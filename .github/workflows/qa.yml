@@ -1,0 +1,16 @@
+name: Publish
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Output Bikeshed to HTML
+        uses: netwerk-digitaal-erfgoed/bikeshed-action@v1
