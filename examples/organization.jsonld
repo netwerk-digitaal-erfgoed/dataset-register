@@ -1,0 +1,7 @@
+{
+  "@context": "https://schema.org/",
+  "@type": "Organization",
+  "url": "https://www.kb.nl/",
+  "name": "Koninklijke Bibliotheek",
+  "sameAs": "https://ror.org/02w4jbg70"
+}
