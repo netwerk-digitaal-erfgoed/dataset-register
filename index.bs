@@ -109,7 +109,7 @@ Providing information about the organization behind the dataset (the [=publisher
     </pre>
 </div>
 
-See also [[DBPR#UCR#R-ProvAvailable]].
+See also [[DWBP-UCR#R-ProvAvailable]].
 
 ### Overview ### {#organization-overview}
 
@@ -387,9 +387,10 @@ it must be described in [=terms=] that provide meaning to the data for humans as
     We [[JSON-LD-SYNTAX#specifying-the-type|specify the item’s type]] in the [[SCHEMA-ORG]] vocabulary
     and refer to the painter by his RKDArtists [[IRI]].
 
-    <pre highlight="json-ld" line-highlight="2,4" line-numbers>
+    <pre highlight="json-ld" line-highlight="3,5" line-numbers>
         {
-          "@type": "https://schema.org/Painting",
+          "@context": "https://schema.org/",
+          "@type": "Painting",
           "name": "The Night Watch",
           "creator": "https://data.rkd.nl/artists/66219"
         }
@@ -422,9 +423,35 @@ For [=machine-readability|machine-readable=] access to data,
 it needs to be published in an [[RDF11-PRIMER#section-graph-syntax|RDF format]].
 RDF formats include [[JSON-LD]], [[N3]] and [[Turtle]].
 
-> Therefore, publishers *must* publish their [[#organization-information|organization information]] 
-> and [[#dataset-information|dataset information]] in RDF. 
-> Publishers *should* also publish the [[#data|data]] itself in RDF.
+> Therefore, publishers *must* make their [[#organization-information|organization information]] 
+> and [[#dataset-information|dataset information]] available in RDF. 
+> Publishers *should* also make the data [[#data|data]] itself available in RDF.
+
+<div class="example">
+    <a href="https://developers.google.com/search/docs/guides/intro-structured-data">Google recommends</a> 
+    including the JSON-LD directly in the HTML source of your collection’s web pages.
+    
+    So, on your organization’s web page, for instance <a href="https://www.kb.nl">www.kb.nl</a>, include:
+
+    <xmp highlight=html>
+        <html>
+          <head>
+            <title>Koninklijke Bibliotheek</title>
+            <script type="application/ld+json">
+              {
+                "@context": "https://schema.org/",
+                "@type": "Organization",
+                "name": "Koninklijke Bibliotheek",
+                "url": ""url": "https://www.kb.nl/",
+              }
+            </script>
+          </head>
+          <body>
+            Here continues the web page of the organization...
+          </body>
+        </html>    
+    </xmp>
+</div>
 
 Google’s [Structured Data Testing Tool](https://search.google.com/structured-data/testing-tool/)
 can help with testing RDF metadata.
