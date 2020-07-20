@@ -44,7 +44,7 @@ Context {#context}
 ------------------
 
 While focused on digital heritage institutions in The Netherlands,
-this document is based on broader, international best practices for publishing datasets, including [[DWBP]] and [[LD-BP]].
+this document is based on broader, international best practices for publishing datasets, including [[DWBP-UCR]], [[DWBP]] and [[LD-BP]].
 
 Code examples {#examples}
 -------------------------
@@ -73,6 +73,7 @@ Definitions {#definitions}
 :: On organization that provides one or more [=datasets=].
    
     Issue: is this a good translation for ‘bronhouder’? And add examples.
+    This would probably be ‘heritage institution’ in <a href="https://www.netwerkdigitaalerfgoed.nl/wp-content/uploads/2019/05/190513-DERA2.0-ENG.pdf">DERA</a>.
 
 : <dfn>Consumer</dfn>
 :: On organization or an individual that uses one or more [=datasets=] that are provided by a [=publisher=].
@@ -83,8 +84,7 @@ Definitions {#definitions}
 :: Terms describe what digital heritage is about.
     Terms are subjects, persons, places or time units, for example.
     Take The Night Watch: it is a *painting*, created by *Rembrandt* in *Amsterdam*, in the year *1642*.
-    See also [[LD-GLOSSARY#term]].
-
+    See also [[LD-GLOSSARY#term|Linked Data Glossary]].
 
 Requirements {#requirements#}
 ============
@@ -108,6 +108,8 @@ Providing information about the organization behind the dataset (the [=publisher
     highlight: json-ld
     </pre>
 </div>
+
+See also [[DBPR#UCR#R-ProvAvailable]].
 
 ### Overview ### {#organization-overview}
 
@@ -222,6 +224,8 @@ for example one of the [Creative Commons](https://creativecommons.org/choose/) l
     </pre>
 </div>
 
+See also [[DWBP-UCR#R-LicenseAvailable]].
+
 ### Publication date ### {#dataset-date}
 
 Publishers *SHOULD* make known when the dataset was originally published and when it was last updated.
@@ -239,15 +243,17 @@ Publishers *SHOULD* make known when the dataset was originally published and whe
     </pre>
 </div>
 
-### Version information ### {#dataset-versions}
+### Version ### {#dataset-versions}
 
 Data may change over time. 
-[=consumers=], such as researchers, may want to determine which information was valid at a certain moment.
+[=Consumers=], such as researchers, may want to determine which information was valid at a certain moment.
 
 > Therefore, publishers *should* not only publish the current version of the dataset,
 > but keep historical versions accessible to users.
 
 It is up to the publisher to determine when to publish new versions.
+
+See also [[DWBP#dataVersioning]].
 
 ### Full example ### {#dataset-example}
 
@@ -390,19 +396,25 @@ it must be described in [=terms=] that provide meaning to the data for humans as
     </pre>
 </div>
 
+See also [[DWBP-UCR#R-VocabReference]].
+
 ## Developer documentation ## {#developer-docs}
 
 Publishers *MUST* publish documentation for their data access [=API=].
 
 Issue: TODO
 
+See also [[DWBP-UCR#R-APIDocumented]]
+
 ## Durable identifiers ## {#identifiers}
 
 [=Consumers=] want to refer to data in datasets. Preferably they do so by linking to it.
 
-> Therefore, publishers *must* maintain permanent identifiers for their [[#data|data]],
+> Therefore, publishers *must* maintain a permanent and unique identifier for each [[#data|data]] resource,
 > as well as their [[#organization-information|organization]] and [[#dataset-information|dataset]] information.
 > Publishers *should* use [[IRI|IRIs]] as identifiers.
+
+See also [[DWBP-UCR#R-UniqueIdentifier]] and [[DWBP-UCR#R-PersistentIdentification]].
 
 ## Information in RDF ## {#rdf}
 
@@ -416,6 +428,8 @@ RDF formats include [[JSON-LD]], [[N3]] and [[Turtle]].
 
 Google’s [Structured Data Testing Tool](https://search.google.com/structured-data/testing-tool/)
 can help with testing RDF metadata.
+
+See also [[DWBP-UCR#R-FormatMachineRead]].
 
 ## Information remains available ## {#available}
 
