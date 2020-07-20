@@ -442,7 +442,7 @@ RDF formats include [[JSON-LD]], [[N3]] and [[Turtle]].
                 "@context": "https://schema.org/",
                 "@type": "Organization",
                 "name": "Koninklijke Bibliotheek",
-                "url": ""url": "https://www.kb.nl/",
+                "url": "https://www.kb.nl/"
               }
             </script>
           </head>
