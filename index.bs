@@ -59,6 +59,10 @@ Definitions {#definitions}
 : <dfn>Dataset</dfn>
 :: A collection of data. A dataset is identified with at least a name and creator.
 
+: <dfn>Distribution</dfn>
+:: A channel through which a [=dataset=] is available, 
+    for example a CSV file download or a [[SPARQL11-OVERVIEW|SPARQL]] endpoint.
+
 : <dfn export>Term Source</dfn>
 :: A set of [=terms=].
 :: Issue: TODO
@@ -254,6 +258,72 @@ Data may change over time.
 It is up to the publisher to determine when to publish new versions.
 
 See also [[DWBP#dataVersioning]].
+
+### Distributions ### {#dataset-distributions}
+
+[=Consumers=] that are interested in a dataset should be able to access the data in it.
+[=Distributions=] tell consumers where and how they can get the data.
+
+> Therefore, publishers *SHOULD* add at least one distribution.
+
+In Schema.org, each type of Distribution is called a [DataDownload](https://schema.org/DataDownload),
+even if it is a query endpoint.
+
+<table>
+    <caption>[schema:DataDownload](https://schema.org/DataDownload) properties</caption>
+    <thead>
+        <tr>
+            <th>Property</th>
+            <th>Description</th>
+            <th>Usage</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <th scope="row">@id</th>
+            <td>The IRI where the distribution is available in a browser.</td>
+            <td>Required</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:encodingFormat](https://schema.org/encodingFormat)</th>
+            <td>
+                The distribution’s MIME format,
+                for example `application/sparql-query` for a SPARL endpoint
+                or `application/ld+json` for a data dump serialized as JSON-LD.
+            </td>
+            <td>Required</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:contentUrl](https://schema.org/contentUrl)</th>
+            <td>The URL where the distribution can be directly accessed.</td>
+            <td>Required</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="example">
+    A dataset with two distributions: a SPARQL endpoint and a JSON-LD data dump download:
+
+    <pre highlight=json-ld>
+        {
+          "@context": "https://schema.org/",
+          "@type": "Dataset",
+          "distributions": [
+            {
+              "@id": "http://vocab.getty.edu/aat/sparql",
+              "@type": "DataDownload",
+              "encodingFormat": "application/sparql-query",
+              "contentUrl": "http://vocab.getty.edu/sparql"
+            },
+            {
+              "@type": "DataDownload",
+              "encodingFormat": "application/ld+json",
+              "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.json"
+            }            
+          ]
+        }
+    </pre>
+</div>  
 
 ### Full example ### {#dataset-example}
 
