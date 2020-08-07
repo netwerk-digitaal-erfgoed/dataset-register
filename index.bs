@@ -23,9 +23,9 @@ To enable [=datasets=] to be found and used,
 they must be published according to a well-documented,
 shared and [=machine-readability|machine-readable=] publication model.
 
-This document describes rules for such a model.
-When [=publishers=] make their datasets adhere to these requirements,
-they enable consumers (both humans and machines) to use the published data in new and better ways.
+This document describes such a model and its rules.
+When [=publishers=] make their datasets adhere to these rules,
+they enable consumers – both humans and machines – to use the published data in new and better ways.
 
 The requirements prescribe the metadata that publishers should provide with their data. 
 They do so on four levels: that of the organization, the dataset, the data itself and a global level:
@@ -38,7 +38,14 @@ They do so on four levels: that of the organization, the dataset, the data itsel
 Audience {#audience}
 --------------------
 
-Dataset [=publishers=]
+This document is mainly geared towards two groups of readers.
+ 
+Digital heritage collection managers can follow these requirements to make their published datasets findable and usable, 
+for instance through [Google Dataset Search](https://datasetsearch.research.google.com) 
+and the [NDE Registry](https://www.netwerkdigitaalerfgoed.nl/kennis-en-voorzieningen/digitaal-erfgoed-bruikbaar/register/).
+
+Suppliers of collection management system can support these requirements in their software
+to enable the collection managers using it to do the above.
 
 Context {#context}
 ------------------
