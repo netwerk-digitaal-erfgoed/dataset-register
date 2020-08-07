@@ -515,7 +515,7 @@ RDF formats include [[JSON-LD]], [[N3]] and [[Turtle]].
 
 <div class="example">
     <a href="https://developers.google.com/search/docs/guides/intro-structured-data#structured-data">Google recommends</a> 
-    including the JSON-LD directly in the HTML source of your collection’s web pages.
+    including the JSON-LD directly in the HTML source of web pages.
     
     So, on your organization’s web page, for instance <a href="https://www.kb.nl">www.kb.nl</a>, include:
 
