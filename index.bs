@@ -58,7 +58,9 @@ Code examples {#examples}
 
 RDF code examples are in the [[SCHEMA-ORG]] vocabulary, serialized as [[JSON-LD]].
 
-Issue: explain why 
+While other vocabularies, such as [[VOCAB-DCAT-2]] can also be used,
+Schema.org has the advantage that it’s [better picked up by search engines](https://github.com/netwerk-digitaal-erfgoed/project-organisations-datasets/tree/master/publication-model#considerations),
+improving findability, one of the main goals of publishing datasets on the web.
 
 Definitions {#definitions}
 ==========================
