@@ -81,7 +81,7 @@ Definitions {#definitions}
 :: Issue: TODO
 
 : <dfn>Publisher</dfn>
-:: On organization that provides one or more [=datasets=].
+:: An individual or organization that provides one or more [=datasets=].
    
     Issue: is this a good translation for ‘bronhouder’? And add examples.
     This would probably be ‘heritage institution’ in <a href="https://www.netwerkdigitaalerfgoed.nl/wp-content/uploads/2019/05/190513-DERA2.0-ENG.pdf">DERA</a>.
