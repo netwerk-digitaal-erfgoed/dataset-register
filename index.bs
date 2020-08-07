@@ -90,6 +90,13 @@ Definitions {#definitions}
     Take The Night Watch: it is a *painting*, created by *Rembrandt* in *Amsterdam*, in the year *1642*.
     See also [[LD-GLOSSARY#term|Linked Data Glossary]].
 
+Conceptual model {#conceptual-model}
+===============
+
+<pre class=include>
+path: model.svg
+</pre>
+
 Requirements {#requirements#}
 ============
 
