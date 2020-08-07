@@ -44,8 +44,8 @@ Digital heritage collection managers can follow these requirements to make their
 for instance through [Google Dataset Search](https://datasetsearch.research.google.com) 
 and the [NDE Registry](https://www.netwerkdigitaalerfgoed.nl/kennis-en-voorzieningen/digitaal-erfgoed-bruikbaar/register/).
 
-Suppliers of collection management system can support these requirements in their software
-to enable the collection managers using it to do the above.
+Suppliers of collection management system can implement these requirements in their software
+to help collection managers using it to publish datasets in the correct format.
 
 Context {#context}
 ------------------
