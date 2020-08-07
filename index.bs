@@ -40,12 +40,14 @@ Audience {#audience}
 
 This document is mainly geared towards two groups of readers.
  
-Digital heritage collection managers can follow these requirements to make their published datasets findable and usable, 
+Digital heritage collection managers can follow the requirements in this document to make their published datasets findable and usable, 
 for instance through [Google Dataset Search](https://datasetsearch.research.google.com) 
 and the [NDE Registry](https://www.netwerkdigitaalerfgoed.nl/kennis-en-voorzieningen/digitaal-erfgoed-bruikbaar/register/).
 
 Suppliers of collection management system can implement these requirements in their software
 to help collection managers using it to publish datasets in the correct format.
+These requirements are scoped to the online publication output of collection management systems;
+they do not prescribe how those systems should store data internally. 
 
 Context {#context}
 ------------------
