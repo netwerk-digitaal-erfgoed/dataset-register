@@ -511,7 +511,7 @@ RDF formats include [[JSON-LD]], [[N3]] and [[Turtle]].
 
 > Therefore, publishers *must* make their [[#organization-information|organization information]] 
 > and [[#dataset-information|dataset information]] available in RDF. 
-> Publishers *should* also make the data [[#data|data]] itself available in RDF.
+> Publishers *should* also make the [[#data|data]] itself available in RDF.
 
 <div class="example">
     <a href="https://developers.google.com/search/docs/guides/intro-structured-data">Google recommends</a> 
