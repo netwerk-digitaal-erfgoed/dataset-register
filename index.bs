@@ -514,7 +514,7 @@ RDF formats include [[JSON-LD]], [[N3]] and [[Turtle]].
 > Publishers *should* also make the [[#data|data]] itself available in RDF.
 
 <div class="example">
-    <a href="https://developers.google.com/search/docs/guides/intro-structured-data">Google recommends</a> 
+    <a href="https://developers.google.com/search/docs/guides/intro-structured-data#structured-data">Google recommends</a> 
     including the JSON-LD directly in the HTML source of your collection’s web pages.
     
     So, on your organization’s web page, for instance <a href="https://www.kb.nl">www.kb.nl</a>, include:
