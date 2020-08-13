@@ -75,7 +75,8 @@ Definitions {#definitions}
     for example a CSV file download or a [[SPARQL11-OVERVIEW|SPARQL]] endpoint.
 
 : <dfn export>Term Source</dfn>
-:: A set of [=terms=].
+:: An authoritative set of [=terms=].
+    Examples are thesauri and taxonomies.
 :: Issue: TODO
 
 : <dfn export>Application Programming Interface</dfn> (<dfn>API</dfn>)
