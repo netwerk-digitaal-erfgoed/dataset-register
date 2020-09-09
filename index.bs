@@ -57,6 +57,9 @@ Context {#context}
 While focused on digital heritage institutions in The Netherlands,
 this document is based on broader, international best practices for publishing datasets, including [[DWBP-UCR]], [[DWBP]] and [[LD-BP]].
 
+These requirements incorporate a previous [publication model](https://github.com/netwerk-digitaal-erfgoed/project-organisations-datasets/tree/master/publication-model),
+which provides more background on choices made here.
+
 Code examples {#examples}
 -------------------------
 
