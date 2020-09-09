@@ -5,7 +5,9 @@ Level: 1
 Status: LS
 Markup Shorthands: css yes, markdown yes
 URL: https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/
-Editor: David de Boer, Netwerk Digitaal Erfgoed https://www.netwerkdigitaalerfgoed.nl, david@ddeboer.nl, https://github.com/ddeboer
+Editor: 
+    David de Boer, Netwerk Digitaal Erfgoed https://www.netwerkdigitaalerfgoed.nl, david@ddeboer.nl, https://github.com/ddeboer
+    Bob Coret, Netwerk Digitaal Erfgoed https://netwerkdigitaalerfgoed.nl, bob.coret@netwerkdigitaalerfgoed.nl, https://twitter.com/coret
 Abstract: This document describes requirements for publishing datasets. 
     By following these requirements, publishers enable users to find and use their datasets.
 </pre>
