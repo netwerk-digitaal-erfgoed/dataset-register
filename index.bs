@@ -543,7 +543,7 @@ RDF formats include [[JSON-LD]], [[N3]] and [[Turtle]].
     </xmp>
 </div>
 
-Google’s [Structured Data Testing Tool](https://search.google.com/structured-data/testing-tool/)
+Google’s [Rich Results Test](https://search.google.com/test/rich-results) (previously Structured Data Testing Tool)
 can help with testing RDF metadata.
 
 See also [[DWBP-UCR#R-FormatMachineRead]].
