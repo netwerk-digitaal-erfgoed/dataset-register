@@ -143,33 +143,34 @@ See also [[DWBP-UCR#R-ProvAvailable]].
 ### Overview ### {#organization-overview}
 
 <table>
+    <caption>[schema:Organization](https://schema.org/Organization) properties</caption>
     <thead>
         <tr>
             <th>Property</th>
-            <th>Cardinality</th>
             <th>Description</th>
-            <th>Schema.org</th>
+            <th>Cardinality</th>
+            <th>Usage</th>
         </tr>
     </thead>
     <tbody>
-        <tr>
-            <th scope="row">Name</th>
-            <td>1</td>
-            <td>**REQUIRED.** The organization’s full name.</td>
+		<tr>
             <th scope="row">[schema:name](https://schema.org/name)</th>
-        </tr>
-        <tr>
-            <th scope="row">Organization URL</th>
-            <td>1</td>
-            <td>**REQUIRED.** A link to the organization’s website.</td>
+            <td>The organization’s full name.</td>
+			<td>1</td>
+            <td>Required</td>
+		</tr>
+		<tr>
             <th scope="row">[schema:url](https://schema.org/url)</th>
-        </tr>
-        <tr>
-            <th scope="row">Identifications</th>
-            <td>0..n</td>
-            <td>**OPTIONAL.** Links to the organization in other databases.</td>
+            <td>A link to the organization’s website.</td>
+			<td>1</td>
+            <td>Required</td>
+		</tr>
+		<tr>
             <th scope="row">[schema:sameAs](https://schema.org/sameAs)</th>
-        </tr>
+            <td>Links to the organization in other databases.</td>
+			<td>0..n</td>
+            <td>Recommended</td>
+		</tr>
     </tbody>
 </table>
 
@@ -301,6 +302,7 @@ even if it is a query endpoint.
         <tr>
             <th>Property</th>
             <th>Description</th>
+            <th>Cardinality</th>
             <th>Usage</th>
         </tr>
     </thead>
@@ -308,24 +310,69 @@ even if it is a query endpoint.
         <tr>
             <th scope="row">@id</th>
             <td>The IRI where the distribution is available in a browser.</td>
+            <td>1</td>
+			<td>Required</td>
+        </tr>
+		<tr>
+            <th scope="row">[schema:name](https://schema.org/name)</th>
+            <td>Name of the distribution, depicting the type of distribution.</td>
+            <td>1</td>			
             <td>Required</td>
         </tr>
+		<tr>
+            <th scope="row">[schema:description](https://schema.org/description)</th>
+            <td>A description of the the distribution.</td>
+            <td>0..1</td>			
+            <td>Recommended</td>
+        </tr>		
         <tr>
             <th scope="row">[schema:encodingFormat](https://schema.org/encodingFormat)</th>
-            <td>
-                The distribution’s MIME format,
-                for example `application/sparql-query` for a SPARL endpoint
-                or `application/ld+json` for a data dump serialized as JSON-LD.
-            </td>
+            <td>The distribution’s MIME format, for example `application/sparql-query` for a SPARL endpoint
+ or `application/ld+json` for a data dump serialized as JSON-LD. See <a href="http://www.iana.org/assignments/media-types/media-types.xhtml">IANA-site</a> and <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types">MDN-reference</a> for more information. </td>
+            <td>1..n</td>	
             <td>Required</td>
         </tr>
         <tr>
             <th scope="row">[schema:contentUrl](https://schema.org/contentUrl)</th>
             <td>The URL where the distribution can be directly accessed.</td>
+            <td>1</td>	
             <td>Required</td>
         </tr>
-    </tbody>
+	
+        <tr>
+            <th scope="row">[schema:datePublished](https://schema.org/datePublished)</th>
+            <td>Date (or datatime) the distribution was published.</td>
+            <td>0..1</td>	
+            <td>Recommended</td>
+        </tr>	
+        <tr>
+            <th scope="row">[schema:dateModified](https://schema.org/dateModified)</th>
+            <td>Date (or datetime) the distribution was last modified.</td>
+            <td>0..1</td>	
+			<td>Recommended</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:inLanguage](https://schema.org/inLanguage)</th>
+            <td>Language or languages in which the dataset is available. Use one of the language codes from the <a href="https://tools.ietf.org/html/bcp47">IETF BCP 47 standard</a>, such as "nl-NL".</td>
+            <td>0..1</td>	
+			<td>Recommended</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:license](https://schema.org/license)</th>
+            <td>See [[#dataset-license]].</td>
+            <td>0..1</td>	
+			<td>Recommended</td>
+        </tr>
+		<tr>
+            <th scope="row">[schema:contentSize](https://schema.org/contentSize)</th>
+            <td>A measure indicating the size of the distribution.</td>
+            <td>0..1</td>	
+			<td>Recommended</td>
+        </tr>	
+	</tbody>
 </table>
+
+
 
 <div class="example">
     A dataset with two distributions: a SPARQL endpoint and a JSON-LD data dump download:
@@ -373,68 +420,78 @@ Required and recommended attributes:
     <thead>
         <tr>
             <th>Property</th>
-            <th>Cardinality</th>
             <th>Description</th>
+            <th>Cardinality</th>
+            <th>Usage</th>
         </tr>
     </thead>
     <tbody>
         <tr>
             <th scope="row">[schema:identifier](https://schema.org/identifier)</th>
-            <td>1</td>
-            <td>**REQUIRED.** See [[#dataset-basic]].</td>
+            <td>See [[#dataset-basic]].</td>
+			<td>1</td>
+            <td>Required</td>
         </tr>
         <tr>
             <th scope="row">[schema:name](https://schema.org/name)</th>
-            <td>1</td>
-            <td>**REQUIRED.** See [[#dataset-basic]]</td>
+            <td>See [[#dataset-basic]</td>
+			<td>1</td>
+            <td>Required</td>
         </tr>
         <tr>
             <th scope="row">[schema:description](https://schema.org/description)</th>
-            <td>1</td>
-            <td>**REQUIRED.** See [[#dataset-basic]].</td>
+            <td>See [[#dataset-basic]].</td>
+			<td>1</td>
+            <td>Required</td>
         </tr>
         <tr>
             <th scope="row">[schema:creator](https://schema.org/creator)</th>
-            <td>1</td>
-            <td>**REQUIRED** The owner of the dataset.</td>
-        </tr>
-        <tr>
-            <th scope="row">[schema:publisher](https://schema.org/publisher)</th>
-            <td>1</td>
-            <td>**REQUIRED** The publisher of the dataset.</td>
+            <td>The owner of the dataset.</td>
+			<td>1</td>
+            <td>Required</td>
         </tr>
         <tr>
             <th scope="row">[schema:license](https://schema.org/license)</th>
-            <td>1</td>
-            <td>**REQUIRED.** See [[#dataset-license]].</td>
+            <td>See [[#dataset-license]].</td>
+			<td>1</td>
+            <td>Required</td>
         </tr>
         <tr>
             <th scope="row">[schema:distribution](https://schema.org/distribution)</th>
-            <td>1..n</td>
-            <td>**REQUIRED** See [[#dataset-distributions]].</td>
+            <td>See [[#dataset-distributions]].</td>
+			<td>1..n</td>
+            <td>Required</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:publisher](https://schema.org/publisher)</th>
+            <td>The publisher of the dataset.</td>
+			<td>0..1</td>
+            <td>Recommended</td>
         </tr>
         <tr>
             <th scope="row">[schema:dateCreated](https://schema.org/dateCreated)</th>
-            <td>1</td>
-            <td>**RECOMMENDED.** See [[#dataset-date]].</td>
+            <td>See [[#dataset-date]].</td>
+			<td>0..1</td>
+            <td>Recommended</td>
         </tr>
         <tr>
             <th scope="row">[schema:datePublished](https://schema.org/datePublished)</th>
-            <td>1</td>
-            <td>**RECOMMENDED.** See [[#dataset-date]].</td>
+            <td>See [[#dataset-date]].</td>
+			<td>0..1</td>
+            <td>Recommended</td>
         </tr>
         <tr>
             <th scope="row">[schema:dateModified](https://schema.org/dateModified)</th>
-            <td>1</td>
-            <td>**RECOMMENDED.** See [[#dataset-date]].</td>
+            <td>See [[#dataset-date]].</td>
+			<td>0..1</td>
+            <td>Recommended</td>
         </tr>
         <tr>
             <th scope="row">[schema:version](https://schema.org/version)</th>
-            <td>1</td>
-            <td>**RECOMMENDED.** See [[#dataset-versions]].</td>
+            <td>See [[#dataset-versions]].</td>
+			<td>0..1</td>
+            <td>Recommended</td>
         </tr>
-			
-		
     </tbody>
 </table>
 
@@ -450,55 +507,65 @@ The following dataset attributes provided extra information, which improves the 
     <thead>
         <tr>
             <th>Property</th>
-            <th>Cardinality</th>
             <th>Description</th>
+            <th>Cardinality</th>
+			<th>Usage</th>
         </tr>
     </thead>
     <tbody>
         <tr> 	
             <th scope="row">[schema:mainEntityOfPage](https://schema.org/mainEntityOfPage)</th>
-            <td>1</td>
-            <td>**RECOMMENDED.** URL of a webpage where the dataset is described.</td>
+            <td>URL of a webpage where the dataset is described.</td>
+			<td>0..1</td>
+            <td>Recommended</td>
         </tr>
         <tr>	
             <th scope="row">[schema:inLanguage](https://schema.org/inLanguage)</th>
-            <td>1</td>
-            <td>**RECOMMENDED.** Language or languages in which the dataset is available. Use one of the language codes from the <a href="https://tools.ietf.org/html/bcp47">IETF BCP 47 standard</a>, such as "nl-NL".</td>
+            <td>Language or languages in which the dataset is available. Use one of the language codes from the <a href="https://tools.ietf.org/html/bcp47">IETF BCP 47 standard</a>, such as "nl-NL".</td>
+			<td>0..n</td>
+            <td>Recommended</td>
         </tr>
         <tr>	
             <th scope="row">[schema:isBasedOnUrl](https://schema.org/isBasedOnUrl)</th>
-            <td>1</td>
-            <td>**RECOMMENDED.** The URL of dataset this dataset is based on.</td>
+            <td>The URL of dataset this dataset is based on.</td>
+			<td>0..1</td>
+            <td>Recommended</td>
         </tr>
         <tr>	
             <th scope="row">[schema:citation](https://schema.org/citation)</th>
-            <td>1</td>
-            <td>**RECOMMENDED** A citation or reference for the dataset.</td>
+            <td>A citation or reference for the dataset.</td>
+			<td>0..1</td>
+            <td>Recommended</td>
         </tr>
         <tr>
             <th scope="row">[schema:genre](https://schema.org/genre)</th>
-            <td>1</td>
-            <td>**RECOMMENDED** The genre or genres which describe the dataset.</td>
+            <td>The genre or genres which describe the dataset.</td>
+			<td>0..n</td>
+            <td>Recommended</td>
         </tr>
         <tr>	
             <th scope="row">[schema:keywords](https://schema.org/keywords)</th>
-            <td>1</td>
-            <td>**RECOMMENDED.** One or more keyword which describe the dataset.</td>
+            <td>One or more keyword which describe the dataset.</td>
+			<td>0..n</td>
+            <td>Recommended</td>
         </tr>
         <tr>	
             <th scope="row">[schema:spatialCoverage](https://schema.org/spatialCoverage)</th>
-            <td>1</td>
-            <td>**RECOMMENDED** Indicates the place(s) which are the focus of the dataset.</td>
+            <td>Indicates the place(s) which are the focus of the dataset.</td>
+			<td>0..1</td>
+            <td>Recommended</td>
         </tr>
         <tr>
             <th scope="row">[schema:temporalCoverage](https://schema.org/temporalCoverage)</th>
-            <td>1</td>
-            <td>**RECOMMENDED.** Indicates the period that the dataset applies to.</td>
+            <td>Indicates the period that the dataset applies to.</td>
+			<td>0..1</td>
+            <td>Recommended</td>
         </tr>
         <tr>	
             <th scope="row">[schema:includedInDataCatalog](https://schema.org/includedInDataCatalog)</th>
-            <td>1</td>
-            <td>**RECOMMENDED.** The URI of the data catalog in which the dataset is.</td>
+            <td>The URI of the data catalog in which the dataset is.</td>
+			<td>0..1</td>
+            <td>Recommended</td>
         </tr>
      
     </tbody>
@@ -510,6 +577,11 @@ The following dataset attributes provided extra information, which improves the 
 A collection of datasets is a data catalog. A catalog provides the [=Consumers=] with a complete overview of available datasets, which improves discoverability.
 
 > Therefore, publishers *SHOULD* provide a catalog.
+
+
+<pre class=include>
+path: datacatalog-dataset-distribution.svg
+</pre>
 
 <div class="example">
     A catalog of available datasets:
@@ -545,30 +617,35 @@ A collection of datasets is a data catalog. A catalog provides the [=Consumers=]
     <thead>
         <tr>
             <th>Property</th>
-            <th>Cardinality</th>
             <th>Description</th>
+            <th>Cardinality</th>
+			<th>Usage</th>
         </tr>
     </thead>
     <tbody>
         <tr>
             <th scope="row">[schema:name](https://schema.org/name)</th>
-            <td>1</td>
-            <td>**REQUIRED**</td>
+            <td>The name of the datacatalog.</td>
+			<td>1</td>
+            <td>Required</td>
         </tr>
         <tr>
             <th scope="row">[schema:description](https://schema.org/description)</th>
-            <td>1</td>
-            <td>**REQUIRED**</td>
+            <td>A description of the data catalog.</td>
+			<td>1</td>
+            <td>Required</td>
         </tr>
         <tr>
             <th scope="row">[schema:publisher](https://schema.org/publisher)</th>
-            <td>1..n</td>
-            <td>**REQUIRED**</td>
+            <td>The publisher of the data catalog.</td>
+			<td>1</td>
+            <td>Required</td>
         </tr>
         <tr>
             <th scope="row">[schema:dataset](https://schema.org/dataset)</th>
-            <td>1..n</td>
-            <td>**REQUIRED**</td>
+            <td>The datasets containing all dataset information.</td>
+			<td>1..n</td>
+            <td>Required</td>
         </tr>
     </tbody>
 </table>
