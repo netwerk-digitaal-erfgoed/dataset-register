@@ -255,17 +255,18 @@ for example one of the [Creative Commons](https://creativecommons.org/choose/) l
 
 See also [[DWBP-UCR#R-LicenseAvailable]].
 
-### Publication date ### {#dataset-date}
+### Dataset description dates ### {#dataset-date}
 
-Publishers *SHOULD* make known when the dataset was originally published and when it was last updated.
-
+Publishers *SHOULD* make known when the dataset description was originally created, published and when it was last updated.
+ 
 <div class="example">
-    Specify publication dates:
+    Specify dataset description dates:
     
     <pre highlight=json-ld>
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
+          "dateCreated": "2019-04-14",
           "datePublished": "2019-05-21",
           "dateModified": "2019-08-15"
         }
