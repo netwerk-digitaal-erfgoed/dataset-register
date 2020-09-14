@@ -328,7 +328,7 @@ even if it is a query endpoint.
         <tr>
             <th scope="row">[schema:encodingFormat](https://schema.org/encodingFormat)</th>
             <td>The distribution’s MIME format, for example `application/sparql-query` for a SPARL endpoint
- or `application/ld+json` for a data dump serialized as JSON-LD. See <a href="http://www.iana.org/assignments/media-types/media-types.xhtml">IANA-site</a> and <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types">MDN-reference</a> for more information. </td>
+ or `application/ld+json` for a data dump serialized as JSON-LD. See [[IANA-MEDIA-TYPES]] and <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types">MDN-reference</a> for more information.</td>
             <td>1..n</td>	
             <td>Required</td>
         </tr>
@@ -353,7 +353,7 @@ even if it is a query endpoint.
         </tr>
         <tr>
             <th scope="row">[schema:inLanguage](https://schema.org/inLanguage)</th>
-            <td>Language or languages in which the dataset is available. Use one of the language codes from the <a href="https://tools.ietf.org/html/bcp47">IETF BCP 47 standard</a>, such as "nl-NL".</td>
+            <td>Language or languages in which the dataset is available. Use one of the language codes from the [[BCP47]], such as "nl-NL".</td>
             <td>0..1</td>	
 			<td>Recommended</td>
         </tr>
@@ -521,7 +521,7 @@ The following dataset attributes provided extra information, which improves the 
         </tr>
         <tr>	
             <th scope="row">[schema:inLanguage](https://schema.org/inLanguage)</th>
-            <td>Language or languages in which the dataset is available. Use one of the language codes from the <a href="https://tools.ietf.org/html/bcp47">IETF BCP 47 standard</a>, such as "nl-NL".</td>
+            <td>Language or languages in which the dataset is available. Use one of the language codes from the [[BCP47]], such as "nl-NL".</td>
 			<td>0..n</td>
             <td>Recommended</td>
         </tr>
