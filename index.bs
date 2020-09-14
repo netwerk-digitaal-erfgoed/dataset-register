@@ -275,10 +275,10 @@ Publishers *SHOULD* make known when the dataset description was originally creat
 
 ### Version ### {#dataset-versions}
 
-Data may change over time. 
+A dataset description may change over time. 
 [=Consumers=], such as researchers, may want to determine which information was valid at a certain moment.
 
-> Therefore, publishers *should* not only publish the current version of the dataset,
+> Therefore, publishers *should* not only publish the current version of the dataset description,
 > but keep historical versions accessible to users.
 
 It is up to the publisher to determine when to publish new versions.
@@ -369,7 +369,7 @@ even if it is a query endpoint.
 Required attributes:
 
 <table>
-    <caption>[schema:Dataset](https://schema.org/Dataset)</caption>
+    <caption>[schema:Dataset](https://schema.org/Dataset) properties</caption>
     <thead>
         <tr>
             <th>Property</th>
@@ -414,6 +414,11 @@ Required attributes:
             <td>**REQUIRED** </td>
         </tr>
         <tr>
+            <th scope="row">[schema:dateCreated](https://schema.org/dateCreated)</th>
+            <td>1</td>
+            <td>**RECOMMENDED.** See [[#dataset-date]].</td>
+        </tr>
+        <tr>
             <th scope="row">[schema:datePublished](https://schema.org/datePublished)</th>
             <td>1</td>
             <td>**RECOMMENDED.** See [[#dataset-date]].</td>
@@ -426,8 +431,43 @@ Required attributes:
     </tbody>
 </table>
 
+### Data catalog ### {#data-catalog}
+
+A collection of datasets is a data catalog. A catalog provides the [=Consumers=] with a complete overview of available datasets, which improves discoverability.
+
+> Therefore, publishers *SHOULD* provide a catalog.
+
+<div class="example">
+    A catalog of available datasets:
+    
+    <pre highlight="json-ld" line-highlight="3,5" line-numbers>
+		{
+		  "@context": "https://schema.org/",
+		  "@type": "DataCatalog",
+		  "name": "Linked Data KB",
+		  "description": "Alle linked data zoals beschikbaar gesteld door de Koninklijke Bibliotheek.",
+		  "publisher": {
+                "@type": "Organization",
+                "name": "Koninklijke Bibliotheek",
+                "url": "https://www.kb.nl/"
+           },
+           "dataset": [
+             {
+               "@type": "Dataset",
+               "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
+               ...
+             }, { 
+               ...
+             }
+		  ]
+		}
+    </pre>
+</div>
+
+
+
 <table>
-    <caption>This is a caption</caption>
+    <caption>[schema:DataCatalog](http://schema.org/DataCatalog) properties</caption>
     <thead>
         <tr>
             <th>Property</th>
