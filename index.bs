@@ -373,6 +373,7 @@ even if it is a query endpoint.
 </table>
 
 
+:: Issue: TODO Elaborate (and give examples of) the types of distribution (in schema:name), like SPARQL-endpoint, OAI-PMH-endpoint, LDF-endpoint, Data dump, Opensearch API. Or introduce proprietary property for the type (might be better the using the free-format name).
 
 <div class="example">
     A dataset with two distributions: a SPARQL endpoint and a JSON-LD data dump download:
@@ -410,6 +411,8 @@ even if it is a query endpoint.
     highlight: json-ld
     </pre>
 </div>
+
+:: Issue: TODO Expand example based on required (and recommended) properties.
 
 ### Overview ### {#dataset-overview}
 
@@ -497,6 +500,9 @@ Required and recommended attributes:
 
 
 ### Extended information ###  {#dataset-extended}
+
+
+:: Issue: TODO Right location? Why separate?
 
 The following dataset attributes provided extra information, which improves the richness of the description and helps [=Consumers=] in finding and selecting datasets.
 
@@ -690,7 +696,7 @@ See also [[DWBP-UCR#R-VocabReference]].
 
 Publishers *MUST* publish documentation for their data access [=API=].
 
-Issue: TODO
+Issue: TODO plus mention SHACL (here or elsewhere)?
 
 See also [[DWBP-UCR#R-APIDocumented]]
 
