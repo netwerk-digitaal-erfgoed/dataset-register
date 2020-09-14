@@ -212,10 +212,10 @@ Publishers *MUST* include basic information about the dataset, at the very minim
 
 If more information is available, publishers *SHOULD* add it.
 
-<div class="example" line-numbers line-highlight="11-15" >
+<div class="example">
     More information about the dataset.
     
-    <pre highlight=json-ld>
+    <pre highlight="json-ld" line-numbers line-highlight="11-15">
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
