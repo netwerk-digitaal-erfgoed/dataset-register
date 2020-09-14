@@ -366,7 +366,7 @@ even if it is a query endpoint.
 
 ### Overview ### {#dataset-overview}
 
-Required attributes:
+Required and recommended attributes:
 
 <table>
     <caption>[schema:Dataset](https://schema.org/Dataset) properties</caption>
@@ -401,7 +401,7 @@ Required attributes:
         <tr>
             <th scope="row">[schema:publisher](https://schema.org/publisher)</th>
             <td>1</td>
-            <td>**REQUIRED** </td>
+            <td>**REQUIRED** The publisher of the dataset.</td>
         </tr>
         <tr>
             <th scope="row">[schema:license](https://schema.org/license)</th>
@@ -411,7 +411,7 @@ Required attributes:
         <tr>
             <th scope="row">[schema:distribution](https://schema.org/distribution)</th>
             <td>1..n</td>
-            <td>**REQUIRED** </td>
+            <td>**REQUIRED** See [[#dataset-distributions]].</td>
         </tr>
         <tr>
             <th scope="row">[schema:dateCreated](https://schema.org/dateCreated)</th>
@@ -428,8 +428,82 @@ Required attributes:
             <td>1</td>
             <td>**RECOMMENDED.** See [[#dataset-date]].</td>
         </tr>
+        <tr>
+            <th scope="row">[schema:version](https://schema.org/version)</th>
+            <td>1</td>
+            <td>**RECOMMENDED.** See [[#dataset-versions]].</td>
+        </tr>
+			
+		
     </tbody>
 </table>
+
+
+### Extended information ###  {#dataset-extended}
+
+The following dataset attributes provided extra information, which improves the richness of the description and helps [=Consumers=] in finding and selecting datasets.
+
+> Therefore, publishers *SHOULD* provide extended information.
+
+<table>
+    <caption>[schema:Dataset](https://schema.org/Dataset) properties</caption>
+    <thead>
+        <tr>
+            <th>Property</th>
+            <th>Cardinality</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr> 	
+            <th scope="row">[schema:mainEntityOfPage](https://schema.org/mainEntityOfPage)</th>
+            <td>1</td>
+            <td>**RECOMMENDED.** URL of a webpage where the dataset is described.</td>
+        </tr>
+        <tr>	
+            <th scope="row">[schema:inLanguage](https://schema.org/inLanguage)</th>
+            <td>1</td>
+            <td>**RECOMMENDED.** Language or languages in which the dataset is available. Use one of the language codes from the <a href="https://tools.ietf.org/html/bcp47">IETF BCP 47 standard</a>, such as "nl-NL".</td>
+        </tr>
+        <tr>	
+            <th scope="row">[schema:isBasedOnUrl](https://schema.org/isBasedOnUrl)</th>
+            <td>1</td>
+            <td>**RECOMMENDED.** The URL of dataset this dataset is based on.</td>
+        </tr>
+        <tr>	
+            <th scope="row">[schema:citation](https://schema.org/citation)</th>
+            <td>1</td>
+            <td>**RECOMMENDED** A citation or reference for the dataset.</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:genre](https://schema.org/genre)</th>
+            <td>1</td>
+            <td>**RECOMMENDED** The genre or genres which describe the dataset.</td>
+        </tr>
+        <tr>	
+            <th scope="row">[schema:keywords](https://schema.org/keywords)</th>
+            <td>1</td>
+            <td>**RECOMMENDED.** One or more keyword which describe the dataset.</td>
+        </tr>
+        <tr>	
+            <th scope="row">[schema:spatialCoverage](https://schema.org/spatialCoverage)</th>
+            <td>1..n</td>
+            <td>**RECOMMENDED** Indicates the place(s) which are the focus of the dataset.</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:temporalCoverage](https://schema.org/temporalCoverage)</th>
+            <td>1</td>
+            <td>**RECOMMENDED.** Indicates the period that the dataset applies to.</td>
+        </tr>
+        <tr>	
+            <th scope="row">[schema:includedInDataCatalog](https://schema.org/includedInDataCatalog)</th>
+            <td>1</td>
+            <td>**RECOMMENDED.** The URI of the data catalog in which the dataset is.</td>
+        </tr>
+     
+    </tbody>
+</table>
+
 
 ### Data catalog ### {#data-catalog}
 
