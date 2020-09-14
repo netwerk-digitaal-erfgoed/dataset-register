@@ -390,7 +390,7 @@ Required and recommended attributes:
         </tr>
         <tr>
             <th scope="row">[schema:description](https://schema.org/description)</th>
-            <td>1..n</td>
+            <td>1</td>
             <td>**REQUIRED.** See [[#dataset-basic]].</td>
         </tr>
         <tr>
@@ -487,7 +487,7 @@ The following dataset attributes provided extra information, which improves the 
         </tr>
         <tr>	
             <th scope="row">[schema:spatialCoverage](https://schema.org/spatialCoverage)</th>
-            <td>1..n</td>
+            <td>1</td>
             <td>**RECOMMENDED** Indicates the place(s) which are the focus of the dataset.</td>
         </tr>
         <tr>
