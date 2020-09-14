@@ -211,7 +211,7 @@ Publishers *MUST* include basic information about the dataset, at the very minim
 
 If more information is available, publishers *SHOULD* add it.
 
-<div class="example" line-numbers line-highlight="11-15" >
+<div class="example">
     More information about the dataset.
     
     <pre highlight=json-ld>
@@ -440,7 +440,7 @@ A collection of datasets is a data catalog. A catalog provides the [=Consumers=]
 <div class="example">
     A catalog of available datasets:
     
-    <pre highlight="json-ld" line-highlight="3,5" line-numbers>
+    <pre highlight=json-ld>
 		{
 		  "@context": "https://schema.org/",
 		  "@type": "DataCatalog",
@@ -511,7 +511,7 @@ it must be described in [=terms=] that provide meaning to the data for humans as
 <div class="example">
     A painting in plain JSON, where all values are [[RDF11-CONCEPTS#section-literals|string literals]]:
     
-    <pre highlight="json" line-numbers>
+    <pre highlight=json-ld>
         {
           "type": "Artwork",
           "name": "The Night Watch",
@@ -523,7 +523,7 @@ it must be described in [=terms=] that provide meaning to the data for humans as
     We [[JSON-LD-SYNTAX#specifying-the-type|specify the item’s type]] in the [[SCHEMA-ORG]] vocabulary
     and refer to the painter by his RKDArtists [[IRI]].
 
-    <pre highlight="json-ld" line-highlight="3,5" line-numbers>
+    <pre highlight=json-ld>
         {
           "@context": "https://schema.org/",
           "@type": "Painting",
