@@ -382,7 +382,7 @@ even if it is a query endpoint.
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
-          "distributions": [
+          "distribution": [
             {
               "@id": "http://vocab.getty.edu/aat/sparql",
               "@type": "DataDownload",
