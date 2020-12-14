@@ -2,8 +2,32 @@ import fastify from 'fastify';
 
 const server = fastify();
 
-server.post('/datasets', async (request, reply) => {
-  reply.send({hello: 'world'});
+const datasetsRequest = {
+  schema: {
+    body: {
+      type: 'object',
+      required: ['@id'],
+      properties: {
+        '@id': { type: 'string' }
+      }
+    }
+  }
+};
+
+server.post('/datasets', datasetsRequest, async (request, reply) => {
+  // @ts-ignore
+  const url = request.body['@id'];
+  reply.send(url);
+});
+
+server.addContentTypeParser('application/ld+json', { parseAs: 'string' }, function (req, body: string, done) {
+  try {
+    var json = JSON.parse(body);
+    done(null, json);
+  } catch (err) {
+    err.statusCode = 400;
+    done(err, undefined);
+  }
 });
 
 const start = async () => {
