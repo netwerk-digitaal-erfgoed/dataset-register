@@ -23,7 +23,6 @@ const comunica = newEngine();
 
 server.post('/datasets', datasetsRequest, async (request, reply) => {
   const url = (request.body as {'@id': string})['@id'];
-  reply.send('test');
 
   const selectResult = (await comunica.query(
     `
@@ -78,7 +77,7 @@ server.post('/datasets', datasetsRequest, async (request, reply) => {
     constructResult,
     'application/ld+json'
   );
-  reply.send(data);
+  reply.send('test2');
 
   // const store = new Store();
   // store.import(constructResult.quadStream);
