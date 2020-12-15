@@ -23,6 +23,7 @@ const comunica = newEngine();
 
 server.post('/datasets', datasetsRequest, async (request, reply) => {
   const url = (request.body as {'@id': string})['@id'];
+  reply.send('test');
 
   const selectResult = (await comunica.query(
     `
