@@ -19,7 +19,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "fastify": "^3.9.1"
+    "@comunica/actor-init-sparql": "^1.18.1",
+    "fastify": "^3.9.1",
+    "n3": "^1.6.4"
   },
   "devDependencies": {
     "@types/node": "^14.14.10",
