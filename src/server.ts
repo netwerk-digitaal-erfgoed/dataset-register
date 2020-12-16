@@ -77,7 +77,7 @@ server.post('/datasets', datasetsRequest, async (request, reply) => {
     constructResult,
     'application/ld+json'
   );
-  reply.send('test2');
+  reply.send(data);
 
   // const store = new Store();
   // store.import(constructResult.quadStream);
