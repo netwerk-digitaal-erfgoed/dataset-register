@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node build/server.js",
-    "dev": "ts-node-dev src/server.ts",
+    "dev": "ts-node-dev --files src/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "gts lint",
     "clean": "gts clean",
@@ -20,11 +20,21 @@
   "license": "ISC",
   "dependencies": {
     "@comunica/actor-init-sparql": "^1.18.1",
+    "@rdfjs/dataset": "^1.0.1",
     "fastify": "^3.9.1",
-    "n3": "^1.6.4"
+    "n3": "^1.6.4",
+    "rdf-dataset-ext": "^1.0.0",
+    "rdf-dereference": "^1.6.0",
+    "rdf-ext": "^1.3.0",
+    "rdf-parse": "^1.6.1",
+    "rdf-validate-shacl": "^0.2.5"
   },
   "devDependencies": {
     "@types/node": "^14.14.10",
+    "@types/rdf-dataset-ext": "^1.0.0",
+    "@types/rdf-ext": "^1.3.8",
+    "@types/rdf-js": "^4.0.0",
+    "@types/rdfjs__dataset": "^1.0.4",
     "gts": "^3.0.3",
     "ts-node-dev": "^1.1.1",
     "typescript": "^4.1.2"
