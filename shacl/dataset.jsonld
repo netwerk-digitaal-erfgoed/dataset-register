@@ -1,0 +1,96 @@
+{
+  "@context": {
+    "schema": "http://schema.org/",
+    "sh": "http://www.w3.org/ns/shacl#"
+  },
+  "@graph": [
+    {
+      "@type": "sh:NodeShape",
+      "sh:targetClass": {
+        "@id": "schema:Dataset"
+      },
+      "sh:property": [
+        {
+          "sh:path": {
+            "@id": "schema:name"
+          },
+          "sh:minCount": 1
+        },
+        {
+          "sh:path": {
+            "@id": "schema:alternateName"
+          },
+          "sh:minCount": 0
+        },
+        {
+          "sh:path": {
+            "@id": "schema:description"
+          },
+          "sh:minCount": 1
+        },
+        {
+          "sh:path": {
+            "@id": "schema:license"
+          },
+          "sh:minCount": 1
+        },
+        {
+          "sh:path": {
+            "@id": "schema:creator"
+          },
+          "sh:minCount": 2,
+          "sh:class": {
+            "@id": "schema:Organization"
+          },
+          "sh:node": "schema:CreatorShape"
+        },
+        {
+          "sh:path": {
+            "@id": "schema:distribution"
+          },
+          "sh:minCount": 1,
+          "sh:class": {
+            "@id": "schema:DataDownload"
+          },
+          "sh:node": "schema:DistributionShape"
+        }
+      ]
+    },
+    {
+      "@id": "schema:CreatorShape",
+      "@type": "sh:NodeShape",
+      "sh:targetClass": {
+        "@id": "schema:Organization"
+      },
+      "sh:property": [
+        {
+          "sh:path": {
+            "@id": "schema:name"
+          },
+          "sh:minCount": 1
+        }
+      ]
+    },
+    {
+      "@id": "schema:DistributionShape",
+      "@type": "sh:NodeShape",
+      "sh:targetClass": {
+        "@id": "schema:DataDownload"
+      },
+      "sh:property": [
+        {
+          "sh:path": {
+            "@id": "schema:contentUrl"
+          },
+          "sh:minCount": 1
+        },
+        {
+          "sh:path": {
+            "@id": "schema:encodingFormat"
+          },
+          "sh:minCount": 1
+        }
+      ]
+    }
+  ]
+}
