@@ -1,10 +1,9 @@
 import fastify from 'fastify';
-import {IQueryResultQuads, newEngine} from '@comunica/actor-init-sparql';
 import {ShaclValidator} from './validator';
 import * as https from 'https';
-import factory from 'rdf-ext';
 import {StreamWriter} from 'n3';
 import {toStream} from 'rdf-dataset-ext';
+import {fetch} from './fetch';
 
 const server = fastify();
 
@@ -20,8 +19,6 @@ const datasetsRequest = {
   },
 };
 
-const comunica = newEngine();
-
 server.post('/datasets', datasetsRequest, async (request, reply) => {
   const url = (request.body as {'@id': string})['@id'];
 
@@ -33,73 +30,16 @@ server.post('/datasets', datasetsRequest, async (request, reply) => {
       return;
     }
 
-    // Find dataset description RDF at the URL.
-    const constructResult = (await comunica.query(
-      `
-      CONSTRUCT {
-        ?s a schema:Dataset ;
-          schema:identifier ?identifier ;
-          schema:name ?name ;
-          schema:description ?description ;
-          schema:creator ?creator ;
-          schema:license ?license ;
-          schema:distribution ?distribution ;
-          schema:url ?url ;
-          schema:keywords ?keywords .
-         
-        ?distribution a schema:DataDownload ;       
-          schema:encodingFormat ?encodingFormat ;
-          schema:contentUrl ?contentUrl .
-        ?creator a schema:Organization ;
-          schema:name ?creatorName .                   
-      }   
-      WHERE {
-        ?s a schema:Dataset ;
-          schema:identifier ?identifier ;
-          schema:name ?name ;
-          schema:description ?description ;
-          schema:creator ?creator ;
-          schema:license ?license ;
-          schema:distribution ?distribution .
-        ?distribution a schema:DataDownload ; 
-          schema:encodingFormat ?encodingFormat ;
-          schema:contentUrl ?contentUrl .
-        ?creator a schema:Organization ; 
-          schema:name ?creatorName .
-        OPTIONAL { ?s schema:url ?url . }
-        OPTIONAL { ?s schema:keywords ?keywords . }
-      }`,
-      {sources: [url]}
-    )) as IQueryResultQuads;
+    // Fetch dataset description.
+    const dataset = await fetch(url);
 
-    // Based on dereferenced URL.
-    // const result = await rdfDereferencer.dereference(url);
-    // const store = await factory
-    //   .dataset()
-    //   // @ts-ignore
-    //   .import(result.quads);
-    // // @ts-ignore
-    // const validationReport = await validator.validate(storeFromQuery);
-    // if (!validationReport.conforms) {
-    //   const streamWriter = new StreamWriter();
-    //   const validationRdf = streamWriter.import(toStream(validationReport.dataset));
-    //   reply.code(400).send(validationRdf);
-    //   return;
-    // }
-
-    // Validate the RDF using SHACL.
-    const storeFromQuery = await factory
-      .dataset()
-      .import(constructResult.quadStream);
-
-    if (storeFromQuery.size === 0) {
+    if (dataset.size === 0) {
       reply.code(400).send();
       return;
     }
 
-    const queryResultValidationReport = await validator.validate(
-      storeFromQuery
-    );
+    // Validate dataset description using SHACL.
+    const queryResultValidationReport = await validator.validate(dataset);
     if (!queryResultValidationReport.conforms) {
       const streamWriter = new StreamWriter();
       const validationRdf = streamWriter.import(
@@ -111,116 +51,11 @@ server.post('/datasets', datasetsRequest, async (request, reply) => {
 
     reply.code(202).send();
   });
-
-  // const selectResult = (await comunica.query(
-  //   `
-  //   SELECT ?s ?p ?o WHERE {
-  //     ?s a schema:Dataset ;
-  //       schema:name ?name ;
-  //       ?p ?o .
-  //   }
-  //   `,
-  //   {sources: [url]}
-  // )) as IQueryResultBindings;
-  // selectResult.bindingsStream.on('data', binding => {
-  //   console.log(binding.get('?s').value);
-  //   console.log(binding.get('?s').termType);
-  //   console.log(binding.get('?p').value);
-  //   console.log(binding.get('?o').value);
-  // });
-  /*
-  try {
-    comunica.query(
-      `
-      CONSTRUCT {
-        ?s a schema:Dataset ;
-          schema:identifier ?identifier ;
-          schema:name ?name ;
-          schema:description ?description ;
-          schema:creator ?creator ;
-          schema:license ?license ;
-          schema:url ?url ;
-          schema:keywords ?keywords ;
-          schema:distribution ?distribution .
-        ?distribution schema:encodingFormat ?encodingFormat ;
-          schema:contentUrl ?contentUrl .
-      }
-      WHERE {
-        ?s a schema:Dataset ;
-          schema:identifier ?identifier ;
-          schema:name ?name ;
-          schema:description ?description ;
-          schema:creator ?creator ;
-          schema:license ?license ;
-          schema:distribution ?distribution .
-        ?d schema:encodingFormat ?encodingFormat ;
-          schema:contentUrl ?contentUrl .
-        OPTIONAL { ?s schema:url ?url . }
-        OPTIONAL { ?s schema:keywords ?keywords . }
-      }
-      `,
-      {sources: [url]}
-    )
-      .catch(() => console.error('NOPE'))
-      .then(constructResult => console.log(constructResult));
-
-    // const {data} = await comunica.resultToString(
-    //   constructResult,
-    //   'application/ld+json'
-    // );
-
-  } catch (e) {
-    console.log('error', e);
-  }
-
-
-  // TODO: don't do this but a simple status code.
-
-
-  // const store = new Store();
-  // store.import(constructResult.quadStream);
-  //
-  // const writer = new Writer();
-  // constructResult
-  //   .quadStream.on('data', (q) => {
-  //     writer.addQuad(q);
-  //   })
-  //   .on('end', () => {
-  //     writer.end((error, result) => reply.send(result));
-  //   });
-
-  // writer.addQuads(store.getQuads('', null, null, null));
-  // writer.addQuad(new Quad(namedNode('http://bla'), namedNode('http://bli.com'), namedNode('http://ding')));
-
-  // const streamWriter = new StreamWriter();
-  // const data = streamWriter.import(store.match());
-
-  // writer.end((error, result) => reply.send('hoi' + error + result));
-  // reply.send();
-
-  // store.addQuads(await constructResult.quads());
-
-  // constructResult
-  //   .quadStream.on('data', (quad) => {
-  //   console.log(quad.subject.value + ' ' + quad.predicate.value + ' ' + quad.object.value );
-  // });
-  // selectResult.quadStream.on('error', (error) => {
-  //   console.log('error', error);
-  // });
-
-  // console.log('quads', await selectResult.quads());
-
-  // console.log('bindings', result.bindings());
-  // result.bindingsStream.on('data', (binding) => {
-  //   console.log(binding.get('?s').value);
-  //   console.log(binding.get('?p').value);
-  //   console.log(binding.get('?o').value);
-  // });
-
-  // reply.send(url);
-  */
 });
 
+/**
+ * Make Fastify accept JSON-LD payloads.
+ */
 server.addContentTypeParser(
   'application/ld+json',
   {parseAs: 'string'},
