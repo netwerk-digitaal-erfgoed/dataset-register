@@ -3,7 +3,8 @@ import rdfDereferencer from 'rdf-dereference';
 import factory from 'rdf-ext';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 
-export const fetch = (url: string): Promise<DatasetExt> => dereference(url);
+export const fetch = (url: string): Promise<DatasetExt | null> =>
+  dereference(url);
 
 /**
  * Fetch the dataset description by dereferencing its URL.
@@ -11,9 +12,22 @@ export const fetch = (url: string): Promise<DatasetExt> => dereference(url);
  * This assumes the dataset description is the primary resource on the URL. If the (embedded) RDF contains multiple
  * datasets (such as a catalog of datasets), we have a problem.
  */
-async function dereference(url: string): Promise<DatasetExt> {
+async function dereference(url: string): Promise<DatasetExt | null> {
   const result = await rdfDereferencer.dereference(url);
-  return await factory.dataset().import(result.quads);
+  const dataset = await factory.dataset().import(result.quads);
+
+  // Ensure we have at least a dataset IRI.
+  if (
+    dataset.match(
+      null,
+      factory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+      factory.namedNode('http://schema.org/Dataset')
+    ).size === 0
+  ) {
+    return null;
+  }
+
+  return dataset;
 }
 
 /**

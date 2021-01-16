@@ -4,8 +4,14 @@ import * as https from 'https';
 import {StreamWriter} from 'n3';
 import {toStream} from 'rdf-dataset-ext';
 import {fetch} from './fetch';
+import {GraphDbDataStore} from './store';
 
 const server = fastify();
+const datastore = new GraphDbDataStore(
+  process.env.GRAPHDB_URL || 'http://localhost:7200/repositories/registry',
+  process.env.GRAPHDB_USERNAME,
+  process.env.GRAPHDB_PASSWORD
+);
 
 const datasetsRequest = {
   schema: {
@@ -25,16 +31,14 @@ server.post('/datasets', datasetsRequest, async (request, reply) => {
   https.get(url, async res => {
     // Ensure the dataset description URL exists.
     if (res.statusCode! < 200 || res.statusCode! > 400) {
-      console.log('not found');
       reply.code(404).send('No dataset description found at ' + url);
       return;
     }
 
     // Fetch dataset description.
     const dataset = await fetch(url);
-
-    if (dataset.size === 0) {
-      reply.code(400).send();
+    if (dataset === null) {
+      reply.code(404).send('No dataset description found at ' + url);
       return;
     }
 
@@ -48,6 +52,8 @@ server.post('/datasets', datasetsRequest, async (request, reply) => {
       reply.code(400).send(validationRdf);
       return;
     }
+
+    datastore.store(dataset);
 
     reply.code(202).send();
   });

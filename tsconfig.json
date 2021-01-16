@@ -8,6 +8,7 @@
   },
   "include": [
     "src/",
-    "test/**/*.ts"
+    "test/**/*.ts",
+    "node_modules/graphdb/lib/types.d.ts"
   ]
 }
