@@ -38,7 +38,7 @@
           "sh:path": {
             "@id": "schema:creator"
           },
-          "sh:minCount": 2,
+          "sh:minCount": 1,
           "sh:class": {
             "@id": "schema:Organization"
           },
