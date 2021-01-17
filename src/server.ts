@@ -8,7 +8,8 @@ import {GraphDbDataStore} from './store';
 
 const server = fastify();
 const datastore = new GraphDbDataStore(
-  process.env.GRAPHDB_URL || 'http://localhost:7200/repositories/registry',
+  process.env.GRAPHDB_URL || 'http://localhost:7200',
+  'registry',
   process.env.GRAPHDB_USERNAME,
   process.env.GRAPHDB_PASSWORD
 );
@@ -53,7 +54,8 @@ server.post('/datasets', datasetsRequest, async (request, reply) => {
       return;
     }
 
-    datastore.store(dataset);
+    // Store the dataset.
+    await datastore.store(dataset);
 
     reply.code(202).send();
   });
