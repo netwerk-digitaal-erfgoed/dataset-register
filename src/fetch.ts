@@ -2,10 +2,17 @@ import {IQueryResultQuads, newEngine} from '@comunica/actor-init-sparql';
 import rdfDereferencer from 'rdf-dereference';
 import factory from 'rdf-ext';
 import DatasetExt from 'rdf-ext/lib/Dataset';
+import nodeFetch from 'node-fetch';
 
-export const fetch = (url: string): Promise<DatasetExt | null> =>
-  dereference(url);
+export async function fetch(url: string): Promise<DatasetExt | null> {
+  // Comunica doesn't handle status codes well, so first make sure the URL can be retrieved.
+  const response = await nodeFetch(url);
+  if (!response.ok) {
+    return null;
+  }
 
+  return dereference(url);
+}
 /**
  * Fetch the dataset description by dereferencing its URL.
  *

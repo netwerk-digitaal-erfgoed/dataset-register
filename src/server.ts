@@ -1,6 +1,5 @@
 import fastify from 'fastify';
 import {ShaclValidator} from './validator';
-import * as https from 'https';
 import {StreamWriter} from 'n3';
 import {toStream} from 'rdf-dataset-ext';
 import {fetch} from './fetch';
@@ -29,36 +28,28 @@ const datasetsRequest = {
 server.post('/datasets', datasetsRequest, async (request, reply) => {
   const url = (request.body as {'@id': string})['@id'];
 
-  https.get(url, async res => {
-    // Ensure the dataset description URL exists.
-    if (res.statusCode! < 200 || res.statusCode! > 400) {
-      reply.code(404).send('No dataset description found at ' + url);
-      return;
-    }
+  // Fetch dataset description.
+  const dataset = await fetch(url);
+  if (dataset === null) {
+    reply.code(404).send('No dataset description found at ' + url);
+    return;
+  }
 
-    // Fetch dataset description.
-    const dataset = await fetch(url);
-    if (dataset === null) {
-      reply.code(404).send('No dataset description found at ' + url);
-      return;
-    }
+  // Validate dataset description using SHACL.
+  const queryResultValidationReport = await validator.validate(dataset);
+  if (!queryResultValidationReport.conforms) {
+    const streamWriter = new StreamWriter();
+    const validationRdf = streamWriter.import(
+      toStream(queryResultValidationReport.dataset)
+    );
+    reply.code(400).send(validationRdf);
+    return;
+  }
 
-    // Validate dataset description using SHACL.
-    const queryResultValidationReport = await validator.validate(dataset);
-    if (!queryResultValidationReport.conforms) {
-      const streamWriter = new StreamWriter();
-      const validationRdf = streamWriter.import(
-        toStream(queryResultValidationReport.dataset)
-      );
-      reply.code(400).send(validationRdf);
-      return;
-    }
+  // Store the dataset.
+  await datastore.store(dataset);
 
-    // Store the dataset.
-    await datastore.store(dataset);
-
-    reply.code(202).send();
-  });
+  reply.code(202).send();
 });
 
 /**
