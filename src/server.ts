@@ -6,7 +6,7 @@ import {fetch} from './fetch';
 import {GraphDbDataStore} from './store';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 
-const server = fastify();
+const server = fastify({logger: process.env.LOG ? !!+process.env.LOG : true});
 const datastore = new GraphDbDataStore(
   process.env.GRAPHDB_URL || 'http://localhost:7200',
   'registry',
@@ -53,6 +53,7 @@ async function validate(
 
 server.post('/datasets', datasetsRequest, async (request, reply) => {
   const url = (request.body as {'@id': string})['@id'];
+  request.log.info(url);
   const dataset = await validate(url, reply);
   if (dataset) {
     // Store the dataset.
@@ -64,6 +65,7 @@ server.post('/datasets', datasetsRequest, async (request, reply) => {
 
 server.put('/datasets/validate', datasetsRequest, async (request, reply) => {
   const url = (request.body as {'@id': string})['@id'];
+  request.log.info(url);
   if ((await validate(url, reply)) !== null) {
     reply.code(200).send();
   }
