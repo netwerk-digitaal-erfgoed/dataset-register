@@ -2,7 +2,7 @@ import fastify, {FastifyReply} from 'fastify';
 import {ShaclValidator} from './validator';
 import {StreamWriter} from 'n3';
 import {toStream} from 'rdf-dataset-ext';
-import {fetch} from './fetch';
+import {fetch, NoDatasetFoundAtUrl, UrlNotFound} from './fetch';
 import {GraphDbDataStore} from './store';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 
@@ -30,10 +30,16 @@ async function validate(
   url: string,
   reply: FastifyReply
 ): Promise<DatasetExt | null> {
-  // Fetch dataset description.
-  const dataset = await fetch(url);
-  if (dataset === null) {
-    reply.code(404).send('No dataset description found at ' + url);
+  let dataset: DatasetExt;
+  try {
+    dataset = await fetch(url);
+  } catch (e) {
+    if (e instanceof UrlNotFound) {
+      reply.code(404).send('URL not found: ' + url);
+    }
+    if (e instanceof NoDatasetFoundAtUrl) {
+      reply.code(406).send(e.message);
+    }
     return null;
   }
 
@@ -58,6 +64,7 @@ server.post('/datasets', datasetsRequest, async (request, reply) => {
   if (dataset) {
     // Store the dataset.
     await datastore.store(dataset);
+    console.log('okies');
 
     reply.code(202).send();
   }
