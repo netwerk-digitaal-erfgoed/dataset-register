@@ -4,11 +4,14 @@ import factory from 'rdf-ext';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import nodeFetch from 'node-fetch';
 
-export async function fetch(url: string): Promise<DatasetExt | null> {
+export class UrlNotFound extends Error {}
+export class NoDatasetFoundAtUrl extends Error {}
+
+export async function fetch(url: string): Promise<DatasetExt> {
   // Comunica doesn't handle status codes well, so first make sure the URL can be retrieved.
   const response = await nodeFetch(url);
   if (!response.ok) {
-    return null;
+    throw new UrlNotFound();
   }
 
   return dereference(url);
@@ -19,9 +22,14 @@ export async function fetch(url: string): Promise<DatasetExt | null> {
  * This assumes the dataset description is the primary resource on the URL. If the (embedded) RDF contains multiple
  * datasets (such as a catalog of datasets), we have a problem.
  */
-async function dereference(url: string): Promise<DatasetExt | null> {
-  const result = await rdfDereferencer.dereference(url);
-  const dataset = await factory.dataset().import(result.quads);
+async function dereference(url: string): Promise<DatasetExt> {
+  let dataset: DatasetExt;
+  try {
+    const result = await rdfDereferencer.dereference(url);
+    dataset = await factory.dataset().import(result.quads);
+  } catch (e) {
+    throw new NoDatasetFoundAtUrl(e.message);
+  }
 
   // Ensure we have at least a dataset IRI.
   if (
@@ -31,7 +39,7 @@ async function dereference(url: string): Promise<DatasetExt | null> {
       factory.namedNode('http://schema.org/Dataset')
     ).size === 0
   ) {
-    return null;
+    throw new NoDatasetFoundAtUrl();
   }
 
   return dataset;
