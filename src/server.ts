@@ -1,9 +1,10 @@
-import fastify from 'fastify';
+import fastify, {FastifyReply} from 'fastify';
 import {ShaclValidator} from './validator';
 import {StreamWriter} from 'n3';
 import {toStream} from 'rdf-dataset-ext';
 import {fetch} from './fetch';
 import {GraphDbDataStore} from './store';
+import DatasetExt from 'rdf-ext/lib/Dataset';
 
 const server = fastify();
 const datastore = new GraphDbDataStore(
@@ -25,14 +26,15 @@ const datasetsRequest = {
   },
 };
 
-server.post('/datasets', datasetsRequest, async (request, reply) => {
-  const url = (request.body as {'@id': string})['@id'];
-
+async function validate(
+  url: string,
+  reply: FastifyReply
+): Promise<DatasetExt | null> {
   // Fetch dataset description.
   const dataset = await fetch(url);
   if (dataset === null) {
     reply.code(404).send('No dataset description found at ' + url);
-    return;
+    return null;
   }
 
   // Validate dataset description using SHACL.
@@ -43,13 +45,28 @@ server.post('/datasets', datasetsRequest, async (request, reply) => {
       toStream(queryResultValidationReport.dataset)
     );
     reply.code(400).send(validationRdf);
-    return;
+    return null;
   }
 
-  // Store the dataset.
-  await datastore.store(dataset);
+  return dataset;
+}
 
-  reply.code(202).send();
+server.post('/datasets', datasetsRequest, async (request, reply) => {
+  const url = (request.body as {'@id': string})['@id'];
+  const dataset = await validate(url, reply);
+  if (dataset) {
+    // Store the dataset.
+    await datastore.store(dataset);
+
+    reply.code(202).send();
+  }
+});
+
+server.put('/datasets/validate', datasetsRequest, async (request, reply) => {
+  const url = (request.body as {'@id': string})['@id'];
+  if ((await validate(url, reply)) !== null) {
+    reply.code(200).send();
+  }
 });
 
 /**
