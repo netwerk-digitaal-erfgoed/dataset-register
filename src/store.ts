@@ -2,16 +2,26 @@ import DatasetExt from 'rdf-ext/lib/Dataset';
 import factory from 'rdf-ext';
 import fetch, {Headers, Response} from 'node-fetch';
 import {Writer} from 'n3';
+import {URL} from 'url';
+import {Quad} from 'rdf-js';
+import * as querystring from 'querystring';
 // const graphdb = require('graphdb');
 
 export interface Store {
   /**
    * Store a dataset description, replacing any triples that were previously stored for the dataset.
    */
-  store(dataset: DatasetExt): void;
+  store(dataset: DatasetExt, url: URL): void;
 }
 
+/**
+ * GraphDB client that uses the REST API.
+ *
+ * @see https://triplestore.netwerkdigitaalerfgoed.nl/webapi
+ */
 export class GraphDbDataStore implements Store {
+  private readonly registrationsGraph =
+    'https://demo.netwerkdigitaalerfgoed.nl/registry/registrations';
   private token?: string;
 
   constructor(
@@ -31,7 +41,7 @@ export class GraphDbDataStore implements Store {
   private async request(
     method: string,
     url: string,
-    body: string
+    body?: string
   ): Promise<Response> {
     const headers = await this.authenticate();
     headers.set('Content-Type', 'application/x-trig');
@@ -83,7 +93,7 @@ export class GraphDbDataStore implements Store {
    *
    * @see https://graphdb.ontotext.com/documentation/standard/replace-graph.html
    */
-  public async store(dataset: DatasetExt) {
+  public async store(dataset: DatasetExt, url: URL) {
     const quad = dataset
       .match(
         null,
@@ -93,14 +103,40 @@ export class GraphDbDataStore implements Store {
       .toArray()[0];
 
     const datasetUri = quad.subject.value;
-    const writer = new Writer({format: 'application/trig'});
-    writer.addQuads(dataset.toArray());
-    await writer.end(async (error, result) => {
+
+    await getWriter(dataset.toArray()).end(async (error, result) => {
       await this.request(
         'PUT',
         '/rdf-graphs/service?graph=' + datasetUri,
         result
       );
+    });
+
+    await this.request(
+      'DELETE',
+      '/statements?' +
+        querystring.stringify({
+          subj: '<' + url.toString() + '>',
+          context: '<' + this.registrationsGraph + '>',
+        })
+    );
+
+    const foundAtUrlQuads = [
+      factory.quad(
+        factory.namedNode(url.toString()),
+        factory.namedNode('http://schema.org/mainEntity'),
+        factory.namedNode(datasetUri),
+        factory.namedNode(this.registrationsGraph)
+      ),
+      factory.quad(
+        factory.namedNode(url.toString()),
+        factory.namedNode('http://schema.org/datePosted'),
+        factory.namedNode(new Date().toISOString()),
+        factory.namedNode(this.registrationsGraph)
+      ),
+    ];
+    await getWriter(foundAtUrlQuads).end(async (error, result) => {
+      await this.request('POST', '/statements', result);
     });
 
     // await this.repository.deleteStatements(
@@ -111,4 +147,11 @@ export class GraphDbDataStore implements Store {
     // );
     // await this.repository.addQuads(dataset.toArray(), datasetUri);
   }
+}
+
+function getWriter(quads: Quad[]): Writer {
+  const writer = new Writer({format: 'application/x-trig'});
+  writer.addQuads(quads);
+
+  return writer;
 }
