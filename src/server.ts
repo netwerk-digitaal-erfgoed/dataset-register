@@ -5,6 +5,7 @@ import {toStream} from 'rdf-dataset-ext';
 import {fetch, NoDatasetFoundAtUrl, UrlNotFound} from './fetch';
 import {GraphDbDataStore} from './store';
 import DatasetExt from 'rdf-ext/lib/Dataset';
+import {URL} from 'url';
 
 const server = fastify({logger: process.env.LOG ? !!+process.env.LOG : true});
 const datastore = new GraphDbDataStore(
@@ -27,7 +28,7 @@ const datasetsRequest = {
 };
 
 async function validate(
-  url: string,
+  url: URL,
   reply: FastifyReply
 ): Promise<DatasetExt | null> {
   let dataset: DatasetExt;
@@ -58,21 +59,20 @@ async function validate(
 }
 
 server.post('/datasets', datasetsRequest, async (request, reply) => {
-  const url = (request.body as {'@id': string})['@id'];
-  request.log.info(url);
+  const url = new URL((request.body as {'@id': string})['@id']);
+  request.log.info(url.toString());
   const dataset = await validate(url, reply);
   if (dataset) {
     // Store the dataset.
-    await datastore.store(dataset);
-    console.log('okies');
+    await datastore.store(dataset, url);
 
     reply.code(202).send();
   }
 });
 
 server.put('/datasets/validate', datasetsRequest, async (request, reply) => {
-  const url = (request.body as {'@id': string})['@id'];
-  request.log.info(url);
+  const url = new URL((request.body as {'@id': string})['@id']);
+  request.log.info(url.toString());
   if ((await validate(url, reply)) !== null) {
     reply.code(200).send();
   }
