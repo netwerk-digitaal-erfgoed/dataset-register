@@ -112,26 +112,48 @@ export class GraphDbDataStore implements Store {
       );
     });
 
-    await this.request(
-      'DELETE',
-      '/statements?' +
-        querystring.stringify({
-          subj: '<' + url.toString() + '>',
-          context: '<' + this.registrationsGraph + '>',
-        })
-    );
-
+    await Promise.all([
+      this.request(
+        'DELETE',
+        '/statements?' +
+          querystring.stringify({
+            subj: '<' + url.toString() + '>',
+            context: '<' + this.registrationsGraph + '>',
+          })
+      ),
+      this.request(
+        'DELETE',
+        '/statements?' +
+          querystring.stringify({
+            subj: '<' + datasetUri + '>',
+            context: '<' + this.registrationsGraph + '>',
+          })
+      ),
+    ]);
+    const date = new Date().toISOString();
     const foundAtUrlQuads = [
       factory.quad(
         factory.namedNode(url.toString()),
-        factory.namedNode('http://schema.org/mainEntity'),
+        factory.namedNode('http://schema.org/about'),
         factory.namedNode(datasetUri),
         factory.namedNode(this.registrationsGraph)
       ),
       factory.quad(
         factory.namedNode(url.toString()),
         factory.namedNode('http://schema.org/datePosted'),
-        factory.namedNode(new Date().toISOString()),
+        factory.namedNode(date),
+        factory.namedNode(this.registrationsGraph)
+      ),
+      factory.quad(
+        factory.namedNode(url.toString()),
+        factory.namedNode('http://schema.org/encoding'),
+        factory.namedNode('http://schema.org'), // Currently the only vocabulary that we support.
+        factory.namedNode(this.registrationsGraph)
+      ),
+      factory.quad(
+        factory.namedNode(datasetUri),
+        factory.namedNode('http://schema.org/datePosted'),
+        factory.namedNode(date),
         factory.namedNode(this.registrationsGraph)
       ),
     ];

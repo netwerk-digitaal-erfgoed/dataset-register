@@ -26,8 +26,8 @@ export async function fetch(url: URL): Promise<DatasetExt> {
 async function dereference(url: URL): Promise<DatasetExt> {
   let dataset: DatasetExt;
   try {
-    const result = await rdfDereferencer.dereference(url.toString());
-    dataset = await factory.dataset().import(result.quads);
+    const {quads} = await rdfDereferencer.dereference(url.toString());
+    dataset = await factory.dataset().import(quads);
   } catch (e) {
     throw new NoDatasetFoundAtUrl(e.message);
   }
