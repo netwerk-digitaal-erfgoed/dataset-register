@@ -11,7 +11,7 @@ The backlog is also available at the [project board](https://github.com/orgs/net
 This application stores data in the [GraphDB](https://graphdb.ontotext.com) RDF store,
 so you need to have that running locally.
 
-You can [do so in two ways]:
+You can do so in two ways:
 
 - either [install GraphDB for your OS](https://graphdb.ontotext.com/documentation/free/quick-start-guide.html);
 - or run it in a Docker container:
