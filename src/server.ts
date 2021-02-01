@@ -30,10 +30,10 @@ const datasetsRequest = {
 async function validate(
   url: URL,
   reply: FastifyReply
-): Promise<DatasetExt | null> {
-  let dataset: DatasetExt;
+): Promise<DatasetExt[] | null> {
+  let datasets: DatasetExt[];
   try {
-    dataset = await fetch(url);
+    datasets = await fetch(url);
   } catch (e) {
     if (e instanceof UrlNotFound) {
       reply.code(404).send('URL not found: ' + url);
@@ -44,27 +44,28 @@ async function validate(
     return null;
   }
 
-  // Validate dataset description using SHACL.
-  const queryResultValidationReport = await validator.validate(dataset);
-  if (!queryResultValidationReport.conforms) {
-    const streamWriter = new StreamWriter();
-    const validationRdf = streamWriter.import(
-      toStream(queryResultValidationReport.dataset)
-    );
-    reply.code(400).send(validationRdf);
-    return null;
+  // Validate each dataset using SHACL. Return validation result for the first datasets that is invalid.
+  for (const dataset of datasets) {
+    const queryResultValidationReport = await validator.validate(dataset);
+    if (!queryResultValidationReport.conforms) {
+      const streamWriter = new StreamWriter();
+      const validationRdf = streamWriter.import(
+        toStream(queryResultValidationReport.dataset)
+      );
+      reply.code(400).send(validationRdf);
+      return null;
+    }
   }
 
-  return dataset;
+  return datasets;
 }
 
 server.post('/datasets', datasetsRequest, async (request, reply) => {
   const url = new URL((request.body as {'@id': string})['@id']);
   request.log.info(url.toString());
-  const dataset = await validate(url, reply);
-  if (dataset) {
-    // Store the dataset.
-    await datastore.store(dataset, url);
+  const datasets = await validate(url, reply);
+  if (datasets) {
+    datasets.forEach(dataset => datastore.store(dataset, url));
 
     reply.code(202).send();
   }
