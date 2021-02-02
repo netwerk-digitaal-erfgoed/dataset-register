@@ -65,8 +65,8 @@ server.post('/datasets', datasetsRequest, async (request, reply) => {
   request.log.info(url.toString());
   const datasets = await validate(url, reply);
   if (datasets) {
-    await datastore.store(datasets, url);
     reply.code(202).send();
+    await datastore.store(datasets, url);
   }
 });
 
