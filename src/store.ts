@@ -83,6 +83,16 @@ export class GraphDbDataStore implements Store {
       method: 'POST',
       headers: {'X-Graphdb-Password': this.password!},
     });
+
+    if (!response.ok) {
+      throw Error(
+        'Could not authenticate username ' +
+          this.username +
+          ' with GraphDB; got status code ' +
+          response.status
+      );
+    }
+
     this.token = response.headers.get('Authorization')!;
 
     return new Headers({Authorization: this.token});
