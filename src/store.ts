@@ -23,13 +23,10 @@ export class GraphDbDataStore implements Store {
   private readonly registrationsGraph =
     'https://demo.netwerkdigitaalerfgoed.nl/registry/registrations';
   private token?: string;
+  private username?: string;
+  private password?: string;
 
-  constructor(
-    private url: string,
-    private repository: string,
-    private username?: string,
-    private password?: string
-  ) {
+  constructor(private url: string, private repository: string) {
     // Doesn't work with authentication: see https://github.com/Ontotext-AD/graphdb.js/issues/123
     // const config = new graphdb.repository.RepositoryClientConfig()
     //   .setEndpoints([url])
@@ -38,12 +35,33 @@ export class GraphDbDataStore implements Store {
     // this.repository = new graphdb.repository.RDFRepositoryClient(config);
   }
 
+  public async authenticate(username: string, password: string) {
+    this.username = username;
+    this.password = password;
+
+    const response = await fetch(this.url + '/rest/login/' + this.username, {
+      method: 'POST',
+      headers: {'X-Graphdb-Password': this.password!},
+    });
+
+    if (!response.ok) {
+      throw Error(
+        'Could not authenticate username ' +
+          this.username +
+          ' with GraphDB; got status code ' +
+          response.status
+      );
+    }
+
+    this.token = response.headers.get('Authorization')!;
+  }
+
   private async request(
     method: string,
     url: string,
     body?: string
   ): Promise<Response> {
-    const headers = await this.authenticate();
+    const headers = await this.getHeaders();
     headers.set('Content-Type', 'application/x-trig');
     const repositoryUrl = this.url + '/repositories/' + this.repository + url;
     const response = await fetch(repositoryUrl, {
@@ -70,30 +88,16 @@ export class GraphDbDataStore implements Store {
     return response;
   }
 
-  private async authenticate(): Promise<Headers> {
+  private async getHeaders(): Promise<Headers> {
     if (this.username === undefined || this.password === undefined) {
       return new Headers();
     }
 
     if (this.token === undefined) {
-      const response = await fetch(this.url + '/rest/login/' + this.username, {
-        method: 'POST',
-        headers: {'X-Graphdb-Password': this.password!},
-      });
-
-      if (!response.ok) {
-        throw Error(
-          'Could not authenticate username ' +
-            this.username +
-            ' with GraphDB; got status code ' +
-            response.status
-        );
-      }
-
-      this.token = response.headers.get('Authorization')!;
+      await this.authenticate(this.username, this.password);
     }
 
-    return new Headers({Authorization: this.token});
+    return new Headers({Authorization: this.token!});
   }
 
   /**

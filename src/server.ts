@@ -10,9 +10,7 @@ import {URL} from 'url';
 const server = fastify({logger: process.env.LOG ? !!+process.env.LOG : true});
 const datastore = new GraphDbDataStore(
   process.env.GRAPHDB_URL || 'http://localhost:7200',
-  'registry',
-  process.env.GRAPHDB_USERNAME,
-  process.env.GRAPHDB_PASSWORD
+  'registry'
 );
 
 const datasetsRequest = {
@@ -99,6 +97,12 @@ let validator: ShaclValidator;
 (async () => {
   try {
     validator = await ShaclValidator.fromUrl('shacl/dataset.jsonld');
+    if (process.env.GRAPHDB_USERNAME && process.env.GRAPHDB_PASSWORD) {
+      await datastore.authenticate(
+        process.env.GRAPHDB_USERNAME,
+        process.env.GRAPHDB_PASSWORD
+      );
+    }
     await server.listen(3000, '0.0.0.0');
   } catch (err) {
     console.error(err);
