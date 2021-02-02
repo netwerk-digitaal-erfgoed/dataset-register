@@ -11,7 +11,7 @@ export interface Store {
   /**
    * Store a dataset description, replacing any triples that were previously stored for the dataset.
    */
-  store(dataset: DatasetExt, url: URL): void;
+  store(datasets: DatasetExt[], url: URL): void;
 }
 
 /**
@@ -101,73 +101,26 @@ export class GraphDbDataStore implements Store {
    *
    * @see https://graphdb.ontotext.com/documentation/standard/replace-graph.html
    */
-  public async store(dataset: DatasetExt, url: URL) {
-    const quad = dataset
-      .match(
-        null,
-        factory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-        factory.namedNode('http://schema.org/Dataset')
-      )
-      .toArray()[0];
+  public async store(datasets: DatasetExt[], url: URL) {
+    // Find each Dataset’s IRI.
+    const datasetIris = await datasets.reduce((map, dataset) => {
+      const quad = dataset
+        .match(
+          null,
+          factory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+          factory.namedNode('http://schema.org/Dataset')
+        )
+        .toArray()[0];
+      const url = new URL(quad.subject.value);
+      map.set(url, dataset);
+      return map;
+    }, new Map<URL, DatasetExt>());
 
-    const datasetUri = quad.subject.value;
+    // Store each Dataset.
+    datasetIris.forEach((dataset, iri) => this.storeDataset(dataset, iri));
 
-    await getWriter(dataset.toArray()).end(async (error, result) => {
-      await this.request(
-        'PUT',
-        '/rdf-graphs/service?graph=' + datasetUri,
-        result
-      );
-    });
-
-    await Promise.all([
-      this.request(
-        'DELETE',
-        '/statements?' +
-          querystring.stringify({
-            subj: '<' + url.toString() + '>',
-            context: '<' + this.registrationsGraph + '>',
-          })
-      ),
-      this.request(
-        'DELETE',
-        '/statements?' +
-          querystring.stringify({
-            subj: '<' + datasetUri + '>',
-            context: '<' + this.registrationsGraph + '>',
-          })
-      ),
-    ]);
-    const date = new Date().toISOString();
-    const foundAtUrlQuads = [
-      factory.quad(
-        factory.namedNode(url.toString()),
-        factory.namedNode('http://schema.org/about'),
-        factory.namedNode(datasetUri),
-        factory.namedNode(this.registrationsGraph)
-      ),
-      factory.quad(
-        factory.namedNode(url.toString()),
-        factory.namedNode('http://schema.org/datePosted'),
-        factory.namedNode(date),
-        factory.namedNode(this.registrationsGraph)
-      ),
-      factory.quad(
-        factory.namedNode(url.toString()),
-        factory.namedNode('http://schema.org/encoding'),
-        factory.namedNode('http://schema.org'), // Currently the only vocabulary that we support.
-        factory.namedNode(this.registrationsGraph)
-      ),
-      factory.quad(
-        factory.namedNode(datasetUri),
-        factory.namedNode('http://schema.org/datePosted'),
-        factory.namedNode(date),
-        factory.namedNode(this.registrationsGraph)
-      ),
-    ];
-    await getWriter(foundAtUrlQuads).end(async (error, result) => {
-      await this.request('POST', '/statements', result);
-    });
+    // Store the URL registration that contains one or more datasets.
+    await this.storeRegistration(url, [...datasetIris.keys()]);
 
     // await this.repository.deleteStatements(
     //   undefined,
@@ -176,6 +129,60 @@ export class GraphDbDataStore implements Store {
     //   datasetUri
     // );
     // await this.repository.addQuads(dataset.toArray(), datasetUri);
+  }
+
+  private async storeDataset(dataset: DatasetExt, graphIri: URL) {
+    await getWriter(dataset.toArray()).end(async (error, result) => {
+      await this.request(
+        'PUT',
+        '/rdf-graphs/service?graph=' + graphIri.toString(),
+        result
+      );
+    });
+  }
+
+  private async storeRegistration(url: URL, foundDatasetIris: URL[]) {
+    await this.request(
+      'DELETE',
+      '/statements?' +
+        querystring.stringify({
+          subj: '<' + url.toString() + '>',
+          context: '<' + this.registrationsGraph + '>',
+        })
+    );
+    const date = new Date().toISOString();
+    const foundAtUrlQuads = [
+      factory.quad(
+        factory.namedNode(url.toString()),
+        factory.namedNode('http://schema.org/datePosted'),
+        factory.namedNode(date),
+        factory.namedNode(this.registrationsGraph)
+      ),
+      ...foundDatasetIris.flatMap(datasetIri => [
+        factory.quad(
+          factory.namedNode(url.toString()),
+          factory.namedNode('http://schema.org/about'),
+          factory.namedNode(datasetIri.toString()),
+          factory.namedNode(this.registrationsGraph)
+        ),
+        factory.quad(
+          factory.namedNode(url.toString()),
+          factory.namedNode('http://schema.org/encoding'),
+          factory.namedNode('http://schema.org'), // Currently the only vocabulary that we support.
+          factory.namedNode(this.registrationsGraph)
+        ),
+        factory.quad(
+          factory.namedNode(datasetIri.toString()),
+          factory.namedNode('http://schema.org/datePosted'),
+          factory.namedNode(date),
+          factory.namedNode(this.registrationsGraph)
+        ),
+      ]),
+    ];
+
+    await getWriter(foundAtUrlQuads).end(async (error, result) => {
+      await this.request('POST', '/statements', result);
+    });
   }
 }
 
