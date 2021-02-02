@@ -70,7 +70,8 @@ export class GraphDbDataStore implements Store {
       body: body,
     });
     if (
-      response.status === 401 &&
+      // 409 = `Auth token hash mismatch`, which occurs after GraphDB has restarted.
+      (response.status === 401 || response.status === 409) &&
       this.username !== undefined &&
       this.password !== undefined
     ) {
