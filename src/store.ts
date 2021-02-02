@@ -71,29 +71,27 @@ export class GraphDbDataStore implements Store {
   }
 
   private async authenticate(): Promise<Headers> {
-    if (this.username === null || this.password === null) {
+    if (this.username === undefined || this.password === undefined) {
       return new Headers();
     }
 
-    if (this.token !== undefined) {
-      return new Headers();
+    if (this.token === undefined) {
+      const response = await fetch(this.url + '/rest/login/' + this.username, {
+        method: 'POST',
+        headers: {'X-Graphdb-Password': this.password!},
+      });
+
+      if (!response.ok) {
+        throw Error(
+          'Could not authenticate username ' +
+            this.username +
+            ' with GraphDB; got status code ' +
+            response.status
+        );
+      }
+
+      this.token = response.headers.get('Authorization')!;
     }
-
-    const response = await fetch(this.url + '/rest/login/' + this.username, {
-      method: 'POST',
-      headers: {'X-Graphdb-Password': this.password!},
-    });
-
-    if (!response.ok) {
-      throw Error(
-        'Could not authenticate username ' +
-          this.username +
-          ' with GraphDB; got status code ' +
-          response.status
-      );
-    }
-
-    this.token = response.headers.get('Authorization')!;
 
     return new Headers({Authorization: this.token});
   }
