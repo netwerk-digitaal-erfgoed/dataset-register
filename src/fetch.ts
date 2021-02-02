@@ -15,14 +15,29 @@ export class UrlNotFound extends Error {}
 export class NoDatasetFoundAtUrl extends Error {}
 
 export async function fetch(url: URL): Promise<DatasetExt[]> {
-  // Comunica doesn't handle status codes well, so first make sure the URL can be retrieved.
-  const response = await nodeFetch(url);
+  // Comunica doesn't handle status codes well (https://github.com/comunica/comunica/issues/777),
+  // so first make sure the URL can be retrieved.
+  const response = await nodeFetch(url, {
+    // Use Comunica’s Accept header.
+    headers: {
+      Accept:
+        'application/n-quads,application/trig;q=0.95,application/ld+json;q=0.9,application/n-triples;q=0.8,text/turtle;q=0.6,application/rdf+xml;q=0.5',
+    },
+  });
   if (!response.ok) {
-    throw new UrlNotFound();
+    if (response.status === 404) {
+      throw new UrlNotFound();
+    }
+    throw new NoDatasetFoundAtUrl();
   }
 
   //   return await construct(url);
-  return query(url);
+  const datasets = await query(url);
+  if (datasets.length === 0) {
+    throw new NoDatasetFoundAtUrl();
+  }
+
+  return datasets;
 }
 
 /**
@@ -56,26 +71,35 @@ async function dereference(url: URL): Promise<DatasetExt[]> {
   return [dataset];
 }
 
+const engine = newEngine();
+
 /**
  * Fetch dataset descriptions by executing a SPARQL SELECT query.
+ *
+ * Use OPTIONALs in order to fetch both complete and incomplete datasets. We want those incomplete datasets in order
+ * to have SHACL validation results. Any data not matching this SPARQL query will return nothing, after all, and nothing
+ * cannot be validated by SHACL.
  */
 async function query(url: URL): Promise<DatasetExt[]> {
-  const engine = newEngine();
   const {bindingsStream} = (await engine.query(
     `
       SELECT * WHERE {
         ?s a schema:Dataset ;
-          schema:name ?name ;
-          schema:description ?description ;
-          schema:license ?license ;
-          schema:creator ?creator ;
-          schema:distribution ?distribution .
-        ?creator schema:name ?creator_name ;
-          a schema:Organization .
-        ?distribution a schema:DataDownload ;
-          schema:contentUrl ?contentUrl ;
-          schema:encodingFormat ?encodingFormat .
-        OPTIONAL { ?s schema:alternateName ?alternateName . }
+        OPTIONAL { ?s schema:alternateName ?alternateName }
+        OPTIONAL { ?s schema:name ?name }
+        OPTIONAL { ?s schema:description ?description }
+        OPTIONAL { ?s schema:license ?license }
+        OPTIONAL { ?s schema:creator ?creator }
+        OPTIONAL { ?s schema:distribution ?distribution }
+        OPTIONAL { 
+          ?creator a schema:Organization ;
+            schema:name ?creator_name . 
+        }
+        OPTIONAL {
+          ?distribution a schema:DataDownload ;
+            schema:contentUrl ?contentUrl ;
+            schema:encodingFormat ?encodingFormat 
+        }
       } LIMIT 100000`,
     {sources: [url.toString()]}
   )) as IQueryResultBindings;
@@ -92,12 +116,66 @@ async function query(url: URL): Promise<DatasetExt[]> {
          * Use skolemized values because they are correct, unlike the generated blank node ids.
          * See https://github.com/rubensworks/jsonld-streaming-parser.js/issues/72
          */
-        const creatorBlankNode = factory.blankNode(
-          binding.get('?creator').skolemized.value.replace(/:/g, '_')
-        );
-        const distributionBlankNode = factory.blankNode(
-          binding.get('?distribution').skolemized.value.replace(/:/g, '_')
-        );
+        if (binding.get('?creator')) {
+          const creatorBlankNode = factory.blankNode(
+            binding.get('?creator').skolemized.value.replace(/:/g, '_')
+          );
+          store.addQuads([
+            factory.quad(
+              datasetIri,
+              factory.namedNode('http://schema.org/creator'),
+              creatorBlankNode,
+              datasetIri
+            ),
+            factory.quad(
+              creatorBlankNode,
+              factory.namedNode(
+                'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
+              ),
+              factory.namedNode('http://schema.org/Organization'),
+              datasetIri
+            ),
+            factory.quad(
+              creatorBlankNode,
+              factory.namedNode('http://schema.org/name'),
+              binding.get('?creator_name') as NamedNode,
+              datasetIri
+            ),
+          ]);
+        }
+        if (binding.get('?distribution')) {
+          const distributionBlankNode = factory.blankNode(
+            binding.get('?distribution').skolemized.value.replace(/:/g, '_')
+          );
+          store.addQuads([
+            factory.quad(
+              datasetIri,
+              factory.namedNode('http://schema.org/distribution'),
+              distributionBlankNode,
+              datasetIri
+            ),
+            factory.quad(
+              distributionBlankNode,
+              factory.namedNode(
+                'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
+              ),
+              factory.namedNode('http://schema.org/DataDownload'),
+              datasetIri
+            ),
+            factory.quad(
+              distributionBlankNode,
+              factory.namedNode('http://schema.org/contentUrl'),
+              binding.get('?contentUrl') as NamedNode,
+              datasetIri
+            ),
+            factory.quad(
+              distributionBlankNode,
+              factory.namedNode('http://schema.org/encodingFormat'),
+              binding.get('?encodingFormat') as Quad_Object,
+              datasetIri
+            ),
+          ]);
+        }
 
         store.addQuads([
           factory.quad(
@@ -124,52 +202,6 @@ async function query(url: URL): Promise<DatasetExt[]> {
             datasetIri,
             factory.namedNode('http://schema.org/license'),
             binding.get('?license') as Quad_Object,
-            datasetIri
-          ),
-          factory.quad(
-            datasetIri,
-            factory.namedNode('http://schema.org/creator'),
-            creatorBlankNode,
-            datasetIri
-          ),
-          factory.quad(
-            creatorBlankNode,
-            factory.namedNode(
-              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
-            ),
-            factory.namedNode('http://schema.org/Organization'),
-            datasetIri
-          ),
-          factory.quad(
-            creatorBlankNode,
-            factory.namedNode('http://schema.org/name'),
-            binding.get('?creator_name') as NamedNode,
-            datasetIri
-          ),
-          factory.quad(
-            datasetIri,
-            factory.namedNode('http://schema.org/distribution'),
-            distributionBlankNode,
-            datasetIri
-          ),
-          factory.quad(
-            distributionBlankNode,
-            factory.namedNode(
-              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
-            ),
-            factory.namedNode('http://schema.org/DataDownload'),
-            datasetIri
-          ),
-          factory.quad(
-            distributionBlankNode,
-            factory.namedNode('http://schema.org/contentUrl'),
-            binding.get('?contentUrl') as NamedNode,
-            datasetIri
-          ),
-          factory.quad(
-            distributionBlankNode,
-            factory.namedNode('http://schema.org/encodingFormat'),
-            binding.get('?encodingFormat') as Quad_Object,
             datasetIri
           ),
         ]);
