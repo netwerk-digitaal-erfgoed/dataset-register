@@ -1,27 +1,19 @@
+import fetch, {Headers, Response} from 'node-fetch';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import factory from 'rdf-ext';
-import fetch, {Headers, Response} from 'node-fetch';
-import {Writer} from 'n3';
 import {URL} from 'url';
+import querystring from 'querystring';
 import {Quad} from 'rdf-js';
-import * as querystring from 'querystring';
-// const graphdb = require('graphdb');
-
-export interface Store {
-  /**
-   * Store a dataset description, replacing any triples that were previously stored for the dataset.
-   */
-  store(datasets: DatasetExt[], url: URL): void;
-}
+import {Writer} from 'n3';
+import {Registration, RegistrationStore} from './registration';
+import {DatasetStore, extractIris} from './dataset';
 
 /**
  * GraphDB client that uses the REST API.
  *
  * @see https://triplestore.netwerkdigitaalerfgoed.nl/webapi
  */
-export class GraphDbDataStore implements Store {
-  private readonly registrationsGraph =
-    'https://demo.netwerkdigitaalerfgoed.nl/registry/registrations';
+export class GraphDbClient {
   private token?: string;
   private username?: string;
   private password?: string;
@@ -56,7 +48,7 @@ export class GraphDbDataStore implements Store {
     this.token = response.headers.get('Authorization')!;
   }
 
-  private async request(
+  public async request(
     method: string,
     url: string,
     body?: string
@@ -81,8 +73,8 @@ export class GraphDbDataStore implements Store {
     }
 
     if (!response.ok) {
-      console.log(
-        'HTTP error ' + response.status + ' for URL ' + repositoryUrl
+      console.error(
+        'HTTP error ' + response.status + ' for ' + method + ' ' + repositoryUrl
       );
     }
 
@@ -100,78 +92,40 @@ export class GraphDbDataStore implements Store {
 
     return new Headers({Authorization: this.token!});
   }
+}
 
-  /**
-   * Store the dataset using optimized graph replacement.
-   *
-   * @see https://graphdb.ontotext.com/documentation/standard/replace-graph.html
-   */
-  public async store(datasets: DatasetExt[], url: URL) {
-    // Find each Dataset’s IRI.
-    const datasetIris = await datasets.reduce((map, dataset) => {
-      const quad = dataset
-        .match(
-          null,
-          factory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-          factory.namedNode('http://schema.org/Dataset')
-        )
-        .toArray()[0];
-      const url = new URL(quad.subject.value);
-      map.set(url, dataset);
-      return map;
-    }, new Map<URL, DatasetExt>());
+export class GraphDbRegistrationStore implements RegistrationStore {
+  private readonly registrationsGraph =
+    'https://demo.netwerkdigitaalerfgoed.nl/registry/registrations';
 
-    // Store each Dataset.
-    datasetIris.forEach((dataset, iri) => this.storeDataset(dataset, iri));
+  constructor(private client: GraphDbClient) {}
 
-    // Store the URL registration that contains one or more datasets.
-    await this.storeRegistration(url, [...datasetIris.keys()]);
-
-    // await this.repository.deleteStatements(
-    //   undefined,
-    //   undefined,
-    //   undefined,
-    //   datasetUri
-    // );
-    // await this.repository.addQuads(dataset.toArray(), datasetUri);
-  }
-
-  private async storeDataset(dataset: DatasetExt, graphIri: URL) {
-    await getWriter(dataset.toArray()).end(async (error, result) => {
-      await this.request(
-        'PUT',
-        '/rdf-graphs/service?graph=' + graphIri.toString(),
-        result
-      );
-    });
-  }
-
-  private async storeRegistration(url: URL, foundDatasetIris: URL[]) {
-    await this.request(
+  async store(registration: Registration) {
+    await this.client.request(
       'DELETE',
       '/statements?' +
         querystring.stringify({
-          subj: '<' + url.toString() + '>',
+          subj: '<' + registration.url.toString() + '>',
           context: '<' + this.registrationsGraph + '>',
         })
     );
     const date = new Date().toISOString();
     const foundAtUrlQuads = [
       factory.quad(
-        factory.namedNode(url.toString()),
+        factory.namedNode(registration.url.toString()),
         factory.namedNode('http://schema.org/datePosted'),
         factory.literal(date, 'xsd:dateTime'),
         factory.namedNode(this.registrationsGraph)
       ),
-      ...foundDatasetIris.flatMap(datasetIri => [
+      ...registration.foundDatasets.flatMap(datasetIri => [
         factory.quad(
-          factory.namedNode(url.toString()),
+          factory.namedNode(registration.url.toString()),
           factory.namedNode('http://schema.org/about'),
           factory.namedNode(datasetIri.toString()),
           factory.namedNode(this.registrationsGraph)
         ),
         factory.quad(
-          factory.namedNode(url.toString()),
+          factory.namedNode(registration.url.toString()),
           factory.namedNode('http://schema.org/encoding'),
           factory.namedNode('http://schema.org'), // Currently the only vocabulary that we support.
           factory.namedNode(this.registrationsGraph)
@@ -186,7 +140,33 @@ export class GraphDbDataStore implements Store {
     ];
 
     await getWriter(foundAtUrlQuads).end(async (error, result) => {
-      await this.request('POST', '/statements', result);
+      await this.client.request('POST', '/statements', result);
+    });
+  }
+}
+
+export class GraphDbDatasetStore implements DatasetStore {
+  constructor(private readonly client: GraphDbClient) {}
+
+  /**
+   * Store the dataset using optimized graph replacement.
+   *
+   * @see https://graphdb.ontotext.com/documentation/standard/replace-graph.html
+   */
+  public async store(datasets: DatasetExt[]) {
+    // Find each Dataset’s IRI.
+    extractIris(datasets).forEach((dataset, iri) =>
+      this.storeDataset(dataset, iri)
+    );
+  }
+
+  private async storeDataset(dataset: DatasetExt, graphIri: URL) {
+    await getWriter(dataset.toArray()).end(async (error, result) => {
+      await this.client.request(
+        'PUT',
+        '/rdf-graphs/service?graph=' + graphIri.toString(),
+        result
+      );
     });
   }
 }
