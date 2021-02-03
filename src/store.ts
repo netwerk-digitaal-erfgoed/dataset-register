@@ -160,7 +160,7 @@ export class GraphDbDataStore implements Store {
       factory.quad(
         factory.namedNode(url.toString()),
         factory.namedNode('http://schema.org/datePosted'),
-        factory.namedNode(date),
+        factory.literal(date, 'xsd:dateTime'),
         factory.namedNode(this.registrationsGraph)
       ),
       ...foundDatasetIris.flatMap(datasetIri => [
@@ -179,7 +179,7 @@ export class GraphDbDataStore implements Store {
         factory.quad(
           factory.namedNode(datasetIri.toString()),
           factory.namedNode('http://schema.org/datePosted'),
-          factory.namedNode(date),
+          factory.literal(date, 'xsd:dateTime'),
           factory.namedNode(this.registrationsGraph)
         ),
       ]),
