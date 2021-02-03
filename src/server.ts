@@ -3,15 +3,23 @@ import {ShaclValidator} from './validator';
 import {StreamWriter} from 'n3';
 import {toStream} from 'rdf-dataset-ext';
 import {fetch, NoDatasetFoundAtUrl, UrlNotFound} from './fetch';
-import {GraphDbDataStore} from './store';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import {URL} from 'url';
+import {
+  GraphDbClient,
+  GraphDbDatasetStore,
+  GraphDbRegistrationStore,
+} from './graphdb';
+import {Registration} from './registration';
+import {extractIris} from './dataset';
 
 const server = fastify({logger: process.env.LOG ? !!+process.env.LOG : true});
-const datastore = new GraphDbDataStore(
+const client = new GraphDbClient(
   process.env.GRAPHDB_URL || 'http://localhost:7200',
   'registry'
 );
+const datasetStore = new GraphDbDatasetStore(client);
+const registrationStore = new GraphDbRegistrationStore(client);
 
 const datasetsRequest = {
   schema: {
@@ -64,7 +72,10 @@ server.post('/datasets', datasetsRequest, async (request, reply) => {
   const datasets = await validate(url, reply);
   if (datasets) {
     reply.code(202).send();
-    await datastore.store(datasets, url);
+    await datasetStore.store(datasets);
+    await registrationStore.store(
+      new Registration(url, [...extractIris(datasets).keys()])
+    );
   }
 });
 
@@ -98,7 +109,7 @@ let validator: ShaclValidator;
   try {
     validator = await ShaclValidator.fromUrl('shacl/dataset.jsonld');
     if (process.env.GRAPHDB_USERNAME && process.env.GRAPHDB_PASSWORD) {
-      await datastore.authenticate(
+      await client.authenticate(
         process.env.GRAPHDB_USERNAME,
         process.env.GRAPHDB_PASSWORD
       );
