@@ -1,14 +1,14 @@
-# Registry API
+# Register
 
-This is the API for the Registry.
+This is a prototype for the NDE Register.
 
-For a demo application using this API, see https://demo.netwerkdigitaalerfgoed.nl/register/.
+For a demo application using this prototype, see https://demo.netwerkdigitaalerfgoed.nl/register/.
 
-The backlog is also available at the [project board](https://github.com/orgs/netwerk-digitaal-erfgoed/projects/1?card_filter_query=repo%3Anetwerk-digitaal-erfgoed%2Fregistry-api).
+The backlog is also available at the [project board](https://github.com/orgs/netwerk-digitaal-erfgoed/projects/1?card_filter_query=repo%3Anetwerk-digitaal-erfgoed%2Fregister).
 
 ## Run the application
 
-This application stores data in the [GraphDB](https://graphdb.ontotext.com) RDF store,
+This application stores data in a [GraphDB](https://graphdb.ontotext.com) RDF store,
 so you need to have that running locally.
 
 You can do so in two ways:
