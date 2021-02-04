@@ -31,7 +31,7 @@ You may want to disable logging, which is enabled by default:
 
 ```
 npm run compile
-LOG=false npm run
+LOG=false npm start
 ```
 
 ### Configuration

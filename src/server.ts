@@ -1,5 +1,5 @@
 import fastify, {FastifyReply} from 'fastify';
-import {ShaclValidator} from './validator';
+import {ShaclValidator, Validator} from './validator';
 import {StreamWriter} from 'n3';
 import {toStream} from 'rdf-dataset-ext';
 import {fetch, NoDatasetFoundAtUrl, UrlNotFound} from './fetch';
@@ -12,6 +12,8 @@ import {
 } from './graphdb';
 import {Registration} from './registration';
 import {extractIris} from './dataset';
+import {scheduleJob} from 'node-schedule';
+import {Crawler} from './crawler';
 
 const server = fastify({logger: process.env.LOG ? !!+process.env.LOG : true});
 const client = new GraphDbClient(
@@ -20,6 +22,7 @@ const client = new GraphDbClient(
 );
 const datasetStore = new GraphDbDatasetStore(client);
 const registrationStore = new GraphDbRegistrationStore(client);
+let validator: Validator;
 
 const datasetsRequest = {
   schema: {
@@ -50,17 +53,12 @@ async function validate(
     return null;
   }
 
-  // Validate each dataset using SHACL. Return validation result for the first datasets that is invalid.
-  for (const dataset of datasets) {
-    const queryResultValidationReport = await validator.validate(dataset);
-    if (!queryResultValidationReport.conforms) {
-      const streamWriter = new StreamWriter();
-      const validationRdf = streamWriter.import(
-        toStream(queryResultValidationReport.dataset)
-      );
-      reply.code(400).send(validationRdf);
-      return null;
-    }
+  const validationErrors = await validator.validate(datasets);
+  if (validationErrors !== null) {
+    const streamWriter = new StreamWriter();
+    const validationRdf = streamWriter.import(toStream(validationErrors));
+    reply.code(400).send(validationRdf);
+    return null;
   }
 
   return datasets;
@@ -73,9 +71,11 @@ server.post('/datasets', datasetsRequest, async (request, reply) => {
   if (datasets) {
     reply.code(202).send();
     await datasetStore.store(datasets);
-    await registrationStore.store(
-      new Registration(url, [...extractIris(datasets).keys()])
-    );
+    const registration = new Registration(url, new Date(), [
+      ...extractIris(datasets).keys(),
+    ]);
+    registration.read();
+    await registrationStore.store(registration);
   }
 });
 
@@ -103,18 +103,25 @@ server.addContentTypeParser(
   }
 );
 
-let validator: ShaclValidator;
-
 (async () => {
   try {
-    validator = await ShaclValidator.fromUrl('shacl/dataset.jsonld');
     if (process.env.GRAPHDB_USERNAME && process.env.GRAPHDB_PASSWORD) {
       await client.authenticate(
         process.env.GRAPHDB_USERNAME,
         process.env.GRAPHDB_PASSWORD
       );
     }
+    validator = await ShaclValidator.fromUrl('shacl/dataset.jsonld');
+    const crawler = new Crawler(registrationStore, datasetStore, validator);
+
+    // Start web server.
     await server.listen(3000, '0.0.0.0');
+
+    // Schedule crawler to check every hour for CRAWLER_INTERVAL that have expired their REGISTRATION_URL_TTL.
+    const ttl = ((process.env.REGISTRATION_URL_TTL || 86400) as number) * 1000;
+    scheduleJob(process.env.CRAWLER_INTERVAL || '0 * * * *', () => {
+      crawler.crawl(new Date(Date.now() - ttl));
+    });
   } catch (err) {
     console.error(err);
   }
