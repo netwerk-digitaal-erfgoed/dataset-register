@@ -51,10 +51,14 @@ export class GraphDbClient {
   public async request(
     method: string,
     url: string,
-    body?: string
+    body?: string,
+    accept?: string
   ): Promise<Response> {
     const headers = await this.getHeaders();
     headers.set('Content-Type', 'application/x-trig');
+    if (accept) {
+      headers.set('Accept', accept);
+    }
     const repositoryUrl = this.url + '/repositories/' + this.repository + url;
     const response = await fetch(repositoryUrl, {
       method: method,
@@ -79,6 +83,17 @@ export class GraphDbClient {
     }
 
     return response;
+  }
+
+  public async query(query: string) {
+    const response = await this.request(
+      'GET',
+      '?' + querystring.stringify({query}),
+      undefined,
+      'application/sparql-results+json'
+    );
+
+    return response.json();
   }
 
   private async getHeaders(): Promise<Headers> {
@@ -109,39 +124,96 @@ export class GraphDbRegistrationStore implements RegistrationStore {
           context: '<' + this.registrationsGraph + '>',
         })
     );
-    const date = new Date().toISOString();
-    const foundAtUrlQuads = [
+    const quads = [
       factory.quad(
         factory.namedNode(registration.url.toString()),
         factory.namedNode('http://schema.org/datePosted'),
-        factory.literal(date, 'xsd:dateTime'),
+        factory.literal(registration.datePosted.toISOString(), 'xsd:dateTime'),
         factory.namedNode(this.registrationsGraph)
       ),
-      ...registration.foundDatasets.flatMap(datasetIri => [
-        factory.quad(
-          factory.namedNode(registration.url.toString()),
-          factory.namedNode('http://schema.org/about'),
-          factory.namedNode(datasetIri.toString()),
-          factory.namedNode(this.registrationsGraph)
-        ),
-        factory.quad(
-          factory.namedNode(registration.url.toString()),
-          factory.namedNode('http://schema.org/encoding'),
-          factory.namedNode('http://schema.org'), // Currently the only vocabulary that we support.
-          factory.namedNode(this.registrationsGraph)
-        ),
-        factory.quad(
-          factory.namedNode(datasetIri.toString()),
-          factory.namedNode('http://schema.org/datePosted'),
-          factory.literal(date, 'xsd:dateTime'),
-          factory.namedNode(this.registrationsGraph)
-        ),
-      ]),
+      factory.quad(
+        factory.namedNode(registration.url.toString()),
+        factory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        factory.namedNode('http://schema.org/EntryPoint'),
+        factory.namedNode(this.registrationsGraph)
+      ),
+      factory.quad(
+        factory.namedNode(registration.url.toString()),
+        factory.namedNode('http://schema.org/encoding'),
+        factory.namedNode('http://schema.org'), // Currently the only vocabulary that we support.
+        factory.namedNode(this.registrationsGraph)
+      ),
+      ...registration.foundDatasets.flatMap(datasetIri => {
+        const datasetQuads = [
+          factory.quad(
+            factory.namedNode(registration.url.toString()),
+            factory.namedNode('http://schema.org/about'),
+            factory.namedNode(datasetIri.toString()),
+            factory.namedNode(this.registrationsGraph)
+          ),
+          factory.quad(
+            factory.namedNode(datasetIri.toString()),
+            factory.namedNode(
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
+            ),
+            factory.namedNode('http://schema.org/Dataset'),
+            factory.namedNode(this.registrationsGraph)
+          ),
+        ];
+        if (registration.dateRead !== undefined) {
+          datasetQuads.push(
+            factory.quad(
+              factory.namedNode(datasetIri.toString()),
+              factory.namedNode('http://schema.org/dateRead'),
+              factory.literal(
+                registration.dateRead.toISOString(),
+                'xsd:dateTime'
+              ),
+              factory.namedNode(this.registrationsGraph)
+            )
+          );
+        }
+        return datasetQuads;
+      }),
     ];
+    if (registration.dateRead !== undefined) {
+      quads.push(
+        factory.quad(
+          factory.namedNode(registration.url.toString()),
+          factory.namedNode('http://schema.org/dateRead'),
+          factory.literal(registration.dateRead.toISOString(), 'xsd:dateTime'),
+          factory.namedNode(this.registrationsGraph)
+        )
+      );
+    }
 
-    await getWriter(foundAtUrlQuads).end(async (error, result) => {
+    await getWriter(quads).end(async (error, result) => {
       await this.client.request('POST', '/statements', result);
     });
+  }
+
+  async findRegistrationsReadBefore(date: Date): Promise<Registration[]> {
+    // Use STR(?dateRead) as a workaround for https://github.com/netwerk-digitaal-erfgoed/register/issues/45
+    const result = await this.client.query(`
+      PREFIX schema: <http://schema.org/>
+      SELECT * WHERE {
+      GRAPH <${this.registrationsGraph}> {
+        ?s a schema:EntryPoint ;
+            schema:datePosted ?datePosted ;
+            schema:dateRead ?dateRead .
+        FILTER (STR(?dateRead) < "${date.toISOString()}")  
+        OPTIONAL { ?s schema:about ?datasets }
+        }
+      }`);
+
+    return result.results.bindings.map(
+      (binding: {s: {value: string}; datePosted: {value: string}}) =>
+        new Registration(
+          new URL(binding.s.value),
+          new Date(binding.datePosted.value),
+          [] // Irrelevant for now.
+        )
+    );
   }
 }
 

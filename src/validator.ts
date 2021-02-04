@@ -4,7 +4,14 @@ import factory from 'rdf-ext';
 import rdfParser from 'rdf-parse';
 import SHACLValidator from 'rdf-validate-shacl';
 
-export class ShaclValidator {
+export interface Validator {
+  /**
+   * Returns `null` if all datasets are valid or `DatasetCore` with failed constraints of the first invalid dataset.
+   */
+  validate(datasets: DatasetCore[]): Promise<DatasetCore | null>;
+}
+
+export class ShaclValidator implements Validator {
   private inner: typeof SHACLValidator;
 
   public static async fromUrl(url: string): Promise<ShaclValidator> {
@@ -15,8 +22,15 @@ export class ShaclValidator {
     this.inner = new SHACLValidator(dataset);
   }
 
-  public async validate(dataset: DatasetCore) {
-    return this.inner.validate(dataset);
+  public async validate(datasets: DatasetCore[]): Promise<DatasetCore | null> {
+    for (const dataset of datasets) {
+      const queryResultValidationReport = this.inner.validate(dataset);
+      if (!queryResultValidationReport.conforms) {
+        return queryResultValidationReport.dataset;
+      }
+    }
+
+    return null;
   }
 }
 
