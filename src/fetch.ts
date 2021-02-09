@@ -177,7 +177,7 @@ async function query(url: URL): Promise<DatasetExt[]> {
           ]);
         }
 
-        store.addQuads([
+        store.addQuad(
           factory.quad(
             datasetIri,
             factory.namedNode(
@@ -185,28 +185,42 @@ async function query(url: URL): Promise<DatasetExt[]> {
             ),
             factory.namedNode('http://schema.org/Dataset'),
             datasetIri
-          ),
-          factory.quad(
-            datasetIri,
-            factory.namedNode('http://schema.org/name'),
-            binding.get('?name') as Quad_Object,
-            datasetIri
-          ),
-          factory.quad(
-            datasetIri,
-            factory.namedNode('http://schema.org/description'),
-            binding.get('?description') as Quad_Object,
-            datasetIri
-          ),
-          factory.quad(
-            datasetIri,
-            factory.namedNode('http://schema.org/license'),
-            binding.get('?license') as Quad_Object,
-            datasetIri
-          ),
-        ]);
+          )
+        );
 
-        // Optionals.
+        if (binding.get('?name')) {
+          store.addQuad(
+            factory.quad(
+              datasetIri,
+              factory.namedNode('http://schema.org/name'),
+              binding.get('?name') as Quad_Object,
+              datasetIri
+            )
+          );
+        }
+
+        if (binding.get('?description')) {
+          store.addQuad(
+            factory.quad(
+              datasetIri,
+              factory.namedNode('http://schema.org/description'),
+              binding.get('?description') as Quad_Object,
+              datasetIri
+            )
+          );
+        }
+
+        if (binding.get('?license')) {
+          store.addQuad(
+            factory.quad(
+              datasetIri,
+              factory.namedNode('http://schema.org/license'),
+              binding.get('?license') as Quad_Object,
+              datasetIri
+            )
+          );
+        }
+
         if (binding.get('?alternateName')) {
           store.addQuad(
             factory.quad(
