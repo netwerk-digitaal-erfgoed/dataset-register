@@ -1,6 +1,7 @@
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import factory from 'rdf-ext';
 import {URL} from 'url';
+import {datasetType} from './query';
 
 export interface DatasetStore {
   /**
@@ -15,7 +16,7 @@ export function extractIris(datasets: DatasetExt[]): Map<URL, DatasetExt> {
       .match(
         null,
         factory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-        factory.namedNode('http://schema.org/Dataset')
+        datasetType
       )
       .toArray()[0];
     const url = new URL(quad.subject.value);
