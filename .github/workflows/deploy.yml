@@ -51,6 +51,9 @@ jobs:
       - name: Update deployment
         run: |
           kubectl set image deployment/registry-api app=${{ steps.vars.outputs.docker_image }}:${{ steps.vars.outputs.sha_short }} --record
+          kubectl set image deployment/registry-crawler app=${{ steps.vars.outputs.docker_image }}:${{ steps.vars.outputs.sha_short }} --record
 
       - name: Verify deployment
-        run: kubectl rollout status deployment/registry-api
+        run: |
+          kubectl rollout status deployment/registry-api
+          kubectl rollout status deployment/registry-crawler

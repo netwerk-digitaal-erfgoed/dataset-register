@@ -119,9 +119,11 @@ server.addContentTypeParser(
 
     // Schedule crawler to check every hour for CRAWLER_INTERVAL that have expired their REGISTRATION_URL_TTL.
     const ttl = ((process.env.REGISTRATION_URL_TTL || 86400) as number) * 1000;
-    scheduleJob(process.env.CRAWLER_INTERVAL || '0 * * * *', () => {
-      crawler.crawl(new Date(Date.now() - ttl));
-    });
+    if (process.env.CRAWLER_SCHEDULE !== undefined) {
+      scheduleJob(process.env.CRAWLER_SCHEDULE, () => {
+        crawler.crawl(new Date(Date.now() - ttl));
+      });
+    }
   } catch (err) {
     console.error(err);
   }

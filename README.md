@@ -42,3 +42,5 @@ You can configure the application through environment variables:
 - `GRAPHDB_USERNAME`: if using authentication, your GraphDB username (default: empty).
 - `GRAPHDB_PASSWORD`: if using authentication, your GraphDB password (default: empty).
 - `LOG`: enable/disable logging (default: `true`).
+- `CRAWLER_SCHEDULE`: a schedule in Cron format; for example `0 * * * *` to crawl every hour 
+  (default: crawling  disabled). 
