@@ -111,7 +111,7 @@ server.addContentTypeParser(
         process.env.GRAPHDB_PASSWORD
       );
     }
-    validator = await ShaclValidator.fromUrl('shacl/dataset.jsonld');
+    validator = await ShaclValidator.fromUrl('shacl/dcat.jsonld');
     const crawler = new Crawler(registrationStore, datasetStore, validator);
 
     // Start web server.

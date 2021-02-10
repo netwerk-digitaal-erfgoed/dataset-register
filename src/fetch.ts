@@ -9,7 +9,7 @@ import DatasetExt from 'rdf-ext/lib/Dataset';
 import nodeFetch from 'node-fetch';
 import {URL} from 'url';
 import {Store} from 'n3';
-import {NamedNode, Quad_Object} from 'rdf-js';
+import {bindingsToQuads, selectQuery} from './query';
 
 export class UrlNotFound extends Error {}
 export class NoDatasetFoundAtUrl extends Error {}
@@ -81,157 +81,16 @@ const engine = newEngine();
  * cannot be validated by SHACL.
  */
 async function query(url: URL): Promise<DatasetExt[]> {
-  const {bindingsStream} = (await engine.query(
-    `
-      SELECT * WHERE {
-        ?s a schema:Dataset ;
-        OPTIONAL { ?s schema:alternateName ?alternateName }
-        OPTIONAL { ?s schema:name ?name }
-        OPTIONAL { ?s schema:description ?description }
-        OPTIONAL { ?s schema:license ?license }
-        OPTIONAL { ?s schema:creator ?creator }
-        OPTIONAL { ?s schema:distribution ?distribution }
-        OPTIONAL { 
-          ?creator a schema:Organization ;
-            schema:name ?creator_name . 
-        }
-        OPTIONAL {
-          ?distribution a schema:DataDownload ;
-            schema:contentUrl ?contentUrl ;
-            schema:encodingFormat ?encodingFormat 
-        }
-      } LIMIT 100000`,
-    {sources: [url.toString()]}
-  )) as IQueryResultBindings;
+  const {bindingsStream} = (await engine.query(selectQuery, {
+    sources: [url.toString()],
+  })) as IQueryResultBindings;
 
-  // Write results to an N3 Store for deduplication.
+  // Write results to an N3 Store for deduplication and partitioning by dataset.
   const store = new Store();
 
   return new Promise(resolve => {
     bindingsStream
-      .on('data', binding => {
-        const datasetIri = binding.get('?s') as NamedNode;
-
-        /**
-         * Use skolemized values because they are correct, unlike the generated blank node ids.
-         * See https://github.com/rubensworks/jsonld-streaming-parser.js/issues/72
-         */
-        if (binding.get('?creator')) {
-          const creatorBlankNode = factory.blankNode(
-            binding.get('?creator').skolemized.value.replace(/:/g, '_')
-          );
-          store.addQuads([
-            factory.quad(
-              datasetIri,
-              factory.namedNode('http://schema.org/creator'),
-              creatorBlankNode,
-              datasetIri
-            ),
-            factory.quad(
-              creatorBlankNode,
-              factory.namedNode(
-                'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
-              ),
-              factory.namedNode('http://schema.org/Organization'),
-              datasetIri
-            ),
-            factory.quad(
-              creatorBlankNode,
-              factory.namedNode('http://schema.org/name'),
-              binding.get('?creator_name') as NamedNode,
-              datasetIri
-            ),
-          ]);
-        }
-        if (binding.get('?distribution')) {
-          const distributionBlankNode = factory.blankNode(
-            binding.get('?distribution').skolemized.value.replace(/:/g, '_')
-          );
-          store.addQuads([
-            factory.quad(
-              datasetIri,
-              factory.namedNode('http://schema.org/distribution'),
-              distributionBlankNode,
-              datasetIri
-            ),
-            factory.quad(
-              distributionBlankNode,
-              factory.namedNode(
-                'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
-              ),
-              factory.namedNode('http://schema.org/DataDownload'),
-              datasetIri
-            ),
-            factory.quad(
-              distributionBlankNode,
-              factory.namedNode('http://schema.org/contentUrl'),
-              binding.get('?contentUrl') as NamedNode,
-              datasetIri
-            ),
-            factory.quad(
-              distributionBlankNode,
-              factory.namedNode('http://schema.org/encodingFormat'),
-              binding.get('?encodingFormat') as Quad_Object,
-              datasetIri
-            ),
-          ]);
-        }
-
-        store.addQuad(
-          factory.quad(
-            datasetIri,
-            factory.namedNode(
-              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
-            ),
-            factory.namedNode('http://schema.org/Dataset'),
-            datasetIri
-          )
-        );
-
-        if (binding.get('?name')) {
-          store.addQuad(
-            factory.quad(
-              datasetIri,
-              factory.namedNode('http://schema.org/name'),
-              binding.get('?name') as Quad_Object,
-              datasetIri
-            )
-          );
-        }
-
-        if (binding.get('?description')) {
-          store.addQuad(
-            factory.quad(
-              datasetIri,
-              factory.namedNode('http://schema.org/description'),
-              binding.get('?description') as Quad_Object,
-              datasetIri
-            )
-          );
-        }
-
-        if (binding.get('?license')) {
-          store.addQuad(
-            factory.quad(
-              datasetIri,
-              factory.namedNode('http://schema.org/license'),
-              binding.get('?license') as Quad_Object,
-              datasetIri
-            )
-          );
-        }
-
-        if (binding.get('?alternateName')) {
-          store.addQuad(
-            factory.quad(
-              datasetIri,
-              factory.namedNode('http://schema.org/alternateName'),
-              binding.get('?alternateName') as Quad_Object,
-              datasetIri
-            )
-          );
-        }
-      })
+      .on('data', binding => store.addQuads(bindingsToQuads(binding)))
       .on('end', async () => {
         // Each dataset description is stored in its own graph, so separate them out now.
         const datasets: DatasetExt[] = await Promise.all(
