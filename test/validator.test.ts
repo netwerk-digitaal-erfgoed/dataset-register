@@ -10,11 +10,11 @@ describe('Validator', () => {
     validator = await ShaclValidator.fromUrl('shacl/combined.jsonld');
   });
 
-  it('accepts valid Schema.org datasets', async () => {
+  it('accepts valid Schema.org dataset', async () => {
     expect(await validate('dataset-schema-org-valid.jsonld')).toBeNull();
   });
 
-  it('reports invalid Schema.org datasets', async () => {
+  it('reports invalid Schema.org dataset', async () => {
     const report = await validate('dataset-schema-org-invalid.jsonld');
     expect(report).not.toBeNull();
   });
@@ -35,12 +35,17 @@ describe('Validator', () => {
   });
 
   it('rejects a list that contains at least one invalid Schema.org dataset', async () => {
-    const report = await validate('datasets-schema-org-valid.jsonld');
+    const report = await validate('datasets-schema-org-invalid.jsonld');
     expect(report).not.toBeNull();
   });
 
-  it('rejects empty JSON', async () => {
+  it('rejects empty RDF', async () => {
     const report = await validate('empty.jsonld');
+    expect(report).not.toBeNull();
+  });
+
+  it('rejects RDF that contains no dataset', async () => {
+    const report = await validate('no-dataset.jsonld');
     expect(report).not.toBeNull();
   });
 });
