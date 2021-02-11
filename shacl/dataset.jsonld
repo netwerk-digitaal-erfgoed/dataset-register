@@ -3,8 +3,30 @@
     "schema": "http://schema.org/",
     "sh": "http://www.w3.org/ns/shacl#"
   },
-  "@graph": [
+  "@graph": [	
+
+	{
+      "@id": "schema:DatacatalogShape",
+      "@type": "sh:NodeShape",
+      "sh:targetClass": {
+        "@id": "schema:DataCatalog"
+      },
+      "sh:property": [
+        {
+          "sh:path": {
+            "@id": "schema:dataset"
+          },
+          "sh:minCount": 1,
+          "sh:class": {
+            "@id": "schema:Dataset"
+          },
+          "sh:node": "schema:DatasetShape"
+        }
+	  ]
+	},
+
     {
+      "@id": "schema:DatasetShape",
       "@type": "sh:NodeShape",
       "sh:targetClass": {
         "@id": "schema:Dataset"
