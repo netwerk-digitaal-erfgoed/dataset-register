@@ -4,9 +4,9 @@
   "dataset": [
     {
       "@type": "Dataset",
-      "@id": "https://www.openarch.nl/id/dataset_ade",
-      "identifier": "https://www.openarch.nl/id/dataset_ade",
-      "name": "Dataset genealogical metadata Archief Delft/Open Archives",
+      "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
+      "name": "Alba amicorum van de Koninklijke Bibliotheek",
+      "description": "Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.",
       "license": "http://creativecommons.org/publicdomain/zero/1.0/",
       "creator": {
         "@type": "Organization",
@@ -22,11 +22,6 @@
           "@type": "DataDownload",
           "contentUrl": "https://www.openarch.nl//exports/c431a4425bc56080c868435c8d910f83/files/ade-20201113.a2a.ttl.gz",
           "encodingFormat": "text/turtle"
-        },
-        {
-          "@type": "DataDownload",
-          "contentUrl": "/exports/7fe21ad3f5b996daa795be83572a2576/files/ade-20201215.a2a.xml.gz",
-          "encodingFormat": "text/xml"
         }
       ]
     }
