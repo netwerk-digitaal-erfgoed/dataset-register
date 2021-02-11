@@ -7,7 +7,7 @@ let validator: Validator;
 
 describe('Validator', () => {
   beforeAll(async () => {
-    validator = await ShaclValidator.fromUrl('shacl/dataset.jsonld');
+    validator = await ShaclValidator.fromUrl('shacl/combined.jsonld');
   });
 
   it('accepts valid Schema.org datasets', async () => {
