@@ -38,6 +38,11 @@ describe('Validator', () => {
     const report = await validate('datasets-schema-org-valid.jsonld');
     expect(report).not.toBeNull();
   });
+
+  it('rejects empty JSON', async () => {
+    const report = await validate('empty.jsonld');
+    expect(report).not.toBeNull();
+  });
 });
 
 const validate = async (filename: string) =>
