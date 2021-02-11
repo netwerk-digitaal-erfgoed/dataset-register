@@ -1,0 +1,29 @@
+{
+  "@context": "https://schema.org/",
+  "@graph": [
+    {
+      "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
+      "name": "Valid dataset",
+      "description": "Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.",
+      "identifier": "http://data.bibliotheken.nl/id/dataset/rise-alba",
+      "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+      "creator": {
+        "@type": "Organization",
+        "url": "https://www.kb.nl/",
+        "name": "Koninklijke Bibliotheek",
+        "sameAs": "https://ror.org/02w4jbg70"
+      },
+      "distribution": [
+        {
+          "@type": "DataDownload",
+          "encodingFormat": "application/rdf+xml",
+          "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
+        }
+      ]
+    },
+    {
+      "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba2",
+      "name": "Invalid dataset"
+    }
+  ]
+}
