@@ -16,7 +16,7 @@ You can do so in two ways:
 - either [install GraphDB for your OS](https://graphdb.ontotext.com/documentation/free/quick-start-guide.html);
 - or run it in a Docker container:
     ```
-    docker run -p 7200:7200 docker-registry.ontotext.com/graphdb-free:9.5.0-adoptopenjdk11
+    docker run -p 7200:7200 docker-registry.ontotext.com/graphdb-free:9.6.0-adoptopenjdk11
     ```
 
 When GraphDB runs, you can start the application in development mode:
