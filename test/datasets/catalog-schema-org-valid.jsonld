@@ -1,0 +1,24 @@
+{
+  "@context": "https://schema.org/",
+  "@type": "DataCatalog",
+  "dataset": [
+    {
+      "@type": "Dataset",
+      "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
+      "name": "Alba amicorum van de Koninklijke Bibliotheek",
+      "description": "Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.",
+      "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+      "creator": {
+        "@type": "Organization",
+        "name": "Open Archives"
+      },
+      "distribution": [
+        {
+          "@type": "DataDownload",
+          "contentUrl": "https://api.openarch.nl/oai-pmh/?verb=ListRecords&metadataPrefix=oai_a2a&set=ade",
+          "encodingFormat": "text/xml"
+        }
+      ]
+    }
+  ]
+}

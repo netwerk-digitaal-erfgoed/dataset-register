@@ -91,46 +91,45 @@ const distributionMapping = new Map([
 export const datasetType = dcat('Dataset');
 export const selectQuery = `
   SELECT * WHERE {
-    ${dataset} a schema:Dataset .
-    OPTIONAL { ${dataset} schema:identifier ${identifier} }
-    OPTIONAL { ${dataset} schema:name ${name} }
-    OPTIONAL { ${dataset} schema:alternateName ${alternateName} }
-    OPTIONAL { ${dataset} schema:description ${description} }
-    OPTIONAL { 
-      ${dataset} schema:license ${license} .
-      FILTER isIri(${license}) 
-    }
-    OPTIONAL { ${dataset} schema:dateCreated ${dateCreated} }
-    OPTIONAL { ${dataset} schema:datePublished ${datePublished} }
-    OPTIONAL { ${dataset} schema:dateModified ${dateModified} }
-    OPTIONAL { ${dataset} schema:inLanguage ${language} }
-    OPTIONAL { ${dataset} schema:isBasedOnUrl ${source} }
-    OPTIONAL { ${dataset} schema:keyword ${keyword} }
-    OPTIONAL { ${dataset} schema:spatialCoverage ${spatial} }
-    OPTIONAL { ${dataset} schema:temporalCoverage ${temporal} }
-    OPTIONAL { ${dataset} schema:version ${version} }
-    OPTIONAL { ${dataset} schema:mainEntityOfPage ${mainEntityOfPage} }
-    OPTIONAL { ${dataset} schema:creator ${creator} }
-    OPTIONAL { ${dataset} schema:distribution ${distribution} }
-    OPTIONAL { 
-      ${creator} a schema:Organization ;
-        schema:name ${creatorName} .
-        OPTIONAL { ?creator schema:url ${creatorUrl} }
-        OPTIONAL { ?creator schema:sameAs ${creatorSameAs} }
-    }
-    OPTIONAL {
-      ${distribution} a schema:DataDownload ;
+    ${dataset} a schema:Dataset ;
+      schema:name ${name} ;
+      schema:description ${description} ;
+      schema:license ${license} ;
+      schema:creator ${creator} ;
+      schema:distribution ${distribution} .
+      
+      OPTIONAL { ${dataset} schema:identifier ${identifier} }
+      OPTIONAL { ${dataset} schema:alternateName ${alternateName} }
+      OPTIONAL { ${dataset} schema:dateCreated ${dateCreated} }
+      OPTIONAL { ${dataset} schema:datePublished ${datePublished} }
+      OPTIONAL { ${dataset} schema:dateModified ${dateModified} }
+      OPTIONAL { ${dataset} schema:inLanguage ${language} }
+      OPTIONAL { ${dataset} schema:isBasedOnUrl ${source} }
+      OPTIONAL { ${dataset} schema:keyword ${keyword} }
+      OPTIONAL { ${dataset} schema:spatialCoverage ${spatial} }
+      OPTIONAL { ${dataset} schema:temporalCoverage ${temporal} }
+      OPTIONAL { ${dataset} schema:version ${version} }
+      OPTIONAL { ${dataset} schema:mainEntityOfPage ${mainEntityOfPage} }
+ 
+      FILTER isIri(${license})
+
+    ${creator} a schema:Organization ;
+      schema:name ${creatorName} .
+      OPTIONAL { ?creator schema:url ${creatorUrl} }
+      OPTIONAL { ?creator schema:sameAs ${creatorSameAs} }
+    
+    ${distribution} a schema:DataDownload ;
         schema:contentUrl ${distributionUrl} ;
-        schema:encodingFormat ${distributionFormat} 
-    }
-    OPTIONAL { ?distribution schema:fileFormat ${distributionMediaType} }
-    OPTIONAL { ?distribution schema:datePublished ${distributionDatePublished} }
-    OPTIONAL { ?distribution schema:dateModified ${distributionDateModified} }
-    OPTIONAL { ?distribution schema:description ${distributionDescription} }
-    OPTIONAL { ?distribution schema:inLanguage ${distributionLanguage} }
-    OPTIONAL { ?distribution schema:license ${distributionLicense} }
-    OPTIONAL { ?distribution schema:name ${distributionName} }
-    OPTIONAL { ?distribution schema:contentSize ${distributionSize} }
+        schema:encodingFormat ${distributionFormat} . 
+              
+        OPTIONAL { ?distribution schema:fileFormat ${distributionMediaType} }
+        OPTIONAL { ?distribution schema:datePublished ${distributionDatePublished} }
+        OPTIONAL { ?distribution schema:dateModified ${distributionDateModified} }
+        OPTIONAL { ?distribution schema:description ${distributionDescription} }
+        OPTIONAL { ?distribution schema:inLanguage ${distributionLanguage} }
+        OPTIONAL { ?distribution schema:license ${distributionLicense} }
+        OPTIONAL { ?distribution schema:name ${distributionName} }
+        OPTIONAL { ?distribution schema:contentSize ${distributionSize} }      
  
   } LIMIT 10000
 `;

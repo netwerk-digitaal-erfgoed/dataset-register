@@ -2,8 +2,6 @@ import {Registration, RegistrationStore} from '../src/registration';
 import {Crawler} from '../src/crawler';
 import {DatasetStore} from '../src/dataset';
 import DatasetExt from 'rdf-ext/lib/Dataset';
-import {Validator} from '../src/validator';
-import DatasetCore from '@rdfjs/dataset/DatasetCore';
 import {Dataset} from 'rdf-js';
 
 describe('Crawler', () => {
@@ -25,13 +23,7 @@ describe('Crawler', () => {
       },
     };
 
-    const validator: Validator = {
-      async validate(datasets: DatasetCore[]): Promise<DatasetCore | null> {
-        return Promise.resolve(null);
-      },
-    };
-
-    const crawler = new Crawler(registrationStore, datasetStore, validator);
+    const crawler = new Crawler(registrationStore, datasetStore);
     crawler.crawl(new Date());
 
     // TODO: add assertions.
