@@ -46,29 +46,13 @@ export async function fetch(url: URL): Promise<DatasetExt[]> {
  * This assumes the dataset descriptions is the primary resource on the URL. If the (embedded) RDF contains multiple
  * datasets (such as a catalog of datasets), we have a problem.
  */
-// eslint-disable-next-line
-async function dereference(url: URL): Promise<DatasetExt[]> {
-  // eslint-disable-line no-unused-vars
-  let dataset: DatasetExt;
+export async function dereference(url: URL): Promise<DatasetExt> {
   try {
     const {quads} = await rdfDereferencer.dereference(url.toString());
-    dataset = await factory.dataset().import(quads);
+    return await factory.dataset().import(quads);
   } catch (e) {
     throw new NoDatasetFoundAtUrl(e.message);
   }
-
-  // Ensure we have at least a dataset IRI.
-  if (
-    dataset.match(
-      null,
-      factory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-      factory.namedNode('http://schema.org/Dataset')
-    ).size === 0
-  ) {
-    throw new NoDatasetFoundAtUrl();
-  }
-
-  return [dataset];
 }
 
 const engine = newEngine();

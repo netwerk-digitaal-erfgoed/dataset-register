@@ -2,7 +2,7 @@ import fastify, {FastifyReply} from 'fastify';
 import {ShaclValidator, Validator} from './validator';
 import {StreamWriter} from 'n3';
 import {toStream} from 'rdf-dataset-ext';
-import {fetch, NoDatasetFoundAtUrl, UrlNotFound} from './fetch';
+import {dereference, fetch, NoDatasetFoundAtUrl, UrlNotFound} from './fetch';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import {URL} from 'url';
 import {
@@ -39,10 +39,10 @@ const datasetsRequest = {
 async function validate(
   url: URL,
   reply: FastifyReply
-): Promise<DatasetExt[] | null> {
-  let datasets: DatasetExt[];
+): Promise<DatasetExt | null> {
+  let dataset: DatasetExt;
   try {
-    datasets = await fetch(url);
+    dataset = await dereference(url);
   } catch (e) {
     if (e instanceof UrlNotFound) {
       reply.code(404).send('URL not found: ' + url);
@@ -53,22 +53,27 @@ async function validate(
     return null;
   }
 
-  const validationErrors = await validator.validate(datasets);
-  if (validationErrors !== null) {
-    const streamWriter = new StreamWriter();
-    const validationRdf = streamWriter.import(toStream(validationErrors));
-    reply.code(400).send(validationRdf);
-    return null;
+  const validation = await validator.validate(dataset);
+  switch (validation.state) {
+    case 'valid':
+      return dataset;
+    case 'no-dataset':
+      reply.code(406).send();
+      return null;
+    case 'invalid': {
+      const streamWriter = new StreamWriter();
+      const validationRdf = streamWriter.import(toStream(validation.errors));
+      reply.code(400).send(validationRdf);
+      return null;
+    }
   }
-
-  return datasets;
 }
 
 server.post('/datasets', datasetsRequest, async (request, reply) => {
   const url = new URL((request.body as {'@id': string})['@id']);
   request.log.info(url.toString());
-  const datasets = await validate(url, reply);
-  if (datasets) {
+  if (await validate(url, reply)) {
+    const datasets = await fetch(url);
     reply.code(202).send();
     await datasetStore.store(datasets);
     const registration = new Registration(url, new Date(), [
@@ -111,8 +116,8 @@ server.addContentTypeParser(
         process.env.GRAPHDB_PASSWORD
       );
     }
-    validator = await ShaclValidator.fromUrl('shacl/dcat.jsonld');
-    const crawler = new Crawler(registrationStore, datasetStore, validator);
+    validator = await ShaclValidator.fromUrl('shacl/dataset.jsonld');
+    const crawler = new Crawler(registrationStore, datasetStore);
 
     // Start web server.
     await server.listen(3000, '0.0.0.0');

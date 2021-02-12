@@ -17,11 +17,6 @@
           "@type": "DataDownload",
           "contentUrl": "https://api.openarch.nl/oai-pmh/?verb=ListRecords&metadataPrefix=oai_a2a&set=ade",
           "encodingFormat": "text/xml"
-        },
-        {
-          "@type": "DataDownload",
-          "contentUrl": "https://www.openarch.nl//exports/c431a4425bc56080c868435c8d910f83/files/ade-20201113.a2a.ttl.gz",
-          "encodingFormat": "text/turtle"
         }
       ]
     }
