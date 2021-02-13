@@ -41,10 +41,7 @@ export async function fetch(url: URL): Promise<DatasetExt[]> {
 }
 
 /**
- * Fetch dataset descriptions by dereferencing its URL.
- *
- * This assumes the dataset descriptions is the primary resource on the URL. If the (embedded) RDF contains multiple
- * datasets (such as a catalog of datasets), we have a problem.
+ * Fetch dataset description(s) by dereferencing the registration URL.
  */
 export async function dereference(url: URL): Promise<DatasetExt> {
   try {

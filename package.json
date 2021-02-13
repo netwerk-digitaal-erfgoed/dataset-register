@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node build/src/server.js",
-    "dev": "ts-node-dev --files src/server.ts",
+    "start": "node build/src/main.js",
+    "dev": "ts-node-dev --files src/main.ts",
     "test": "jest ${1}",
     "lint": "gts lint",
     "clean": "gts clean",
@@ -29,6 +29,7 @@
     "fastify": "^3.9.1",
     "graphdb": "^1.6.0-RC3",
     "n3": "^1.6.4",
+    "nock": "^13.0.7",
     "node-fetch": "^2.6.1",
     "node-schedule": "^2.0.0",
     "rdf-dataset-ext": "^1.0.0",
