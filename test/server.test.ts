@@ -78,4 +78,19 @@ describe('Server', () => {
     nockDone();
     expect(response.statusCode).toEqual(400);
   });
+
+  it('handles UTF-8 BOMs', async () => {
+    const {nockDone} = await nock.back('utf8-bom.json');
+    const response = await httpServer.inject({
+      method: 'PUT',
+      url: '/datasets/validate',
+      headers: {'Content-Type': 'application/ld+json'},
+      payload: JSON.stringify({
+        '@id':
+          'https://littest.hosting.deventit.net/Atlantispubliek/data/set/catalog.ttl',
+      }),
+    });
+    nockDone();
+    expect(response.statusCode).toEqual(406);
+  });
 });
