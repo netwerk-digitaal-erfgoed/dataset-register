@@ -17,26 +17,27 @@ export class Crawler {
       dateLastRead
     );
     for (const registration of registrations) {
-      let datasets: DatasetExt[];
+      let datasets: DatasetExt[] = [];
+      let statusCode: number;
 
       try {
         datasets = await fetch(registration.url);
+        this.datasetStore.store(datasets);
+        statusCode = 200;
       } catch (e) {
         if (e instanceof UrlNotFound || e instanceof NoDatasetFoundAtUrl) {
-          // Ignore
-          continue;
+          statusCode = parseInt(e.message);
+        } else {
+          throw e;
         }
-        throw e;
       }
-
-      this.datasetStore.store(datasets);
 
       const updatedRegistration = new Registration(
         registration.url,
         registration.datePosted,
         [...extractIris(datasets).keys()]
       );
-      updatedRegistration.read();
+      updatedRegistration.read(statusCode);
       this.registrationStore.store(updatedRegistration);
     }
   }

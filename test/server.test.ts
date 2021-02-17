@@ -1,28 +1,15 @@
 import nock from 'nock';
 import {FastifyInstance} from 'fastify';
 import {Server} from 'http';
-import DatasetExt from 'rdf-ext/lib/Dataset';
 import {server} from '../src/server';
 import {ShaclValidator} from '../src/validator';
-import {Registration, RegistrationStore} from '../src/registration';
-
-const datasetStore = {
-  store: (datasets: DatasetExt[]) => {},
-};
-
-class MockRegistrationStore implements RegistrationStore {
-  findRegistrationsReadBefore(date: Date): Promise<Registration[]> {
-    return Promise.resolve([]);
-  }
-
-  store(registration: Registration): void {}
-}
+import {MockDatasetStore, MockRegistrationStore} from './mock';
 
 let httpServer: FastifyInstance<Server>;
 describe('Server', () => {
   beforeAll(async () => {
     httpServer = await server(
-      datasetStore,
+      new MockDatasetStore(),
       new MockRegistrationStore(),
       await ShaclValidator.fromUrl('shacl/dataset.jsonld')
     );

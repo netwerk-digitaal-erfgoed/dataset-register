@@ -75,7 +75,7 @@ export async function server(
       const registration = new Registration(url, new Date(), [
         ...extractIris(datasets).keys(),
       ]);
-      registration.read();
+      registration.read(200);
       await registrationStore.store(registration);
     }
   });

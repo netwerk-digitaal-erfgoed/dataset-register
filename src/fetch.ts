@@ -19,6 +19,7 @@ export async function fetch(url: URL): Promise<DatasetExt[]> {
   // so first make sure the URL can be retrieved.
   const response = await nodeFetch(url, {
     // Use Comunica’s Accept header.
+    method: 'HEAD',
     headers: {
       Accept:
         'application/n-quads,application/trig;q=0.95,application/ld+json;q=0.9,application/n-triples;q=0.8,text/turtle;q=0.6,application/rdf+xml;q=0.5',
@@ -26,9 +27,9 @@ export async function fetch(url: URL): Promise<DatasetExt[]> {
   });
   if (!response.ok) {
     if (response.status === 404) {
-      throw new UrlNotFound();
+      throw new UrlNotFound(response.status.toString());
     }
-    throw new NoDatasetFoundAtUrl();
+    throw new NoDatasetFoundAtUrl(response.status.toString());
   }
 
   //   return await construct(url);
@@ -56,10 +57,6 @@ const engine = newEngine();
 
 /**
  * Fetch dataset descriptions by executing a SPARQL SELECT query.
- *
- * Use OPTIONALs in order to fetch both complete and incomplete datasets. We want those incomplete datasets in order
- * to have SHACL validation results. Any data not matching this SPARQL query will return nothing, after all, and nothing
- * cannot be validated by SHACL.
  */
 async function query(url: URL): Promise<DatasetExt[]> {
   const {bindingsStream} = (await engine.query(selectQuery, {
