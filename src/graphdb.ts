@@ -187,6 +187,17 @@ export class GraphDbRegistrationStore implements RegistrationStore {
       );
     }
 
+    if (registration.statusCode !== undefined) {
+      quads.push(
+        factory.quad(
+          factory.namedNode(registration.url.toString()),
+          factory.namedNode('http://schema.org/status'),
+          factory.literal(registration.statusCode.toString(), 'xsd:integer'),
+          factory.namedNode(this.registrationsGraph)
+        )
+      );
+    }
+
     await getWriter(quads).end(async (error, result) => {
       await this.client.request('POST', '/statements', result);
     });

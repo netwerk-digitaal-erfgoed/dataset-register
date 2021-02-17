@@ -2,6 +2,7 @@ import {URL} from 'url';
 
 export class Registration {
   private _dateRead?: Date;
+  private _statusCode?: number;
 
   constructor(
     public readonly url: URL,
@@ -12,12 +13,17 @@ export class Registration {
   /**
    * Mark the Registration as read at a date.
    */
-  public read(date: Date = new Date()) {
+  public read(statusCode: number, date: Date = new Date()) {
+    this._statusCode = statusCode;
     this._dateRead = date;
   }
 
   get dateRead() {
     return this._dateRead;
+  }
+
+  get statusCode() {
+    return this._statusCode;
   }
 }
 

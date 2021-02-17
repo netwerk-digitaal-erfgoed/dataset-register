@@ -1,31 +1,32 @@
-import {Registration, RegistrationStore} from '../src/registration';
+import {Registration} from '../src/registration';
 import {Crawler} from '../src/crawler';
-import {DatasetStore} from '../src/dataset';
-import DatasetExt from 'rdf-ext/lib/Dataset';
-import {Dataset} from 'rdf-js';
+import {URL} from 'url';
+import {MockDatasetStore, MockRegistrationStore} from './mock';
+import nock from 'nock';
+
+let registrationStore: MockRegistrationStore;
+let crawler: Crawler;
 
 describe('Crawler', () => {
-  it('crawls URLs', () => {
-    const registrations: Registration[] = [];
-    const registrationStore: RegistrationStore = {
-      findRegistrationsReadBefore(): Promise<Registration[]> {
-        return Promise.resolve([]);
-      },
-      store(registration: Registration): void {
-        registrations.push(registration);
-      },
-    };
+  beforeEach(async () => {
+    registrationStore = new MockRegistrationStore();
+    crawler = new Crawler(registrationStore, new MockDatasetStore());
+  });
 
-    const datasets: Dataset[] = [];
-    const datasetStore: DatasetStore = {
-      store(datasets: DatasetExt[]): void {
-        datasets.push(...datasets);
-      },
-    };
+  it('stores error HTTP response status code', async () => {
+    nock('https://example.com').head('/registered-url').reply(404);
 
-    const crawler = new Crawler(registrationStore, datasetStore);
-    crawler.crawl(new Date());
+    const registration = new Registration(
+      new URL('https://example.com/registered-url'),
+      new Date(),
+      []
+    );
+    registration.read(200, new Date('2000-01-01'));
+    registrationStore.store(registration);
 
-    // TODO: add assertions.
+    await crawler.crawl(new Date('3000-01-01'));
+
+    const readRegistration = registrationStore.all()[0];
+    expect(readRegistration.statusCode).toBe(404);
   });
 });
