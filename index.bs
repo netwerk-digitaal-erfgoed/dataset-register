@@ -171,10 +171,7 @@ See also [[DWBP-UCR#R-ProvAvailable]].
             <td>0..n</td>
             <td>Recommended</td>
         </tr>
-        <tr>
-            <th scope="row">Identifications</th>
-            <td>0..n</td>
-            <td>**OPTIONAL.** Links to the organization in other databases.</td>
+		<tr>
             <th scope="row">[schema:sameAs](https://schema.org/sameAs)</th>
             <td>Links to the organization in other databases.</td>
 			<td>0..n</td>
