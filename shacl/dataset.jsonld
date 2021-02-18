@@ -29,7 +29,7 @@
           "sh:path": {
             "@id": "dct:description"
           },
-          "sh:minCount": 1
+          "sh:minCount": 0
         },
         {
           "sh:path": {
@@ -138,7 +138,7 @@
           "sh:path": {
             "@id": "schema:description"
           },
-          "sh:minCount": 1
+          "sh:minCount": 0
         },
         {
           "sh:path": {

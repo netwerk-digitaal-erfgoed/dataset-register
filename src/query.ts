@@ -93,11 +93,11 @@ export const selectQuery = `
   SELECT * WHERE {
     ${dataset} a schema:Dataset ;
       schema:name ${name} ;
-      schema:description ${description} ;
       schema:license ${license} ;
       schema:creator ${creator} ;
       schema:distribution ${distribution} .
       
+      OPTIONAL { ${dataset} schema:description ${description} ;
       OPTIONAL { ${dataset} schema:identifier ${identifier} }
       OPTIONAL { ${dataset} schema:alternateName ${alternateName} }
       OPTIONAL { ${dataset} schema:dateCreated ${dateCreated} }
