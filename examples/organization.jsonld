@@ -3,5 +3,6 @@
   "@type": "Organization",
   "url": "https://www.kb.nl/",
   "name": "Koninklijke Bibliotheek",
+  "alternateName": "KB",
   "sameAs": "https://ror.org/02w4jbg70"
 }

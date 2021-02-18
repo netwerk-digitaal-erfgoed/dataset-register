@@ -164,8 +164,17 @@ See also [[DWBP-UCR#R-ProvAvailable]].
             <td>A link to the organization’s website.</td>
 			<td>1</td>
             <td>Required</td>
-		</tr>
-		<tr>
+        </tr>
+        <tr>
+            <th scope="row">[schema:alternateName](https://schema.org/alternateName)</th>
+            <td>Alternative names such as an abbreviation that the organization is known under.</td>
+            <td>0..n</td>
+            <td>Recommended</td>
+        </tr>
+        <tr>
+            <th scope="row">Identifications</th>
+            <td>0..n</td>
+            <td>**OPTIONAL.** Links to the organization in other databases.</td>
             <th scope="row">[schema:sameAs](https://schema.org/sameAs)</th>
             <td>Links to the organization in other databases.</td>
 			<td>0..n</td>
