@@ -325,8 +325,8 @@ even if it is a query endpoint.
 		<tr>
             <th scope="row">[schema:name](https://schema.org/name)</th>
             <td>Name of the distribution, depicting the type of distribution.</td>
-            <td>1</td>			
-            <td>Required</td>
+            <td>0..1</td>			
+            <td>Recommended</td>
         </tr>
 		<tr>
             <th scope="row">[schema:description](https://schema.org/description)</th>
