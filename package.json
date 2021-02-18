@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "engines": {
+    "node": ">=11.14"
+  },
   "scripts": {
     "start": "node build/src/main.js",
     "dev": "ts-node-dev --files src/main.ts",
