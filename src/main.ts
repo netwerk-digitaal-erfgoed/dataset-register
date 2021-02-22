@@ -1,4 +1,5 @@
 import {
+  GraphDbAllowedRegistrationDomainStore,
   GraphDbClient,
   GraphDbDatasetStore,
   GraphDbRegistrationStore,
@@ -22,6 +23,9 @@ const client = new GraphDbClient(
 
   const datasetStore = new GraphDbDatasetStore(client);
   const registrationStore = new GraphDbRegistrationStore(client);
+  const allowedRegistrationDomainStore = new GraphDbAllowedRegistrationDomainStore(
+    client
+  );
   const crawler = new Crawler(registrationStore, datasetStore);
   const validator = await ShaclValidator.fromUrl('shacl/dataset.jsonld');
 
@@ -38,6 +42,7 @@ const client = new GraphDbClient(
     const httpServer = await server(
       datasetStore,
       registrationStore,
+      allowedRegistrationDomainStore,
       validator,
       {logger: process.env.LOG ? !!+process.env.LOG : true}
     );

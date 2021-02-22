@@ -5,7 +5,11 @@ import {URL} from 'url';
 import querystring from 'querystring';
 import {Quad} from 'rdf-js';
 import {Writer} from 'n3';
-import {Registration, RegistrationStore} from './registration';
+import {
+  AllowedRegistrationDomainStore,
+  Registration,
+  RegistrationStore,
+} from './registration';
 import {DatasetStore, extractIris} from './dataset';
 
 /**
@@ -225,6 +229,28 @@ export class GraphDbRegistrationStore implements RegistrationStore {
           [] // Irrelevant for now.
         )
     );
+  }
+}
+
+export class GraphDbAllowedRegistrationDomainStore
+  implements AllowedRegistrationDomainStore {
+  constructor(
+    private readonly client: GraphDbClient,
+    private readonly allowedDomainNamesGraph = 'https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names'
+  ) {}
+
+  async contains(...domainNames: Array<string>) {
+    const result = await this.client.query(`
+      SELECT * WHERE {
+        GRAPH <${this.allowedDomainNamesGraph}> {
+          ?s <https://data.netwerkdigitaalerfgoed.nl/allowed_domain_names/def/domain_name> ?domainNames .
+          VALUES ?domainNames { ${domainNames
+            .map(domainName => `"${domainName}"`)
+            .join(' ')} }
+        }
+      }`);
+
+    return result.results.bindings.length > 0;
   }
 }
 

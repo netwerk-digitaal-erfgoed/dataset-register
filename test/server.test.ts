@@ -3,7 +3,11 @@ import {FastifyInstance} from 'fastify';
 import {Server} from 'http';
 import {server} from '../src/server';
 import {ShaclValidator} from '../src/validator';
-import {MockDatasetStore, MockRegistrationStore} from './mock';
+import {
+  MockAllowedRegistrationDomainStore,
+  MockDatasetStore,
+  MockRegistrationStore,
+} from './mock';
 
 let httpServer: FastifyInstance<Server>;
 describe('Server', () => {
@@ -11,6 +15,7 @@ describe('Server', () => {
     httpServer = await server(
       new MockDatasetStore(),
       new MockRegistrationStore(),
+      new MockAllowedRegistrationDomainStore(),
       await ShaclValidator.fromUrl('shacl/dataset.jsonld')
     );
 
@@ -79,5 +84,31 @@ describe('Server', () => {
     });
     nockDone();
     expect(response.statusCode).toEqual(406);
+  });
+
+  it('rejects unauthorized domains', async () => {
+    const response = await httpServer.inject({
+      method: 'POST',
+      url: '/datasets',
+      headers: {'Content-Type': 'application/ld+json'},
+      payload: JSON.stringify({
+        '@id': 'https://subdomain.not-allowed.com/dataset',
+      }),
+    });
+    expect(response.statusCode).toEqual(403);
+  });
+
+  it('accepts authorized domains', async () => {
+    const {nockDone} = await nock.back('post-dataset.json');
+    const response = await httpServer.inject({
+      method: 'POST',
+      url: '/datasets',
+      headers: {'Content-Type': 'application/ld+json'},
+      payload: JSON.stringify({
+        '@id': 'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html',
+      }),
+    });
+    nockDone();
+    expect(response.statusCode).toEqual(202);
   });
 });

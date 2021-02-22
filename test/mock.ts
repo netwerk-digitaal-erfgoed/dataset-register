@@ -1,4 +1,8 @@
-import {Registration, RegistrationStore} from '../src/registration';
+import {
+  AllowedRegistrationDomainStore,
+  Registration,
+  RegistrationStore,
+} from '../src/registration';
 import {URL} from 'url';
 import {DatasetStore} from '../src/dataset';
 import DatasetExt from 'rdf-ext/lib/Dataset';
@@ -21,6 +25,15 @@ export class MockRegistrationStore implements RegistrationStore {
 
   store(registration: Registration): void {
     this.registrations.set(registration.url, registration);
+  }
+}
+
+export class MockAllowedRegistrationDomainStore
+  implements AllowedRegistrationDomainStore {
+  private readonly domainNames: Array<string> = ['netwerkdigitaalerfgoed.nl'];
+
+  contains(domainName: string): Promise<boolean> {
+    return Promise.resolve(this.domainNames.includes(domainName));
   }
 }
 

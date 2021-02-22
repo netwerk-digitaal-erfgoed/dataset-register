@@ -9,13 +9,19 @@ import {toStream} from 'rdf-dataset-ext';
 import {dereference, fetch, NoDatasetFoundAtUrl, UrlNotFound} from './fetch';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import {URL} from 'url';
-import {Registration, RegistrationStore} from './registration';
+import {
+  AllowedRegistrationDomainStore,
+  Registration,
+  RegistrationStore,
+} from './registration';
 import {DatasetStore, extractIris} from './dataset';
 import {Server} from 'http';
+import * as psl from 'psl';
 
 export async function server(
   datasetStore: DatasetStore,
   registrationStore: RegistrationStore,
+  allowedRegistrationDomainStore: AllowedRegistrationDomainStore,
   validator: Validator,
   options?: FastifyServerOptions
 ): Promise<FastifyInstance<Server>> {
@@ -65,9 +71,26 @@ export async function server(
     }
   }
 
+  async function domainIsAllowed(url: URL): Promise<boolean> {
+    const result = psl.parse(url.hostname);
+    if (result.error || result.domain === null) {
+      return false;
+    }
+
+    return await allowedRegistrationDomainStore.contains(
+      result.domain,
+      result.input
+    );
+  }
+
   server.post('/datasets', datasetsRequest, async (request, reply) => {
     const url = new URL((request.body as {'@id': string})['@id']);
     request.log.info(url.toString());
+    if (!(await domainIsAllowed(url))) {
+      reply.code(403).send({error: 'Domain is not allowed'});
+      return;
+    }
+
     if (await validate(url, reply)) {
       const datasets = await fetch(url);
       reply.code(202).send();
