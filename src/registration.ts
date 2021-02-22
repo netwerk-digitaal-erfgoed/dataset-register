@@ -31,3 +31,10 @@ export interface RegistrationStore {
   store(registration: Registration): void;
   findRegistrationsReadBefore(date: Date): Promise<Registration[]>;
 }
+
+export interface AllowedRegistrationDomainStore {
+  /**
+   * Returns true if the store contains at least one of `domainNames`.
+   */
+  contains(...domainNames: Array<string>): Promise<boolean>;
+}
