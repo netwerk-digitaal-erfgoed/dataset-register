@@ -20,6 +20,16 @@ describe('Validator', () => {
     expect(report.state).toBe('invalid');
   });
 
+  it('accepts valid DCAT dataset', async () => {
+    const report = await validate('dataset-dcat-valid.jsonld');
+    expect(report.state).toEqual('valid');
+  });
+
+  it('reports invalid DCAT dataset', async () => {
+    const report = await validate('dataset-dcat-invalid.jsonld');
+    expect(report.state).toBe('invalid');
+  });
+
   it('accepts valid Schema.org catalog', async () => {
     const report = await validate('catalog-schema-org-valid.jsonld');
     expect(report.state).toEqual('valid');
@@ -30,6 +40,16 @@ describe('Validator', () => {
     expect(report).not.toBeNull();
   });
 
+  it('accepts valid DCAT catalog', async () => {
+    const report = await validate('catalog-dcat-valid.jsonld');
+    expect(report.state).toEqual('valid');
+  });
+
+  it('reports invalid DCAT catalog', async () => {
+    const report = await validate('catalog-dcat-invalid.jsonld');
+    expect(report.state).toEqual('no-dataset');
+  });
+
   it('accepts a list of valid Schema.org datasets', async () => {
     const report = await validate('datasets-schema-org-valid.jsonld');
     expect(report.state).toEqual('valid');
@@ -37,6 +57,16 @@ describe('Validator', () => {
 
   it('rejects a list that contains at least one invalid Schema.org dataset', async () => {
     const report = await validate('datasets-schema-org-invalid.jsonld');
+    expect(report).not.toBeNull();
+  });
+
+  it('accepts a list of valid DCAT datasets', async () => {
+    const report = await validate('datasets-dcat-valid.jsonld');
+    expect(report.state).toEqual('valid');
+  });
+
+  it('rejects a list that contains at least one invalid DCAT dataset', async () => {
+    const report = await validate('datasets-dcat-invalid.jsonld');
     expect(report).not.toBeNull();
   });
 

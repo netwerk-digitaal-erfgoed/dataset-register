@@ -37,7 +37,7 @@ const distributionLicense = '?distribution_license';
 const distributionName = '?distribution_name';
 const distributionSize = '?distribution_size';
 
-const dcat = (property: string) =>
+export const dcat = (property: string) =>
   factory.namedNode(`http://www.w3.org/ns/dcat#${property}`);
 const dct = (property: string) =>
   factory.namedNode(`http://purl.org/dc/terms/${property}`);
@@ -45,7 +45,7 @@ const foaf = (property: string) =>
   factory.namedNode(`http://xmlns.com/foaf/0.1/${property}`);
 const owl = (property: string) =>
   factory.namedNode(`http://www.w3.org/2002/07/owl#${property}`);
-const rdf = (property: string) =>
+export const rdf = (property: string) =>
   factory.namedNode(`http://www.w3.org/1999/02/22-rdf-syntax-ns#${property}`);
 
 // https://www.w3.org/TR/vocab-dcat-2/#Class:Dataset
@@ -56,14 +56,14 @@ const datasetMapping = new Map([
   [description, dct('description')],
   [license, dct('license')],
   [dateCreated, dct('created')],
-  [datePublished, dct('issues')],
+  [datePublished, dct('issued')],
   [dateModified, dct('modified')],
   [language, dct('language')],
   [source, dct('source')],
-  [keyword, dct('keyword')],
+  [keyword, dcat('keyword')],
   // [spatial, dct('spatial')],
   // [temporal, dct('temporal')],
-  [mainEntityOfPage, dct('landingPage')],
+  [mainEntityOfPage, dcat('landingPage')],
   [version, owl('versionInfo')],
 ]);
 
@@ -90,13 +90,25 @@ const distributionMapping = new Map([
 
 export const datasetType = dcat('Dataset');
 export const selectQuery = `
+  PREFIX dcat: <http://www.w3.org/ns/dcat#>
+  PREFIX dct: <http://purl.org/dc/terms/>
   SELECT * WHERE {
-    ${dataset} a schema:Dataset ;
-      schema:name ${name} ;
-      schema:license ${license} ;
-      schema:creator ${creator} ;
-      schema:distribution ${distribution} .
-
+    {
+      ${dataset} a schema:Dataset ;
+        schema:name ${name} ; 
+        schema:license ${license} ;
+        schema:creator ${creator} ;
+        schema:distribution ${distribution} .
+        
+      FILTER (!isBlank(${license}))
+        
+      ${creator} a schema:Organization ;
+        schema:name ${creatorName} .
+        
+      ${distribution} a schema:DataDownload ;
+        schema:contentUrl ${distributionUrl} ;
+        schema:encodingFormat ${distributionFormat} . 
+       
       OPTIONAL { ${dataset} schema:description ${description} } 
       OPTIONAL { ${dataset} schema:identifier ${identifier} }
       OPTIONAL { ${dataset} schema:alternateName ${alternateName} }
@@ -106,33 +118,53 @@ export const selectQuery = `
       OPTIONAL { ${dataset} schema:inLanguage ${language} }
       OPTIONAL { ${dataset} schema:isBasedOnUrl ${source} }
       OPTIONAL { ${dataset} schema:keyword ${keyword} }
-      OPTIONAL { ${dataset} schema:spatialCoverage ${spatial} }
-      OPTIONAL { ${dataset} schema:temporalCoverage ${temporal} }
       OPTIONAL { ${dataset} schema:version ${version} }
       OPTIONAL { ${dataset} schema:mainEntityOfPage ${mainEntityOfPage} }
- 
-      FILTER (!isBlank(${license}))
-
-    ${creator} a schema:Organization ;
-      schema:name ${creatorName} .
-      OPTIONAL { ?creator schema:url ${creatorUrl} }
-      OPTIONAL { ?creator schema:sameAs ${creatorSameAs} }
-    
-    ${distribution} a schema:DataDownload ;
-        schema:contentUrl ${distributionUrl} ;
-        schema:encodingFormat ${distributionFormat} . 
-              
-        OPTIONAL { ?distribution schema:fileFormat ${distributionMediaType} }
-        OPTIONAL { ?distribution schema:datePublished ${distributionDatePublished} }
-        OPTIONAL { ?distribution schema:dateModified ${distributionDateModified} }
-        OPTIONAL { ?distribution schema:description ${distributionDescription} }
-        OPTIONAL { ?distribution schema:inLanguage ${distributionLanguage} }
-        OPTIONAL { ?distribution schema:license ${distributionLicense} }
-        OPTIONAL { ?distribution schema:name ${distributionName} }
-        OPTIONAL { ?distribution schema:contentSize ${distributionSize} }      
- 
-  } LIMIT 10000
-`;
+      
+      OPTIONAL { ${distribution} schema:fileFormat ${distributionMediaType} }
+      OPTIONAL { ${distribution} schema:datePublished ${distributionDatePublished} }
+      OPTIONAL { ${distribution} schema:dateModified ${distributionDateModified} }
+      OPTIONAL { ${distribution} schema:description ${distributionDescription} }
+      OPTIONAL { ${distribution} schema:inLanguage ${distributionLanguage} }
+      OPTIONAL { ${distribution} schema:license ${distributionLicense} }
+      OPTIONAL { ${distribution} schema:name ${distributionName} }
+      OPTIONAL { ${distribution} schema:contentSize ${distributionSize} }
+    } UNION { 
+      ${dataset} a dcat:Dataset ;
+        dct:title ${name} ;
+        dct:license ${license} ;
+        dct:creator ${creator} ;
+        dcat:distribution ${distribution} .
+        
+      ${creator} a foaf:Organization ;
+        foaf:name ${creatorName} .
+        
+      ${distribution} a dcat:Distribution ;
+        dcat:accessURL ${distributionUrl} ;
+        dct:format ${distributionFormat} .
+        
+      OPTIONAL { ${dataset} dct:description ${description} }
+      OPTIONAL { ${dataset} dct:identifier ${identifier} }
+      OPTIONAL { ${dataset} dct:alternative ${alternateName} }
+      OPTIONAL { ${dataset} dct:created ${dateCreated} }
+      OPTIONAL { ${dataset} dct:issued ${datePublished} }
+      OPTIONAL { ${dataset} dct:modified ${dateModified} }
+      OPTIONAL { ${dataset} dct:language ${language} }
+      OPTIONAL { ${dataset} dct:source ${source} }
+      OPTIONAL { ${dataset} dcat:keyword ${keyword} }
+      OPTIONAL { ${dataset} owl:versionInfo ${version} }
+      OPTIONAL { ${dataset} dcat:landingPage ${mainEntityOfPage} }
+      
+      OPTIONAL { ${distribution} dcat:mediaType ${distributionMediaType} }
+      OPTIONAL { ${distribution} dct:issued ${distributionDatePublished} }
+      OPTIONAL { ${distribution} dct:modified ${distributionDateModified} }
+      OPTIONAL { ${distribution} dct:description ${distributionDescription} }
+      OPTIONAL { ${distribution} dct:language ${distributionLanguage} }
+      OPTIONAL { ${distribution} dct:license ${distributionLicense} }
+      OPTIONAL { ${distribution} dct:title ${distributionName} }
+      OPTIONAL { ${distribution} dcat:byteSize ${distributionSize} }
+    }
+  } LIMIT 10000`;
 
 /**
  * Use skolemized values because they are correct, unlike the generated blank node ids.

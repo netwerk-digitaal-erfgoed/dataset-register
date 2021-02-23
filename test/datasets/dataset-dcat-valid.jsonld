@@ -1,0 +1,27 @@
+{
+  "@context": {
+    "dcat": "http://www.w3.org/ns/dcat#",
+    "dct": "http://purl.org/dc/terms/",
+    "foaf": "http://xmlns.com/foaf/0.1/"
+  },
+  "@type": "dcat:Dataset",
+  "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
+  "dct:title": "Alba amicorum van de Koninklijke Bibliotheek",
+  "dct:identifier": "http://data.bibliotheken.nl/id/dataset/rise-alba",
+  "dct:keyword": [
+    "alba amicorum"
+  ],
+  "dct:license": "http://creativecommons.org/publicdomain/zero/1.0/",
+  "dct:creator": {
+    "@type": "foaf:Organization",
+    "foaf:name": "Koninklijke Bibliotheek",
+    "foaf:workplaceHomepage": "https://www.kb.nl/"
+  },
+  "dcat:distribution": [
+    {
+      "@type": "dcat:Distribution",
+      "dct:format": "application/rdf+xml",
+      "dcat:accessURL": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
+    }
+  ]
+}

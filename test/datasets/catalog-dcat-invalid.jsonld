@@ -1,0 +1,8 @@
+{
+  "@context": {
+    "dcat": "http://www.w3.org/ns/dcat#"
+  },
+  "@type": "dcat:Catalog",
+  "dcat:dataset": [
+  ]
+}
