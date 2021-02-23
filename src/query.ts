@@ -111,7 +111,7 @@ export const selectQuery = `
       OPTIONAL { ${dataset} schema:version ${version} }
       OPTIONAL { ${dataset} schema:mainEntityOfPage ${mainEntityOfPage} }
  
-      FILTER isIri(${license})
+      FILTER (!isBlank(${license}))
 
     ${creator} a schema:Organization ;
       schema:name ${creatorName} .
