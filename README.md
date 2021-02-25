@@ -7,7 +7,7 @@ For a demo application using this prototype, see https://demo.netwerkdigitaalerf
 The backlog is also available at
 the [project board](https://github.com/orgs/netwerk-digitaal-erfgoed/projects/1?card_filter_query=repo%3Anetwerk-digitaal-erfgoed%2Fregister).
 
-API documentation is available at https://demo.netwerkdigitaalerfgoed.nl/register-api.
+API documentation is available at https://demo.netwerkdigitaalerfgoed.nl/register-api/static/index.html.
 
 ## Run the application
 
