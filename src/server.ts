@@ -4,7 +4,6 @@ import fastify, {
   FastifyServerOptions,
 } from 'fastify';
 import {Validator} from './validator';
-import {StreamWriter} from 'n3';
 import {toStream} from 'rdf-dataset-ext';
 import {dereference, fetch, NoDatasetFoundAtUrl, UrlNotFound} from './fetch';
 import DatasetExt from 'rdf-ext/lib/Dataset';
@@ -17,6 +16,10 @@ import {
 import {DatasetStore, extractIris} from './dataset';
 import {Server} from 'http';
 import * as psl from 'psl';
+import rdfSerializer from 'rdf-serialize';
+
+const serializer = (contentType: string) => (dataset: DatasetExt) =>
+  rdfSerializer.serialize(toStream(dataset), {contentType});
 
 export async function server(
   datasetStore: DatasetStore,
@@ -26,6 +29,16 @@ export async function server(
   options?: FastifyServerOptions
 ): Promise<FastifyInstance<Server>> {
   const server = fastify(options);
+  server.register(require('fastify-accepts-serializer'), {
+    serializers: (await rdfSerializer.getContentTypes()).map(contentType => {
+      return {
+        regex: new RegExp(contentType.replace('+', '\\+')),
+        serializer: serializer(contentType),
+      };
+    }),
+    default: 'application/ld+json',
+  });
+
   const datasetsRequest = {
     schema: {
       body: {
@@ -47,10 +60,12 @@ export async function server(
       dataset = await dereference(url);
     } catch (e) {
       if (e instanceof UrlNotFound) {
-        reply.code(404).send('URL not found: ' + url);
+        reply.log.info(`URL ${url.toString()} not found`);
+        reply.code(404).send();
       }
       if (e instanceof NoDatasetFoundAtUrl) {
-        reply.code(406).send(e.message);
+        reply.log.info(`No dataset found at URL ${url.toString()}`);
+        reply.code(406).send();
       }
       return null;
     }
@@ -63,9 +78,7 @@ export async function server(
         reply.code(406).send();
         return null;
       case 'invalid': {
-        const streamWriter = new StreamWriter();
-        const validationRdf = streamWriter.import(toStream(validation.errors));
-        reply.code(400).send(validationRdf);
+        reply.code(400).send(validation.errors);
         return null;
       }
     }
@@ -87,7 +100,7 @@ export async function server(
     const url = new URL((request.body as {'@id': string})['@id']);
     request.log.info(url.toString());
     if (!(await domainIsAllowed(url))) {
-      reply.code(403).send({error: 'Domain is not allowed'});
+      reply.code(403).send();
       return;
     }
 
