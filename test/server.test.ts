@@ -69,6 +69,7 @@ describe('Server', () => {
     });
     nockDone();
     expect(response.statusCode).toEqual(400);
+    expect(response.headers['content-type']).toEqual('application/ld+json');
   });
 
   it('handles UTF-8 BOMs', async () => {
