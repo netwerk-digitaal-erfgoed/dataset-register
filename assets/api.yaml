@@ -1,0 +1,140 @@
+openapi: 3.0.3
+info:
+  title: Register
+  description: Netwerk Digitaal Erfgoed Register REST API
+  version: 0.1.0
+  contact:
+    name: Netwerk Digitaal Erfgoed
+    url: 'https://demo.netwerkdigitaalerfgoed.nl/register/faq.php'
+    email: bob.coret@netwerkdigitaalerfgoed.nl
+servers:
+  -
+    url: 'https://demo.netwerkdigitaalerfgoed.nl/register-api'
+    description: 'Register API'
+paths:
+  /datasets:
+    post:
+      summary: Register dataset descriptions
+      description: |-
+        Submit dataset description(s) to the Register. Each dataset description will be validated before it is added to the Register.
+
+        Only URLs that are on the allow list can be registered. Please [contact us](mailto:bob.coret@netwerkdigitaalerfgoed.nl) to have your domain added.
+      requestBody:
+        content:
+          application/ld+json:
+            schema:
+              type: object
+              required:
+                - '@id'
+              properties:
+                '@id':
+                  type: string
+                  description: 'URL where the dataset description(s) can be found.'
+            examples:
+              valid:
+                summary: A valid dataset
+                value: {"@id": "https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html"}
+              invalid:
+                summary: An invalid dataset
+                value: {"@id": "https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2a.html"}
+      responses:
+        202:
+          description: All dataset descriptions at the submitted URL are valid according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a>. The datasets will added to the Register shortly.
+        400:
+          description: One or more dataset descriptions are invalid according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a>. The response body contains a list of [SHACL](https://www.w3.org/TR/shacl/) violations.
+        403:
+          description: The submitted URL is not on the domain name allow list. [Contact us](mailto:bob.coret@netwerkdigitaalerfgoed.nl) to have your intitution’s domain name added.
+        404:
+          description: The URL cannot be resolved.
+        406:
+          description: The URL can be resolved but it contains no datasets.
+  /datasets/validate:
+    put:
+      summary: Validate dataset descriptions
+      description: |-
+        Validate dataset description(s) according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a> that are available at the submitted URL. That URL may resolve:
+
+        - a single dataset which will be validated;
+        - multiple datasets, each of which will be validated;
+        - multiple datasets in a data catalog, which will be validated in full.
+      operationId: validate
+      requestBody:
+        content:
+          application/ld+json:
+            schema:
+              type: object
+              required:
+                - '@id'
+              properties:
+                '@id':
+                  type: string
+                  description: 'URL where the dataset description(s) can be found.'
+            examples:
+              valid:
+                summary: A valid dataset
+                value: {"@id": "https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html"}
+              invalid:
+                summary: An invalid dataset
+                value: {"@id": "https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2a.html"}
+      responses:
+        200:
+          description: All dataset descriptions are valid according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a>.
+        400:
+          description: One or more dataset descriptions are invalid according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a>. The response body contains a list of [SHACL](https://www.w3.org/TR/shacl/) violations.
+          content:
+            application/ld+json:
+              example:
+                - '@id': '_:b7'
+                  '@type':
+                    - 'http://www.w3.org/ns/shacl#ValidationResult'
+                  'http://www.w3.org/ns/shacl#resultSeverity':
+                    - '@id': 'http://www.w3.org/ns/shacl#Violation'
+                  'http://www.w3.org/ns/shacl#sourceConstraintComponent':
+                    - '@id': 'http://www.w3.org/ns/shacl#MinCountConstraintComponent'
+                  'http://www.w3.org/ns/shacl#sourceShape':
+                    - '@id': '_:df_28_15'
+                - '@id': '_:df_28_15'
+                  'http://www.w3.org/ns/shacl#path':
+                    - '@id': 'http://schema.org/creator'
+                  'http://www.w3.org/ns/shacl#minCount':
+                    - '@value': '1'
+                      '@type': 'http://www.w3.org/2001/XMLSchema#integer'
+                  'http://www.w3.org/ns/shacl#class':
+                    - '@id': 'http://schema.org/Organization'
+                  'http://www.w3.org/ns/shacl#node':
+                    - '@value': 'schema:CreatorShape'
+                - '@id': '_:b7'
+                  'http://www.w3.org/ns/shacl#focusNode':
+                    - '@id': 'http://data.bibliotheken.nl/id/dataset/rise-alba'
+                  'http://www.w3.org/ns/shacl#resultPath':
+                    - '@id': 'http://schema.org/creator'
+                  'http://www.w3.org/ns/shacl#resultMessage':
+                    - '@value': Less than 1 values
+                - '@id': '_:report'
+                  '@type':
+                    - 'http://www.w3.org/ns/shacl#ValidationReport'
+                  'http://www.w3.org/ns/shacl#conforms':
+                    - '@value': 'false'
+                      '@type': 'http://www.w3.org/2001/XMLSchema#boolean'
+                  'http://www.w3.org/ns/shacl#result':
+                    - '@id': '_:b10'
+            text/turtle:
+              example: |-
+                _:b11 a <http://www.w3.org/ns/shacl#ValidationResult>;
+                  <http://www.w3.org/ns/shacl#resultSeverity> <http://www.w3.org/ns/shacl#Violation>;
+                  <http://www.w3.org/ns/shacl#sourceConstraintComponent> <http://www.w3.org/ns/shacl#MinCountConstraintComponent>;
+                  <http://www.w3.org/ns/shacl#sourceShape> _:df_28_15.
+                _:df_28_15 <http://www.w3.org/ns/shacl#path> <http://schema.org/creator>;
+                  <http://www.w3.org/ns/shacl#minCount> 1;
+                  <http://www.w3.org/ns/shacl#class> <http://schema.org/Organization>;
+                  <http://www.w3.org/ns/shacl#node> "schema:CreatorShape".
+                _:b11 <http://www.w3.org/ns/shacl#focusNode> <http://data.bibliotheken.nl/id/dataset/rise-alba>;
+                  <http://www.w3.org/ns/shacl#resultPath> <http://schema.org/creator>;
+                  <http://www.w3.org/ns/shacl#resultMessage> "Less than 1 values".
+                _:report a <http://www.w3.org/ns/shacl#ValidationReport>;
+                  <http://www.w3.org/ns/shacl#conforms> false;
+                  <http://www.w3.org/ns/shacl#result> _:b11.
+        404:
+          description: The URL cannot be resolved.
+        406:
+          description: The URL can be resolved but it contains no datasets.
