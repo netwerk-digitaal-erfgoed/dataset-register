@@ -12,6 +12,7 @@ COPY package*.json ./
 RUN npm ci
 COPY --from=build /app/build /app/build
 COPY --from=build /app/shacl /app/shacl
+COPY --from=build /app/assets /app/assets
 USER node
 CMD ["npm", "start"]
 EXPOSE 3000

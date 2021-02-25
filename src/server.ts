@@ -17,6 +17,7 @@ import {DatasetStore, extractIris} from './dataset';
 import {Server} from 'http';
 import * as psl from 'psl';
 import rdfSerializer from 'rdf-serialize';
+import fastifySwagger from 'fastify-swagger';
 
 const serializer = (contentType: string) => (dataset: DatasetExt) =>
   rdfSerializer.serialize(toStream(dataset), {contentType});
@@ -29,15 +30,40 @@ export async function server(
   options?: FastifyServerOptions
 ): Promise<FastifyInstance<Server>> {
   const server = fastify(options);
-  server.register(require('fastify-accepts-serializer'), {
-    serializers: (await rdfSerializer.getContentTypes()).map(contentType => {
-      return {
-        regex: new RegExp(contentType.replace('+', '\\+')),
-        serializer: serializer(contentType),
-      };
-    }),
-    default: 'application/ld+json',
-  });
+
+  server
+    .register(fastifySwagger, {
+      mode: 'static',
+      specification: {
+        baseDir: __dirname,
+        path: './assets/api.yaml',
+      },
+      exposeRoute: true,
+      routePrefix: '/',
+    })
+    .register(require('fastify-accepts-serializer'), {
+      // Doesn't work, so Accept header is required.
+      // default: 'application/ld+json',
+    })
+    .addHook('onRequest', async (request, reply) => {
+      if (request.headers.accept === undefined) {
+        request.headers.accept = 'application/ld+json';
+      }
+    });
+
+  const rdfSerializerConfig = {
+    config: {
+      default: 'application/ld+json',
+      serializers: [
+        ...(await rdfSerializer.getContentTypes()).map(contentType => {
+          return {
+            regex: new RegExp(contentType.replace('+', '\\+')),
+            serializer: serializer(contentType),
+          };
+        }),
+      ],
+    },
+  };
 
   const datasetsRequest = {
     schema: {
@@ -96,33 +122,41 @@ export async function server(
     );
   }
 
-  server.post('/datasets', datasetsRequest, async (request, reply) => {
-    const url = new URL((request.body as {'@id': string})['@id']);
-    request.log.info(url.toString());
-    if (!(await domainIsAllowed(url))) {
-      reply.code(403).send();
-      return;
-    }
+  server.post(
+    '/datasets',
+    {...datasetsRequest, ...rdfSerializerConfig},
+    async (request, reply) => {
+      const url = new URL((request.body as {'@id': string})['@id']);
+      request.log.info(url.toString());
+      if (!(await domainIsAllowed(url))) {
+        reply.code(403).send();
+        return;
+      }
 
-    if (await validate(url, reply)) {
-      const datasets = await fetch(url);
-      reply.code(202).send();
-      await datasetStore.store(datasets);
-      const registration = new Registration(url, new Date(), [
-        ...extractIris(datasets).keys(),
-      ]);
-      registration.read(200);
-      await registrationStore.store(registration);
+      if (await validate(url, reply)) {
+        const datasets = await fetch(url);
+        reply.code(202).send();
+        await datasetStore.store(datasets);
+        const registration = new Registration(url, new Date(), [
+          ...extractIris(datasets).keys(),
+        ]);
+        registration.read(200);
+        await registrationStore.store(registration);
+      }
     }
-  });
+  );
 
-  server.put('/datasets/validate', datasetsRequest, async (request, reply) => {
-    const url = new URL((request.body as {'@id': string})['@id']);
-    request.log.info(url.toString());
-    if ((await validate(url, reply)) !== null) {
-      reply.code(200).send();
+  server.put(
+    '/datasets/validate',
+    {...datasetsRequest, ...rdfSerializerConfig},
+    async (request, reply) => {
+      const url = new URL((request.body as {'@id': string})['@id']);
+      request.log.info(url.toString());
+      if ((await validate(url, reply)) !== null) {
+        reply.code(200).send();
+      }
     }
-  });
+  );
 
   /**
    * Make Fastify accept JSON-LD payloads.
