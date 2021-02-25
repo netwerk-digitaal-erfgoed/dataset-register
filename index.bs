@@ -196,7 +196,8 @@ This information answers user questions such as:
 
 ### Basic information ### {#dataset-basic}
 
-Publishers *MUST* include basic information about the dataset, at the very minimum its title and [=publisher=]. 
+Publishers *MUST* include basic information about the dataset,
+at the very minimum its [[IRI]], title and [=publisher=].
 
 <div class="example">
     Basic dataset information:
@@ -204,6 +205,7 @@ Publishers *MUST* include basic information about the dataset, at the very minim
     <pre highlight=json-ld>
         {
           "@context": "https://schema.org/",
+          "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
           "@type": "Dataset",
           "name": "Alba amicorum van de Koninklijke Bibliotheek",
           "creator": {
@@ -224,6 +226,7 @@ If more information is available, publishers *SHOULD* add it.
     <pre highlight=json-ld line-numbers line-highlight="11-15">
         {
           "@context": "https://schema.org/",
+          "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
           "@type": "Dataset",
           "name": "Alba amicorum van de Koninklijke Bibliotheek",
           "creator": {
@@ -315,7 +318,7 @@ even if it is a query endpoint.
     <tbody>
         <tr>
             <th scope="row">@id</th>
-            <td>The IRI where the distribution is available in a browser.</td>
+            <td>The [[IRI]] where the distribution is available in a browser.</td>
             <td>1</td>
 			<td>Required</td>
         </tr>
