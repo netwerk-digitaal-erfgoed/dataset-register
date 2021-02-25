@@ -44,6 +44,7 @@ const client = new GraphDbClient(
       registrationStore,
       allowedRegistrationDomainStore,
       validator,
+      process.env.DOCS_URL ? process.env.DOCS_URL : undefined,
       {logger: process.env.LOG ? !!+process.env.LOG : true}
     );
     await httpServer.listen(3000, '0.0.0.0');

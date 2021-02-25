@@ -27,6 +27,7 @@ export async function server(
   registrationStore: RegistrationStore,
   allowedRegistrationDomainStore: AllowedRegistrationDomainStore,
   validator: Validator,
+  docsUrl = '/',
   options?: FastifyServerOptions
 ): Promise<FastifyInstance<Server>> {
   const server = fastify(options);
@@ -39,7 +40,7 @@ export async function server(
         path: './assets/api.yaml',
       },
       exposeRoute: true,
-      routePrefix: '/',
+      routePrefix: docsUrl,
     })
     .register(require('fastify-accepts-serializer'), {
       // Doesn't work, so Accept header is required.
