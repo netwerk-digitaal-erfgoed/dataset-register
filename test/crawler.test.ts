@@ -3,6 +3,7 @@ import {Crawler} from '../src/crawler';
 import {URL} from 'url';
 import {MockDatasetStore, MockRegistrationStore} from './mock';
 import nock from 'nock';
+import Pino from 'pino';
 
 let registrationStore: MockRegistrationStore;
 let crawler: Crawler;
@@ -10,7 +11,11 @@ let crawler: Crawler;
 describe('Crawler', () => {
   beforeEach(async () => {
     registrationStore = new MockRegistrationStore();
-    crawler = new Crawler(registrationStore, new MockDatasetStore());
+    crawler = new Crawler(
+      registrationStore,
+      new MockDatasetStore(),
+      Pino({enabled: false})
+    );
   });
 
   it('stores error HTTP response status code', async () => {
