@@ -16,7 +16,7 @@ describe('Server', () => {
       new MockDatasetStore(),
       new MockRegistrationStore(),
       new MockAllowedRegistrationDomainStore(),
-      await ShaclValidator.fromUrl('shacl/register.shacl.ttl')
+      await ShaclValidator.fromUrl('shacl/register.ttl')
     );
 
     nock.back.fixtures = __dirname + '/http';

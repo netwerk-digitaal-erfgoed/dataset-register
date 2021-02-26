@@ -1,0 +1,201 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix schema: <http://schema.org/> .
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix dc: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix reg: <http://terms.netwerkdigitaalerfgoed.nl/ns/register#> .
+
+##
+## Schema.org
+##
+
+#
+# Class shapes
+#
+
+reg:DatacatalogShape
+    a sh:NodeShape ;
+    sh:name "Datacatalogus"@nl, "Data catalog"@en ;
+    rdfs:comment "Een datacatalogus bestaat uit een set van datasetbeschrijvingen"@nl ;
+    sh:targetClass schema:DataCatalog ;
+    sh:property reg:DatatalogProperty ;
+.
+
+reg:DatasetShape
+    a sh:NodeShape ;
+    sh:name "Datasetbeschrijving"@nl, "Dataset description"@en ;
+    rdfs:comment "Een datasetbeschrijving bestaat uit een elementen die de dataset beschrijft"@nl ;
+    sh:and (
+        [ sh:targetClass schema:Dataset ; ]
+        [ sh:not ( [ sh:targetClass schema:WebPage ; ]  ) ]    
+    );
+    sh:nodeKind sh:IRI ;
+
+    # Required properties
+	
+    sh:property reg:SchemaNameProperty,  reg:SchemaCreatorProperty, reg:SchemaLicenseProperty, reg:SchemaDistributionProperty ;
+
+    # Recommended properties
+
+#    TODO
+#    sh:property reg:SchemaDescriptionProperty, reg:SchemaPublisherProperty, reg:SchemaDateCreatedProperty, reg:SchemaDatePublishedProperty, reg:SchemaDateModifiedProperty, reg:SchemaVersionProperty, reg:SchemaManEntityOfPageProperty, reg:SchemaInLanguageProperty, reg:SchemaIsBasedOnUrlProperty, reg:SchemaCitationProperty, reg:SchemaGenreProperty, reg:SchemaKeywordsProperty, reg:SchemaSpatialCoverageProperty, reg:SchemaTemporalCoverageProperty, reg:SchemaIncludedInDataCatalogProperty, reg:SchemaAlternateNameProperty ;
+.
+
+reg:DistributionShape
+    a sh:NodeShape ;
+    sh:targetClass schema:DataDownload ;
+    sh:property reg:DistributionContentUrlProperty, reg:DistributionEncodingFormatProperty ;
+.
+
+reg:CreatorShape
+    a sh:NodeShape ;
+    sh:targetClass schema:Organization ;
+    sh:property reg:CreatorNameProperty ;
+.
+
+reg:CreatorNameProperty a sh:PropertyShape ;
+    sh:minCount 1 ;
+    sh:path schema:name ;
+.
+
+#
+# Property shapes
+#
+
+reg:DistributionContentUrlProperty a sh:PropertyShape ;
+    rdfs:comment "The URL where the distribution can be directly accessed."@en ;
+    sh:minCount 1 ;
+    sh:path schema:contentUrl ;
+    sh:message "Een dataset distributie dient een content URL te bevatten"@nl, "A dataset distribution should contain an content URL"@en ;
+.
+
+reg:DistributionEncodingFormatProperty a sh:PropertyShape ;
+    rdfs:comment "The distribution's MIME format, for example application/sparql-query for a SPARL endpoint or application/ld+json for a data dump serialized as JSON-LD." ;
+    sh:minCount 1 ;
+    sh:path schema:encodingFormat ;
+    sh:message "Een dataset distributie dient een encoding format te bevatten"@nl, "A dataset distribution should contain an encoding format"@en ;
+.
+
+reg:DatatalogProperty a sh:PropertyShape ;
+    sh:class schema:Dataset ;
+    sh:minCount 1 ;
+    sh:node schema:DatasetShape ;
+    sh:path schema:dataset ;
+    sh:message "Een datasetcatalogus dient minimaal een dataset te bevatten"@nl, "A datasetcatalog should contain at least one dataset"@en .
+
+reg:SchemaDatasetRequiredProperties a sh:PropertyGroup ;
+    rdfs:comment "Verplichte properties van een datasetbeschrijving"@nl
+.
+
+reg:SchemaDatasetRecommendedProperties a sh:PropertyGroup ;
+    rdfs:comment "Aangeraden properties van een datasetbeschrijving"@nl
+.
+
+reg:SchemaNameProperty a sh:PropertyShape ;
+    rdfs:comment "Naam van de dataset"@nl ;
+    sh:path schema:name ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "Een datasetbeschrijving dient een naam te bevatten"@nl, "A dataset description should have a name"@en ;
+    sh:group reg:SchemaDatasetRequiredProperties
+.
+
+reg:SchemaDescriptionProperty a sh:PropertyShape ;
+    rdfs:comment "Beschrijving van de dataset"@nl ;
+    sh:path schema:description ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "Een datasetbeschrijving kan een beschrijving bevatten"@nl, "A dataset description could have a description"@en ;
+    sh:group reg:SchemaDatasetRecommendedProperties
+.
+
+reg:SchemaCreatorProperty a sh:PropertyShape ;
+    rdfs:comment "Persoon of organisatie die de dataset heeft gemaakt"@nl ;
+    sh:class schema:Organization ;
+    sh:minCount 1 ;
+    sh:node reg:CreatorShape;
+    sh:path schema:creator ;
+    sh:message "Een datasetbeschrijving dient een maker te bevatten"@nl, "A dataset description should have a creator"@en ;
+    sh:group reg:SchemaDatasetRequiredProperties
+.
+
+reg:SchemaLicenseProperty a sh:PropertyShape ;
+    rdfs:comment "Licentie die van toepassing is op de datasetbeschrijving"@nl ;
+    sh:path schema:license ;
+    sh:or (
+        [ sh:nodeKind sh:Literal ; ]
+        [ sh:nodeKind sh:IRI ; ]
+    ) ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "Een datasetbeschrijving dient een licentie te bevatten (in de vorm van een string of URI)"@nl, "A dataset description should have a license (in the form of a string or URL)"@en ;
+    sh:group reg:SchemaDatasetRequiredProperties ;
+.
+
+reg:SchemaDistributionProperty a sh:PropertyShape ;
+    rdfs:comment "Distributies van een dataset"@nl ;
+    sh:class schema:DataDownload ;
+    sh:minCount 1 ;
+    sh:message "Een datasetbeschrijving dient minimaal een distributie te bevatten"@nl, "A dataset should have at least one distributiion"@en ;
+    sh:node reg:DistributionShape ;
+    sh:path schema:distribution ;
+.
+
+##
+## DCAT
+##
+
+#
+# Class shapes
+#
+
+dcat:DatasetShape
+    a sh:NodeShape ;
+    sh:property [
+        sh:minCount 1 ;
+        sh:path dc:title
+    ], [
+        sh:minCount 0 ;
+        sh:path dc:alternative
+    ], [
+        sh:minCount 0 ;
+        sh:path dc:description
+    ], [
+        sh:minCount 1 ;
+        sh:path dc:license
+    ], [
+        sh:class foaf:Organization ;
+        sh:minCount 1 ;
+        sh:node "dcat:CreatorShape"^^xsd:string ;
+        sh:path dc:creator
+    ], [
+        sh:class dcat:Distribution ;
+        sh:minCount 1 ;
+        sh:node "dcat:DistributionShape"^^xsd:string ;
+        sh:path dcat:distribution
+    ] ;
+    sh:targetClass dcat:Dataset ;
+.
+
+dcat:DistributionShape
+    a sh:NodeShape ;
+    sh:property [
+        sh:minCount 1 ;
+        sh:path dcat:accessURL
+    ], [
+        sh:minCount 1 ;
+        sh:path dc:format
+    ] ;
+    sh:targetClass dcat:Distribution ;
+.
+
+dcat:CreatorShape
+    a sh:NodeShape ;
+    sh:property [
+        sh:minCount 1 ;
+        sh:path foaf:name
+    ] ;
+    sh:targetClass foaf:Organization ;
+.
