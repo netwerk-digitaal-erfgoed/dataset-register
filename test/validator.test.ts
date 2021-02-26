@@ -76,7 +76,7 @@ describe('Validator', () => {
   });
 
   it('rejects RDF that contains no dataset', async () => {
-    const report = await validate('no-register.shacl.ttl');
+    const report = await validate('no-dataset.jsonld');
     expect(report.state).toEqual('no-dataset');
   });
 
