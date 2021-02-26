@@ -7,7 +7,7 @@ let validator: Validator;
 
 describe('Validator', () => {
   beforeAll(async () => {
-    validator = await ShaclValidator.fromUrl('shacl/dataset.jsonld');
+    validator = await ShaclValidator.fromUrl('shacl/register.shacl.ttl');
   });
 
   it('accepts valid Schema.org dataset', async () => {
@@ -101,7 +101,7 @@ describe('Validator', () => {
   });
 
   it('rejects RDF that contains no dataset', async () => {
-    const report = await validate('no-dataset.jsonld');
+    const report = await validate('no-register.shacl.ttl');
     expect(report.state).toEqual('no-dataset');
   });
 
