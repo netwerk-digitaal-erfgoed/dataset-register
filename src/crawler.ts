@@ -2,11 +2,13 @@ import {Registration, RegistrationStore} from './registration';
 import {DatasetStore, extractIris} from './dataset';
 import {fetch, NoDatasetFoundAtUrl, UrlNotFound} from './fetch';
 import DatasetExt from 'rdf-ext/lib/Dataset';
+import {Logger} from 'pino';
 
 export class Crawler {
   constructor(
     private registrationStore: RegistrationStore,
-    private datasetStore: DatasetStore
+    private datasetStore: DatasetStore,
+    private logger: Logger
   ) {}
 
   /**
@@ -17,6 +19,7 @@ export class Crawler {
       dateLastRead
     );
     for (const registration of registrations) {
+      this.logger.info(`Crawling registration URL ${registration.url}`);
       let datasets: DatasetExt[] = [];
       let statusCode: number;
 
