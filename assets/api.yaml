@@ -40,6 +40,8 @@ paths:
       responses:
         202:
           description: All dataset descriptions at the submitted URL are valid according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a>. The datasets will added to the Register shortly.
+          content:
+            application/ld+json: {}
         400:
           description: One or more dataset descriptions are invalid according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a>. The response body contains a list of [SHACL](https://www.w3.org/TR/shacl/) violations.
         403:
@@ -79,6 +81,8 @@ paths:
       responses:
         200:
           description: All dataset descriptions are valid according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a>.
+          content:
+            application/ld+json: {}
         400:
           description: One or more dataset descriptions are invalid according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a>. The response body contains a list of [SHACL](https://www.w3.org/TR/shacl/) violations.
           content:
