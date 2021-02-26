@@ -29,7 +29,7 @@ const client = new GraphDbClient(
     client
   );
   const crawler = new Crawler(registrationStore, datasetStore, logger);
-  const validator = await ShaclValidator.fromUrl('shacl/dataset.jsonld');
+  const validator = await ShaclValidator.fromUrl('shacl/register.shacl.ttl');
 
   // Schedule crawler to check every hour for CRAWLER_INTERVAL that have expired their REGISTRATION_URL_TTL.
   const ttl = ((process.env.REGISTRATION_URL_TTL || 86400) as number) * 1000;
