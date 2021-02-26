@@ -18,6 +18,7 @@ import {Server} from 'http';
 import * as psl from 'psl';
 import rdfSerializer from 'rdf-serialize';
 import fastifySwagger from 'fastify-swagger';
+import fastifyCors from 'fastify-cors';
 
 const serializer = (contentType: string) => (dataset: DatasetExt) =>
   rdfSerializer.serialize(toStream(dataset), {contentType});
@@ -46,6 +47,7 @@ export async function server(
       // Doesn't work, so Accept header is required.
       // default: 'application/ld+json',
     })
+    .register(fastifyCors)
     .addHook('onRequest', async (request, reply) => {
       if (request.headers.accept === undefined) {
         request.headers.accept = 'application/ld+json';
