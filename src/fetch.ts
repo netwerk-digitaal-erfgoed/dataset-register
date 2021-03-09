@@ -49,6 +49,10 @@ export async function dereference(url: URL): Promise<DatasetExt> {
     const {quads} = await rdfDereferencer.dereference(url.toString());
     return await factory.dataset().import(quads);
   } catch (e) {
+    // Match error thrown in Comunica’s ActorRdfDereferenceHttpParseBase.
+    if (e.message.match(/404: unknown error/)) {
+      throw new UrlNotFound(e.message);
+    }
     throw new NoDatasetFoundAtUrl(e.message);
   }
 }
