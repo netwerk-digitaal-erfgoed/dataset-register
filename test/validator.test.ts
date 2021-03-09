@@ -20,6 +20,16 @@ describe('Validator', () => {
     expect(report.state).toBe('invalid');
   });
 
+  it('accepts valid HTTP Schema.org dataset', async () => {
+    const report = await validate('dataset-http-schema-org-valid.jsonld');
+    expect(report.state).toEqual('valid');
+  });
+
+  it('reports invalid HTTP Schema.org dataset', async () => {
+    const report = await validate('dataset-http-schema-org-invalid.jsonld');
+    expect(report.state).toBe('invalid');
+  });
+
   it('accepts valid DCAT dataset', async () => {
     const report = await validate('dataset-dcat-valid.jsonld');
     expect(report.state).toEqual('valid');

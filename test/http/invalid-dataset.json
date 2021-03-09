@@ -8,7 +8,7 @@
         "response": "<!DOCTYPE html><html lang=\"nl\"><body><script type=\"application/ld+json\">{ \"@context\":\"https://schema.org/\", \"@type\":\"Dataset\", \"@id\":\"http://data.bibliotheken.nl/id/dataset/rise-alba\", \"name\":\"Alba amicorum van de Koninklijke Bibliotheek\", \"description\":\"Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.\", \"url\":\"https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum\", \"identifier\": \"http://data.bibliotheken.nl/id/dataset/rise-alba\", \"keywords\":[ \"alba amicorum\" ], \"creator\":{ \"@type\":\"Organization\", \"url\": \"https://www.kb.nl/\", \"name\":\"Koninklijke Bibliotheek\", \"sameAs\":\"https://ror.org/02w4jbg70\" }, \"distribution\":[ { \"@type\":\"DataDownload\", \"encodingFormat\":\"application/rdf+xml\", \"contentUrl\":\"http://data.bibliotheken.nl/id/dataset/rise-alba.rdf\" }, { \"@type\":\"DataDownload\", \"encodingFormat\":\"text/turtle\", \"contentUrl\":\"http://data.bibliotheken.nl/id/dataset/rise-alba.ttl\" }, { \"@type\":\"DataDownload\", \"encodingFormat\":\"application/n-triples\", \"contentUrl\":\"http://data.bibliotheken.nl/id/dataset/rise-alba.nt\" }, { \"@type\":\"DataDownload\", \"encodingFormat\":\"application/ld+json\", \"contentUrl\":\"http://data.bibliotheken.nl/id/dataset/rise-alba.json\" } ] }</script></body></html>",
         "rawHeaders": [
             "Date",
-            "Sat, 13 Feb 2021 12:05:27 GMT",
+            "Tue, 09 Mar 2021 12:11:56 GMT",
             "Content-Type",
             "text/html",
             "Content-Length",
@@ -39,11 +39,11 @@
                 "HTML": {
                     "@id": "rdf:HTML"
                 },
-                "@vocab": "http://schema.org/",
+                "@vocab": "https://schema.org/",
                 "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
                 "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
                 "xsd": "http://www.w3.org/2001/XMLSchema#",
-                "schema": "http://schema.org/",
+                "schema": "https://schema.org/",
                 "owl": "http://www.w3.org/2002/07/owl#",
                 "dc": "http://purl.org/dc/elements/1.1/",
                 "dct": "http://purl.org/dc/terms/",
@@ -136,6 +136,9 @@
                 },
                 "AllWheelDriveConfiguration": {
                     "@id": "schema:AllWheelDriveConfiguration"
+                },
+                "AllergiesHealthAspect": {
+                    "@id": "schema:AllergiesHealthAspect"
                 },
                 "AllocateAction": {
                     "@id": "schema:AllocateAction"
@@ -236,9 +239,6 @@
                 "AudiobookFormat": {
                     "@id": "schema:AudiobookFormat"
                 },
-                "AuthenticContent": {
-                    "@id": "schema:AuthenticContent"
-                },
                 "AuthoritativeLegalValue": {
                     "@id": "schema:AuthoritativeLegalValue"
                 },
@@ -271,6 +271,9 @@
                 },
                 "Ayurvedic": {
                     "@id": "schema:Ayurvedic"
+                },
+                "BackOrder": {
+                    "@id": "schema:BackOrder"
                 },
                 "BackgroundNewsArticle": {
                     "@id": "schema:BackgroundNewsArticle"
@@ -343,6 +346,48 @@
                 },
                 "BoatTrip": {
                     "@id": "schema:BoatTrip"
+                },
+                "BodyMeasurementArm": {
+                    "@id": "schema:BodyMeasurementArm"
+                },
+                "BodyMeasurementBust": {
+                    "@id": "schema:BodyMeasurementBust"
+                },
+                "BodyMeasurementChest": {
+                    "@id": "schema:BodyMeasurementChest"
+                },
+                "BodyMeasurementFoot": {
+                    "@id": "schema:BodyMeasurementFoot"
+                },
+                "BodyMeasurementHand": {
+                    "@id": "schema:BodyMeasurementHand"
+                },
+                "BodyMeasurementHead": {
+                    "@id": "schema:BodyMeasurementHead"
+                },
+                "BodyMeasurementHeight": {
+                    "@id": "schema:BodyMeasurementHeight"
+                },
+                "BodyMeasurementHips": {
+                    "@id": "schema:BodyMeasurementHips"
+                },
+                "BodyMeasurementInsideLeg": {
+                    "@id": "schema:BodyMeasurementInsideLeg"
+                },
+                "BodyMeasurementNeck": {
+                    "@id": "schema:BodyMeasurementNeck"
+                },
+                "BodyMeasurementTypeEnumeration": {
+                    "@id": "schema:BodyMeasurementTypeEnumeration"
+                },
+                "BodyMeasurementUnderbust": {
+                    "@id": "schema:BodyMeasurementUnderbust"
+                },
+                "BodyMeasurementWaist": {
+                    "@id": "schema:BodyMeasurementWaist"
+                },
+                "BodyMeasurementWeight": {
+                    "@id": "schema:BodyMeasurementWeight"
                 },
                 "BodyOfWater": {
                     "@id": "schema:BodyOfWater"
@@ -785,6 +830,9 @@
                 "DeactivateAction": {
                     "@id": "schema:DeactivateAction"
                 },
+                "DecontextualizedContent": {
+                    "@id": "schema:DecontextualizedContent"
+                },
                 "DefenceEstablishment": {
                     "@id": "schema:DefenceEstablishment"
                 },
@@ -1010,6 +1058,9 @@
                 "EatAction": {
                     "@id": "schema:EatAction"
                 },
+                "EditedOrCroppedContent": {
+                    "@id": "schema:EditedOrCroppedContent"
+                },
                 "EducationEvent": {
                     "@id": "schema:EducationEvent"
                 },
@@ -1024,6 +1075,9 @@
                 },
                 "EducationalOrganization": {
                     "@id": "schema:EducationalOrganization"
+                },
+                "EffectivenessHealthAspect": {
+                    "@id": "schema:EffectivenessHealthAspect"
                 },
                 "Electrician": {
                     "@id": "schema:Electrician"
@@ -1325,6 +1379,9 @@
                 "Geriatric": {
                     "@id": "schema:Geriatric"
                 },
+                "GettingAccessHealthAspect": {
+                    "@id": "schema:GettingAccessHealthAspect"
+                },
                 "GiveAction": {
                     "@id": "schema:GiveAction"
                 },
@@ -1463,6 +1520,9 @@
                 "HousePainter": {
                     "@id": "schema:HousePainter"
                 },
+                "HowItWorksHealthAspect": {
+                    "@id": "schema:HowItWorksHealthAspect"
+                },
                 "HowOrWhereHealthAspect": {
                     "@id": "schema:HowOrWhereHealthAspect"
                 },
@@ -1534,6 +1594,9 @@
                 },
                 "InformAction": {
                     "@id": "schema:InformAction"
+                },
+                "IngredientsHealthAspect": {
+                    "@id": "schema:IngredientsHealthAspect"
                 },
                 "InsertAction": {
                     "@id": "schema:InsertAction"
@@ -1793,6 +1856,9 @@
                 "MayTreatHealthAspect": {
                     "@id": "schema:MayTreatHealthAspect"
                 },
+                "MeasurementTypeEnumeration": {
+                    "@id": "schema:MeasurementTypeEnumeration"
+                },
                 "MediaGallery": {
                     "@id": "schema:MediaGallery"
                 },
@@ -1987,9 +2053,6 @@
                 },
                 "MisconceptionsHealthAspect": {
                     "@id": "schema:MisconceptionsHealthAspect"
-                },
-                "MissingContext": {
-                    "@id": "schema:MissingContext"
                 },
                 "MixedEventAttendanceMode": {
                     "@id": "schema:MixedEventAttendanceMode"
@@ -2321,6 +2384,9 @@
                 "OccupationalActivity": {
                     "@id": "schema:OccupationalActivity"
                 },
+                "OccupationalExperienceRequirements": {
+                    "@id": "schema:OccupationalExperienceRequirements"
+                },
                 "OccupationalTherapy": {
                     "@id": "schema:OccupationalTherapy"
                 },
@@ -2443,6 +2509,9 @@
                 },
                 "OrganizeAction": {
                     "@id": "schema:OrganizeAction"
+                },
+                "OriginalMediaContent": {
+                    "@id": "schema:OriginalMediaContent"
                 },
                 "OriginalShippingFees": {
                     "@id": "schema:OriginalShippingFees"
@@ -2686,6 +2755,9 @@
                 },
                 "PreSale": {
                     "@id": "schema:PreSale"
+                },
+                "PregnancyHealthAspect": {
+                    "@id": "schema:PregnancyHealthAspect"
                 },
                 "PrependAction": {
                     "@id": "schema:PrependAction"
@@ -3083,11 +3155,17 @@
                 "SRP": {
                     "@id": "schema:SRP"
                 },
+                "SafetyHealthAspect": {
+                    "@id": "schema:SafetyHealthAspect"
+                },
                 "SaleEvent": {
                     "@id": "schema:SaleEvent"
                 },
                 "SalePrice": {
                     "@id": "schema:SalePrice"
+                },
+                "SatireOrParodyContent": {
+                    "@id": "schema:SatireOrParodyContent"
                 },
                 "SatiricalArticle": {
                     "@id": "schema:SatiricalArticle"
@@ -3206,6 +3284,21 @@
                 "SiteNavigationElement": {
                     "@id": "schema:SiteNavigationElement"
                 },
+                "SizeGroupEnumeration": {
+                    "@id": "schema:SizeGroupEnumeration"
+                },
+                "SizeSpecification": {
+                    "@id": "schema:SizeSpecification"
+                },
+                "SizeSystemEnumeration": {
+                    "@id": "schema:SizeSystemEnumeration"
+                },
+                "SizeSystemImperial": {
+                    "@id": "schema:SizeSystemImperial"
+                },
+                "SizeSystemMetric": {
+                    "@id": "schema:SizeSystemMetric"
+                },
                 "SkiResort": {
                     "@id": "schema:SkiResort"
                 },
@@ -3274,6 +3367,9 @@
                 },
                 "StadiumOrArena": {
                     "@id": "schema:StadiumOrArena"
+                },
+                "StagedContent": {
+                    "@id": "schema:StagedContent"
                 },
                 "StagesHealthAspect": {
                     "@id": "schema:StagesHealthAspect"
@@ -3485,6 +3581,9 @@
                 "TransferAction": {
                     "@id": "schema:TransferAction"
                 },
+                "TransformedContent": {
+                    "@id": "schema:TransformedContent"
+                },
                 "TransitMap": {
                     "@id": "schema:TransitMap"
                 },
@@ -3688,6 +3787,144 @@
                 },
                 "WearAction": {
                     "@id": "schema:WearAction"
+                },
+                "WearableMeasurementBack": {
+                    "@id": "schema:WearableMeasurementBack"
+                },
+                "WearableMeasurementChestOrBust": {
+                    "@id": "schema:WearableMeasurementChestOrBust"
+                },
+                "WearableMeasurementCollar": {
+                    "@id": "schema:WearableMeasurementCollar"
+                },
+                "WearableMeasurementCup": {
+                    "@id": "schema:WearableMeasurementCup"
+                },
+                "WearableMeasurementHeight": {
+                    "@id": "schema:WearableMeasurementHeight"
+                },
+                "WearableMeasurementHips": {
+                    "@id": "schema:WearableMeasurementHips"
+                },
+                "WearableMeasurementInseam": {
+                    "@id": "schema:WearableMeasurementInseam"
+                },
+                "WearableMeasurementLength": {
+                    "@id": "schema:WearableMeasurementLength"
+                },
+                "WearableMeasurementOutsideLeg": {
+                    "@id": "schema:WearableMeasurementOutsideLeg"
+                },
+                "WearableMeasurementSleeve": {
+                    "@id": "schema:WearableMeasurementSleeve"
+                },
+                "WearableMeasurementTypeEnumeration": {
+                    "@id": "schema:WearableMeasurementTypeEnumeration"
+                },
+                "WearableMeasurementWaist": {
+                    "@id": "schema:WearableMeasurementWaist"
+                },
+                "WearableMeasurementWidth": {
+                    "@id": "schema:WearableMeasurementWidth"
+                },
+                "WearableSizeGroupBig": {
+                    "@id": "schema:WearableSizeGroupBig"
+                },
+                "WearableSizeGroupBoys": {
+                    "@id": "schema:WearableSizeGroupBoys"
+                },
+                "WearableSizeGroupEnumeration": {
+                    "@id": "schema:WearableSizeGroupEnumeration"
+                },
+                "WearableSizeGroupExtraShort": {
+                    "@id": "schema:WearableSizeGroupExtraShort"
+                },
+                "WearableSizeGroupExtraTall": {
+                    "@id": "schema:WearableSizeGroupExtraTall"
+                },
+                "WearableSizeGroupGirls": {
+                    "@id": "schema:WearableSizeGroupGirls"
+                },
+                "WearableSizeGroupHusky": {
+                    "@id": "schema:WearableSizeGroupHusky"
+                },
+                "WearableSizeGroupInfants": {
+                    "@id": "schema:WearableSizeGroupInfants"
+                },
+                "WearableSizeGroupJuniors": {
+                    "@id": "schema:WearableSizeGroupJuniors"
+                },
+                "WearableSizeGroupMaternity": {
+                    "@id": "schema:WearableSizeGroupMaternity"
+                },
+                "WearableSizeGroupMens": {
+                    "@id": "schema:WearableSizeGroupMens"
+                },
+                "WearableSizeGroupMisses": {
+                    "@id": "schema:WearableSizeGroupMisses"
+                },
+                "WearableSizeGroupPetite": {
+                    "@id": "schema:WearableSizeGroupPetite"
+                },
+                "WearableSizeGroupPlus": {
+                    "@id": "schema:WearableSizeGroupPlus"
+                },
+                "WearableSizeGroupRegular": {
+                    "@id": "schema:WearableSizeGroupRegular"
+                },
+                "WearableSizeGroupShort": {
+                    "@id": "schema:WearableSizeGroupShort"
+                },
+                "WearableSizeGroupTall": {
+                    "@id": "schema:WearableSizeGroupTall"
+                },
+                "WearableSizeGroupWomens": {
+                    "@id": "schema:WearableSizeGroupWomens"
+                },
+                "WearableSizeSystemAU": {
+                    "@id": "schema:WearableSizeSystemAU"
+                },
+                "WearableSizeSystemBR": {
+                    "@id": "schema:WearableSizeSystemBR"
+                },
+                "WearableSizeSystemCN": {
+                    "@id": "schema:WearableSizeSystemCN"
+                },
+                "WearableSizeSystemContinental": {
+                    "@id": "schema:WearableSizeSystemContinental"
+                },
+                "WearableSizeSystemDE": {
+                    "@id": "schema:WearableSizeSystemDE"
+                },
+                "WearableSizeSystemEN13402": {
+                    "@id": "schema:WearableSizeSystemEN13402"
+                },
+                "WearableSizeSystemEnumeration": {
+                    "@id": "schema:WearableSizeSystemEnumeration"
+                },
+                "WearableSizeSystemEurope": {
+                    "@id": "schema:WearableSizeSystemEurope"
+                },
+                "WearableSizeSystemFR": {
+                    "@id": "schema:WearableSizeSystemFR"
+                },
+                "WearableSizeSystemGS1": {
+                    "@id": "schema:WearableSizeSystemGS1"
+                },
+                "WearableSizeSystemIT": {
+                    "@id": "schema:WearableSizeSystemIT"
+                },
+                "WearableSizeSystemJP": {
+                    "@id": "schema:WearableSizeSystemJP"
+                },
+                "WearableSizeSystemMX": {
+                    "@id": "schema:WearableSizeSystemMX"
+                },
+                "WearableSizeSystemUK": {
+                    "@id": "schema:WearableSizeSystemUK"
+                },
+                "WearableSizeSystemUS": {
+                    "@id": "schema:WearableSizeSystemUS"
                 },
                 "WebAPI": {
                     "@id": "schema:WebAPI"
@@ -5217,6 +5454,9 @@
                 "expectsAcceptanceOf": {
                     "@id": "schema:expectsAcceptanceOf"
                 },
+                "experienceInPlaceOfEducation": {
+                    "@id": "schema:experienceInPlaceOfEducation"
+                },
                 "experienceRequirements": {
                     "@id": "schema:experienceRequirements"
                 },
@@ -5498,6 +5738,9 @@
                 "hasMap": {
                     "@id": "schema:hasMap",
                     "@type": "@id"
+                },
+                "hasMeasurement": {
+                    "@id": "schema:hasMeasurement"
                 },
                 "hasMenu": {
                     "@id": "schema:hasMenu"
@@ -6228,6 +6471,9 @@
                 },
                 "monthlyMinimumRepaymentAmount": {
                     "@id": "schema:monthlyMinimumRepaymentAmount"
+                },
+                "monthsOfExperience": {
+                    "@id": "schema:monthsOfExperience"
                 },
                 "mpn": {
                     "@id": "schema:mpn"
@@ -7352,6 +7598,12 @@
                 "size": {
                     "@id": "schema:size"
                 },
+                "sizeGroup": {
+                    "@id": "schema:sizeGroup"
+                },
+                "sizeSystem": {
+                    "@id": "schema:sizeSystem"
+                },
                 "skills": {
                     "@id": "schema:skills"
                 },
@@ -7531,6 +7783,9 @@
                 "sugarContent": {
                     "@id": "schema:sugarContent"
                 },
+                "suggestedAge": {
+                    "@id": "schema:suggestedAge"
+                },
                 "suggestedAnswer": {
                     "@id": "schema:suggestedAnswer"
                 },
@@ -7539,6 +7794,9 @@
                 },
                 "suggestedMaxAge": {
                     "@id": "schema:suggestedMaxAge"
+                },
+                "suggestedMeasurement": {
+                    "@id": "schema:suggestedMeasurement"
                 },
                 "suggestedMinAge": {
                     "@id": "schema:suggestedMinAge"
@@ -8026,21 +8284,21 @@
             "Access-Control-Allow-Origin",
             "*",
             "Date",
-            "Sat, 13 Feb 2021 11:58:40 GMT",
+            "Tue, 09 Mar 2021 12:05:12 GMT",
             "Expires",
-            "Sat, 13 Feb 2021 12:08:40 GMT",
+            "Tue, 09 Mar 2021 12:15:12 GMT",
             "ETag",
-            "\"v7F5aA\"",
+            "\"8OeRUQ\"",
             "X-Cloud-Trace-Context",
-            "8ca75e3cf8705b3b236437131cb30ef5",
+            "77f72fca1f0cc2fbb4193e447f0e8696",
             "Content-Type",
             "application/ld+json",
             "Server",
             "Google Frontend",
             "Content-Length",
-            "156492",
+            "163025",
             "Age",
-            "407",
+            "404",
             "Cache-Control",
             "public, max-age=600",
             "Alt-Svc",
