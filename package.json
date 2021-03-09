@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node build/src/main.js",
     "dev": "ts-node-dev --files src/main.ts",
-    "test": "jest ${1}",
+    "test": "jest ${1} --forceExit",
     "lint": "gts lint",
     "clean": "gts clean",
     "compile": "tsc",
