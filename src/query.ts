@@ -91,6 +91,7 @@ const distributionMapping = new Map([
 export const datasetType = dcat('Dataset');
 export const selectQuery = `
   PREFIX dcat: <http://www.w3.org/ns/dcat#>
+  PREFIX schema: <https://schema.org/>
   PREFIX dct: <http://purl.org/dc/terms/>
   SELECT * WHERE {
     {
