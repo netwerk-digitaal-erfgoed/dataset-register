@@ -36,11 +36,16 @@ describe('Server', () => {
   });
 
   it('rejects validation requests that point to 404 URL', async () => {
+    nock('https://example.com/').get('/404').reply(404);
     const response = await httpServer.inject({
       method: 'PUT',
       url: '/datasets/validate',
+      headers: {'Content-Type': 'application/ld+json'},
+      payload: JSON.stringify({
+        '@id': 'https://example.com/404',
+      }),
     });
-    expect(response.statusCode).toEqual(400);
+    expect(response.statusCode).toEqual(404);
   });
 
   it('responds with 200 to valid dataset requests', async () => {
