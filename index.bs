@@ -482,8 +482,8 @@ This is an overview of required and recommended attributes.
         <tr>
             <th scope="row">[schema:distribution](https://schema.org/distribution)</th>
             <td>See [[#dataset-distributions]].</td>
-            <td>1..n</td>
-            <td>Required</td>
+            <td>0..n</td>
+            <td>Recommended</td>
         </tr>
         <tr>
             <th scope="row">[schema:publisher](https://schema.org/publisher)</th>
