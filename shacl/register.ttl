@@ -27,14 +27,11 @@ reg:DatasetShape
     a sh:NodeShape ;
     sh:name "Datasetbeschrijving"@nl, "Dataset description"@en ;
     rdfs:comment "Een datasetbeschrijving bestaat uit een elementen die de dataset beschrijft"@nl ;
-    sh:and (
-        [ sh:targetClass schema:Dataset ; ]
-        [ sh:not ( [ sh:targetClass schema:WebPage ; ]  ) ]    
-    );
+    sh:targetClass schema:Dataset ;
     sh:nodeKind sh:IRI ;
 
     # Required properties
-	
+
     sh:property reg:SchemaNameProperty,  reg:SchemaCreatorProperty, reg:SchemaLicenseProperty, reg:SchemaDistributionProperty ;
 
     # Recommended properties
