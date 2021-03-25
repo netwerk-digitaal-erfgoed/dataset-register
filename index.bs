@@ -29,13 +29,12 @@ This document describes such a model and its rules.
 When [=publishers=] make their datasets adhere to these rules,
 they enable consumers – both humans and machines – to use the published data in new and better ways.
 
-The requirements prescribe the metadata that publishers should provide with their data. 
-They do so on four levels: that of the organization, the dataset, the data itself and a global level:
+The requirements prescribe the metadata that publishers should provide with their data.
+This metadata tells [=consumers=]:
 
-- organization metadata tells [=consumers=] who is behind the data publication ([[#organization-information]])
-- dataset metadata lets consumers know how they can use the dataset ([[#dataset-information]])
-- the data contained in the dataset must itself be described in a way that it can be understood, connected and re-used ([[#data]])
-- global requirements apply to all of the above levels ([[#rdf]], [[#available]]).
+- what the dataset is called and under what license it is published ([[#dataset-information]]);
+- which organization has published the dataset ([[#organization-information]]);
+- where the data can be found ([[#dataset-distributions]]).
 
 Audience {#audience}
 --------------------
@@ -73,7 +72,17 @@ Definitions {#definitions}
 ==========================
 
 : <dfn>Dataset</dfn>
-:: A collection of data. A dataset is identified with at least its name and [=publisher=].
+:: The description of a collection of data.
+    A set of metadata that includes the dataset’s name and [=publisher=].
+    The data objects themselves are not part of the dataset proper but provided in its [=distributions=].
+    
+    For example: imagine a dataset of Van Gogh paintings called ‘Sunflowers’,
+    which is published by the Van Gogh Museum under a specific license.
+    These are all part of the dataset.
+    The dataset also tells us the URLs of distributions where we can download or query the data.
+    If we consult the data provided by one of these distributions, we’ve left the sphere of the dataset proper.
+    That is to say, the data itself, which may include descriptions of paintings, persons and places,
+    are *not* properties of the dataset.
 
 : <dfn>Distribution</dfn>
 :: A channel through which a [=dataset=] is available, 
@@ -118,6 +127,163 @@ path: model.svg
 Requirements {#requirements#}
 ============
 
+## Available in RDF ## {#rdf}
+
+For [=machine-readability|machine-readable=] access to data,
+it needs to be published in an [[RDF11-PRIMER#section-graph-syntax|RDF format]].
+RDF formats include [[JSON-LD]], [[N3]] and [[Turtle]].
+
+> [=Publishers=] *MUST* make their [=dataset=] description available in RDF.
+
+Both the Schema.org and DCAT vocabularies *MAY* be used;
+Schema.org is [[#examples|recommended]].
+
+<div class="example">
+    <a href="https://developers.google.com/search/docs/guides/intro-structured-data#structured-data">Google recommends</a> 
+    including the JSON-LD directly in the HTML source of web pages.
+
+    So, on your organization’s web page, for instance <a href="https://www.kb.nl">www.kb.nl</a>, include:
+
+    <xmp highlight=html>
+        <html>
+          <head>
+            <title>Koninklijke Bibliotheek</title>
+            <script type="application/ld+json">
+              {
+                "@context": "https://schema.org/",
+                "@type": "Organization",
+                "name": "Koninklijke Bibliotheek",
+                "url": "https://www.kb.nl/"
+              }
+            </script>
+          </head>
+          <body>
+            Here continues the web page of the organization...
+          </body>
+        </html>    
+    </xmp>
+</div>
+
+See also [[DWBP-UCR#R-FormatMachineRead]].
+
+### Durable identifiers ### {#identifiers}
+
+[=Consumers=] want to refer to datasets. They prefer to do so by linking to them.
+
+> Therefore, publishers *must* maintain a permanent and unique identifier for each [=dataset=],
+> as well as their [[#organization-information|organization]] and [[#dataset-information|dataset]] information.
+> Publishers *should* use [[IRI|IRIs]] as identifiers.
+
+See also [[DWBP-UCR#R-UniqueIdentifier]] and [[DWBP-UCR#R-PersistentIdentification]].
+
+### Information remains available ### {#available}
+
+Datasets will be used by all kinds of [=consumers=] and their systems.
+For stability, users must be able to trust that the datasets will remain available
+so they can be consulted in the future.
+
+> Therefore, publishers *must* ensure information remains available in the future.
+
+## Dataset information ## {#dataset-information}
+
+[=Consumers=] want to consult information about the [=dataset=] to decide whether and how they want to use its data.
+This information answers user questions such as:
+
+- What is the name of the dataset?
+- What is the dataset about? What kind of data does the dataset contain?
+- How recent is the data? When was the dataset last published?
+- How can I use the data? Are there any restrictions? Under which license is the data published?
+- Where can I get the data? In what formats?
+
+### Basic information ### {#dataset-basic}
+
+Publishers *MUST* include basic information about the dataset, at the very minimum its [[IRI]] and name.
+
+<div class="example">
+    Basic dataset information:
+
+    <pre highlight=json-ld>
+        {
+          "@context": "https://schema.org/",
+          "@type": "Dataset",
+          "@id": "http://data.bibliotheken.nl/doc/dataset/rise-alba",
+          "name": "Alba amicorum van de Koninklijke Bibliotheek"
+        }
+    </pre>
+</div>
+
+### License ### {#dataset-license}
+
+Publishers *MUST* make known under which [[DWBP#licenses|license]] the dataset can be used.
+This *SHOULD* be an open license that allows the data to used by [=consumers=],
+for example one of the [Creative Commons](https://creativecommons.org/choose/) licenses.
+
+<div class="example">
+    Specify a license for the dataset:
+
+    <pre highlight=json-ld>
+        {
+          "@context": "https://schema.org/",
+          "@type": "Dataset",
+          "license": "http://creativecommons.org/publicdomain/zero/1.0/"
+        }
+    </pre>
+</div>
+
+See also [[DWBP-UCR#R-LicenseAvailable]].
+
+### Creation, publication and modification dates ### {#dataset-date}
+
+Publishers *SHOULD* make known when the dataset description was originally created, published and when it was last updated.
+
+<div class="example">
+    Specify dataset description dates:
+
+    <pre highlight=json-ld>
+        {
+          "@context": "https://schema.org/",
+          "@type": "Dataset",
+          "dateCreated": "2019-04-14",
+          "datePublished": "2019-05-21",
+          "dateModified": "2019-08-15"
+        }
+    </pre>
+</div>
+
+### Version ### {#dataset-versions}
+
+A dataset description may change over time.
+[=Consumers=], such as researchers, may want to determine which information was valid at a certain moment.
+
+> Therefore, publishers *SHOULD* not only publish the current version of the dataset description,
+> but keep historical versions accessible to users.
+
+It is up to the [=publisher=] to determine when to publish new versions.
+
+See also [[DWBP#dataVersioning]].
+
+### More information ### {#more-information}
+
+If more information is available, publishers *SHOULD* add it.
+
+<div class="example">
+    More information about the dataset.
+
+    <pre highlight=json-ld line-numbers>
+        {
+          "@context": "https://schema.org/",
+          "@type": "Dataset",
+          "description": "Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.",
+          "url": "https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum",
+          "keywords": [
+            "alba amicorum"
+          ]
+        }
+    </pre>
+</div>
+
+See [[#dataset-overview]] for an overview of attributes.
+
 ## Organization information ## {#organization-information}
 
 Users want to know where the [=dataset=] came from ([[DWBP#provenance|provenance]]).
@@ -127,20 +293,286 @@ Providing information about the organization behind the dataset (the [=publisher
 - How can I contact the organization for questions or feedback?
 
 > Therefore, publishers *must* publish basic information about the organization.
-> They *should* do so in the [[SCHEMA-ORG]] vocabulary.
+> At the least, the organization’s name and URL must be provided. 
 
 <div class="example">
-    An organization description in [[SCHEMA-ORG]]:
+    An organization description:
 
-    <pre class=include-code>
-    path: examples/organization.jsonld
-    highlight: json-ld
+    <pre highlight=json-ld>
+      {
+        "@context": "https://schema.org/",
+        "@type": "Organization",
+        "name": "Koninklijke Bibliotheek",
+        "url": "https://www.kb.nl/"
+      }
     </pre>
 </div>
 
-See also [[DWBP-UCR#R-ProvAvailable]].
+See [[#organization-overview]] for a full overview of organization attributes.
 
-### Overview ### {#organization-overview}
+### Dataset creator ### {#dataset-creator}
+
+The organization data is then included as the dataset’s creator:
+
+<div class="example">
+    A dataset with a creator. The creator has some optional attributes.
+
+    <pre highlight=json-ld>
+        {
+          "@context": "https://schema.org/",
+          "@type": "Dataset",
+          "creator": {
+            "@type": "Organization",
+            "name": "Koninklijke Bibliotheek",
+            "url": "https://www.kb.nl/",
+            "alternateName": "KB",
+            "sameAs": "https://ror.org/02w4jbg70"
+          }
+        }
+    </pre>
+</div>
+
+## Distributions ## {#dataset-distributions}
+
+[=Consumers=] that are interested in a dataset should be able to access the data in it.
+[=Distributions=] tell consumers where and how they can get the data.
+
+> Therefore, publishers *SHOULD* add at least one distribution.
+> Each distribution *MUST* have at least a MIME format and the URL where the distribution can be accessed.
+
+Distributions can be data dumps in RDF or some other format such as CSV, SPARQL endpoints, OAI-PMH endpoints and more.
+
+<div class="example">
+    A minimal definition of a SPARQL endpoint distribution.
+    In the Schema.org vocabulary, each type of distribution is called a [DataDownload](https://schema.org/DataDownload),
+    even if it is a query endpoint.
+
+    <pre highlight=json-ld>
+        {
+          "@context": "https://schema.org/",
+          "@type": "DataDownload",
+          "encodingFormat": "application/sparql-query",
+          "contentUrl": "http://vocab.getty.edu/sparql"
+        }
+    </pre>
+</div>
+
+The distributions are then included under the `distribution` attribute with the dataset.
+
+<div class="example">
+    A dataset with two distributions.
+
+    <pre highlight=json-ld>
+        {
+          "@context": "https://schema.org/",
+          "@type": "Dataset",
+          "distribution": [
+            {
+              "@id": "http://vocab.getty.edu/aat/sparql",
+              "@type": "DataDownload",
+              "encodingFormat": "application/sparql-query",
+              "contentUrl": "http://vocab.getty.edu/sparql"
+            },
+            {
+              "@type": "DataDownload",
+              "encodingFormat": "application/ld+json",
+              "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.json"
+            }            
+          ]
+        }
+    </pre>
+</div>
+
+See [[#distribution-attributes]] for a full overview.
+
+Issue: TODO Elaborate (and give examples of) the types of distribution (in schema:name), like SPARQL-endpoint, OAI-PMH-endpoint, LDF-endpoint, Data dump, Opensearch API. Or introduce proprietary property for the type (might be better the using the free-format name).
+
+### Developer documentation ### {#developer-docs}
+
+If the distribution is non-standard [=API=], publishers *MUST* publish documentation on how to use that API.
+
+Issue: Can we specify a Distribution property for this?
+
+See also [[DWBP-UCR#R-APIDocumented]].
+
+## Data catalog ## {#data-catalog}
+
+A collection of datasets is a data catalog. A catalog provides the [=Consumers=] with a complete overview of available datasets, which improves discoverability.
+
+> Therefore, publishers *SHOULD* provide a catalog.
+
+<pre class=include>
+path: datacatalog-dataset-distribution.svg
+</pre>
+
+<div class="example">
+    A catalog of available datasets:
+    
+    <pre highlight=json-ld>
+        {
+          "@context": "https://schema.org/","@type": "DataCatalog",
+          "name": "Linked Data KB",
+          "description": "Alle linked data zoals beschikbaar gesteld door de Koninklijke Bibliotheek.",
+          "publisher": {
+            "@type": "Organization",
+            "name": "Koninklijke Bibliotheek",
+            "url": "https://www.kb.nl/"
+          },
+          "dataset": [
+            {
+              "@type": "Dataset",
+              "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
+              ...
+            }, 
+            { 
+              ...
+            }
+          ]
+        }
+    </pre>
+</div>
+
+## Overview of attributes ## {#overview} 
+
+This is an overview of required and recommended attributes.
+
+### Dataset attributes ### {#dataset-overview}
+
+<table>
+    <caption>[schema:Dataset](https://schema.org/Dataset) properties</caption>
+    <thead>
+        <tr>
+            <th>Property</th>
+            <th>Description</th>
+            <th>Cardinality</th>
+            <th>Usage</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <th scope="row">[schema:identifier](https://schema.org/identifier)</th>
+            <td>See [[#dataset-basic]].</td>
+            <td>1</td>
+            <td>Required</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:name](https://schema.org/name)</th>
+            <td>See [[#dataset-basic]]</td>
+            <td>1</td>
+            <td>Required</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:description](https://schema.org/description)</th>
+            <td>See [[#dataset-basic]].</td>
+            <td>0..1</td>
+            <td>Recommended</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:creator](https://schema.org/creator)</th>
+            <td>The owner of the dataset.</td>
+            <td>1</td>
+            <td>Required</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:license](https://schema.org/license)</th>
+            <td>See [[#dataset-license]].</td>
+            <td>1</td>
+            <td>Required</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:distribution](https://schema.org/distribution)</th>
+            <td>See [[#dataset-distributions]].</td>
+            <td>1..n</td>
+            <td>Required</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:publisher](https://schema.org/publisher)</th>
+            <td>The publisher of the dataset.</td>
+            <td>0..1</td>
+            <td>Recommended</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:dateCreated](https://schema.org/dateCreated)</th>
+            <td>See [[#dataset-date]].</td>
+            <td>0..1</td>
+            <td>Recommended</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:datePublished](https://schema.org/datePublished)</th>
+            <td>See [[#dataset-date]].</td>
+            <td>0..1</td>
+            <td>Recommended</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:dateModified](https://schema.org/dateModified)</th>
+            <td>See [[#dataset-date]].</td>
+		    <td>0..1</td>
+            <td>Recommended</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:version](https://schema.org/version)</th>
+            <td>See [[#dataset-versions]].</td>
+            <td>0..1</td>
+            <td>Recommended</td>
+        </tr>
+        <tr> 	
+            <th scope="row">[schema:mainEntityOfPage](https://schema.org/mainEntityOfPage)</th>
+            <td>URL of a webpage where the dataset is described.</td>
+            <td>0..1</td>
+            <td>Recommended</td>
+        </tr>
+        <tr>	
+            <th scope="row">[schema:inLanguage](https://schema.org/inLanguage)</th>
+            <td>Language or languages in which the dataset is available. Use one of the language codes from the [[BCP47]], such as "nl-NL".</td>
+            <td>0..n</td>
+            <td>Recommended</td>
+        </tr>
+        <tr>	
+            <th scope="row">[schema:isBasedOnUrl](https://schema.org/isBasedOnUrl)</th>
+            <td>The URL of dataset this dataset is based on.</td>
+            <td>0..1</td>
+            <td>Recommended</td>
+        </tr>
+        <tr>	
+            <th scope="row">[schema:citation](https://schema.org/citation)</th>
+            <td>A citation or reference for the dataset.</td>
+            <td>0..1</td>
+            <td>Recommended</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:genre](https://schema.org/genre)</th>
+            <td>The genre or genres which describe the dataset.</td>
+            <td>0..n</td>
+            <td>Recommended</td>
+        </tr>
+        <tr>	
+            <th scope="row">[schema:keywords](https://schema.org/keywords)</th>
+            <td>One or more keyword which describe the dataset.</td>
+            <td>0..n</td>
+            <td>Recommended</td>
+        </tr>
+        <tr>	
+            <th scope="row">[schema:spatialCoverage](https://schema.org/spatialCoverage)</th>
+            <td>Indicates the place(s) which are the focus of the dataset.</td>
+            <td>0..1</td>
+            <td>Recommended</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:temporalCoverage](https://schema.org/temporalCoverage)</th>
+            <td>Indicates the period that the dataset applies to.</td>
+            <td>0..1</td>
+            <td>Recommended</td>
+        </tr>
+        <tr>	
+            <th scope="row">[schema:includedInDataCatalog](https://schema.org/includedInDataCatalog)</th>
+            <td>The URI of the data catalog in which the dataset is.</td>
+            <td>0..1</td>
+            <td>Recommended</td>
+        </tr>
+    </tbody>
+</table>
+
+### Organization attributes ### {#organization-overview}
 
 <table>
     <caption>[schema:Organization](https://schema.org/Organization) properties</caption>
@@ -156,13 +588,13 @@ See also [[DWBP-UCR#R-ProvAvailable]].
 		<tr>
             <th scope="row">[schema:name](https://schema.org/name)</th>
             <td>The organization’s full name.</td>
-			<td>1</td>
+            <td>1</td>
             <td>Required</td>
 		</tr>
 		<tr>
             <th scope="row">[schema:url](https://schema.org/url)</th>
             <td>A link to the organization’s website.</td>
-			<td>1</td>
+            <td>1</td>
             <td>Required</td>
         </tr>
         <tr>
@@ -174,137 +606,13 @@ See also [[DWBP-UCR#R-ProvAvailable]].
 		<tr>
             <th scope="row">[schema:sameAs](https://schema.org/sameAs)</th>
             <td>Links to the organization in other databases.</td>
-			<td>0..n</td>
+            <td>0..n</td>
             <td>Recommended</td>
 		</tr>
     </tbody>
 </table>
 
-## Dataset information ## {#dataset-information}
-
-For users, having access to the data contained in the [=dataset=] is not enough. 
-Users want to consult information about the dataset to decide whether and how they want to use its data.
-This information answers user questions such as:
-
-- What is the name of the dataset?
-- What is the dataset about? What kind of data does the dataset contain?
-- How recent is the data? When was the dataset last published?
-- How can I use the data? Are there any restrictions? Under which license is the data published?
-- Where can I get the data? In what formats?
-
-> Therefore, publishers *MUST* publish basic information about the dataset.
-
-### Basic information ### {#dataset-basic}
-
-Publishers *MUST* include basic information about the dataset,
-at the very minimum its [[IRI]], title and [=publisher=].
-
-<div class="example">
-    Basic dataset information:
-    
-    <pre highlight=json-ld>
-        {
-          "@context": "https://schema.org/",
-          "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
-          "@type": "Dataset",
-          "name": "Alba amicorum van de Koninklijke Bibliotheek",
-          "creator": {
-            "@type": "Organization",
-            "url": "https://www.kb.nl/",
-            "name": "Koninklijke Bibliotheek",
-            "sameAs": "https://ror.org/02w4jbg70"
-          }
-        }
-    </pre>
-</div>
-
-If more information is available, publishers *SHOULD* add it:
-
-<div class="example">
-    Optional information about the dataset.
-    
-    <pre highlight=json-ld line-numbers line-highlight="11-16">
-        {
-          "@context": "https://schema.org/",
-          "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
-          "@type": "Dataset",
-          "name": "Alba amicorum van de Koninklijke Bibliotheek",
-          "creator": {
-            "@type": "Organization",
-            "url": "https://www.kb.nl/",
-            "name": "Koninklijke Bibliotheek",
-            "sameAs": "https://ror.org/02w4jbg70"
-          },
-          "description": "Alba amicorum of the National Library of the Netherlands, a dataset defined for the Europeana Rise of Literacy project." 
-          "url": "https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum",
-          "identifier": "http://data.bibliotheken.nl/id/dataset/rise-alba",
-          "keywords": [
-            "alba amicorum"
-          ]
-        }
-    </pre>
-
-</div>
-
-### License ### {#dataset-license}
-
-Publishers *MUST* make known under which [[DWBP#licenses|license]] the dataset can be used. 
-This *SHOULD* be an open license that allows the data to used by [=consumers=],
-for example one of the [Creative Commons](https://creativecommons.org/choose/) licenses. 
-
-<div class="example">
-    Specify an open license for the dataset:
-    
-    <pre highlight=json-ld>
-        {
-          "@context": "https://schema.org/",
-          "@type": "Dataset",
-          "license": "http://creativecommons.org/publicdomain/zero/1.0/"
-        }
-    </pre>
-</div>
-
-See also [[DWBP-UCR#R-LicenseAvailable]].
-
-### Dataset description dates ### {#dataset-date}
-
-Publishers *SHOULD* make known when the dataset description was originally created, published and when it was last updated.
- 
-<div class="example">
-    Specify dataset description dates:
-    
-    <pre highlight=json-ld>
-        {
-          "@context": "https://schema.org/",
-          "@type": "Dataset",
-          "dateCreated": "2019-04-14",
-          "datePublished": "2019-05-21",
-          "dateModified": "2019-08-15"
-        }
-    </pre>
-</div>
-
-### Version ### {#dataset-versions}
-
-A dataset description may change over time. 
-[=Consumers=], such as researchers, may want to determine which information was valid at a certain moment.
-
-> Therefore, publishers *should* not only publish the current version of the dataset description,
-> but keep historical versions accessible to users.
-
-It is up to the publisher to determine when to publish new versions.
-
-See also [[DWBP#dataVersioning]].
-
-### Distributions ### {#dataset-distributions}
-
-[=Consumers=] that are interested in a dataset should be able to access the data in it.
-[=Distributions=] tell consumers where and how they can get the data.
-
-> Therefore, publishers *SHOULD* add at least one distribution.
-
-In Schema.org, each type of Distribution is called a [DataDownload](https://schema.org/DataDownload),
-even if it is a query endpoint.
+### Distribution attributes ### {#distribution-attributes}
 
 <table>
     <caption>[schema:DataDownload](https://schema.org/DataDownload) properties</caption>
@@ -319,7 +627,7 @@ even if it is a query endpoint.
     <tbody>
         <tr>
             <th scope="row">@id</th>
-            <td>The [[IRI]] where the distribution is available in a browser.</td>
+            <td>The IRI where the distribution is available in a browser.</td>
             <td>1</td>
 			<td>Required</td>
         </tr>
@@ -348,7 +656,6 @@ even if it is a query endpoint.
             <td>1</td>	
             <td>Required</td>
         </tr>
-	
         <tr>
             <th scope="row">[schema:datePublished](https://schema.org/datePublished)</th>
             <td>Date (or datatime) the distribution was published.</td>
@@ -382,251 +689,7 @@ even if it is a query endpoint.
 	</tbody>
 </table>
 
-
-:: Issue: TODO Elaborate (and give examples of) the types of distribution (in schema:name), like SPARQL-endpoint, OAI-PMH-endpoint, LDF-endpoint, Data dump, Opensearch API. Or introduce proprietary property for the type (might be better the using the free-format name).
-
-<div class="example">
-    A dataset with two distributions: a SPARQL endpoint and a JSON-LD data dump download:
-
-    <pre highlight=json-ld>
-        {
-          "@context": "https://schema.org/",
-          "@type": "Dataset",
-          "distribution": [
-            {
-              "@id": "http://vocab.getty.edu/aat/sparql",
-              "@type": "DataDownload",
-              "encodingFormat": "application/sparql-query",
-              "contentUrl": "http://vocab.getty.edu/sparql"
-            },
-            {
-              "@type": "DataDownload",
-              "encodingFormat": "application/ld+json",
-              "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.json"
-            }            
-          ]
-        }
-    </pre>
-</div>  
-
-### Full example ### {#dataset-example}
-
-<div class="example">
-    A full dataset description that includes basic information ([[#dataset-basic]]), 
-    a license ([[#dataset-license]])
-    and publication dates ([[#dataset-date]]):
-
-    <pre class=include-code>
-    path: examples/dataset.jsonld
-    highlight: json-ld
-    </pre>
-</div>
-
-:: Issue: TODO Expand example based on required (and recommended) properties.
-
-### Overview ### {#dataset-overview}
-
-Required and recommended attributes:
-
-<table>
-    <caption>[schema:Dataset](https://schema.org/Dataset) properties</caption>
-    <thead>
-        <tr>
-            <th>Property</th>
-            <th>Description</th>
-            <th>Cardinality</th>
-            <th>Usage</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <th scope="row">[schema:identifier](https://schema.org/identifier)</th>
-            <td>See [[#dataset-basic]].</td>
-			<td>1</td>
-            <td>Required</td>
-        </tr>
-        <tr>
-            <th scope="row">[schema:name](https://schema.org/name)</th>
-            <td>See [[#dataset-basic]</td>
-			<td>1</td>
-            <td>Required</td>
-        </tr>
-        <tr>
-            <th scope="row">[schema:creator](https://schema.org/creator)</th>
-            <td>The owner of the dataset.</td>
-			<td>1</td>
-            <td>Required</td>
-        </tr>
-        <tr>
-            <th scope="row">[schema:license](https://schema.org/license)</th>
-            <td>See [[#dataset-license]].</td>
-			<td>1</td>
-            <td>Required</td>
-        </tr>
-        <tr>
-            <th scope="row">[schema:distribution](https://schema.org/distribution)</th>
-            <td>See [[#dataset-distributions]].</td>
-			<td>1..n</td>
-            <td>Required</td>
-        </tr>
-        <tr>
-            <th scope="row">[schema:description](https://schema.org/description)</th>
-            <td>See [[#dataset-basic]].</td>
-			<td>0..1</td>
-            <td>Recommended</td>
-        </tr>
-        <tr>
-            <th scope="row">[schema:publisher](https://schema.org/publisher)</th>
-            <td>The publisher of the dataset.</td>
-			<td>0..1</td>
-            <td>Recommended</td>
-        </tr>
-        <tr>
-            <th scope="row">[schema:dateCreated](https://schema.org/dateCreated)</th>
-            <td>See [[#dataset-date]].</td>
-			<td>0..1</td>
-            <td>Recommended</td>
-        </tr>
-        <tr>
-            <th scope="row">[schema:datePublished](https://schema.org/datePublished)</th>
-            <td>See [[#dataset-date]].</td>
-			<td>0..1</td>
-            <td>Recommended</td>
-        </tr>
-        <tr>
-            <th scope="row">[schema:dateModified](https://schema.org/dateModified)</th>
-            <td>See [[#dataset-date]].</td>
-			<td>0..1</td>
-            <td>Recommended</td>
-        </tr>
-        <tr>
-            <th scope="row">[schema:version](https://schema.org/version)</th>
-            <td>See [[#dataset-versions]].</td>
-			<td>0..1</td>
-            <td>Recommended</td>
-        </tr>
-    </tbody>
-</table>
-
-
-### Extended information ###  {#dataset-extended}
-
-
-:: Issue: TODO Right location? Why separate?
-
-The following dataset attributes provided extra information, which improves the richness of the description and helps [=Consumers=] in finding and selecting datasets.
-
-> Therefore, publishers *SHOULD* provide extended information.
-
-<table>
-    <caption>[schema:Dataset](https://schema.org/Dataset) properties</caption>
-    <thead>
-        <tr>
-            <th>Property</th>
-            <th>Description</th>
-            <th>Cardinality</th>
-			<th>Usage</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr> 	
-            <th scope="row">[schema:mainEntityOfPage](https://schema.org/mainEntityOfPage)</th>
-            <td>URL of a webpage where the dataset is described.</td>
-			<td>0..1</td>
-            <td>Recommended</td>
-        </tr>
-        <tr>	
-            <th scope="row">[schema:inLanguage](https://schema.org/inLanguage)</th>
-            <td>Language or languages in which the dataset is available. Use one of the language codes from the [[BCP47]], such as "nl-NL".</td>
-			<td>0..n</td>
-            <td>Recommended</td>
-        </tr>
-        <tr>	
-            <th scope="row">[schema:isBasedOnUrl](https://schema.org/isBasedOnUrl)</th>
-            <td>The URL of dataset this dataset is based on.</td>
-			<td>0..1</td>
-            <td>Recommended</td>
-        </tr>
-        <tr>	
-            <th scope="row">[schema:citation](https://schema.org/citation)</th>
-            <td>A citation or reference for the dataset.</td>
-			<td>0..1</td>
-            <td>Recommended</td>
-        </tr>
-        <tr>
-            <th scope="row">[schema:genre](https://schema.org/genre)</th>
-            <td>The genre or genres which describe the dataset.</td>
-			<td>0..n</td>
-            <td>Recommended</td>
-        </tr>
-        <tr>	
-            <th scope="row">[schema:keywords](https://schema.org/keywords)</th>
-            <td>One or more keyword which describe the dataset.</td>
-			<td>0..n</td>
-            <td>Recommended</td>
-        </tr>
-        <tr>	
-            <th scope="row">[schema:spatialCoverage](https://schema.org/spatialCoverage)</th>
-            <td>Indicates the place(s) which are the focus of the dataset.</td>
-			<td>0..1</td>
-            <td>Recommended</td>
-        </tr>
-        <tr>
-            <th scope="row">[schema:temporalCoverage](https://schema.org/temporalCoverage)</th>
-            <td>Indicates the period that the dataset applies to.</td>
-			<td>0..1</td>
-            <td>Recommended</td>
-        </tr>
-        <tr>	
-            <th scope="row">[schema:includedInDataCatalog](https://schema.org/includedInDataCatalog)</th>
-            <td>The URI of the data catalog in which the dataset is.</td>
-			<td>0..1</td>
-            <td>Recommended</td>
-        </tr>
-     
-    </tbody>
-</table>
-
-
-### Data catalog ### {#data-catalog}
-
-A collection of datasets is a data catalog. A catalog provides the [=Consumers=] with a complete overview of available datasets, which improves discoverability.
-
-> Therefore, publishers *SHOULD* provide a catalog.
-
-
-<pre class=include>
-path: datacatalog-dataset-distribution.svg
-</pre>
-
-<div class="example">
-    A catalog of available datasets:
-    
-    <pre highlight=json-ld>
-		{
-		  "@context": "https://schema.org/",
-		  "@type": "DataCatalog",
-		  "name": "Linked Data KB",
-		  "description": "Alle linked data zoals beschikbaar gesteld door de Koninklijke Bibliotheek.",
-		  "publisher": {
-                "@type": "Organization",
-                "name": "Koninklijke Bibliotheek",
-                "url": "https://www.kb.nl/"
-           },
-           "dataset": [
-             {
-               "@type": "Dataset",
-               "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
-               ...
-             }, { 
-               ...
-             }
-		  ]
-		}
-    </pre>
-</div>
-
-
+### DataCatalog attributes ### {#datacatalog-attributes}
 
 <table>
     <caption>[schema:DataCatalog](http://schema.org/DataCatalog) properties</caption>
@@ -666,105 +729,28 @@ path: datacatalog-dataset-distribution.svg
     </tbody>
 </table>
 
-## Data information ## {#data}
-
-### Relations to terms ### {#relations}
-
-To understand and connect data,
-it must be described in [=terms=] that provide meaning to the data for humans as well as machines.
-
-> Therefore, data publishers *SHOULD* describe their data with [=terms=].
+### Full example ### {#dataset-example}
 
 <div class="example">
-    A painting in plain JSON, where all values are [[RDF11-CONCEPTS#section-literals|string literals]]:
-    
-    <pre highlight="json" line-numbers>
-        {
-          "type": "Artwork",
-          "name": "The Night Watch",
-          "creator": "Rembrandt"
-        }
-    </pre>
-    
-    Now, with relations to [=terms=].
-    We [[JSON-LD-SYNTAX#specifying-the-type|specify the item’s type]] in the [[SCHEMA-ORG]] vocabulary
-    and refer to the painter by his RKDArtists [[IRI]].
+    A full dataset description that includes basic information ([[#dataset-basic]]), 
+    a license ([[#dataset-license]])
+    and publication dates ([[#dataset-date]]):
 
-    <pre highlight="json-ld" line-highlight="3,5" line-numbers>
-        {
-          "@context": "https://schema.org/",
-          "@type": "Painting",
-          "name": "The Night Watch",
-          "creator": "https://data.rkd.nl/artists/66219"
-        }
+    <pre class=include-code>
+    path: examples/dataset.jsonld
+    highlight: json-ld
     </pre>
 </div>
 
-See also [[DWBP-UCR#R-VocabReference]].
+Issue: TODO Expand example based on required (and recommended) properties.
 
-## Developer documentation ## {#developer-docs}
+# Tools # {#tools}
 
-Publishers *MUST* publish documentation for their data access [=API=].
-
-Issue: TODO plus mention SHACL (here or elsewhere)?
-
-See also [[DWBP-UCR#R-APIDocumented]]
-
-## Durable identifiers ## {#identifiers}
-
-[=Consumers=] want to refer to data in datasets. Preferably they do so by linking to it.
-
-> Therefore, publishers *must* maintain a permanent and unique identifier for each [[#data|data]] resource,
-> as well as their [[#organization-information|organization]] and [[#dataset-information|dataset]] information.
-> Publishers *should* use [[IRI|IRIs]] as identifiers.
-
-See also [[DWBP-UCR#R-UniqueIdentifier]] and [[DWBP-UCR#R-PersistentIdentification]].
-
-## Information in RDF ## {#rdf}
-
-For [=machine-readability|machine-readable=] access to data,
-it needs to be published in an [[RDF11-PRIMER#section-graph-syntax|RDF format]].
-RDF formats include [[JSON-LD]], [[N3]] and [[Turtle]].
-
-> Therefore, publishers *must* make their [[#organization-information|organization information]] 
-> and [[#dataset-information|dataset information]] available in RDF. 
-> Publishers *should* also make the [[#data|data]] itself available in RDF.
-
-<div class="example">
-    <a href="https://developers.google.com/search/docs/guides/intro-structured-data#structured-data">Google recommends</a> 
-    including the JSON-LD directly in the HTML source of web pages.
-    
-    So, on your organization’s web page, for instance <a href="https://www.kb.nl">www.kb.nl</a>, include:
-
-    <xmp highlight=html>
-        <html>
-          <head>
-            <title>Koninklijke Bibliotheek</title>
-            <script type="application/ld+json">
-              {
-                "@context": "https://schema.org/",
-                "@type": "Organization",
-                "name": "Koninklijke Bibliotheek",
-                "url": "https://www.kb.nl/"
-              }
-            </script>
-          </head>
-          <body>
-            Here continues the web page of the organization...
-          </body>
-        </html>    
-    </xmp>
-</div>
+*This section is non-normative.*
 
 Google’s [Rich Results Test](https://search.google.com/test/rich-results) (previously Structured Data Testing Tool)
 can help with testing RDF metadata.
 
-See also [[DWBP-UCR#R-FormatMachineRead]].
+Issue: Reference SHACL.
 
-## Information remains available ## {#available}
-
-Datasets will be used by all kinds of [=consumers=] and their systems.
-For stability, users must be able to trust that the datasets will remain available
-so they can be consulted in the future.
-
-> Therefore, publishers *must* ensure information remains available in the future.
+Issue: Validation with NDE Register.
