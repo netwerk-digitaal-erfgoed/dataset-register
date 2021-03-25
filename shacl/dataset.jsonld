@@ -51,7 +51,7 @@
           "sh:path": {
             "@id": "dcat:distribution"
           },
-          "sh:minCount": 1,
+          "sh:minCount": 0,
           "sh:class": {
             "@id": "dcat:Distribution"
           },
@@ -160,7 +160,7 @@
           "sh:path": {
             "@id": "schema:distribution"
           },
-          "sh:minCount": 1,
+          "sh:minCount": 0,
           "sh:class": {
             "@id": "schema:DataDownload"
           },

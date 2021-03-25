@@ -2,7 +2,6 @@
   "@context": "http://schema.org/",
   "@type": "Dataset",
   "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
-  "name": "Alba amicorum van de Koninklijke Bibliotheek",
   "description": "Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.",
   "url": "https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum",
   "identifier": "http://data.bibliotheken.nl/id/dataset/rise-alba",
@@ -15,7 +14,5 @@
     "url": "https://www.kb.nl/",
     "name": "Koninklijke Bibliotheek",
     "sameAs": "https://ror.org/02w4jbg70"
-  },
-  "distribution": [
-  ]
+  }
 }

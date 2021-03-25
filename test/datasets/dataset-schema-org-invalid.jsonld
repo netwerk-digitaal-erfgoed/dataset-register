@@ -17,5 +17,9 @@
     "sameAs": "https://ror.org/02w4jbg70"
   },
   "distribution": [
+    {
+      "@type": "DataDownload",
+      "encodingFormat": "application/rdf+xml"
+    }
   ]
 }
