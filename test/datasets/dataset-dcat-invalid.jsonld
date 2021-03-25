@@ -7,7 +7,6 @@
   },
   "@type": "dcat:Dataset",
   "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
-  "dct:title": "Alba amicorum van de Koninklijke Bibliotheek",
   "dct:identifier": "http://data.bibliotheken.nl/id/dataset/rise-alba",
   "dct:keyword": [
     "alba amicorum"
@@ -17,7 +16,5 @@
     "@type": "foaf:Organization",
     "foaf:name": "Koninklijke Bibliotheek",
     "foaf:workplaceHomepage": "https://www.kb.nl/"
-  },
-  "dcat:distribution": [
-  ]
+  }
 }
