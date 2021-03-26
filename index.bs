@@ -88,11 +88,6 @@ Definitions {#definitions}
 :: A channel through which a [=dataset=] is available, 
     for example a CSV file download or a [[SPARQL11-OVERVIEW|SPARQL]] endpoint.
 
-: <dfn export>Term Source</dfn>
-:: An authoritative set of [=terms=].
-    Examples are thesauri and taxonomies.
-:: Issue: TODO
-
 : <dfn export>Application Programming Interface</dfn> (<dfn>API</dfn>)
 :: Issue: TODO
 
@@ -109,13 +104,6 @@ Definitions {#definitions}
 :: On organization or an individual that uses one or more [=datasets=] that are provided by a [=publisher=].
 
     Issue: add examples
-    
-: <dfn>Term</dfn>
-:: Terms describe what digital heritage is about.
-    Terms are subjects, persons, places or time units, for example.
-    Take The Night Watch: it is a *painting*, created by *Rembrandt* in *Amsterdam*, in the year *1642*.
-    Terms are entries in a [=term source=].
-    See also [[LD-GLOSSARY#term|Linked Data Glossary]].
 
 Conceptual model {#conceptual-model}
 ===============
