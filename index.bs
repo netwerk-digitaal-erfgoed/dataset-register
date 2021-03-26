@@ -328,7 +328,8 @@ The organization data is then included as the dataset’s creator:
 > Therefore, publishers *SHOULD* add at least one distribution.
 > Each distribution *MUST* have at least a MIME format and the URL where the distribution can be accessed.
 
-Distributions can be data dumps in RDF or some other format such as CSV, SPARQL endpoints, OAI-PMH endpoints and more.
+Distributions can be data dumps in RDF or some other format such as CSV, live SPARQL endpoints,
+OAI-PMH endpoints or other APIs.
 
 <div class="example">
     A minimal definition of a SPARQL endpoint distribution.
@@ -365,7 +366,12 @@ The distributions are then included under the `distribution` attribute with the 
               "@type": "DataDownload",
               "encodingFormat": "application/ld+json",
               "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.json"
-            }            
+            },
+            {
+              "@type": "DataDownload",
+              "encodingFormat": "text/csv",
+              "contentUrl": "https://example.com/data.csv"
+            }
           ]
         }
     </pre>
