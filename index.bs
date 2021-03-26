@@ -450,8 +450,8 @@ This is an overview of required and recommended attributes.
     </thead>
     <tbody>
         <tr>
-            <th scope="row">[schema:identifier](https://schema.org/identifier)</th>
-            <td>See [[#dataset-basic]].</td>
+            <th scope="row">@id</th>
+            <td>The [[IRI]] of the dataset.</td>
             <td>1</td>
             <td>Required</td>
         </tr>
