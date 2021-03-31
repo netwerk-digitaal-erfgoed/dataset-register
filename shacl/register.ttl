@@ -178,12 +178,21 @@ dcat:DatasetShape
 
 dcat:DistributionShape
     a sh:NodeShape ;
-    sh:property [
-        sh:minCount 1 ;
-        sh:path dcat:accessURL
-    ], [
-        sh:minCount 1 ;
-        sh:path dc:format
+	sh:or (
+		[ sh:property [
+			sh:minCount 1 ;
+			sh:path dcat:accessURL
+			]
+		] 
+		[ sh:property [
+			sh:minCount 1 ;
+			sh:path dcat:downloadURL
+			]
+		]
+	);
+	sh:property [
+		sh:minCount 1 ;
+		sh:path dc:format
     ] ;
     sh:targetClass dcat:Distribution ;
 .
