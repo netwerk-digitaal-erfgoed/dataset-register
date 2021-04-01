@@ -36,8 +36,11 @@ reg:DatasetShape
 
     # Recommended properties
 
+    sh:property reg:SchemaPublisherProperty ;
+	
 #    TODO
-#    sh:property reg:SchemaDescriptionProperty, reg:SchemaPublisherProperty, reg:SchemaDateCreatedProperty, reg:SchemaDatePublishedProperty, reg:SchemaDateModifiedProperty, reg:SchemaVersionProperty, reg:SchemaManEntityOfPageProperty, reg:SchemaInLanguageProperty, reg:SchemaIsBasedOnUrlProperty, reg:SchemaCitationProperty, reg:SchemaGenreProperty, reg:SchemaKeywordsProperty, reg:SchemaSpatialCoverageProperty, reg:SchemaTemporalCoverageProperty, reg:SchemaIncludedInDataCatalogProperty, reg:SchemaAlternateNameProperty ;
+#    sh:property reg:SchemaDescriptionProperty, reg:SchemaDateCreatedProperty, reg:SchemaDatePublishedProperty, reg:SchemaDateModifiedProperty, reg:SchemaVersionProperty, reg:SchemaManEntityOfPageProperty, reg:SchemaInLanguageProperty, reg:SchemaIsBasedOnUrlProperty, reg:SchemaCitationProperty, reg:SchemaGenreProperty, reg:SchemaKeywordsProperty, reg:SchemaSpatialCoverageProperty, reg:SchemaTemporalCoverageProperty, reg:SchemaIncludedInDataCatalogProperty, reg:SchemaAlternateNameProperty ;
+
 .
 
 reg:DistributionShape
@@ -110,12 +113,33 @@ reg:SchemaDescriptionProperty a sh:PropertyShape ;
 
 reg:SchemaCreatorProperty a sh:PropertyShape ;
     rdfs:comment "Persoon of organisatie die de dataset heeft gemaakt"@nl ;
-    sh:class schema:Organization ;
+    sh:or (
+        [
+            sh:class schema:Person ;
+        ]
+        [
+            sh:class schema:Organization ;
+        ]
+    );
     sh:minCount 1 ;
-    sh:node reg:CreatorShape;
+    sh:node reg:CreatorShape ;
     sh:path schema:creator ;
     sh:message "Een datasetbeschrijving dient een maker te bevatten"@nl, "A dataset description should have a creator"@en ;
     sh:group reg:SchemaDatasetRequiredProperties
+.
+
+reg:SchemaPublisherProperty a sh:PropertyShape ;
+    rdfs:comment "Persoon of organisatie die de dataset heeft gepubliceerd"@nl ;
+    sh:or (
+        [
+            sh:class schema:Person ;
+        ]
+        [
+            sh:class schema:Organization ;
+        ]
+    );
+    sh:path schema:publisher ;
+    sh:group reg:SchemaDatasetRecommendedProperties
 .
 
 reg:SchemaLicenseProperty a sh:PropertyShape ;
