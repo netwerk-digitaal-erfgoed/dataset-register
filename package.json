@@ -2,7 +2,7 @@
   "name": "register",
   "version": "1.0.0",
   "description": "",
-  "main": "build/src/main.jsnpm",
+  "main": "build/src/main.js",
   "engines": {
     "node": ">=11.14"
   },
