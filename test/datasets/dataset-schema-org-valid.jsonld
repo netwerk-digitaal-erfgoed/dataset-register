@@ -20,6 +20,11 @@
       "@type": "DataDownload",
       "encodingFormat": "application/rdf+xml",
       "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
+    },
+    {
+      "@type": "DataDownload",
+      "encodingFormat": "application/ld+json",
+      "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld"
     }
   ]
 }

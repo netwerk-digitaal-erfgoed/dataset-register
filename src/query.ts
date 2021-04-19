@@ -167,10 +167,6 @@ export const selectQuery = `
     }
   } LIMIT 10000`;
 
-/**
- * Use skolemized values because they are correct, unlike the generated blank node ids.
- * See https://github.com/rubensworks/jsonld-streaming-parser.js/issues/72
- */
 export function bindingsToQuads(binding: Map<string, Term>): Quad[] {
   const datasetIri = binding.get('?dataset') as NamedNode;
   const quads = [
@@ -179,13 +175,7 @@ export function bindingsToQuads(binding: Map<string, Term>): Quad[] {
   ];
 
   if (binding.get(creator)) {
-    const creatorBlankNode = factory.blankNode(
-      (binding.get(creator) as BlankNodeScoped).skolemized.value.replace(
-        /:/g,
-        '_'
-      )
-    );
-
+    const creatorBlankNode = binding.get(creator) as BlankNodeScoped;
     quads.push(
       factory.quad(datasetIri, dct('creator'), creatorBlankNode, datasetIri),
       factory.quad(
@@ -199,13 +189,7 @@ export function bindingsToQuads(binding: Map<string, Term>): Quad[] {
   }
 
   if (binding.get(distribution)) {
-    const distributionBlankNode = factory.blankNode(
-      (binding.get(distribution) as BlankNodeScoped).skolemized.value.replace(
-        /:/g,
-        '_'
-      )
-    );
-
+    const distributionBlankNode = binding.get(distribution) as BlankNodeScoped;
     quads.push(
       factory.quad(
         datasetIri,
