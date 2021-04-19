@@ -1,8 +1,8 @@
 {
-  "name": "registry-api",
+  "name": "register",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "build/src/main.jsnpm",
   "engines": {
     "node": ">=11.14"
   },
