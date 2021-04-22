@@ -9,6 +9,7 @@ const alternateName = '?alternateName';
 const description = '?description';
 const license = '?license';
 const creator = '?creator';
+const publisher = '?publisher';
 const distribution = '?distribution';
 const dateCreated = '?dateCreated';
 const datePublished = '?datePublished';
@@ -25,6 +26,11 @@ const creatorName = '?creator_name';
 const creatorEmail = '?creator_email';
 const creatorUrl = '?creator_url';
 const creatorSameAs = '?creator_sameAs';
+
+const publisherName = '?publisher_name';
+const publisherEmail = '?publisher_email';
+const publisherUrl = '?publisher_url';
+const publisherSameAs = '?publisher_sameAs';
 
 const distributionUrl = '?distribution_url';
 const distributionMediaType = '?distribution_mediaType';
@@ -74,6 +80,13 @@ export const creatorMapping = new Map([
   [creatorSameAs, owl('sameAs')],
 ]);
 
+export const publisherMapping = new Map([
+  [publisherName, foaf('name')],
+  [publisherEmail, foaf('mbox')],
+  [publisherUrl, foaf('workplaceHomepage')],
+  [publisherSameAs, owl('sameAs')],
+]);
+
 // https://www.w3.org/TR/vocab-dcat-2/#Class:Distribution
 const distributionMapping = new Map([
   [distributionUrl, dcat('accessURL')],
@@ -98,14 +111,22 @@ export const selectQuery = `
       ${dataset} a schema:Dataset ;
         schema:name ${name} ; 
         schema:license ${license} ;
-        schema:creator ${creator} ;
         schema:distribution ${distribution} .
         
       FILTER (!isBlank(${license}))
-        
-      ${creator} a schema:Organization ;
-        schema:name ${creatorName} .
-        
+
+      OPTIONAL { 
+        ${dataset} schema:creator ${creator} .        
+        ${creator} a schema:Organization ;
+          schema:name ${creatorName} .
+      }
+          
+      OPTIONAL { 
+        ${dataset} schema:publisher ${publisher} .        
+        ${creator} a schema:Organization ;
+          schema:name ${publisherName} .
+      }
+          
       ${distribution} a schema:DataDownload ;
         schema:contentUrl ${distributionUrl} ;
         schema:encodingFormat ${distributionFormat} . 
@@ -173,6 +194,25 @@ export function bindingsToQuads(binding: Map<string, Term>): Quad[] {
     factory.quad(datasetIri, rdf('type'), datasetType, datasetIri),
     ..._bindingsToQuads(datasetIri, binding, datasetMapping, datasetIri),
   ];
+
+  if (binding.get(publisher)) {
+    const publisherBlankNode = binding.get(publisher) as BlankNodeScoped;
+    quads.push(
+      factory.quad(datasetIri, dct('creator'), publisherBlankNode, datasetIri),
+      factory.quad(
+        publisherBlankNode,
+        rdf('type'),
+        foaf('Organization'),
+        datasetIri
+      ),
+      ..._bindingsToQuads(
+        publisherBlankNode,
+        binding,
+        publisherMapping,
+        datasetIri
+      )
+    );
+  }
 
   if (binding.get(creator)) {
     const creatorBlankNode = binding.get(creator) as BlankNodeScoped;

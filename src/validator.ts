@@ -4,6 +4,7 @@ import factory from 'rdf-ext';
 import rdfParser from 'rdf-parse';
 import SHACLValidator from 'rdf-validate-shacl';
 import DatasetExt from 'rdf-ext/lib/Dataset';
+import ValidationReport from 'rdf-validate-shacl/src/validation-report';
 
 export interface Validator {
   /**
@@ -13,7 +14,7 @@ export interface Validator {
 }
 
 export class ShaclValidator implements Validator {
-  private inner: typeof SHACLValidator;
+  private inner: SHACLValidator;
 
   public static async fromUrl(url: string): Promise<ShaclValidator> {
     return new this(await readUrl(url));
@@ -38,14 +39,14 @@ export class ShaclValidator implements Validator {
     }
 
     const queryResultValidationReport = this.inner.validate(dataset);
-    if (!queryResultValidationReport.conforms) {
-      return {
-        state: 'invalid',
-        errors: queryResultValidationReport.dataset,
-      };
-    }
+    const state = hasViolation(queryResultValidationReport)
+      ? 'invalid'
+      : 'valid';
 
-    return {state: 'valid'};
+    return {
+      state: state,
+      errors: queryResultValidationReport.dataset,
+    };
   }
 }
 
@@ -59,6 +60,7 @@ type ValidationResult = Valid | NoDataset | InvalidDataset;
 
 export type Valid = {
   state: 'valid';
+  errors: DatasetCore;
 };
 
 type NoDataset = {
@@ -69,3 +71,16 @@ export type InvalidDataset = {
   state: 'invalid';
   errors: DatasetCore;
 };
+
+export const shacl = (property: string) =>
+  factory.namedNode(`http://www.w3.org/ns/shacl#${property}`);
+
+/**
+ * Check for severity Violation rather than {@see ValidationReport.conforms} because the latter is false on any
+ * violation, including Info and Warning.
+ */
+const hasViolation = (report: ValidationReport) =>
+  report.results.some(
+    (result: ValidationReport.ValidationResult) =>
+      result.severity?.value === shacl('Violation').value
+  );

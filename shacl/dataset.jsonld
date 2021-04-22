@@ -39,13 +39,17 @@
         },
         {
           "sh:path": {
-            "@id": "dct:creator"
+            "@id": "dct:publisher"
           },
           "sh:minCount": 1,
+          "sh:severity": {
+            "@id": "sh:Warning"
+          },
           "sh:class": {
             "@id": "foaf:Organization"
           },
-          "sh:node": "dcat:CreatorShape"
+          "sh:node": "dcat:PublisherShape",
+          "sh:message": "Please use dct:publisher instead of dct:creator"
         },
         {
           "sh:path": {
@@ -60,7 +64,7 @@
       ]
     },
     {
-      "@id": "dcat:CreatorShape",
+      "@id": "dcat:PublisherShape",
       "@type": "sh:NodeShape",
       "sh:targetClass": {
         "@id": "foaf:Organization"
@@ -148,13 +152,17 @@
         },
         {
           "sh:path": {
-            "@id": "schema:creator"
+            "@id": "schema:publisher"
           },
           "sh:minCount": 1,
+          "sh:severity": {
+            "@id": "sh:Warning"
+          },
           "sh:class": {
             "@id": "schema:Organization"
           },
-          "sh:node": "schema:CreatorShape"
+          "sh:node": "schema:PublisherShape",
+          "sh:message": "Please use schema:publisher instead of schema:creator"
         },
         {
           "sh:path": {
@@ -169,7 +177,7 @@
       ]
     },
     {
-      "@id": "schema:CreatorShape",
+      "@id": "schema:PublisherShape",
       "@type": "sh:NodeShape",
       "sh:targetClass": {
         "@id": "schema:Organization"

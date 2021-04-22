@@ -8,7 +8,7 @@
       "name": "Alba amicorum van de Koninklijke Bibliotheek",
       "description": "Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.",
       "license": "http://creativecommons.org/publicdomain/zero/1.0/",
-      "creator": {
+      "publisher": {
         "@type": "Organization",
         "name": "Open Archives"
       },
