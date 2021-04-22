@@ -298,18 +298,18 @@ Providing information about the organization behind the dataset (the [=publisher
 
 See [[#organization-overview]] for a full overview of organization attributes.
 
-### Dataset creator ### {#dataset-creator}
+### Dataset publisher ### {#dataset-publisher}
 
-The organization data is then included as the dataset’s creator:
+The organization data is then included as the dataset’s publisher:
 
 <div class="example">
-    A dataset with a creator. The creator has some optional attributes.
+    A dataset with a publisher. The publisher has some optional attributes.
 
     <pre highlight=json-ld>
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
-          "creator": {
+          "publisher": {
             "@type": "Organization",
             "name": "Koninklijke Bibliotheek",
             "url": "https://www.kb.nl/",
@@ -462,8 +462,8 @@ This is an overview of required and recommended attributes.
             <td>Recommended</td>
         </tr>
         <tr>
-            <th scope="row">[schema:creator](https://schema.org/creator)</th>
-            <td>The owner of the dataset.</td>
+            <th scope="row">[schema:publisher](https://schema.org/publisher)</th>
+            <td>The publisher of the dataset.</td>
             <td>1</td>
             <td>Required</td>
         </tr>
@@ -480,8 +480,8 @@ This is an overview of required and recommended attributes.
             <td>Recommended</td>
         </tr>
         <tr>
-            <th scope="row">[schema:publisher](https://schema.org/publisher)</th>
-            <td>The publisher of the dataset.</td>
+            <th scope="row">[schema:creator](https://schema.org/creator)</th>
+            <td>The owner of the dataset.</td>
             <td>0..1</td>
             <td>Recommended</td>
         </tr>
