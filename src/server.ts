@@ -102,6 +102,7 @@ export async function server(
     const validation = await validator.validate(dataset);
     switch (validation.state) {
       case 'valid':
+        reply.send(validation.errors);
         return dataset;
       case 'no-dataset':
         reply.code(406).send();
@@ -136,9 +137,9 @@ export async function server(
         return;
       }
 
+      reply.code(202);
       if (await validate(url, reply)) {
         const datasets = await fetch(url);
-        reply.code(202).send();
         await datasetStore.store(datasets);
         const registration = new Registration(url, new Date(), [
           ...extractIris(datasets).keys(),
@@ -155,9 +156,7 @@ export async function server(
     async (request, reply) => {
       const url = new URL((request.body as {'@id': string})['@id']);
       request.log.info(url.toString());
-      if ((await validate(url, reply)) !== null) {
-        reply.code(200).send();
-      }
+      await validate(url, reply);
     }
   );
 

@@ -1,7 +1,7 @@
 import factory from 'rdf-ext';
 import {JsonLdParser} from 'jsonld-streaming-parser';
 import * as fs from 'fs';
-import {ShaclValidator, Validator} from '../src/validator';
+import {shacl, ShaclValidator, Valid, Validator} from '../src/validator';
 
 let validator: Validator;
 
@@ -18,6 +18,21 @@ describe('Validator', () => {
   it('reports invalid Schema.org dataset', async () => {
     const report = await validate('dataset-schema-org-invalid.jsonld');
     expect(report.state).toBe('invalid');
+  });
+
+  it('accepts valid Schema.org dataset without publisher', async () => {
+    const report = await validate(
+      'dataset-schema-org-valid-no-publisher.jsonld'
+    );
+    expect(report.state).toEqual('valid');
+    expect(report.state === 'valid');
+    expect(
+      (report as Valid).errors.match(
+        null,
+        shacl('resultSeverity'),
+        shacl('Warning')
+      ).size
+    ).toEqual(1);
   });
 
   it('accepts valid HTTP Schema.org dataset', async () => {
