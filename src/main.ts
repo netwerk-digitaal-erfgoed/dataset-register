@@ -4,7 +4,7 @@ import {
   GraphDbDatasetStore,
   GraphDbRegistrationStore,
 } from './graphdb';
-import {ShaclValidator} from './validator';
+import {readUrl, ShaclValidator} from './validator';
 import {Crawler} from './crawler';
 import {scheduleJob} from 'node-schedule';
 import {server} from './server';
@@ -29,7 +29,8 @@ const client = new GraphDbClient(
     client
   );
   const crawler = new Crawler(registrationStore, datasetStore, logger);
-  const validator = await ShaclValidator.fromUrl('shacl/register.ttl');
+  const shacl = await readUrl('shacl/register.ttl');
+  const validator = new ShaclValidator(shacl);
 
   // Schedule crawler to check every hour for CRAWLER_INTERVAL that have expired their REGISTRATION_URL_TTL.
   const ttl = ((process.env.REGISTRATION_URL_TTL || 86400) as number) * 1000;
@@ -47,6 +48,7 @@ const client = new GraphDbClient(
       registrationStore,
       allowedRegistrationDomainStore,
       validator,
+      shacl,
       process.env.DOCS_URL || undefined,
       {logger: process.env.LOG ? !!+process.env.LOG : true}
     );

@@ -154,3 +154,40 @@ paths:
           description: The URL cannot be resolved.
         406:
           description: The URL can be resolved but it contains no datasets.
+  /shacl:
+    get:
+      summary: Get the SHACL shape that is used to validate dataset descriptions.
+      description: |-
+        Get the <a href="https://www.w3.org/TR/shacl/">SHACL shape graph</a> that is used to validate dataset descriptions.
+      responses:
+        200:
+          description: A SHACL shape
+          content:
+            application/ld+json:
+              example: |-
+                [
+                  {
+                    "@id": "http://terms.netwerkdigitaalerfgoed.nl/ns/register#DatasetShape",
+                    "@type": [
+                      "http://www.w3.org/ns/shacl#NodeShape"
+                    ],
+                    "http://www.w3.org/ns/shacl#name": [
+                      {
+                        "@value": "Datasetbeschrijving",
+                        "@language": "nl"
+                      },
+                      {
+                        "@value": "Dataset description",
+                        "@language": "en"
+                      }
+                    ]
+                  }
+                ]
+            text/turtle:
+              example: |-
+                <http://terms.netwerkdigitaalerfgoed.nl/ns/register#DatasetShape> a <http://www.w3.org/ns/shacl#NodeShape>.
+                    <http://www.w3.org/ns/shacl#name> "Datasetbeschrijving"@nl, "Dataset description"@en;
+                    <http://www.w3.org/2000/01/rdf-schema#comment> "Een datasetbeschrijving bestaat uit een elementen die de dataset beschrijft"@nl;
+                    <http://www.w3.org/ns/shacl#targetClass> <http://schema.org/Dataset>;
+                    <http://www.w3.org/ns/shacl#nodeKind> <http://www.w3.org/ns/shacl#IRI>;
+                    <http://www.w3.org/ns/shacl#property> <http://terms.netwerkdigitaalerfgoed.nl/ns/register#SchemaNameProperty>, <http://terms.netwerkdigitaalerfgoed.nl/ns/register#SchemaLicenseProperty>, <http://terms.netwerkdigitaalerfgoed.nl/ns/register#SchemaDescriptionProperty>, <http://terms.netwerkdigitaalerfgoed.nl/ns/register#SchemaPublisherPrope
