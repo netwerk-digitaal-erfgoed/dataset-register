@@ -50,7 +50,7 @@ export class ShaclValidator implements Validator {
   }
 }
 
-async function readUrl(url: string): Promise<DatasetCore> {
+export async function readUrl(url: string): Promise<DatasetCore> {
   const fileStream = fs.createReadStream(url);
   const rdfStream = rdfParser.parse(fileStream, {path: url});
   return await factory.dataset().import(rdfStream);

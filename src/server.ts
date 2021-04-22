@@ -19,6 +19,7 @@ import * as psl from 'psl';
 import rdfSerializer from 'rdf-serialize';
 import fastifySwagger from 'fastify-swagger';
 import fastifyCors from 'fastify-cors';
+import {DatasetCore} from 'rdf-js';
 
 const serializer = (contentType: string) => (dataset: DatasetExt) =>
   rdfSerializer.serialize(toStream(dataset), {contentType});
@@ -28,6 +29,7 @@ export async function server(
   registrationStore: RegistrationStore,
   allowedRegistrationDomainStore: AllowedRegistrationDomainStore,
   validator: Validator,
+  shacl: DatasetCore,
   docsUrl = '/',
   options?: FastifyServerOptions
 ): Promise<FastifyInstance<Server>> {
@@ -159,6 +161,10 @@ export async function server(
       await validate(url, reply);
     }
   );
+
+  server.get('/shacl', rdfSerializerConfig, async (request, reply) => {
+    reply.send(shacl);
+  });
 
   /**
    * Make Fastify accept JSON-LD payloads.

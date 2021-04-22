@@ -2,7 +2,7 @@ import nock from 'nock';
 import {FastifyInstance} from 'fastify';
 import {Server} from 'http';
 import {server} from '../src/server';
-import {ShaclValidator} from '../src/validator';
+import {readUrl, ShaclValidator} from '../src/validator';
 import {
   MockAllowedRegistrationDomainStore,
   MockDatasetStore,
@@ -12,11 +12,13 @@ import {
 let httpServer: FastifyInstance<Server>;
 describe('Server', () => {
   beforeAll(async () => {
+    const shacl = await readUrl('shacl/register.ttl');
     httpServer = await server(
       new MockDatasetStore(),
       new MockRegistrationStore(),
       new MockAllowedRegistrationDomainStore(),
-      await ShaclValidator.fromUrl('shacl/register.ttl')
+      new ShaclValidator(shacl),
+      shacl
     );
 
     nock.back.fixtures = __dirname + '/http';
@@ -116,5 +118,14 @@ describe('Server', () => {
     });
     nockDone();
     expect(response.statusCode).toEqual(202);
+  });
+
+  it('returns SHACL graph', async () => {
+    const response = await httpServer.inject({
+      method: 'GET',
+      url: '/shacl',
+      headers: {'Content-Type': 'text/turtle'},
+    });
+    expect(response.statusCode).toEqual(200);
   });
 });
