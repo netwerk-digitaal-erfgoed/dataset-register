@@ -84,6 +84,9 @@ Definitions {#definitions}
     That is to say, the data itself, which may include descriptions of paintings, persons and places,
     are *not* properties of the dataset.
 
+: <dfn>Data catalog</dfn>
+:: A collection of [=datasets=].
+
 : <dfn>Distribution</dfn>
 :: A channel through which a [=dataset=] is available, 
     for example a CSV file download or a [[SPARQL11-OVERVIEW|SPARQL]] endpoint.
@@ -391,20 +394,17 @@ See also [[DWBP-UCR#R-APIDocumented]].
 
 ## Data catalog ## {#data-catalog}
 
-A collection of datasets is a data catalog. A catalog provides the [=Consumers=] with a complete overview of available datasets, which improves discoverability.
+A [=data catalog=] provides [=consumers=] with a complete overview of available datasets, which improves discoverability.
 
 > Therefore, publishers *SHOULD* provide a catalog.
-
-<pre class=include>
-path: datacatalog-dataset-distribution.svg
-</pre>
 
 <div class="example">
     A catalog of available datasets:
     
     <pre highlight=json-ld>
         {
-          "@context": "https://schema.org/","@type": "DataCatalog",
+          "@context": "https://schema.org/",
+          "@type": "DataCatalog",
           "name": "Linked Data KB",
           "description": "Alle linked data zoals beschikbaar gesteld door de Koninklijke Bibliotheek.",
           "publisher": {
@@ -425,6 +425,8 @@ path: datacatalog-dataset-distribution.svg
         }
     </pre>
 </div>
+
+See [[#datacatalog-attributes]] for a full overview of catalog attributes.
 
 ## Overview of attributes ## {#overview} 
 
