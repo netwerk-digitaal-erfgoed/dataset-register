@@ -736,9 +736,8 @@ Issue: TODO Expand example based on required (and recommended) properties.
 
 *This section is non-normative.*
 
+Developers can use the [NDE Register API](https://demo.netwerkdigitaalerfgoed.nl/register-api/) to validate datasets and catalogs against the requirements described in this document.
+The [[SHACL]] shape graph used to validate datasets and catalogs is available at [/shacl](https://demo.netwerkdigitaalerfgoed.nl/register-api/shacl).
+
 Google’s [Rich Results Test](https://search.google.com/test/rich-results) (previously Structured Data Testing Tool)
-can help with testing RDF metadata.
-
-Issue: Reference SHACL.
-
-Issue: Validation with NDE Register.
+can help with testing RDF metadata in general.
