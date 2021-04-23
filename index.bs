@@ -620,10 +620,17 @@ This is an overview of required and recommended attributes.
     </thead>
     <tbody>
         <tr>
-            <th scope="row">@id</th>
-            <td>The IRI where the distribution is available in a browser.</td>
-            <td>1</td>
-			<td>Required</td>
+            <th scope="row">[schema:contentUrl](https://schema.org/contentUrl)</th>
+            <td>The URL where the distribution can be directly accessed.</td>
+            <td>1</td>	
+            <td>Required</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:encodingFormat](https://schema.org/encodingFormat)</th>
+            <td>The distribution’s MIME format, for example `application/sparql-query` for a SPARL endpoint
+ or `application/ld+json` for a data dump serialized as JSON-LD. See [[IANA-MEDIA-TYPES]] and <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types">MDN-reference</a> for more information.</td>
+            <td>1..n</td>	
+            <td>Required</td>
         </tr>
 		<tr>
             <th scope="row">[schema:name](https://schema.org/name)</th>
@@ -637,19 +644,6 @@ This is an overview of required and recommended attributes.
             <td>0..1</td>			
             <td>Recommended</td>
         </tr>		
-        <tr>
-            <th scope="row">[schema:encodingFormat](https://schema.org/encodingFormat)</th>
-            <td>The distribution’s MIME format, for example `application/sparql-query` for a SPARL endpoint
- or `application/ld+json` for a data dump serialized as JSON-LD. See [[IANA-MEDIA-TYPES]] and <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types">MDN-reference</a> for more information.</td>
-            <td>1..n</td>	
-            <td>Required</td>
-        </tr>
-        <tr>
-            <th scope="row">[schema:contentUrl](https://schema.org/contentUrl)</th>
-            <td>The URL where the distribution can be directly accessed.</td>
-            <td>1</td>	
-            <td>Required</td>
-        </tr>
         <tr>
             <th scope="row">[schema:datePublished](https://schema.org/datePublished)</th>
             <td>Date (or datatime) the distribution was published.</td>
