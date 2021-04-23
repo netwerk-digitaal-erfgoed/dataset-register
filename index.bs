@@ -140,8 +140,8 @@ Schema.org is [[#examples|recommended]].
               {
                 "@context": "https://schema.org/",
                 "@type": "Organization",
-                "name": "Koninklijke Bibliotheek",
-                "url": "https://www.kb.nl/"
+                "@id": "https://www.kb.nl",
+                "name": "Koninklijke Bibliotheek"
               }
             </script>
           </head>
@@ -281,7 +281,7 @@ Providing information about the organization behind the dataset (the [=publisher
 - How can I contact the organization for questions or feedback?
 
 > Therefore, publishers *must* publish basic information about the organization.
-> At the least, the organization’s name and URL must be provided. 
+> At the least, the organization’s name and IRI must be provided. 
 
 <div class="example">
     An organization description:
@@ -290,8 +290,9 @@ Providing information about the organization behind the dataset (the [=publisher
       {
         "@context": "https://schema.org/",
         "@type": "Organization",
+        "@id": "https://www.kb.nl",
         "name": "Koninklijke Bibliotheek",
-        "url": "https://www.kb.nl/"
+        "alternateName": "KB"
       }
     </pre>
 </div>
@@ -311,10 +312,9 @@ The organization data is then included as the dataset’s publisher:
           "@type": "Dataset",
           "publisher": {
             "@type": "Organization",
+            "@id": "https://www.kb.nl",
             "name": "Koninklijke Bibliotheek",
-            "url": "https://www.kb.nl/",
-            "alternateName": "KB",
-            "sameAs": "https://ror.org/02w4jbg70"
+            "alternateName": "KB"
           }
         }
     </pre>
@@ -409,8 +409,8 @@ path: datacatalog-dataset-distribution.svg
           "description": "Alle linked data zoals beschikbaar gesteld door de Koninklijke Bibliotheek.",
           "publisher": {
             "@type": "Organization",
+            "@id": "https://www.kb.nl/"
             "name": "Koninklijke Bibliotheek",
-            "url": "https://www.kb.nl/"
           },
           "dataset": [
             {
@@ -579,6 +579,12 @@ This is an overview of required and recommended attributes.
         </tr>
     </thead>
     <tbody>
+        <tr>
+            <th scope="row">@id</th>
+            <td>The [[IRI]] of the organization.</td>
+            <td>1</td>
+            <td>Required</td>
+        </tr>
 		<tr>
             <th scope="row">[schema:name](https://schema.org/name)</th>
             <td>The organization’s full name.</td>
