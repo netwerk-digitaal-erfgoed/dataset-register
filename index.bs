@@ -707,8 +707,8 @@ This is an overview of required and recommended attributes.
         <tr>
             <th scope="row">[schema:description](https://schema.org/description)</th>
             <td>A description of the data catalog.</td>
-			<td>1</td>
-            <td>Required</td>
+			<td>0..1</td>
+            <td>Recommended</td>
         </tr>
         <tr>
             <th scope="row">[schema:publisher](https://schema.org/publisher)</th>
