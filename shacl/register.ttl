@@ -59,6 +59,7 @@ reg:CreatorShape
 
 reg:CreatorNameProperty a sh:PropertyShape ;
     sh:minCount 1 ;
+    sh:maxCount 1 ;
     sh:path schema:name ;
 .
 
@@ -69,6 +70,7 @@ reg:CreatorNameProperty a sh:PropertyShape ;
 reg:DistributionContentUrlProperty a sh:PropertyShape ;
     rdfs:comment "The URL where the distribution can be directly accessed."@en ;
     sh:minCount 1 ;
+    sh:maxCount 1 ;
     sh:path schema:contentUrl ;
     sh:message "Een dataset distributie dient een content URL te bevatten"@nl, "A dataset distribution should contain an content URL"@en ;
 .
@@ -76,6 +78,7 @@ reg:DistributionContentUrlProperty a sh:PropertyShape ;
 reg:DistributionEncodingFormatProperty a sh:PropertyShape ;
     rdfs:comment "The distribution's MIME format, for example application/sparql-query for a SPARL endpoint or application/ld+json for a data dump serialized as JSON-LD." ;
     sh:minCount 1 ;
+    sh:maxCount 1 ;
     sh:path schema:encodingFormat ;
     sh:message "Een dataset distributie dient een encoding format te bevatten"@nl, "A dataset distribution should contain an encoding format"@en ;
 .
@@ -91,6 +94,7 @@ reg:SchemaNameProperty a sh:PropertyShape ;
     rdfs:comment "Naam van de dataset"@nl ;
     sh:path schema:name ;
     sh:minCount 1 ;
+    sh:maxCount 1 ;
     sh:datatype xsd:string ;
     sh:message "Een datasetbeschrijving dient een naam te bevatten"@nl, "A dataset description should have a name"@en
 .
@@ -99,6 +103,7 @@ reg:SchemaDescriptionProperty a sh:PropertyShape ;
     rdfs:comment "Beschrijving van de dataset"@nl ;
     sh:path schema:description ;
     sh:minCount 0 ;
+    sh:maxCount 1 ;
     sh:datatype xsd:string ;
     sh:message "Een datasetbeschrijving kan een beschrijving bevatten"@nl, "A dataset description should have a description"@en
 .
@@ -106,6 +111,7 @@ reg:SchemaDescriptionProperty a sh:PropertyShape ;
 reg:SchemaCreatorProperty a sh:PropertyShape ;
     sh:path schema:creator ;
     sh:minCount 0 ;
+    sh:maxCount 1 ;
     sh:class schema:Organization ;
     sh:node reg:CreatorShape ;
     sh:message "Een datasetbeschrijving dient een maker te bevatten"@nl, "A dataset description should have a creator"@en ;
@@ -115,6 +121,7 @@ reg:SchemaCreatorProperty a sh:PropertyShape ;
 reg:SchemaPublisherProperty a sh:PropertyShape ;
     sh:path schema:publisher ;
     sh:minCount 1 ;
+    sh:maxCount 1 ;
     sh:severity sh:Warning ;
     sh:class schema:Organization ;
     rdfs:comment "Persoon of organisatie die de dataset heeft gepubliceerd"@nl
@@ -135,7 +142,7 @@ reg:SchemaLicenseProperty a sh:PropertyShape ;
 reg:SchemaDistributionProperty a sh:PropertyShape ;
     rdfs:comment "Distributies van een dataset"@nl ;
     sh:class schema:DataDownload ;
-    sh:minCount 1 ;
+    sh:minCount 0 ;
     sh:message "Een datasetbeschrijving dient minimaal een distributie te bevatten"@nl, "A dataset should have at least one distributiion"@en ;
     sh:node reg:DistributionShape ;
     sh:path schema:distribution ;
@@ -153,20 +160,25 @@ dcat:DatasetShape
     a sh:NodeShape ;
     sh:property [
         sh:minCount 1 ;
+        sh:maxCount 1 ;
         sh:path dc:title
     ], [
         sh:minCount 0 ;
+        sh:maxCount 1 ;
         sh:path dc:alternative
     ], [
         sh:minCount 0 ;
+        sh:maxCount 1 ;
         sh:path dc:description
     ], [
         sh:minCount 1 ;
+        sh:maxCount 1 ;
         sh:path dc:license
     ],
     [
         sh:path dc:publisher ;
         sh:minCount 1 ;
+        sh:maxCount 1 ;
         sh:severity sh:Warning ;
         sh:class foaf:Organization ;
         sh:node "dcat:CreatorShape"
@@ -174,6 +186,7 @@ dcat:DatasetShape
     [
         sh:path dc:creator ;
         sh:minCount 0 ;
+        sh:maxCount 1 ;
         sh:class foaf:Organization ;
         sh:node "dcat:CreatorShape"
     ],
@@ -191,17 +204,20 @@ dcat:DistributionShape
 	sh:or (
 		[ sh:property [
 			sh:minCount 1 ;
+			sh:maxCount 1 ;
 			sh:path dcat:accessURL
 			]
 		]
 		[ sh:property [
 			sh:minCount 1 ;
+			sh:maxCount 1 ;
 			sh:path dcat:downloadURL
 			]
 		]
 	);
 	sh:property [
 		sh:minCount 1 ;
+		sh:maxCount 1 ;
 		sh:path dc:format
     ] ;
     sh:targetClass dcat:Distribution ;
@@ -211,6 +227,7 @@ dcat:CreatorShape
     a sh:NodeShape ;
     sh:property [
         sh:minCount 1 ;
+        sh:maxCount 1 ;
         sh:path foaf:name
     ] ;
     sh:targetClass foaf:Organization ;
