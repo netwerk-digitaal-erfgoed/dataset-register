@@ -17,18 +17,18 @@
 
 reg:DatacatalogShape
     a sh:NodeShape ;
-    sh:name "Datacatalogus"@nl, "Data catalog"@en ;
-    rdfs:comment "Een datacatalogus bestaat uit een set van datasetbeschrijvingen"@nl ;
     sh:targetClass schema:DataCatalog ;
     sh:property reg:DatatalogProperty ;
+    rdfs:label "Datacatalogus"@nl, "Data catalog"@en ;
+    rdfs:comment "Een datacatalogus bestaat uit een set van datasetbeschrijvingen"@nl ;
 .
 
 reg:DatasetShape
     a sh:NodeShape ;
-    sh:name "Datasetbeschrijving"@nl, "Dataset description"@en ;
-    rdfs:comment "Een datasetbeschrijving bestaat uit een elementen die de dataset beschrijft"@nl ;
     sh:targetClass schema:Dataset ;
     sh:nodeKind sh:IRI ;
+    rdfs:label "Datasetbeschrijving"@nl, "Dataset description"@en ;
+    rdfs:comment "Een datasetbeschrijving bestaat uit een elementen die de dataset beschrijft"@nl ;
 
     # Required properties
 
@@ -84,27 +84,28 @@ reg:DistributionEncodingFormatProperty a sh:PropertyShape ;
 .
 
 reg:DatatalogProperty a sh:PropertyShape ;
+    sh:path schema:dataset ;
     sh:class schema:Dataset ;
     sh:minCount 1 ;
     sh:node schema:DatasetShape ;
-    sh:path schema:dataset ;
+    sh:name "Dataset in deze catalogus"@nl ;
     sh:message "Een datasetcatalogus dient minimaal een dataset te bevatten"@nl, "A datasetcatalog should contain at least one dataset"@en .
 
 reg:SchemaNameProperty a sh:PropertyShape ;
-    rdfs:comment "Naam van de dataset"@nl ;
     sh:path schema:name ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
+    sh:name "Naam van de dataset"@nl ;
     sh:message "Een datasetbeschrijving dient een naam te bevatten"@nl, "A dataset description should have a name"@en
 .
 
 reg:SchemaDescriptionProperty a sh:PropertyShape ;
-    rdfs:comment "Beschrijving van de dataset"@nl ;
     sh:path schema:description ;
     sh:minCount 0 ;
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
+    sh:name "Beschrijving van de dataset"@nl ;
     sh:message "Een datasetbeschrijving kan een beschrijving bevatten"@nl, "A dataset description should have a description"@en
 .
 
@@ -114,8 +115,8 @@ reg:SchemaCreatorProperty a sh:PropertyShape ;
     sh:maxCount 1 ;
     sh:class schema:Organization ;
     sh:node reg:CreatorShape ;
+    sh:name "Persoon of organisatie die de dataset heeft gemaakt"@nl ;
     sh:message "Een datasetbeschrijving dient een maker te bevatten"@nl, "A dataset description should have a creator"@en ;
-    rdfs:comment "Persoon of organisatie die de dataset heeft gemaakt"@nl
 .
 
 reg:SchemaPublisherProperty a sh:PropertyShape ;
@@ -123,12 +124,11 @@ reg:SchemaPublisherProperty a sh:PropertyShape ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:severity sh:Warning ;
+    sh:name "Persoon of organisatie die de dataset heeft gepubliceerd"@nl ;
     sh:class schema:Organization ;
-    rdfs:comment "Persoon of organisatie die de dataset heeft gepubliceerd"@nl
 .
 
 reg:SchemaLicenseProperty a sh:PropertyShape ;
-    rdfs:comment "Licentie die van toepassing is op de datasetbeschrijving"@nl ;
     sh:path schema:license ;
     sh:or (
         [ sh:nodeKind sh:Literal ; ]
@@ -136,16 +136,17 @@ reg:SchemaLicenseProperty a sh:PropertyShape ;
     ) ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
+    sh:name "Licentie die van toepassing is op de datasetbeschrijving"@nl ;
     sh:message "Een datasetbeschrijving dient een licentie te bevatten (in de vorm van een string of URI)"@nl, "A dataset description should have a license (in the form of a string or URL)"@en
 .
 
 reg:SchemaDistributionProperty a sh:PropertyShape ;
-    rdfs:comment "Distributies van een dataset"@nl ;
     sh:class schema:DataDownload ;
     sh:minCount 0 ;
-    sh:message "Een datasetbeschrijving dient minimaal een distributie te bevatten"@nl, "A dataset should have at least one distributiion"@en ;
     sh:node reg:DistributionShape ;
     sh:path schema:distribution ;
+    sh:name "Distributies van een dataset"@nl ;
+    sh:message "Een datasetbeschrijving dient minimaal een distributie te bevatten"@nl, "A dataset should have at least one distributiion"@en ;
 .
 
 ##
