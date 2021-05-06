@@ -82,10 +82,10 @@ reg:CreatorShape
         # Required properties
         reg:CreatorNameProperty,
         # TODO
-        # reg:CreatorUrlProperty ? of @id ?
         # Recommended properties
         reg:SchemaAlternateNameProperty ;
         # TODO
+        # reg:CreatorUrlProperty ? of @id ?
         # reg:SchemaSameAsProperty
 .
 
