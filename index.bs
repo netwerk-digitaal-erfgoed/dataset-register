@@ -593,12 +593,6 @@ This is an overview of required and recommended attributes.
             <td>1</td>
             <td>Required</td>
 		</tr>
-		<tr>
-            <th scope="row">[schema:url](https://schema.org/url)</th>
-            <td>A link to the organization’s website.</td>
-            <td>1</td>
-            <td>Required</td>
-        </tr>
         <tr>
             <th scope="row">[schema:alternateName](https://schema.org/alternateName)</th>
             <td>Alternative names such as an abbreviation that the organization is known under.</td>
