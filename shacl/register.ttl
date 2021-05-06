@@ -208,7 +208,6 @@ reg:SchemaPublisherProperty a sh:PropertyShape ;
     sh:severity sh:Warning ;
     sh:name "Persoon of organisatie die de dataset heeft gepubliceerd"@nl, "Person or organization that published the dataset"@en ;
     sh:class schema:Organization ;
-    # TODO schema:Person
 .
 
 reg:SchemaLicenseReqProperty a sh:PropertyShape ;
