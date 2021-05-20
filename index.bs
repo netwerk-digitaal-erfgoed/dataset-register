@@ -422,6 +422,7 @@ A [=data catalog=] provides [=consumers=] with a complete overview of available 
         {
           "@context": "https://schema.org/",
           "@type": "DataCatalog",
+          "@id": "http://data.bibliotheken.nl/id/datacatalog",
           "name": "Linked Data KB",
           "description": "Alle linked data zoals beschikbaar gesteld door de Koninklijke Bibliotheek.",
           "publisher": {
@@ -578,7 +579,7 @@ This is an overview of required and recommended attributes.
         </tr>
         <tr>	
             <th scope="row">[schema:includedInDataCatalog](https://schema.org/includedInDataCatalog)</th>
-            <td>The URI of the data catalog in which the dataset is.</td>
+            <td>The [[IRI]] of the data catalog(s) that the dataset belongs to.</td>
             <td>0..1</td>
             <td>Recommended</td>
         </tr>
@@ -716,8 +717,14 @@ This is an overview of required and recommended attributes.
     </thead>
     <tbody>
         <tr>
+            <th scope="row">@id</th>
+            <td>The [[IRI]] of the data catalog.</td>
+            <td>1</td>
+            <td>Required</td>
+        </tr>
+        <tr>
             <th scope="row">[schema:name](https://schema.org/name)</th>
-            <td>The name of the datacatalog.</td>
+            <td>The name of the data catalog.</td>
 			<td>1</td>
             <td>Required</td>
         </tr>
@@ -735,7 +742,7 @@ This is an overview of required and recommended attributes.
         </tr>
         <tr>
             <th scope="row">[schema:dataset](https://schema.org/dataset)</th>
-            <td>The datasets containing all dataset information.</td>
+            <td>The datasets that are contained in the data catalog.</td>
 			<td>1..n</td>
             <td>Required</td>
         </tr>
