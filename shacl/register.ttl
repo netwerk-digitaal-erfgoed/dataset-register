@@ -115,7 +115,7 @@ reg:DistributionEncodingFormatProperty a sh:PropertyShape ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:path schema:encodingFormat ;
-    sh:message "Een dataset distributie dient een encoding format te bevatten"@nl, "A dataset distribution should contain one encoding format"@en ;
+    sh:message "Een dataset distributie dient een encoding format te bevatten"@nl, "A dataset distribution must contain one encoding format"@en ;
 .
 
 reg:SchemaDatasetProperty a sh:PropertyShape ;
