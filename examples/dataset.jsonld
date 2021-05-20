@@ -4,37 +4,47 @@
   "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
   "name": "Alba amicorum van de Koninklijke Bibliotheek",
   "description": "Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.",
-  "url": "https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum",
+  "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+  "dateCreated": "2019-04-14",
+  "datePublished": "2019-05-21",
+  "dateModified": "2019-08-15",
   "keywords": [
     "alba amicorum"
   ],
-  "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+  "includedInDataCatalog": "http://data.bibliotheken.nl/id/datacatalog",
+  "inLanguage": [
+    "nl-NL",
+    "en-US"
+  ],
+  "mainEntityOfPage": "https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum",
   "publisher": {
     "@type": "Organization",
     "@id": "https://www.kb.nl",
     "name": "Koninklijke Bibliotheek",
+    "alternateName": "KB",
+    "sameAs": "https://ror.org/02w4jbg70"
+  },
+  "creator": {
+    "@type": "Organization",
+    "@id": "https://www.kb.nl",
+    "name": "Koninklijke Bibliotheek",
+    "alternateName": "KB",
     "sameAs": "https://ror.org/02w4jbg70"
   },
   "distribution": [
     {
       "@type": "DataDownload",
-      "encodingFormat": "application/rdf+xml",
-      "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
+      "encodingFormat": "application/sparql-query",
+      "contentUrl": "http://data.bibliotheken.nl/sparql"
     },
     {
       "@type": "DataDownload",
       "encodingFormat": "text/turtle",
-      "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.ttl"
-    },
-    {
-      "@type": "DataDownload",
-      "encodingFormat": "application/n-triples",
-      "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.nt"
-    },
-    {
-      "@type": "DataDownload",
-      "encodingFormat": "application/ld+json",
-      "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.json"
+      "contentUrl": "http://data.bibliotheken.nl/files/alba_20201016.ttl.gz",
+      "name": "Datadump Alba Amicorum",
+      "datePublished": "2019-05-21",
+      "dateModified": "2019-08-15",
+      "contentSize": "614K"
     }
   ]
 }

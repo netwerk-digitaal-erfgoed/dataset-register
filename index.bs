@@ -745,17 +745,13 @@ This is an overview of required and recommended attributes.
 ### Full example ### {#dataset-example}
 
 <div class="example">
-    A full dataset description that includes basic information ([[#dataset-basic]]), 
-    a license ([[#dataset-license]])
-    and publication dates ([[#dataset-date]]):
+    A full dataset description that includes [[#dataset-overview|required and recommended attributes]].
 
     <pre class=include-code>
     path: examples/dataset.jsonld
     highlight: json-ld
     </pre>
 </div>
-
-Issue: TODO Expand example based on required (and recommended) properties.
 
 # Tools # {#tools}
 
