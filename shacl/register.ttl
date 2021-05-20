@@ -40,8 +40,8 @@ reg:DatasetShape
 
     sh:property
         # Required properties
-        reg:SchemaNameReqProperty,
-        reg:SchemaLicenseReqProperty,
+        reg:SchemaDatasetNameProperty,
+        reg:SchemaDatasetLicenseProperty,
         reg:SchemaPublisherProperty,
         # Recommended properties
         reg:SchemaDescriptionProperty,
@@ -66,11 +66,11 @@ reg:DistributionShape
         reg:DistributionContentUrlProperty, 
         reg:DistributionEncodingFormatProperty,
         # Recommended properties
-        reg:SchemaNameRecProperty,
+        reg:SchemaDistributionNameProperty,
         reg:SchemaDescriptionProperty,
         reg:SchemaDatePublishedProperty,
         reg:SchemaDateModifiedProperty,
-        reg:SchemaLicenseRecProperty ;
+        reg:SchemaDistributionLicenseProperty ;
         # TODO
         # reg:SchemaInLanguageProperty, reg:SchemaContentSizeProperty
 .
@@ -127,7 +127,7 @@ reg:SchemaDatasetProperty a sh:PropertyShape ;
     sh:message "Een datasetcatalogus dient minimaal een dataset te bevatten"@nl, "A dataset catalog should contain at least one dataset"@en ;
 .
 
-reg:SchemaNameReqProperty a sh:PropertyShape ;
+reg:SchemaDatasetNameProperty a sh:PropertyShape ;
     sh:path schema:name ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
@@ -136,7 +136,7 @@ reg:SchemaNameReqProperty a sh:PropertyShape ;
     sh:message "Een datasetbeschrijving dient een naam te bevatten"@nl, "A dataset description should have a name"@en ;
 .
 
-reg:SchemaNameRecProperty a sh:PropertyShape ;
+reg:SchemaDistributionNameProperty a sh:PropertyShape ;
     sh:path schema:name ;
     sh:minCount 0 ;
     sh:maxCount 1 ;
@@ -210,7 +210,7 @@ reg:SchemaPublisherProperty a sh:PropertyShape ;
     sh:class schema:Organization ;
 .
 
-reg:SchemaLicenseReqProperty a sh:PropertyShape ;
+reg:SchemaDatasetLicenseProperty a sh:PropertyShape ;
     sh:path schema:license ;
     sh:or (
         [ sh:nodeKind sh:Literal ; ]
@@ -222,7 +222,7 @@ reg:SchemaLicenseReqProperty a sh:PropertyShape ;
     sh:message "Een datasetbeschrijving dient een licentie te bevatten (in de vorm van een string of URI)"@nl, "A dataset description should have one license (in the form of a string or URL)"@en ;
 .
 
-reg:SchemaLicenseRecProperty a sh:PropertyShape ;
+reg:SchemaDistributionLicenseProperty a sh:PropertyShape ;
     sh:path schema:license ;
     sh:or (
         [ sh:nodeKind sh:Literal ; ]
