@@ -389,9 +389,23 @@ Issue: TODO Elaborate (and give examples of) the types of distribution (in schem
 
 ### Developer documentation ### {#developer-docs}
 
-If the distribution is non-standard [=API=], publishers *MUST* publish documentation on how to use that API.
+If the distribution is non-standard [=API=], publishers *MUST* publish human-readable documentation on how to use that API
+and link to the documentation URL in the [schema:usageInfo](https://schema.org/usageInfo) attribute:
 
-Issue: Can we specify a Distribution property for this?
+<div class="example">
+    A custom API with a link to the documentation.
+    A minimal definition of a SPARQL endpoint distribution.
+
+    <pre highlight=json-ld>
+        {
+          "@context": "https://schema.org/",
+          "@type": "DataDownload",
+          "encodingFormat": "application/json",
+          "contentUrl": "https://example.com/custom-json-api",
+          "usageInfo": "https://example.com/custom-json-api/docs"
+        }
+    </pre>
+</div>
 
 See also [[DWBP-UCR#R-APIDocumented]].
 
@@ -651,7 +665,7 @@ This is an overview of required and recommended attributes.
         </tr>		
         <tr>
             <th scope="row">[schema:datePublished](https://schema.org/datePublished)</th>
-            <td>Date (or datatime) the distribution was published.</td>
+            <td>Date (or datetime) the distribution was published.</td>
             <td>0..1</td>	
             <td>Recommended</td>
         </tr>	
@@ -659,26 +673,32 @@ This is an overview of required and recommended attributes.
             <th scope="row">[schema:dateModified](https://schema.org/dateModified)</th>
             <td>Date (or datetime) the distribution was last modified.</td>
             <td>0..1</td>	
-			<td>Recommended</td>
+            <td>Recommended</td>
         </tr>
         <tr>
             <th scope="row">[schema:inLanguage](https://schema.org/inLanguage)</th>
             <td>Language or languages in which the dataset is available. Use one of the language codes from the [[BCP47]], such as "nl-NL".</td>
             <td>0..1</td>	
-			<td>Recommended</td>
+            <td>Recommended</td>
         </tr>
         <tr>
             <th scope="row">[schema:license](https://schema.org/license)</th>
             <td>See [[#dataset-license]].</td>
             <td>0..1</td>	
-			<td>Recommended</td>
+            <td>Recommended</td>
         </tr>
 		<tr>
             <th scope="row">[schema:contentSize](https://schema.org/contentSize)</th>
             <td>A measure indicating the size of the distribution.</td>
             <td>0..1</td>	
-			<td>Recommended</td>
-        </tr>	
+            <td>Recommended</td>
+        </tr>
+        <tr>
+            <th scope="row">[schema:usageInfo](https://schema.org/usageInfo)</th>
+            <td>A link to the API documentation; see [[#developer-docs]].</td>
+            <td>0..1</td>	
+            <td>Required if custom API</td>
+        </tr>
 	</tbody>
 </table>
 
