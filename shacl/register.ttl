@@ -18,7 +18,6 @@
 reg:DatacatalogShape
     a sh:NodeShape ;
     sh:targetClass schema:DataCatalog ;
-    sh:property reg:DatatalogProperty ;
     rdfs:label "Datacatalogus"@nl, "Data catalog"@en ;
     rdfs:comment "Een datacatalogus bestaat uit een set van datasetbeschrijvingen"@nl, "A data catalog consists of a set of dataset descriptions"@en ;
     sh:property
