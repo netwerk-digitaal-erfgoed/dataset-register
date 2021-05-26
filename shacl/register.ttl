@@ -184,7 +184,7 @@ reg:SchemaDatePublishedProperty a sh:PropertyShape ;
 .
 
 reg:SchemaDateModifiedProperty a sh:PropertyShape ;
-    sh:path schema:dataModified ;
+    sh:path schema:dateModified ;
     sh:minCount 0 ;
     sh:datatype xsd:date ;
     sh:name "Datum waarop de datasetbeschrijving voor het laatst is gewijzigd"@nl, "Date on which the dataset description was last modified"@en ;
