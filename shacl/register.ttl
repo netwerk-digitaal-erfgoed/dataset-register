@@ -172,21 +172,42 @@ reg:SchemaDescriptionProperty a sh:PropertyShape ;
 reg:SchemaDateCreatedProperty a sh:PropertyShape ;
     sh:path schema:dateCreated ;
     sh:minCount 0 ;
-    sh:datatype xsd:date ;
+    sh:or (
+        [
+            sh:datatype xsd:date ;
+        ]
+        [
+            sh:datatype xsd:dateTime ;
+        ]
+    ) ;
     sh:name "Aanmaakdatum van de datasetbeschrijving"@nl, "Creation date of the dataset description"@en ;
 .
 
 reg:SchemaDatePublishedProperty a sh:PropertyShape ;
     sh:path schema:datePublished ;
     sh:minCount 0 ;
-    sh:datatype xsd:date ;
+    sh:or (
+        [
+            sh:datatype xsd:date ;
+        ]
+        [
+            sh:datatype xsd:dateTime ;
+        ]
+    ) ;
     sh:name "Publicatiedatum van de datasetbeschrijving"@nl, "Publication date of the dataset description"@en ;
 .
 
 reg:SchemaDateModifiedProperty a sh:PropertyShape ;
     sh:path schema:dateModified ;
     sh:minCount 0 ;
-    sh:datatype xsd:date ;
+    sh:or (
+        [
+            sh:datatype xsd:date ;
+        ]
+        [
+            sh:datatype xsd:dateTime ;
+        ]
+    ) ;
     sh:name "Datum waarop de datasetbeschrijving voor het laatst is gewijzigd"@nl, "Date on which the dataset description was last modified"@en ;
 .
 
