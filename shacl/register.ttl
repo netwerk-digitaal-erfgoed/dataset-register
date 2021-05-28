@@ -23,7 +23,7 @@ reg:DatacatalogShape
     sh:property
         # Required properties
         reg:SchemaDatasetProperty,
-        reg:SchemaNameReqProperty,
+        reg:SchemaDatacatalogNameProperty,
         reg:SchemaPublisherProperty,
         # Recommended properties
         reg:SchemaDescriptionProperty ;
@@ -90,15 +90,13 @@ reg:CreatorShape
 reg:DateTimeNodeShape
     a sh:NodeShape ;
     sh:or (
+   	      [ sh:datatype schema:Date ]
+   	      [ sh:datatype schema:dateTime ]
           [ sh:datatype xsd:dateTime ]
           [ sh:datatype xsd:date ]
-          [
-            sh:datatype xsd:string ;
-            sh:pattern "^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2}:\\d{2}[\\.0-9+Z-]*)?$" ;
-          ]
         ) ;
      sh:name "dateTime" ;
-     sh:message "Datum moet van het type xsd:date, xsd:dateTime of xsd:string in ISO formaat, bijv. 2018-12-18T12:00:00.000+0500, zijn"@nl, "Date must be xsd:date, xsd:dateTime or xsd:string in ISO format, eg 2018-12-18T12:00:00.000+0500"@en ;
+     sh:message "Datum moet van het type schema/xsd:date of schema/xsd:dateTime zijn"@nl, "Date must be schame/xsd:date or schema/xsd:dateTime"@en ;
      sh:severity sh:Warning ;
 .
 
@@ -139,6 +137,15 @@ reg:SchemaDatasetProperty a sh:PropertyShape ;
     sh:node schema:DatasetShape ;
     sh:name "Dataset in deze catalogus"@nl, "Dataset in a catalog"@en ;
     sh:message "Een datasetcatalogus dient minimaal een dataset te bevatten"@nl, "A dataset catalog should contain at least one dataset"@en ;
+.
+
+reg:SchemaDatacatalogNameProperty a sh:PropertyShape ;
+    sh:path schema:name ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:name "Naam van de dataset"@nl, "Name of the dataset"@en ;
+    sh:message "Een datasetcatalogys dient een naam te bevatten"@nl, "A data catalog should have a name"@en ;
 .
 
 reg:SchemaDatasetNameProperty a sh:PropertyShape ;
@@ -189,7 +196,6 @@ reg:SchemaDateCreatedProperty a sh:PropertyShape ;
     sh:minCount 0 ;
     sh:maxCount 1 ;
     sh:node reg:DateTimeNodeShape ;
-    sh:lessThanOrEquals schema:datePublished ;
     sh:name "Aanmaakdatum van de datasetbeschrijving"@nl, "Creation date of the dataset description"@en ;
 .
 
