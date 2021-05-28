@@ -87,6 +87,21 @@ reg:CreatorShape
         # reg:SchemaSameAsProperty
 .
 
+reg:DateTimeNodeShape
+    a sh:NodeShape ;
+    sh:or (
+          [ sh:datatype xsd:dateTime ]
+          [ sh:datatype xsd:date ]
+          [
+            sh:datatype xsd:string ;
+            sh:pattern "^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2}:\\d{2}[\\.0-9+Z-]*)?$" ;
+          ]
+        ) ;
+     sh:name "dateTime" ;
+     sh:message "Datum moet van het type xsd:date, xsd:dateTime of xsd:string in ISO formaat, bijv. 2018-12-18T12:00:00.000+0500, zijn"@nl, "Date must be xsd:date, xsd:dateTime or xsd:string in ISO format, eg 2018-12-18T12:00:00.000+0500"@en ;
+     sh:severity sh:Warning ;
+.
+
 # TODO 
 # reg:PublisherShape
 
@@ -172,42 +187,25 @@ reg:SchemaDescriptionProperty a sh:PropertyShape ;
 reg:SchemaDateCreatedProperty a sh:PropertyShape ;
     sh:path schema:dateCreated ;
     sh:minCount 0 ;
-    sh:or (
-        [
-            sh:datatype xsd:date ;
-        ]
-        [
-            sh:datatype xsd:dateTime ;
-        ]
-    ) ;
+    sh:maxCount 1 ;
+    sh:node reg:DateTimeNodeShape ;
+    sh:lessThanOrEquals schema:datePublished ;
     sh:name "Aanmaakdatum van de datasetbeschrijving"@nl, "Creation date of the dataset description"@en ;
 .
 
 reg:SchemaDatePublishedProperty a sh:PropertyShape ;
     sh:path schema:datePublished ;
     sh:minCount 0 ;
-    sh:or (
-        [
-            sh:datatype xsd:date ;
-        ]
-        [
-            sh:datatype xsd:dateTime ;
-        ]
-    ) ;
+    sh:maxCount 1 ;
+    sh:node reg:DateTimeNodeShape ;
     sh:name "Publicatiedatum van de datasetbeschrijving"@nl, "Publication date of the dataset description"@en ;
 .
 
 reg:SchemaDateModifiedProperty a sh:PropertyShape ;
     sh:path schema:dateModified ;
     sh:minCount 0 ;
-    sh:or (
-        [
-            sh:datatype xsd:date ;
-        ]
-        [
-            sh:datatype xsd:dateTime ;
-        ]
-    ) ;
+    sh:maxCount 1 ;
+    sh:node reg:DateTimeNodeShape ;
     sh:name "Datum waarop de datasetbeschrijving voor het laatst is gewijzigd"@nl, "Date on which the dataset description was last modified"@en ;
 .
 

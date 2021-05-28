@@ -15,6 +15,9 @@
     "name": "Koninklijke Bibliotheek",
     "sameAs": "https://ror.org/02w4jbg70"
   },
+  "dateModified": "2021-05-27",
+  "datePublished": { "@type": "xsd:dateTime", "@value": "2021-05-27T09:56:21.370767" },
+  "dateCreated": { "@type": "xsd:date", "@value": "2021-05-27" },
   "distribution": [
     {
       "@type": "DataDownload",
