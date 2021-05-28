@@ -92,12 +92,12 @@ reg:DateTimeNodeShape
     sh:or (
    	      [ sh:datatype schema:Date ]
    	      [ sh:datatype schema:dateTime ]
-          [ sh:datatype xsd:dateTime ]
-          [ sh:datatype xsd:date ]
+   	      [ sh:datatype xsd:dateTime ]
+   	      [ sh:datatype xsd:date ]
         ) ;
-     sh:name "dateTime" ;
-     sh:message "Datum moet van het type schema/xsd:date of schema/xsd:dateTime zijn"@nl, "Date must be schame/xsd:date or schema/xsd:dateTime"@en ;
-     sh:severity sh:Warning ;
+    sh:name "dateTime" ;
+    sh:message "Datum moet van het type schema/xsd:date of schema/xsd:dateTime zijn"@nl, "Date must be schame/xsd:date or schema/xsd:dateTime"@en ;
+    sh:severity sh:Warning ;
 .
 
 # TODO 
@@ -137,6 +137,7 @@ reg:SchemaDatasetProperty a sh:PropertyShape ;
     sh:node schema:DatasetShape ;
     sh:name "Dataset in deze catalogus"@nl, "Dataset in a catalog"@en ;
     sh:message "Een datasetcatalogus dient minimaal een dataset te bevatten"@nl, "A dataset catalog should contain at least one dataset"@en ;
+    sh:severity sh:Warning ;
 .
 
 reg:SchemaDatacatalogNameProperty a sh:PropertyShape ;
