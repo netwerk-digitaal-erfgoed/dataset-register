@@ -47,7 +47,7 @@ describe('Fetch', () => {
     );
 
     expect(datasets).toHaveLength(1);
-    expect(datasets[0].size).toBe(15);
+    expect(datasets[0].size).toBe(18);
   });
 });
 
