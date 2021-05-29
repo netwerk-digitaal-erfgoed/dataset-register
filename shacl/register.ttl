@@ -145,8 +145,8 @@ reg:SchemaDatacatalogNameProperty a sh:PropertyShape ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
-    sh:name "Naam van de dataset"@nl, "Name of the dataset"@en ;
-    sh:message "Een datasetcatalogys dient een naam te bevatten"@nl, "A data catalog should have a name"@en ;
+    sh:name "Naam van de catalog"@nl, "Name of the catalog"@en ;
+    sh:message "Een datasetcatalogus dient een naam te bevatten"@nl, "A data catalog must have a name"@en ;
 .
 
 reg:SchemaDatasetNameProperty a sh:PropertyShape ;
