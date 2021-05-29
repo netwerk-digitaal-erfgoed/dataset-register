@@ -96,7 +96,7 @@ reg:DateTimeNodeShape
    	      [ sh:datatype xsd:date ]
         ) ;
     sh:name "dateTime" ;
-    sh:message "Datum moet van het type schema/xsd:date of schema/xsd:dateTime zijn"@nl, "Date must be schame/xsd:date or schema/xsd:dateTime"@en ;
+    sh:message "Datum moet van het type schema/xsd:date of schema/xsd:dateTime zijn"@nl, "Date must be schema/xsd:date or schema/xsd:dateTime"@en ;
     sh:severity sh:Warning ;
 .
 
