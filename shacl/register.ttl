@@ -210,7 +210,7 @@ reg:SchemaCreatorProperty a sh:PropertyShape ;
     sh:minCount 0 ;
     sh:maxCount 1 ;
     sh:class schema:Organization ;
-    sh:node reg:CreatorShape ;
+    sh:node reg:OrganizationShape ;
     sh:name "Persoon of organisatie die de dataset heeft gemaakt"@nl, "Person or organisation which created the dataset"@en ;
     sh:message "Een datasetbeschrijving dient een maker te bevatten"@nl, "A dataset description should have a creator"@en ;
 .
