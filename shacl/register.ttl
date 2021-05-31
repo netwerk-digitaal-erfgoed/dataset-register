@@ -54,7 +54,6 @@ reg:DatasetShape
         # TODO
         # reg:SchemaVersionProperty, reg:SchemaManEntityOfPageProperty, reg:SchemaInLanguageProperty, reg:SchemaIsBasedOnUrlProperty, reg:SchemaCitationProperty, 
         # reg:SchemaGenreProperty, reg:SchemaKeywordsProperty, reg:SchemaSpatialCoverageProperty, reg:SchemaTemporalCoverageProperty, reg:SchemaIncludedInDataCatalogProperty, 
-
 .
 
 reg:DistributionShape
@@ -74,12 +73,13 @@ reg:DistributionShape
         # reg:SchemaInLanguageProperty, reg:SchemaContentSizeProperty
 .
 
-reg:CreatorShape
+reg:OrganizationShape
     a sh:NodeShape ;
     sh:targetClass schema:Organization ;
+    sh:nodeKind sh:IRI ;
     sh:property
         # Required properties
-        reg:CreatorNameProperty,
+        reg:OrganizationNameProperty,
         # TODO
         # Recommended properties
         reg:SchemaAlternateNameProperty ;
@@ -100,18 +100,15 @@ reg:DateTimeShape
     sh:severity sh:Warning ;
 .
 
-# TODO 
-# reg:PublisherShape
-
-
 #
 # Property shapes
 #
 
-reg:CreatorNameProperty a sh:PropertyShape ;
+reg:OrganizationNameProperty a sh:PropertyShape ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:path schema:name ;
+    sh:message "Een organisatie moet een naam hebben"@nl, "An organization must contain a name URL"@en ;	
 .
 
 reg:DistributionContentUrlProperty a sh:PropertyShape ;
@@ -175,14 +172,6 @@ reg:SchemaAlternateNameProperty a sh:PropertyShape ;
     sh:message "Een datasetbeschrijving kan meerdere alternatieve naam te bevatten"@nl, "A dataset description can contain multiple alternative names"@en ;
 .
 
-reg:SchemaAlternateNameProperty a sh:PropertyShape ;
-    sh:path schema:alternateName ;
-    sh:minCount 0 ;
-    sh:datatype xsd:string ;
-    sh:name "Alternatieve naam van de dataset"@nl, "Alternative name of the dataset"@en ;
-    sh:message "Een datasetbeschrijving kan meerdere alternatieve naam te bevatten"@nl, "A dataset description can contain multiple alternative names"@en ;
-.
-
 reg:SchemaDescriptionProperty a sh:PropertyShape ;
     sh:path schema:description ;
     sh:minCount 0 ;
@@ -232,7 +221,9 @@ reg:SchemaPublisherProperty a sh:PropertyShape ;
     sh:maxCount 1 ;
     sh:severity sh:Warning ;
     sh:name "Persoon of organisatie die de dataset heeft gepubliceerd"@nl, "Person or organization that published the dataset"@en ;
+    sh:message "Een datasetbeschrijving dient een uitgever te bevatten"@nl, "A dataset description should have a publisher"@en ;
     sh:class schema:Organization ;
+    sh:node reg:OrganizationShape ;
 .
 
 reg:SchemaDatasetLicenseProperty a sh:PropertyShape ;
@@ -300,14 +291,14 @@ dcat:DatasetShape
         sh:maxCount 1 ;
         sh:severity sh:Warning ;
         sh:class foaf:Organization ;
-        sh:node "dcat:CreatorShape"
+        sh:node "dcat:OrganizationShape"
     ],
     [
         sh:path dc:creator ;
         sh:minCount 0 ;
         sh:maxCount 1 ;
         sh:class foaf:Organization ;
-        sh:node "dcat:CreatorShape"
+        sh:node "dcat:OrganizationShape"
     ],
     [
         sh:path dcat:distribution ;
@@ -342,7 +333,7 @@ dcat:DistributionShape
     sh:targetClass dcat:Distribution ;
 .
 
-dcat:CreatorShape
+dcat:OrganizationShape
     a sh:NodeShape ;
     sh:property [
         sh:minCount 1 ;

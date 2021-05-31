@@ -11,6 +11,7 @@
       "license": "http://creativecommons.org/publicdomain/zero/1.0/",
       "publisher": {
         "@type": "Organization",
+		"@id": "https://www.openarch.nl/",		
         "name": "Open Archives"
       },
       "distribution": [
