@@ -5,11 +5,11 @@ info:
   version: 0.2.0
   contact:
     name: Netwerk Digitaal Erfgoed
-    url: 'https://demo.netwerkdigitaalerfgoed.nl/register/faq.php'
+    url: 'https://datasetregister.netwerkdigitaalerfgoed.nl/faq.php'
     email: bob.coret@netwerkdigitaalerfgoed.nl
 servers:
   -
-    url: 'https://demo.netwerkdigitaalerfgoed.nl/register-api'
+    url: 'https://datasetregister.netwerkdigitaalerfgoed.nl/api'
     description: 'Register API'
 paths:
   /datasets:

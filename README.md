@@ -6,9 +6,9 @@ a service that helps users find and discover datasets.
 Institutions (such as cultural heritage organizations) register their dataset descriptions with the NDE Register
 using its HTTP API. The Register builds an index by fetching and periodically crawling dataset descriptions.
 
-The HTTP API is documented at https://demo.netwerkdigitaalerfgoed.nl/register-api.
+The HTTP API is documented at https://datasetregister.netwerkdigitaalerfgoed.nl/api.
 
-See the [Register Demonstrator](https://demo.netwerkdigitaalerfgoed.nl/register/),
+See the [Register Demonstrator](https://datasetregister.netwerkdigitaalerfgoed.nl),
 a demo application using this prototype, for more background information (in Dutch).
 
 ## Design principles
@@ -24,12 +24,12 @@ a demo application using this prototype, for more background information (in Dut
 ### Validate dataset descriptions
 
 Dataset descriptions must adhere to the [Requirements for Datasets](https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/).
-You can check validity using the [validate API call](https://demo.netwerkdigitaalerfgoed.nl/register-api/static/index.html#/default/validate).
+You can check validity using the [validate API call](https://datasetregister.netwerkdigitaalerfgoed.nl/api/static/index.html#/default/validate).
 
 ### Submit dataset descriptions
 
 To submit your dataset descriptions to the Register,
-use the [datasets API call](https://demo.netwerkdigitaalerfgoed.nl/register-api/static/index.html#/default/post_datasets).
+use the [datasets API call](https://datasetregister.netwerkdigitaalerfgoed.nl/api/static/index.html#/default/post_datasets).
 
 ### Search dataset descriptions
 
@@ -40,13 +40,13 @@ from our [triple store](http://triplestore.netwerkdigitaalerfgoed.nl).
 
 If you want to automate dataset descriptions registrations
 by connecting your (collection management) application to the Register,
-please see the [HTTP API documentation](https://demo.netwerkdigitaalerfgoed.nl/register-api).
+please see the [HTTP API documentation](https://datasetregister.netwerkdigitaalerfgoed.nl/api).
 
 ## Run the application
 
 To run the application yourself (for instance if you’d like to contribute, which you’re very welcome to do),
 follow these steps.
-(As mentioned above, find the hosted version at https://demo.netwerkdigitaalerfgoed.nl/register-api).
+(As mentioned above, find the hosted version at https://datasetregister.netwerkdigitaalerfgoed.nl/api).
 
 This application stores data in a [GraphDB](https://graphdb.ontotext.com) RDF store, so you need to have that running
 locally:
