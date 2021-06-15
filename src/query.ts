@@ -43,15 +43,15 @@ const distributionLicense = '?distribution_license';
 const distributionName = '?distribution_name';
 const distributionSize = '?distribution_size';
 
-export const dcat = (property: string) =>
+export const dcat = (property: string): NamedNode =>
   factory.namedNode(`http://www.w3.org/ns/dcat#${property}`);
-const dct = (property: string) =>
+const dct = (property: string): NamedNode =>
   factory.namedNode(`http://purl.org/dc/terms/${property}`);
-const foaf = (property: string) =>
+const foaf = (property: string): NamedNode =>
   factory.namedNode(`http://xmlns.com/foaf/0.1/${property}`);
-const owl = (property: string) =>
+const owl = (property: string): NamedNode =>
   factory.namedNode(`http://www.w3.org/2002/07/owl#${property}`);
-export const rdf = (property: string) =>
+export const rdf = (property: string): NamedNode =>
   factory.namedNode(`http://www.w3.org/1999/02/22-rdf-syntax-ns#${property}`);
 
 // https://www.w3.org/TR/vocab-dcat-2/#Class:Dataset
