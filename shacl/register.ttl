@@ -123,8 +123,9 @@ reg:SchemaDatasetProperty a sh:PropertyShape ;
     sh:class schema:Dataset ;
     sh:minCount 1 ;
     sh:node schema:DatasetShape ;
-    sh:name "Dataset in deze catalogus"@nl, "Dataset in a catalog"@en ;
-    sh:message "Een datasetcatalogus dient minimaal een dataset te bevatten"@nl, "A dataset catalog should contain at least one dataset"@en ;
+    sh:name "Dataset(s) in de datacatalogus"@nl, "Dataset(s) in the data catalog"@en ;
+    sh:message "Een datacatalogus dient minimaal een dataset te bevatten"@nl, "A data catalog should contain at least one dataset"@en ;
+    sh:severity sh:Warning ;
 .
 
 reg:SchemaDatasetNameProperty a sh:PropertyShape ;
