@@ -75,12 +75,13 @@ reg:DistributionShape
         # reg:SchemaInLanguageProperty, reg:SchemaContentSizeProperty
 .
 
-reg:CreatorShape
+reg:OrganizationShape
     a sh:NodeShape ;
     sh:targetClass schema:Organization ;
+    sh:nodeKind sh:IRI ;
     sh:property
         # Required properties
-        reg:CreatorNameProperty,
+        reg:OrganizationNameProperty,
         # TODO
         # Recommended properties
         reg:SchemaAlternateNameProperty ;
@@ -88,18 +89,15 @@ reg:CreatorShape
         # reg:SchemaSameAsProperty
 .
 
-# TODO 
-# reg:PublisherShape
-
-
 #
 # Property shapes
 #
 
-reg:CreatorNameProperty a sh:PropertyShape ;
+reg:OrganizationNameProperty a sh:PropertyShape ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:path schema:name ;
+    sh:message "Een organisatie moet een naam hebben"@nl, "An organization must contain a name"@en ;	
 .
 
 reg:DistributionContentUrlProperty a sh:PropertyShape ;
@@ -196,7 +194,7 @@ reg:SchemaCreatorProperty a sh:PropertyShape ;
     sh:minCount 0 ;
     sh:maxCount 1 ;
     sh:class schema:Organization ;
-    sh:node reg:CreatorShape ;
+    sh:node reg:OrganizationShape ;
     sh:name "Persoon of organisatie die de dataset heeft gemaakt"@nl, "Person or organisation which created the dataset"@en ;
     sh:message "Een datasetbeschrijving dient een maker te bevatten"@nl, "A dataset description should have a creator"@en ;
 .
@@ -207,7 +205,9 @@ reg:SchemaPublisherProperty a sh:PropertyShape ;
     sh:maxCount 1 ;
     sh:severity sh:Warning ;
     sh:name "Persoon of organisatie die de dataset heeft gepubliceerd"@nl, "Person or organization that published the dataset"@en ;
+    sh:message "Er moet een uitgever gespecificeerd zijn"@nl, "A publisher must be specified"@en ;
     sh:class schema:Organization ;
+    sh:node reg:OrganizationShape ;
 .
 
 reg:SchemaDatasetLicenseProperty a sh:PropertyShape ;
@@ -275,20 +275,20 @@ dcat:DatasetShape
         sh:maxCount 1 ;
         sh:severity sh:Warning ;
         sh:class foaf:Organization ;
-        sh:node "dcat:CreatorShape"
+        sh:node dcat:OrganizationShape
     ],
     [
         sh:path dc:creator ;
         sh:minCount 0 ;
         sh:maxCount 1 ;
         sh:class foaf:Organization ;
-        sh:node "dcat:CreatorShape"
+        sh:node dcat:OrganizationShape
     ],
     [
         sh:path dcat:distribution ;
         sh:minCount 0 ;
         sh:class dcat:Distribution ;
-        sh:node "dcat:DistributionShape"
+        sh:node dcat:DistributionShape
     ] ;
     sh:targetClass dcat:Dataset ;
 .
@@ -317,7 +317,7 @@ dcat:DistributionShape
     sh:targetClass dcat:Distribution ;
 .
 
-dcat:CreatorShape
+dcat:OrganizationShape
     a sh:NodeShape ;
     sh:property [
         sh:minCount 1 ;
