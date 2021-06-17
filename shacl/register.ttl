@@ -88,7 +88,7 @@ reg:CreatorShape
         # reg:SchemaSameAsProperty
 .
 
-reg:DateTimeNodeShape
+reg:DateTimeShape
     a sh:NodeShape ;
     sh:or (
 	   	  [ sh:datatype schema:Date ]
@@ -187,7 +187,7 @@ reg:SchemaDateCreatedProperty a sh:PropertyShape ;
     sh:path schema:dateCreated ;
     sh:minCount 0 ;
     sh:maxCount 1 ;
-    sh:node reg:DateTimeNodeShape ;
+    sh:node reg:DateTimeShape ;
     sh:name "Aanmaakdatum van de datasetbeschrijving"@nl, "Creation date of the dataset description"@en ;
 .
 
@@ -195,7 +195,7 @@ reg:SchemaDatePublishedProperty a sh:PropertyShape ;
     sh:path schema:datePublished ;
     sh:minCount 0 ;
     sh:maxCount 1 ;
-    sh:node reg:DateTimeNodeShape ;
+    sh:node reg:DateTimeShape ;
     sh:name "Publicatiedatum van de datasetbeschrijving"@nl, "Publication date of the dataset description"@en ;
 .
 
@@ -203,7 +203,7 @@ reg:SchemaDateModifiedProperty a sh:PropertyShape ;
     sh:path schema:dataModified ;
     sh:minCount 0 ;
     sh:maxCount 1 ;
-    sh:node reg:DateTimeNodeShape ;
+    sh:node reg:DateTimeShape ;
     sh:name "Datum waarop de datasetbeschrijving voor het laatst is gewijzigd"@nl, "Date on which the dataset description was last modified"@en ;
 .
 
