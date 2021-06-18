@@ -152,14 +152,6 @@ reg:SchemaAlternateNameProperty a sh:PropertyShape ;
     sh:message "Een datasetbeschrijving kan meerdere alternatieve naam te bevatten"@nl, "A dataset description can contain multiple alternative names"@en ;
 .
 
-reg:SchemaAlternateNameProperty a sh:PropertyShape ;
-    sh:path schema:alternateName ;
-    sh:minCount 0 ;
-    sh:datatype xsd:string ;
-    sh:name "Alternatieve naam van de dataset"@nl, "Alternative name of the dataset"@en ;
-    sh:message "Een datasetbeschrijving kan meerdere alternatieve naam te bevatten"@nl, "A dataset description can contain multiple alternative names"@en ;
-.
-
 reg:SchemaDescriptionProperty a sh:PropertyShape ;
     sh:path schema:description ;
     sh:minCount 0 ;
