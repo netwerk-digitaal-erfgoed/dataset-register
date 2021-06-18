@@ -10,7 +10,7 @@
       "license": "http://creativecommons.org/publicdomain/zero/1.0/",
       "publisher": {
         "@type": "Organization",
-        "url": "https://www.kb.nl/",
+        "@id": "https://www.kb.nl/",
         "name": "Koninklijke Bibliotheek",
         "sameAs": "https://ror.org/02w4jbg70"
       },
@@ -31,7 +31,7 @@
       "license": "http://creativecommons.org/publicdomain/zero/1.0/",
       "publisher": {
         "@type": "Organization",
-        "url": "https://www.kb.nl/",
+        "@id": "https://www.kb.nl/",
         "name": "Koninklijke Bibliotheek",
         "sameAs": "https://ror.org/02w4jbg70"
       },
