@@ -18,7 +18,6 @@
 reg:DatacatalogShape
     a sh:NodeShape ;
     sh:targetClass schema:DataCatalog ;
-    sh:property reg:DatatalogProperty ;
     rdfs:label "Datacatalogus"@nl, "Data catalog"@en ;
     rdfs:comment "Een datacatalogus bestaat uit een set van datasetbeschrijvingen"@nl, "A data catalog consists of a set of dataset descriptions"@en ;
     sh:property
@@ -89,6 +88,22 @@ reg:OrganizationShape
         # reg:SchemaSameAsProperty
 .
 
+reg:DateTimeShape
+    a sh:NodeShape ;
+    sh:or (
+	   	  [ sh:datatype schema:Date ]
+	   	  [ sh:datatype schema:dateTime ]
+	   	  [ sh:datatype xsd:dateTime ]
+	   	  [ sh:datatype xsd:date ]
+        ) ;
+     sh:name "dateTime" ;
+     sh:message "Datum moet van het type schema:Date/xsd:date of schema:dateTime/xsd:dateTime zijn"@nl, "Date must be schema:Date/xsd:date or schema:dateTime/xsd:dateTime"@en ;
+     sh:severity sh:Warning ;
+.
+
+# TODO 
+# reg:PublisherShape
+
 #
 # Property shapes
 #
@@ -121,8 +136,9 @@ reg:SchemaDatasetProperty a sh:PropertyShape ;
     sh:class schema:Dataset ;
     sh:minCount 1 ;
     sh:node schema:DatasetShape ;
-    sh:name "Dataset in deze catalogus"@nl, "Dataset in a catalog"@en ;
-    sh:message "Een datasetcatalogus dient minimaal een dataset te bevatten"@nl, "A dataset catalog should contain at least one dataset"@en ;
+    sh:name "Dataset(s) in de datacatalogus"@nl, "Dataset(s) in the data catalog"@en ;
+    sh:message "Een datacatalogus dient minimaal een dataset te bevatten"@nl, "A data catalog should contain at least one dataset"@en ;
+    sh:severity sh:Warning ;
 .
 
 reg:SchemaDatasetNameProperty a sh:PropertyShape ;
@@ -151,14 +167,6 @@ reg:SchemaAlternateNameProperty a sh:PropertyShape ;
     sh:message "Een datasetbeschrijving kan meerdere alternatieve naam te bevatten"@nl, "A dataset description can contain multiple alternative names"@en ;
 .
 
-reg:SchemaAlternateNameProperty a sh:PropertyShape ;
-    sh:path schema:alternateName ;
-    sh:minCount 0 ;
-    sh:datatype xsd:string ;
-    sh:name "Alternatieve naam van de dataset"@nl, "Alternative name of the dataset"@en ;
-    sh:message "Een datasetbeschrijving kan meerdere alternatieve naam te bevatten"@nl, "A dataset description can contain multiple alternative names"@en ;
-.
-
 reg:SchemaDescriptionProperty a sh:PropertyShape ;
     sh:path schema:description ;
     sh:minCount 0 ;
@@ -171,21 +179,24 @@ reg:SchemaDescriptionProperty a sh:PropertyShape ;
 reg:SchemaDateCreatedProperty a sh:PropertyShape ;
     sh:path schema:dateCreated ;
     sh:minCount 0 ;
-    sh:datatype xsd:date ;
+    sh:maxCount 1 ;
+    sh:node reg:DateTimeShape ;
     sh:name "Aanmaakdatum van de datasetbeschrijving"@nl, "Creation date of the dataset description"@en ;
 .
 
 reg:SchemaDatePublishedProperty a sh:PropertyShape ;
     sh:path schema:datePublished ;
     sh:minCount 0 ;
-    sh:datatype xsd:date ;
+    sh:maxCount 1 ;
+    sh:node reg:DateTimeShape ;
     sh:name "Publicatiedatum van de datasetbeschrijving"@nl, "Publication date of the dataset description"@en ;
 .
 
 reg:SchemaDateModifiedProperty a sh:PropertyShape ;
     sh:path schema:dataModified ;
     sh:minCount 0 ;
-    sh:datatype xsd:date ;
+    sh:maxCount 1 ;
+    sh:node reg:DateTimeShape ;
     sh:name "Datum waarop de datasetbeschrijving voor het laatst is gewijzigd"@nl, "Date on which the dataset description was last modified"@en ;
 .
 
