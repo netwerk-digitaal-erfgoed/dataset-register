@@ -193,7 +193,7 @@ reg:SchemaDatePublishedProperty a sh:PropertyShape ;
 .
 
 reg:SchemaDateModifiedProperty a sh:PropertyShape ;
-    sh:path schema:dataModified ;
+    sh:path schema:dateModified ;
     sh:minCount 0 ;
     sh:maxCount 1 ;
     sh:node reg:DateTimeShape ;
