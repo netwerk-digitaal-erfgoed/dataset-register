@@ -108,6 +108,15 @@ reg:DateTimeShape
 # Property shapes
 #
 
+reg:SchemaNameReqProperty a sh:PropertyShape ;
+    sh:path schema:name ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:name "Naam van de datacatalogus"@nl, "Name of the data catalog"@en ;
+    sh:message "Een datacatalogus dient een naam te bevatten"@nl, "A data catalog should have a name"@en ;
+.
+
 reg:OrganizationNameProperty a sh:PropertyShape ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
