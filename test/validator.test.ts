@@ -1,7 +1,13 @@
 import factory from 'rdf-ext';
 import {JsonLdParser} from 'jsonld-streaming-parser';
 import * as fs from 'fs';
-import {shacl, ShaclValidator, Valid, Validator} from '../src/validator';
+import {
+  InvalidDataset,
+  shacl,
+  ShaclValidator,
+  Valid,
+  Validator,
+} from '../src/validator';
 
 let validator: Validator;
 
@@ -10,7 +16,7 @@ describe('Validator', () => {
     validator = await ShaclValidator.fromUrl('shacl/register.ttl');
   });
 
-  it('accepts valid Schema.org dataset', async () => {
+  it('accepts minimal valid Schema.org dataset', async () => {
     const report = await validate('dataset-schema-org-valid.jsonld');
     expect(report.state).toEqual('valid');
   });
@@ -60,9 +66,15 @@ describe('Validator', () => {
     expect(report.state).toEqual('valid');
   });
 
+  it('reports empty Schema.org catalog', async () => {
+    const report = await validate('catalog-schema-org-no-dataset.jsonld');
+    expect(report.state).toEqual('no-dataset');
+  });
+
   it('reports invalid Schema.org catalog', async () => {
     const report = await validate('catalog-schema-org-invalid.jsonld');
-    expect(report).not.toBeNull();
+    expect(report.state).toEqual('invalid');
+    expectViolations(report as InvalidDataset, ['http://schema.org/name']);
   });
 
   it('accepts valid DCAT catalog', async () => {
@@ -116,9 +128,21 @@ const validate = async (filename: string) =>
 
 const dataset = async (filename: string) => {
   const jsonLdParser = new JsonLdParser();
+  // const b = factory.dataset();
   return await factory
     .dataset()
     .import(
       fs.createReadStream(`test/datasets/${filename}`).pipe(jsonLdParser)
     );
 };
+
+const expectViolations = (report: InvalidDataset, violationPaths: string[]) =>
+  violationPaths.forEach(violationPath =>
+    expect(
+      report.errors.match(
+        null,
+        shacl('resultPath'),
+        factory.namedNode(violationPath)
+      ).size
+    ).toEqual(1)
+  );
