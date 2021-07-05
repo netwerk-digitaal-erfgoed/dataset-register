@@ -23,7 +23,7 @@ reg:DatacatalogShape
     sh:property
         # Required properties
         reg:SchemaDatasetProperty,
-        reg:SchemaNameReqProperty,
+        reg:SchemaCatalogNameProperty,
         reg:SchemaPublisherProperty,
         # Recommended properties
         reg:SchemaDescriptionProperty ;
@@ -108,7 +108,7 @@ reg:DateTimeShape
 # Property shapes
 #
 
-reg:SchemaNameReqProperty a sh:PropertyShape ;
+reg:SchemaCatalogNameProperty a sh:PropertyShape ;
     sh:path schema:name ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
