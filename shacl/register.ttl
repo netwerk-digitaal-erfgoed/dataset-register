@@ -52,8 +52,8 @@ reg:DatasetShape
         reg:SchemaAlternateNameProperty ;
 
         # TODO
-        # reg:SchemaVersionProperty, reg:SchemaManEntityOfPageProperty, reg:SchemaInLanguageProperty, reg:SchemaIsBasedOnUrlProperty, reg:SchemaCitationProperty, 
-        # reg:SchemaGenreProperty, reg:SchemaKeywordsProperty, reg:SchemaSpatialCoverageProperty, reg:SchemaTemporalCoverageProperty, reg:SchemaIncludedInDataCatalogProperty, 
+        # reg:SchemaVersionProperty, reg:SchemaManEntityOfPageProperty, reg:SchemaInLanguageProperty, reg:SchemaIsBasedOnUrlProperty, reg:SchemaCitationProperty,
+        # reg:SchemaGenreProperty, reg:SchemaKeywordsProperty, reg:SchemaSpatialCoverageProperty, reg:SchemaTemporalCoverageProperty, reg:SchemaIncludedInDataCatalogProperty,
 
 .
 
@@ -62,7 +62,7 @@ reg:DistributionShape
     sh:targetClass schema:DataDownload ;
     sh:property
         # Required properties
-        reg:DistributionContentUrlProperty, 
+        reg:DistributionContentUrlProperty,
         reg:DistributionEncodingFormatProperty,
         # Recommended properties
         reg:SchemaDistributionNameProperty,
@@ -101,7 +101,7 @@ reg:DateTimeShape
      sh:severity sh:Warning ;
 .
 
-# TODO 
+# TODO
 # reg:PublisherShape
 
 #
@@ -121,7 +121,7 @@ reg:OrganizationNameProperty a sh:PropertyShape ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:path schema:name ;
-    sh:message "Een organisatie moet een naam hebben"@nl, "An organization must contain a name"@en ;	
+    sh:message "Een organisatie moet een naam hebben"@nl, "An organization must contain a name"@en ;
 .
 
 reg:DistributionContentUrlProperty a sh:PropertyShape ;
@@ -232,10 +232,7 @@ reg:SchemaPublisherProperty a sh:PropertyShape ;
 
 reg:SchemaDatasetLicenseProperty a sh:PropertyShape ;
     sh:path schema:license ;
-    sh:or (
-        [ sh:nodeKind sh:Literal ; ]
-        [ sh:nodeKind sh:IRI ; ]
-    ) ;
+    sh:nodeKind sh:IRIOrLiteral ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:name "Licentie die van toepassing is op de datasetbeschrijving"@nl, "License applicable to the dataset description"@en ;
@@ -244,10 +241,7 @@ reg:SchemaDatasetLicenseProperty a sh:PropertyShape ;
 
 reg:SchemaDistributionLicenseProperty a sh:PropertyShape ;
     sh:path schema:license ;
-    sh:or (
-        [ sh:nodeKind sh:Literal ; ]
-        [ sh:nodeKind sh:IRI ; ]
-    ) ;
+    sh:nodeKind sh:IRIOrLiteral ;
     sh:minCount 0 ;
     sh:maxCount 1 ;
     sh:name "Licentie die van toepassing is op de datasetdistributie"@nl, "License applicable to the dataset distributie"@en ;
