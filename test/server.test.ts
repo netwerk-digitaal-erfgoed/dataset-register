@@ -79,7 +79,7 @@ describe('Server', () => {
     expect(response.headers['content-type']).toEqual('application/ld+json');
   });
 
-  it('handles UTF-8 BOMs', async () => {
+  it('ignores UTF-8 BOMs', async () => {
     const {nockDone} = await nock.back('utf8-bom.json');
     const response = await httpServer.inject({
       method: 'PUT',
@@ -91,7 +91,7 @@ describe('Server', () => {
       }),
     });
     nockDone();
-    expect(response.statusCode).toEqual(406);
+    expect(response.statusCode).toEqual(200);
   });
 
   it('rejects unauthorized domains', async () => {
