@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: Register
-  description: Netwerk Digitaal Erfgoed Register REST API
-  version: 0.2.0
+  title: Datasetregister
+  description: Netwerk Digitaal Erfgoed Datasetregister REST API
+  version: 0.2.1
   contact:
     name: Netwerk Digitaal Erfgoed
     url: 'https://datasetregister.netwerkdigitaalerfgoed.nl/faq.php'
@@ -10,13 +10,13 @@ info:
 servers:
   -
     url: 'https://datasetregister.netwerkdigitaalerfgoed.nl/api'
-    description: 'Register API'
+    description: 'Datasetregister API'
 paths:
   /datasets:
     post:
-      summary: Register dataset descriptions
+      summary: Datasetregister dataset descriptions
       description: |-
-        Submit dataset description(s) to the Register. Each dataset description will be validated before it is added to the Register.
+        Submit dataset description(s) to the Datasetregister. Each dataset description will be validated before it is added to the Datasetregister.
 
         Only URLs that are on the allow list can be registered. Please [contact us](mailto:bob.coret@netwerkdigitaalerfgoed.nl) to have your domain added.
       requestBody:
@@ -39,7 +39,7 @@ paths:
                 value: {"@id": "https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2a.html"}
       responses:
         202:
-          description: All dataset descriptions at the submitted URL are valid according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a>. The datasets will added to the Register shortly.
+          description: All dataset descriptions at the submitted URL are valid according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a>. The datasets will added to the Datasetregister shortly.
           content:
             application/ld+json: {}
         400:
