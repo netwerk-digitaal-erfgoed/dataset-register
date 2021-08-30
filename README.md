@@ -1,14 +1,14 @@
-# Register
+# Dataset Register
 
-This is a prototype of the [NDE](https://www.netwerkdigitaalerfgoed.nl/en/about-us/) Register,
+This is a prototype of the [NDE](https://www.netwerkdigitaalerfgoed.nl/en/about-us/) Dataset Register,
 a service that helps users find and discover datasets.
 
-Institutions (such as cultural heritage organizations) register their dataset descriptions with the NDE Register
-using its HTTP API. The Register builds an index by fetching and periodically [crawling](#crawler) dataset descriptions.
+Institutions (such as cultural heritage organizations) register their dataset descriptions with the NDE Dataset Register
+using its HTTP API. The Dataset Register builds an index by fetching and periodically [crawling](#crawler) dataset descriptions.
 
 The HTTP API is documented at https://datasetregister.netwerkdigitaalerfgoed.nl/api.
 
-See the [Register Demonstrator](https://datasetregister.netwerkdigitaalerfgoed.nl),
+See the [Dataset Register Demonstrator](https://datasetregister.netwerkdigitaalerfgoed.nl),
 a demo application using this prototype, for more background information (in Dutch).
 
 ## Design principles
@@ -28,7 +28,7 @@ You can check validity using the [validate API call](https://datasetregister.net
 
 ### Submit dataset descriptions
 
-To submit your dataset descriptions to the Register,
+To submit your dataset descriptions to the Dataset Register,
 use the [datasets API call](https://datasetregister.netwerkdigitaalerfgoed.nl/api/static/index.html#/default/post_datasets).
 
 ### Search dataset descriptions
@@ -39,7 +39,7 @@ from our [triple store](http://triplestore.netwerkdigitaalerfgoed.nl).
 ### Automate registrations
 
 If you want to automate dataset descriptions registrations
-by connecting your (collection management) application to the Register,
+by connecting your (collection management) application to the Dataset Register,
 please see the [HTTP API documentation](https://datasetregister.netwerkdigitaalerfgoed.nl/api).
 
 ## Run the application
@@ -98,7 +98,7 @@ npm test
 
 ### Crawler
 
-The crawler will periodically fetch registration URLs ([`schema:EntryPoint`](#schemaentrypoint)) to update the dataset descriptions stored in the Register. 
+The crawler will periodically fetch registration URLs ([`schema:EntryPoint`](#schemaentrypoint)) to update the dataset descriptions stored in the Dataset Register. 
 
 To enable the crawler, set [the `CRAWLER_SCHEDULE` configuration variable](#configuration).
 The crawler will then check all registration URLs according to that schedule to see if any of the URLs have become outdated.
