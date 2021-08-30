@@ -123,7 +123,7 @@ export const selectQuery = `
           
       OPTIONAL { 
         ${dataset} schema:publisher ${publisher} .        
-        ${creator} a schema:Organization ;
+        ${publisher} a schema:Organization ;
           schema:name ${publisherName} .
       }
           
@@ -198,7 +198,7 @@ export function bindingsToQuads(binding: Map<string, Term>): Quad[] {
   if (binding.get(publisher)) {
     const publisherBlankNode = binding.get(publisher) as BlankNodeScoped;
     quads.push(
-      factory.quad(datasetIri, dct('creator'), publisherBlankNode, datasetIri),
+      factory.quad(datasetIri, dct('publisher'), publisherBlankNode, datasetIri),
       factory.quad(
         publisherBlankNode,
         rdf('type'),
