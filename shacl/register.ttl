@@ -33,6 +33,7 @@ reg:DatasetShape
     a sh:NodeShape ;
     sh:targetClass schema:Dataset ;
     sh:nodeKind sh:IRI ;
+    sh:pattern "^https?://" ;
     rdfs:label "Datasetbeschrijving"@nl, "Dataset description"@en ;
     rdfs:comment "Een datasetbeschrijving bestaat uit een elementen die de dataset beschrijft"@nl, "A dataset description consists of elements that describe the dataset"@en ;
     sh:targetClass schema:Dataset ;
@@ -78,6 +79,7 @@ reg:OrganizationShape
     a sh:NodeShape ;
     sh:targetClass schema:Organization ;
     sh:nodeKind sh:IRI ;
+    sh:pattern "^https?://" ;
     sh:property
         # Required properties
         reg:OrganizationNameProperty,
