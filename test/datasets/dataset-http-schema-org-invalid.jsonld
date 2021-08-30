@@ -11,8 +11,7 @@
   "license": "http://creativecommons.org/publicdomain/zero/1.0/",
   "publisher": {
     "@type": "Organization",
-    "@id": "https://www.kb.nl/",
-    "name": "Koninklijke Bibliotheek",
-    "sameAs": "https://ror.org/02w4jbg70"
+    "@id": "this-is-no-http-iri",
+    "name": "Koninklijke Bibliotheek"
   }
 }

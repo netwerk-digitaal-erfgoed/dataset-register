@@ -49,6 +49,8 @@ describe('Validator', () => {
   it('reports invalid HTTP Schema.org dataset', async () => {
     const report = await validate('dataset-http-schema-org-invalid.jsonld');
     expect(report.state).toBe('invalid');
+    expectViolations(report as InvalidDataset, ['http://schema.org/name']);
+    expectViolations(report as InvalidDataset, ['http://schema.org/publisher']);
   });
 
   it('accepts valid DCAT dataset', async () => {
@@ -119,6 +121,11 @@ describe('Validator', () => {
 
   it('rejects a dataset that has no IRI', async () => {
     const report = await validate('dataset-invalid-no-iri.jsonld');
+    expect(report.state).toEqual('no-dataset');
+  });
+
+  it('rejects a dataset that has no HTTP IRI', async () => {
+    const report = await validate('dataset-invalid-no-http-iri.jsonld');
     expect(report.state).toEqual('no-dataset');
   });
 });
