@@ -198,7 +198,12 @@ export function bindingsToQuads(binding: Map<string, Term>): Quad[] {
   if (binding.get(publisher)) {
     const publisherBlankNode = binding.get(publisher) as BlankNodeScoped;
     quads.push(
-      factory.quad(datasetIri, dct('publisher'), publisherBlankNode, datasetIri),
+      factory.quad(
+        datasetIri,
+        dct('publisher'),
+        publisherBlankNode,
+        datasetIri
+      ),
       factory.quad(
         publisherBlankNode,
         rdf('type'),
