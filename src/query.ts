@@ -17,8 +17,6 @@ const dateModified = '?dateModified';
 const language = '?language';
 const source = '$source';
 const keyword = '?keyword';
-const spatial = '?spatial';
-const temporal = '?temporal';
 const mainEntityOfPage = '?mainEntityOfPage';
 const version = '?version';
 

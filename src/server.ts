@@ -50,7 +50,7 @@ export async function server(
       // default: 'application/ld+json',
     })
     .register(fastifyCors)
-    .addHook('onRequest', async (request, reply) => {
+    .addHook('onRequest', async request => {
       if (request.headers.accept === undefined) {
         request.headers.accept = 'application/ld+json';
       }
