@@ -137,7 +137,7 @@ export const selectQuery = `
       OPTIONAL { ${dataset} schema:dateModified ${dateModified} }
       OPTIONAL { ${dataset} schema:inLanguage ${language} }
       OPTIONAL { ${dataset} schema:isBasedOnUrl ${source} }
-      OPTIONAL { ${dataset} schema:keyword ${keyword} }
+      OPTIONAL { ${dataset} schema:keywords ${keyword} }
       OPTIONAL { ${dataset} schema:version ${version} }
       OPTIONAL { ${dataset} schema:mainEntityOfPage ${mainEntityOfPage} }
       

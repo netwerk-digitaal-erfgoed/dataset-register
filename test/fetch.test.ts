@@ -47,7 +47,18 @@ describe('Fetch', () => {
     );
 
     expect(datasets).toHaveLength(1);
-    expect(datasets[0].size).toBe(18);
+    const dataset = datasets[0];
+    expect(dataset.size).toBe(19);
+    expect(
+      dataset.includes(
+        factory.quad(
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
+          dcat('keyword'),
+          factory.literal('alba amicorum'),
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+        )
+      )
+    ).toBe(true);
   });
 });
 
