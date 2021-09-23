@@ -21,6 +21,13 @@ describe('Validator', () => {
     expect(report.state).toEqual('valid');
   });
 
+  it('accepts minimal valid Schema.org dataset', async () => {
+    const report = await validate(
+      'dataset-schema-org-valid-plus-organization.jsonld'
+    );
+    expect(report.state).toEqual('valid');
+  });
+
   it('reports invalid Schema.org dataset', async () => {
     const report = await validate('dataset-schema-org-invalid.jsonld');
     expect(report.state).toBe('invalid');
