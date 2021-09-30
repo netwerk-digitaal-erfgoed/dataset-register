@@ -15,8 +15,7 @@
     "compile": "tsc",
     "fix": "gts fix",
     "prepare": "npm run compile",
-    "pretest": "npm run compile",
-    "posttest": "npm run lint"
+    "posttest": "jest-coverage-thresholds-bumper --silent"
   },
   "keywords": [],
   "author": "",
@@ -64,6 +63,7 @@
     "chokidar": "^3.5.2",
     "gts": "^3.0.3",
     "jest": "^26.6.3",
+    "jest-coverage-thresholds-bumper": "^1.0.0",
     "jsonld-streaming-parser": "^2.3.2",
     "ts-jest": "^26.5.5",
     "ts-node-dev": "^1.1.6",
