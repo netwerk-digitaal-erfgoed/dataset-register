@@ -2,7 +2,7 @@ import {URL} from 'url';
 import {fetch} from '../src/fetch';
 import nock from 'nock';
 import fs from 'fs';
-import {dcat, rdf} from '../src/query';
+import {dcat, dct, rdf} from '../src/query';
 import factory from 'rdf-ext';
 
 describe('Fetch', () => {
@@ -48,13 +48,23 @@ describe('Fetch', () => {
 
     expect(datasets).toHaveLength(1);
     const dataset = datasets[0];
-    expect(dataset.size).toBe(19);
+    expect(dataset.size).toBe(22);
     expect(
       dataset.includes(
         factory.quad(
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
           dcat('keyword'),
           factory.literal('alba amicorum'),
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+        )
+      )
+    ).toBe(true);
+    expect(
+      dataset.includes(
+        factory.quad(
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
+          dct('creator'),
+          factory.namedNode('https://example.com/creator'),
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
         )
       )
