@@ -43,7 +43,7 @@ const distributionSize = '?distribution_size';
 
 export const dcat = (property: string): NamedNode =>
   factory.namedNode(`http://www.w3.org/ns/dcat#${property}`);
-const dct = (property: string): NamedNode =>
+export const dct = (property: string): NamedNode =>
   factory.namedNode(`http://purl.org/dc/terms/${property}`);
 const foaf = (property: string): NamedNode =>
   factory.namedNode(`http://xmlns.com/foaf/0.1/${property}`);
