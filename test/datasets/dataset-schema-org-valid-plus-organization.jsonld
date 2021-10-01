@@ -36,7 +36,7 @@
       ]
    },
    {
-      "@context": "http://schema.org",
+      "@context": "https://schema.org",
       "@type": "Organization",
       "url": "https://haagsgemeentearchief.nl/",
       "name": "Haags Gemeentearchief",
