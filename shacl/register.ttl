@@ -339,5 +339,4 @@ dcat:OrganizationShape
         sh:maxCount 1 ;
         sh:path foaf:name
     ] ;
-    sh:targetClass foaf:Organization ;
 .
