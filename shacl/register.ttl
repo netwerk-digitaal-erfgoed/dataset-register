@@ -113,7 +113,7 @@ reg:DateTimeShape
 reg:SchemaCatalogNameProperty a sh:PropertyShape ;
     sh:path schema:name ;
     sh:minCount 1 ;
-        sh:or (
+    sh:or (
 		[ sh:datatype xsd:string ]
 		[ sh:datatype rdf:langString ]
 	);
@@ -124,6 +124,10 @@ reg:SchemaCatalogNameProperty a sh:PropertyShape ;
 reg:OrganizationNameProperty a sh:PropertyShape ;
     sh:minCount 1 ;
     sh:path schema:name ;
+    sh:or (
+		[ sh:datatype xsd:string ]
+		[ sh:datatype rdf:langString ]
+	);
     sh:message "Een organisatie moet een naam hebben"@nl, "An organization must contain a name"@en ;
 .
 
