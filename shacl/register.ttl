@@ -159,26 +159,20 @@ reg:SchemaDatasetNameProperty a sh:PropertyShape ;
 
 reg:SchemaDistributionNameProperty a sh:PropertyShape ;
     sh:path schema:name ;
-    sh:minCount 0 ;
     sh:datatype xsd:string ;
     sh:name "Naam van de distributie"@nl, "Name of the distributie"@en ;
-    sh:message "Een distributie mag maximaal een naam te bevatten"@nl, "A dataset distributie can have one or no name"@en ;
 .
 
 reg:SchemaAlternateNameProperty a sh:PropertyShape ;
     sh:path schema:alternateName ;
-    sh:minCount 0 ;
     sh:datatype xsd:string ;
     sh:name "Alternatieve naam van de dataset"@nl, "Alternative name of the dataset"@en ;
-    sh:message "Een datasetbeschrijving kan meerdere alternatieve naam te bevatten"@nl, "A dataset description can contain multiple alternative names"@en ;
 .
 
 reg:SchemaDescriptionProperty a sh:PropertyShape ;
     sh:path schema:description ;
-    sh:minCount 0 ;
     sh:datatype xsd:string ;
     sh:name "Beschrijving van de dataset"@nl, "Description of the dataset"@en ;
-    sh:message "Een datasetbeschrijving kan een beschrijving bevatten"@nl, "A dataset description should have a description"@en ;
 .
 
 reg:SchemaDateCreatedProperty a sh:PropertyShape ;
@@ -246,7 +240,6 @@ reg:SchemaDistributionLicenseProperty a sh:PropertyShape ;
 
 reg:SchemaDistributionProperty a sh:PropertyShape ;
     sh:class schema:DataDownload ;
-    sh:minCount 0 ;
     sh:node reg:DistributionShape ;
     sh:path schema:distribution ;
     sh:name "Distributies van een dataset"@nl ;
@@ -266,10 +259,8 @@ dcat:DatasetShape
         sh:minCount 1 ;
         sh:path dc:title
     ], [
-        sh:minCount 0 ;
         sh:path dc:alternative
     ], [
-        sh:minCount 0 ;
         sh:path dc:description
     ], [
         sh:minCount 1 ;
@@ -293,7 +284,6 @@ dcat:DatasetShape
     ],
     [
         sh:path dcat:distribution ;
-        sh:minCount 0 ;
         sh:class dcat:Distribution ;
         sh:node dcat:DistributionShape
     ] ;
