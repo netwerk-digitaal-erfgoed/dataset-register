@@ -6,6 +6,7 @@
 @prefix dc: <http://purl.org/dc/terms/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix reg: <http://terms.netwerkdigitaalerfgoed.nl/ns/register#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 
 ##
 ## Schema.org
@@ -112,7 +113,10 @@ reg:DateTimeShape
 reg:SchemaCatalogNameProperty a sh:PropertyShape ;
     sh:path schema:name ;
     sh:minCount 1 ;
-    sh:datatype xsd:string ;
+        sh:or (
+		[ sh:datatype xsd:string ]
+		[ sh:datatype rdf:langString ]
+	);
     sh:name "Naam van de datacatalogus"@nl, "Name of the data catalog"@en ;
     sh:message "Een datacatalogus dient een naam te bevatten"@nl, "A data catalog should have a name"@en ;
 .
@@ -152,26 +156,38 @@ reg:SchemaDatasetProperty a sh:PropertyShape ;
 reg:SchemaDatasetNameProperty a sh:PropertyShape ;
     sh:path schema:name ;
     sh:minCount 1 ;
-    sh:datatype xsd:string ;
+    sh:or (
+		[ sh:datatype xsd:string ]
+		[ sh:datatype rdf:langString ]
+	);
     sh:name "Naam van de dataset"@nl, "Name of the dataset"@en ;
     sh:message "Een datasetbeschrijving dient een naam te bevatten"@nl, "A dataset description should have a name"@en ;
 .
 
 reg:SchemaDistributionNameProperty a sh:PropertyShape ;
     sh:path schema:name ;
-    sh:datatype xsd:string ;
+    sh:or (
+		[ sh:datatype xsd:string ]
+		[ sh:datatype rdf:langString ]
+	);
     sh:name "Naam van de distributie"@nl, "Name of the distributie"@en ;
 .
 
 reg:SchemaAlternateNameProperty a sh:PropertyShape ;
     sh:path schema:alternateName ;
-    sh:datatype xsd:string ;
+    sh:or (
+		[ sh:datatype xsd:string ]
+		[ sh:datatype rdf:langString ]
+	);
     sh:name "Alternatieve naam van de dataset"@nl, "Alternative name of the dataset"@en ;
 .
 
 reg:SchemaDescriptionProperty a sh:PropertyShape ;
     sh:path schema:description ;
-    sh:datatype xsd:string ;
+    sh:or (
+		[ sh:datatype xsd:string ]
+		[ sh:datatype rdf:langString ]
+	);
     sh:name "Beschrijving van de dataset"@nl, "Description of the dataset"@en ;
 .
 
