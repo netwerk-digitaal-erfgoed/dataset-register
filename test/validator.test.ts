@@ -29,9 +29,7 @@ describe('Validator', () => {
   });
 
   it('accepts valid Schema.org dataset language selectors', async () => {
-    const report = await validate(
-      'dataset-schema-kb-valid.jsonld'
-    );
+    const report = await validate('dataset-schema-kb-valid.jsonld');
     expect(report.state).toEqual('valid');
   });
 
