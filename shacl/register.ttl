@@ -112,7 +112,6 @@ reg:DateTimeShape
 reg:SchemaCatalogNameProperty a sh:PropertyShape ;
     sh:path schema:name ;
     sh:minCount 1 ;
-    sh:maxCount 1 ;
     sh:datatype xsd:string ;
     sh:name "Naam van de datacatalogus"@nl, "Name of the data catalog"@en ;
     sh:message "Een datacatalogus dient een naam te bevatten"@nl, "A data catalog should have a name"@en ;
@@ -120,7 +119,6 @@ reg:SchemaCatalogNameProperty a sh:PropertyShape ;
 
 reg:OrganizationNameProperty a sh:PropertyShape ;
     sh:minCount 1 ;
-    sh:maxCount 1 ;
     sh:path schema:name ;
     sh:message "Een organisatie moet een naam hebben"@nl, "An organization must contain a name"@en ;
 .
@@ -154,7 +152,6 @@ reg:SchemaDatasetProperty a sh:PropertyShape ;
 reg:SchemaDatasetNameProperty a sh:PropertyShape ;
     sh:path schema:name ;
     sh:minCount 1 ;
-    sh:maxCount 1 ;
     sh:datatype xsd:string ;
     sh:name "Naam van de dataset"@nl, "Name of the dataset"@en ;
     sh:message "Een datasetbeschrijving dient een naam te bevatten"@nl, "A dataset description should have a name"@en ;
@@ -163,7 +160,6 @@ reg:SchemaDatasetNameProperty a sh:PropertyShape ;
 reg:SchemaDistributionNameProperty a sh:PropertyShape ;
     sh:path schema:name ;
     sh:minCount 0 ;
-    sh:maxCount 1 ;
     sh:datatype xsd:string ;
     sh:name "Naam van de distributie"@nl, "Name of the distributie"@en ;
     sh:message "Een distributie mag maximaal een naam te bevatten"@nl, "A dataset distributie can have one or no name"@en ;
@@ -180,7 +176,6 @@ reg:SchemaAlternateNameProperty a sh:PropertyShape ;
 reg:SchemaDescriptionProperty a sh:PropertyShape ;
     sh:path schema:description ;
     sh:minCount 0 ;
-    sh:maxCount 1 ;
     sh:datatype xsd:string ;
     sh:name "Beschrijving van de dataset"@nl, "Description of the dataset"@en ;
     sh:message "Een datasetbeschrijving kan een beschrijving bevatten"@nl, "A dataset description should have a description"@en ;
@@ -269,15 +264,12 @@ dcat:DatasetShape
     a sh:NodeShape ;
     sh:property [
         sh:minCount 1 ;
-        sh:maxCount 1 ;
         sh:path dc:title
     ], [
         sh:minCount 0 ;
-        sh:maxCount 1 ;
         sh:path dc:alternative
     ], [
         sh:minCount 0 ;
-        sh:maxCount 1 ;
         sh:path dc:description
     ], [
         sh:minCount 1 ;
@@ -336,7 +328,6 @@ dcat:OrganizationShape
     a sh:NodeShape ;
     sh:property [
         sh:minCount 1 ;
-        sh:maxCount 1 ;
         sh:path foaf:name
     ] ;
 .
