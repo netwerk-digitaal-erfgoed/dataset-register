@@ -501,7 +501,7 @@ This is an overview of required and recommended attributes.
         <tr>
             <th scope="row">[schema:creator](https://schema.org/creator)</th>
             <td>The owner of the dataset.</td>
-            <td>0..1</td>
+            <td>0..n</td>
             <td>Recommended</td>
         </tr>
         <tr>
@@ -541,8 +541,8 @@ This is an overview of required and recommended attributes.
             <td>Recommended</td>
         </tr>
         <tr>	
-            <th scope="row">[schema:isBasedOnUrl](https://schema.org/isBasedOnUrl)</th>
-            <td>The URL of dataset this dataset is based on.</td>
+            <th scope="row">[schema:isBasedOn](https://schema.org/isBasedOn)</th>
+            <td>The URL of dataset this dataset is based on (previously schema:isBasedOnUrl).</td>
             <td>0..1</td>
             <td>Recommended</td>
         </tr>
