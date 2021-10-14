@@ -1,0 +1,22 @@
+@prefix schema: <http://schema.org/> .
+@prefix dc: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://www.goudatijdmachine.nl/data/api/items/145>
+  a schema:Dataset ;
+  schema:name "Combinatie perceelnummers met verpondingsregister"^^xsd:string ;
+  schema:dateModified "2021-09-05"^^xsd:date ;
+  schema:datePublished "2021-09-05"^^xsd:date ;
+  schema:description "Combinatie van kadastrale perceelnummers uit 1832 met Verpondingsnummers uit het verpondingsregister 1875 en de plaatselijke aanduiding uit het verpondingsregister." ;
+  schema:license "http://creativecommons.org/publicdomain/zero/1.0/deed.nl"@nl ;
+  schema:publisher <https://www.goudatijdmachine.nl/data/api/items/232> ;
+    schema:distribution <https://www.goudatijdmachine.nl/data/api/items/144> .
+
+<https://www.goudatijdmachine.nl/data/api/items/232>
+  a schema:Organization ;
+  schema:name "Gouda Tijdmachine" .
+
+<https://www.goudatijdmachine.nl/data/api/items/144>
+  a schema:DataDownload ;
+  schema:contentUrl "https://www.goudatijdmachine.nl/wp-content/uploads/sites/7/2021/09/Totaal_perceel_Plaand_EPSG_4326.geojson" ;
+  schema:encodingFormat "application/geo+json" .
