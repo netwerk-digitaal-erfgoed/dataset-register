@@ -11,7 +11,7 @@ import {URL} from 'url';
 import {Store} from 'n3';
 import {bindingsToQuads, selectQuery} from './query';
 import {Readable} from 'stream';
-import {StandardizeSchemaOrgPrefixToHttps} from './standardize';
+import {StandardizeSchemaOrgPrefixToHttps} from './transform';
 
 export class UrlNotFound extends Error {}
 export class NoDatasetFoundAtUrl extends Error {}

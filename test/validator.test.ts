@@ -10,7 +10,7 @@ import {
 } from '../src/validator';
 import {StreamParser} from 'n3';
 import {Transform} from 'stream';
-import {StandardizeSchemaOrgPrefixToHttps} from '../src/standardize';
+import {StandardizeSchemaOrgPrefixToHttps} from '../src/transform';
 
 let validator: Validator;
 
