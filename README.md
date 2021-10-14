@@ -184,8 +184,8 @@ See the [Requirements for Datasets](https://netwerk-digitaal-erfgoed.github.io/r
 | Property | Description | Based on |
 | -------- | ----------- | -------- |
 | [`dcat:accessUrl`](https://www.w3.org/TR/vocab-dcat-3/) | Distribution URL. | [`schema:contentUrl`](https://schema.org/contentUrl) |
-| [`dcat:mediaType`](https://www.w3.org/TR/vocab-dcat-3/) | Distribution’s IANA media type. | [`schema:encodingFormat`](https://schema.org/encodingFormat) |
-| [`dct:format`](http://purl.org/dc/terms/format) | Distribution content type (e.g. `text/turtle`). |
+| [`dcat:mediaType`](https://www.w3.org/TR/vocab-dcat-3/) | Distribution’s IANA media type. | [`schema:fileFormat`](https://schema.org/fileFormat) |
+| [`dct:format`](http://purl.org/dc/terms/format) | Distribution content type (e.g. `text/turtle`). | [`schema:encodingFormat`](https://schema.org/encodingFormat) |
 | [`dct:issued`](http://purl.org/dc/terms/issued) | Distribution publication date. | [`schema:datePublished`](https://schema.org/datePublished) |
 | [`dct:modified`](http://purl.org/dc/terms/issued) | Distribution last modification date. | [`schema:dateModified`](https://schema.org/dateModified) |
 | [`dct:description`](http://purl.org/dc/terms/description) | Distribution description. | [`schema:description`](https://schema.org/description) |
