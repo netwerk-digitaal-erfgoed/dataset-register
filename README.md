@@ -30,6 +30,7 @@ You can check validity using the [validate API call](https://datasetregister.net
 
 To submit your dataset descriptions to the Dataset Register,
 use the [datasets API call](https://datasetregister.netwerkdigitaalerfgoed.nl/api/static/index.html#/default/post_datasets).
+URLs must be [allowed](#allow-list) before they can be added to the Register.
 
 ### Search dataset descriptions
 
