@@ -162,3 +162,19 @@ If the dataset’s description is in Schema.org rather than DCAT, the descriptio
 | [`dct:license`](http://purl.org/dc/terms/license) | Distribution license. |
 | [`dct:title`](http://purl.org/dc/terms/license) | Distribution title. |
 | [`dcat:byteSize`](https://www.w3.org/TR/vocab-dcat-3/) | Distribution’s download size in bytes. |
+
+### Allow list
+
+A registration URL must be on a domain that is allowed before it can be added to the Register.
+Allowed domains are administered in the 
+[https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names RDF graph](https://triplestore.netwerkdigitaalerfgoed.nl/resource?uri=https:%2F%2Fdata.netwerkdigitaalerfgoed.nl%2Fregistry%2Fallowed_domain_names&role=context).
+
+To add a URL:
+
+```sparql
+INSERT DATA { 
+    GRAPH <https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names> { 
+        [] <https://data.netwerkdigitaalerfgoed.nl/allowed_domain_names/def/domain_name> "your-domain.com" .
+    }
+}
+```
