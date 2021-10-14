@@ -77,7 +77,6 @@ reg:DistributionShape
 
 reg:OrganizationShape
     a sh:NodeShape ;
-    sh:targetClass schema:Organization ;
     sh:nodeKind sh:IRI ;
     sh:pattern "^https?://" ;
     sh:property
@@ -340,5 +339,4 @@ dcat:OrganizationShape
         sh:maxCount 1 ;
         sh:path foaf:name
     ] ;
-    sh:targetClass foaf:Organization ;
 .
