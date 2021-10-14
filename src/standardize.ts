@@ -39,12 +39,7 @@ export class StandardizeSchemaOrgPrefixToHttps extends Transform {
     if (object.termType === 'Literal') {
       return factory.literal(
         object.value,
-        factory.namedNode(
-          object.datatype.value.replace(
-            'http://schema.org/',
-            'https://schema.org/'
-          )
-        )
+        this.replace(object.datatype as NamedNode)
       );
     }
 
