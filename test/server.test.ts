@@ -8,14 +8,16 @@ import {
   MockDatasetStore,
   MockRegistrationStore,
 } from './mock';
+import {URL} from 'url';
 
 let httpServer: FastifyInstance<Server>;
+const registrationStore = new MockRegistrationStore();
 describe('Server', () => {
   beforeAll(async () => {
     const shacl = await readUrl('shacl/register.ttl');
     httpServer = await server(
       new MockDatasetStore(),
-      new MockRegistrationStore(),
+      registrationStore,
       new MockAllowedRegistrationDomainStore(),
       new ShaclValidator(shacl),
       shacl
@@ -118,6 +120,27 @@ describe('Server', () => {
     });
     nockDone();
     expect(response.statusCode).toEqual(202);
+  });
+
+  it('stores registration even if fetching datasets fails', async () => {
+    const {nockDone} = await nock.back('post-dataset-query-fails.json');
+    const response = await httpServer.inject({
+      method: 'POST',
+      url: '/datasets',
+      headers: {'Content-Type': 'application/ld+json'},
+      payload: JSON.stringify({
+        '@id': 'https://netwerkdigitaalerfgoed.nl/fails',
+      }),
+    });
+    nockDone();
+
+    // Validation succeeds, so 202 to the client, even if fetching datasets fails.
+    expect(response.statusCode).toEqual(202);
+    expect(
+      registrationStore.isRegistered(
+        new URL('https://netwerkdigitaalerfgoed.nl/fails')
+      )
+    ).toBe(true);
   });
 
   it('returns SHACL graph', async () => {

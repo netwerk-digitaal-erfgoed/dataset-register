@@ -37,10 +37,9 @@ export class Crawler {
 
       const updatedRegistration = new Registration(
         registration.url,
-        registration.datePosted,
-        [...extractIris(datasets).keys()]
+        registration.datePosted
       );
-      updatedRegistration.read(statusCode);
+      updatedRegistration.read([...extractIris(datasets).keys()], statusCode);
       this.registrationStore.store(updatedRegistration);
     }
   }
