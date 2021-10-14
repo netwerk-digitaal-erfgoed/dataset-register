@@ -1,9 +1,9 @@
 import {URL} from 'url';
 import {fetch} from '../src/fetch';
 import nock from 'nock';
+import fs from 'fs';
 import {dcat, dct, rdf} from '../src/query';
 import factory from 'rdf-ext';
-import {file} from './file';
 
 describe('Fetch', () => {
   it('must accept valid DCAT dataset descriptions', async () => {
@@ -71,3 +71,6 @@ describe('Fetch', () => {
     ).toBe(true);
   });
 });
+
+const file = async (filename: string) =>
+  await fs.promises.readFile(`test/datasets/${filename}`, 'utf-8');
