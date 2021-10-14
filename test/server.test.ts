@@ -8,14 +8,17 @@ import {
   MockDatasetStore,
   MockRegistrationStore,
 } from './mock';
+import {file} from './file';
+import {URL} from 'url';
 
 let httpServer: FastifyInstance<Server>;
+const registrationStore = new MockRegistrationStore();
 describe('Server', () => {
   beforeAll(async () => {
     const shacl = await readUrl('shacl/register.ttl');
     httpServer = await server(
       new MockDatasetStore(),
-      new MockRegistrationStore(),
+      registrationStore,
       new MockAllowedRegistrationDomainStore(),
       new ShaclValidator(shacl),
       shacl
@@ -120,6 +123,37 @@ describe('Server', () => {
     expect(response.statusCode).toEqual(202);
   });
 
+  it('stores registration even if fetching datasets fails', async () => {
+    nock.cleanAll();
+    const datasetResponse = await file('dataset-schema-org-valid.jsonld');
+    nock('https://netwerkdigitaalerfgoed.nl')
+      .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
+      .head('/fails') // Dereference for validation request must succeed.
+      .reply(200)
+      .get('/fails')
+      .reply(200, datasetResponse)
+      .get('/fails') // But querying the dataset must fail for this test case.
+      .reply(500);
+    nock.enableNetConnect('schema.org');
+
+    const response = await httpServer.inject({
+      method: 'POST',
+      url: '/datasets',
+      headers: {'Content-Type': 'application/ld+json'},
+      payload: JSON.stringify({
+        '@id': 'https://netwerkdigitaalerfgoed.nl/fails',
+      }),
+    });
+    expect(response.statusCode).toEqual(202); // Validation succeeds, so 202.
+
+    await waitForNockDone();
+    expect(
+      registrationStore.isRegistered(
+        new URL('https://netwerkdigitaalerfgoed.nl/fails')
+      )
+    ).toBe(true);
+  });
+
   it('returns SHACL graph', async () => {
     const response = await httpServer.inject({
       method: 'GET',
@@ -129,3 +163,13 @@ describe('Server', () => {
     expect(response.statusCode).toEqual(200);
   });
 });
+
+const waitForNockDone = async () => {
+  if (nock.isDone()) {
+    return;
+  }
+
+  return new Promise(resolve => {
+    setTimeout(() => resolve(waitForNockDone()), 100);
+  });
+};
