@@ -147,7 +147,7 @@ export class GraphDbRegistrationStore implements RegistrationStore {
         factory.namedNode('http://schema.org'), // Currently the only vocabulary that we support.
         factory.namedNode(this.registrationsGraph)
       ),
-      ...registration.foundDatasets.flatMap(datasetIri => {
+      ...registration.datasets.flatMap(datasetIri => {
         const datasetQuads = [
           factory.quad(
             factory.namedNode(registration.url.toString()),
@@ -224,8 +224,7 @@ export class GraphDbRegistrationStore implements RegistrationStore {
       (binding: {s: {value: string}; datePosted: {value: string}}) =>
         new Registration(
           new URL(binding.s.value),
-          new Date(binding.datePosted.value),
-          [] // Irrelevant for now.
+          new Date(binding.datePosted.value)
         )
     );
   }

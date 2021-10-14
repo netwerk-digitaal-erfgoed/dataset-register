@@ -23,15 +23,19 @@ describe('Crawler', () => {
 
     const registration = new Registration(
       new URL('https://example.com/registered-url'),
-      new Date(),
-      []
+      new Date()
     );
-    registration.read(200, new Date('2000-01-01'));
+    registration.read(
+      [new URL('https://example.com/dataset1')],
+      200,
+      new Date('2000-01-01')
+    );
     registrationStore.store(registration);
 
     await crawler.crawl(new Date('3000-01-01'));
 
     const readRegistration = registrationStore.all()[0];
     expect(readRegistration.statusCode).toBe(404);
+    expect(readRegistration.datasets).toEqual([]); // Any datasets previously read at the URL are emptied.
   });
 });
