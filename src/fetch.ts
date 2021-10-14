@@ -10,6 +10,8 @@ import nodeFetch from 'node-fetch';
 import {URL} from 'url';
 import {Store} from 'n3';
 import {bindingsToQuads, selectQuery} from './query';
+import {Readable} from 'stream';
+import {StandardizeSchemaOrgPrefixToHttps} from './transform';
 
 export class UrlNotFound extends Error {}
 export class NoDatasetFoundAtUrl extends Error {}
@@ -29,13 +31,13 @@ export async function fetch(url: URL): Promise<DatasetExt[]> {
     if (response.status === 404) {
       throw new UrlNotFound(response.status.toString());
     }
-    throw new NoDatasetFoundAtUrl(response.status.toString());
+    throw new NoDatasetFoundAtUrl(url.toString());
   }
 
   //   return await construct(url);
   const datasets = await query(url);
   if (datasets.length === 0) {
-    throw new NoDatasetFoundAtUrl();
+    throw new NoDatasetFoundAtUrl(url.toString());
   }
 
   return datasets;
@@ -47,7 +49,11 @@ export async function fetch(url: URL): Promise<DatasetExt[]> {
 export async function dereference(url: URL): Promise<DatasetExt> {
   try {
     const {quads} = await rdfDereferencer.dereference(url.toString());
-    return await factory.dataset().import(quads);
+    return await factory
+      .dataset()
+      .import(
+        (quads as Readable).pipe(new StandardizeSchemaOrgPrefixToHttps())
+      );
   } catch (e) {
     if (e instanceof Error) {
       // Match error thrown in Comunica’s ActorRdfDereferenceHttpParseBase.
