@@ -8,7 +8,6 @@ import {
   MockDatasetStore,
   MockRegistrationStore,
 } from './mock';
-import {file} from './file';
 import {URL} from 'url';
 
 let httpServer: FastifyInstance<Server>;
@@ -124,18 +123,7 @@ describe('Server', () => {
   });
 
   it('stores registration even if fetching datasets fails', async () => {
-    nock.cleanAll();
-    const datasetResponse = await file('dataset-schema-org-valid.jsonld');
-    nock('https://netwerkdigitaalerfgoed.nl')
-      .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
-      .head('/fails') // Dereference for validation request must succeed.
-      .reply(200)
-      .get('/fails')
-      .reply(200, datasetResponse)
-      .get('/fails') // But querying the dataset must fail for this test case.
-      .reply(500);
-    nock.enableNetConnect('schema.org');
-
+    const {nockDone} = await nock.back('post-dataset-query-fails.json');
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets',
@@ -144,9 +132,10 @@ describe('Server', () => {
         '@id': 'https://netwerkdigitaalerfgoed.nl/fails',
       }),
     });
-    expect(response.statusCode).toEqual(202); // Validation succeeds, so 202.
+    nockDone();
 
-    await waitForNockDone();
+    // Validation succeeds, so 202 to the client, even if fetching datasets fails.
+    expect(response.statusCode).toEqual(202);
     expect(
       registrationStore.isRegistered(
         new URL('https://netwerkdigitaalerfgoed.nl/fails')
@@ -163,13 +152,3 @@ describe('Server', () => {
     expect(response.statusCode).toEqual(200);
   });
 });
-
-const waitForNockDone = async () => {
-  if (nock.isDone()) {
-    return;
-  }
-
-  return new Promise(resolve => {
-    setTimeout(() => resolve(waitForNockDone()), 100);
-  });
-};

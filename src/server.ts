@@ -139,7 +139,7 @@ export async function server(
         return;
       }
 
-      await reply.code(202).send();
+      reply.code(202); // The validate function will reply.send() with any validation warnings.
       if (await validate(url, reply)) {
         // The URL has validated, so any problems with processing the dataset are now ours. Therefore, make sure to
         // store the registration so we can come back to that when crawling, even if fetching the datasets fails.
@@ -156,6 +156,7 @@ export async function server(
         await registrationStore.store(registration);
       }
     }
+    // If the dataset did not validate, the validate() function has replied with a 4xx status code.
   );
 
   server.put(
