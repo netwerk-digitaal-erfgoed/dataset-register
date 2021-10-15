@@ -107,8 +107,7 @@ export const selectQuery = `
     {
       ${dataset} a schema:Dataset ;
         schema:name ${name} ; 
-        schema:license ${license} ;
-        schema:distribution ${distribution} .
+        schema:license ${license} .
         
       FILTER (!isBlank(${license}))
 
@@ -124,9 +123,12 @@ export const selectQuery = `
           schema:name ${publisherName} .
       }
           
-      ${distribution} a schema:DataDownload ;
-        schema:contentUrl ${distributionUrl} ;
-        schema:encodingFormat ${distributionFormat} . 
+      OPTIONAL {
+        ${dataset} schema:distribution ${distribution} .
+        ${distribution} a schema:DataDownload ;
+          schema:contentUrl ${distributionUrl} ;
+          schema:encodingFormat ${distributionFormat} .
+      } 
        
       OPTIONAL { ${dataset} schema:description ${description} } 
       OPTIONAL { ${dataset} schema:identifier ${identifier} }
@@ -153,15 +155,17 @@ export const selectQuery = `
       ${dataset} a dcat:Dataset ;
         dct:title ${name} ;
         dct:license ${license} ;
-        dct:creator ${creator} ;
-        dcat:distribution ${distribution} .
+        dct:creator ${creator} .
         
       ${creator} a foaf:Organization ;
         foaf:name ${creatorName} .
-        
-      ${distribution} a dcat:Distribution ;
-        dcat:accessURL ${distributionUrl} ;
-        dct:format ${distributionFormat} .
+      
+      OPTIONAL {  
+        ${dataset} dcat:distribution ${distribution} .
+        ${distribution} a dcat:Distribution ;
+          dcat:accessURL ${distributionUrl} ;
+          dct:format ${distributionFormat} .
+      }
         
       OPTIONAL { ${dataset} dct:description ${description} }
       OPTIONAL { ${dataset} dct:identifier ${identifier} }

@@ -5,34 +5,14 @@
   "name": "Alba amicorum van de Koninklijke Bibliotheek",
   "url": "https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum",
   "identifier": "http://data.bibliotheken.nl/id/dataset/rise-alba",
-  "keywords": [
-    "alba amicorum"
-  ],
   "license": "http://creativecommons.org/publicdomain/zero/1.0/",
   "publisher": {
     "@type": "Organization",
-    "@id": "https://www.kb.nl/",
+    "@id": "https://example.com/publisher",
     "name": "Koninklijke Bibliotheek",
     "sameAs": "https://ror.org/02w4jbg70"
   },
-  "creator": {
-    "@type": "Organization",
-    "@id": "https://example.com/creator",
-    "name": "Koninklijke Bibliotheek"
-  },
   "dateModified": "2021-05-27T09:56:21.370767",
   "datePublished": "2021-05-28",
-  "dateCreated": { "@type": "http://www.w3.org/2001/XMLSchema#date", "@value": "2021-05-27" },
-  "distribution": [
-    {
-      "@type": "DataDownload",
-      "encodingFormat": "application/rdf+xml",
-      "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
-    },
-    {
-      "@type": "DataDownload",
-      "encodingFormat": "application/ld+json",
-      "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld"
-    }
-  ]
+  "dateCreated": { "@type": "http://www.w3.org/2001/XMLSchema#date", "@value": "2021-05-27" }
 }
