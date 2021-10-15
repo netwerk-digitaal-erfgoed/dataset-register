@@ -52,6 +52,19 @@ describe('Server', () => {
     expect(response.statusCode).toEqual(404);
   });
 
+  it('rejects validation requests that point to URL with empty response', async () => {
+    nock('https://example.com/').get('/200').reply(200, '');
+    const response = await httpServer.inject({
+      method: 'PUT',
+      url: '/datasets/validate',
+      headers: {'Content-Type': 'application/ld+json'},
+      payload: JSON.stringify({
+        '@id': 'https://example.com/200',
+      }),
+    });
+    expect(response.statusCode).toEqual(406);
+  });
+
   it('responds with 200 to valid dataset requests', async () => {
     const {nockDone} = await nock.back('valid-dataset.json');
     const response = await httpServer.inject({

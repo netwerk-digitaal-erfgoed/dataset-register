@@ -6,38 +6,30 @@ import {
 import rdfDereferencer from 'rdf-dereference';
 import factory from 'rdf-ext';
 import DatasetExt from 'rdf-ext/lib/Dataset';
-import nodeFetch from 'node-fetch';
 import {URL} from 'url';
 import {Store} from 'n3';
 import {bindingsToQuads, selectQuery} from './query';
 import {Readable} from 'stream';
 import {StandardizeSchemaOrgPrefixToHttps} from './transform';
 
-export class UrlNotFound extends Error {}
+export class HttpError extends Error {
+  constructor(message: string, public readonly statusCode: number) {
+    super(message);
+  }
+}
+
 export class NoDatasetFoundAtUrl extends Error {}
 
 export async function fetch(url: URL): Promise<DatasetExt[]> {
-  // Comunica doesn't handle status codes well (https://github.com/comunica/comunica/issues/777),
-  // so first make sure the URL can be retrieved.
-  const response = await nodeFetch(url, {
-    // Use Comunica’s Accept header.
-    method: 'HEAD',
-    headers: {
-      Accept:
-        'application/n-quads,application/trig;q=0.95,application/ld+json;q=0.9,application/n-triples;q=0.8,text/turtle;q=0.6,application/rdf+xml;q=0.5',
-    },
-  });
-  if (!response.ok) {
-    if (response.status === 404) {
-      throw new UrlNotFound(response.status.toString());
-    }
-    throw new NoDatasetFoundAtUrl(url.toString());
+  let datasets = [];
+  try {
+    datasets = await query(url);
+  } catch (e) {
+    handleComunicaError(e);
   }
 
-  //   return await construct(url);
-  const datasets = await query(url);
   if (datasets.length === 0) {
-    throw new NoDatasetFoundAtUrl(url.toString());
+    throw new NoDatasetFoundAtUrl();
   }
 
   return datasets;
@@ -55,14 +47,7 @@ export async function dereference(url: URL): Promise<DatasetExt> {
         (quads as Readable).pipe(new StandardizeSchemaOrgPrefixToHttps())
       );
   } catch (e) {
-    if (e instanceof Error) {
-      // Match error thrown in Comunica’s ActorRdfDereferenceHttpParseBase.
-      if (e.message.match(/404: unknown error/)) {
-        throw new UrlNotFound(e.message);
-      }
-      throw new NoDatasetFoundAtUrl(e.message);
-    }
-    throw e;
+    handleComunicaError(e);
   }
 }
 
@@ -148,4 +133,26 @@ async function construct(url: URL) {
   console.log(await result.quads());
 
   return await factory.dataset().import(result.quadStream);
+}
+
+/**
+ * Parse Comunica error response to throw a specific error class.
+ */
+function handleComunicaError(e: unknown): never {
+  if (e instanceof Error) {
+    // Match error thrown in Comunica’s ActorRdfDereferenceHttpParseBase.
+    if (e.message.match(/404: unknown error/)) {
+      throw new HttpError(e.message, 404);
+    }
+
+    const matches = e.message.match(/HTTP status (\d+)/);
+    if (matches) {
+      const statusCode = parseInt(matches[1]);
+      throw new HttpError(e.message, statusCode);
+    }
+
+    throw new NoDatasetFoundAtUrl(e.message);
+  }
+
+  throw e;
 }
