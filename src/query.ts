@@ -198,40 +198,25 @@ export function bindingsToQuads(binding: Map<string, Term>): Quad[] {
   ];
 
   if (binding.get(publisher)) {
-    const publisherBlankNode = binding.get(publisher) as BlankNodeScoped;
+    const publisherNode = binding.get(publisher) as NamedNode;
     quads.push(
+      factory.quad(datasetIri, dct('publisher'), publisherNode, datasetIri),
       factory.quad(
-        datasetIri,
-        dct('publisher'),
-        publisherBlankNode,
-        datasetIri
-      ),
-      factory.quad(
-        publisherBlankNode,
+        publisherNode,
         rdf('type'),
         foaf('Organization'),
         datasetIri
       ),
-      ..._bindingsToQuads(
-        publisherBlankNode,
-        binding,
-        publisherMapping,
-        datasetIri
-      )
+      ..._bindingsToQuads(publisherNode, binding, publisherMapping, datasetIri)
     );
   }
 
   if (binding.get(creator)) {
-    const creatorBlankNode = binding.get(creator) as BlankNodeScoped;
+    const creatorNode = binding.get(creator) as NamedNode;
     quads.push(
-      factory.quad(datasetIri, dct('creator'), creatorBlankNode, datasetIri),
-      factory.quad(
-        creatorBlankNode,
-        rdf('type'),
-        foaf('Organization'),
-        datasetIri
-      ),
-      ..._bindingsToQuads(creatorBlankNode, binding, creatorMapping, datasetIri)
+      factory.quad(datasetIri, dct('creator'), creatorNode, datasetIri),
+      factory.quad(creatorNode, rdf('type'), foaf('Organization'), datasetIri),
+      ..._bindingsToQuads(creatorNode, binding, creatorMapping, datasetIri)
     );
   }
 
