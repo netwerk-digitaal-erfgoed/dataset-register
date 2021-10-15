@@ -44,13 +44,15 @@ describe('Fetch', () => {
 
     expect(datasets).toHaveLength(1);
     const dataset = datasets[0];
-    expect(dataset.size).toBe(22);
+    expect(dataset.size).toBe(12);
     expect(
       dataset.includes(
         factory.quad(
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
-          dcat('keyword'),
-          factory.literal('alba amicorum'),
+          dct('license'),
+          factory.namedNode(
+            'http://creativecommons.org/publicdomain/zero/1.0/'
+          ),
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
         )
       )
@@ -59,8 +61,8 @@ describe('Fetch', () => {
       dataset.includes(
         factory.quad(
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
-          dct('creator'),
-          factory.namedNode('https://example.com/creator'),
+          dct('publisher'),
+          factory.namedNode('https://example.com/publisher'),
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
         )
       )
