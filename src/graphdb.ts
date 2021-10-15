@@ -271,7 +271,7 @@ export class GraphDbDatasetStore implements DatasetStore {
     await getWriter(dataset.toArray()).end(async (error, result) => {
       await this.client.request(
         'PUT',
-        '/rdf-graphs/service?graph=' + graphIri.toString(),
+        '/rdf-graphs/service?graph=' + encodeURIComponent(graphIri.toString()),
         result
       );
     });
