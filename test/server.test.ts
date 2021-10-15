@@ -109,6 +109,22 @@ describe('Server', () => {
     expect(response.statusCode).toEqual(200);
   });
 
+  it('handles errors during streaming', async () => {
+    nock('https://example.com')
+      .get('/200')
+      // {"@id": null} is an example to trip up JsonLdParser, which throws Found illegal @id 'null'.
+      .reply(200, {'@id': null}, {'Content-Type': 'application/ld+json'});
+    const response = await httpServer.inject({
+      method: 'PUT',
+      url: '/datasets/validate',
+      headers: {'Content-Type': 'application/ld+json'},
+      payload: JSON.stringify({
+        '@id': 'https://example.com/200',
+      }),
+    });
+    expect(response.statusCode).toEqual(406);
+  });
+
   it('rejects unauthorized domains', async () => {
     const response = await httpServer.inject({
       method: 'POST',

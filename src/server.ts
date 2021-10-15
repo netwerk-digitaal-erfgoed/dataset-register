@@ -102,7 +102,9 @@ export async function server(
       }
 
       if (e instanceof NoDatasetFoundAtUrl) {
-        reply.log.info(`No dataset found at URL ${url.toString()}`);
+        reply.log.info(
+          `No dataset found at URL ${url.toString()}: ${e.message}`
+        );
         reply.code(406).send();
       }
 

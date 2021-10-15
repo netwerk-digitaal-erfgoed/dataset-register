@@ -9,7 +9,7 @@ import DatasetExt from 'rdf-ext/lib/Dataset';
 import {URL} from 'url';
 import {Store} from 'n3';
 import {bindingsToQuads, selectQuery} from './query';
-import {Readable} from 'stream';
+import {pipeline, Readable} from 'stream';
 import {StandardizeSchemaOrgPrefixToHttps} from './transform';
 
 export class HttpError extends Error {
@@ -41,11 +41,16 @@ export async function fetch(url: URL): Promise<DatasetExt[]> {
 export async function dereference(url: URL): Promise<DatasetExt> {
   try {
     const {quads} = await rdfDereferencer.dereference(url.toString());
-    return await factory
-      .dataset()
-      .import(
-        (quads as Readable).pipe(new StandardizeSchemaOrgPrefixToHttps())
-      );
+    const stream = pipeline(
+      quads as Readable,
+      new StandardizeSchemaOrgPrefixToHttps(),
+      err => {
+        if (err) {
+          throw new Error(err?.message);
+        }
+      }
+    );
+    return await factory.dataset().import(stream);
   } catch (e) {
     handleComunicaError(e);
   }
