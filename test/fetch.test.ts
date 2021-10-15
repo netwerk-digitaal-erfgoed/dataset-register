@@ -1,5 +1,5 @@
 import {URL} from 'url';
-import {fetch} from '../src/fetch';
+import {fetch, HttpError, NoDatasetFoundAtUrl} from '../src/fetch';
 import nock from 'nock';
 import fs from 'fs';
 import {dcat, dct, rdf} from '../src/query';
@@ -10,8 +10,6 @@ describe('Fetch', () => {
     const response = await file('dataset-dcat-valid.jsonld');
     nock('https://example.com')
       .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
-      .head('/valid-dcat-dataset')
-      .reply(200)
       .get('/valid-dcat-dataset')
       .reply(200, response);
 
@@ -37,8 +35,6 @@ describe('Fetch', () => {
     const response = await file('dataset-schema-org-valid.jsonld');
     nock('https://example.com')
       .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
-      .head('/valid-schema-org-dataset')
-      .reply(200)
       .get('/valid-schema-org-dataset')
       .reply(200, response);
 
@@ -69,6 +65,38 @@ describe('Fetch', () => {
         )
       )
     ).toBe(true);
+  });
+
+  it('handles 404 error dataset response', async () => {
+    nock('https://example.com').get('/404').reply(404);
+    expect.assertions(2);
+    try {
+      await fetch(new URL('https://example.com/404'));
+    } catch (e) {
+      expect(e).toBeInstanceOf(HttpError);
+      expect((e as HttpError).statusCode).toBe(404);
+    }
+  });
+
+  it('handles 500 error dataset response', async () => {
+    nock('https://example.com').get('/500').reply(500);
+    expect.assertions(2);
+    try {
+      await fetch(new URL('https://example.com/500'));
+    } catch (e) {
+      expect(e).toBeInstanceOf(HttpError);
+      expect((e as HttpError).statusCode).toBe(500);
+    }
+  });
+
+  it('handles empty dataset response', async () => {
+    nock('https://example.com').get('/200').reply(200);
+    expect.assertions(1);
+    try {
+      await fetch(new URL('https://example.com/200'));
+    } catch (e) {
+      expect(e).toBeInstanceOf(NoDatasetFoundAtUrl);
+    }
   });
 });
 

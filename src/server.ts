@@ -5,7 +5,7 @@ import fastify, {
 } from 'fastify';
 import {Validator} from './validator';
 import {toStream} from 'rdf-dataset-ext';
-import {dereference, fetch, NoDatasetFoundAtUrl, UrlNotFound} from './fetch';
+import {dereference, fetch, HttpError, NoDatasetFoundAtUrl} from './fetch';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import {URL} from 'url';
 import {
@@ -90,14 +90,22 @@ export async function server(
     try {
       dataset = await dereference(url);
     } catch (e) {
-      if (e instanceof UrlNotFound) {
-        reply.log.info(`URL ${url.toString()} not found`);
-        reply.code(404).send();
+      if (e instanceof HttpError) {
+        reply.log.info(
+          `Error at URL ${url.toString()}: ${e.statusCode} ${e.message}`
+        );
+        if (e.statusCode === 404) {
+          reply.code(404).send();
+        } else {
+          reply.code(406).send();
+        }
       }
+
       if (e instanceof NoDatasetFoundAtUrl) {
         reply.log.info(`No dataset found at URL ${url.toString()}`);
         reply.code(406).send();
       }
+
       return null;
     }
 
