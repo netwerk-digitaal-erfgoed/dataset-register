@@ -8555,7 +8555,7 @@
     },
     {
         "scope": "https://netwerkdigitaalerfgoed.nl:443",
-        "method": "HEAD",
+        "method": "GET",
         "path": "/fails",
         "body": "",
         "status": 500,
