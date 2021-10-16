@@ -8,6 +8,9 @@ import {
   Valid,
   Validator,
 } from '../src/validator';
+import {StreamParser} from 'n3';
+import {Transform} from 'stream';
+import {StandardizeSchemaOrgPrefixToHttps} from '../src/transform';
 
 let validator: Validator;
 
@@ -17,7 +20,15 @@ describe('Validator', () => {
   });
 
   it('accepts minimal valid Schema.org dataset', async () => {
-    const report = await validate('dataset-schema-org-valid.jsonld');
+    const report = await validate('dataset-schema-org-valid-minimal.jsonld');
+    expect(report.state).toEqual('valid');
+  });
+
+  it('accepts minimal valid Schema.org dataset in Turtle', async () => {
+    const report = await validate(
+      'dataset-http-schema-org-valid.ttl',
+      new StreamParser()
+    );
     expect(report.state).toEqual('valid');
   });
 
@@ -25,6 +36,11 @@ describe('Validator', () => {
     const report = await validate(
       'dataset-schema-org-valid-plus-organization.jsonld'
     );
+    expect(report.state).toEqual('valid');
+  });
+
+  it('accepts valid Schema.org dataset', async () => {
+    const report = await validate('dataset-schema-org-valid.jsonld');
     expect(report.state).toEqual('valid');
   });
 
@@ -56,8 +72,10 @@ describe('Validator', () => {
   it('reports invalid HTTP Schema.org dataset', async () => {
     const report = await validate('dataset-http-schema-org-invalid.jsonld');
     expect(report.state).toBe('invalid');
-    expectViolations(report as InvalidDataset, ['http://schema.org/name']);
-    expectViolations(report as InvalidDataset, ['http://schema.org/publisher']);
+    expectViolations(report as InvalidDataset, ['https://schema.org/name']);
+    expectViolations(report as InvalidDataset, [
+      'https://schema.org/publisher',
+    ]);
   });
 
   it('accepts valid DCAT dataset', async () => {
@@ -83,7 +101,7 @@ describe('Validator', () => {
   it('reports invalid Schema.org catalog', async () => {
     const report = await validate('catalog-schema-org-invalid.jsonld');
     expect(report.state).toEqual('invalid');
-    expectViolations(report as InvalidDataset, ['http://schema.org/name']);
+    expectViolations(report as InvalidDataset, ['https://schema.org/name']);
   });
 
   it('accepts valid DCAT catalog', async () => {
@@ -137,17 +155,16 @@ describe('Validator', () => {
   });
 });
 
-const validate = async (filename: string) =>
-  validator.validate(await dataset(filename));
+const validate = async (filename: string, parser?: Transform) =>
+  validator.validate(await dataset(filename, parser));
 
-const dataset = async (filename: string) => {
-  const jsonLdParser = new JsonLdParser();
-  // const b = factory.dataset();
-  return await factory
-    .dataset()
-    .import(
-      fs.createReadStream(`test/datasets/${filename}`).pipe(jsonLdParser)
-    );
+const dataset = async (filename: string, parser?: Transform) => {
+  return await factory.dataset().import(
+    fs
+      .createReadStream(`test/datasets/${filename}`)
+      .pipe(parser ?? new JsonLdParser())
+      .pipe(new StandardizeSchemaOrgPrefixToHttps())
+  );
 };
 
 const expectViolations = (report: InvalidDataset, violationPaths: string[]) =>

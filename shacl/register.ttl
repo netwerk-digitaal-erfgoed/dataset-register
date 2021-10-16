@@ -1,11 +1,12 @@
 @prefix sh: <http://www.w3.org/ns/shacl#> .
-@prefix schema: <http://schema.org/> .
+@prefix schema: <https://schema.org/> .
 @prefix dcat: <http://www.w3.org/ns/dcat#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix dc: <http://purl.org/dc/terms/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix reg: <http://terms.netwerkdigitaalerfgoed.nl/ns/register#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 
 ##
 ## Schema.org
@@ -89,17 +90,16 @@ reg:OrganizationShape
         # reg:SchemaSameAsProperty
 .
 
-reg:DateTimeShape
-    a sh:NodeShape ;
+reg:DateTimeShape a sh:NodeShape ;
     sh:or (
-	   	  [ sh:datatype schema:Date ]
-	   	  [ sh:datatype schema:dateTime ]
-	   	  [ sh:datatype xsd:dateTime ]
-	   	  [ sh:datatype xsd:date ]
-        ) ;
-     sh:name "dateTime" ;
-     sh:message "Datum moet van het type schema:Date/xsd:date of schema:dateTime/xsd:dateTime zijn"@nl, "Date must be schema:Date/xsd:date or schema:dateTime/xsd:dateTime"@en ;
-     sh:severity sh:Warning ;
+        [ sh:datatype schema:Date ]
+        [ sh:datatype schema:dateTime ]
+        [ sh:datatype xsd:dateTime ]
+        [ sh:datatype xsd:date ]
+    ) ;
+    sh:name "dateTime" ;
+    sh:message "Datum moet van het type schema:Date/xsd:date of schema:dateTime/xsd:dateTime zijn"@nl, "Date must be schema:Date/xsd:date or schema:dateTime/xsd:dateTime"@en ;
+    sh:severity sh:Warning ;
 .
 
 # TODO
@@ -112,16 +112,21 @@ reg:DateTimeShape
 reg:SchemaCatalogNameProperty a sh:PropertyShape ;
     sh:path schema:name ;
     sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:datatype xsd:string ;
+    sh:or (
+        [ sh:datatype xsd:string ]
+        [ sh:datatype rdf:langString ]
+    ) ;
     sh:name "Naam van de datacatalogus"@nl, "Name of the data catalog"@en ;
-    sh:message "Een datacatalogus dient een naam te bevatten"@nl, "A data catalog should have a name"@en ;
+    sh:message "Een datacatalogus moet een naam hebben"@nl, "A data catalog must have a name"@en ;
 .
 
 reg:OrganizationNameProperty a sh:PropertyShape ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
     sh:path schema:name ;
+    sh:minCount 1 ;
+    sh:or (
+        [ sh:datatype xsd:string ]
+        [ sh:datatype rdf:langString ]
+    ) ;
     sh:message "Een organisatie moet een naam hebben"@nl, "An organization must contain a name"@en ;
 .
 
@@ -154,34 +159,40 @@ reg:SchemaDatasetProperty a sh:PropertyShape ;
 reg:SchemaDatasetNameProperty a sh:PropertyShape ;
     sh:path schema:name ;
     sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:datatype xsd:string ;
+    sh:or (
+        [ sh:datatype xsd:string ]
+        [ sh:datatype rdf:langString ]
+    ) ;
     sh:name "Naam van de dataset"@nl, "Name of the dataset"@en ;
     sh:message "Een datasetbeschrijving dient een naam te bevatten"@nl, "A dataset description should have a name"@en ;
 .
 
 reg:SchemaDistributionNameProperty a sh:PropertyShape ;
     sh:path schema:name ;
-    sh:minCount 0 ;
-    sh:maxCount 1 ;
-    sh:datatype xsd:string ;
+    sh:or (
+        [ sh:datatype xsd:string ]
+        [ sh:datatype rdf:langString ]
+    ) ;
     sh:name "Naam van de distributie"@nl, "Name of the distributie"@en ;
     sh:message "Een distributie mag maximaal een naam te bevatten"@nl, "A dataset distributie can have one or no name"@en ;
 .
 
 reg:SchemaAlternateNameProperty a sh:PropertyShape ;
     sh:path schema:alternateName ;
-    sh:minCount 0 ;
-    sh:datatype xsd:string ;
+    sh:or (
+        [ sh:datatype xsd:string ]
+        [ sh:datatype rdf:langString ]
+    ) ;
     sh:name "Alternatieve naam van de dataset"@nl, "Alternative name of the dataset"@en ;
     sh:message "Een datasetbeschrijving kan meerdere alternatieve naam te bevatten"@nl, "A dataset description can contain multiple alternative names"@en ;
 .
 
 reg:SchemaDescriptionProperty a sh:PropertyShape ;
     sh:path schema:description ;
-    sh:minCount 0 ;
-    sh:maxCount 1 ;
-    sh:datatype xsd:string ;
+    sh:or (
+        [ sh:datatype xsd:string ]
+        [ sh:datatype rdf:langString ]
+    );
     sh:name "Beschrijving van de dataset"@nl, "Description of the dataset"@en ;
     sh:message "Een datasetbeschrijving kan een beschrijving bevatten"@nl, "A dataset description should have a description"@en ;
 .
@@ -213,7 +224,6 @@ reg:SchemaDateModifiedProperty a sh:PropertyShape ;
 reg:SchemaCreatorProperty a sh:PropertyShape ;
     sh:path schema:creator ;
     sh:minCount 0 ;
-    sh:maxCount 1 ;
     sh:class schema:Organization ;
     sh:node reg:OrganizationShape ;
     sh:name "Persoon of organisatie die de dataset heeft gemaakt"@nl, "Person or organisation which created the dataset"@en ;
@@ -269,15 +279,10 @@ dcat:DatasetShape
     a sh:NodeShape ;
     sh:property [
         sh:minCount 1 ;
-        sh:maxCount 1 ;
         sh:path dc:title
     ], [
-        sh:minCount 0 ;
-        sh:maxCount 1 ;
         sh:path dc:alternative
     ], [
-        sh:minCount 0 ;
-        sh:maxCount 1 ;
         sh:path dc:description
     ], [
         sh:minCount 1 ;
@@ -287,21 +292,17 @@ dcat:DatasetShape
     [
         sh:path dc:publisher ;
         sh:minCount 1 ;
-        sh:maxCount 1 ;
         sh:severity sh:Warning ;
         sh:class foaf:Organization ;
         sh:node dcat:OrganizationShape
     ],
     [
         sh:path dc:creator ;
-        sh:minCount 0 ;
-        sh:maxCount 1 ;
         sh:class foaf:Organization ;
         sh:node dcat:OrganizationShape
     ],
     [
         sh:path dcat:distribution ;
-        sh:minCount 0 ;
         sh:class dcat:Distribution ;
         sh:node dcat:DistributionShape
     ] ;
@@ -323,7 +324,7 @@ dcat:DistributionShape
             sh:path dcat:downloadURL
             ]
         ]
-    );
+    ) ;
     sh:property [
         sh:minCount 1 ;
         sh:maxCount 1 ;
@@ -336,7 +337,6 @@ dcat:OrganizationShape
     a sh:NodeShape ;
     sh:property [
         sh:minCount 1 ;
-        sh:maxCount 1 ;
         sh:path foaf:name
     ] ;
 .

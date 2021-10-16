@@ -30,6 +30,7 @@ You can check validity using the [validate API call](https://datasetregister.net
 
 To submit your dataset descriptions to the Dataset Register,
 use the [datasets API call](https://datasetregister.netwerkdigitaalerfgoed.nl/api/static/index.html#/default/post_datasets).
+URLs must be [allowed](#allow-list) before they can be added to the Register.
 
 ### Search dataset descriptions
 
@@ -136,28 +137,75 @@ Each dataset that is found at the [`schema:EntryPoint`](#schemaentrypoint) regis
 When a dataset’s RDF description is fetched and validated, it is added as a `dcat:Dataset` to its own graph. The URL
 of the graph corresponds to the dataset’s IRI.
 
-If the dataset’s description is in Schema.org rather than DCAT, the description is first converted to DCAT.
+If the dataset’s description is provided in Schema.org rather than DCAT, the description is first converted to DCAT. The
+‘Based on’ column shows the corresponding Schema.org property.
+See the [Requirements for Datasets](https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/) for more details.
 
-| Property | Description |
-| -------- | ----------- |
-| [`dct:creator`](http://purl.org/dc/terms/creator) | Dataset creator. |
-| [`dct:title`](http://purl.org/dc/terms/title) | Dataset title. |
-| [`dct:description`](http://purl.org/dc/terms/description) | Dataset description. |
-| [`dct:license`](http://purl.org/dc/terms/license) | Dataset license. |
-| [`dct:modified`](http://purl.org/dc/terms/modified) | Dataset last modification date. |
-| [`dcat:distribution`](https://www.w3.org/TR/vocab-dcat-3/#Property:dataset_distribution) | Dataset [distributions](#dcatdistribution). |
+| Property | Description | Based on |
+| -------- | ----------- | -------- |
+| [`dct:title`](http://purl.org/dc/terms/title) | Dataset title. | [`schema:name`](https://schema.org/name) |
+| [`dct:alternative`](http://purl.org/dc/terms/alternative) | Dataset alternate title. | [`schema:alternateName`](https://schema.org/alternateName) |
+| [`dct:identifier`](http://purl.org/dc/terms/identifier) | Dataset identifier. | [`schema:identifier`](https://schema.org/identifier) |
+| [`dct:description`](http://purl.org/dc/terms/description) | Dataset description. | [`schema:description`](https://schema.org/description) |
+| [`dct:license`](http://purl.org/dc/terms/license) | Dataset license. | [`schema:license`](https://schema.org/license) |
+| [`dct:language`](http://purl.org/dc/terms/language) | Language(s) in which the dataset is available. | [`schema:inLanguage`](https://schema.org/inLanguage) |
+| [`dcat:keyword`](https://www.w3.org/TR/vocab-dcat-3/#Property:resource_keyword) | Keywords or tags that describe the dataset. | [`schema:keywords`](https://schema.org/keywords) |
+| [`dcat:landingPage`](https://www.w3.org/TR/vocab-dcat-3/#Property:resource_landing_page) | Keywords or tags that describe the dataset. | [`schema:mainEntityOfPage`](https://schema.org/mainEntityOfPage) |
+| [`dct:source`](http://purl.org/dc/terms/source) | URL(s) of datasets the dataset is based on. | [`schema:isBasedOn`](https://schema.org/isBasedOn) |
+| [`dct:created`](http://purl.org/dc/terms/created) | Dataset creation date. | [`schema:dateCreated`](https://schema.org/dateCreated) |
+| [`dct:issued`](http://purl.org/dc/terms/issued) | Dataset publication date. | [`schema:datePublished`](https://schema.org/datePublished) |
+| [`dct:modified`](http://purl.org/dc/terms/modified) | Dataset last modification date. | [`schema:dateModified`](https://schema.org/dateModifed) |
+| [`owl:versionInfo`](https://www.w3.org/2002/07/owl#versionInfo) | Dataset version | [`schema:version`](https://schema.org/version) |
+| [`dct:creator`](http://purl.org/dc/terms/creator) | Dataset [creator](#foaforganization). | [`schema:creator`](https://schema.org/creator) |
+| [`dct:publisher`](http://purl.org/dc/terms/publisher) | Dataset [publisher](#foaforganization). | [`schema:publisher`](https://schema.org/publisher) |
+| [`dcat:distribution`](https://www.w3.org/TR/vocab-dcat-3/#Property:dataset_distribution) | Dataset [distributions](#dcatdistribution). | [`schema:distribution`](https://schema.org/distribution) |
+
+### `foaf:Organization`
+
+The objects of both the `dct:creator` and `dct:publisher` dataset have type `foaf:Organization`.
+
+If the dataset’s organizations are provided in Schema.org rather than DCAT, the organizations are first converted to
+DCAT. The ‘Based on’ column shows the corresponding Schema.org property.
+See the [Requirements for Datasets](https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/) for more details.
+
+| Property | Description | Based on |
+| -------- | ----------- | -------- |
+| [`foaf:name`](http://xmlns.com/foaf/0.1/name) | Organization name. | [`schema:name`](https://schema.org/name) |
+
 
 ### `dcat:Distribution`
 
-| Property | Description |
-| -------- | ----------- |
-| [`dcat:accessUrl`](https://www.w3.org/TR/vocab-dcat-3/) | Distribution URL. |
-| [`dcat:mediaType`](https://www.w3.org/TR/vocab-dcat-3/) | Distribution’s IANA media type. |
-| [`dct:format`](http://purl.org/dc/terms/format) | Distribution content type (e.g. `text/turtle`). |
-| [`dct:issued`](http://purl.org/dc/terms/issued) | Distribution publication date. |
-| [`dct:modified`](http://purl.org/dc/terms/issued) | Distribution last modification date. |
-| [`dct:description`](http://purl.org/dc/terms/description) | Distribution description. |
-| [`dct:language`](http://purl.org/dc/terms/language) | Distribution language. |
-| [`dct:license`](http://purl.org/dc/terms/license) | Distribution license. |
-| [`dct:title`](http://purl.org/dc/terms/license) | Distribution title. |
-| [`dcat:byteSize`](https://www.w3.org/TR/vocab-dcat-3/) | Distribution’s download size in bytes. |
+The objects of `dcat:distribution` dataset properties have type `dcat:Distribution`.
+
+If the dataset’s distributions are provided in Schema.org rather than DCAT, the distributions are first converted to
+DCAT. The ‘Based on’ column shows the corresponding Schema.org property.
+See the [Requirements for Datasets](https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/) for more details.
+
+| Property | Description | Based on |
+| -------- | ----------- | -------- |
+| [`dcat:accessUrl`](https://www.w3.org/TR/vocab-dcat-3/) | Distribution URL. | [`schema:contentUrl`](https://schema.org/contentUrl) |
+| [`dcat:mediaType`](https://www.w3.org/TR/vocab-dcat-3/) | Distribution’s IANA media type. | [`schema:fileFormat`](https://schema.org/fileFormat) |
+| [`dct:format`](http://purl.org/dc/terms/format) | Distribution content type (e.g. `text/turtle`). | [`schema:encodingFormat`](https://schema.org/encodingFormat) |
+| [`dct:issued`](http://purl.org/dc/terms/issued) | Distribution publication date. | [`schema:datePublished`](https://schema.org/datePublished) |
+| [`dct:modified`](http://purl.org/dc/terms/issued) | Distribution last modification date. | [`schema:dateModified`](https://schema.org/dateModified) |
+| [`dct:description`](http://purl.org/dc/terms/description) | Distribution description. | [`schema:description`](https://schema.org/description) |
+| [`dct:language`](http://purl.org/dc/terms/language) | Distribution language. | [`schema:inLanguage`](https://schema.org/inLanguage) |
+| [`dct:license`](http://purl.org/dc/terms/license) | Distribution license. | [`schema:license`](https://schema.org/license) |
+| [`dct:title`](http://purl.org/dc/terms/title) | Distribution title. | [`schema:name`](https://schema.org/name) |
+| [`dcat:byteSize`](https://www.w3.org/TR/vocab-dcat-3/) | Distribution’s download size in bytes. | [`schema:contentSize`](https://schema.org/contentSize) |
+
+### Allow list
+
+A registration URL must be on a domain that is allowed before it can be added to the Register.
+Allowed domains are administered in the 
+[https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names RDF graph](https://triplestore.netwerkdigitaalerfgoed.nl/resource?uri=https:%2F%2Fdata.netwerkdigitaalerfgoed.nl%2Fregistry%2Fallowed_domain_names&role=context).
+
+To add a URL:
+
+```sparql
+INSERT DATA { 
+    GRAPH <https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names> { 
+        [] <https://data.netwerkdigitaalerfgoed.nl/allowed_domain_names/def/domain_name> "your-domain.com" .
+    }
+}
+```

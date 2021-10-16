@@ -5,7 +5,7 @@ import fastify, {
 } from 'fastify';
 import {Validator} from './validator';
 import {toStream} from 'rdf-dataset-ext';
-import {dereference, fetch, NoDatasetFoundAtUrl, UrlNotFound} from './fetch';
+import {dereference, fetch, HttpError, NoDatasetFoundAtUrl} from './fetch';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import {URL} from 'url';
 import {
@@ -90,14 +90,24 @@ export async function server(
     try {
       dataset = await dereference(url);
     } catch (e) {
-      if (e instanceof UrlNotFound) {
-        reply.log.info(`URL ${url.toString()} not found`);
-        reply.code(404).send();
+      if (e instanceof HttpError) {
+        reply.log.info(
+          `Error at URL ${url.toString()}: ${e.statusCode} ${e.message}`
+        );
+        if (e.statusCode === 404) {
+          reply.code(404).send();
+        } else {
+          reply.code(406).send();
+        }
       }
+
       if (e instanceof NoDatasetFoundAtUrl) {
-        reply.log.info(`No dataset found at URL ${url.toString()}`);
+        reply.log.info(
+          `No dataset found at URL ${url.toString()}: ${e.message}`
+        );
         reply.code(406).send();
       }
+
       return null;
     }
 
@@ -139,17 +149,24 @@ export async function server(
         return;
       }
 
-      reply.code(202);
+      reply.code(202); // The validate function will reply.send() with any validation warnings.
       if (await validate(url, reply)) {
+        // The URL has validated, so any problems with processing the dataset are now ours. Therefore, make sure to
+        // store the registration so we can come back to that when crawling, even if fetching the datasets fails.
+        // Store first rather than wrapping in a try/catch to cope with OOMs.
+        const registration = new Registration(url, new Date());
+        await registrationStore.store(registration);
+
+        // Fetch dataset descriptions and store them.
         const datasets = await fetch(url);
         await datasetStore.store(datasets);
-        const registration = new Registration(url, new Date(), [
-          ...extractIris(datasets).keys(),
-        ]);
-        registration.read(200);
+
+        // Update registration with dataset descriptions that we found.
+        registration.read([...extractIris(datasets).keys()], 200);
         await registrationStore.store(registration);
       }
     }
+    // If the dataset did not validate, the validate() function has replied with a 4xx status code.
   );
 
   server.put(

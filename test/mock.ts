@@ -23,6 +23,12 @@ export class MockRegistrationStore implements RegistrationStore {
     );
   }
 
+  isRegistered(url: URL) {
+    return this.all().some(
+      registration => registration.url.toString() === url.toString()
+    );
+  }
+
   store(registration: Registration): void {
     this.registrations.set(registration.url, registration);
   }

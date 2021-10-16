@@ -102,14 +102,12 @@ const distributionMapping = new Map([
 export const datasetType = dcat('Dataset');
 export const selectQuery = `
   PREFIX dcat: <http://www.w3.org/ns/dcat#>
-  PREFIX schema: <http://schema.org/>
   PREFIX dct: <http://purl.org/dc/terms/>
   SELECT * WHERE {
     {
       ${dataset} a schema:Dataset ;
         schema:name ${name} ; 
-        schema:license ${license} ;
-        schema:distribution ${distribution} .
+        schema:license ${license} .
         
       FILTER (!isBlank(${license}))
 
@@ -125,9 +123,12 @@ export const selectQuery = `
           schema:name ${publisherName} .
       }
           
-      ${distribution} a schema:DataDownload ;
-        schema:contentUrl ${distributionUrl} ;
-        schema:encodingFormat ${distributionFormat} . 
+      OPTIONAL {
+        ${dataset} schema:distribution ${distribution} .
+        ${distribution} a schema:DataDownload ;
+          schema:contentUrl ${distributionUrl} ;
+          schema:encodingFormat ${distributionFormat} .
+      } 
        
       OPTIONAL { ${dataset} schema:description ${description} } 
       OPTIONAL { ${dataset} schema:identifier ${identifier} }
@@ -136,7 +137,8 @@ export const selectQuery = `
       OPTIONAL { ${dataset} schema:datePublished ${datePublished} }
       OPTIONAL { ${dataset} schema:dateModified ${dateModified} }
       OPTIONAL { ${dataset} schema:inLanguage ${language} }
-      OPTIONAL { ${dataset} schema:isBasedOnUrl ${source} }
+      OPTIONAL { ${dataset} schema:isBasedOn ${source} }
+      OPTIONAL { ${dataset} schema:isBasedOnUrl ${source} } 
       OPTIONAL { ${dataset} schema:keywords ${keyword} }
       OPTIONAL { ${dataset} schema:version ${version} }
       OPTIONAL { ${dataset} schema:mainEntityOfPage ${mainEntityOfPage} }
@@ -153,15 +155,17 @@ export const selectQuery = `
       ${dataset} a dcat:Dataset ;
         dct:title ${name} ;
         dct:license ${license} ;
-        dct:creator ${creator} ;
-        dcat:distribution ${distribution} .
+        dct:creator ${creator} .
         
       ${creator} a foaf:Organization ;
         foaf:name ${creatorName} .
-        
-      ${distribution} a dcat:Distribution ;
-        dcat:accessURL ${distributionUrl} ;
-        dct:format ${distributionFormat} .
+      
+      OPTIONAL {  
+        ${dataset} dcat:distribution ${distribution} .
+        ${distribution} a dcat:Distribution ;
+          dcat:accessURL ${distributionUrl} ;
+          dct:format ${distributionFormat} .
+      }
         
       OPTIONAL { ${dataset} dct:description ${description} }
       OPTIONAL { ${dataset} dct:identifier ${identifier} }
@@ -194,40 +198,25 @@ export function bindingsToQuads(binding: Map<string, Term>): Quad[] {
   ];
 
   if (binding.get(publisher)) {
-    const publisherBlankNode = binding.get(publisher) as BlankNodeScoped;
+    const publisherNode = binding.get(publisher) as NamedNode;
     quads.push(
+      factory.quad(datasetIri, dct('publisher'), publisherNode, datasetIri),
       factory.quad(
-        datasetIri,
-        dct('publisher'),
-        publisherBlankNode,
-        datasetIri
-      ),
-      factory.quad(
-        publisherBlankNode,
+        publisherNode,
         rdf('type'),
         foaf('Organization'),
         datasetIri
       ),
-      ..._bindingsToQuads(
-        publisherBlankNode,
-        binding,
-        publisherMapping,
-        datasetIri
-      )
+      ..._bindingsToQuads(publisherNode, binding, publisherMapping, datasetIri)
     );
   }
 
   if (binding.get(creator)) {
-    const creatorBlankNode = binding.get(creator) as BlankNodeScoped;
+    const creatorNode = binding.get(creator) as NamedNode;
     quads.push(
-      factory.quad(datasetIri, dct('creator'), creatorBlankNode, datasetIri),
-      factory.quad(
-        creatorBlankNode,
-        rdf('type'),
-        foaf('Organization'),
-        datasetIri
-      ),
-      ..._bindingsToQuads(creatorBlankNode, binding, creatorMapping, datasetIri)
+      factory.quad(datasetIri, dct('creator'), creatorNode, datasetIri),
+      factory.quad(creatorNode, rdf('type'), foaf('Organization'), datasetIri),
+      ..._bindingsToQuads(creatorNode, binding, creatorMapping, datasetIri)
     );
   }
 
