@@ -12,7 +12,22 @@
     "name": "Koninklijke Bibliotheek",
     "sameAs": "https://ror.org/02w4jbg70"
   },
+  "creator": [
+    {
+      "@type": "Organization",
+      "@id": "https://example.com/creator1",
+      "name": "Creator 1"
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://example.com/creator2",
+      "name": "Creator 2"
+    }
+  ],
   "dateModified": "2021-05-27T09:56:21.370767",
   "datePublished": "2021-05-28",
-  "dateCreated": { "@type": "http://www.w3.org/2001/XMLSchema#date", "@value": "2021-05-27" }
+  "dateCreated": {
+    "@type": "http://www.w3.org/2001/XMLSchema#date",
+    "@value": "2021-05-27"
+  }
 }
