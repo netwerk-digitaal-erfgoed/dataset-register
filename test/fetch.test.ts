@@ -47,7 +47,7 @@ describe('Fetch', () => {
     expect(dataset.size).toBe(8);
   });
 
-  it('must accept valid Schema.org dataset descriptions', async () => {
+  it('accepts valid Schema.org dataset description', async () => {
     const response = await file('dataset-schema-org-valid.jsonld');
     nock('https://example.com')
       .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
@@ -60,7 +60,7 @@ describe('Fetch', () => {
 
     expect(datasets).toHaveLength(1);
     const dataset = datasets[0];
-    expect(dataset.size).toBe(18);
+    expect(dataset.size).toBe(19);
     expect(
       dataset.includes(
         factory.quad(
