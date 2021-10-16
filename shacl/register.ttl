@@ -213,7 +213,6 @@ reg:SchemaDateModifiedProperty a sh:PropertyShape ;
 reg:SchemaCreatorProperty a sh:PropertyShape ;
     sh:path schema:creator ;
     sh:minCount 0 ;
-    sh:maxCount 1 ;
     sh:class schema:Organization ;
     sh:node reg:OrganizationShape ;
     sh:name "Persoon of organisatie die de dataset heeft gemaakt"@nl, "Person or organisation which created the dataset"@en ;
@@ -295,7 +294,6 @@ dcat:DatasetShape
     [
         sh:path dc:creator ;
         sh:minCount 0 ;
-        sh:maxCount 1 ;
         sh:class foaf:Organization ;
         sh:node dcat:OrganizationShape
     ],
