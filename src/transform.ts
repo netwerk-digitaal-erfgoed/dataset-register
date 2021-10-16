@@ -39,7 +39,7 @@ export class StandardizeSchemaOrgPrefixToHttps extends Transform {
     if (object.termType === 'Literal') {
       return factory.literal(
         object.value,
-        this.replace(object.datatype as NamedNode)
+        object.language || this.replace(object.datatype as NamedNode)
       );
     }
 
