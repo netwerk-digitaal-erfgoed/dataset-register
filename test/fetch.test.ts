@@ -31,6 +31,22 @@ describe('Fetch', () => {
     ).toBe(true);
   });
 
+  it('accepts minimal valid Schema.org dataset', async () => {
+    const response = await file('dataset-schema-org-valid-minimal.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
+      .get('/minimal-valid-schema-org-dataset')
+      .reply(200, response);
+
+    const datasets = await fetch(
+      new URL('https://example.com/minimal-valid-schema-org-dataset')
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    expect(dataset.size).toBe(8);
+  });
+
   it('must accept valid Schema.org dataset descriptions', async () => {
     const response = await file('dataset-schema-org-valid.jsonld');
     nock('https://example.com')
