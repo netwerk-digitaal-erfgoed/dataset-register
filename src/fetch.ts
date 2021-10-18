@@ -18,7 +18,11 @@ export class HttpError extends Error {
   }
 }
 
-export class NoDatasetFoundAtUrl extends Error {}
+export class NoDatasetFoundAtUrl extends Error {
+  constructor(message = '') {
+    super(`No dataset found at URL: ${message}`);
+  }
+}
 
 export async function fetch(url: URL): Promise<DatasetExt[]> {
   let datasets = [];
