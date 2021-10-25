@@ -85,6 +85,48 @@ describe('Fetch', () => {
     ).toBe(true);
   });
 
+  it('accepts valid Schema.org dataset in Turtle', async () => {
+    const response = await file('dataset-schema-org-valid.ttl');
+    nock('https://example.com')
+      .defaultReplyHeaders({'Content-Type': 'text/turtle'})
+      .get('/valid-schema-org-dataset')
+      .reply(200, response);
+
+    const datasets = await fetch(
+      new URL('https://example.com/valid-schema-org-dataset')
+    );
+
+    expect(datasets).toHaveLength(1);
+  });
+
+  it('accepts valid HTTP Schema.org dataset in JSON-LD', async () => {
+    const response = await file('dataset-http-schema-org-valid.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
+      .get('/valid-schema-org-dataset')
+      .reply(200, response);
+
+    const datasets = await fetch(
+      new URL('https://example.com/valid-schema-org-dataset')
+    );
+
+    expect(datasets).toHaveLength(1);
+  });
+
+  it('accepts valid HTTP Schema.org dataset in Turtle', async () => {
+    const response = await file('dataset-http-schema-org-valid.ttl');
+    nock('https://example.com')
+      .defaultReplyHeaders({'Content-Type': 'text/turtle'})
+      .get('/valid-schema-org-dataset')
+      .reply(200, response);
+
+    const datasets = await fetch(
+      new URL('https://example.com/valid-schema-org-dataset')
+    );
+
+    expect(datasets).toHaveLength(1);
+  });
+
   it('handles 404 error dataset response', async () => {
     nock('https://example.com').get('/404').reply(404);
     expect.assertions(2);

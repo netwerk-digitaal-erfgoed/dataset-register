@@ -103,54 +103,13 @@ export const datasetType = dcat('Dataset');
 export const selectQuery = `
   PREFIX dcat: <http://www.w3.org/ns/dcat#>
   PREFIX dct: <http://purl.org/dc/terms/>
+  PREFIX schema: <https://schema.org/>
+  PREFIX httpSchema: <http://schema.org/>
   SELECT * WHERE {
     {
-      ${dataset} a schema:Dataset ;
-        schema:name ${name} ; 
-        schema:license ${license} .
-        
-      FILTER (!isBlank(${license}))
-
-      OPTIONAL { 
-        ${dataset} schema:creator ${creator} .        
-        ${creator} a schema:Organization ;
-          schema:name ${creatorName} .
-      }
-          
-      OPTIONAL { 
-        ${dataset} schema:publisher ${publisher} .        
-        ${publisher} a schema:Organization ;
-          schema:name ${publisherName} .
-      }
-          
-      OPTIONAL {
-        ${dataset} schema:distribution ${distribution} .
-        ${distribution} a schema:DataDownload ;
-          schema:contentUrl ${distributionUrl} ;
-          schema:encodingFormat ${distributionFormat} .
-      } 
-       
-      OPTIONAL { ${dataset} schema:description ${description} } 
-      OPTIONAL { ${dataset} schema:identifier ${identifier} }
-      OPTIONAL { ${dataset} schema:alternateName ${alternateName} }
-      OPTIONAL { ${dataset} schema:dateCreated ${dateCreated} }
-      OPTIONAL { ${dataset} schema:datePublished ${datePublished} }
-      OPTIONAL { ${dataset} schema:dateModified ${dateModified} }
-      OPTIONAL { ${dataset} schema:inLanguage ${language} }
-      OPTIONAL { ${dataset} schema:isBasedOn ${source} }
-      OPTIONAL { ${dataset} schema:isBasedOnUrl ${source} } 
-      OPTIONAL { ${dataset} schema:keywords ${keyword} }
-      OPTIONAL { ${dataset} schema:version ${version} }
-      OPTIONAL { ${dataset} schema:mainEntityOfPage ${mainEntityOfPage} }
-      
-      OPTIONAL { ${distribution} schema:fileFormat ${distributionMediaType} }
-      OPTIONAL { ${distribution} schema:datePublished ${distributionDatePublished} }
-      OPTIONAL { ${distribution} schema:dateModified ${distributionDateModified} }
-      OPTIONAL { ${distribution} schema:description ${distributionDescription} }
-      OPTIONAL { ${distribution} schema:inLanguage ${distributionLanguage} }
-      OPTIONAL { ${distribution} schema:license ${distributionLicense} }
-      OPTIONAL { ${distribution} schema:name ${distributionName} }
-      OPTIONAL { ${distribution} schema:contentSize ${distributionSize} }
+      ${schemaOrgQuery('schema')}
+    } UNION {
+      ${schemaOrgQuery('httpSchema')}
     } UNION { 
       ${dataset} a dcat:Dataset ;
         dct:title ${name} ;
@@ -268,4 +227,55 @@ function _bindingsToQuads(
   });
 
   return quads;
+}
+
+function schemaOrgQuery(prefix: string): string {
+  return `
+    ${dataset} a ${prefix}:Dataset ;
+      ${prefix}:name ${name} ; 
+      ${prefix}:license ${license} .
+      
+    FILTER (!isBlank(${license}))
+
+    OPTIONAL { 
+      ${dataset} ${prefix}:creator ${creator} .        
+      ${creator} a ${prefix}:Organization ;
+        ${prefix}:name ${creatorName} .
+    }
+        
+    OPTIONAL { 
+      ${dataset} ${prefix}:publisher ${publisher} .        
+      ${publisher} a ${prefix}:Organization ;
+        ${prefix}:name ${publisherName} .
+    }
+        
+    OPTIONAL {
+      ${dataset} ${prefix}:distribution ${distribution} .
+      ${distribution} a ${prefix}:DataDownload ;
+        ${prefix}:contentUrl ${distributionUrl} ;
+        ${prefix}:encodingFormat ${distributionFormat} .
+    } 
+     
+    OPTIONAL { ${dataset} ${prefix}:description ${description} } 
+    OPTIONAL { ${dataset} ${prefix}:identifier ${identifier} }
+    OPTIONAL { ${dataset} ${prefix}:alternateName ${alternateName} }
+    OPTIONAL { ${dataset} ${prefix}:dateCreated ${dateCreated} }
+    OPTIONAL { ${dataset} ${prefix}:datePublished ${datePublished} }
+    OPTIONAL { ${dataset} ${prefix}:dateModified ${dateModified} }
+    OPTIONAL { ${dataset} ${prefix}:inLanguage ${language} }
+    OPTIONAL { ${dataset} ${prefix}:isBasedOn ${source} }
+    OPTIONAL { ${dataset} ${prefix}:isBasedOnUrl ${source} } 
+    OPTIONAL { ${dataset} ${prefix}:keywords ${keyword} }
+    OPTIONAL { ${dataset} ${prefix}:version ${version} }
+    OPTIONAL { ${dataset} ${prefix}:mainEntityOfPage ${mainEntityOfPage} }
+    
+    OPTIONAL { ${distribution} ${prefix}:fileFormat ${distributionMediaType} }
+    OPTIONAL { ${distribution} ${prefix}:datePublished ${distributionDatePublished} }
+    OPTIONAL { ${distribution} ${prefix}:dateModified ${distributionDateModified} }
+    OPTIONAL { ${distribution} ${prefix}:description ${distributionDescription} }
+    OPTIONAL { ${distribution} ${prefix}:inLanguage ${distributionLanguage} }
+    OPTIONAL { ${distribution} ${prefix}:license ${distributionLicense} }
+    OPTIONAL { ${distribution} ${prefix}:name ${distributionName} }
+    OPTIONAL { ${distribution} ${prefix}:contentSize ${distributionSize} }
+`;
 }
