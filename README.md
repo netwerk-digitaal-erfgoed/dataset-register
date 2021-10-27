@@ -118,9 +118,9 @@ Each registration URL gets added as a `schema:EntryPoint` to the
 | Property | Description |
 | ------------- | ------------- |
 | [`schema:datePosted`](https://schema.org/datePosted) | When the URL was registered. |
-| [`schema:dateRead`](https://schema.org/dateRead) | When the URL was last read by the application. The [crawler](#crawler) updates this value when fetching desriptions. |
+| [`schema:dateRead`](https://schema.org/dateRead) | When the URL was last read by the application. The [crawler](#crawler) updates this value when fetching descriptions. |
 | [`schema:status`](https://schema.org/status) | The HTTP status code last encountered when fetching the URL. |
-| [`schema:about`](https://schema.org/about) | The set of [`schema:Dataset`s](#schemadataset) that the URL contains. |
+| [`schema:about`](https://schema.org/about) | The set of [`schema:Dataset`s](#schemadataset) that the URL contains. The [crawler](#crawler) updates this value when fetching descriptions. |
 
 ### `schema:Dataset`
 
