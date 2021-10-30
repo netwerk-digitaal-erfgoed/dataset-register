@@ -112,8 +112,10 @@ If any outdated registration URLs are found, they are fetched and updated in the
 
 ### `schema:EntryPoint`
 
-Each registration URL gets added as a `schema:EntryPoint` to the
+Any URL [registered by clients](#submit-dataset-descriptions) is added as a `schema:EntryPoint` to the
 [Registrations graph](https://triplestore.netwerkdigitaalerfgoed.nl/resource?uri=https:%2F%2Fdemo.netwerkdigitaalerfgoed.nl%2Fregistry%2Fregistrations&role=context).
+
+Datasets are fetched from this URL on registration and when [crawling](#crawler) it.
 
 | Property | Description |
 | ------------- | ------------- |
