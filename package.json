@@ -38,7 +38,7 @@
     "nock": "^13.1.0",
     "node-fetch": "^2.6.1",
     "node-schedule": "^2.0.0",
-    "pino": "^6.11.3",
+    "pino": "^7.0.5",
     "psl": "^1.8.0",
     "rdf-dataset-ext": "^1.0.0",
     "rdf-dereference": "^1.8.0",
