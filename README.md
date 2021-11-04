@@ -88,6 +88,8 @@ You can configure the application through environment variables:
 
 ## Run the tests
 
+The tests are run automatically [on CI](.github/workflows/qa.yml).
+
 To run the tests locally, clone this repository, then:
 
 ```
