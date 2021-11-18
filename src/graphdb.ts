@@ -273,18 +273,25 @@ export class GraphDbDatasetStore implements DatasetStore {
    */
   public async store(datasets: DatasetExt[]) {
     // Find each Dataset’s IRI.
-    extractIris(datasets).forEach((dataset, iri) =>
-      this.storeDataset(dataset, iri)
-    );
+    for (const [iri, dataset] of [...extractIris(datasets)]) {
+      // Serialize requests: wait for each response before sending next request to prevent GraphDB from running OOM.
+      await this.storeDataset(dataset, iri);
+    }
   }
 
   private async storeDataset(dataset: DatasetExt, graphIri: URL) {
-    await getWriter(dataset.toArray()).end(async (error, result) => {
-      await this.client.request(
-        'PUT',
-        '/rdf-graphs/service?graph=' + encodeURIComponent(graphIri.toString()),
-        result
-      );
+    await new Promise(resolve => {
+      getWriter(dataset.toArray()).end(async (error, result) => {
+        console.log('putting dataset', graphIri.toString());
+        const response = await this.client.request(
+          'PUT',
+          '/rdf-graphs/service?graph=' +
+            encodeURIComponent(graphIri.toString()),
+          result
+        );
+        console.log('response');
+        resolve(response);
+      });
     });
   }
 }
