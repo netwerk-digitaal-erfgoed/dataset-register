@@ -35,7 +35,8 @@ export class MockRegistrationStore implements RegistrationStore {
 }
 
 export class MockAllowedRegistrationDomainStore
-  implements AllowedRegistrationDomainStore {
+  implements AllowedRegistrationDomainStore
+{
   private readonly domainNames: Array<string> = ['netwerkdigitaalerfgoed.nl'];
 
   contains(domainName: string): Promise<boolean> {

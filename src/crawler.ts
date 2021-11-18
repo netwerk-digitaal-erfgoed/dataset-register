@@ -2,22 +2,21 @@ import {Registration, RegistrationStore} from './registration';
 import {DatasetStore, extractIris} from './dataset';
 import {fetch, HttpError, NoDatasetFoundAtUrl} from './fetch';
 import DatasetExt from 'rdf-ext/lib/Dataset';
-import {Logger} from 'pino';
+import Pino from 'pino';
 
 export class Crawler {
   constructor(
     private registrationStore: RegistrationStore,
     private datasetStore: DatasetStore,
-    private logger: Logger
+    private logger: Pino.Logger
   ) {}
 
   /**
    * Crawl all registered URLs that were last read before `dateLastRead`.
    */
   public async crawl(dateLastRead: Date) {
-    const registrations = await this.registrationStore.findRegistrationsReadBefore(
-      dateLastRead
-    );
+    const registrations =
+      await this.registrationStore.findRegistrationsReadBefore(dateLastRead);
     for (const registration of registrations) {
       this.logger.info(`Crawling registration URL ${registration.url}`);
       let datasets: DatasetExt[] = [];

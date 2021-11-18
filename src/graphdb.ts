@@ -12,6 +12,16 @@ import {
 } from './registration';
 import {DatasetStore, extractIris} from './dataset';
 
+export type SparqlResult = {
+  results: {
+    bindings: Binding[];
+  };
+};
+
+export type Binding = {
+  [key: string]: {value: string};
+};
+
 /**
  * GraphDB client that uses the REST API.
  *
@@ -89,7 +99,7 @@ export class GraphDbClient {
     return response;
   }
 
-  public async query(query: string) {
+  public async query(query: string): Promise<SparqlResult> {
     const response = await this.request(
       'GET',
       '?' + querystring.stringify({query}),
@@ -97,7 +107,7 @@ export class GraphDbClient {
       'application/sparql-results+json'
     );
 
-    return response.json();
+    return (await response.json()) as SparqlResult;
   }
 
   private async getHeaders(): Promise<Headers> {
@@ -221,7 +231,7 @@ export class GraphDbRegistrationStore implements RegistrationStore {
       } GROUP BY ?s ?datePosted`);
 
     return result.results.bindings.map(
-      (binding: {s: {value: string}; datePosted: {value: string}}) =>
+      binding =>
         new Registration(
           new URL(binding.s.value),
           new Date(binding.datePosted.value)
@@ -231,7 +241,8 @@ export class GraphDbRegistrationStore implements RegistrationStore {
 }
 
 export class GraphDbAllowedRegistrationDomainStore
-  implements AllowedRegistrationDomainStore {
+  implements AllowedRegistrationDomainStore
+{
   constructor(
     private readonly client: GraphDbClient,
     private readonly allowedDomainNamesGraph = 'https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names'
