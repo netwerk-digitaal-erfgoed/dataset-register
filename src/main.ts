@@ -25,9 +25,8 @@ const client = new GraphDbClient(
   const logger = Pino();
   const datasetStore = new GraphDbDatasetStore(client);
   const registrationStore = new GraphDbRegistrationStore(client);
-  const allowedRegistrationDomainStore = new GraphDbAllowedRegistrationDomainStore(
-    client
-  );
+  const allowedRegistrationDomainStore =
+    new GraphDbAllowedRegistrationDomainStore(client);
   const crawler = new Crawler(registrationStore, datasetStore, logger);
   const shacl = await readUrl('shacl/register.ttl');
   const validator = new ShaclValidator(shacl);
