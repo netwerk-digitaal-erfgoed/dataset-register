@@ -282,14 +282,12 @@ export class GraphDbDatasetStore implements DatasetStore {
   private async storeDataset(dataset: DatasetExt, graphIri: URL) {
     await new Promise(resolve => {
       getWriter(dataset.toArray()).end(async (error, result) => {
-        console.log('putting dataset', graphIri.toString());
         const response = await this.client.request(
           'PUT',
           '/rdf-graphs/service?graph=' +
             encodeURIComponent(graphIri.toString()),
           result
         );
-        console.log('response');
         resolve(response);
       });
     });
