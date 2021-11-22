@@ -138,9 +138,6 @@ async function construct(url: URL) {
     {sources: [url.toString()]}
   )) as IQueryResultQuads;
 
-  // const quads = await result.quads();
-  console.log(await result.quads());
-
   return await factory.dataset().import(result.quadStream);
 }
 
