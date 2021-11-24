@@ -8,9 +8,10 @@ import factory from 'rdf-ext';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import {URL} from 'url';
 import {Store} from 'n3';
-import {bindingsToQuads, selectQuery} from './query';
+import {bindingsToQuads, selectQuery, sparqlLimit} from './query';
 import {pipeline, Readable} from 'stream';
 import {StandardizeSchemaOrgPrefixToHttps} from './transform';
+import Pino from 'pino';
 
 export class HttpError extends Error {
   constructor(message: string, public readonly statusCode: number) {
@@ -72,11 +73,20 @@ async function query(url: URL): Promise<DatasetExt[]> {
 
   // Write results to an N3 Store for deduplication and partitioning by dataset.
   const store = new Store();
-
+  let count = 0;
   return new Promise(resolve => {
     bindingsStream
-      .on('data', binding => store.addQuads(bindingsToQuads(binding)))
+      .on('data', binding => {
+        count++;
+        store.addQuads(bindingsToQuads(binding));
+      })
       .on('end', async () => {
+        if (count === sparqlLimit) {
+          Pino().error(
+            `SPARQL query result for ${url.toString()} reached the SPARQL limit of ${sparqlLimit}`
+          );
+        }
+
         // Each dataset description is stored in its own graph, so separate them out now.
         const datasets: DatasetExt[] = await Promise.all(
           store

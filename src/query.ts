@@ -100,6 +100,7 @@ const distributionMapping = new Map([
 ]);
 
 export const datasetType = dcat('Dataset');
+export const sparqlLimit = 50000;
 export const selectQuery = `
   PREFIX dcat: <http://www.w3.org/ns/dcat#>
   PREFIX dct: <http://purl.org/dc/terms/>
@@ -147,7 +148,7 @@ export const selectQuery = `
       OPTIONAL { ${distribution} dct:title ${distributionName} }
       OPTIONAL { ${distribution} dcat:byteSize ${distributionSize} }
     }
-  } LIMIT 10000`;
+  } LIMIT ${sparqlLimit}`;
 
 export function bindingsToQuads(binding: Map<string, Term>): Quad[] {
   const datasetIri = binding.get('?dataset') as NamedNode;

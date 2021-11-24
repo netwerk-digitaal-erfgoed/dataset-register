@@ -143,7 +143,6 @@ export async function server(
     {...datasetsRequest, ...rdfSerializerConfig},
     async (request, reply) => {
       const url = new URL((request.body as {'@id': string})['@id']);
-      request.log.info(url.toString());
       if (!(await domainIsAllowed(url))) {
         reply.code(403).send();
         return;
@@ -159,6 +158,9 @@ export async function server(
 
         // Fetch dataset descriptions and store them.
         const datasets = await fetch(url);
+        request.log.info(
+          `Found ${datasets.length} datasets at ${url.toString()}`
+        );
         await datasetStore.store(datasets);
 
         // Update registration with dataset descriptions that we found.
