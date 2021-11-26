@@ -1,13 +1,15 @@
 import {Registration, RegistrationStore} from './registration';
 import {DatasetStore, extractIris} from './dataset';
-import {fetch, HttpError, NoDatasetFoundAtUrl} from './fetch';
+import {dereference, fetch, HttpError, NoDatasetFoundAtUrl} from './fetch';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import Pino from 'pino';
+import {Validator} from './validator';
 
 export class Crawler {
   constructor(
     private registrationStore: RegistrationStore,
     private datasetStore: DatasetStore,
+    private validator: Validator,
     private logger: Pino.Logger
   ) {}
 
@@ -21,17 +23,22 @@ export class Crawler {
       this.logger.info(`Crawling registration URL ${registration.url}`);
       let datasets: DatasetExt[] = [];
       let statusCode = 200;
+      let isValid = true;
 
       try {
-        datasets = await fetch(registration.url);
-        this.datasetStore.store(datasets);
+        const data = await dereference(registration.url);
+        isValid = (await this.validator.validate(data)).state === 'valid';
+        if (isValid) {
+          datasets = await fetch(registration.url);
+          this.datasetStore.store(datasets);
+        }
       } catch (e) {
         if (e instanceof HttpError) {
           statusCode = e.statusCode;
-        } else if (e instanceof NoDatasetFoundAtUrl) {
+        }
+
+        if (e instanceof NoDatasetFoundAtUrl) {
           // Request was successful, but no datasets exist any longer at the URL, so ignore.
-        } else {
-          throw e;
         }
       }
 
@@ -39,7 +46,11 @@ export class Crawler {
         registration.url,
         registration.datePosted
       );
-      updatedRegistration.read([...extractIris(datasets).keys()], statusCode);
+      updatedRegistration.read(
+        [...extractIris(datasets).keys()],
+        statusCode,
+        isValid
+      );
       this.registrationStore.store(updatedRegistration);
     }
   }

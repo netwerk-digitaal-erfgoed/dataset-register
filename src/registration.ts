@@ -2,6 +2,12 @@ import {URL} from 'url';
 
 export class Registration {
   private _dateRead?: Date;
+
+  /**
+   * If the Registration has become invalid, the date at which it did so.
+   */
+  private _validUntil?: Date;
+
   private _statusCode?: number;
   private _datasets: URL[] = [];
 
@@ -10,10 +16,18 @@ export class Registration {
   /**
    * Mark the Registration as read at a date.
    */
-  public read(datasets: URL[], statusCode: number, date: Date = new Date()) {
+  public read(
+    datasets: URL[],
+    statusCode: number,
+    valid: boolean,
+    date: Date = new Date()
+  ) {
     this._datasets = datasets;
     this._statusCode = statusCode;
     this._dateRead = date;
+    if (!valid) {
+      this._validUntil = date;
+    }
   }
 
   get dateRead() {
@@ -24,12 +38,19 @@ export class Registration {
     return this._statusCode;
   }
 
+  get validUntil() {
+    return this._validUntil;
+  }
+
   get datasets() {
     return this._datasets;
   }
 }
 
 export interface RegistrationStore {
+  /**
+   * Store a {@see Registration}, replacing any Registrations with the same URL.
+   */
   store(registration: Registration): void;
   findRegistrationsReadBefore(date: Date): Promise<Registration[]>;
 }

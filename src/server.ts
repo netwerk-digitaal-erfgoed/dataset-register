@@ -164,7 +164,7 @@ export async function server(
         await datasetStore.store(datasets);
 
         // Update registration with dataset descriptions that we found.
-        registration.read([...extractIris(datasets).keys()], 200);
+        registration.read([...extractIris(datasets).keys()], 200, true);
         await registrationStore.store(registration);
       }
     }

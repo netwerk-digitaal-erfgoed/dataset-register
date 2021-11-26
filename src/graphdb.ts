@@ -3,7 +3,7 @@ import DatasetExt from 'rdf-ext/lib/Dataset';
 import factory from 'rdf-ext';
 import {URL} from 'url';
 import querystring from 'querystring';
-import {Quad} from 'rdf-js';
+import {Quad, Quad_Object, Quad_Predicate} from 'rdf-js';
 import {Writer} from 'n3';
 import {
   AllowedRegistrationDomainStore,
@@ -131,31 +131,27 @@ export class GraphDbRegistrationStore implements RegistrationStore {
 
   async store(registration: Registration) {
     const quads = [
-      factory.quad(
-        factory.namedNode(registration.url.toString()),
+      this.registrationQuad(
+        registration,
         factory.namedNode('http://schema.org/datePosted'),
-        factory.literal(registration.datePosted.toISOString(), 'xsd:dateTime'),
-        factory.namedNode(this.registrationsGraph)
+        factory.literal(registration.datePosted.toISOString(), 'xsd:dateTime')
       ),
-      factory.quad(
-        factory.namedNode(registration.url.toString()),
+      this.registrationQuad(
+        registration,
         factory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-        factory.namedNode('http://schema.org/EntryPoint'),
-        factory.namedNode(this.registrationsGraph)
+        factory.namedNode('http://schema.org/EntryPoint')
       ),
-      factory.quad(
-        factory.namedNode(registration.url.toString()),
+      this.registrationQuad(
+        registration,
         factory.namedNode('http://schema.org/encoding'),
-        factory.namedNode('http://schema.org'), // Currently the only vocabulary that we support.
-        factory.namedNode(this.registrationsGraph)
+        factory.namedNode('http://schema.org') // Currently the only vocabulary that we support.
       ),
       ...registration.datasets.flatMap(datasetIri => {
         const datasetQuads = [
-          factory.quad(
-            factory.namedNode(registration.url.toString()),
+          this.registrationQuad(
+            registration,
             factory.namedNode('http://schema.org/about'),
-            factory.namedNode(datasetIri.toString()),
-            factory.namedNode(this.registrationsGraph)
+            factory.namedNode(datasetIri.toString())
           ),
           factory.quad(
             factory.namedNode(datasetIri.toString()),
@@ -184,22 +180,30 @@ export class GraphDbRegistrationStore implements RegistrationStore {
     ];
     if (registration.dateRead !== undefined) {
       quads.push(
-        factory.quad(
-          factory.namedNode(registration.url.toString()),
+        this.registrationQuad(
+          registration,
           factory.namedNode('http://schema.org/dateRead'),
-          factory.literal(registration.dateRead.toISOString(), 'xsd:dateTime'),
-          factory.namedNode(this.registrationsGraph)
+          factory.literal(registration.dateRead.toISOString(), 'xsd:dateTime')
         )
       );
     }
 
     if (registration.statusCode !== undefined) {
       quads.push(
-        factory.quad(
-          factory.namedNode(registration.url.toString()),
+        this.registrationQuad(
+          registration,
           factory.namedNode('http://schema.org/status'),
-          factory.literal(registration.statusCode.toString(), 'xsd:integer'),
-          factory.namedNode(this.registrationsGraph)
+          factory.literal(registration.statusCode.toString(), 'xsd:integer')
+        )
+      );
+    }
+
+    if (registration.validUntil !== undefined) {
+      quads.push(
+        this.registrationQuad(
+          registration,
+          factory.namedNode('http://schema.org/validUntil'),
+          factory.literal(registration.validUntil.toISOString(), 'xsd:dateTime')
         )
       );
     }
@@ -238,6 +242,18 @@ export class GraphDbRegistrationStore implements RegistrationStore {
         )
     );
   }
+
+  private registrationQuad = (
+    registration: Registration,
+    predicate: Quad_Predicate,
+    object: Quad_Object
+  ) =>
+    factory.quad(
+      factory.namedNode(registration.url.toString()),
+      predicate,
+      object,
+      factory.namedNode(this.registrationsGraph)
+    );
 }
 
 export class GraphDbAllowedRegistrationDomainStore
