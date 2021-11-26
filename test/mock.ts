@@ -6,6 +6,7 @@ import {
 import {URL} from 'url';
 import {DatasetStore} from '../src/dataset';
 import DatasetExt from 'rdf-ext/lib/Dataset';
+import fs from 'fs';
 
 export class MockRegistrationStore implements RegistrationStore {
   private readonly registrations: Map<URL, Registration> = new Map();
@@ -45,9 +46,12 @@ export class MockAllowedRegistrationDomainStore
 }
 
 export class MockDatasetStore implements DatasetStore {
-  private readonly datasets = [];
+  private datasets: DatasetExt[] = [];
 
   store(datasets: DatasetExt[]): void {
-    datasets.push(...datasets);
+    this.datasets.push(...datasets);
   }
 }
+
+export const file = async (filename: string) =>
+  await fs.promises.readFile(`test/datasets/${filename}`, 'utf-8');
