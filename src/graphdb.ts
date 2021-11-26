@@ -130,14 +130,6 @@ export class GraphDbRegistrationStore implements RegistrationStore {
   constructor(private client: GraphDbClient) {}
 
   async store(registration: Registration) {
-    await this.client.request(
-      'DELETE',
-      '/statements?' +
-        querystring.stringify({
-          subj: '<' + registration.url.toString() + '>',
-          context: '<' + this.registrationsGraph + '>',
-        })
-    );
     const quads = [
       factory.quad(
         factory.namedNode(registration.url.toString()),
@@ -213,6 +205,14 @@ export class GraphDbRegistrationStore implements RegistrationStore {
     }
 
     await getWriter(quads).end(async (error, result) => {
+      await this.client.request(
+        'DELETE',
+        '/statements?' +
+          querystring.stringify({
+            subj: '<' + registration.url.toString() + '>',
+            context: '<' + this.registrationsGraph + '>',
+          })
+      );
       await this.client.request('POST', '/statements', result);
     });
   }
