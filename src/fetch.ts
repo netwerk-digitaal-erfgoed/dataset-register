@@ -1,8 +1,4 @@
-import {
-  IQueryResultBindings,
-  IQueryResultQuads,
-  newEngine,
-} from '@comunica/actor-init-sparql';
+import {IQueryResultBindings, newEngine} from '@comunica/actor-init-sparql';
 import rdfDereferencer from 'rdf-dereference';
 import factory from 'rdf-ext';
 import DatasetExt from 'rdf-ext/lib/Dataset';
@@ -110,46 +106,46 @@ async function query(url: URL): Promise<DatasetExt[]> {
  * Currently unusable; see https://github.com/comunica/comunica/issues/773.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function construct(url: URL) {
-  const comunica = newEngine();
-  const result = (await comunica.query(
-    `
-      CONSTRUCT {
-        ?s a schema:Dataset ;
-          schema:name ?name ;
-          schema:description ?description ;
-          schema:creator ?creator ;
-          schema:license ?license ;
-          schema:distribution ?distribution .
-        ?distribution a schema:DataDownload ;
-          schema:encodingFormat ?encodingFormat ;
-          schema:contentUrl ?contentUrl .
-        ?creator a schema:Organization ;
-          schema:name ?creatorName .                 
-      }   
-      WHERE {
-        {
-          ?s a schema:Dataset ;
-            schema:identifier ?identifier ;
-            schema:name ?name ;
-            schema:description ?description ;
-            schema:creator ?creator ;
-            schema:license ?license ;
-            schema:distribution ?distribution .
-          ?distribution a schema:DataDownload ; 
-            schema:encodingFormat ?encodingFormat ;
-            schema:contentUrl ?contentUrl .
-          ?creator a schema:Organization ; 
-            schema:name ?creatorName .
-          OPTIONAL { ?s schema:url ?url . }
-          OPTIONAL { ?s schema:keywords ?keywords . }
-        }
-      }`,
-    {sources: [url.toString()]}
-  )) as IQueryResultQuads;
-
-  return await factory.dataset().import(result.quadStream);
-}
+// async function construct(url: URL) {
+//   const comunica = newEngine();
+//   const result = (await comunica.query(
+//     `
+//       CONSTRUCT {
+//         ?s a schema:Dataset ;
+//           schema:name ?name ;
+//           schema:description ?description ;
+//           schema:creator ?creator ;
+//           schema:license ?license ;
+//           schema:distribution ?distribution .
+//         ?distribution a schema:DataDownload ;
+//           schema:encodingFormat ?encodingFormat ;
+//           schema:contentUrl ?contentUrl .
+//         ?creator a schema:Organization ;
+//           schema:name ?creatorName .
+//       }
+//       WHERE {
+//         {
+//           ?s a schema:Dataset ;
+//             schema:identifier ?identifier ;
+//             schema:name ?name ;
+//             schema:description ?description ;
+//             schema:creator ?creator ;
+//             schema:license ?license ;
+//             schema:distribution ?distribution .
+//           ?distribution a schema:DataDownload ;
+//             schema:encodingFormat ?encodingFormat ;
+//             schema:contentUrl ?contentUrl .
+//           ?creator a schema:Organization ;
+//             schema:name ?creatorName .
+//           OPTIONAL { ?s schema:url ?url . }
+//           OPTIONAL { ?s schema:keywords ?keywords . }
+//         }
+//       }`,
+//     {sources: [url.toString()]}
+//   )) as IQueryResultQuads;
+//
+//   return await factory.dataset().import(result.quadStream);
+// }
 
 /**
  * Parse Comunica error response to throw a specific error class.
