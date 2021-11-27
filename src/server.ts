@@ -164,8 +164,12 @@ export async function server(
         await datasetStore.store(datasets);
 
         // Update registration with dataset descriptions that we found.
-        registration.read([...extractIris(datasets).keys()], 200, true);
-        await registrationStore.store(registration);
+        const updatedRegistration = registration.read(
+          [...extractIris(datasets).keys()],
+          200,
+          true
+        );
+        await registrationStore.store(updatedRegistration);
       }
     }
     // If the dataset did not validate, the validate() function has replied with a 4xx status code.

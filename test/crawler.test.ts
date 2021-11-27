@@ -92,11 +92,11 @@ describe('Crawler', () => {
 
 function storeRegistrationFixture(url: URL) {
   const registration = new Registration(url, new Date());
-  registration.read(
+  const updatedRegistration = registration.read(
     [new URL('https://example.com/dataset1')],
     200,
     true,
     new Date('2000-01-01')
   );
-  registrationStore.store(registration);
+  registrationStore.store(updatedRegistration);
 }

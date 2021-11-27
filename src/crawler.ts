@@ -1,4 +1,4 @@
-import {Registration, RegistrationStore} from './registration';
+import {RegistrationStore} from './registration';
 import {DatasetStore, extractIris} from './dataset';
 import {dereference, fetch, HttpError, NoDatasetFoundAtUrl} from './fetch';
 import DatasetExt from 'rdf-ext/lib/Dataset';
@@ -42,11 +42,7 @@ export class Crawler {
         }
       }
 
-      const updatedRegistration = new Registration(
-        registration.url,
-        registration.datePosted
-      );
-      updatedRegistration.read(
+      const updatedRegistration = registration.read(
         [...extractIris(datasets).keys()],
         statusCode,
         isValid

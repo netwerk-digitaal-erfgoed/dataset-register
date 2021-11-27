@@ -2,16 +2,17 @@ import {URL} from 'url';
 
 export class Registration {
   private _dateRead?: Date;
-
-  /**
-   * If the Registration has become invalid, the date at which it did so.
-   */
-  private _validUntil?: Date;
-
   private _statusCode?: number;
   private _datasets: URL[] = [];
 
-  constructor(public readonly url: URL, public readonly datePosted: Date) {}
+  constructor(
+    public readonly url: URL,
+    public readonly datePosted: Date,
+    /**
+     * If the Registration has become invalid, the date at which it did so.
+     */
+    public readonly validUntil?: Date
+  ) {}
 
   /**
    * Mark the Registration as read at a date.
@@ -21,13 +22,17 @@ export class Registration {
     statusCode: number,
     valid: boolean,
     date: Date = new Date()
-  ) {
-    this._datasets = datasets;
-    this._statusCode = statusCode;
-    this._dateRead = date;
-    if (!valid) {
-      this._validUntil = date;
-    }
+  ): Registration {
+    const registration = new Registration(
+      this.url,
+      this.datePosted,
+      valid ? undefined : this.validUntil ?? date
+    );
+    registration._datasets = datasets;
+    registration._statusCode = statusCode;
+    registration._dateRead = date;
+
+    return registration;
   }
 
   get dateRead() {
@@ -36,10 +41,6 @@ export class Registration {
 
   get statusCode() {
     return this._statusCode;
-  }
-
-  get validUntil() {
-    return this._validUntil;
   }
 
   get datasets() {

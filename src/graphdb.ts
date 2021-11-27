@@ -225,20 +225,22 @@ export class GraphDbRegistrationStore implements RegistrationStore {
     // Use STR(?dateRead) as a workaround for https://github.com/netwerk-digitaal-erfgoed/register/issues/45
     const result = await this.client.query(`
       PREFIX schema: <http://schema.org/>
-      SELECT ?s ?datePosted WHERE {
+      SELECT ?s ?datePosted ?validUntil WHERE {
         GRAPH <${this.registrationsGraph}> {
           ?s a schema:EntryPoint ;
             schema:datePosted ?datePosted ;
             schema:dateRead ?dateRead .
+          OPTIONAL { ?s schema:validUntil ?validUntil . }
           FILTER (STR(?dateRead) < "${date.toISOString()}")  
         }
-      } GROUP BY ?s ?datePosted`);
+      } GROUP BY ?s ?datePosted ?validUntil`);
 
     return result.results.bindings.map(
       binding =>
         new Registration(
           new URL(binding.s.value),
-          new Date(binding.datePosted.value)
+          new Date(binding.datePosted.value),
+          binding.validUntil ? new Date(binding.validUntil.value) : undefined
         )
     );
   }
