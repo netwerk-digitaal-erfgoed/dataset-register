@@ -1,15 +1,17 @@
 {
   "name": "register",
+  "type": "module",
+  "exports": "./build/src/main.js",
   "version": "1.0.0",
   "description": "",
   "main": "build/src/main.js",
   "engines": {
-    "node": ">=11.14"
+    "node": ">=16"
   },
   "scripts": {
-    "start": "node build/src/main.js",
-    "dev": "ts-node-dev --files src/main.ts",
-    "test": "jest ${1} --forceExit",
+    "start": "node --experimental-specifier-resolution=node build/src/main.js",
+    "dev": "tsc-watch --onSuccess 'npm run start'",
+    "test": "jest ${1}",
     "lint": "gts lint",
     "clean": "gts clean",
     "compile": "tsc",
@@ -44,7 +46,6 @@
     "rdf-dereference": "^1.8.0",
     "rdf-ext": "^1.3.1",
     "rdf-js": "^4.0.2",
-    "rdf-parse": "^1.8.1",
     "rdf-serialize": "^1.1.0",
     "rdf-validate-shacl": "^0.3.0"
   },
@@ -64,7 +65,8 @@
     "jest-coverage-thresholds-bumper": "^1.0.0",
     "jsonld-streaming-parser": "^2.3.2",
     "ts-jest": "^27.0.7",
-    "ts-node-dev": "^1.1.8",
+    "ts-node": "^10.4.0",
+    "tsc-watch": "^4.5.0",
     "typescript": "^4.3.2"
   }
 }
