@@ -1,15 +1,22 @@
-module.exports = {
+export default {
   roots: ['test/'],
-  preset: 'ts-jest',
+  extensionsToTreatAsEsm: ['.ts'],
+  globals: {
+    'ts-jest': {
+      useESM: false,
+    },
+  },
+  preset: 'ts-jest/presets/default-esm',
   testTimeout: 10000,
   collectCoverage: true,
   coverageReporters: ['json-summary', 'text'],
   coverageThreshold: {
     global: {
-      lines: 95.8,
-      statements: 95.89,
-      branches: 82.75,
+      lines: 95.84,
+      statements: 95.93,
+      branches: 81.81,
       functions: 100,
     },
   },
+  transform: {},
 };

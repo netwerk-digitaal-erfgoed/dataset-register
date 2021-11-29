@@ -1,15 +1,18 @@
 {
   "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
-    "lib": ["es2019"],
+    "lib": [
+      "ES2020"
+    ],
+    "module": "ES2020",
     "rootDir": "",
     "outDir": "build",
     "skipLibCheck": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "moduleResolution": "node"
   },
   "include": [
     "src/",
-    "test/**/*.ts",
-    "node_modules/graphdb/lib/types.d.ts"
-  ]
+    "test/**/*.ts"
+  ],
 }

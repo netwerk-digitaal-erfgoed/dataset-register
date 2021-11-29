@@ -4,7 +4,7 @@ import fastify, {
   FastifyServerOptions,
 } from 'fastify';
 import {Validator} from './validator';
-import {toStream} from 'rdf-dataset-ext';
+import datasetExt from 'rdf-dataset-ext';
 import {dereference, fetch, HttpError, NoDatasetFoundAtUrl} from './fetch';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import {URL} from 'url';
@@ -16,13 +16,14 @@ import {
 import {DatasetStore, extractIris} from './dataset';
 import {Server} from 'http';
 import * as psl from 'psl';
-import rdfSerializer from 'rdf-serialize';
+import {rdfSerializer} from './rdf';
 import fastifySwagger from 'fastify-swagger';
 import fastifyCors from 'fastify-cors';
 import {DatasetCore} from 'rdf-js';
+import acceptsSerializer from 'fastify-accepts-serializer';
 
 const serializer = (contentType: string) => (dataset: DatasetExt) =>
-  rdfSerializer.serialize(toStream(dataset), {contentType});
+  rdfSerializer.serialize(datasetExt.toStream(dataset), {contentType});
 
 export async function server(
   datasetStore: DatasetStore,
@@ -39,15 +40,14 @@ export async function server(
     .register(fastifySwagger, {
       mode: 'static',
       specification: {
-        baseDir: __dirname,
+        baseDir: process.cwd(),
         path: './assets/api.yaml',
       },
       exposeRoute: true,
       routePrefix: docsUrl,
     })
-    .register(require('fastify-accepts-serializer'), {
-      // Doesn't work, so Accept header is required.
-      // default: 'application/ld+json',
+    .register(acceptsSerializer, {
+      default: 'application/ld+json', // default doesn't work, so Accept header is required.
     })
     .register(fastifyCors)
     .addHook('onRequest', async request => {

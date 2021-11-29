@@ -1,10 +1,9 @@
-import fs from 'fs';
 import {DatasetCore} from 'rdf-js';
 import factory from 'rdf-ext';
-import rdfParser from 'rdf-parse';
 import SHACLValidator from 'rdf-validate-shacl';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import ValidationReport from 'rdf-validate-shacl/src/validation-report';
+import {rdfDereferencer} from './rdf';
 
 export interface Validator {
   /**
@@ -50,9 +49,11 @@ export class ShaclValidator implements Validator {
 }
 
 export async function readUrl(url: string): Promise<DatasetCore> {
-  const fileStream = fs.createReadStream(url);
-  const rdfStream = rdfParser.parse(fileStream, {path: url});
-  return await factory.dataset().import(rdfStream);
+  const {quads} = await rdfDereferencer.dereference(url.toString(), {
+    localFiles: true,
+  });
+
+  return await factory.dataset().import(quads);
 }
 
 type ValidationResult = Valid | NoDataset | InvalidDataset;
