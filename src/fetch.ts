@@ -1,5 +1,4 @@
 import {IQueryResultBindings, newEngine} from '@comunica/actor-init-sparql';
-import rdfDereferencer from 'rdf-dereference';
 import factory from 'rdf-ext';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import {URL} from 'url';
@@ -8,6 +7,7 @@ import {bindingsToQuads, selectQuery, sparqlLimit} from './query';
 import {pipeline, Readable} from 'stream';
 import {StandardizeSchemaOrgPrefixToHttps} from './transform';
 import Pino from 'pino';
+import {rdfDereferencer} from './rdf';
 
 export class HttpError extends Error {
   constructor(message: string, public readonly statusCode: number) {
