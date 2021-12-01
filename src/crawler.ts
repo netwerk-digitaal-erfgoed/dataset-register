@@ -30,7 +30,7 @@ export class Crawler {
         isValid = (await this.validator.validate(data)).state === 'valid';
         if (isValid) {
           datasets = await fetch(registration.url);
-          this.datasetStore.store(datasets);
+          await this.datasetStore.store(datasets);
         }
       } catch (e) {
         if (e instanceof HttpError) {
@@ -47,7 +47,7 @@ export class Crawler {
         statusCode,
         isValid
       );
-      this.registrationStore.store(updatedRegistration);
+      await this.registrationStore.store(updatedRegistration);
     }
   }
 }
