@@ -560,7 +560,7 @@ This is an overview of required and recommended attributes.
         </tr>
         <tr>	
             <th scope="row">[schema:keywords](https://schema.org/keywords)</th>
-            <td>One or more keyword which describe the dataset.</td>
+            <td>The keyword or keywords which describe the dataset.</td>
             <td>0..n</td>
             <td>Recommended</td>
         </tr>
