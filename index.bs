@@ -567,13 +567,13 @@ This is an overview of required and recommended attributes.
         <tr>	
             <th scope="row">[schema:spatialCoverage](https://schema.org/spatialCoverage)</th>
             <td>Indicates the place(s) which are the focus of the dataset.</td>
-            <td>0..1</td>
+            <td>0..n</td>
             <td>Recommended</td>
         </tr>
         <tr>
             <th scope="row">[schema:temporalCoverage](https://schema.org/temporalCoverage)</th>
             <td>Indicates the period that the dataset applies to.</td>
-            <td>0..1</td>
+            <td>0..n</td>
             <td>Recommended</td>
         </tr>
         <tr>	
