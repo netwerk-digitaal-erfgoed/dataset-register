@@ -579,7 +579,7 @@ This is an overview of required and recommended attributes.
         <tr>	
             <th scope="row">[schema:includedInDataCatalog](https://schema.org/includedInDataCatalog)</th>
             <td>The HTTP [[IRI]] of the data catalog(s) that the dataset belongs to.</td>
-            <td>0..1</td>
+            <td>0..n</td>
             <td>Recommended</td>
         </tr>
     </tbody>
