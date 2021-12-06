@@ -29,7 +29,7 @@
     "@comunica/actor-init-sparql": "^1.21.2",
     "@comunica/data-factory": "^1.21.1",
     "@rdfjs/dataset": "^1.1.0",
-    "@types/rdf-validate-shacl": "^0.2.2",
+    "@types/rdf-validate-shacl": "^0.4.0",
     "asynciterator": "^3.2.0",
     "fastify": "^3.15.0",
     "fastify-accepts-serializer": "^3.2.0",
