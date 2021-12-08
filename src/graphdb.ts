@@ -208,16 +208,23 @@ export class GraphDbRegistrationStore implements RegistrationStore {
       );
     }
 
-    await getWriter(quads).end(async (error, result) => {
-      await this.client.request(
-        'DELETE',
-        '/statements?' +
-          querystring.stringify({
-            subj: '<' + registration.url.toString() + '>',
-            context: '<' + this.registrationsGraph + '>',
-          })
-      );
-      await this.client.request('POST', '/statements', result);
+    return new Promise((resolve, reject) => {
+      getWriter(quads).end(async (error, result) => {
+        try {
+          await this.client.request(
+            'DELETE',
+            '/statements?' +
+              querystring.stringify({
+                subj: '<' + registration.url.toString() + '>',
+                context: '<' + this.registrationsGraph + '>',
+              })
+          );
+          await this.client.request('POST', '/statements', result);
+          resolve(null);
+        } catch (e) {
+          reject(e);
+        }
+      });
     });
   }
 
@@ -298,16 +305,23 @@ export class GraphDbDatasetStore implements DatasetStore {
   }
 
   private async storeDataset(dataset: DatasetExt, graphIri: URL) {
-    await new Promise(resolve => {
-      getWriter(dataset.toArray()).end(async (error, result) => {
-        const response = await this.client.request(
-          'PUT',
-          '/rdf-graphs/service?graph=' +
-            encodeURIComponent(graphIri.toString()),
-          result
-        );
-        resolve(response);
-      });
+    await new Promise((resolve, reject) => {
+      getWriter([...dataset.match(null, null, null, null)]).end(
+        async (error, result) => {
+          try {
+            resolve(
+              await this.client.request(
+                'PUT',
+                '/rdf-graphs/service?graph=' +
+                  encodeURIComponent(graphIri.toString()),
+                result
+              )
+            );
+          } catch (e) {
+            reject(e);
+          }
+        }
+      );
     });
   }
 }
