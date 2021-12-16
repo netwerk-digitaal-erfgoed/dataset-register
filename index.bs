@@ -647,7 +647,7 @@ This is an overview of required and recommended attributes.
         <tr>
             <th scope="row">[schema:encodingFormat](https://schema.org/encodingFormat)</th>
             <td>The distribution’s MIME format, for example `application/sparql-query` for a SPARL endpoint
- or `application/ld+json` for a data dump serialized as JSON-LD. See [[IANA-MEDIA-TYPES]] and <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types">MDN-reference</a> for more information.</td>
+ or `application/ld+json` for a data dump serialized as JSON-LD. Use a value from the [[IANA-MEDIA-TYPES]] list.</td>
             <td>1..n</td>	
             <td>Required</td>
         </tr>
