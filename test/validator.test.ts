@@ -20,8 +20,12 @@ describe('Validator', () => {
   });
 
   it('accepts minimal valid Schema.org dataset', async () => {
-    const report = await validate('dataset-schema-org-valid-minimal.jsonld');
+    const report = (await validate(
+      'dataset-schema-org-valid-minimal.jsonld'
+    )) as Valid;
     expect(report.state).toEqual('valid');
+    expectViolations(report, ['https://schema.org/description']);
+    expectViolations(report, ['https://schema.org/distribution']);
   });
 
   it('accepts minimal valid Schema.org dataset in Turtle', async () => {
@@ -167,7 +171,10 @@ const dataset = async (filename: string, parser?: Transform) => {
   );
 };
 
-const expectViolations = (report: InvalidDataset, violationPaths: string[]) =>
+const expectViolations = (
+  report: InvalidDataset | Valid,
+  violationPaths: string[]
+) =>
   violationPaths.forEach(violationPath =>
     expect(
       report.errors.match(

@@ -10,7 +10,7 @@
   schema:description "Combinatie van kadastrale perceelnummers uit 1832 met Verpondingsnummers uit het verpondingsregister 1875 en de plaatselijke aanduiding uit het verpondingsregister." ;
   schema:license "http://creativecommons.org/publicdomain/zero/1.0/deed.nl"@nl ;
   schema:publisher <https://www.goudatijdmachine.nl/data/api/items/232> ;
-    schema:distribution <https://www.goudatijdmachine.nl/data/api/items/144> .
+  schema:distribution <https://www.goudatijdmachine.nl/data/api/items/144> .
 
 <https://www.goudatijdmachine.nl/data/api/items/232>
   a schema:Organization ;
