@@ -100,6 +100,7 @@ const distributionMapping = new Map([
 ]);
 
 export const datasetType = dcat('Dataset');
+export const sparqlLimit = 50000;
 export const selectQuery = `
   PREFIX dcat: <http://www.w3.org/ns/dcat#>
   PREFIX dct: <http://purl.org/dc/terms/>
@@ -124,6 +125,15 @@ export const selectQuery = `
         ${distribution} a dcat:Distribution ;
           dcat:accessURL ${distributionUrl} ;
           dct:format ${distributionFormat} .
+          
+        OPTIONAL { ${distribution} dcat:mediaType ${distributionMediaType} }
+        OPTIONAL { ${distribution} dct:issued ${distributionDatePublished} }
+        OPTIONAL { ${distribution} dct:modified ${distributionDateModified} }
+        OPTIONAL { ${distribution} dct:description ${distributionDescription} }
+        OPTIONAL { ${distribution} dct:language ${distributionLanguage} }
+        OPTIONAL { ${distribution} dct:license ${distributionLicense} }
+        OPTIONAL { ${distribution} dct:title ${distributionName} }
+        OPTIONAL { ${distribution} dcat:byteSize ${distributionSize} }
       }
         
       OPTIONAL { ${dataset} dct:description ${description} }
@@ -137,17 +147,8 @@ export const selectQuery = `
       OPTIONAL { ${dataset} dcat:keyword ${keyword} }
       OPTIONAL { ${dataset} owl:versionInfo ${version} }
       OPTIONAL { ${dataset} dcat:landingPage ${mainEntityOfPage} }
-      
-      OPTIONAL { ${distribution} dcat:mediaType ${distributionMediaType} }
-      OPTIONAL { ${distribution} dct:issued ${distributionDatePublished} }
-      OPTIONAL { ${distribution} dct:modified ${distributionDateModified} }
-      OPTIONAL { ${distribution} dct:description ${distributionDescription} }
-      OPTIONAL { ${distribution} dct:language ${distributionLanguage} }
-      OPTIONAL { ${distribution} dct:license ${distributionLicense} }
-      OPTIONAL { ${distribution} dct:title ${distributionName} }
-      OPTIONAL { ${distribution} dcat:byteSize ${distributionSize} }
     }
-  } LIMIT 10000`;
+  } LIMIT ${sparqlLimit}`;
 
 export function bindingsToQuads(binding: Map<string, Term>): Quad[] {
   const datasetIri = binding.get('?dataset') as NamedNode;
@@ -254,6 +255,15 @@ function schemaOrgQuery(prefix: string): string {
       ${distribution} a ${prefix}:DataDownload ;
         ${prefix}:contentUrl ${distributionUrl} ;
         ${prefix}:encodingFormat ${distributionFormat} .
+        
+      OPTIONAL { ${distribution} ${prefix}:fileFormat ${distributionMediaType} }
+      OPTIONAL { ${distribution} ${prefix}:datePublished ${distributionDatePublished} }
+      OPTIONAL { ${distribution} ${prefix}:dateModified ${distributionDateModified} }
+      OPTIONAL { ${distribution} ${prefix}:description ${distributionDescription} }
+      OPTIONAL { ${distribution} ${prefix}:inLanguage ${distributionLanguage} }
+      OPTIONAL { ${distribution} ${prefix}:license ${distributionLicense} }
+      OPTIONAL { ${distribution} ${prefix}:name ${distributionName} }
+      OPTIONAL { ${distribution} ${prefix}:contentSize ${distributionSize} }
     } 
      
     OPTIONAL { ${dataset} ${prefix}:description ${description} } 
@@ -268,14 +278,5 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL { ${dataset} ${prefix}:keywords ${keyword} }
     OPTIONAL { ${dataset} ${prefix}:version ${version} }
     OPTIONAL { ${dataset} ${prefix}:mainEntityOfPage ${mainEntityOfPage} }
-    
-    OPTIONAL { ${distribution} ${prefix}:fileFormat ${distributionMediaType} }
-    OPTIONAL { ${distribution} ${prefix}:datePublished ${distributionDatePublished} }
-    OPTIONAL { ${distribution} ${prefix}:dateModified ${distributionDateModified} }
-    OPTIONAL { ${distribution} ${prefix}:description ${distributionDescription} }
-    OPTIONAL { ${distribution} ${prefix}:inLanguage ${distributionLanguage} }
-    OPTIONAL { ${distribution} ${prefix}:license ${distributionLicense} }
-    OPTIONAL { ${distribution} ${prefix}:name ${distributionName} }
-    OPTIONAL { ${distribution} ${prefix}:contentSize ${distributionSize} }
 `;
 }

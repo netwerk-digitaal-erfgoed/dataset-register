@@ -5,15 +5,34 @@ export class Registration {
   private _statusCode?: number;
   private _datasets: URL[] = [];
 
-  constructor(public readonly url: URL, public readonly datePosted: Date) {}
+  constructor(
+    public readonly url: URL,
+    public readonly datePosted: Date,
+    /**
+     * If the Registration has become invalid, the date at which it did so.
+     */
+    public readonly validUntil?: Date
+  ) {}
 
   /**
    * Mark the Registration as read at a date.
    */
-  public read(datasets: URL[], statusCode: number, date: Date = new Date()) {
-    this._datasets = datasets;
-    this._statusCode = statusCode;
-    this._dateRead = date;
+  public read(
+    datasets: URL[],
+    statusCode: number,
+    valid: boolean,
+    date: Date = new Date()
+  ): Registration {
+    const registration = new Registration(
+      this.url,
+      this.datePosted,
+      valid ? undefined : this.validUntil ?? date
+    );
+    registration._datasets = datasets;
+    registration._statusCode = statusCode;
+    registration._dateRead = date;
+
+    return registration;
   }
 
   get dateRead() {
@@ -30,6 +49,9 @@ export class Registration {
 }
 
 export interface RegistrationStore {
+  /**
+   * Store a {@see Registration}, replacing any Registrations with the same URL.
+   */
   store(registration: Registration): void;
   findRegistrationsReadBefore(date: Date): Promise<Registration[]>;
 }

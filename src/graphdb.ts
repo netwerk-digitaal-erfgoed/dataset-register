@@ -3,7 +3,7 @@ import DatasetExt from 'rdf-ext/lib/Dataset';
 import factory from 'rdf-ext';
 import {URL} from 'url';
 import querystring from 'querystring';
-import {Quad} from 'rdf-js';
+import {Quad, Quad_Object, Quad_Predicate} from 'rdf-js';
 import {Writer} from 'n3';
 import {
   AllowedRegistrationDomainStore,
@@ -11,6 +11,16 @@ import {
   RegistrationStore,
 } from './registration';
 import {DatasetStore, extractIris} from './dataset';
+
+export type SparqlResult = {
+  results: {
+    bindings: Binding[];
+  };
+};
+
+export type Binding = {
+  [key: string]: {value: string};
+};
 
 /**
  * GraphDB client that uses the REST API.
@@ -89,7 +99,7 @@ export class GraphDbClient {
     return response;
   }
 
-  public async query(query: string) {
+  public async query(query: string): Promise<SparqlResult> {
     const response = await this.request(
       'GET',
       '?' + querystring.stringify({query}),
@@ -97,7 +107,7 @@ export class GraphDbClient {
       'application/sparql-results+json'
     );
 
-    return response.json();
+    return (await response.json()) as SparqlResult;
   }
 
   private async getHeaders(): Promise<Headers> {
@@ -120,40 +130,28 @@ export class GraphDbRegistrationStore implements RegistrationStore {
   constructor(private client: GraphDbClient) {}
 
   async store(registration: Registration) {
-    await this.client.request(
-      'DELETE',
-      '/statements?' +
-        querystring.stringify({
-          subj: '<' + registration.url.toString() + '>',
-          context: '<' + this.registrationsGraph + '>',
-        })
-    );
     const quads = [
-      factory.quad(
-        factory.namedNode(registration.url.toString()),
+      this.registrationQuad(
+        registration,
         factory.namedNode('http://schema.org/datePosted'),
-        factory.literal(registration.datePosted.toISOString(), 'xsd:dateTime'),
-        factory.namedNode(this.registrationsGraph)
+        factory.literal(registration.datePosted.toISOString(), 'xsd:dateTime')
       ),
-      factory.quad(
-        factory.namedNode(registration.url.toString()),
+      this.registrationQuad(
+        registration,
         factory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-        factory.namedNode('http://schema.org/EntryPoint'),
-        factory.namedNode(this.registrationsGraph)
+        factory.namedNode('http://schema.org/EntryPoint')
       ),
-      factory.quad(
-        factory.namedNode(registration.url.toString()),
+      this.registrationQuad(
+        registration,
         factory.namedNode('http://schema.org/encoding'),
-        factory.namedNode('http://schema.org'), // Currently the only vocabulary that we support.
-        factory.namedNode(this.registrationsGraph)
+        factory.namedNode('http://schema.org') // Currently the only vocabulary that we support.
       ),
       ...registration.datasets.flatMap(datasetIri => {
         const datasetQuads = [
-          factory.quad(
-            factory.namedNode(registration.url.toString()),
+          this.registrationQuad(
+            registration,
             factory.namedNode('http://schema.org/about'),
-            factory.namedNode(datasetIri.toString()),
-            factory.namedNode(this.registrationsGraph)
+            factory.namedNode(datasetIri.toString())
           ),
           factory.quad(
             factory.namedNode(datasetIri.toString()),
@@ -182,28 +180,51 @@ export class GraphDbRegistrationStore implements RegistrationStore {
     ];
     if (registration.dateRead !== undefined) {
       quads.push(
-        factory.quad(
-          factory.namedNode(registration.url.toString()),
+        this.registrationQuad(
+          registration,
           factory.namedNode('http://schema.org/dateRead'),
-          factory.literal(registration.dateRead.toISOString(), 'xsd:dateTime'),
-          factory.namedNode(this.registrationsGraph)
+          factory.literal(registration.dateRead.toISOString(), 'xsd:dateTime')
         )
       );
     }
 
     if (registration.statusCode !== undefined) {
       quads.push(
-        factory.quad(
-          factory.namedNode(registration.url.toString()),
+        this.registrationQuad(
+          registration,
           factory.namedNode('http://schema.org/status'),
-          factory.literal(registration.statusCode.toString(), 'xsd:integer'),
-          factory.namedNode(this.registrationsGraph)
+          factory.literal(registration.statusCode.toString(), 'xsd:integer')
         )
       );
     }
 
-    await getWriter(quads).end(async (error, result) => {
-      await this.client.request('POST', '/statements', result);
+    if (registration.validUntil !== undefined) {
+      quads.push(
+        this.registrationQuad(
+          registration,
+          factory.namedNode('http://schema.org/validUntil'),
+          factory.literal(registration.validUntil.toISOString(), 'xsd:dateTime')
+        )
+      );
+    }
+
+    return new Promise((resolve, reject) => {
+      getWriter(quads).end(async (error, result) => {
+        try {
+          await this.client.request(
+            'DELETE',
+            '/statements?' +
+              querystring.stringify({
+                subj: '<' + registration.url.toString() + '>',
+                context: '<' + this.registrationsGraph + '>',
+              })
+          );
+          await this.client.request('POST', '/statements', result);
+          resolve(null);
+        } catch (e) {
+          reject(e);
+        }
+      });
     });
   }
 
@@ -211,27 +232,42 @@ export class GraphDbRegistrationStore implements RegistrationStore {
     // Use STR(?dateRead) as a workaround for https://github.com/netwerk-digitaal-erfgoed/register/issues/45
     const result = await this.client.query(`
       PREFIX schema: <http://schema.org/>
-      SELECT ?s ?datePosted WHERE {
+      SELECT ?s ?datePosted ?validUntil WHERE {
         GRAPH <${this.registrationsGraph}> {
           ?s a schema:EntryPoint ;
             schema:datePosted ?datePosted ;
             schema:dateRead ?dateRead .
+          OPTIONAL { ?s schema:validUntil ?validUntil . }
           FILTER (STR(?dateRead) < "${date.toISOString()}")  
         }
-      } GROUP BY ?s ?datePosted`);
+      } GROUP BY ?s ?datePosted ?validUntil`);
 
     return result.results.bindings.map(
-      (binding: {s: {value: string}; datePosted: {value: string}}) =>
+      binding =>
         new Registration(
           new URL(binding.s.value),
-          new Date(binding.datePosted.value)
+          new Date(binding.datePosted.value),
+          binding.validUntil ? new Date(binding.validUntil.value) : undefined
         )
     );
   }
+
+  private registrationQuad = (
+    registration: Registration,
+    predicate: Quad_Predicate,
+    object: Quad_Object
+  ) =>
+    factory.quad(
+      factory.namedNode(registration.url.toString()),
+      predicate,
+      object,
+      factory.namedNode(this.registrationsGraph)
+    );
 }
 
 export class GraphDbAllowedRegistrationDomainStore
-  implements AllowedRegistrationDomainStore {
+  implements AllowedRegistrationDomainStore
+{
   constructor(
     private readonly client: GraphDbClient,
     private readonly allowedDomainNamesGraph = 'https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names'
@@ -262,17 +298,29 @@ export class GraphDbDatasetStore implements DatasetStore {
    */
   public async store(datasets: DatasetExt[]) {
     // Find each Dataset’s IRI.
-    extractIris(datasets).forEach((dataset, iri) =>
-      this.storeDataset(dataset, iri)
-    );
+    for (const [iri, dataset] of [...extractIris(datasets)]) {
+      // Serialize requests: wait for each response before sending next request to prevent GraphDB from running OOM.
+      await this.storeDataset(dataset, iri);
+    }
   }
 
   private async storeDataset(dataset: DatasetExt, graphIri: URL) {
-    await getWriter(dataset.toArray()).end(async (error, result) => {
-      await this.client.request(
-        'PUT',
-        '/rdf-graphs/service?graph=' + encodeURIComponent(graphIri.toString()),
-        result
+    await new Promise((resolve, reject) => {
+      getWriter([...dataset.match(null, null, null, null)]).end(
+        async (error, result) => {
+          try {
+            resolve(
+              await this.client.request(
+                'PUT',
+                '/rdf-graphs/service?graph=' +
+                  encodeURIComponent(graphIri.toString()),
+                result
+              )
+            );
+          } catch (e) {
+            reject(e);
+          }
+        }
       );
     });
   }

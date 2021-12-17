@@ -1,9 +1,9 @@
 import {URL} from 'url';
 import {fetch, HttpError, NoDatasetFoundAtUrl} from '../src/fetch';
 import nock from 'nock';
-import fs from 'fs';
 import {dcat, dct, rdf} from '../src/query';
 import factory from 'rdf-ext';
+import {file} from './mock';
 
 describe('Fetch', () => {
   it('must accept valid DCAT dataset descriptions', async () => {
@@ -44,7 +44,7 @@ describe('Fetch', () => {
 
     expect(datasets).toHaveLength(1);
     const dataset = datasets[0];
-    expect(dataset.size).toBe(8);
+    expect(dataset.size).toBe(6);
   });
 
   it('accepts valid Schema.org dataset description', async () => {
@@ -60,7 +60,7 @@ describe('Fetch', () => {
 
     expect(datasets).toHaveLength(1);
     const dataset = datasets[0];
-    expect(dataset.size).toBe(19);
+    expect(dataset.size).toBe(25);
     expect(
       dataset.includes(
         factory.quad(
@@ -83,6 +83,14 @@ describe('Fetch', () => {
         )
       )
     ).toBe(true);
+    expect(
+      dataset.match(
+        factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
+        dcat('distribution'),
+        null,
+        factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+      )
+    ).toHaveLength(2);
   });
 
   it('accepts valid Schema.org dataset in Turtle', async () => {
@@ -159,6 +167,3 @@ describe('Fetch', () => {
     }
   });
 });
-
-const file = async (filename: string) =>
-  await fs.promises.readFile(`test/datasets/${filename}`, 'utf-8');

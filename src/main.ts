@@ -25,12 +25,16 @@ const client = new GraphDbClient(
   const logger = Pino();
   const datasetStore = new GraphDbDatasetStore(client);
   const registrationStore = new GraphDbRegistrationStore(client);
-  const allowedRegistrationDomainStore = new GraphDbAllowedRegistrationDomainStore(
-    client
-  );
-  const crawler = new Crawler(registrationStore, datasetStore, logger);
+  const allowedRegistrationDomainStore =
+    new GraphDbAllowedRegistrationDomainStore(client);
   const shacl = await readUrl('shacl/register.ttl');
   const validator = new ShaclValidator(shacl);
+  const crawler = new Crawler(
+    registrationStore,
+    datasetStore,
+    validator,
+    logger
+  );
 
   // Schedule crawler to check every hour for CRAWLER_INTERVAL that have expired their REGISTRATION_URL_TTL.
   const ttl = ((process.env.REGISTRATION_URL_TTL || 86400) as number) * 1000;
