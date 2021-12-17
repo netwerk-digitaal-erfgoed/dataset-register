@@ -15,7 +15,6 @@
   "description": {
     "@value": "en",
     "@language": "Description only in English"
-
   },
   "url": "https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum",
   "identifier": "http://data.bibliotheken.nl/id/dataset/rise-alba",
@@ -43,5 +42,17 @@
   "dateCreated": {
     "@type": "http://www.w3.org/2001/XMLSchema#date",
     "@value": "2021-05-27"
-  }
+  },
+  "distribution": [
+    {
+      "@type": "DataDownload",
+      "encodingFormat": "application/rdf+xml",
+      "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
+    },
+    {
+      "@type": "DataDownload",
+      "encodingFormat": "application/ld+json",
+      "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld"
+    }
+  ]
 }
