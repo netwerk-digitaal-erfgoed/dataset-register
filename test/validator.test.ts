@@ -11,6 +11,8 @@ import {
 import {StreamParser} from 'n3';
 import {Transform} from 'stream';
 import {StandardizeSchemaOrgPrefixToHttps} from '../src/transform';
+import {MicrodataRdfParser} from 'microdata-rdf-streaming-parser/lib/MicrodataRdfParser';
+import {RdfaParser} from 'rdfa-streaming-parser/lib/RdfaParser';
 
 let validator: Validator;
 
@@ -28,6 +30,22 @@ describe('Validator', () => {
     const report = await validate(
       'dataset-http-schema-org-valid.ttl',
       new StreamParser()
+    );
+    expect(report.state).toEqual('valid');
+  });
+
+  it('accepts minimal valid Schema.org dataset in Microdata', async () => {
+    const report = await validate(
+      'dataset-schema-org-valid-microdata.html',
+      new MicrodataRdfParser()
+    );
+    expect(report.state).toEqual('valid');
+  });
+
+  it('accepts minimal valid Schema.org dataset in HTML+RDFa', async () => {
+    const report = await validate(
+      'dataset-schema-org-valid-rdfa.html',
+      new RdfaParser()
     );
     expect(report.state).toEqual('valid');
   });
