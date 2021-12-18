@@ -27,7 +27,8 @@ reg:DatacatalogShape
         reg:SchemaCatalogNameProperty,
         reg:SchemaPublisherProperty,
         # Recommended properties
-        reg:SchemaDescriptionProperty ;
+        reg:SchemaDescriptionProperty,
+        reg:SchemaDescriptionPropertyShouldExist ;
 .
 
 reg:DatasetShape
@@ -37,7 +38,6 @@ reg:DatasetShape
     sh:pattern "^https?://" ;
     rdfs:label "Datasetbeschrijving"@nl, "Dataset description"@en ;
     rdfs:comment "Een datasetbeschrijving bestaat uit een elementen die de dataset beschrijft"@nl, "A dataset description consists of elements that describe the dataset"@en ;
-    sh:targetClass schema:Dataset ;
 
     sh:property
         # Required properties
@@ -46,6 +46,7 @@ reg:DatasetShape
         reg:SchemaPublisherProperty,
         # Recommended properties
         reg:SchemaDescriptionProperty,
+        reg:SchemaDescriptionPropertyShouldExist,
         reg:SchemaDistributionProperty,
         reg:SchemaCreatorProperty,
         reg:SchemaDateCreatedProperty,
@@ -69,6 +70,7 @@ reg:DistributionShape
         # Recommended properties
         reg:SchemaDistributionNameProperty,
         reg:SchemaDescriptionProperty,
+        reg:SchemaDescriptionPropertyShouldExist,
         reg:SchemaDatePublishedProperty,
         reg:SchemaDateModifiedProperty,
         reg:SchemaDistributionLicenseProperty ;
@@ -193,8 +195,15 @@ reg:SchemaDescriptionProperty a sh:PropertyShape ;
         [ sh:datatype xsd:string ]
         [ sh:datatype rdf:langString ]
     );
-    sh:name "Beschrijving van de dataset"@nl, "Description of the dataset"@en ;
-    sh:message "Een datasetbeschrijving kan een beschrijving bevatten"@nl, "A dataset description should have a description"@en ;
+    sh:maxCount 1 ;
+    sh:message "Moet precies één beschrijving hebben van type string of langString"@nl, "Must have a single description of type string or langString"@en ;
+.
+
+reg:SchemaDescriptionPropertyShouldExist a sh:PropertyShape ;
+  sh:path schema:description ;
+  sh:minCount 1 ;
+  sh:severity sh:Info ;
+  sh:message "Kan een beschrijving hebben"@nl, "Should have a description"@en ;
 .
 
 reg:SchemaDateCreatedProperty a sh:PropertyShape ;
@@ -261,8 +270,9 @@ reg:SchemaDistributionLicenseProperty a sh:PropertyShape ;
 
 reg:SchemaDistributionProperty a sh:PropertyShape ;
     sh:class schema:DataDownload ;
-    sh:minCount 0 ;
+    sh:minCount 1 ;
     sh:node reg:DistributionShape ;
+    sh:severity sh:Info ;
     sh:path schema:distribution ;
     sh:name "Distributies van een dataset"@nl ;
 .
