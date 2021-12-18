@@ -182,6 +182,11 @@ export async function server(
       const url = new URL((request.body as {'@id': string})['@id']);
       request.log.info(url.toString());
       await validate(url, reply);
+      request.log.info(
+        `Validated at ${Math.round(
+          process.memoryUsage().rss / 1024 / 1024
+        )} MB memory`
+      );
     }
   );
 
