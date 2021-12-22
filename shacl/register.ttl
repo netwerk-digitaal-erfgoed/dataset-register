@@ -195,7 +195,6 @@ reg:SchemaDescriptionProperty a sh:PropertyShape ;
         [ sh:datatype xsd:string ]
         [ sh:datatype rdf:langString ]
     );
-    sh:maxCount 1 ;
     sh:message "Moet precies één beschrijving hebben van type string of langString"@nl, "Must have a single description of type string or langString"@en ;
 .
 
