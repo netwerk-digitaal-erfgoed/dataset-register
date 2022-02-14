@@ -57,7 +57,7 @@
     "@types/psl": "^1.1.0",
     "@types/rdf-dataset-ext": "^1.0.1",
     "@types/rdf-ext": "^1.3.9",
-    "@types/rdfjs__dataset": "^1.0.5",
+    "@types/rdfjs__dataset": "^2.0.0",
     "chokidar": "^3.5.2",
     "gts": "^3.0.3",
     "jest": "^27.3.1",
