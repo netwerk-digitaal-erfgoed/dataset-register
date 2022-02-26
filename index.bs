@@ -388,12 +388,11 @@ Issue: TODO Elaborate (and give examples of) the types of distribution (in schem
 
 ### Developer documentation ### {#developer-docs}
 
-If the distribution is non-standard [=API=], publishers *MUST* publish human-readable documentation on how to use that API
-and link to the documentation URL in the [schema:usageInfo](https://schema.org/usageInfo) attribute:
+If the distribution is a non-standard [=API=], publishers *MUST* publish human-readable documentation on how to use that
+API and link to the documentation URL in the [schema:usageInfo](https://schema.org/usageInfo) attribute:
 
 <div class="example">
     A custom API with a link to the documentation.
-    A minimal definition of a SPARQL endpoint distribution.
 
     <pre highlight=json-ld>
         {
