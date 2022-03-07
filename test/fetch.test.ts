@@ -20,7 +20,7 @@ describe('Fetch', () => {
     expect(datasets).toHaveLength(1);
     const dataset = datasets[0];
     expect(
-      dataset.includes(
+      dataset.has(
         factory.quad(
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
           rdf('type'),
@@ -62,7 +62,7 @@ describe('Fetch', () => {
     const dataset = datasets[0];
     expect(dataset.size).toBe(25);
     expect(
-      dataset.includes(
+      dataset.has(
         factory.quad(
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
           dct('license'),
@@ -74,7 +74,7 @@ describe('Fetch', () => {
       )
     ).toBe(true);
     expect(
-      dataset.includes(
+      dataset.has(
         factory.quad(
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
           dct('publisher'),
@@ -83,14 +83,14 @@ describe('Fetch', () => {
         )
       )
     ).toBe(true);
-    expect(
-      dataset.match(
+    expect([
+      ...dataset.match(
         factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
         dcat('distribution'),
         null,
         factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
-      )
-    ).toHaveLength(2);
+      ),
+    ]).toHaveLength(2);
   });
 
   it('accepts valid Schema.org dataset in Turtle', async () => {

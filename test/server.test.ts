@@ -8,7 +8,8 @@ import {
   MockDatasetStore,
   MockRegistrationStore,
 } from './mock';
-import {URL} from 'url';
+import {fileURLToPath, URL} from 'url';
+import {dirname} from 'path';
 
 let httpServer: FastifyInstance<Server>;
 const registrationStore = new MockRegistrationStore();
@@ -23,7 +24,7 @@ describe('Server', () => {
       shacl
     );
 
-    nock.back.fixtures = __dirname + '/http';
+    nock.back.fixtures = dirname(fileURLToPath(import.meta.url)) + '/http';
     nock.back.setMode('record');
   });
 

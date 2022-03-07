@@ -12,13 +12,13 @@ export interface DatasetStore {
 
 export function extractIris(datasets: DatasetExt[]): Map<URL, DatasetExt> {
   return datasets.reduce((map, dataset) => {
-    const quad = dataset
-      .match(
+    const quad = [
+      ...dataset.match(
         null,
         factory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
         datasetType
-      )
-      .toArray()[0];
+      ),
+    ][0];
     const url = new URL(quad.subject.value);
     map.set(url, dataset);
     return map;
