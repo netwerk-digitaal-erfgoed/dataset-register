@@ -26,7 +26,7 @@
     "shacl/"
   ],
   "dependencies": {
-    "@comunica/actor-init-sparql": "^1.21.2",
+    "@comunica/actor-init-sparql": "^2.0.1",
     "@comunica/data-factory": "^2.0.1",
     "@rdfjs/dataset": "^2.0.0",
     "@types/rdf-validate-shacl": "^0.4.0",
