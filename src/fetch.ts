@@ -1,4 +1,4 @@
-import {IQueryResultBindings, newEngine} from '@comunica/actor-init-sparql';
+import {QueryEngine} from '@comunica/query-sparql';
 import factory from 'rdf-ext';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import {URL} from 'url';
@@ -57,15 +57,15 @@ export async function dereference(url: URL): Promise<DatasetExt> {
   }
 }
 
-const engine = newEngine();
+const engine = new QueryEngine();
 
 /**
  * Fetch dataset descriptions by executing a SPARQL SELECT query.
  */
 async function query(url: URL): Promise<DatasetExt[]> {
-  const {bindingsStream} = (await engine.query(selectQuery, {
+  const bindingsStream = await engine.queryBindings(selectQuery, {
     sources: [url.toString()],
-  })) as IQueryResultBindings;
+  });
 
   // Write results to an N3 Store for deduplication and partitioning by dataset.
   const store = new Store();
