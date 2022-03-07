@@ -5,8 +5,8 @@ import {
 } from '../src/registration';
 import {URL} from 'url';
 import {DatasetStore} from '../src/dataset';
-import DatasetExt from 'rdf-ext/lib/Dataset';
 import fs from 'fs';
+import DatasetExt from 'rdf-ext/lib/Dataset';
 
 export class MockRegistrationStore implements RegistrationStore {
   private readonly registrations: Map<URL, Registration> = new Map();

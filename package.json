@@ -2,16 +2,16 @@
   "name": "register",
   "type": "module",
   "exports": "./build/src/main.js",
-  "version": "1.0.0",
+  "version": "0.0.0-semantically-released",
   "description": "",
   "main": "build/src/main.js",
   "engines": {
     "node": ">=16"
   },
   "scripts": {
-    "start": "node --experimental-specifier-resolution=node build/src/main.js",
+    "start": "node --experimental-specifier-resolution=node build/main.js",
     "dev": "tsc-watch --onSuccess 'npm run start'",
-    "test": "jest ${1}",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest ${1}",
     "lint": "gts lint",
     "clean": "gts clean",
     "compile": "tsc",

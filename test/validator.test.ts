@@ -1,4 +1,4 @@
-import factory from 'rdf-ext';
+import rdf from 'rdf-ext';
 import {JsonLdParser} from 'jsonld-streaming-parser';
 import * as fs from 'fs';
 import {
@@ -181,7 +181,7 @@ const validate = async (filename: string, parser?: Transform) =>
   validator.validate(await dataset(filename, parser));
 
 const dataset = async (filename: string, parser?: Transform) => {
-  return await factory.dataset().import(
+  return await rdf.dataset().import(
     fs
       .createReadStream(`test/datasets/${filename}`)
       .pipe(parser ?? new JsonLdParser())
@@ -198,7 +198,7 @@ const expectViolations = (
       report.errors.match(
         null,
         shacl('resultPath'),
-        factory.namedNode(violationPath)
+        rdf.namedNode(violationPath)
       ).size
     ).toEqual(1)
   );
