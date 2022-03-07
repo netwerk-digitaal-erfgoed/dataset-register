@@ -49,11 +49,11 @@ export class ShaclValidator implements Validator {
 }
 
 export async function readUrl(url: string): Promise<DatasetCore> {
-  const {quads} = await rdfDereferencer.dereference(url.toString(), {
+  const {data} = await rdfDereferencer.dereference(url.toString(), {
     localFiles: true,
   });
 
-  return await factory.dataset().import(quads);
+  return await factory.dataset().import(data);
 }
 
 type ValidationResult = Valid | NoDataset | InvalidDataset;

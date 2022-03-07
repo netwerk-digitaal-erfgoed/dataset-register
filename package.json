@@ -43,7 +43,7 @@
     "pino": "^7.2.0",
     "psl": "^1.8.0",
     "rdf-dataset-ext": "^1.0.0",
-    "rdf-dereference": "^1.8.0",
+    "rdf-dereference": "^2.0.0",
     "rdf-ext": "^2.0.1",
     "rdf-js": "^4.0.2",
     "rdf-serialize": "^2.0.0",
