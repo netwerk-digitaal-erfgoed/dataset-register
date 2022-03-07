@@ -2,44 +2,44 @@ import {BlankNode, NamedNode, Quad, Quad_Object, Term} from 'rdf-js';
 import factory from 'rdf-ext';
 import {BlankNodeScoped} from '@comunica/data-factory';
 
-const dataset = '?dataset';
-const identifier = '?identifier';
-const name = '?name';
-const alternateName = '?alternateName';
-const description = '?description';
-const license = '?license';
-const creator = '?creator';
-const publisher = '?publisher';
-const distribution = '?distribution';
-const dateCreated = '?dateCreated';
-const datePublished = '?datePublished';
-const dateModified = '?dateModified';
-const language = '?language';
-const source = '$source';
-const keyword = '?keyword';
-const mainEntityOfPage = '?mainEntityOfPage';
-const version = '?version';
+const dataset = 'dataset';
+const identifier = 'identifier';
+const name = 'name';
+const alternateName = 'alternateName';
+const description = 'description';
+const license = 'license';
+const creator = 'creator';
+const publisher = 'publisher';
+const distribution = 'distribution';
+const dateCreated = 'dateCreated';
+const datePublished = 'datePublished';
+const dateModified = 'dateModified';
+const language = 'language';
+const source = 'source';
+const keyword = 'keyword';
+const mainEntityOfPage = 'mainEntityOfPage';
+const version = 'version';
 
-const creatorName = '?creator_name';
-const creatorEmail = '?creator_email';
-const creatorUrl = '?creator_url';
-const creatorSameAs = '?creator_sameAs';
+const creatorName = 'creator_name';
+const creatorEmail = 'creator_email';
+const creatorUrl = 'creator_url';
+const creatorSameAs = 'creator_sameAs';
 
-const publisherName = '?publisher_name';
-const publisherEmail = '?publisher_email';
-const publisherUrl = '?publisher_url';
-const publisherSameAs = '?publisher_sameAs';
+const publisherName = 'publisher_name';
+const publisherEmail = 'publisher_email';
+const publisherUrl = 'publisher_url';
+const publisherSameAs = 'publisher_sameAs';
 
-const distributionUrl = '?distribution_url';
-const distributionMediaType = '?distribution_mediaType';
-const distributionFormat = '?distribution_format';
-const distributionDatePublished = '?distribution_datePublished';
-const distributionDateModified = '?distribution_dateModified';
-const distributionDescription = '?distribution_description';
-const distributionLanguage = '?distribution_language';
-const distributionLicense = '?distribution_license';
-const distributionName = '?distribution_name';
-const distributionSize = '?distribution_size';
+const distributionUrl = 'distribution_url';
+const distributionMediaType = 'distribution_mediaType';
+const distributionFormat = 'distribution_format';
+const distributionDatePublished = 'distribution_datePublished';
+const distributionDateModified = 'distribution_dateModified';
+const distributionDescription = 'distribution_description';
+const distributionLanguage = 'distribution_language';
+const distributionLicense = 'distribution_license';
+const distributionName = 'distribution_name';
+const distributionSize = 'distribution_size';
 
 export const dcat = (property: string): NamedNode =>
   factory.namedNode(`http://www.w3.org/ns/dcat#${property}`);
@@ -112,46 +112,46 @@ export const selectQuery = `
     } UNION {
       ${schemaOrgQuery('httpSchema')}
     } UNION { 
-      ${dataset} a dcat:Dataset ;
-        dct:title ${name} ;
-        dct:license ${license} ;
-        dct:creator ${creator} .
+      ?${dataset} a dcat:Dataset ;
+        dct:title ?${name} ;
+        dct:license ?${license} ;
+        dct:creator ?${creator} .
         
-      ${creator} a foaf:Organization ;
-        foaf:name ${creatorName} .
+      ?${creator} a foaf:Organization ;
+        foaf:name ?${creatorName} .
       
       OPTIONAL {  
-        ${dataset} dcat:distribution ${distribution} .
-        ${distribution} a dcat:Distribution ;
-          dcat:accessURL ${distributionUrl} ;
-          dct:format ${distributionFormat} .
+        ?${dataset} dcat:distribution ?${distribution} .
+        ?${distribution} a dcat:Distribution ;
+          dcat:accessURL ?${distributionUrl} ;
+          dct:format ?${distributionFormat} .
           
-        OPTIONAL { ${distribution} dcat:mediaType ${distributionMediaType} }
-        OPTIONAL { ${distribution} dct:issued ${distributionDatePublished} }
-        OPTIONAL { ${distribution} dct:modified ${distributionDateModified} }
-        OPTIONAL { ${distribution} dct:description ${distributionDescription} }
-        OPTIONAL { ${distribution} dct:language ${distributionLanguage} }
-        OPTIONAL { ${distribution} dct:license ${distributionLicense} }
-        OPTIONAL { ${distribution} dct:title ${distributionName} }
-        OPTIONAL { ${distribution} dcat:byteSize ${distributionSize} }
+        OPTIONAL { ?${distribution} dcat:mediaType ?${distributionMediaType} }
+        OPTIONAL { ?${distribution} dct:issued ?${distributionDatePublished} }
+        OPTIONAL { ?${distribution} dct:modified ?${distributionDateModified} }
+        OPTIONAL { ?${distribution} dct:description ?${distributionDescription} }
+        OPTIONAL { ?${distribution} dct:language ?${distributionLanguage} }
+        OPTIONAL { ?${distribution} dct:license ?${distributionLicense} }
+        OPTIONAL { ?${distribution} dct:title ?${distributionName} }
+        OPTIONAL { ?${distribution} dcat:byteSize ?${distributionSize} }
       }
         
-      OPTIONAL { ${dataset} dct:description ${description} }
-      OPTIONAL { ${dataset} dct:identifier ${identifier} }
-      OPTIONAL { ${dataset} dct:alternative ${alternateName} }
-      OPTIONAL { ${dataset} dct:created ${dateCreated} }
-      OPTIONAL { ${dataset} dct:issued ${datePublished} }
-      OPTIONAL { ${dataset} dct:modified ${dateModified} }
-      OPTIONAL { ${dataset} dct:language ${language} }
-      OPTIONAL { ${dataset} dct:source ${source} }
-      OPTIONAL { ${dataset} dcat:keyword ${keyword} }
-      OPTIONAL { ${dataset} owl:versionInfo ${version} }
-      OPTIONAL { ${dataset} dcat:landingPage ${mainEntityOfPage} }
+      OPTIONAL { ?${dataset} dct:description ?${description} }
+      OPTIONAL { ?${dataset} dct:identifier ?${identifier} }
+      OPTIONAL { ?${dataset} dct:alternative ?${alternateName} }
+      OPTIONAL { ?${dataset} dct:created ?${dateCreated} }
+      OPTIONAL { ?${dataset} dct:issued ?${datePublished} }
+      OPTIONAL { ?${dataset} dct:modified ?${dateModified} }
+      OPTIONAL { ?${dataset} dct:language ?${language} }
+      OPTIONAL { ?${dataset} dct:source ?${source} }
+      OPTIONAL { ?${dataset} dcat:keyword ?${keyword} }
+      OPTIONAL { ?${dataset} owl:versionInfo ?${version} }
+      OPTIONAL { ?${dataset} dcat:landingPage ?${mainEntityOfPage} }
     }
   } LIMIT ${sparqlLimit}`;
 
 export function bindingsToQuads(binding: Map<string, Term>): Quad[] {
-  const datasetIri = binding.get('?dataset') as NamedNode;
+  const datasetIri = binding.get('dataset') as NamedNode;
   const quads = [
     factory.quad(datasetIri, rdf('type'), datasetType, datasetIri),
     ..._bindingsToQuads(datasetIri, binding, datasetMapping, datasetIri),
@@ -232,51 +232,51 @@ function _bindingsToQuads(
 
 function schemaOrgQuery(prefix: string): string {
   return `
-    ${dataset} a ${prefix}:Dataset ;
-      ${prefix}:name ${name} ; 
-      ${prefix}:license ${license} .
+    ?${dataset} a ${prefix}:Dataset ;
+      ${prefix}:name ?${name} ; 
+      ${prefix}:license ?${license} .
       
-    FILTER (!isBlank(${license}))
+    FILTER (!isBlank(?${license}))
 
     OPTIONAL { 
-      ${dataset} ${prefix}:creator ${creator} .        
-      ${creator} a ${prefix}:Organization ;
-        ${prefix}:name ${creatorName} .
+      ?${dataset} ${prefix}:creator ?${creator} .        
+      ?${creator} a ${prefix}:Organization ;
+        ${prefix}:name ?${creatorName} .
     }
         
     OPTIONAL { 
-      ${dataset} ${prefix}:publisher ${publisher} .        
-      ${publisher} a ${prefix}:Organization ;
-        ${prefix}:name ${publisherName} .
+      ?${dataset} ${prefix}:publisher ?${publisher} .        
+      ?${publisher} a ${prefix}:Organization ;
+        ${prefix}:name ?${publisherName} .
     }
         
     OPTIONAL {
-      ${dataset} ${prefix}:distribution ${distribution} .
-      ${distribution} a ${prefix}:DataDownload ;
-        ${prefix}:contentUrl ${distributionUrl} ;
-        ${prefix}:encodingFormat ${distributionFormat} .
+      ?${dataset} ${prefix}:distribution ?${distribution} .
+      ?${distribution} a ${prefix}:DataDownload ;
+        ${prefix}:contentUrl ?${distributionUrl} ;
+        ${prefix}:encodingFormat ?${distributionFormat} .
         
-      OPTIONAL { ${distribution} ${prefix}:fileFormat ${distributionMediaType} }
-      OPTIONAL { ${distribution} ${prefix}:datePublished ${distributionDatePublished} }
-      OPTIONAL { ${distribution} ${prefix}:dateModified ${distributionDateModified} }
-      OPTIONAL { ${distribution} ${prefix}:description ${distributionDescription} }
-      OPTIONAL { ${distribution} ${prefix}:inLanguage ${distributionLanguage} }
-      OPTIONAL { ${distribution} ${prefix}:license ${distributionLicense} }
-      OPTIONAL { ${distribution} ${prefix}:name ${distributionName} }
-      OPTIONAL { ${distribution} ${prefix}:contentSize ${distributionSize} }
+      OPTIONAL { ?${distribution} ${prefix}:fileFormat ?${distributionMediaType} }
+      OPTIONAL { ?${distribution} ${prefix}:datePublished ?${distributionDatePublished} }
+      OPTIONAL { ?${distribution} ${prefix}:dateModified ?${distributionDateModified} }
+      OPTIONAL { ?${distribution} ${prefix}:description ?${distributionDescription} }
+      OPTIONAL { ?${distribution} ${prefix}:inLanguage ?${distributionLanguage} }
+      OPTIONAL { ?${distribution} ${prefix}:license ?${distributionLicense} }
+      OPTIONAL { ?${distribution} ${prefix}:name ?${distributionName} }
+      OPTIONAL { ?${distribution} ${prefix}:contentSize ?${distributionSize} }
     } 
      
-    OPTIONAL { ${dataset} ${prefix}:description ${description} } 
-    OPTIONAL { ${dataset} ${prefix}:identifier ${identifier} }
-    OPTIONAL { ${dataset} ${prefix}:alternateName ${alternateName} }
-    OPTIONAL { ${dataset} ${prefix}:dateCreated ${dateCreated} }
-    OPTIONAL { ${dataset} ${prefix}:datePublished ${datePublished} }
-    OPTIONAL { ${dataset} ${prefix}:dateModified ${dateModified} }
-    OPTIONAL { ${dataset} ${prefix}:inLanguage ${language} }
-    OPTIONAL { ${dataset} ${prefix}:isBasedOn ${source} }
-    OPTIONAL { ${dataset} ${prefix}:isBasedOnUrl ${source} } 
-    OPTIONAL { ${dataset} ${prefix}:keywords ${keyword} }
-    OPTIONAL { ${dataset} ${prefix}:version ${version} }
-    OPTIONAL { ${dataset} ${prefix}:mainEntityOfPage ${mainEntityOfPage} }
+    OPTIONAL { ?${dataset} ${prefix}:description ?${description} } 
+    OPTIONAL { ?${dataset} ${prefix}:identifier ?${identifier} }
+    OPTIONAL { ?${dataset} ${prefix}:alternateName ?${alternateName} }
+    OPTIONAL { ?${dataset} ${prefix}:dateCreated ?${dateCreated} }
+    OPTIONAL { ?${dataset} ${prefix}:datePublished ?${datePublished} }
+    OPTIONAL { ?${dataset} ${prefix}:dateModified ?${dateModified} }
+    OPTIONAL { ?${dataset} ${prefix}:inLanguage ?${language} }
+    OPTIONAL { ?${dataset} ${prefix}:isBasedOn ?${source} }
+    OPTIONAL { ?${dataset} ${prefix}:isBasedOnUrl ?${source} } 
+    OPTIONAL { ?${dataset} ${prefix}:keywords ?${keyword} }
+    OPTIONAL { ?${dataset} ${prefix}:version ?${version} }
+    OPTIONAL { ?${dataset} ${prefix}:mainEntityOfPage ?${mainEntityOfPage} }
 `;
 }
