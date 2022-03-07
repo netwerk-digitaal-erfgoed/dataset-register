@@ -41,9 +41,9 @@ export async function fetch(url: URL): Promise<DatasetExt[]> {
  */
 export async function dereference(url: URL): Promise<DatasetExt> {
   try {
-    const {quads} = await rdfDereferencer.dereference(url.toString());
+    const {data} = await rdfDereferencer.dereference(url.toString());
     const stream = pipeline(
-      quads as Readable,
+      data,
       new StandardizeSchemaOrgPrefixToHttps(),
       err => {
         if (err) {
