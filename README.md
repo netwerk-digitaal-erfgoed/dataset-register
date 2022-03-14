@@ -155,7 +155,7 @@ See the [Requirements for Datasets](https://netwerk-digitaal-erfgoed.github.io/r
 | [`dct:license`](http://purl.org/dc/terms/license) | Dataset license. | [`schema:license`](https://schema.org/license) |
 | [`dct:language`](http://purl.org/dc/terms/language) | Language(s) in which the dataset is available. | [`schema:inLanguage`](https://schema.org/inLanguage) |
 | [`dcat:keyword`](https://www.w3.org/TR/vocab-dcat-3/#Property:resource_keyword) | Keywords or tags that describe the dataset. | [`schema:keywords`](https://schema.org/keywords) |
-| [`dcat:landingPage`](https://www.w3.org/TR/vocab-dcat-3/#Property:resource_landing_page) | Keywords or tags that describe the dataset. | [`schema:mainEntityOfPage`](https://schema.org/mainEntityOfPage) |
+| [`dcat:landingPage`](https://www.w3.org/TR/vocab-dcat-3/#Property:resource_landing_page) | URL of a webpage where the dataset is described. | [`schema:mainEntityOfPage`](https://schema.org/mainEntityOfPage) |
 | [`dct:source`](http://purl.org/dc/terms/source) | URL(s) of datasets the dataset is based on. | [`schema:isBasedOn`](https://schema.org/isBasedOn) |
 | [`dct:created`](http://purl.org/dc/terms/created) | Dataset creation date. | [`schema:dateCreated`](https://schema.org/dateCreated) |
 | [`dct:issued`](http://purl.org/dc/terms/issued) | Dataset publication date. | [`schema:datePublished`](https://schema.org/datePublished) |
