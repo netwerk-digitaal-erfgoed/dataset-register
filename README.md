@@ -186,18 +186,18 @@ If the dataset’s distributions are provided in Schema.org rather than DCAT, th
 DCAT. The ‘Based on’ column shows the corresponding Schema.org property.
 See the [Requirements for Datasets](https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/) for more details.
 
-| Property | Description | Based on |
-| -------- | ----------- | -------- |
-| [`dcat:accessUrl`](https://www.w3.org/TR/vocab-dcat-3/) | Distribution URL. | [`schema:contentUrl`](https://schema.org/contentUrl) |
-| [`dcat:mediaType`](https://www.w3.org/TR/vocab-dcat-3/) | Distribution’s IANA media type. | [`schema:fileFormat`](https://schema.org/fileFormat) |
-| [`dct:format`](http://purl.org/dc/terms/format) | Distribution content type (e.g. `text/turtle`). | [`schema:encodingFormat`](https://schema.org/encodingFormat) |
-| [`dct:issued`](http://purl.org/dc/terms/issued) | Distribution publication date. | [`schema:datePublished`](https://schema.org/datePublished) |
-| [`dct:modified`](http://purl.org/dc/terms/issued) | Distribution last modification date. | [`schema:dateModified`](https://schema.org/dateModified) |
+| Property                                                  | Description | Based on |
+|-----------------------------------------------------------| ----------- | -------- |
+| [`dcat:accessURL`](https://www.w3.org/TR/vocab-dcat-3/)   | Distribution URL. | [`schema:contentUrl`](https://schema.org/contentUrl) |
+| [`dcat:mediaType`](https://www.w3.org/TR/vocab-dcat-3/)   | Distribution’s IANA media type. | [`schema:fileFormat`](https://schema.org/fileFormat) |
+| [`dct:format`](http://purl.org/dc/terms/format)           | Distribution content type (e.g. `text/turtle`). | [`schema:encodingFormat`](https://schema.org/encodingFormat) |
+| [`dct:issued`](http://purl.org/dc/terms/issued)           | Distribution publication date. | [`schema:datePublished`](https://schema.org/datePublished) |
+| [`dct:modified`](http://purl.org/dc/terms/issued)         | Distribution last modification date. | [`schema:dateModified`](https://schema.org/dateModified) |
 | [`dct:description`](http://purl.org/dc/terms/description) | Distribution description. | [`schema:description`](https://schema.org/description) |
-| [`dct:language`](http://purl.org/dc/terms/language) | Distribution language. | [`schema:inLanguage`](https://schema.org/inLanguage) |
-| [`dct:license`](http://purl.org/dc/terms/license) | Distribution license. | [`schema:license`](https://schema.org/license) |
-| [`dct:title`](http://purl.org/dc/terms/title) | Distribution title. | [`schema:name`](https://schema.org/name) |
-| [`dcat:byteSize`](https://www.w3.org/TR/vocab-dcat-3/) | Distribution’s download size in bytes. | [`schema:contentSize`](https://schema.org/contentSize) |
+| [`dct:language`](http://purl.org/dc/terms/language)       | Distribution language. | [`schema:inLanguage`](https://schema.org/inLanguage) |
+| [`dct:license`](http://purl.org/dc/terms/license)         | Distribution license. | [`schema:license`](https://schema.org/license) |
+| [`dct:title`](http://purl.org/dc/terms/title)             | Distribution title. | [`schema:name`](https://schema.org/name) |
+| [`dcat:byteSize`](https://www.w3.org/TR/vocab-dcat-3/)    | Distribution’s download size in bytes. | [`schema:contentSize`](https://schema.org/contentSize) |
 
 ### Allow list
 
