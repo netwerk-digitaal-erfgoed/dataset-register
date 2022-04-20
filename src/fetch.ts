@@ -4,7 +4,7 @@ import DatasetExt from 'rdf-ext/lib/Dataset';
 import {URL} from 'url';
 import {Store} from 'n3';
 import {bindingsToQuads, selectQuery, sparqlLimit} from './query';
-import {pipeline, Readable} from 'stream';
+import {pipeline} from 'stream';
 import {StandardizeSchemaOrgPrefixToHttps} from './transform';
 import Pino from 'pino';
 import {rdfDereferencer} from './rdf';
@@ -45,11 +45,7 @@ export async function dereference(url: URL): Promise<DatasetExt> {
     const stream = pipeline(
       data,
       new StandardizeSchemaOrgPrefixToHttps(),
-      err => {
-        if (err) {
-          throw new Error(err?.message);
-        }
-      }
+      () => {} // Noop because errors are caught below.
     );
     return await factory.dataset().import(stream);
   } catch (e) {
