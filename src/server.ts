@@ -17,10 +17,10 @@ import {DatasetStore, extractIris} from './dataset';
 import {Server} from 'http';
 import * as psl from 'psl';
 import {rdfSerializer} from './rdf';
-import fastifySwagger from 'fastify-swagger';
-import fastifyCors from 'fastify-cors';
+import fastifySwagger from '@fastify/swagger';
+import fastifyCors from '@fastify/cors';
 import {DatasetCore} from 'rdf-js';
-import acceptsSerializer from 'fastify-accepts-serializer';
+import acceptsSerializer from '@fastify/accepts-serializer';
 
 const serializer = (contentType: string) => (dataset: DatasetExt) =>
   rdfSerializer.serialize(datasetExt.toStream(dataset), {contentType});

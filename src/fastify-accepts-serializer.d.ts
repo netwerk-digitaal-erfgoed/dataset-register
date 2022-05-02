@@ -1,1 +1,1 @@
-declare module 'fastify-accepts-serializer';
+declare module '@fastify/accepts-serializer';
