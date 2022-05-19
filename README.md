@@ -35,7 +35,7 @@ URLs must be [allowed](#allow-list) before they can be added to the Register.
 ### Search dataset descriptions
 
 You can retrieve dataset descriptions registered by yourself and others
-from our [triple store](http://triplestore.netwerkdigitaalerfgoed.nl).
+from our [triple store](https://triplestore.netwerkdigitaalerfgoed.nl/sparql?savedQueryName=Full%20dataset%20descriptions%20for%20publisher&owner=admin).
 
 ### Automate registrations
 
