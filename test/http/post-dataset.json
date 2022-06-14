@@ -5,20 +5,20 @@
         "path": "/datasets/kb/2.html",
         "body": "",
         "status": 200,
-        "response": "<!DOCTYPE html>\r\n<html lang=\"nl\">\r\n\r\n<head>\r\n    <meta charset=\"utf-8\">\r\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\">\r\n    <meta name=\"description\" content=\"Datasets\">\r\n    <link href=\"../assets/imgs/nde_logo_simplified.png\" rel=\"icon\" type=\"image/png\">\r\n    <title>Dataset Descriptions</title>\r\n    <link rel=\"stylesheet\" href=\"https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css\" integrity=\"sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T\" crossorigin=\"anonymous\">\r\n    <link href=\"../assets/css/main.css\" rel=\"stylesheet\" type=\"text/css\">\r\n</head>\r\n\r\n<body class=\"withNavbar withSink\">\r\n    <nav class=\"navbar fixed-top \">\r\n        <div class=\"navbar-content\">\r\n            <div class=\"navbar-icon\">\r\n                <a class=\"navbar-brand\" href=\"../\">\r\n                    <img alt=\"Dataset Descriptions home\" src=\"../assets/imgs/nde_logo.png\">\r\n                </a>\r\n            </div>\r\n            <div class=\"navbar-title\">\r\n                <a class=\"navbar-brand\" href=\"../\">Dataset Descriptions</a>|&nbsp;&nbsp;&nbsp;<a href=\"index.html\">Datasets KB</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;Alba amicorum van de Koninklijke Bibliotheek\r\n            </div>\r\n        </div>\r\n    </nav>\r\n    <div class=\"container\">\r\n        <div class=\"row\">\r\n            <div class=\"col\" style=\"text-align:center;\">\r\n                <h1>Alba amicorum van de Koninklijke Bibliotheek</h1>\r\n                <p>Datasetbeschrijving in JSON-LD volgens schema.org/Dataset + <a href=\"https://developers.google.com/search/docs/data-types/dataset\">Google documentatie</a></p>\r\n            </div>\r\n        </div>\r\n\r\n        <div class=\"row\">\r\n\r\n            <div class=\"col\">\r\n                <h3>Name</h3>\r\n                <p>Alba amicorum van de Koninklijke Bibliotheek</p>\r\n                <h3>Description</h3>\r\n                <p>Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.</p>\r\n                <h3>URL</h3>\r\n                <p><a href=\"https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum\">https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum</a></p>\r\n                <h3>Identifier</h3>\r\n                <p>http://data.bibliotheken.nl/id/dataset/rise-alba</p>\r\n\r\n                <h3>Keywords</h3>\r\n                <p>alba amicorum</p>\r\n                <h3>License</h3>\r\n                <p><a href=\"http://creativecommons.org/publicdomain/zero/1.0/\">CC-0 (Public domain)</a></p>\r\n                <h3>Creator</h3>\r\n                <p><a href=\"https://www.kb.nl/\">Koninklijke Bibliotheek</a> (https://ror.org/02w4jbg70)</p>\r\n                <h2>Distributions</h2>\r\n\r\n                <ul>\r\n                    <li><a href=\"http://data.bibliotheken.nl/id/dataset/rise-alba.rdf\">application/rdf+xml</a></li>\r\n                    <li><a href=\"http://data.bibliotheken.nl/id/dataset/rise-alba.ttl\">text/turtle</a></li>\r\n                    <li><a href=\"http://data.bibliotheken.nl/id/dataset/rise-alba.nt\">application/n-triples</a></li>\r\n                    <li><a href=\"http://data.bibliotheken.nl/id/dataset/rise-alba.json\">application/ld+json</a></li>\r\n                </ul>\r\n\r\n                <script type=\"application/ld+json\">\r\n                    { \"@context\":\"https://schema.org/\", \"@type\":\"Dataset\", \"@id\":\"http://data.bibliotheken.nl/id/dataset/rise-alba\", \"name\":\"Alba amicorum van de Koninklijke Bibliotheek\", \"description\":\"Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.\", \"url\":\"https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum\", \"identifier\": \"http://data.bibliotheken.nl/id/dataset/rise-alba\", \"keywords\":[ \"alba amicorum\" ], \"license\" : \"http://creativecommons.org/publicdomain/zero/1.0/\", \"publisher\":{ \"@type\":\"Organization\", \"@id\": \"https://www.kb.nl/\", \"name\":\"Koninklijke Bibliotheek\", \"sameAs\":\"https://ror.org/02w4jbg70\" }, \"distribution\":[ { \"@type\":\"DataDownload\", \"encodingFormat\":\"application/rdf+xml\", \"contentUrl\":\"http://data.bibliotheken.nl/id/dataset/rise-alba.rdf\" }, { \"@type\":\"DataDownload\", \"encodingFormat\":\"text/turtle\", \"contentUrl\":\"http://data.bibliotheken.nl/id/dataset/rise-alba.ttl\" }, { \"@type\":\"DataDownload\", \"encodingFormat\":\"application/n-triples\", \"contentUrl\":\"http://data.bibliotheken.nl/id/dataset/rise-alba.nt\" }, { \"@type\":\"DataDownload\", \"encodingFormat\":\"application/ld+json\", \"contentUrl\":\"http://data.bibliotheken.nl/id/dataset/rise-alba.json\" } ] }\r\n                </script>\r\n\r\n                <!-- niet opgenomen: dateCreated=2019-05-21  dateModified=2019-08-15  -->\r\n            </div>\r\n        </div>\r\n</body>\r\n\r\n</html>",
+        "response": "<!DOCTYPE html>\r\n<html lang=\"nl\">\r\n\r\n<head>\r\n    <meta charset=\"utf-8\">\r\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\">\r\n    <meta name=\"description\" content=\"Datasets\">\r\n    <link href=\"../assets/imgs/nde_logo_simplified.png\" rel=\"icon\" type=\"image/png\">\r\n    <title>Dataset Descriptions</title>\r\n    <link rel=\"stylesheet\" href=\"https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css\" integrity=\"sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T\" crossorigin=\"anonymous\">\r\n    <link href=\"../assets/css/main.css\" rel=\"stylesheet\" type=\"text/css\">\r\n</head>\r\n\r\n<body class=\"withNavbar withSink\">\r\n    <nav class=\"navbar fixed-top \">\r\n        <div class=\"navbar-content\">\r\n            <div class=\"navbar-icon\">\r\n                <a class=\"navbar-brand\" href=\"../\">\r\n                    <img alt=\"Dataset Descriptions home\" src=\"../assets/imgs/nde_logo.png\">\r\n                </a>\r\n            </div>\r\n            <div class=\"navbar-title\">\r\n                <a class=\"navbar-brand\" href=\"../\">Dataset Descriptions</a>|&nbsp;&nbsp;&nbsp;<a href=\"index.html\">Datasets KB</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;Alba amicorum van de Koninklijke Bibliotheek\r\n            </div>\r\n        </div>\r\n    </nav>\r\n    <div class=\"container\">\r\n        <div class=\"row\">\r\n            <div class=\"col\" style=\"text-align:center;\">\r\n                <h1>Alba amicorum van de Koninklijke Bibliotheek</h1>\r\n                <p>Datasetbeschrijving in JSON-LD volgens schema.org/Dataset + <a href=\"https://developers.google.com/search/docs/data-types/dataset\">Google documentatie</a></p>\r\n            </div>\r\n        </div>\r\n\r\n        <div class=\"row\">\r\n\r\n            <div class=\"col\">\r\n                <h3>Name</h3>\r\n                <p>Alba amicorum van de Koninklijke Bibliotheek</p>\r\n                <h3>Description</h3>\r\n                <p>Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.</p>\r\n                <h3>URL</h3>\r\n                <p><a href=\"https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum\">https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum</a></p>\r\n                <h3>Identifier</h3>\r\n                <p>http://data.bibliotheken.nl/id/dataset/rise-alba</p>\r\n\r\n                <h3>Keywords</h3>\r\n                <p>alba amicorum</p>\r\n                <h3>License</h3>\r\n                <p><a href=\"http://creativecommons.org/publicdomain/zero/1.0/\">CC-0 (Public domain)</a></p>\r\n                <h3>Creator</h3>\r\n                <p><a href=\"https://www.kb.nl/\">Koninklijke Bibliotheek</a> (https://ror.org/02w4jbg70)</p>\r\n                <h2>Distributions</h2>\r\n\r\n                <ul>\r\n                    <li><a href=\"http://data.bibliotheken.nl/id/dataset/rise-alba.rdf\">application/rdf+xml</a></li>\r\n                    <li><a href=\"http://data.bibliotheken.nl/id/dataset/rise-alba.ttl\">text/turtle</a></li>\r\n                    <li><a href=\"http://data.bibliotheken.nl/id/dataset/rise-alba.nt\">application/n-triples</a></li>\r\n                    <li><a href=\"http://data.bibliotheken.nl/id/dataset/rise-alba.json\">application/ld+json</a></li>\r\n                </ul>\r\n\r\n                <script type=\"application/ld+json\">\r\n                    { \"@context\":\"https://schema.org/\", \"@type\":\"Dataset\", \"@id\":\"http://data.bibliotheken.nl/id/dataset/rise-alba\", \"name\":\"Alba amicorum van de Koninklijke Bibliotheek\", \"description\":\"Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.\", \"url\":\"https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum\", \"identifier\": \"http://data.bibliotheken.nl/id/dataset/rise-alba\", \"keywords\":[ \"alba amicorum\" ], \"license\" : \"http://creativecommons.org/publicdomain/zero/1.0/\", \"publisher\":{ \"@type\":\"Organization\", \"@id\": \"https://www.kb.nl/\", \"name\":\"Koninklijke Bibliotheek\", \"sameAs\":\"https://ror.org/02w4jbg70\" }, \"distribution\":[ { \"@type\":\"DataDownload\", \"encodingFormat\":\"application/rdf+xml\", \"contentUrl\":\"http://data.bibliotheken.nl/id/dataset/rise-alba.rdf\" }, { \"@type\":\"DataDownload\", \"encodingFormat\":\"text/turtle\", \"contentUrl\":\"http://data.bibliotheken.nl/id/dataset/rise-alba.ttl\" }, { \"@type\":\"DataDownload\", \"encodingFormat\":\"application/n-triples\", \"contentUrl\":\"http://data.bibliotheken.nl/id/dataset/rise-alba.nt\" }, { \"@type\":\"DataDownload\", \"encodingFormat\":\"application/ld+json\", \"contentUrl\":\"http://data.bibliotheken.nl/id/dataset/rise-alba.json\" } ] }\r\n                </script>\r\n\r\n                <!-- niet opgenomen: dateCreated=2019-05-21  dateModified=2019-08-15  -->\r\n            </div>\r\n        </div>\r\n</body>\r\n\r\n</html>\r\n",
         "rawHeaders": [
             "Date",
-            "Thu, 22 Apr 2021 10:46:08 GMT",
+            "Tue, 14 Jun 2022 08:59:28 GMT",
             "Content-Type",
             "text/html",
             "Content-Length",
-            "4842",
+            "4846",
             "Connection",
             "keep-alive",
             "Last-Modified",
-            "Sun, 17 Jan 2021 16:38:15 GMT",
+            "Fri, 17 Dec 2021 18:09:19 GMT",
             "ETag",
-            "\"600467f7-12ea\"",
+            "\"61bcd24f-12ee\"",
             "Accept-Ranges",
             "bytes",
             "Strict-Transport-Security",
@@ -32,6 +32,49 @@
         "path": "/",
         "body": "",
         "status": 200,
+        "response": "\n<!DOCTYPE html>\n<html lang=\"en\">\n<!-- Generated from Home.j2 -->\n    <head>\n    <title>Schema.org - Schema.org </title>\n    <meta charset=\"utf-8\" >\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <meta name=\"description\" content=\"Schema.org is a set of extensible schemas that enables webmasters to embed\n    structured data on their web pages for use by search engines and other applications.\" />\n    <link rel=\"shortcut icon\" type=\"image/png\" href=\"/docs/favicon.ico\"/>\n    <link rel=\"stylesheet\" type=\"text/css\" href=\"/docs/schemaorg.css\" />\n    <link rel=\"stylesheet\" type=\"text/css\" href=\"/docs/devnote.css\" />\n    <link rel=\"stylesheet\" type=\"text/css\" href=\"/docs/prettify.css\" />\n    <link rel=\"stylesheet\" type=\"text/css\" href=\"/docs/devnote.css\" />\n    <script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js\"></script>\n    <script src=\"/docs/schemaorg.js\"></script>\n    \n    \n</head>\n<body>\n    <!-- Header start from PageHeader.j2 -->\n<!-- Static Doc Insert PageHead -->\n\n<div id=\"container\">\n  <div id=\"headerwrap\">\n    <div id=\"pagehead1\" class=\"mobnav\">\n      <div class=\"header-block\" id=\"pagehead-left\">\n        <div id=\"sitename2\">\n          <a href=\"/\">Schema.org</a>\n        </div>\n        <div id=\"navicon2\">\n          <a href=\"javascript:void(0);\" class=\"icon\" onclick=\"navFunction()\"><img height=\"40\" alt=\"menu\" src=\"/docs/menu-bar-icon-white.png\"></a>\n        </div>\n      </div>\n      <div  class=\"header-block header-block-right mobnav\" id=\"pagehead-mid\">\n        <div id=\"selectionbar2\">\n          <ul>\n            <li>\n              <a href=\"/docs/documents.html\">Docs</a>\n            </li>\n            <li>\n              <a href=\"/docs/schemas.html\">Schemas</a>\n            </li>\n            <li>\n              <a href=\"https://validator.schema.org\">Validate</a>\n            </li>\n            <li>\n              <a href=\"/docs/about.html\">About</a>\n            </li>\n          <!--\n             <li>\n              <a href=\"/\">Home</a>\n            </li>\n          -->\n          </ul>\n        </div> <!-- selectionbar -->\n      </div>\n      <div  class=\"header-block header-block-right mobnav\" id=\"pagehead-right\">\n        <div id=\"cse-search-form2\">\n            <div class=\"gcse-searchbox-only\" data-resultsUrl=\"/docs/search_results.html\"></div>\n        </div>\n      </div>\n    </div>\n  </div>\n  <div class=\"devnote\"><b>Note</b>: you are viewing the development\n    version of <a href=\"https://schema.org\">Schema.org</a>.\n    See <a href=\"/docs/howwework.html\">How we work</a> for more details.\n  </div>\n</div>\n  \n \n<!-- Header end from PageHeader.j2 -->\n    <div id=\"mainContent\">\n      <h1>Welcome to Schema.org</h1>\n\n\n        <p>\n            Schema.org is a collaborative, community activity with a mission to create,\n            maintain, and promote schemas for structured data on the\n            Internet, on web pages, in email messages, and beyond.\n        </p>\n\n        <p>\n            Schema.org vocabulary can be used with many different encodings,\n            including RDFa, Microdata and JSON-LD. These vocabularies cover\n            entities, relationships between entities and actions, and can\n            easily be extended through a well-documented extension model. Over 10 million sites use\n            Schema.org to markup their web pages and email messages.\n            Many applications from Google, Microsoft, Pinterest, Yandex and others\n            already use these vocabularies to power rich, extensible experiences.\n        </p>\n        <p>\n            Founded by Google, Microsoft, Yahoo and Yandex,\n            Schema.org vocabularies are developed by an open <a href=\"https://www.w3.org/community/schemaorg\">community</a> process,\n            using the <a\n            href=\"http://lists.w3.org/Archives/Public/public-schemaorg\">public-schemaorg@w3.org</a>\n             mailing list and through <a href=\"http://github.com/schemaorg/schemaorg\">GitHub</a>.\n        </p>\n\n        <p>\n           A shared vocabulary makes it easier for webmasters and developers to decide\n           on a schema and get the maximum benefit for their efforts.\n           It is in this spirit that the founders, together with the\n           larger community have come together - to provide a shared collection of schemas.\n         </p>\n\n        <p>\n            We invite you to <a href=\"docs/gs.html\">get started</a>!\n        </p>\n        <p>\n            View our blog at <a href=\"http://blog.schema.org\">blog.schema.org</a> or see <a href=\"/docs/releases.html\">release history</a> for version 14.0.\n        </p>\n\n        <br/>\n    </div> <!-- mainContent -->\n\t<!-- Footer start from PageFooter.j2 -->\n    \n    <div id=\"footer\"><p>\n      <div id=\"versioninfo\">\n          V14.0<br/>\n          2022-03-17\n      </div>\n      <a href=\"/docs/terms.html\">Terms and conditions</a>\n    </div>\n\n    <script>\n      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){\n      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),\n      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)\n      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');\n\n      ga('create', 'UA-52672119-1', 'auto');\n      ga('send', 'pageview');\n\n    </script>\n<!-- Footer end from PageFooter.j2 -->\n</body>\n</html>",
+        "rawHeaders": [
+            "Access-Control-Allow-Credentials",
+            "true",
+            "Access-Control-Allow-Headers",
+            "Accept",
+            "Access-Control-Allow-Methods",
+            "GET",
+            "Access-Control-Allow-Origin",
+            "*",
+            "Access-Control-Expose-Headers",
+            "Link",
+            "Link",
+            "</docs/jsonldcontext.jsonld>; rel=\"alternate\"; type=\"application/ld+json\"",
+            "X-Cloud-Trace-Context",
+            "f9092d964e446f99d1a293bb2fbb0940",
+            "Server",
+            "Google Frontend",
+            "Content-Length",
+            "5368",
+            "Date",
+            "Tue, 14 Jun 2022 08:50:16 GMT",
+            "Expires",
+            "Tue, 14 Jun 2022 09:00:16 GMT",
+            "Cache-Control",
+            "public, max-age=600",
+            "Age",
+            "552",
+            "ETag",
+            "\"cgLTzg\"",
+            "Content-Type",
+            "text/html",
+            "Alt-Svc",
+            "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\""
+        ],
+        "responseIsBinary": false
+    },
+    {
+        "scope": "https://schema.org:443",
+        "method": "GET",
+        "path": "/docs/jsonldcontext.jsonld",
+        "body": "",
+        "status": 200,
         "response": {
             "@context": {
                 "type": "@type",
@@ -40,16 +83,34 @@
                     "@id": "rdf:HTML"
                 },
                 "@vocab": "http://schema.org/",
+                "csvw": "http://www.w3.org/ns/csvw#",
+                "dc": "http://purl.org/dc/elements/1.1/",
+                "dcat": "http://www.w3.org/ns/dcat#",
+                "dcmitype": "http://purl.org/dc/dcmitype/",
+                "dcterms": "http://purl.org/dc/terms/",
+                "dcam": "http://purl.org/dc/dcam/",
+                "doap": "http://usefulinc.com/ns/doap#",
+                "foaf": "http://xmlns.com/foaf/0.1/",
+                "odrl": "http://www.w3.org/ns/odrl/2/",
+                "org": "http://www.w3.org/ns/org#",
+                "owl": "http://www.w3.org/2002/07/owl#",
+                "prof": "http://www.w3.org/ns/dx/prof/",
+                "prov": "http://www.w3.org/ns/prov#",
+                "qb": "http://purl.org/linked-data/cube#",
                 "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
                 "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
-                "xsd": "http://www.w3.org/2001/XMLSchema#",
                 "schema": "http://schema.org/",
-                "owl": "http://www.w3.org/2002/07/owl#",
-                "dc": "http://purl.org/dc/elements/1.1/",
+                "sh": "http://www.w3.org/ns/shacl#",
+                "skos": "http://www.w3.org/2004/02/skos/core#",
+                "sosa": "http://www.w3.org/ns/sosa/",
+                "ssn": "http://www.w3.org/ns/ssn/",
+                "time": "http://www.w3.org/2006/time#",
+                "vann": "http://purl.org/vocab/vann/",
+                "void": "http://rdfs.org/ns/void#",
+                "xsd": "http://www.w3.org/2001/XMLSchema#",
+                "xml": "http://www.w3.org/XML/1998/namespace",
                 "dct": "http://purl.org/dc/terms/",
                 "dctype": "http://purl.org/dc/dcmitype/",
-                "void": "http://rdfs.org/ns/void#",
-                "dcat": "http://www.w3.org/ns/dcat#",
                 "3DModel": {
                     "@id": "schema:3DModel"
                 },
@@ -107,6 +168,9 @@
                 "AdultEntertainment": {
                     "@id": "schema:AdultEntertainment"
                 },
+                "AdultOrientedEnumeration": {
+                    "@id": "schema:AdultOrientedEnumeration"
+                },
                 "AdvertiserContentArticle": {
                     "@id": "schema:AdvertiserContentArticle"
                 },
@@ -130,6 +194,9 @@
                 },
                 "AlbumRelease": {
                     "@id": "schema:AlbumRelease"
+                },
+                "AlcoholConsideration": {
+                    "@id": "schema:AlcoholConsideration"
                 },
                 "AlignmentObject": {
                     "@id": "schema:AlignmentObject"
@@ -160,6 +227,9 @@
                 },
                 "AnatomicalSystem": {
                     "@id": "schema:AnatomicalSystem"
+                },
+                "AndroidPlatform": {
+                    "@id": "schema:AndroidPlatform"
                 },
                 "Anesthesia": {
                     "@id": "schema:Anesthesia"
@@ -232,6 +302,9 @@
                 },
                 "AudioObject": {
                     "@id": "schema:AudioObject"
+                },
+                "AudioObjectSnapshot": {
+                    "@id": "schema:AudioObjectSnapshot"
                 },
                 "Audiobook": {
                     "@id": "schema:Audiobook"
@@ -325,6 +398,9 @@
                 },
                 "BikeStore": {
                     "@id": "schema:BikeStore"
+                },
+                "BioChemEntity": {
+                    "@id": "schema:BioChemEntity"
                 },
                 "Blog": {
                     "@id": "schema:Blog"
@@ -569,6 +645,9 @@
                 "CheckoutPage": {
                     "@id": "schema:CheckoutPage"
                 },
+                "ChemicalSubstance": {
+                    "@id": "schema:ChemicalSubstance"
+                },
                 "ChildCare": {
                     "@id": "schema:ChildCare"
                 },
@@ -794,6 +873,9 @@
                 "DanceGroup": {
                     "@id": "schema:DanceGroup"
                 },
+                "DangerousGoodConsideration": {
+                    "@id": "schema:DangerousGoodConsideration"
+                },
                 "DataCatalog": {
                     "@id": "schema:DataCatalog"
                 },
@@ -869,6 +951,9 @@
                 "DemoAlbum": {
                     "@id": "schema:DemoAlbum"
                 },
+                "DemoGameAvailability": {
+                    "@id": "schema:DemoGameAvailability"
+                },
                 "Dentist": {
                     "@id": "schema:Dentist"
                 },
@@ -889,6 +974,9 @@
                 },
                 "Dermatology": {
                     "@id": "schema:Dermatology"
+                },
+                "DesktopWebPlatform": {
+                    "@id": "schema:DesktopWebPlatform"
                 },
                 "DiabeticDiet": {
                     "@id": "schema:DiabeticDiet"
@@ -925,6 +1013,9 @@
                 },
                 "DigitalFormat": {
                     "@id": "schema:DigitalFormat"
+                },
+                "DigitalPlatformEnumeration": {
+                    "@id": "schema:DigitalPlatformEnumeration"
                 },
                 "DisabilitySupport": {
                     "@id": "schema:DisabilitySupport"
@@ -1307,11 +1398,17 @@
                 "FourWheelDriveConfiguration": {
                     "@id": "schema:FourWheelDriveConfiguration"
                 },
+                "FreeReturn": {
+                    "@id": "schema:FreeReturn"
+                },
                 "Friday": {
                     "@id": "schema:Friday"
                 },
                 "FrontWheelDriveConfiguration": {
                     "@id": "schema:FrontWheelDriveConfiguration"
+                },
+                "FullGameAvailability": {
+                    "@id": "schema:FullGameAvailability"
                 },
                 "FullRefund": {
                     "@id": "schema:FullRefund"
@@ -1330,6 +1427,9 @@
                 },
                 "Game": {
                     "@id": "schema:Game"
+                },
+                "GameAvailabilityEnumeration": {
+                    "@id": "schema:GameAvailabilityEnumeration"
                 },
                 "GamePlayMode": {
                     "@id": "schema:GamePlayMode"
@@ -1355,8 +1455,14 @@
                 "GenderType": {
                     "@id": "schema:GenderType"
                 },
+                "Gene": {
+                    "@id": "schema:Gene"
+                },
                 "GeneralContractor": {
                     "@id": "schema:GeneralContractor"
+                },
+                "GenericWebPlatform": {
+                    "@id": "schema:GenericWebPlatform"
                 },
                 "Genetic": {
                     "@id": "schema:Genetic"
@@ -1475,6 +1581,9 @@
                 "HealthTopicContent": {
                     "@id": "schema:HealthTopicContent"
                 },
+                "HealthcareConsideration": {
+                    "@id": "schema:HealthcareConsideration"
+                },
                 "HearingImpairedSupported": {
                     "@id": "schema:HearingImpairedSupported"
                 },
@@ -1556,6 +1665,9 @@
                 "HyperTocEntry": {
                     "@id": "schema:HyperTocEntry"
                 },
+                "IOSPlatform": {
+                    "@id": "schema:IOSPlatform"
+                },
                 "IceCreamShop": {
                     "@id": "schema:IceCreamShop"
                 },
@@ -1567,6 +1679,9 @@
                 },
                 "ImageObject": {
                     "@id": "schema:ImageObject"
+                },
+                "ImageObjectSnapshot": {
+                    "@id": "schema:ImageObjectSnapshot"
                 },
                 "ImagingTest": {
                     "@id": "schema:ImagingTest"
@@ -1871,6 +1986,9 @@
                 "MediaReview": {
                     "@id": "schema:MediaReview"
                 },
+                "MediaReviewItem": {
+                    "@id": "schema:MediaReviewItem"
+                },
                 "MediaSubscription": {
                     "@id": "schema:MediaSubscription"
                 },
@@ -2033,6 +2151,9 @@
                 "MerchantReturnPolicy": {
                     "@id": "schema:MerchantReturnPolicy"
                 },
+                "MerchantReturnPolicySeasonalOverride": {
+                    "@id": "schema:MerchantReturnPolicySeasonalOverride"
+                },
                 "MerchantReturnUnlimitedWindow": {
                     "@id": "schema:MerchantReturnUnlimitedWindow"
                 },
@@ -2065,6 +2186,12 @@
                 },
                 "MobilePhoneStore": {
                     "@id": "schema:MobilePhoneStore"
+                },
+                "MobileWebPlatform": {
+                    "@id": "schema:MobileWebPlatform"
+                },
+                "MolecularEntity": {
+                    "@id": "schema:MolecularEntity"
                 },
                 "Monday": {
                     "@id": "schema:Monday"
@@ -2194,6 +2321,9 @@
                 },
                 "NailSalon": {
                     "@id": "schema:NailSalon"
+                },
+                "NarcoticConsideration": {
+                    "@id": "schema:NarcoticConsideration"
                 },
                 "Neck": {
                     "@id": "schema:Neck"
@@ -2441,6 +2571,9 @@
                 "Online": {
                     "@id": "schema:Online"
                 },
+                "OnlineBusiness": {
+                    "@id": "schema:OnlineBusiness"
+                },
                 "OnlineEventAttendanceMode": {
                     "@id": "schema:OnlineEventAttendanceMode"
                 },
@@ -2449,6 +2582,9 @@
                 },
                 "OnlineOnly": {
                     "@id": "schema:OnlineOnly"
+                },
+                "OnlineStore": {
+                    "@id": "schema:OnlineStore"
                 },
                 "OpenTrial": {
                     "@id": "schema:OpenTrial"
@@ -2708,6 +2844,9 @@
                 "PlayAction": {
                     "@id": "schema:PlayAction"
                 },
+                "PlayGameAction": {
+                    "@id": "schema:PlayGameAction"
+                },
                 "Playground": {
                     "@id": "schema:Playground"
                 },
@@ -2849,6 +2988,9 @@
                 "PropertyValueSpecification": {
                     "@id": "schema:PropertyValueSpecification"
                 },
+                "Protein": {
+                    "@id": "schema:Protein"
+                },
                 "Protozoa": {
                     "@id": "schema:Protozoa"
                 },
@@ -2981,6 +3123,9 @@
                 "RecyclingCenter": {
                     "@id": "schema:RecyclingCenter"
                 },
+                "ReducedRelevanceForChildrenConsideration": {
+                    "@id": "schema:ReducedRelevanceForChildrenConsideration"
+                },
                 "RefundTypeEnumeration": {
                     "@id": "schema:RefundTypeEnumeration"
                 },
@@ -3034,6 +3179,9 @@
                 },
                 "ReportedDoseSchedule": {
                     "@id": "schema:ReportedDoseSchedule"
+                },
+                "ResearchOrganization": {
+                    "@id": "schema:ResearchOrganization"
                 },
                 "ResearchProject": {
                     "@id": "schema:ResearchProject"
@@ -3101,8 +3249,35 @@
                 "ReturnAction": {
                     "@id": "schema:ReturnAction"
                 },
+                "ReturnAtKiosk": {
+                    "@id": "schema:ReturnAtKiosk"
+                },
+                "ReturnByMail": {
+                    "@id": "schema:ReturnByMail"
+                },
+                "ReturnFeesCustomerResponsibility": {
+                    "@id": "schema:ReturnFeesCustomerResponsibility"
+                },
                 "ReturnFeesEnumeration": {
                     "@id": "schema:ReturnFeesEnumeration"
+                },
+                "ReturnInStore": {
+                    "@id": "schema:ReturnInStore"
+                },
+                "ReturnLabelCustomerResponsibility": {
+                    "@id": "schema:ReturnLabelCustomerResponsibility"
+                },
+                "ReturnLabelDownloadAndPrint": {
+                    "@id": "schema:ReturnLabelDownloadAndPrint"
+                },
+                "ReturnLabelInBox": {
+                    "@id": "schema:ReturnLabelInBox"
+                },
+                "ReturnLabelSourceEnumeration": {
+                    "@id": "schema:ReturnLabelSourceEnumeration"
+                },
+                "ReturnMethodEnumeration": {
+                    "@id": "schema:ReturnMethodEnumeration"
                 },
                 "ReturnShippingFees": {
                     "@id": "schema:ReturnShippingFees"
@@ -3203,6 +3378,9 @@
                 "SearchAction": {
                     "@id": "schema:SearchAction"
                 },
+                "SearchRescueOrganization": {
+                    "@id": "schema:SearchRescueOrganization"
+                },
                 "SearchResultsPage": {
                     "@id": "schema:SearchResultsPage"
                 },
@@ -3241,6 +3419,9 @@
                 },
                 "ServiceChannel": {
                     "@id": "schema:ServiceChannel"
+                },
+                "SexualContentConsideration": {
+                    "@id": "schema:SexualContentConsideration"
                 },
                 "ShareAction": {
                     "@id": "schema:ShareAction"
@@ -3377,6 +3558,9 @@
                 "State": {
                     "@id": "schema:State"
                 },
+                "Statement": {
+                    "@id": "schema:Statement"
+                },
                 "StatisticalPopulation": {
                     "@id": "schema:StatisticalPopulation"
                 },
@@ -3479,6 +3663,9 @@
                 "TaxiVehicleUsage": {
                     "@id": "schema:TaxiVehicleUsage"
                 },
+                "Taxon": {
+                    "@id": "schema:Taxon"
+                },
                 "TechArticle": {
                     "@id": "schema:TechArticle"
                 },
@@ -3538,6 +3725,9 @@
                 },
                 "TireShop": {
                     "@id": "schema:TireShop"
+                },
+                "TobaccoNicotineConsideration": {
+                    "@id": "schema:TobaccoNicotineConsideration"
                 },
                 "TollFree": {
                     "@id": "schema:TollFree"
@@ -3635,6 +3825,9 @@
                 "UnRegisterAction": {
                     "@id": "schema:UnRegisterAction"
                 },
+                "UnclassifiedAdultConsideration": {
+                    "@id": "schema:UnclassifiedAdultConsideration"
+                },
                 "UnemploymentSupport": {
                     "@id": "schema:UnemploymentSupport"
                 },
@@ -3731,11 +3924,17 @@
                 "VideoObject": {
                     "@id": "schema:VideoObject"
                 },
+                "VideoObjectSnapshot": {
+                    "@id": "schema:VideoObjectSnapshot"
+                },
                 "ViewAction": {
                     "@id": "schema:ViewAction"
                 },
                 "VinylFormat": {
                     "@id": "schema:VinylFormat"
+                },
+                "ViolenceConsideration": {
+                    "@id": "schema:ViolenceConsideration"
                 },
                 "VirtualLocation": {
                     "@id": "schema:VirtualLocation"
@@ -3784,6 +3983,9 @@
                 },
                 "Waterfall": {
                     "@id": "schema:Waterfall"
+                },
+                "WeaponConsideration": {
+                    "@id": "schema:WeaponConsideration"
                 },
                 "WearAction": {
                     "@id": "schema:WearAction"
@@ -4188,6 +4390,9 @@
                 "alternativeHeadline": {
                     "@id": "schema:alternativeHeadline"
                 },
+                "alternativeOf": {
+                    "@id": "schema:alternativeOf"
+                },
                 "alumni": {
                     "@id": "schema:alumni"
                 },
@@ -4220,6 +4425,9 @@
                 },
                 "appearance": {
                     "@id": "schema:appearance"
+                },
+                "applicableCountry": {
+                    "@id": "schema:applicableCountry"
                 },
                 "applicableLocation": {
                     "@id": "schema:applicableLocation"
@@ -4258,6 +4466,10 @@
                 },
                 "archiveHeld": {
                     "@id": "schema:archiveHeld"
+                },
+                "archivedAt": {
+                    "@id": "schema:archivedAt",
+                    "@type": "@id"
                 },
                 "area": {
                     "@id": "schema:area"
@@ -4331,11 +4543,24 @@
                 "associatedArticle": {
                     "@id": "schema:associatedArticle"
                 },
+                "associatedClaimReview": {
+                    "@id": "schema:associatedClaimReview"
+                },
+                "associatedDisease": {
+                    "@id": "schema:associatedDisease",
+                    "@type": "@id"
+                },
                 "associatedMedia": {
                     "@id": "schema:associatedMedia"
                 },
+                "associatedMediaReview": {
+                    "@id": "schema:associatedMediaReview"
+                },
                 "associatedPathophysiology": {
                     "@id": "schema:associatedPathophysiology"
+                },
+                "associatedReview": {
+                    "@id": "schema:associatedReview"
                 },
                 "athlete": {
                     "@id": "schema:athlete"
@@ -4460,6 +4685,15 @@
                 },
                 "billingStart": {
                     "@id": "schema:billingStart"
+                },
+                "bioChemInteraction": {
+                    "@id": "schema:bioChemInteraction"
+                },
+                "bioChemSimilarity": {
+                    "@id": "schema:bioChemSimilarity"
+                },
+                "biologicalRole": {
+                    "@id": "schema:biologicalRole"
                 },
                 "biomechnicalClass": {
                     "@id": "schema:biomechnicalClass"
@@ -4660,11 +4894,20 @@
                 "checkoutTime": {
                     "@id": "schema:checkoutTime"
                 },
+                "chemicalComposition": {
+                    "@id": "schema:chemicalComposition"
+                },
+                "chemicalRole": {
+                    "@id": "schema:chemicalRole"
+                },
                 "childMaxAge": {
                     "@id": "schema:childMaxAge"
                 },
                 "childMinAge": {
                     "@id": "schema:childMinAge"
+                },
+                "childTaxon": {
+                    "@id": "schema:childTaxon"
                 },
                 "children": {
                     "@id": "schema:children"
@@ -4677,6 +4920,9 @@
                 },
                 "citation": {
                     "@id": "schema:citation"
+                },
+                "claimInterpreter": {
+                    "@id": "schema:claimInterpreter"
                 },
                 "claimReviewed": {
                     "@id": "schema:claimReviewed"
@@ -4860,6 +5106,12 @@
                 "countriesSupported": {
                     "@id": "schema:countriesSupported"
                 },
+                "countryOfAssembly": {
+                    "@id": "schema:countryOfAssembly"
+                },
+                "countryOfLastProcessing": {
+                    "@id": "schema:countryOfLastProcessing"
+                },
                 "countryOfOrigin": {
                     "@id": "schema:countryOfOrigin"
                 },
@@ -4913,6 +5165,15 @@
                 },
                 "customer": {
                     "@id": "schema:customer"
+                },
+                "customerRemorseReturnFees": {
+                    "@id": "schema:customerRemorseReturnFees"
+                },
+                "customerRemorseReturnLabelSource": {
+                    "@id": "schema:customerRemorseReturnLabelSource"
+                },
+                "customerRemorseReturnShippingFeesAmount": {
+                    "@id": "schema:customerRemorseReturnShippingFeesAmount"
                 },
                 "cutoffTime": {
                     "@id": "schema:cutoffTime"
@@ -5096,6 +5357,9 @@
                 },
                 "differentialDiagnosis": {
                     "@id": "schema:differentialDiagnosis"
+                },
+                "directApply": {
+                    "@id": "schema:directApply"
                 },
                 "director": {
                     "@id": "schema:director"
@@ -5290,6 +5554,9 @@
                     "@id": "schema:embedUrl",
                     "@type": "@id"
                 },
+                "embeddedTextCaption": {
+                    "@id": "schema:embeddedTextCaption"
+                },
                 "emissionsCO2": {
                     "@id": "schema:emissionsCO2"
                 },
@@ -5307,6 +5574,9 @@
                 },
                 "employmentUnit": {
                     "@id": "schema:employmentUnit"
+                },
+                "encodesBioChemEntity": {
+                    "@id": "schema:encodesBioChemEntity"
                 },
                 "encodesCreativeWork": {
                     "@id": "schema:encodesCreativeWork"
@@ -5467,6 +5737,9 @@
                     "@id": "schema:expires",
                     "@type": "Date"
                 },
+                "expressedIn": {
+                    "@id": "schema:expressedIn"
+                },
                 "familyName": {
                     "@id": "schema:familyName"
                 },
@@ -5579,8 +5852,17 @@
                 "funder": {
                     "@id": "schema:funder"
                 },
+                "funding": {
+                    "@id": "schema:funding"
+                },
                 "game": {
                     "@id": "schema:game"
+                },
+                "gameAvailabilityType": {
+                    "@id": "schema:gameAvailabilityType"
+                },
+                "gameEdition": {
+                    "@id": "schema:gameEdition"
                 },
                 "gameItem": {
                     "@id": "schema:gameItem"
@@ -5699,6 +5981,15 @@
                 "handlingTime": {
                     "@id": "schema:handlingTime"
                 },
+                "hasAdultConsideration": {
+                    "@id": "schema:hasAdultConsideration"
+                },
+                "hasBioChemEntityPart": {
+                    "@id": "schema:hasBioChemEntityPart"
+                },
+                "hasBioPolymerSequence": {
+                    "@id": "schema:hasBioPolymerSequence"
+                },
                 "hasBroadcastChannel": {
                     "@id": "schema:hasBroadcastChannel"
                 },
@@ -5754,6 +6045,10 @@
                 "hasMerchantReturnPolicy": {
                     "@id": "schema:hasMerchantReturnPolicy"
                 },
+                "hasMolecularFunction": {
+                    "@id": "schema:hasMolecularFunction",
+                    "@type": "@id"
+                },
                 "hasOccupation": {
                     "@id": "schema:hasOccupation"
                 },
@@ -5768,6 +6063,9 @@
                 },
                 "hasProductReturnPolicy": {
                     "@id": "schema:hasProductReturnPolicy"
+                },
+                "hasRepresentation": {
+                    "@id": "schema:hasRepresentation"
                 },
                 "hasVariant": {
                     "@id": "schema:hasVariant"
@@ -5888,6 +6186,12 @@
                 "inBroadcastLineup": {
                     "@id": "schema:inBroadcastLineup"
                 },
+                "inChI": {
+                    "@id": "schema:inChI"
+                },
+                "inChIKey": {
+                    "@id": "schema:inChIKey"
+                },
                 "inCodeSet": {
                     "@id": "schema:inCodeSet",
                     "@type": "@id"
@@ -6002,6 +6306,9 @@
                 "interestRate": {
                     "@id": "schema:interestRate"
                 },
+                "interpretedAsClaim": {
+                    "@id": "schema:interpretedAsClaim"
+                },
                 "inventoryLevel": {
                     "@id": "schema:inventoryLevel"
                 },
@@ -6031,18 +6338,32 @@
                 "isConsumableFor": {
                     "@id": "schema:isConsumableFor"
                 },
+                "isEncodedByBioChemEntity": {
+                    "@id": "schema:isEncodedByBioChemEntity"
+                },
                 "isFamilyFriendly": {
                     "@id": "schema:isFamilyFriendly"
                 },
                 "isGift": {
                     "@id": "schema:isGift"
                 },
+                "isInvolvedInBiologicalProcess": {
+                    "@id": "schema:isInvolvedInBiologicalProcess",
+                    "@type": "@id"
+                },
                 "isLiveBroadcast": {
                     "@id": "schema:isLiveBroadcast"
+                },
+                "isLocatedInSubcellularLocation": {
+                    "@id": "schema:isLocatedInSubcellularLocation",
+                    "@type": "@id"
                 },
                 "isPartOf": {
                     "@id": "schema:isPartOf",
                     "@type": "@id"
+                },
+                "isPartOfBioChemEntity": {
+                    "@id": "schema:isPartOfBioChemEntity"
                 },
                 "isPlanForApartment": {
                     "@id": "schema:isPlanForApartment"
@@ -6071,6 +6392,9 @@
                 "isicV4": {
                     "@id": "schema:isicV4"
                 },
+                "iso6523Code": {
+                    "@id": "schema:iso6523Code"
+                },
                 "isrcCode": {
                     "@id": "schema:isrcCode"
                 },
@@ -6095,6 +6419,15 @@
                 "itemCondition": {
                     "@id": "schema:itemCondition"
                 },
+                "itemDefectReturnFees": {
+                    "@id": "schema:itemDefectReturnFees"
+                },
+                "itemDefectReturnLabelSource": {
+                    "@id": "schema:itemDefectReturnLabelSource"
+                },
+                "itemDefectReturnShippingFeesAmount": {
+                    "@id": "schema:itemDefectReturnShippingFeesAmount"
+                },
                 "itemListElement": {
                     "@id": "schema:itemListElement"
                 },
@@ -6115,6 +6448,9 @@
                 },
                 "itinerary": {
                     "@id": "schema:itinerary"
+                },
+                "iupacName": {
+                    "@id": "schema:iupacName"
                 },
                 "jobBenefits": {
                     "@id": "schema:jobBenefits"
@@ -6388,6 +6724,9 @@
                 "mediaAuthenticityCategory": {
                     "@id": "schema:mediaAuthenticityCategory"
                 },
+                "mediaItemAppearance": {
+                    "@id": "schema:mediaItemAppearance"
+                },
                 "median": {
                     "@id": "schema:median"
                 },
@@ -6434,7 +6773,8 @@
                     "@id": "schema:merchant"
                 },
                 "merchantReturnDays": {
-                    "@id": "schema:merchantReturnDays"
+                    "@id": "schema:merchantReturnDays",
+                    "@type": "Date"
                 },
                 "merchantReturnLink": {
                     "@id": "schema:merchantReturnLink",
@@ -6468,6 +6808,15 @@
                 },
                 "modifiedTime": {
                     "@id": "schema:modifiedTime"
+                },
+                "molecularFormula": {
+                    "@id": "schema:molecularFormula"
+                },
+                "molecularWeight": {
+                    "@id": "schema:molecularWeight"
+                },
+                "monoisotopicMolecularWeight": {
+                    "@id": "schema:monoisotopicMolecularWeight"
                 },
                 "monthlyMinimumRepaymentAmount": {
                     "@id": "schema:monthlyMinimumRepaymentAmount"
@@ -6516,6 +6865,9 @@
                 },
                 "naturalProgression": {
                     "@id": "schema:naturalProgression"
+                },
+                "negativeNotes": {
+                    "@id": "schema:negativeNotes"
                 },
                 "nerve": {
                     "@id": "schema:nerve"
@@ -6715,6 +7067,13 @@
                 "originAddress": {
                     "@id": "schema:originAddress"
                 },
+                "originalMediaContextDescription": {
+                    "@id": "schema:originalMediaContextDescription"
+                },
+                "originalMediaLink": {
+                    "@id": "schema:originalMediaLink",
+                    "@type": "@id"
+                },
                 "originatesFrom": {
                     "@id": "schema:originatesFrom"
                 },
@@ -6753,6 +7112,9 @@
                 },
                 "parentService": {
                     "@id": "schema:parentService"
+                },
+                "parentTaxon": {
+                    "@id": "schema:parentTaxon"
                 },
                 "parents": {
                     "@id": "schema:parents"
@@ -6906,6 +7268,9 @@
                 "position": {
                     "@id": "schema:position"
                 },
+                "positiveNotes": {
+                    "@id": "schema:positiveNotes"
+                },
                 "possibleComplication": {
                     "@id": "schema:possibleComplication"
                 },
@@ -6935,6 +7300,9 @@
                 },
                 "potentialAction": {
                     "@id": "schema:potentialAction"
+                },
+                "potentialUse": {
+                    "@id": "schema:potentialUse"
                 },
                 "preOp": {
                     "@id": "schema:preOp"
@@ -7341,6 +7709,9 @@
                 "restPeriods": {
                     "@id": "schema:restPeriods"
                 },
+                "restockingFee": {
+                    "@id": "schema:restockingFee"
+                },
                 "result": {
                     "@id": "schema:result"
                 },
@@ -7353,8 +7724,23 @@
                 "returnFees": {
                     "@id": "schema:returnFees"
                 },
+                "returnLabelSource": {
+                    "@id": "schema:returnLabelSource"
+                },
+                "returnMethod": {
+                    "@id": "schema:returnMethod"
+                },
                 "returnPolicyCategory": {
                     "@id": "schema:returnPolicyCategory"
+                },
+                "returnPolicyCountry": {
+                    "@id": "schema:returnPolicyCountry"
+                },
+                "returnPolicySeasonalOverride": {
+                    "@id": "schema:returnPolicySeasonalOverride"
+                },
+                "returnShippingFeesAmount": {
+                    "@id": "schema:returnShippingFeesAmount"
                 },
                 "review": {
                     "@id": "schema:review"
@@ -7553,6 +7939,9 @@
                 "servingSize": {
                     "@id": "schema:servingSize"
                 },
+                "sha256": {
+                    "@id": "schema:sha256"
+                },
                 "sharedContent": {
                     "@id": "schema:sharedContent"
                 },
@@ -7612,6 +8001,9 @@
                 },
                 "slogan": {
                     "@id": "schema:slogan"
+                },
+                "smiles": {
+                    "@id": "schema:smiles"
                 },
                 "smokingAllowed": {
                     "@id": "schema:smokingAllowed"
@@ -7849,6 +8241,12 @@
                 },
                 "taxID": {
                     "@id": "schema:taxID"
+                },
+                "taxonRank": {
+                    "@id": "schema:taxonRank"
+                },
+                "taxonomicRange": {
+                    "@id": "schema:taxonomicRange"
                 },
                 "teaches": {
                     "@id": "schema:teaches"
@@ -8283,26 +8681,53 @@
             "GET",
             "Access-Control-Allow-Origin",
             "*",
-            "Date",
-            "Thu, 22 Apr 2021 10:40:41 GMT",
-            "Expires",
-            "Thu, 22 Apr 2021 10:50:41 GMT",
-            "ETag",
-            "\"z2afww\"",
             "X-Cloud-Trace-Context",
-            "a3f3bebf0adc47eec37099033b478bfe",
-            "Content-Type",
-            "application/ld+json",
+            "b7c5367b664294a603ad0c56dc77e827",
             "Server",
             "Google Frontend",
             "Content-Length",
-            "163023",
-            "Age",
-            "327",
+            "171645",
+            "Date",
+            "Tue, 14 Jun 2022 08:54:35 GMT",
+            "Expires",
+            "Tue, 14 Jun 2022 09:04:35 GMT",
             "Cache-Control",
             "public, max-age=600",
+            "Age",
+            "293",
+            "ETag",
+            "\"cgLTzg\"",
+            "Content-Type",
+            "application/ld+json",
             "Alt-Svc",
-            "h3-29=\":443\"; ma=2592000,h3-T051=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\""
+            "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\""
+        ],
+        "responseIsBinary": false
+    },
+    {
+        "scope": "https://demo.netwerkdigitaalerfgoed.nl:443",
+        "method": "GET",
+        "path": "/datasets/kb/2.html",
+        "body": "",
+        "status": 200,
+        "response": "<!DOCTYPE html>\r\n<html lang=\"nl\">\r\n\r\n<head>\r\n    <meta charset=\"utf-8\">\r\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\">\r\n    <meta name=\"description\" content=\"Datasets\">\r\n    <link href=\"../assets/imgs/nde_logo_simplified.png\" rel=\"icon\" type=\"image/png\">\r\n    <title>Dataset Descriptions</title>\r\n    <link rel=\"stylesheet\" href=\"https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css\" integrity=\"sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T\" crossorigin=\"anonymous\">\r\n    <link href=\"../assets/css/main.css\" rel=\"stylesheet\" type=\"text/css\">\r\n</head>\r\n\r\n<body class=\"withNavbar withSink\">\r\n    <nav class=\"navbar fixed-top \">\r\n        <div class=\"navbar-content\">\r\n            <div class=\"navbar-icon\">\r\n                <a class=\"navbar-brand\" href=\"../\">\r\n                    <img alt=\"Dataset Descriptions home\" src=\"../assets/imgs/nde_logo.png\">\r\n                </a>\r\n            </div>\r\n            <div class=\"navbar-title\">\r\n                <a class=\"navbar-brand\" href=\"../\">Dataset Descriptions</a>|&nbsp;&nbsp;&nbsp;<a href=\"index.html\">Datasets KB</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;Alba amicorum van de Koninklijke Bibliotheek\r\n            </div>\r\n        </div>\r\n    </nav>\r\n    <div class=\"container\">\r\n        <div class=\"row\">\r\n            <div class=\"col\" style=\"text-align:center;\">\r\n                <h1>Alba amicorum van de Koninklijke Bibliotheek</h1>\r\n                <p>Datasetbeschrijving in JSON-LD volgens schema.org/Dataset + <a href=\"https://developers.google.com/search/docs/data-types/dataset\">Google documentatie</a></p>\r\n            </div>\r\n        </div>\r\n\r\n        <div class=\"row\">\r\n\r\n            <div class=\"col\">\r\n                <h3>Name</h3>\r\n                <p>Alba amicorum van de Koninklijke Bibliotheek</p>\r\n                <h3>Description</h3>\r\n                <p>Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.</p>\r\n                <h3>URL</h3>\r\n                <p><a href=\"https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum\">https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum</a></p>\r\n                <h3>Identifier</h3>\r\n                <p>http://data.bibliotheken.nl/id/dataset/rise-alba</p>\r\n\r\n                <h3>Keywords</h3>\r\n                <p>alba amicorum</p>\r\n                <h3>License</h3>\r\n                <p><a href=\"http://creativecommons.org/publicdomain/zero/1.0/\">CC-0 (Public domain)</a></p>\r\n                <h3>Creator</h3>\r\n                <p><a href=\"https://www.kb.nl/\">Koninklijke Bibliotheek</a> (https://ror.org/02w4jbg70)</p>\r\n                <h2>Distributions</h2>\r\n\r\n                <ul>\r\n                    <li><a href=\"http://data.bibliotheken.nl/id/dataset/rise-alba.rdf\">application/rdf+xml</a></li>\r\n                    <li><a href=\"http://data.bibliotheken.nl/id/dataset/rise-alba.ttl\">text/turtle</a></li>\r\n                    <li><a href=\"http://data.bibliotheken.nl/id/dataset/rise-alba.nt\">application/n-triples</a></li>\r\n                    <li><a href=\"http://data.bibliotheken.nl/id/dataset/rise-alba.json\">application/ld+json</a></li>\r\n                </ul>\r\n\r\n                <script type=\"application/ld+json\">\r\n                    { \"@context\":\"https://schema.org/\", \"@type\":\"Dataset\", \"@id\":\"http://data.bibliotheken.nl/id/dataset/rise-alba\", \"name\":\"Alba amicorum van de Koninklijke Bibliotheek\", \"description\":\"Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.\", \"url\":\"https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum\", \"identifier\": \"http://data.bibliotheken.nl/id/dataset/rise-alba\", \"keywords\":[ \"alba amicorum\" ], \"license\" : \"http://creativecommons.org/publicdomain/zero/1.0/\", \"publisher\":{ \"@type\":\"Organization\", \"@id\": \"https://www.kb.nl/\", \"name\":\"Koninklijke Bibliotheek\", \"sameAs\":\"https://ror.org/02w4jbg70\" }, \"distribution\":[ { \"@type\":\"DataDownload\", \"encodingFormat\":\"application/rdf+xml\", \"contentUrl\":\"http://data.bibliotheken.nl/id/dataset/rise-alba.rdf\" }, { \"@type\":\"DataDownload\", \"encodingFormat\":\"text/turtle\", \"contentUrl\":\"http://data.bibliotheken.nl/id/dataset/rise-alba.ttl\" }, { \"@type\":\"DataDownload\", \"encodingFormat\":\"application/n-triples\", \"contentUrl\":\"http://data.bibliotheken.nl/id/dataset/rise-alba.nt\" }, { \"@type\":\"DataDownload\", \"encodingFormat\":\"application/ld+json\", \"contentUrl\":\"http://data.bibliotheken.nl/id/dataset/rise-alba.json\" } ] }\r\n                </script>\r\n\r\n                <!-- niet opgenomen: dateCreated=2019-05-21  dateModified=2019-08-15  -->\r\n            </div>\r\n        </div>\r\n</body>\r\n\r\n</html>\r\n",
+        "rawHeaders": [
+            "Date",
+            "Tue, 14 Jun 2022 08:59:28 GMT",
+            "Content-Type",
+            "text/html",
+            "Content-Length",
+            "4846",
+            "Connection",
+            "keep-alive",
+            "Last-Modified",
+            "Fri, 17 Dec 2021 18:09:19 GMT",
+            "ETag",
+            "\"61bcd24f-12ee\"",
+            "Accept-Ranges",
+            "bytes",
+            "Strict-Transport-Security",
+            "max-age=15724800; includeSubDomains"
         ],
         "responseIsBinary": false
     }
