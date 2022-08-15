@@ -64,7 +64,7 @@
     "jsonld-streaming-parser": "^3.0.0",
     "microdata-rdf-streaming-parser": "^2.0.0",
     "nock": "^13.2.6",
-    "rdfa-streaming-parser": "^1.5.0",
+    "rdfa-streaming-parser": "^2.0.0",
     "ts-jest": "^27.0.7",
     "ts-node": "^10.4.0",
     "tsc-watch": "^5.0.2",
