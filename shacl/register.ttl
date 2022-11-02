@@ -143,9 +143,8 @@ reg:DistributionContentUrlProperty a sh:PropertyShape ;
 reg:DistributionEncodingFormatProperty a sh:PropertyShape ;
     rdfs:comment "Het MIME-formaat van de distributie, bijvoorbeeld application/sparql-query voor een SPARL-endpoint of application/ld+json voor een datadump die is geserialiseerd als JSON-LD."@nl, "The distribution's MIME format, for example application/sparql-query for a SPARL endpoint or application/ld+json for a data dump serialized as JSON-LD."@en ;
     sh:minCount 1 ;
-    sh:maxCount 1 ;
     sh:path schema:encodingFormat ;
-    sh:message "Een dataset distributie dient een encoding format te bevatten"@nl, "A dataset distribution must contain one encoding format"@en ;
+    sh:message "Een dataset distributie dient minstens 1 encoding format te bevatten"@nl, "A dataset distribution must contain at least one encoding format"@en ;
 .
 
 reg:SchemaDatasetProperty a sh:PropertyShape ;
