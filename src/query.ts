@@ -19,6 +19,7 @@ const source = 'source';
 const keyword = 'keyword';
 const mainEntityOfPage = 'mainEntityOfPage';
 const version = 'version';
+const includedInDataCatalog = 'includedInDataCatalog';
 
 const creatorName = 'creator_name';
 const creatorEmail = 'creator_email';
@@ -69,6 +70,7 @@ const datasetMapping = new Map([
   // [temporal, dct('temporal')],
   [mainEntityOfPage, dcat('landingPage')],
   [version, owl('versionInfo')],
+  [includedInDataCatalog, dct('isPartOf')],
 ]);
 
 export const creatorMapping = new Map([
@@ -146,6 +148,7 @@ export const selectQuery = `
       OPTIONAL { ?${dataset} dct:source ?${source} }
       OPTIONAL { ?${dataset} dcat:keyword ?${keyword} }
       OPTIONAL { ?${dataset} owl:versionInfo ?${version} }
+      OPTIONAL { ?${dataset} dct:isPartOf ?${includedInDataCatalog} }
       OPTIONAL { ?${dataset} dcat:landingPage ?${mainEntityOfPage} }
     }
   } LIMIT ${sparqlLimit}`;
@@ -277,6 +280,7 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL { ?${dataset} ${prefix}:isBasedOnUrl ?${source} } 
     OPTIONAL { ?${dataset} ${prefix}:keywords ?${keyword} }
     OPTIONAL { ?${dataset} ${prefix}:version ?${version} }
+    OPTIONAL { ?${dataset} ${prefix}:includedInDataCatalog ?${includedInDataCatalog} }
     OPTIONAL { ?${dataset} ${prefix}:mainEntityOfPage ?${mainEntityOfPage} }
 `;
 }
