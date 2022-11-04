@@ -92,6 +92,13 @@ reg:OrganizationShape
         # reg:SchemaSameAsProperty
 .
 
+reg:PersonShape
+    a sh:NodeShape ;
+    sh:class schema:Person ;
+    sh:property reg:PersonNameProperty ;
+    sh:severity sh:Warning ;
+.
+
 reg:DateTimeShape a sh:NodeShape ;
     sh:or (
         [ sh:datatype schema:Date ]
@@ -104,8 +111,6 @@ reg:DateTimeShape a sh:NodeShape ;
     sh:severity sh:Warning ;
 .
 
-# TODO
-# reg:PublisherShape
 
 #
 # Property shapes
@@ -129,7 +134,17 @@ reg:OrganizationNameProperty a sh:PropertyShape ;
         [ sh:datatype xsd:string ]
         [ sh:datatype rdf:langString ]
     ) ;
-    sh:message "Een organisatie moet een naam hebben"@nl, "An organization must contain a name"@en ;
+    sh:message "Een organisatie moet een naam hebben"@nl, "An organization must have a name"@en ;
+.
+
+reg:PersonNameProperty a sh:PropertyShape ;
+    sh:path schema:name ;
+    sh:minCount 1 ;
+    sh:or (
+        [ sh:datatype xsd:string ]
+        [ sh:datatype rdf:langString ]
+    ) ;
+    sh:message "Een persoon moet een naam hebben"@nl, "A person must have a name"@en ;
 .
 
 reg:DistributionContentUrlProperty a sh:PropertyShape ;
@@ -231,21 +246,19 @@ reg:SchemaDateModifiedProperty a sh:PropertyShape ;
 reg:SchemaCreatorProperty a sh:PropertyShape ;
     sh:path schema:creator ;
     sh:minCount 0 ;
-    sh:class schema:Organization ;
-    sh:node reg:OrganizationShape ;
+    sh:or ( [ sh:node reg:OrganizationShape ] [ sh:node reg:PersonShape ] );
     sh:name "Persoon of organisatie die de dataset heeft gemaakt"@nl, "Person or organisation which created the dataset"@en ;
     sh:message "Een datasetbeschrijving dient een maker te bevatten"@nl, "A dataset description should have a creator"@en ;
 .
 
 reg:SchemaPublisherProperty a sh:PropertyShape ;
     sh:path schema:publisher ;
+    sh:or ( [ sh:node reg:OrganizationShape ] [ sh:node reg:PersonShape ] );
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:severity sh:Warning ;
     sh:name "Persoon of organisatie die de dataset heeft gepubliceerd"@nl, "Person or organization that published the dataset"@en ;
     sh:message "Er moet een uitgever gespecificeerd zijn"@nl, "A publisher must be specified"@en ;
-    sh:class schema:Organization ;
-    sh:node reg:OrganizationShape ;
 .
 
 reg:SchemaDatasetLicenseProperty a sh:PropertyShape ;

@@ -60,7 +60,7 @@ describe('Fetch', () => {
 
     expect(datasets).toHaveLength(1);
     const dataset = datasets[0];
-    expect(dataset.size).toBe(25);
+    expect(dataset.size).toBe(22);
     expect(
       dataset.has(
         factory.quad(

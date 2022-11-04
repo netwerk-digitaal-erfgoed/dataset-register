@@ -8,8 +8,10 @@ const name = 'name';
 const alternateName = 'alternateName';
 const description = 'description';
 const license = 'license';
-const creator = 'creator';
-const publisher = 'publisher';
+const creator_person = 'creator_person';
+const publisher_person = 'publisher_person';
+const creator_organization = 'creator_organization';
+const publisher_organization = 'publisher_organization';
 const distribution = 'distribution';
 const dateCreated = 'dateCreated';
 const datePublished = 'datePublished';
@@ -160,28 +162,42 @@ export function bindingsToQuads(binding: Map<string, Term>): Quad[] {
     ..._bindingsToQuads(datasetIri, binding, datasetMapping, datasetIri),
   ];
 
-  if (binding.get(publisher)) {
-    const publisherNode = binding.get(publisher) as NamedNode;
+  if (binding.get(publisher_person)) {
+    const publisherNode = binding.get(publisher_person) as NamedNode;
     quads.push(
       factory.quad(datasetIri, dct('publisher'), publisherNode, datasetIri),
-      factory.quad(
-        publisherNode,
-        rdf('type'),
-        foaf('Organization'),
-        datasetIri
-      ),
+      factory.quad(publisherNode, rdf('type'), foaf('Person'), datasetIri),
       ..._bindingsToQuads(publisherNode, binding, publisherMapping, datasetIri)
     );
   }
 
-  if (binding.get(creator)) {
-    const creatorNode = binding.get(creator) as NamedNode;
+  if (binding.get(creator_person)) {
+    const creatorNode = binding.get(creator_person) as NamedNode;
+    quads.push(
+      factory.quad(datasetIri, dct('creator'), creatorNode, datasetIri),
+      factory.quad(creatorNode, rdf('type'), foaf('Person'), datasetIri),
+      ..._bindingsToQuads(creatorNode, binding, creatorMapping, datasetIri)
+    );
+  }
+
+  if (binding.get(publisher_organization)) {
+    const publisherNode = binding.get(publisher_organization) as NamedNode;
+    quads.push(
+      factory.quad(datasetIri, dct('publisher'), publisherNode, datasetIri),
+      factory.quad(publisherNode, rdf('type'), foaf('Organization'), datasetIri),
+      ..._bindingsToQuads(publisherNode, binding, publisherMapping, datasetIri)
+    );
+  }
+
+  if (binding.get(creator_organization)) {
+    const creatorNode = binding.get(creator_organization) as NamedNode;
     quads.push(
       factory.quad(datasetIri, dct('creator'), creatorNode, datasetIri),
       factory.quad(creatorNode, rdf('type'), foaf('Organization'), datasetIri),
       ..._bindingsToQuads(creatorNode, binding, creatorMapping, datasetIri)
     );
   }
+
 
   if (binding.get(distribution)) {
     const distributionBlankNode = binding.get(distribution) as BlankNodeScoped;
@@ -242,14 +258,26 @@ function schemaOrgQuery(prefix: string): string {
     FILTER (!isBlank(?${license}))
 
     OPTIONAL { 
-      ?${dataset} ${prefix}:creator ?${creator} .        
-      ?${creator} a ${prefix}:Organization ;
+      ?${dataset} ${prefix}:creator ?${creator_organization} .
+      ?${creator_organization} a ${prefix}:Organization ;
         ${prefix}:name ?${creatorName} .
     }
-        
+	
     OPTIONAL { 
-      ?${dataset} ${prefix}:publisher ?${publisher} .        
-      ?${publisher} a ${prefix}:Organization ;
+      ?${dataset} ${prefix}:creator ?${creator_person} .
+      ?${creator_person} a ${prefix}:Person ;
+        ${prefix}:name ?${creatorName} .
+    }
+
+    OPTIONAL { 
+      ?${dataset} ${prefix}:publisher ?${publisher_organization} .
+      ?${publisher_organization} a ${prefix}:Organization ;
+        ${prefix}:name ?${publisherName} .
+    }
+
+    OPTIONAL { 
+      ?${dataset} ${prefix}:publisher ?${publisher_person} .
+      ?${publisher_person} a ${prefix}:Person ;
         ${prefix}:name ?${publisherName} .
     }
         
