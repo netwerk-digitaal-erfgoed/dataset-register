@@ -35,7 +35,16 @@ URLs must be [allowed](#allow-list) before they can be added to the Register.
 ### Search dataset descriptions
 
 You can retrieve dataset descriptions registered by yourself and others
-from our [triple store](https://triplestore.netwerkdigitaalerfgoed.nl/sparql?savedQueryName=Full%20dataset%20descriptions%20for%20publisher&owner=admin).
+from our [triple store’s web interface](https://triplestore.netwerkdigitaalerfgoed.nl/sparql?savedQueryName=Full%20dataset%20descriptions%20for%20publisher&owner=admin).
+
+Alternatively, use the SPARQL endpoint at `https://triplestore.netwerkdigitaalerfgoed.nl/repositories/registry` directly.
+For example using [Comunica](https://comunica.dev):
+
+    comunica-sparql sparql@https://triplestore.netwerkdigitaalerfgoed.nl/repositories/registry 'select * {?s a <http://www.w3.org/ns/dcat#Dataset> . ?s ?p ?o . } limit 100'
+
+Or curl:
+
+    curl -H Accept:application/sparql-results+json --data-urlencode 'query=select * {?s a <http://www.w3.org/ns/dcat#Dataset> . ?s ?p ?o . } limit 100'  https://triplestore.netwerkdigitaalerfgoed.nl/repositories/registry
 
 ### Automate registrations
 
