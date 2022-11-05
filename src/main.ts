@@ -11,7 +11,7 @@ import {server} from './server';
 import Pino from 'pino';
 
 const client = new GraphDbClient(
-  process.env.GRAPHDB_URL || 'http://localhost:7200',
+  process.env.GRAPHDB_URL || 'http://127.0.0.1:7200',
   'registry'
 );
 (async () => {
