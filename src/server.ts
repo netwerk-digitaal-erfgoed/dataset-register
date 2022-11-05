@@ -187,11 +187,12 @@ export async function server(
           process.memoryUsage().rss / 1024 / 1024
         )} MB memory`
       );
+      return reply;
     }
   );
 
   server.get('/shacl', rdfSerializerConfig, async (request, reply) => {
-    reply.send(shacl);
+    return reply.send(shacl);
   });
 
   /**
