@@ -78,6 +78,7 @@ describe('Server', () => {
     });
     nockDone();
     expect(response.statusCode).toEqual(200);
+    expect(response.payload).not.toEqual('');
   });
 
   it('responds with validation errors to invalid dataset requests', async () => {
@@ -85,14 +86,15 @@ describe('Server', () => {
     const response = await httpServer.inject({
       method: 'PUT',
       url: '/datasets/validate',
-      headers: {'Content-Type': 'application/ld+json'},
+      headers: {'Content-Type': 'application/ld+json', Accept: 'text/turtle'},
       payload: JSON.stringify({
         '@id': 'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2a.html',
       }),
     });
     nockDone();
     expect(response.statusCode).toEqual(400);
-    expect(response.headers['content-type']).toEqual('application/ld+json');
+    expect(response.headers['content-type']).toEqual('text/turtle');
+    expect(response.payload).not.toEqual('');
   });
 
   it('ignores UTF-8 BOMs', async () => {
@@ -150,6 +152,7 @@ describe('Server', () => {
     });
     nockDone();
     expect(response.statusCode).toEqual(202);
+    expect(response.payload).not.toEqual('');
   });
 
   it('stores registration even if fetching datasets fails', async () => {
@@ -180,5 +183,6 @@ describe('Server', () => {
       headers: {'Content-Type': 'text/turtle'},
     });
     expect(response.statusCode).toEqual(200);
+    expect(response.payload).not.toEqual('');
   });
 });
