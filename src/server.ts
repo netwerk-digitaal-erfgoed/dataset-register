@@ -22,8 +22,12 @@ import fastifyCors from '@fastify/cors';
 import {DatasetCore} from 'rdf-js';
 import acceptsSerializer from '@fastify/accepts-serializer';
 
-const serializer = (contentType: string) => (dataset: DatasetExt) =>
-  rdfSerializer.serialize(datasetExt.toStream(dataset), {contentType});
+const serializer =
+  (contentType: string) =>
+  // Set return type any to make returning Stream work with fastify-accepts 5.1.0.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (dataset: DatasetExt): any =>
+    rdfSerializer.serialize(datasetExt.toStream(dataset), {contentType});
 
 export async function server(
   datasetStore: DatasetStore,
