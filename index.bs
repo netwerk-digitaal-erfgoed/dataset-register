@@ -12,10 +12,6 @@ Abstract: This document describes requirements for publishing datasets.
     By following these requirements, publishers enable users to find and use their datasets.
 </pre>
 
-<div class="advisement">
-    This document is a working draft.
-</div> 
-
 Introduction {#introduction}
 ============
 
