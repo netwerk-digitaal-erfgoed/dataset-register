@@ -380,23 +380,58 @@ The distributions are then included under the `distribution` attribute with the 
 
 See [[#distribution-attributes]] for a full overview.
 
-Issue: TODO Elaborate (and give examples of) the types of distribution (in schema:name), like SPARQL-endpoint, OAI-PMH-endpoint, LDF-endpoint, Data dump, Opensearch API. Or introduce proprietary property for the type (might be better the using the free-format name).
-
 ### Developer documentation ### {#developer-docs}
 
-If the distribution is a non-standard [=API=], publishers *MUST* publish human-readable documentation on how to use that
-API and link to the documentation URL in the [schema:usageInfo](https://schema.org/usageInfo) attribute:
+Publishers *SHOULD* link to documentation URLs via the [schema:usageInfo](https://schema.org/usageInfo) attribute. For datadumps this should be documentation about the 
+data model.  For [=API=]'s this should be documentation about the specific capabilities of the API (like content-type support) *AND* the generic specification of the 
+protocol which also 'types' the distribution such as OAI-PMH, SPARQL and REST.
+
+<table>
+    <caption>Recommended URI's for typing</caption>
+    <thead>
+        <tr>
+            <th>Protocol</th>
+            <th>URL specification</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <th scope="row">OAI-PMH</th>
+            <td>http://www.openarchives.org/pmh/</td>
+        </tr>
+        <tr>
+            <th scope="row">SPARQL</th>
+            <td>https://www.w3.org/TR/sparql11-query/</td>
+        </tr>
+        <tr>
+            <th scope="row">TPF</th>
+            <td>https://linkeddatafragments.org/specification/triple-pattern-fragments/</td>
+        </tr>
+        <tr>
+            <th scope="row">REST</th>
+            <td>https://developers.arcgis.com/rest/</td>
+        </tr>
+        <tr>
+            <th scope="row">WMS</th>
+            <td>http://www.opengeospatial.org/standards/wms</td>
+        </tr>
+        <tr>
+            <th scope="row">GraphQL</th>
+            <td>https://spec.graphql.org/</td>
+        </tr>
+    </tbody>
+</table>
 
 <div class="example">
-    A custom API with a link to the documentation.
+    A distribution with a link to the generic documentation and the protocolo specification (typing the distribution as SPARQL-endpoint).
 
     <pre highlight=json-ld>
         {
           "@context": "https://schema.org/",
           "@type": "DataDownload",
-          "encodingFormat": "application/json",
-          "contentUrl": "https://example.com/custom-json-api",
-          "usageInfo": "https://example.com/custom-json-api/docs"
+          "encodingFormat": "application/sparql-results+json",
+          "contentUrl": "http://vocab.getty.edu/sparql",
+          "usageInfo": [ "https://www.w3.org/TR/sparql11-query/", "https://vocab.getty.edu/" ]
         }
     </pre>
 </div>
