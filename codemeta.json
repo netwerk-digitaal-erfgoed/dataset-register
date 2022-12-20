@@ -1,0 +1,48 @@
+{
+    "@context": [
+        "https://doi.org/10.5063/schema/codemeta-2.0",
+        "https://w3id.org/software-iodata",
+        "https://raw.githubusercontent.com/jantman/repostatus.org/master/badges/latest/ontology.jsonld",
+        "https://schema.org",
+        "https://w3id.org/software-types"
+    ],
+    "@type": "SoftwareSourceCode",
+    "applicationCategory": "https://vocabs.dariah.eu/tadirah/discovering",
+    "author": [
+        {
+            "@type": "Person",
+            "email": "david@ddeboer.nl",
+            "familyName": "de Boer",
+            "givenName": "David"
+        },
+        {
+            "@type": "Person",
+            "email": "bob.coret+github@gmail.com",
+            "familyName": "Coret",
+            "givenName": "Bob"
+        }
+    ],
+    "codeRepository": "https://github.com/netwerk-digitaal-erfgoed/dataset-register.git",
+    "dateCreated": "2020-12-14T21:59:30Z+0100",
+    "description": "Live index of heritage datasets",
+    "developmentStatus": ["https://www.repostatus.org/#active", "https://w3id.org/research-technology-readiness-level#Level9Proven"],
+    "license": "https://spdx.org/licenses/EUPL-1.2",
+    "name": "Dataset Register",
+    "producer": {
+        "@type": "Organization",
+        "name": "Netwerk Digitaal Erfgoed",
+        "url": "https://www.netwerkdigitaalerfgoed.nl"
+    },
+    "programmingLanguage": "TypeScript",
+    "readme": "https://github.com/netwerk-digitaal-erfgoed/dataset-register/blob/master/README.md",
+    "runtimePlatform": "node >=16",
+    "targetProduct": [
+        {
+            "@id": "/api",
+            "@type": "WebApplication",
+            "name": "Dataset Register OpenAPI",
+            "url": "https://datasetregister.netwerkdigitaalerfgoed.nl/api"
+        }
+    ],
+    "url": "https://github.com/netwerk-digitaal-erfgoed/dataset-register.git"
+}
