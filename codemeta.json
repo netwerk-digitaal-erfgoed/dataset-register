@@ -38,7 +38,7 @@
     "runtimePlatform": "node >=16",
     "targetProduct": [
         {
-            "@id": "/api",
+            "@id": "https://datasetregister.netwerkdigitaalerfgoed.nl/api",
             "@type": "WebApplication",
             "name": "Dataset Register OpenAPI",
             "url": "https://datasetregister.netwerkdigitaalerfgoed.nl/api"
