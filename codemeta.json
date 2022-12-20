@@ -34,7 +34,7 @@
         "url": "https://www.netwerkdigitaalerfgoed.nl"
     },
     "programmingLanguage": "TypeScript",
-    "readme": "https://github.com/netwerk-digitaal-erfgoed/dataset-register/blob/master/README.md",
+    "readme": "https://github.com/netwerk-digitaal-erfgoed/dataset-register#readme",
     "runtimePlatform": "node >=16",
     "targetProduct": [
         {
