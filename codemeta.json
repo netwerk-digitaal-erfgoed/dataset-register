@@ -7,7 +7,12 @@
         "https://w3id.org/software-types"
     ],
     "@type": "SoftwareSourceCode",
-    "applicationCategory": "https://vocabs.dariah.eu/tadirah/discovering",
+    "applicationCategory": {
+        "@id": "https://vocabs.dariah.eu/tadirah/discovering",
+        "http://www.w3.org/2004/02/skos/core#inScheme": {
+            "@id":  "https://vocabs.dariah.eu/tadirah/"
+        }
+    },
     "author": [
         {
             "@type": "Person",
@@ -23,9 +28,23 @@
         }
     ],
     "codeRepository": "https://github.com/netwerk-digitaal-erfgoed/dataset-register.git",
+    "contIntegration": "https://github.com/netwerk-digitaal-erfgoed/dataset-register/actions",
     "dateCreated": "2020-12-14T21:59:30Z+0100",
     "description": "Live index of heritage datasets",
-    "developmentStatus": ["https://www.repostatus.org/#active", "https://w3id.org/research-technology-readiness-level#Level9Proven"],
+    "developmentStatus": [
+        "https://www.repostatus.org/#active",
+        {
+            "@id":  "https://w3id.org/research-technology-readiness-level#Level9Proven",
+            "http://www.w3.org/2004/02/skos/core#inScheme": {
+                "@id":  "https://w3id.org/research-technology-readiness-level"
+            }
+        }
+    ],
+    "issueTracker": "https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues",
+    "keywords": [
+        "nde",
+        "datasets"
+    ],
     "license": "https://spdx.org/licenses/EUPL-1.2",
     "name": "Dataset Register",
     "producer": {
@@ -36,6 +55,11 @@
     "programmingLanguage": "TypeScript",
     "readme": "https://github.com/netwerk-digitaal-erfgoed/dataset-register#readme",
     "runtimePlatform": "node >=16",
+    "softwareHelp": {
+        "@id": "https://datasetregister.netwerkdigitaalerfgoed.nl/?lang=en",
+        "@type": "WebSite",
+        "url": "https://datasetregister.netwerkdigitaalerfgoed.nl/?lang=en"
+    },
     "targetProduct": [
         {
             "@id": "https://datasetregister.netwerkdigitaalerfgoed.nl/api",
