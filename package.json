@@ -30,7 +30,7 @@
     "@comunica/query-sparql": "^2.0.5",
     "@fastify/accepts-serializer": "^5.0.0",
     "@fastify/cors": "^8.0.0",
-    "@fastify/swagger": "^7.3.0",
+    "@fastify/swagger": "^8.2.1",
     "@rdfjs/dataset": "^2.0.0",
     "@types/rdf-validate-shacl": "^0.4.0",
     "asynciterator": "^3.2.0",
