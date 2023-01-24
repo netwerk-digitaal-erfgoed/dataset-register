@@ -27,7 +27,7 @@
   },
   "creator": [
     {
-      "@type": "Organization",
+      "@type": "Person",
       "@id": "https://example.com/creator1",
       "name": "Creator 1"
     },

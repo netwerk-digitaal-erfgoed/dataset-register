@@ -46,7 +46,7 @@ export const dcat = (property: string): NamedNode =>
   factory.namedNode(`http://www.w3.org/ns/dcat#${property}`);
 export const dct = (property: string): NamedNode =>
   factory.namedNode(`http://purl.org/dc/terms/${property}`);
-const foaf = (property: string): NamedNode =>
+export const foaf = (property: string): NamedNode =>
   factory.namedNode(`http://xmlns.com/foaf/0.1/${property}`);
 const owl = (property: string): NamedNode =>
   factory.namedNode(`http://www.w3.org/2002/07/owl#${property}`);
@@ -167,7 +167,14 @@ export function bindingsToQuads(binding: Map<string, Term>): Quad[] {
       factory.quad(
         publisherNode,
         rdf('type'),
-        foaf('Organization'),
+        factory.quad(
+          publisherNode,
+          rdf('type'),
+          organizationOrPersonToFoaf(
+            (binding.get('publisherType') as NamedNode) || foaf('Organization')
+          ),
+          datasetIri
+        ),
         datasetIri
       ),
       ..._bindingsToQuads(publisherNode, binding, publisherMapping, datasetIri)
@@ -178,7 +185,14 @@ export function bindingsToQuads(binding: Map<string, Term>): Quad[] {
     const creatorNode = binding.get(creator) as NamedNode;
     quads.push(
       factory.quad(datasetIri, dct('creator'), creatorNode, datasetIri),
-      factory.quad(creatorNode, rdf('type'), foaf('Organization'), datasetIri),
+      factory.quad(
+        creatorNode,
+        rdf('type'),
+        organizationOrPersonToFoaf(
+          (binding.get('creatorType') as NamedNode) || foaf('Organization')
+        ),
+        datasetIri
+      ),
       ..._bindingsToQuads(creatorNode, binding, creatorMapping, datasetIri)
     );
   }
@@ -243,15 +257,19 @@ function schemaOrgQuery(prefix: string): string {
 
     OPTIONAL { 
       ?${dataset} ${prefix}:creator ?${creator} .        
-      ?${creator} a ${prefix}:Organization ;
+      ?${creator} a ?organizationOrPerson ;
+        a ?creatorType ; 
         ${prefix}:name ?${creatorName} .
     }
-        
+      
     OPTIONAL { 
       ?${dataset} ${prefix}:publisher ?${publisher} .        
-      ?${publisher} a ${prefix}:Organization ;
+      ?${publisher} a ?organizationORrPerson ;
+        a ?publisherType ;
         ${prefix}:name ?${publisherName} .
     }
+    
+    VALUES ?organizationOrPerson { ${prefix}:Organization ${prefix}:Person }  
         
     OPTIONAL {
       ?${dataset} ${prefix}:distribution ?${distribution} .
@@ -283,4 +301,18 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL { ?${dataset} ${prefix}:includedInDataCatalog ?${includedInDataCatalog} }
     OPTIONAL { ?${dataset} ${prefix}:mainEntityOfPage ?${mainEntityOfPage} }
 `;
+}
+
+function organizationOrPersonToFoaf(type: NamedNode) {
+  switch (type.value) {
+    case 'http://schema.org/Person':
+    case 'https://schema.org/Person':
+      return foaf('Person');
+    case 'http://schema.org/Organization':
+    case 'https://schema.org/Organization':
+      return foaf('Organization');
+  }
+
+  // Already in FOAF.
+  return type;
 }
