@@ -1,7 +1,7 @@
 import {URL} from 'url';
 import {fetch, HttpError, NoDatasetFoundAtUrl} from '../src/fetch';
 import nock from 'nock';
-import {dcat, dct, rdf} from '../src/query';
+import {dcat, dct, foaf, rdf} from '../src/query';
 import factory from 'rdf-ext';
 import {file} from './mock';
 
@@ -79,6 +79,16 @@ describe('Fetch', () => {
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
           dct('publisher'),
           factory.namedNode('https://example.com/publisher'),
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+        )
+      )
+    ).toBe(true);
+    expect(
+      dataset.has(
+        factory.quad(
+          factory.namedNode('https://example.com/creator1'),
+          rdf('type'),
+          foaf('Person'),
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
         )
       )
