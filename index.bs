@@ -29,7 +29,7 @@ The requirements prescribe the metadata that publishers should provide with thei
 This metadata tells [=consumers=]:
 
 - what the dataset is called and under what license it is published ([[#dataset-information]]);
-- which organization has published the dataset ([[#organization-information]]);
+- which person/organization has published the dataset ([[#creator-publisher-information]]);
 - where the data can be found ([[#dataset-distributions]]).
 
 Audience {#audience}
@@ -273,15 +273,16 @@ If more information is available, publishers *SHOULD* add it.
 
 See [[#dataset-overview]] for an overview of attributes.
 
-## Organization information ## {#organization-information}
+## Creator/publisher information ## {#creator-publisher-information}
 
 Users want to know where the [=dataset=] came from ([[DWBP#provenance|provenance]]).
-Providing information about the organization behind the dataset (the [=publisher=]) answers user questions such as:
+The dataset’s creator and/or [=publisher=] is either a person or an organization.
+Providing information about the person/organization behind the dataset (the ) answers user questions such as:
 
-- Which organization has published this dataset? How reliable and credible does that make the dataset?
-- How can I contact the organization for questions or feedback?
+- Which person/organization has published this dataset? How reliable and credible does that make the dataset?
+- How can I contact the person/organization for questions or feedback?
 
-> Therefore, publishers *must* publish basic information about the organization.
+> Therefore, publishers *must* publish basic information about the person/organization.
 > At the least, the organization’s name and HTTP IRI must be provided. 
 
 <div class="example">
@@ -300,12 +301,25 @@ Providing information about the organization behind the dataset (the [=publisher
 
 See [[#organization-overview]] for a full overview of organization attributes.
 
+<div class="example">
+    A person description:
+
+    <pre highlight=json-ld>
+      {
+        "@context": "https://schema.org/",
+        "@type": "Person",
+        "@id": "https://example.com",
+        "name": "Jan Jansen"
+      }
+    </pre>
+</div>
+
 ### Dataset publisher ### {#dataset-publisher}
 
-The organization data is then included as the dataset’s publisher:
+The person/organization data is then included as the dataset’s publisher:
 
 <div class="example">
-    A dataset with a publisher. The publisher has some optional attributes.
+    A dataset with an organization as publisher. The publisher has some optional attributes.
 
     <pre highlight=json-ld>
         {
@@ -320,6 +334,23 @@ The organization data is then included as the dataset’s publisher:
         }
     </pre>
 </div>
+
+<div class="example">
+    A dataset with a person as publisher. The publisher has some optional attributes.
+
+    <pre highlight=json-ld>
+        {
+          "@context": "https://schema.org/",
+          "@type": "Dataset",
+          "publisher": {
+            "@type": "Person",
+            "@id": "https://example.com",
+            "name": "Jan Jansen"
+          }
+        }
+    </pre>
+</div>
+
 
 ## Distributions ## {#dataset-distributions}
 
@@ -383,11 +414,11 @@ See [[#distribution-attributes]] for a full overview.
 ### Developer documentation ### {#developer-docs}
 
 Publishers *SHOULD* link to documentation URLs via the [schema:usageInfo](https://schema.org/usageInfo) attribute. For datadumps this should be documentation about the 
-data model.  For [=API=]'s this should be documentation about the specific capabilities of the API (like content-type support) *AND* the generic specification of the 
-protocol which also 'types' the distribution such as OAI-PMH, SPARQL and REST.
+data model. For [=API=]s this should be documentation about the specific capabilities of the API (like content-type support) *AND* the generic specification of the 
+protocol which also types the distribution such as OAI-PMH, SPARQL and REST.
 
 <table>
-    <caption>Recommended URI's for typing</caption>
+    <caption>Recommended URIs for typing</caption>
     <thead>
         <tr>
             <th>Protocol</th>
