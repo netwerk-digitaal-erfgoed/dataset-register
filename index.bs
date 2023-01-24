@@ -341,7 +341,7 @@ OAI-PMH endpoints or other APIs.
         {
           "@context": "https://schema.org/",
           "@type": "DataDownload",
-          "encodingFormat": "application/sparql-query",
+          "encodingFormat": "application/sparql-results+xml",
           "contentUrl": "http://vocab.getty.edu/sparql"
         }
     </pre>
@@ -360,7 +360,7 @@ The distributions are then included under the `distribution` attribute with the 
             {
               "@id": "http://vocab.getty.edu/aat/sparql",
               "@type": "DataDownload",
-              "encodingFormat": "application/sparql-query",
+              "encodingFormat": "application/sparql-results+json",
               "contentUrl": "http://vocab.getty.edu/sparql"
             },
             {
@@ -683,7 +683,9 @@ This is an overview of required and recommended attributes.
         <tr>
             <th scope="row">[schema:encodingFormat](https://schema.org/encodingFormat)</th>
             <td>The distribution’s MIME format, for example `application/sparql-query` for a SPARL endpoint
- or `application/ld+json` for a data dump serialized as JSON-LD. Use a value from the [[IANA-MEDIA-TYPES]] list.</td>
+ or `application/ld+json` for a data dump serialized as JSON-LD. Use a value from the [[IANA-MEDIA-TYPES]] list. 
+ The value should indicate the Media type of the response of the schema:contentUrl when no Accept header is included in the request. 
+ It is recommended to provide an URL of documentation via the schema:usageInfo property in which the supported encoding formats which can be requested via an Accept HTTP header are listed.</td>
             <td>1..n</td>	
             <td>Required</td>
         </tr>
