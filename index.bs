@@ -329,7 +329,13 @@ The person/organization data is then included as the dataset’s publisher:
             "@type": "Organization",
             "@id": "https://www.kb.nl",
             "name": "Koninklijke Bibliotheek",
-            "alternateName": "KB"
+            "alternateName": "KB",
+            "contactPoint": {
+              "@type": "ContactPoint",
+              "name": "Dataset manager’s name",
+              "email": "datasets@kb.nl",
+              "telephone": "+31 6 12345678"
+            }
           }
         }
     </pre>
@@ -671,24 +677,30 @@ This is an overview of required and recommended attributes.
             <td>1</td>
             <td>Required</td>
         </tr>
-		<tr>
+        <tr>
             <th scope="row">[schema:name](https://schema.org/name)</th>
             <td>The organization’s full name.</td>
             <td>1</td>
             <td>Required</td>
-		</tr>
+        </tr>
         <tr>
             <th scope="row">[schema:alternateName](https://schema.org/alternateName)</th>
             <td>Alternative names such as an abbreviation that the organization is known under.</td>
             <td>0..n</td>
             <td>Recommended</td>
         </tr>
-		<tr>
+        <tr>
             <th scope="row">[schema:sameAs](https://schema.org/sameAs)</th>
             <td>Links to the organization in other databases.</td>
             <td>0..n</td>
             <td>Recommended</td>
-		</tr>
+        </tr>
+        <tr>
+            <th scope="row">[schema:contactPoint](https://schema.org/contactPoint)</th>
+            <td>Where [=consumers=] can reach the organization for questions and suggestions about the dataset.</td>
+            <td>1</td>
+            <td>Recommended</td>
+        </tr>
     </tbody>
 </table>
 
