@@ -56,7 +56,7 @@ const client = new GraphDbClient(
       process.env.DOCS_URL || undefined,
       {logger: process.env.LOG ? !!+process.env.LOG : true}
     );
-    await httpServer.listen(3000, '0.0.0.0');
+    await httpServer.listen({port: 3000, host: '0.0.0.0'});
   } catch (err) {
     console.error(err);
   }
