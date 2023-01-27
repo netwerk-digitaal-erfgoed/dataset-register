@@ -460,7 +460,7 @@ protocol which also types the distribution such as OAI-PMH, SPARQL and REST.
 </table>
 
 <div class="example">
-    A distribution with a link to the generic documentation and the protocolo specification (typing the distribution as SPARQL-endpoint).
+    A distribution with a link to the generic documentation and the protocol specification (typing the distribution as SPARQL-endpoint).
 
     <pre highlight=json-ld>
         {
