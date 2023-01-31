@@ -11,6 +11,9 @@ servers:
   -
     url: 'https://datasetregister.netwerkdigitaalerfgoed.nl/api'
     description: 'Dataset Register API'
+  -
+    url: 'http://localhost:3000'
+    description: 'Local development Dataset Register API'
 paths:
   /datasets:
     post:
