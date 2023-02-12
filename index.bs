@@ -759,7 +759,7 @@ When the distribution is compressed, the compression format (e.g. zip, gzip) sho
         </tr>
         <tr>
             <th scope="row">[schema:inLanguage](https://schema.org/inLanguage)</th>
-            <td>Language or languages in which the dataset is available. Use one of the language codes from the [[BCP47]], such as "nl-NL".</td>
+            <td>Language or languages in which the distribution is available. Use one of the language codes from the [[BCP47]], such as "nl-NL".</td>
             <td>0..1</td>	
             <td>Recommended</td>
         </tr>
