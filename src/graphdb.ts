@@ -134,7 +134,10 @@ export class GraphDbRegistrationStore implements RegistrationStore {
       this.registrationQuad(
         registration,
         factory.namedNode('http://schema.org/datePosted'),
-        factory.literal(registration.datePosted.toISOString(), 'xsd:dateTime')
+        factory.literal(
+          registration.datePosted.toISOString(),
+          factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime')
+        )
       ),
       this.registrationQuad(
         registration,
@@ -169,7 +172,7 @@ export class GraphDbRegistrationStore implements RegistrationStore {
               factory.namedNode('http://schema.org/dateRead'),
               factory.literal(
                 registration.dateRead.toISOString(),
-                'xsd:dateTime'
+                factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime')
               ),
               factory.namedNode(this.registrationsGraph)
             )
@@ -183,7 +186,10 @@ export class GraphDbRegistrationStore implements RegistrationStore {
         this.registrationQuad(
           registration,
           factory.namedNode('http://schema.org/dateRead'),
-          factory.literal(registration.dateRead.toISOString(), 'xsd:dateTime')
+          factory.literal(
+            registration.dateRead.toISOString(),
+            factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime')
+          )
         )
       );
     }
@@ -193,7 +199,10 @@ export class GraphDbRegistrationStore implements RegistrationStore {
         this.registrationQuad(
           registration,
           factory.namedNode('http://schema.org/status'),
-          factory.literal(registration.statusCode.toString(), 'xsd:integer')
+          factory.literal(
+            registration.statusCode.toString(),
+            factory.namedNode('http://www.w3.org/2001/XMLSchema#integer')
+          )
         )
       );
     }
@@ -203,7 +212,10 @@ export class GraphDbRegistrationStore implements RegistrationStore {
         this.registrationQuad(
           registration,
           factory.namedNode('http://schema.org/validUntil'),
-          factory.literal(registration.validUntil.toISOString(), 'xsd:dateTime')
+          factory.literal(
+            registration.validUntil.toISOString(),
+            factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime')
+          )
         )
       );
     }
