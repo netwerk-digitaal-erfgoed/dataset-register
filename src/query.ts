@@ -167,13 +167,8 @@ export function bindingsToQuads(binding: Map<string, Term>): Quad[] {
       factory.quad(
         publisherNode,
         rdf('type'),
-        factory.quad(
-          publisherNode,
-          rdf('type'),
-          organizationOrPersonToFoaf(
-            (binding.get('publisherType') as NamedNode) || foaf('Organization')
-          ),
-          datasetIri
+        organizationOrPersonToFoaf(
+          (binding.get('publisherType') as NamedNode) || foaf('Organization')
         ),
         datasetIri
       ),

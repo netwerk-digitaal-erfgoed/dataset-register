@@ -86,6 +86,16 @@ describe('Fetch', () => {
     expect(
       dataset.has(
         factory.quad(
+          factory.namedNode('https://example.com/publisher'),
+          rdf('type'),
+          foaf('Organization'),
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+        )
+      )
+    ).toBe(true);
+    expect(
+      dataset.has(
+        factory.quad(
           factory.namedNode('https://example.com/creator1'),
           rdf('type'),
           foaf('Person'),
