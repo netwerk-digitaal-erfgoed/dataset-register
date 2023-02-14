@@ -8703,32 +8703,5 @@
             "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\""
         ],
         "responseIsBinary": false
-    },
-    {
-        "scope": "https://demo.netwerkdigitaalerfgoed.nl:443",
-        "method": "GET",
-        "path": "/datasets/kb/2.html",
-        "body": "",
-        "status": 200,
-        "response": "<!DOCTYPE html>\r\n<html lang=\"nl\">\r\n\r\n<head>\r\n    <meta charset=\"utf-8\">\r\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\">\r\n    <meta name=\"description\" content=\"Datasets\">\r\n    <link href=\"../assets/imgs/nde_logo_simplified.png\" rel=\"icon\" type=\"image/png\">\r\n    <title>Dataset Descriptions</title>\r\n    <link rel=\"stylesheet\" href=\"https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css\" integrity=\"sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T\" crossorigin=\"anonymous\">\r\n    <link href=\"../assets/css/main.css\" rel=\"stylesheet\" type=\"text/css\">\r\n</head>\r\n\r\n<body class=\"withNavbar withSink\">\r\n    <nav class=\"navbar fixed-top \">\r\n        <div class=\"navbar-content\">\r\n            <div class=\"navbar-icon\">\r\n                <a class=\"navbar-brand\" href=\"../\">\r\n                    <img alt=\"Dataset Descriptions home\" src=\"../assets/imgs/nde_logo.png\">\r\n                </a>\r\n            </div>\r\n            <div class=\"navbar-title\">\r\n                <a class=\"navbar-brand\" href=\"../\">Dataset Descriptions</a>|&nbsp;&nbsp;&nbsp;<a href=\"index.html\">Datasets KB</a>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;Alba amicorum van de Koninklijke Bibliotheek\r\n            </div>\r\n        </div>\r\n    </nav>\r\n    <div class=\"container\">\r\n        <div class=\"row\">\r\n            <div class=\"col\" style=\"text-align:center;\">\r\n                <h1>Alba amicorum van de Koninklijke Bibliotheek</h1>\r\n                <p>Datasetbeschrijving in JSON-LD volgens schema.org/Dataset + <a href=\"https://developers.google.com/search/docs/data-types/dataset\">Google documentatie</a></p>\r\n            </div>\r\n        </div>\r\n\r\n        <div class=\"row\">\r\n\r\n            <div class=\"col\">\r\n                <h3>Name</h3>\r\n                <p>Alba amicorum van de Koninklijke Bibliotheek</p>\r\n                <h3>Description</h3>\r\n                <p>Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.</p>\r\n                <h3>URL</h3>\r\n                <p><a href=\"https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum\">https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum</a></p>\r\n                <h3>Identifier</h3>\r\n                <p>http://data.bibliotheken.nl/id/dataset/rise-alba</p>\r\n\r\n                <h3>Keywords</h3>\r\n                <p>alba amicorum</p>\r\n                <h3>License</h3>\r\n                <p><a href=\"http://creativecommons.org/publicdomain/zero/1.0/\">CC-0 (Public domain)</a></p>\r\n                <h3>Creator</h3>\r\n                <p><a href=\"https://www.kb.nl/\">Koninklijke Bibliotheek</a> (https://ror.org/02w4jbg70)</p>\r\n                <h2>Distributions</h2>\r\n\r\n                <ul>\r\n                    <li><a href=\"http://data.bibliotheken.nl/id/dataset/rise-alba.rdf\">application/rdf+xml</a></li>\r\n                    <li><a href=\"http://data.bibliotheken.nl/id/dataset/rise-alba.ttl\">text/turtle</a></li>\r\n                    <li><a href=\"http://data.bibliotheken.nl/id/dataset/rise-alba.nt\">application/n-triples</a></li>\r\n                    <li><a href=\"http://data.bibliotheken.nl/id/dataset/rise-alba.json\">application/ld+json</a></li>\r\n                </ul>\r\n\r\n                <script type=\"application/ld+json\">\r\n                    { \"@context\":\"https://schema.org/\", \"@type\":\"Dataset\", \"@id\":\"http://data.bibliotheken.nl/id/dataset/rise-alba\", \"name\":\"Alba amicorum van de Koninklijke Bibliotheek\", \"description\":\"Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.\", \"url\":\"https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum\", \"identifier\": \"http://data.bibliotheken.nl/id/dataset/rise-alba\", \"keywords\":[ \"alba amicorum\" ], \"license\" : \"http://creativecommons.org/publicdomain/zero/1.0/\", \"publisher\":{ \"@type\":\"Organization\", \"@id\": \"https://www.kb.nl/\", \"name\":\"Koninklijke Bibliotheek\", \"sameAs\":\"https://ror.org/02w4jbg70\" }, \"distribution\":[ { \"@type\":\"DataDownload\", \"encodingFormat\":\"application/rdf+xml\", \"contentUrl\":\"http://data.bibliotheken.nl/id/dataset/rise-alba.rdf\" }, { \"@type\":\"DataDownload\", \"encodingFormat\":\"text/turtle\", \"contentUrl\":\"http://data.bibliotheken.nl/id/dataset/rise-alba.ttl\" }, { \"@type\":\"DataDownload\", \"encodingFormat\":\"application/n-triples\", \"contentUrl\":\"http://data.bibliotheken.nl/id/dataset/rise-alba.nt\" }, { \"@type\":\"DataDownload\", \"encodingFormat\":\"application/ld+json\", \"contentUrl\":\"http://data.bibliotheken.nl/id/dataset/rise-alba.json\" } ] }\r\n                </script>\r\n\r\n                <!-- niet opgenomen: dateCreated=2019-05-21  dateModified=2019-08-15  -->\r\n            </div>\r\n        </div>\r\n</body>\r\n\r\n</html>\r\n",
-        "rawHeaders": [
-            "Date",
-            "Tue, 14 Jun 2022 08:59:28 GMT",
-            "Content-Type",
-            "text/html",
-            "Content-Length",
-            "4846",
-            "Connection",
-            "keep-alive",
-            "Last-Modified",
-            "Fri, 17 Dec 2021 18:09:19 GMT",
-            "ETag",
-            "\"61bcd24f-12ee\"",
-            "Accept-Ranges",
-            "bytes",
-            "Strict-Transport-Security",
-            "max-age=15724800; includeSubDomains"
-        ],
-        "responseIsBinary": false
     }
 ]
