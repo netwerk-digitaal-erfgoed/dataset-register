@@ -34,9 +34,9 @@
     "developmentStatus": [
         "https://www.repostatus.org/#active",
         {
-            "@id":  "https://w3id.org/research-technology-readiness-level#Level9Proven",
+            "@id":  "https://w3id.org/research-technology-readiness-levels#Level9Proven",
             "http://www.w3.org/2004/02/skos/core#inScheme": {
-                "@id":  "https://w3id.org/research-technology-readiness-level"
+                "@id":  "https://w3id.org/research-technology-readiness-levels"
             }
         }
     ],
