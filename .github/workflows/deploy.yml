@@ -16,7 +16,7 @@ jobs:
         id: vars
         run: |
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-          echo "::set-output name=docker_image::ghcr.io/netwerk-digitaal-erfgoed/registry-api"
+          echo "::set-output name=docker_image::ghcr.io/netwerk-digitaal-erfgoed/dataset-register"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
