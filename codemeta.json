@@ -41,6 +41,15 @@
         }
     ],
     "issueTracker": "https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues",
+    "funding": {
+        "@type": "Grant",
+        "funder": {
+            "@id": "https://identifier.overheid.nl/tooi/id/ministerie/mnre1109",
+            "@type": "Organization",
+            "name": "Ministerie van Onderwijs, Cultuur en Wetenschap",
+            "url": "https://www.rijksoverheid.nl/ministeries/ministerie-van-onderwijs-cultuur-en-wetenschap"
+        }
+    },
     "keywords": [
         "nde",
         "datasets"
