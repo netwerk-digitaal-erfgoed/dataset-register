@@ -6,6 +6,7 @@ COPY . .
 RUN NODE_ENV=production npm run compile
 
 FROM node:lts-alpine
+LABEL org.opencontainers.image.source = "https://github.com/netwerk-digitaal-erfgoed/dataset-register"
 ENV NODE_ENV=production
 WORKDIR /app/
 COPY package*.json ./
