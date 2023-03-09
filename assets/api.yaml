@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Dataset Register
   description: Dutch Digital Heritage Network Dataset Register REST API
-  version: 0.2.1
+  version: 'latest'
   contact:
     name: Dutch Digital Heritage Network
     url: 'https://datasetregister.netwerkdigitaalerfgoed.nl/faq.php'

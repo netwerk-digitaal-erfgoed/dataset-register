@@ -21,6 +21,7 @@ import fastifySwagger from '@fastify/swagger';
 import fastifyCors from '@fastify/cors';
 import {DatasetCore} from 'rdf-js';
 import acceptsSerializer from '@fastify/accepts-serializer';
+import fastifySwaggerUi from '@fastify/swagger-ui';
 
 const serializer =
   (contentType: string) =>
@@ -44,10 +45,12 @@ export async function server(
     .register(fastifySwagger, {
       mode: 'static',
       specification: {
-        baseDir: process.cwd(),
         path: './assets/api.yaml',
+        baseDir: process.cwd(),
       },
-      exposeRoute: true,
+    })
+    .register(fastifySwaggerUi, {
+      baseDir: process.cwd(),
       routePrefix: docsUrl,
     })
     .register(acceptsSerializer, {

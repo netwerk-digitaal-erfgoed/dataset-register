@@ -32,6 +32,22 @@ describe('Server', () => {
     nock.restore();
   });
 
+  it('shows documentation', async () => {
+    const redirect = await httpServer.inject({
+      method: 'GET',
+      url: '/',
+      headers: {Accept: '*/*'},
+    });
+    expect(redirect.statusCode).toEqual(302);
+
+    const response = await httpServer.inject({
+      method: 'GET',
+      url: redirect.headers.location?.toString(),
+      headers: {Accept: '*/*'},
+    });
+    expect(response.statusCode).toEqual(200);
+  });
+
   it('rejects validation requests without URL', async () => {
     const response = await httpServer.inject({
       method: 'PUT',
