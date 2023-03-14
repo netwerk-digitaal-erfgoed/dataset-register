@@ -327,24 +327,48 @@ dcat:DatasetShape
         sh:maxCount 1 ;
         sh:path dc:license
     ],
-    [
-        sh:path dc:publisher ;
-        sh:minCount 1 ;
-        sh:severity sh:Warning ;
-        sh:class foaf:Organization ;
-        sh:node dcat:OrganizationShape
-    ],
-    [
-        sh:path dc:creator ;
-        sh:class foaf:Organization ;
-        sh:node dcat:OrganizationShape
-    ],
+    dcat:DcatCreatorProperty,
+	dcat:DcatPublisherProperty,
     [
         sh:path dcat:distribution ;
         sh:class dcat:Distribution ;
         sh:node dcat:DistributionShape
     ] ;
     sh:targetClass dcat:Dataset ;
+.
+
+dcat:DcatPublisherProperty a sh:PropertyShape ;
+    sh:path dc:publisher ;
+    sh:minCount 1 ;
+    sh:or (
+        [
+            sh:class foaf:Organization ;
+            sh:node dcat:OrganizationShape ;
+        ]
+        [
+            sh:class foaf:Person ;
+            sh:node dcat:PersonShape ;
+        ]
+    ) ;
+    sh:name "Persoon of organisatie die de dataset heeft gepubliceerd"@nl, "Person or organization which published the dataset"@en ;
+    sh:message "Een datasetbeschrijving dient een uitgever te bevatten"@nl, "A dataset description should have a publisher"@en ;
+.	
+
+dcat:DcatCreatorProperty a sh:PropertyShape ;
+    sh:path dc:creator ;
+    sh:minCount 0 ;
+    sh:or (
+        [
+            sh:class foaf:Organization ;
+            sh:node dcat:OrganizationShape ;
+        ]
+        [
+            sh:class foaf:Person ;
+            sh:node dcat:PersonShape ;
+        ]
+    ) ;
+    sh:name "Persoon of organisatie die de dataset heeft gemaakt"@nl, "Person or organization which created the dataset"@en ;
+    sh:message "Een datasetbeschrijving dient een maker te bevatten"@nl, "A dataset description should have a creator"@en ;
 .
 
 dcat:DistributionShape
