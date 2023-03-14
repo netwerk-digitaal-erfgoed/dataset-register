@@ -386,6 +386,12 @@ dcat:DistributionShape
             sh:path dcat:downloadURL
             ]
         ]
+        [ sh:property [
+            sh:minCount 1 ;
+            sh:maxCount 1 ;
+            sh:path dcat:accessService
+            ]
+        ]		
     ) ;
 	sh:or (
         [ sh:property [
