@@ -1,0 +1,118 @@
+{
+   "@context": {
+    "dcat": "http://www.w3.org/ns/dcat#",
+    "dcm": "http://purl.org/dc/dcmitype/",
+    "dct": "http://purl.org/dc/terms/",
+    "foaf": "http://xmlns.com/foaf/0.1/",
+    "iso639-1": "http://id.loc.gov/vocabulary/iso639-1/",
+    "org": "http://www.w3.org/ns/org#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "void": "http://rdfs.org/ns/void#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "vcard": "http://www.w3.org/2006/vcard/ns#"
+   },
+   "@id": "https://data.netwerkdigitaalerfgoed.nl/coret/GoudaTimeMachine",
+   "@type": [
+    "dcat:Dataset",
+    "void:Dataset"
+   ],
+   "dcat:contactPoint": {
+    "@type": [
+     "foaf:Person",
+     "vcard:Individual"
+    ],
+    "@id": "https://data.netwerkdigitaalerfgoed.nl/coret",
+    "foaf:name": "Bob Coret",
+    "rdfs:label": "Bob Coret"
+   },
+   "dcat:distribution": [
+    {
+     "@type": "dcat:Distribution",
+     "dcat:downloadURL": "https://data.netwerkdigitaalerfgoed.nl/coret/GoudaTimeMachine/download.trig.gz",
+     "dcat:mediaType": "application/trig",
+     "dcat:description": "TriG download"
+    },
+    {
+     "@type": "dcat:Distribution",
+     "dcat:downloadURL": "https://data.netwerkdigitaalerfgoed.nl/coret/GoudaTimeMachine/download.nt.gz",
+     "dcat:mediaType": "application/n-triples",
+     "dcat:description": "N-Triples download"
+    },
+    {
+     "@type": "dcat:Distribution",
+     "dcat:downloadURL": "https://data.netwerkdigitaalerfgoed.nl/coret/GoudaTimeMachine/download.nq.gz",
+     "dcat:mediaType": "application/n-quads",
+     "dcat:description": "N-Quads download"
+    },
+    {
+     "@type": "dcat:Distribution",
+     "dcat:downloadURL": "https://data.netwerkdigitaalerfgoed.nl/coret/GoudaTimeMachine/download.ttl.gz",
+     "dcat:mediaType": "text/turtle",
+     "dcat:description": "Turtle download"
+    },
+    {
+     "@type": "dcat:Distribution",
+     "dct:title": "Sparql endpoints",
+     "dct:description": "RDF representation of the data",
+	 "dcat:mediaType": "text/turtle",
+     "dcat:accessService": [
+      {
+       "@type": "dcat:DataService",
+       "dct:conformsTo": "https://www.w3.org/TR/sparql11-query/",
+       "dct:title": "GoudaTimeMachine",
+       "dct:description": "Service that supports queries to obtain RDF representations of subsets of the data",
+       "dcat:endpointURL": "https://api.data.netwerkdigitaalerfgoed.nl/datasets/coret/GoudaTimeMachine/services/GoudaTimeMachine/sparql",
+       "dcat:landingPage": "https://data.netwerkdigitaalerfgoed.nl/coret/GoudaTimeMachine/sparql/GoudaTimeMachine"
+      }
+     ]
+    }
+   ],
+   "dct:creator": {
+    "@type": [
+     "foaf:Person",
+     "vcard:Individual"
+    ],
+    "@id": "https://data.netwerkdigitaalerfgoed.nl/coret",
+    "foaf:name": "Bob Coret",
+    "rdfs:label": "Bob Coret"
+   },
+   "dct:description": "Proof of concept van weergave van Goudse triples voor de Gouda Tijdmachine. \n\nTwee datasets (elk in een graph) zijn opgenomen: een lijst van straten (gekoppeld aan externe bronnen waaronder Wikidata en de BAG) en een lijst van gevelstenen (geëxtraheerd van <a href=\"http://www.gevelstenen.net/\">gevelstenen.net</a>). De gevelstenen zijn gekoppeld aan de straten, ook bevatten ze coördinaten zodat ze eenvoudig <a href=\"https://data.netwerkdigitaalerfgoed.nl/coret/-/queries/Query-1\">op de kaart</a> gezet kunnen worden.",
+   "dct:identifier": "https://data.netwerkdigitaalerfgoed.nl/coret/GoudaTimeMachine",
+   "dct:issued": {
+    "@type": "xsd:date",
+    "@value": "2021-06-29"
+   },
+   "dct:language": {
+    "@type": "dct:LinguisticSystem",
+    "@id": "iso639-1:en"
+   },
+   "dct:license": {
+    "@type": "dct:LicenseDocument",
+    "@id": "http://creativecommons.org/publicdomain/zero/1.0/"
+   },
+   "dct:modified": {
+    "@type": "xsd:date",
+    "@value": "2023-03-07"
+   },
+   "dct:publisher": {
+    "@type": [
+     "foaf:Person",
+     "vcard:Individual"
+    ],
+    "@id": "https://data.netwerkdigitaalerfgoed.nl/coret",
+    "foaf:name": "Bob Coret",
+    "rdfs:label": "Bob Coret"
+   },
+   "dct:title": "Gouda Tijdmachine",
+   "dct:type": {
+    "@id": "dcm:Dataset"
+   },
+   "foaf:depiction": {
+    "@type": "foaf:Image",
+    "@id": "https://data.netwerkdigitaalerfgoed.nl/imgs/avatars/d/60db86d67c260e03964d35a3.png?v=3"
+   },
+   "rdfs:label": "Gouda Tijdmachine",
+   "void:sparqlEndpoint": [
+    "https://data.netwerkdigitaalerfgoed.nl/coret/GoudaTimeMachine/sparql/GoudaTimeMachine"
+   ]
+}
