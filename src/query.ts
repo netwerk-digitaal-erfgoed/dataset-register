@@ -135,9 +135,9 @@ export const selectQuery = `
       OPTIONAL {  
         ?${dataset} dcat:distribution ?${distribution} .
         ?${distribution} a dcat:Distribution ;
-          dcat:accessURL ?${distributionUrl} ;
-          dct:format ?${distributionFormat} .
+          dcat:accessURL ?${distributionUrl} .
           
+        OPTIONAL { ?${distribution} dct:format ?${distributionFormat} }
         OPTIONAL { ?${distribution} dcat:mediaType ?${distributionMediaType} }
         OPTIONAL { ?${distribution} dct:issued ?${distributionDatePublished} }
         OPTIONAL { ?${distribution} dct:modified ?${distributionDateModified} }

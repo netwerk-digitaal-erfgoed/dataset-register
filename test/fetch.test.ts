@@ -4,6 +4,7 @@ import nock from 'nock';
 import {dcat, dct, foaf, rdf} from '../src/query';
 import factory from 'rdf-ext';
 import {file} from './mock';
+import {BlankNode} from 'rdf-js';
 
 describe('Fetch', () => {
   it('must accept valid DCAT dataset descriptions', async () => {
@@ -18,14 +19,29 @@ describe('Fetch', () => {
     );
 
     expect(datasets).toHaveLength(1);
+    const datasetUri = factory.namedNode(
+      'http://data.bibliotheken.nl/id/dataset/rise-alba'
+    );
     const dataset = datasets[0];
     expect(
       dataset.has(
+        factory.quad(datasetUri, rdf('type'), dcat('Dataset'), datasetUri)
+      )
+    ).toBe(true);
+
+    const distributions = [
+      ...dataset.match(datasetUri, dcat('distribution'), null, datasetUri),
+    ];
+    expect(distributions).toHaveLength(1);
+
+    // dcat:
+    expect(
+      dataset.has(
         factory.quad(
-          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
-          rdf('type'),
-          dcat('Dataset'),
-          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+          distributions[0].object as BlankNode,
+          dcat('mediaType'),
+          factory.literal('application/rdf+xml'),
+          datasetUri
         )
       )
     ).toBe(true);
