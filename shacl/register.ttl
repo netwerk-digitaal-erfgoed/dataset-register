@@ -331,13 +331,29 @@ dcat:DatasetShape
         sh:path dc:publisher ;
         sh:minCount 1 ;
         sh:severity sh:Warning ;
-        sh:class foaf:Organization ;
-        sh:node dcat:OrganizationShape
+        sh:or (
+            [
+                 sh:class foaf:Organization ;
+                 sh:node dcat:OrganizationShape ;
+            ]
+            [
+                 sh:class foaf:Person ;
+                 sh:node dcat:PersonShape ;
+            ]
+        ) ;
     ],
     [
         sh:path dc:creator ;
-        sh:class foaf:Organization ;
-        sh:node dcat:OrganizationShape
+        sh:or (
+            [
+                 sh:class foaf:Organization ;
+                 sh:node dcat:OrganizationShape ;
+            ]
+            [
+                 sh:class foaf:Person ;
+                 sh:node dcat:PersonShape ;
+            ]
+        ) ;
     ],
     [
         sh:path dcat:distribution ;
@@ -373,8 +389,28 @@ dcat:DistributionShape
 
 dcat:OrganizationShape
     a sh:NodeShape ;
+    sh:nodeKind sh:IRI ;
+    sh:pattern "^https?://" ;
     sh:property [
+        sh:path foaf:name ;
         sh:minCount 1 ;
-        sh:path foaf:name
-    ] ;
-.
+        sh:or (
+            [ sh:datatype xsd:string ]
+            [ sh:datatype rdf:langString ]
+        ) ;
+        sh:message "Een organisatie moet een naam hebben"@nl, "An organization must have a name"@en ;
+    ] .
+
+dcat:PersonShape
+    a sh:NodeShape ;
+    sh:nodeKind sh:IRI ;
+    sh:pattern "^https?://" ;
+    sh:property [
+        sh:path foaf:name ;
+        sh:minCount 1 ;
+        sh:or (
+            [ sh:datatype xsd:string ]
+            [ sh:datatype rdf:langString ]
+        ) ;
+        sh:message "Een persoon moet een naam hebben"@nl, "A person must have a name"@en ;
+    ] .

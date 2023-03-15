@@ -106,6 +106,7 @@ export const sparqlLimit = 50000;
 export const selectQuery = `
   PREFIX dcat: <http://www.w3.org/ns/dcat#>
   PREFIX dct: <http://purl.org/dc/terms/>
+  PREFIX foaf: <http://xmlns.com/foaf/0.1/>
   PREFIX schema: <https://schema.org/>
   PREFIX httpSchema: <http://schema.org/>
   SELECT * WHERE {
@@ -117,11 +118,20 @@ export const selectQuery = `
       ?${dataset} a dcat:Dataset ;
         dct:title ?${name} ;
         dct:license ?${license} ;
-        dct:creator ?${creator} .
+        dct:publisher ?${publisher} .
         
-      ?${creator} a foaf:Organization ;
-        foaf:name ?${creatorName} .
+      ?${publisher} a ?foafOrganizationOrPerson ;
+        a ?publisherType ;
+        foaf:name ?${publisherName} .
       
+      OPTIONAL {
+        ?${creator} a ?foafOrganizationOrPerson ;
+          a ?creatorType ;
+          foaf:name ?${creatorName} .
+      }
+        
+      VALUES ?foafOrganizationOrPerson { foaf:Organization foaf:Person }
+
       OPTIONAL {  
         ?${dataset} dcat:distribution ?${distribution} .
         ?${distribution} a dcat:Distribution ;
@@ -259,7 +269,7 @@ function schemaOrgQuery(prefix: string): string {
       
     OPTIONAL { 
       ?${dataset} ${prefix}:publisher ?${publisher} .        
-      ?${publisher} a ?organizationORrPerson ;
+      ?${publisher} a ?organizationOrPerson ;
         a ?publisherType ;
         ${prefix}:name ?${publisherName} .
     }
