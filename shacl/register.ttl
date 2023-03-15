@@ -365,6 +365,7 @@ dcat:DatasetShape
 
 dcat:DistributionShape
     a sh:NodeShape ;
+    sh:targetClass dcat:Distribution ;
     sh:or (
         [ sh:property [
             sh:minCount 1 ;
@@ -379,13 +380,18 @@ dcat:DistributionShape
             ]
         ]
     ) ;
-    sh:property [
-        sh:minCount 1 ;
-        sh:maxCount 1 ;
-        sh:path dc:format
-    ] ;
-    sh:targetClass dcat:Distribution ;
-.
+    sh:or (
+        [ sh:property [
+            sh:minCount 1 ;
+            sh:maxCount 1 ;
+            sh:path dcat:mediaType
+        ] ]
+        [ sh:property [
+            sh:minCount 1 ;
+            sh:maxCount 1 ;
+            sh:path dc:format
+        ] ]
+    ) .
 
 dcat:OrganizationShape
     a sh:NodeShape ;
