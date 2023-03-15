@@ -12,10 +12,10 @@
     "alba amicorum"
   ],
   "dct:license": "http://creativecommons.org/publicdomain/zero/1.0/",
-  "dct:creator": {
-    "@type": "foaf:Organization",
-    "foaf:name": "Koninklijke Bibliotheek",
-    "foaf:workplaceHomepage": "https://www.kb.nl/"
+  "dct:publisher": {
+    "@id": "https://example.com/dataset-provider",
+    "@type": "foaf:Person",
+    "foaf:name": "Dataset Provider"
   },
   "dcat:distribution": [
     {
