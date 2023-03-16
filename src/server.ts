@@ -178,8 +178,10 @@ export async function server(
         );
         await registrationStore.store(updatedRegistration);
       }
+
+      // If the dataset did not validate, the validate() function has set a 4xx status code.
+      return reply;
     }
-    // If the dataset did not validate, the validate() function has replied with a 4xx status code.
   );
 
   server.put(
