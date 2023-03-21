@@ -171,6 +171,21 @@ describe('Server', () => {
     expect(response.payload).not.toEqual('');
   });
 
+  it('responds with validation errors when adding an invalid dataset', async () => {
+    const {nockDone} = await nock.back('invalid-dataset.json');
+    const response = await httpServer.inject({
+      method: 'POST',
+      url: '/datasets',
+      headers: {'Content-Type': 'application/ld+json', Accept: 'text/turtle'},
+      payload: JSON.stringify({
+        '@id': 'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2a.html',
+      }),
+    });
+    nockDone();
+    expect(response.statusCode).toEqual(400);
+    expect(response.payload).not.toEqual('');
+  });
+
   it('stores registration even if fetching datasets fails', async () => {
     const {nockDone} = await nock.back('post-dataset-query-fails.json');
     const response = await httpServer.inject({
