@@ -1,4 +1,4 @@
-import {QueryEngine} from '@comunica/query-sparql';
+import {QueryEngineFactory} from '@comunica/query-sparql';
 import factory from 'rdf-ext';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import {URL} from 'url';
@@ -8,6 +8,7 @@ import {pipeline} from 'stream';
 import {StandardizeSchemaOrgPrefixToHttps} from './transform';
 import Pino from 'pino';
 import {rdfDereferencer} from './rdf';
+import {resolve} from 'node:path';
 
 export class HttpError extends Error {
   constructor(message: string, public readonly statusCode: number) {
@@ -22,11 +23,10 @@ export class NoDatasetFoundAtUrl extends Error {
 }
 
 export async function fetch(url: URL): Promise<DatasetExt[]> {
-  let datasets = [];
-  try {
-    datasets = await query(url);
-  } catch (e) {
-    handleComunicaError(e);
+  let datasets = await doFetch(url);
+  const nextPage = await findNextPage(url);
+  if (nextPage !== null && nextPage !== url) {
+    datasets = [...datasets, ...(await doFetch(nextPage))];
   }
 
   if (datasets.length === 0) {
@@ -34,6 +34,14 @@ export async function fetch(url: URL): Promise<DatasetExt[]> {
   }
 
   return datasets;
+}
+
+export async function doFetch(url: URL) {
+  try {
+    return await query(url);
+  } catch (e) {
+    handleComunicaError(e);
+  }
 }
 
 /**
@@ -53,7 +61,11 @@ export async function dereference(url: URL): Promise<DatasetExt> {
   }
 }
 
-const engine = new QueryEngine();
+// Use custom config to disable "ccqs:config/rdf-resolve-hypermedia-links/actors.json", which causes
+// many duplicate bindings and does not find any datasets on the second page ff.
+const engine = await new QueryEngineFactory().create({
+  configPath: resolve('src/comunica-config.json'),
+});
 
 /**
  * Fetch dataset descriptions by executing a SPARQL SELECT query.
@@ -163,4 +175,24 @@ function handleComunicaError(e: unknown): never {
   }
 
   throw e;
+}
+
+async function findNextPage(url: URL): Promise<URL | null> {
+  const bindingsStream = await engine.queryBindings(
+    `
+    PREFIX hydra: <http://www.w3.org/ns/hydra/core#>
+    
+    SELECT ?nextPage { 
+        ?s ?nextPagePredicate ?nextPage 
+        VALUES ?nextPagePredicate { hydra:next hydra:nextPage }
+    }
+    `,
+    {
+      sources: [url.toString()],
+    }
+  );
+  const bindings = await bindingsStream.toArray();
+  const nextPage = bindings[0]?.get('nextPage')?.value;
+
+  return nextPage ? new URL(nextPage) : null;
 }

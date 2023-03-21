@@ -202,4 +202,24 @@ describe('Fetch', () => {
       expect(e).toBeInstanceOf(NoDatasetFoundAtUrl);
     }
   });
+
+  it('handles paginated responses', async () => {
+    nock('https://example.com')
+      .get('/datasets/hydra-page1.ttl')
+      .replyWithFile(200, 'test/datasets/hydra-page1.ttl', {
+        'Content-Type': 'text/turtle',
+      });
+
+    nock('https://example.com')
+      .get('/datasets/hydra-page2.ttl')
+      .replyWithFile(200, 'test/datasets/hydra-page2.ttl', {
+        'Content-Type': 'text/turtle',
+      });
+
+    const datasets = await fetch(
+      new URL('https://example.com/datasets/hydra-page1.ttl')
+    );
+
+    expect(datasets).toHaveLength(2);
+  });
 });
