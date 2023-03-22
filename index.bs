@@ -493,8 +493,8 @@ A [=data catalog=] provides [=consumers=] with a complete overview of available 
           "description": "Alle linked data zoals beschikbaar gesteld door de Koninklijke Bibliotheek.",
           "publisher": {
             "@type": "Organization",
-            "@id": "https://www.kb.nl/"
-            "name": "Koninklijke Bibliotheek",
+            "@id": "https://www.kb.nl/",
+            "name": "Koninklijke Bibliotheek"
           },
           "dataset": [
             {
@@ -511,6 +511,59 @@ A [=data catalog=] provides [=consumers=] with a complete overview of available 
 </div>
 
 See [[#datacatalog-attributes]] for a full overview of catalog attributes.
+
+### Pagination
+
+Large [=data catalogs=] may be harder to process for clients. 
+
+> Therefore, [=publishers=] *SHOULD* split large data catalogs in parts of at most a 1000 datasets, using the
+> [Hydra Core Vocabulary](https://www.markus-lanthaler.com/hydra/spec/latest/core/#example-20-a-hydra-partialcollectionview-splits-a-collection-into-multiple-views).
+
+Each page *MUST* be a complete RDF document in itself.
+Related resources, such as the publishing organization, must be described on each page,
+even if that resource is the same on all pages.
+
+<div class="example">
+    A paginated catalog:
+
+    <pre highlight=json-ld line-numbers line-highlight="4,6,15-21">
+        {
+          "@context": [
+            "https://schema.org/",
+            {"hydra": "http://www.w3.org/ns/hydra/core#"}
+          ],
+          "@type": ["DataCatalog", "hydra:Collection"],
+          "@id": "https://example.com/catalog",
+          "name": "Paginated catalog of datasets",
+          "description": "This catalog is paginated using the Hydra Core Vocabulary.",
+          "publisher": {
+            "@type": "Organization",
+            "@id": "/publisher",
+            "name": "Example Publisher"
+          },
+          "hydra:view": {
+            "@id": "/catalog?page=1",
+            "@type": "hydra:PartialCollectionView",
+            "hydra:first": {"@id": "/catalog?page=1"},
+            "hydra:next": {"@id": "/catalog?page=2"},
+            "hydra:first": {"@id": "/catalog?page=498"}
+          },
+          "dataset": [
+            {
+              "@type": "Dataset",
+              "@id": "https://example.com/dataset/1",
+              ...
+            }, 
+            {
+              "@type": "Dataset",
+              "@id": "https://example.com/dataset/2",
+              ...
+            }, 
+            ...
+          ]
+        }
+    </pre>
+</div>
 
 ## Overview of attributes ## {#overview} 
 
