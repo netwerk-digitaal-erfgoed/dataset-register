@@ -8,7 +8,8 @@ import {pipeline} from 'stream';
 import {StandardizeSchemaOrgPrefixToHttps} from './transform';
 import Pino from 'pino';
 import {rdfDereferencer} from './rdf';
-import {resolve} from 'node:path';
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+import _ from './comunica-config.json';
 
 export class HttpError extends Error {
   constructor(message: string, public readonly statusCode: number) {
@@ -64,7 +65,7 @@ export async function dereference(url: URL): Promise<DatasetExt> {
 // Use custom config to disable "ccqs:config/rdf-resolve-hypermedia-links/actors.json", which causes
 // many duplicate bindings and does not find any datasets on the second page ff.
 const engine = await new QueryEngineFactory().create({
-  configPath: resolve('src/comunica-config.json'),
+  configPath: new URL('comunica-config.json', import.meta.url).toString(),
 });
 
 /**
