@@ -15,5 +15,5 @@ jobs:
       - name: Output Bikeshed to HTML
         uses: w3c/spec-prod@v2
         with:
-          GH_PAGES_BRANCH: gh_pages
+          GH_PAGES_BRANCH: gh-pages
           VALIDATE_MARKUP: false
