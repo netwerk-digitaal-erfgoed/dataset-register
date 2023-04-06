@@ -114,7 +114,7 @@ Optionally, the datasets are grouped in [=data catalogs=].
 path: model.svg
 </pre>
 
-Requirements {#requirements#}
+Requirements {#requirements}
 ============
 
 ## Available in RDF ## {#rdf}
@@ -475,7 +475,7 @@ protocol which also types the distribution such as OAI-PMH, SPARQL and REST.
 
 See also [[DWBP-UCR#R-APIDocumented]].
 
-## Data catalog ## {#data-catalog}
+## Data catalog ## {#data-catalog-info}
 
 A [=data catalog=] provides [=consumers=] with a complete overview of available datasets, which improves discoverability.
 
@@ -512,7 +512,7 @@ A [=data catalog=] provides [=consumers=] with a complete overview of available 
 
 See [[#datacatalog-attributes]] for a full overview of catalog attributes.
 
-### Pagination
+### Pagination {#data-catalog-pagination}
 
 Large [=data catalogs=] may be harder to process for clients. 
 
@@ -645,7 +645,7 @@ This is an overview of required and recommended attributes.
         <tr>
             <th scope="row">[schema:dateModified](https://schema.org/dateModified)</th>
             <td>See [[#dataset-date]].</td>
-		    <td>0..1</td>
+            <td>0..1</td>
             <td>Recommended</td>
         </tr>
         <tr>
@@ -654,25 +654,25 @@ This is an overview of required and recommended attributes.
             <td>0..1</td>
             <td>Recommended</td>
         </tr>
-        <tr> 	
+        <tr>     
             <th scope="row">[schema:mainEntityOfPage](https://schema.org/mainEntityOfPage)</th>
             <td>URL of a webpage where the dataset is described.</td>
             <td>0..1</td>
             <td>Recommended</td>
         </tr>
-        <tr>	
+        <tr>    
             <th scope="row">[schema:inLanguage](https://schema.org/inLanguage)</th>
             <td>Language or languages in which the dataset is available. Use one of the language codes from the [[BCP47]], such as "nl-NL".</td>
             <td>0..n</td>
             <td>Recommended</td>
         </tr>
-        <tr>	
+        <tr>    
             <th scope="row">[schema:isBasedOn](https://schema.org/isBasedOn)</th>
             <td>The URL of dataset this dataset is based on (previously schema:isBasedOnUrl).</td>
             <td>0..1</td>
             <td>Recommended</td>
         </tr>
-        <tr>	
+        <tr>    
             <th scope="row">[schema:citation](https://schema.org/citation)</th>
             <td>A citation or reference for the dataset.</td>
             <td>0..1</td>
@@ -684,13 +684,13 @@ This is an overview of required and recommended attributes.
             <td>0..n</td>
             <td>Recommended</td>
         </tr>
-        <tr>	
+        <tr>    
             <th scope="row">[schema:keywords](https://schema.org/keywords)</th>
             <td>The keyword or keywords which describe the dataset.</td>
             <td>0..n</td>
             <td>Recommended</td>
         </tr>
-        <tr>	
+        <tr>    
             <th scope="row">[schema:spatialCoverage](https://schema.org/spatialCoverage)</th>
             <td>Indicates the place(s) which are the focus of the dataset.</td>
             <td>0..n</td>
@@ -702,7 +702,7 @@ This is an overview of required and recommended attributes.
             <td>0..n</td>
             <td>Recommended</td>
         </tr>
-        <tr>	
+        <tr>    
             <th scope="row">[schema:includedInDataCatalog](https://schema.org/includedInDataCatalog)</th>
             <td>The HTTP [[IRI]] of the data catalog(s) that the dataset belongs to.</td>
             <td>0..n</td>
@@ -773,7 +773,7 @@ This is an overview of required and recommended attributes.
         <tr>
             <th scope="row">[schema:contentUrl](https://schema.org/contentUrl)</th>
             <td>The URL where the distribution can be directly accessed.</td>
-            <td>1</td>	
+            <td>1</td>    
             <td>Required</td>
         </tr>
         <tr>
@@ -783,58 +783,58 @@ This is an overview of required and recommended attributes.
 The value should indicate the Media type of the response of the schema:contentUrl when no Accept header is included in the request. 
  It is recommended to provide an URL of documentation via the schema:usageInfo property in which the supported encoding formats which can be requested via an Accept HTTP header are listed.</td>
 When the distribution is compressed, the compression format (e.g. zip, gzip) should be added to the `schema:encodingFormat` (eq. `text/turtle+gzip`).
-            <td>1..n</td>	
+            <td>1..n</td>    
             <td>Required</td>
         </tr>
-		<tr>
+        <tr>
             <th scope="row">[schema:name](https://schema.org/name)</th>
             <td>Name of the distribution, depicting the type of distribution.</td>
-            <td>0..1</td>			
+            <td>0..1</td>            
             <td>Recommended</td>
         </tr>
-		<tr>
+        <tr>
             <th scope="row">[schema:description](https://schema.org/description)</th>
             <td>A description of the the distribution.</td>
-            <td>0..1</td>			
+            <td>0..1</td>            
             <td>Recommended</td>
-        </tr>		
+        </tr>        
         <tr>
             <th scope="row">[schema:datePublished](https://schema.org/datePublished)</th>
             <td>Date (or datetime) the distribution was published.</td>
-            <td>0..1</td>	
+            <td>0..1</td>    
             <td>Recommended</td>
-        </tr>	
+        </tr>    
         <tr>
             <th scope="row">[schema:dateModified](https://schema.org/dateModified)</th>
             <td>Date (or datetime) the distribution was last modified.</td>
-            <td>0..1</td>	
+            <td>0..1</td>    
             <td>Recommended</td>
         </tr>
         <tr>
             <th scope="row">[schema:inLanguage](https://schema.org/inLanguage)</th>
             <td>Language or languages in which the distribution is available. Use one of the language codes from the [[BCP47]], such as "nl-NL".</td>
-            <td>0..1</td>	
+            <td>0..1</td>    
             <td>Recommended</td>
         </tr>
         <tr>
             <th scope="row">[schema:license](https://schema.org/license)</th>
             <td>See [[#dataset-license]].</td>
-            <td>0..1</td>	
+            <td>0..1</td>    
             <td>Recommended</td>
         </tr>
-		<tr>
+        <tr>
             <th scope="row">[schema:contentSize](https://schema.org/contentSize)</th>
             <td>A measure indicating the size of the distribution.</td>
-            <td>0..1</td>	
+            <td>0..1</td>    
             <td>Recommended</td>
         </tr>
         <tr>
             <th scope="row">[schema:usageInfo](https://schema.org/usageInfo)</th>
             <td>A link to the API documentation; see [[#developer-docs]].</td>
-            <td>0..1</td>	
+            <td>0..1</td>    
             <td>Required if custom API</td>
         </tr>
-	</tbody>
+    </tbody>
 </table>
 
 ### DataCatalog attributes ### {#datacatalog-attributes}
@@ -846,7 +846,7 @@ When the distribution is compressed, the compression format (e.g. zip, gzip) sho
             <th>Property</th>
             <th>Description</th>
             <th>Cardinality</th>
-			<th>Usage</th>
+            <th>Usage</th>
         </tr>
     </thead>
     <tbody>
@@ -859,25 +859,25 @@ When the distribution is compressed, the compression format (e.g. zip, gzip) sho
         <tr>
             <th scope="row">[schema:name](https://schema.org/name)</th>
             <td>The name of the data catalog.</td>
-			<td>1</td>
+            <td>1</td>
             <td>Required</td>
         </tr>
         <tr>
             <th scope="row">[schema:description](https://schema.org/description)</th>
             <td>A description of the data catalog.</td>
-			<td>0..1</td>
+            <td>0..1</td>
             <td>Recommended</td>
         </tr>
         <tr>
             <th scope="row">[schema:publisher](https://schema.org/publisher)</th>
             <td>The publisher of the data catalog.</td>
-			<td>1</td>
+            <td>1</td>
             <td>Required</td>
         </tr>
         <tr>
             <th scope="row">[schema:dataset](https://schema.org/dataset)</th>
             <td>The datasets that are contained in the data catalog.</td>
-			<td>1..n</td>
+            <td>1..n</td>
             <td>Required</td>
         </tr>
     </tbody>
