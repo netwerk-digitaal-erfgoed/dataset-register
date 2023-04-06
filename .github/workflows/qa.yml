@@ -7,10 +7,10 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - name: Output Bikeshed to HTML
-        uses: netwerk-digitaal-erfgoed/bikeshed-action@v1
+      - name: Build and validate
+        uses: w3c/spec-prod@v2
