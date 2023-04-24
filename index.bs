@@ -512,7 +512,7 @@ A [=data catalog=] provides [=consumers=] with a complete overview of available 
 
 See [[#datacatalog-attributes]] for a full overview of catalog attributes.
 
-### Pagination {#data-catalog-pagination}
+### Pagination ### {#data-catalog-pagination}
 
 Large [=data catalogs=] may be harder to process for clients. 
 
