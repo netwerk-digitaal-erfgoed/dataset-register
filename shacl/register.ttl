@@ -299,10 +299,12 @@ reg:SchemaDistributionLicenseProperty a sh:PropertyShape ;
 reg:SchemaDistributionProperty a sh:PropertyShape ;
     sh:class schema:DataDownload ;
     sh:minCount 1 ;
-    sh:node reg:DistributionShape ;
     sh:severity sh:Info ;
     sh:path schema:distribution ;
     sh:name "Distributies van een dataset"@nl ;
+    # No ‘sh:node reg:DistributionShape’ here on purpose, because that causes violations on child nodes where we expect
+    # infos, for example on a missing distribution description. The report will be valid while containing violations,
+    # which is confusing to users.
 .
 
 ##

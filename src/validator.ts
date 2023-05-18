@@ -80,7 +80,13 @@ export const shacl = (property: string) =>
  * violation, including Info and Warning.
  */
 const hasViolation = (report: ValidationReport) =>
-  report.results.some(
-    (result: ValidationReport.ValidationResult) =>
-      result.severity?.value === shacl('Violation').value
+  report.results.some(result => resultIsViolation(result));
+
+const resultIsViolation = (
+  result: ValidationReport.ValidationResult
+): boolean => {
+  return (
+    result.severity?.value === shacl('Violation').value ||
+    result.detail.some(detail => resultIsViolation(detail))
   );
+};
