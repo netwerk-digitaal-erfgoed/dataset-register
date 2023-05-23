@@ -1,10 +1,5 @@
 export default {
   preset: 'ts-jest/presets/default-esm',
-  globals: {
-    'ts-jest': {
-      useESM: true,
-    },
-  },
   extensionsToTreatAsEsm: ['.ts'],
   testTimeout: 10000,
   collectCoverage: true,
@@ -21,5 +16,12 @@ export default {
       functions: 68.75,
     },
   },
-  transform: {},
+  transform: {
+    '^.+\\.ts$': [
+      'ts-jest',
+      {
+        useESM: true,
+      },
+    ],
+  },
 };
