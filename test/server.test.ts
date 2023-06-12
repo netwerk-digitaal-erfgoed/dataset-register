@@ -4,6 +4,7 @@ import {Server} from 'http';
 import {server} from '../src/server';
 import {readUrl, ShaclValidator} from '../src/validator';
 import {
+  file,
   MockAllowedRegistrationDomainStore,
   MockDatasetStore,
   MockRegistrationStore,
@@ -21,7 +22,9 @@ describe('Server', () => {
       registrationStore,
       new MockAllowedRegistrationDomainStore(),
       new ShaclValidator(shacl),
-      shacl
+      shacl,
+      '/',
+      {logger: true}
     );
 
     nock.back.fixtures = dirname(fileURLToPath(import.meta.url)) + '/http';
@@ -95,6 +98,46 @@ describe('Server', () => {
     nockDone();
     expect(response.statusCode).toEqual(200);
     expect(response.payload).not.toEqual('');
+  });
+
+  it('validates JSON-LD dataset description in request body', async () => {
+    const response = await httpServer.inject({
+      method: 'POST',
+      url: '/datasets/validate',
+      headers: {'Content-Type': 'application/ld+json'},
+      payload: await file('dataset-schema-org-invalid.jsonld'),
+    });
+    expect(response.statusCode).toEqual(400);
+  });
+
+  it('validates Turtle dataset description in request body', async () => {
+    const response = await httpServer.inject({
+      method: 'POST',
+      url: '/datasets/validate',
+      headers: {'Content-Type': 'text/turtle'},
+      payload: await file('dataset-schema-org-valid.ttl'),
+    });
+    expect(response.statusCode).toEqual(200);
+  });
+
+  it('handles invalid JSON-LD in request body', async () => {
+    const response = await httpServer.inject({
+      method: 'POST',
+      url: '/datasets/validate',
+      headers: {'Content-Type': 'application/ld+json'},
+      payload: 'This is not JSON-LD',
+    });
+    expect(response.statusCode).toEqual(400);
+  });
+
+  it('handles invalid Turtle in request body', async () => {
+    const response = await httpServer.inject({
+      method: 'POST',
+      url: '/datasets/validate',
+      headers: {'Content-Type': 'text/turtle'},
+      payload: 'This is not Turtle',
+    });
+    expect(response.statusCode).toEqual(400);
   });
 
   it('responds with validation errors to invalid dataset requests', async () => {
