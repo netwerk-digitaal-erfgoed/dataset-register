@@ -1,7 +1,12 @@
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import factory from 'rdf-ext';
+import rdf from 'rdf-ext';
 import {URL} from 'url';
 import {datasetType} from './query';
+import {Readable, Transform} from 'stream';
+import {StreamParser} from 'n3';
+import {JsonLdParser} from 'jsonld-streaming-parser';
+import {StandardizeSchemaOrgPrefixToHttps} from './transform';
 
 export interface DatasetStore {
   /**
@@ -23,4 +28,26 @@ export function extractIris(datasets: DatasetExt[]): Map<URL, DatasetExt> {
     map.set(url, dataset);
     return map;
   }, new Map<URL, DatasetExt>());
+}
+
+export async function load(
+  stream: Readable,
+  contentType: 'application/ld+json' | string
+) {
+  const parser =
+    contentType === 'application/ld+json'
+      ? (new JsonLdParser() as Transform)
+      : new StreamParser();
+
+  return new Promise((resolve, reject) =>
+    rdf
+      .dataset()
+      .import(
+        stream
+          .pipe(parser)
+          .on('error', error => reject(error))
+          .pipe(new StandardizeSchemaOrgPrefixToHttps())
+      )
+      .then(data => resolve(data))
+  );
 }
