@@ -101,7 +101,6 @@ describe('Server', () => {
   });
 
   it('validates JSON-LD dataset description in request body', async () => {
-    nock.restore(); // Nock not needed in this test.
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets/validate',
@@ -112,7 +111,6 @@ describe('Server', () => {
   });
 
   it('validates Turtle dataset description in request body', async () => {
-    nock.restore(); // Nock not needed in this test.
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets/validate',
@@ -123,7 +121,6 @@ describe('Server', () => {
   });
 
   it('handles invalid JSON-LD in request body', async () => {
-    nock.restore(); // Nock not needed in this test.
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets/validate',
@@ -134,7 +131,6 @@ describe('Server', () => {
   });
 
   it('handles invalid Turtle in request body', async () => {
-    nock.restore(); // Nock not needed in this test.
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets/validate',
