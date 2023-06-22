@@ -13,6 +13,10 @@ export interface DatasetStore {
    * Store an array of dataset descriptions, replacing any triples that were previously stored for the datasets.
    */
   store(datasets: DatasetExt[]): void;
+
+  countDatasets(): Promise<number>;
+
+  countOrganisations(): Promise<number>;
 }
 
 export function extractIris(datasets: DatasetExt[]): Map<URL, DatasetExt> {
