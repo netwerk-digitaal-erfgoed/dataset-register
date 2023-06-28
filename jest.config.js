@@ -10,8 +10,8 @@ export default {
   coverageReporters: ['json-summary', 'text'],
   coverageThreshold: {
     global: {
-      lines: 71.59,
-      statements: 71.54,
+      lines: 72.09,
+      statements: 72.05,
       branches: 63.77,
       functions: 72.52,
     },

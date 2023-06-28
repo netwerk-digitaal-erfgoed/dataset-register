@@ -25,6 +25,7 @@ import fastifyCors from '@fastify/cors';
 import {DatasetCore} from 'rdf-js';
 import acceptsSerializer from '@fastify/accepts-serializer';
 import fastifySwaggerUi from '@fastify/swagger-ui';
+import {registrationsCounter} from './instrumentation';
 
 const serializer =
   (contentType: string) =>
@@ -171,6 +172,11 @@ export async function server(
         request.log.info(
           `Found ${datasets.length} datasets at ${url.toString()}`
         );
+        registrationsCounter.add(1, {
+          'datasets.count': datasets.length,
+          valid: true,
+        });
+
         await datasetStore.store(datasets);
 
         // Update registration with dataset descriptions that we found.
