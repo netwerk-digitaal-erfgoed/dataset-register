@@ -2,6 +2,7 @@ import {metrics, ValueType} from '@opentelemetry/api';
 import {Resource} from '@opentelemetry/resources';
 import {SemanticResourceAttributes} from '@opentelemetry/semantic-conventions';
 import {
+  ConsoleMetricExporter,
   MeterProvider,
   PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
@@ -16,13 +17,17 @@ const meterProvider = new MeterProvider({
 });
 
 const metricReader = new PeriodicExportingMetricReader({
-  exporter: new OTLPMetricExporter({
-    url: process.env.OPENTELEMETRY_COLLECTOR,
-  }),
+  exporter: new OTLPMetricExporter(),
   exportIntervalMillis: 3000,
 });
 
 meterProvider.addMetricReader(metricReader);
+meterProvider.addMetricReader(
+  new PeriodicExportingMetricReader({
+    exporter: new ConsoleMetricExporter(),
+    exportIntervalMillis: 3000,
+  })
+);
 metrics.setGlobalMeterProvider(meterProvider);
 
 const meter = metrics.getMeter('dataset-register');
