@@ -47,7 +47,6 @@ export class Crawler {
       registrationsCounter.add(1, {
         valid: isValid,
         'http.status': statusCode,
-        'datasets.count': datasets.length,
       });
 
       const updatedRegistration = registration.read(

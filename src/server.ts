@@ -173,7 +173,6 @@ export async function server(
           `Found ${datasets.length} datasets at ${url.toString()}`
         );
         registrationsCounter.add(1, {
-          'datasets.count': datasets.length,
           valid: true,
         });
 
