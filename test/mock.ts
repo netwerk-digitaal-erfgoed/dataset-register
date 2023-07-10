@@ -51,6 +51,14 @@ export class MockDatasetStore implements DatasetStore {
   store(datasets: DatasetExt[]): void {
     this.datasets.push(...datasets);
   }
+
+  countDatasets(): Promise<number> {
+    return Promise.resolve(this.datasets.length);
+  }
+
+  countOrganisations(): Promise<number> {
+    return Promise.resolve(0);
+  }
 }
 
 export const file = async (filename: string) =>

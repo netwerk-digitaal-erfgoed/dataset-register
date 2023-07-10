@@ -9,6 +9,7 @@ import {Crawler} from './crawler';
 import {scheduleJob} from 'node-schedule';
 import {server} from './server';
 import Pino from 'pino';
+import {startInstrumentation} from './instrumentation';
 
 const client = new GraphDbClient(
   process.env.GRAPHDB_URL || 'http://127.0.0.1:7200',
@@ -27,6 +28,7 @@ const client = new GraphDbClient(
   const registrationStore = new GraphDbRegistrationStore(client);
   const allowedRegistrationDomainStore =
     new GraphDbAllowedRegistrationDomainStore(client);
+  await startInstrumentation(datasetStore);
   const shacl = await readUrl('shacl/register.ttl');
   const validator = new ShaclValidator(shacl);
   const crawler = new Crawler(

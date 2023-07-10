@@ -303,6 +303,30 @@ export class GraphDbAllowedRegistrationDomainStore
 export class GraphDbDatasetStore implements DatasetStore {
   constructor(private readonly client: GraphDbClient) {}
 
+  public async countDatasets(): Promise<number> {
+    const result = await this.client.query(`
+      PREFIX dcat: <http://www.w3.org/ns/dcat#>
+
+      SELECT (COUNT(?s) as ?count) WHERE {
+        ?s a dcat:Dataset .
+      }`);
+
+    return parseInt(result.results.bindings[0].count.value);
+  }
+
+  public async countOrganisations(): Promise<number> {
+    const result = await this.client.query(`
+      PREFIX dcat: <http://www.w3.org/ns/dcat#>
+      PREFIX dct: <http://purl.org/dc/terms/>
+
+      SELECT (COUNT(DISTINCT(?publisher)) as ?count) WHERE {
+        ?s a dcat:Dataset ;
+          dct:publisher ?publisher .
+      }`);
+
+    return parseInt(result.results.bindings[0].count.value);
+  }
+
   /**
    * Store the dataset using optimized graph replacement.
    *
