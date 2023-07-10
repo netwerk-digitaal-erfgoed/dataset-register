@@ -1,15 +1,16 @@
 # Dataset Register
 
-This is a prototype of the [NDE](https://www.netwerkdigitaalerfgoed.nl/en/about-us/) Dataset Register,
+This is the [NDE](https://www.netwerkdigitaalerfgoed.nl/en/about-us/) Dataset Register,
 a service that helps users find and discover datasets.
 
 Institutions (such as cultural heritage organizations) register their dataset descriptions with the NDE Dataset Register
-using its HTTP API. The Dataset Register builds an index by fetching and periodically [crawling](#crawler) dataset descriptions.
+using its HTTP API. The Dataset Register builds an index by fetching, [validating](#validate-dataset-descriptions) and
+periodically [crawling](#crawler) dataset descriptions.
 
 The HTTP API is documented at https://datasetregister.netwerkdigitaalerfgoed.nl/api.
 
 See the [Dataset Register Demonstrator](https://datasetregister.netwerkdigitaalerfgoed.nl),
-a demo application using this prototype, for more background information (in Dutch).
+a client application for this repository’s HTTP API, for more background information (in Dutch).
 
 ## Design principles
 

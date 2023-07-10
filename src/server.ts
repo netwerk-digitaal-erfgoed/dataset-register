@@ -1,6 +1,9 @@
 import fastify, {
+  FastifyContextConfig,
+  FastifyError,
   FastifyInstance,
   FastifyReply,
+  FastifyRequest,
   FastifyServerOptions,
 } from 'fastify';
 import {Validator} from './validator';
@@ -13,8 +16,8 @@ import {
   Registration,
   RegistrationStore,
 } from './registration';
-import {DatasetStore, extractIris} from './dataset';
-import {Server} from 'http';
+import {DatasetStore, extractIris, load} from './dataset';
+import {IncomingMessage, Server} from 'http';
 import * as psl from 'psl';
 import {rdfSerializer} from './rdf';
 import fastifySwagger from '@fastify/swagger';
@@ -22,6 +25,7 @@ import fastifyCors from '@fastify/cors';
 import {DatasetCore} from 'rdf-js';
 import acceptsSerializer from '@fastify/accepts-serializer';
 import fastifySwaggerUi from '@fastify/swagger-ui';
+import {registrationsCounter} from './instrumentation';
 
 const serializer =
   (contentType: string) =>
@@ -64,17 +68,15 @@ export async function server(
     });
 
   const rdfSerializerConfig = {
-    config: {
-      default: 'application/ld+json',
-      serializers: [
-        ...(await rdfSerializer.getContentTypes()).map(contentType => {
-          return {
-            regex: new RegExp(contentType.replace('+', '\\+')),
-            serializer: serializer(contentType),
-          };
-        }),
-      ],
-    },
+    default: 'application/ld+json',
+    serializers: [
+      ...(await rdfSerializer.getContentTypes()).map(contentType => {
+        return {
+          regex: new RegExp(contentType.replace('+', '\\+')),
+          serializer: serializer(contentType),
+        };
+      }),
+    ],
   };
 
   const datasetsRequest = {
@@ -89,13 +91,12 @@ export async function server(
     },
   };
 
-  async function validate(
+  async function resolveDataset(
     url: URL,
     reply: FastifyReply
   ): Promise<DatasetExt | null> {
-    let dataset: DatasetExt;
     try {
-      dataset = await dereference(url);
+      return await dereference(url);
     } catch (e) {
       if (e instanceof HttpError) {
         reply.log.info(
@@ -117,7 +118,9 @@ export async function server(
 
       return null;
     }
+  }
 
+  async function validate(dataset: DatasetExt, reply: FastifyReply) {
     const validation = await validator.validate(dataset);
     switch (validation.state) {
       case 'valid':
@@ -147,7 +150,7 @@ export async function server(
 
   server.post(
     '/datasets',
-    {...datasetsRequest, ...rdfSerializerConfig},
+    {...datasetsRequest, config: rdfSerializerConfig},
     async (request, reply) => {
       const url = new URL((request.body as {'@id': string})['@id']);
       if (!(await domainIsAllowed(url))) {
@@ -156,7 +159,8 @@ export async function server(
       }
 
       reply.code(202); // The validate function will reply.send() with any validation warnings.
-      if (await validate(url, reply)) {
+      const dataset = await resolveDataset(url, reply);
+      if (dataset && (await validate(dataset, reply))) {
         // The URL has validated, so any problems with processing the dataset are now ours. Therefore, make sure to
         // store the registration so we can come back to that when crawling, even if fetching the datasets fails.
         // Store first rather than wrapping in a try/catch to cope with OOMs.
@@ -168,6 +172,10 @@ export async function server(
         request.log.info(
           `Found ${datasets.length} datasets at ${url.toString()}`
         );
+        registrationsCounter.add(1, {
+          valid: true,
+        });
+
         await datasetStore.store(datasets);
 
         // Update registration with dataset descriptions that we found.
@@ -186,11 +194,14 @@ export async function server(
 
   server.put(
     '/datasets/validate',
-    {...datasetsRequest, ...rdfSerializerConfig},
+    {...datasetsRequest, config: rdfSerializerConfig},
     async (request, reply) => {
       const url = new URL((request.body as {'@id': string})['@id']);
       request.log.info(url.toString());
-      await validate(url, reply);
+      const dataset = await resolveDataset(url, reply);
+      if (dataset) {
+        await validate(dataset, reply);
+      }
       request.log.info(
         `Validated at ${Math.round(
           process.memoryUsage().rss / 1024 / 1024
@@ -200,18 +211,59 @@ export async function server(
     }
   );
 
-  server.get('/shacl', rdfSerializerConfig, async (request, reply) => {
-    return reply.send(shacl);
-  });
+  server.post(
+    '/datasets/validate',
+    {config: {...rdfSerializerConfig, parseRdf: true}},
+    async (request, reply) => {
+      await validate(request.body as DatasetExt, reply);
+    }
+  );
+
+  server.get(
+    '/shacl',
+    {config: rdfSerializerConfig},
+    async (request, reply) => {
+      return reply.send(shacl);
+    }
+  );
 
   /**
-   * Make Fastify accept JSON-LD payloads.
+   * If a route has enabled `parseRdf`, parse RDF into a DatasetExt object. If not, parse as JSON.
    */
   server.addContentTypeParser(
-    'application/ld+json',
-    {parseAs: 'string'},
-    server.getDefaultJsonParser('ignore', 'ignore')
+    ['application/ld+json', 'text/turtle', 'text/n3', 'application/trig'],
+    async (request: FastifyRequest, payload: IncomingMessage) => {
+      if ((request.routeConfig as CustomConfig).parseRdf ?? false) {
+        try {
+          return await load(
+            request.raw,
+            request.headers['content-type'] ?? 'application/ld+json'
+          );
+        } catch (e) {
+          (e as FastifyError).statusCode = 400;
+          return new Promise((resolve, error) => error(e));
+        }
+      }
+
+      // Parse simple JSON-LD as JSON.
+      return new Promise(resolve => {
+        let data = '';
+        payload.on('data', chunk => {
+          data += chunk;
+        });
+        payload.on('end', () => {
+          resolve(JSON.parse(data));
+        });
+      });
+    }
   );
 
   return server;
+}
+
+export interface CustomConfig extends FastifyContextConfig {
+  /**
+   * If enabled, the RDF request body will be parsed into a DatasetExt object by the content parser.
+   */
+  parseRdf: boolean;
 }
