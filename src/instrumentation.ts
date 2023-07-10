@@ -28,7 +28,7 @@ const metricReader = new PeriodicExportingMetricReader({
   exporter: new OTLPMetricExporter({
     url: process.env.OPENTELEMETRY_COLLECTOR,
   }),
-  exportIntervalMillis: 3000,
+  exportIntervalMillis: 60000,
 });
 
 meterProvider.addMetricReader(metricReader);
