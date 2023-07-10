@@ -2,12 +2,20 @@ import {metrics, ValueType} from '@opentelemetry/api';
 import {Resource} from '@opentelemetry/resources';
 import {SemanticResourceAttributes} from '@opentelemetry/semantic-conventions';
 import {
-  ConsoleMetricExporter,
   MeterProvider,
   PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
 import {OTLPMetricExporter} from '@opentelemetry/exporter-metrics-otlp-proto';
+import {DatasetStore} from './dataset';
 
+export function startInstrumentation(datasetStore: DatasetStore) {
+  datasetsCounter.addCallback(async result =>
+    result.observe(await datasetStore.countDatasets())
+  );
+  organisationsCounter.addCallback(async result =>
+    result.observe(await datasetStore.countOrganisations())
+  );
+}
 const meterProvider = new MeterProvider({
   resource: Resource.default().merge(
     new Resource({
@@ -17,30 +25,34 @@ const meterProvider = new MeterProvider({
 });
 
 const metricReader = new PeriodicExportingMetricReader({
-  exporter: new OTLPMetricExporter(),
+  exporter: new OTLPMetricExporter({
+    url: process.env.OPENTELEMETRY_COLLECTOR,
+  }),
   exportIntervalMillis: 3000,
 });
 
 meterProvider.addMetricReader(metricReader);
-meterProvider.addMetricReader(
-  new PeriodicExportingMetricReader({
-    exporter: new ConsoleMetricExporter(),
-    exportIntervalMillis: 3000,
-  })
-);
 metrics.setGlobalMeterProvider(meterProvider);
 
-const meter = metrics.getMeter('dataset-register');
+const meter = metrics.getMeter('default');
 
-export const datasetsCounter = meter.createObservableCounter('datasets.count', {
-  description: 'Number of registered datasets',
+const datasetsCounter = meter.createObservableCounter('datasets.counter', {
+  description: 'Number of datasets',
   valueType: ValueType.INT,
 });
 
-export const registrationsCounter = meter.createUpDownCounter(
-  'registrations.count',
+const organisationsCounter = meter.createObservableCounter(
+  'organisations.counter',
   {
-    description: 'Number of registration URLs',
+    description: 'Number of organisations',
+    valueType: ValueType.INT,
+  }
+);
+
+export const registrationsCounter = meter.createUpDownCounter(
+  'registrations.counter',
+  {
+    description: 'Number of times an URL was submitted',
     valueType: ValueType.INT,
   }
 );

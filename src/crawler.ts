@@ -4,7 +4,6 @@ import {dereference, fetch, HttpError, NoDatasetFoundAtUrl} from './fetch';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import Pino from 'pino';
 import {Validator} from './validator';
-import {registrationsCounter} from './instrumentation';
 
 export class Crawler {
   constructor(
@@ -42,12 +41,6 @@ export class Crawler {
           // Request was successful, but no datasets exist any longer at the URL, so ignore.
         }
       }
-
-      registrationsCounter.add(-1);
-      registrationsCounter.add(1, {
-        valid: isValid,
-        'http.status': statusCode,
-      });
 
       const updatedRegistration = registration.read(
         [...extractIris(datasets).keys()],
