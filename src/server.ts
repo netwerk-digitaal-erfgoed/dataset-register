@@ -25,7 +25,7 @@ import fastifyCors from '@fastify/cors';
 import {DatasetCore} from 'rdf-js';
 import acceptsSerializer from '@fastify/accepts-serializer';
 import fastifySwaggerUi from '@fastify/swagger-ui';
-import {registrationsCounter} from './instrumentation';
+import {registrationsCounter, validationsCounter} from './instrumentation';
 
 const serializer =
   (contentType: string) =>
@@ -122,6 +122,7 @@ export async function server(
 
   async function validate(dataset: DatasetExt, reply: FastifyReply) {
     const validation = await validator.validate(dataset);
+
     switch (validation.state) {
       case 'valid':
         reply.send(validation.errors);
@@ -203,6 +204,9 @@ export async function server(
       if (dataset) {
         await validate(dataset, reply);
       }
+      validationsCounter.add(1, {
+        status: reply.statusCode,
+      });
       request.log.info(
         `Validated at ${Math.round(
           process.memoryUsage().rss / 1024 / 1024
@@ -217,6 +221,9 @@ export async function server(
     {config: {...rdfSerializerConfig, parseRdf: true}},
     async (request, reply) => {
       await validate(request.body as DatasetExt, reply);
+      validationsCounter.add(1, {
+        status: reply.statusCode,
+      });
     }
   );
 
