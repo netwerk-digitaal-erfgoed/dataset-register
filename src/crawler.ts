@@ -4,6 +4,7 @@ import {dereference, fetch, HttpError, NoDatasetFoundAtUrl} from './fetch';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import Pino from 'pino';
 import {Validator} from './validator';
+import {crawlCounter} from './instrumentation';
 
 export class Crawler {
   constructor(
@@ -23,7 +24,7 @@ export class Crawler {
       this.logger.info(`Crawling registration URL ${registration.url}`);
       let datasets: DatasetExt[] = [];
       let statusCode = 200;
-      let isValid = true;
+      let isValid = false;
 
       try {
         const data = await dereference(registration.url);
@@ -38,9 +39,14 @@ export class Crawler {
         }
 
         if (e instanceof NoDatasetFoundAtUrl) {
-          // Request was successful, but no datasets exist any longer at the URL, so ignore.
+          // Request was successful, but no datasets exist any longer at the URL.
         }
       }
+
+      crawlCounter.add(1, {
+        status: statusCode,
+        valid: isValid,
+      });
 
       const updatedRegistration = registration.read(
         [...extractIris(datasets).keys()],
