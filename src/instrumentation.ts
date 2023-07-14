@@ -47,7 +47,7 @@ const organisationsCounter = meter.createObservableCounter(
   }
 );
 
-export const registrationsCounter = meter.createUpDownCounter(
+export const registrationsCounter = meter.createCounter(
   'registrations.counter',
   {
     description: 'Number of times a dataset/catalog was submitted',
@@ -55,10 +55,12 @@ export const registrationsCounter = meter.createUpDownCounter(
   }
 );
 
-export const validationsCounter = meter.createUpDownCounter(
-  'validations.counter',
-  {
-    description: 'Number of times an dataset/catalog was validated',
-    valueType: ValueType.INT,
-  }
-);
+export const validationsCounter = meter.createCounter('validations.counter', {
+  description: 'Number of times an dataset/catalog was validated',
+  valueType: ValueType.INT,
+});
+
+export const crawlCounter = meter.createCounter('crawler.counter', {
+  description: 'Number of times a dataset/catalog was crawled',
+  valueType: ValueType.INT,
+});
