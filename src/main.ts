@@ -56,7 +56,10 @@ const client = new GraphDbClient(
       validator,
       shacl,
       process.env.DOCS_URL || undefined,
-      {logger: process.env.LOG ? !!+process.env.LOG : true}
+      {
+        logger: process.env.LOG === 'true',
+        trustProxy: process.env.TRUST_PROXY === 'true',
+      }
     );
     await httpServer.listen({port: 3000, host: '0.0.0.0'});
   } catch (err) {
