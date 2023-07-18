@@ -57,7 +57,7 @@ const client = new GraphDbClient(
       shacl,
       process.env.DOCS_URL || undefined,
       {
-        logger: process.env.LOG === 'true',
+        logger: process.env.LOG !== 'false',
         trustProxy: process.env.TRUST_PROXY === 'true',
       }
     );
