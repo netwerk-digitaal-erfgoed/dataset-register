@@ -25,7 +25,7 @@ import fastifyCors from '@fastify/cors';
 import {DatasetCore} from 'rdf-js';
 import acceptsSerializer from '@fastify/accepts-serializer';
 import fastifySwaggerUi from '@fastify/swagger-ui';
-import {registrationsCounter} from './instrumentation';
+import {registrationsCounter, validationsCounter} from './instrumentation';
 
 const serializer =
   (contentType: string) =>
@@ -122,16 +122,17 @@ export async function server(
 
   async function validate(dataset: DatasetExt, reply: FastifyReply) {
     const validation = await validator.validate(dataset);
+
     switch (validation.state) {
       case 'valid':
         reply.send(validation.errors);
-        return dataset;
+        return true;
       case 'no-dataset':
         reply.code(406).send();
-        return null;
+        return false;
       case 'invalid': {
         reply.code(400).send(validation.errors);
-        return null;
+        return false;
       }
     }
   }
@@ -160,7 +161,8 @@ export async function server(
 
       reply.code(202); // The validate function will reply.send() with any validation warnings.
       const dataset = await resolveDataset(url, reply);
-      if (dataset && (await validate(dataset, reply))) {
+      const valid = dataset ? await validate(dataset, reply) : false;
+      if (dataset && valid) {
         // The URL has validated, so any problems with processing the dataset are now ours. Therefore, make sure to
         // store the registration so we can come back to that when crawling, even if fetching the datasets fails.
         // Store first rather than wrapping in a try/catch to cope with OOMs.
@@ -172,10 +174,6 @@ export async function server(
         request.log.info(
           `Found ${datasets.length} datasets at ${url.toString()}`
         );
-        registrationsCounter.add(1, {
-          valid: true,
-        });
-
         await datasetStore.store(datasets);
 
         // Update registration with dataset descriptions that we found.
@@ -186,6 +184,10 @@ export async function server(
         );
         await registrationStore.store(updatedRegistration);
       }
+
+      registrationsCounter.add(1, {
+        valid,
+      });
 
       // If the dataset did not validate, the validate() function has set a 4xx status code.
       return reply;
@@ -202,6 +204,9 @@ export async function server(
       if (dataset) {
         await validate(dataset, reply);
       }
+      validationsCounter.add(1, {
+        status: reply.statusCode,
+      });
       request.log.info(
         `Validated at ${Math.round(
           process.memoryUsage().rss / 1024 / 1024
@@ -216,6 +221,9 @@ export async function server(
     {config: {...rdfSerializerConfig, parseRdf: true}},
     async (request, reply) => {
       await validate(request.body as DatasetExt, reply);
+      validationsCounter.add(1, {
+        status: reply.statusCode,
+      });
     }
   );
 
