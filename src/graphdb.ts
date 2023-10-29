@@ -9,8 +9,8 @@ import {
   AllowedRegistrationDomainStore,
   Registration,
   RegistrationStore,
-} from './registration';
-import {DatasetStore, extractIris} from './dataset';
+} from './registration.js';
+import {DatasetStore, extractIris} from './dataset.js';
 
 export type SparqlResult = {
   results: {

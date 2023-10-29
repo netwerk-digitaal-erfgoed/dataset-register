@@ -6,26 +6,26 @@ import fastify, {
   FastifyRequest,
   FastifyServerOptions,
 } from 'fastify';
-import {Validator} from './validator';
+import {Validator} from './validator.js';
 import datasetExt from 'rdf-dataset-ext';
-import {dereference, fetch, HttpError, NoDatasetFoundAtUrl} from './fetch';
+import {dereference, fetch, HttpError, NoDatasetFoundAtUrl} from './fetch.js';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import {URL} from 'url';
 import {
   AllowedRegistrationDomainStore,
   Registration,
   RegistrationStore,
-} from './registration';
-import {DatasetStore, extractIris, load} from './dataset';
+} from './registration.js';
+import {DatasetStore, extractIris, load} from './dataset.js';
 import {IncomingMessage, Server} from 'http';
 import * as psl from 'psl';
-import {rdfSerializer} from './rdf';
+import {rdfSerializer} from './rdf.js';
 import fastifySwagger from '@fastify/swagger';
 import fastifyCors from '@fastify/cors';
 import {DatasetCore} from 'rdf-js';
 import acceptsSerializer from '@fastify/accepts-serializer';
 import fastifySwaggerUi from '@fastify/swagger-ui';
-import {registrationsCounter, validationsCounter} from './instrumentation';
+import {registrationsCounter, validationsCounter} from './instrumentation.js';
 
 const serializer =
   (contentType: string) =>

@@ -12,7 +12,7 @@ export default {
     global: {
       lines: 71.01,
       statements: 70.97,
-      branches: 63.56,
+      branches: 64.56,
       functions: 68.75,
     },
   },
@@ -23,5 +23,8 @@ export default {
         useESM: true,
       },
     ],
+  },
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
   },
 };
