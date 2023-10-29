@@ -1,10 +1,10 @@
-import {RegistrationStore} from './registration';
-import {DatasetStore, extractIris} from './dataset';
-import {dereference, fetch, HttpError, NoDatasetFoundAtUrl} from './fetch';
+import {RegistrationStore} from './registration.js';
+import {DatasetStore, extractIris} from './dataset.js';
+import {dereference, fetch, HttpError, NoDatasetFoundAtUrl} from './fetch.js';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import Pino from 'pino';
-import {Validator} from './validator';
-import {crawlCounter} from './instrumentation';
+import {Validator} from './validator.js';
+import {crawlCounter} from './instrumentation.js';
 
 export class Crawler {
   constructor(

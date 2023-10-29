@@ -3,13 +3,13 @@ import {
   GraphDbClient,
   GraphDbDatasetStore,
   GraphDbRegistrationStore,
-} from './graphdb';
-import {readUrl, ShaclValidator} from './validator';
-import {Crawler} from './crawler';
+} from './graphdb.js';
+import {readUrl, ShaclValidator} from './validator.js';
+import {Crawler} from './crawler.js';
 import {scheduleJob} from 'node-schedule';
-import {server} from './server';
+import {server} from './server.js';
 import Pino from 'pino';
-import {startInstrumentation} from './instrumentation';
+import {startInstrumentation} from './instrumentation.js';
 
 const client = new GraphDbClient(
   process.env.GRAPHDB_URL || 'http://127.0.0.1:7200',
