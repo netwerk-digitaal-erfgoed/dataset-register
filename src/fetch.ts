@@ -27,7 +27,7 @@ export async function fetch(url: URL): Promise<DatasetExt[]> {
   let datasets = await doFetch(url);
   const nextPage = await findNextPage(url);
   if (nextPage !== null && nextPage !== url) {
-    datasets = [...datasets, ...(await doFetch(nextPage))];
+    datasets = [...datasets, ...(await fetch(nextPage))];
   }
 
   if (datasets.length === 0) {
