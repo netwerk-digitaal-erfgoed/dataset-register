@@ -87,8 +87,8 @@ Definitions {#definitions}
 :: A channel through which a [=dataset=] is available, 
     for example a CSV file download or a [[SPARQL11-OVERVIEW|SPARQL]] endpoint.
 
-: <dfn export>Application Programming Interface</dfn> (<dfn>API</dfn>)
-:: Issue: TODO
+: <dfn>Web API</dfn>
+:: An API that is available over HTTP, for example an OAI-PMH, OpenAPI or SPARQL endpoint. 
 
 : <dfn>Machine-readability</dfn>
 :: Issue: TODO
@@ -101,8 +101,6 @@ Definitions {#definitions}
 
 : <dfn>Consumer</dfn>
 :: On organization or an individual that uses one or more [=datasets=] that are provided by a [=publisher=].
-
-    Issue: add examples
 
 Conceptual model {#conceptual-model}
 ===============
@@ -367,7 +365,7 @@ The person/organization data is then included as the dataset’s publisher:
 > Each distribution *MUST* have at least a MIME format and the URL where the distribution can be accessed.
 
 Distributions can be data dumps in RDF or some other format such as CSV, live SPARQL endpoints,
-OAI-PMH endpoints or other APIs.
+OAI-PMH endpoints or other [=web APIs=].
 
 <div class="example">
     A minimal definition of a SPARQL endpoint distribution.
@@ -420,7 +418,7 @@ See [[#distribution-attributes]] for a full overview.
 ### Developer documentation ### {#developer-docs}
 
 Publishers *SHOULD* link to documentation URLs via the [schema:usageInfo](https://schema.org/usageInfo) attribute. For datadumps this should be documentation about the 
-data model. For [=API=]s this should be documentation about the specific capabilities of the API (like content-type support) *AND* the generic specification of the 
+data model. For [=web APIs=] this should be documentation about the specific capabilities of the API (like content-type support) *AND* the generic specification of the 
 protocol which also types the distribution such as OAI-PMH, SPARQL and REST.
 
 <table>
@@ -830,7 +828,7 @@ When the distribution is compressed, the compression format (e.g. zip, gzip) sho
         </tr>
         <tr>
             <th scope="row">[schema:usageInfo](https://schema.org/usageInfo)</th>
-            <td>A link to the API documentation; see [[#developer-docs]].</td>
+            <td>A link to the [=web API=] documentation; see [[#developer-docs]].</td>
             <td>0..1</td>    
             <td>Required if custom API</td>
         </tr>
