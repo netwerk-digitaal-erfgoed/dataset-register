@@ -10,10 +10,10 @@ export default {
   coverageReporters: ['json-summary', 'text'],
   coverageThreshold: {
     global: {
-      lines: 71.01,
-      statements: 70.97,
-      branches: 63.56,
-      functions: 68.75,
+      lines: 71.7,
+      statements: 71.73,
+      branches: 63.3,
+      functions: 69.72,
     },
   },
   transform: {
@@ -23,5 +23,8 @@ export default {
         useESM: true,
       },
     ],
+  },
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
   },
 };

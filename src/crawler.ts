@@ -1,15 +1,17 @@
-import {RegistrationStore} from './registration';
-import {DatasetStore, extractIris} from './dataset';
-import {dereference, fetch, HttpError, NoDatasetFoundAtUrl} from './fetch';
+import {RegistrationStore} from './registration.js';
+import {DatasetStore, extractIri, extractIris} from './dataset.js';
+import {dereference, fetch, HttpError, NoDatasetFoundAtUrl} from './fetch.js';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import Pino from 'pino';
-import {Validator} from './validator';
-import {crawlCounter} from './instrumentation';
+import {Valid, Validator} from './validator.js';
+import {crawlCounter} from './instrumentation.js';
+import {rate, RatingStore} from './rate.js';
 
 export class Crawler {
   constructor(
     private registrationStore: RegistrationStore,
     private datasetStore: DatasetStore,
+    private ratingStore: RatingStore,
     private validator: Validator,
     private logger: Pino.Logger
   ) {}
@@ -28,10 +30,16 @@ export class Crawler {
 
       try {
         const data = await dereference(registration.url);
-        isValid = (await this.validator.validate(data)).state === 'valid';
+        const validationResult = await this.validator.validate(data);
+        isValid = validationResult.state === 'valid';
         if (isValid) {
           datasets = await fetch(registration.url);
           await this.datasetStore.store(datasets);
+          datasets.map(async dataset => {
+            const dcatValidationResult = await this.validator.validate(dataset);
+            const rating = rate(dcatValidationResult as Valid);
+            this.ratingStore.store(extractIri(dataset), rating);
+          });
         }
       } catch (e) {
         if (e instanceof HttpError) {

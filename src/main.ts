@@ -2,14 +2,15 @@ import {
   GraphDbAllowedRegistrationDomainStore,
   GraphDbClient,
   GraphDbDatasetStore,
+  GraphDbRatingStore,
   GraphDbRegistrationStore,
-} from './graphdb';
-import {readUrl, ShaclValidator} from './validator';
-import {Crawler} from './crawler';
+} from './graphdb.js';
+import {readUrl, ShaclValidator} from './validator.js';
+import {Crawler} from './crawler.js';
 import {scheduleJob} from 'node-schedule';
-import {server} from './server';
+import {server} from './server.js';
 import Pino from 'pino';
-import {startInstrumentation} from './instrumentation';
+import {startInstrumentation} from './instrumentation.js';
 
 const client = new GraphDbClient(
   process.env.GRAPHDB_URL || 'http://127.0.0.1:7200',
@@ -26,6 +27,7 @@ const client = new GraphDbClient(
   const logger = Pino();
   const datasetStore = new GraphDbDatasetStore(client);
   const registrationStore = new GraphDbRegistrationStore(client);
+  const ratingStore = new GraphDbRatingStore(client);
   const allowedRegistrationDomainStore =
     new GraphDbAllowedRegistrationDomainStore(client);
   await startInstrumentation(datasetStore);
@@ -34,6 +36,7 @@ const client = new GraphDbClient(
   const crawler = new Crawler(
     registrationStore,
     datasetStore,
+    ratingStore,
     validator,
     logger
   );
