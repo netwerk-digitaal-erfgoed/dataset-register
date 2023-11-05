@@ -2,6 +2,7 @@ import {
   GraphDbAllowedRegistrationDomainStore,
   GraphDbClient,
   GraphDbDatasetStore,
+  GraphDbRatingStore,
   GraphDbRegistrationStore,
 } from './graphdb.js';
 import {readUrl, ShaclValidator} from './validator.js';
@@ -26,6 +27,7 @@ const client = new GraphDbClient(
   const logger = Pino();
   const datasetStore = new GraphDbDatasetStore(client);
   const registrationStore = new GraphDbRegistrationStore(client);
+  const ratingStore = new GraphDbRatingStore(client);
   const allowedRegistrationDomainStore =
     new GraphDbAllowedRegistrationDomainStore(client);
   await startInstrumentation(datasetStore);
@@ -34,6 +36,7 @@ const client = new GraphDbClient(
   const crawler = new Crawler(
     registrationStore,
     datasetStore,
+    ratingStore,
     validator,
     logger
   );

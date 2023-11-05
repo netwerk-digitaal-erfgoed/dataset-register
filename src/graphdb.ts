@@ -11,6 +11,7 @@ import {
   RegistrationStore,
 } from './registration.js';
 import {DatasetStore, extractIris} from './dataset.js';
+import {Rating, RatingStore} from './rate.js';
 
 export type SparqlResult = {
   results: {
@@ -62,22 +63,24 @@ export class GraphDbClient {
     this.token = response.headers.get('Authorization')!;
   }
 
-  public async request(
-    method: string,
-    url: string,
-    body?: string,
-    accept?: string
-  ): Promise<Response> {
+  public async request(options: {
+    method: string;
+    url?: string;
+    body?: string;
+    accept?: string;
+    contentType?: string;
+  }): Promise<Response> {
     const headers = await this.getHeaders();
-    headers.set('Content-Type', 'application/x-trig');
-    if (accept) {
-      headers.set('Accept', accept);
+    headers.set('Content-Type', options.contentType ?? 'application/x-trig');
+    if (options.accept) {
+      headers.set('Accept', options.accept);
     }
-    const repositoryUrl = this.url + '/repositories/' + this.repository + url;
+    const repositoryUrl =
+      this.url + '/repositories/' + this.repository + options.url;
     const response = await fetch(repositoryUrl, {
-      method: method,
+      method: options.method,
       headers: headers,
-      body: body,
+      body: options.body,
     });
     if (
       // 409 = `Auth token hash mismatch`, which occurs after GraphDB has restarted.
@@ -87,12 +90,17 @@ export class GraphDbClient {
     ) {
       this.token = undefined;
       // Retry original request.
-      await this.request(method, url, body);
+      await this.request(options);
     }
 
     if (!response.ok) {
       console.error(
-        'HTTP error ' + response.status + ' for ' + method + ' ' + repositoryUrl
+        'HTTP error ' +
+          response.status +
+          ' for ' +
+          options.method +
+          ' ' +
+          repositoryUrl
       );
     }
 
@@ -100,14 +108,28 @@ export class GraphDbClient {
   }
 
   public async query(query: string): Promise<SparqlResult> {
-    const response = await this.request(
-      'GET',
-      '?' + querystring.stringify({query}),
-      undefined,
-      'application/sparql-results+json'
-    );
+    const response = await this.request({
+      method: 'GET',
+      url: '?' + querystring.stringify({query}),
+      accept: 'application/sparql-results+json',
+    });
 
     return (await response.json()) as SparqlResult;
+  }
+
+  public async update(payload: string): Promise<void> {
+    const response = await this.request({
+      method: 'POST',
+      url: '/statements',
+      body: payload,
+      contentType: 'application/sparql-update',
+    });
+
+    if (!response.ok) {
+      console.error(
+        `${response.status} response for SPARQL update ${payload})`
+      );
+    }
   }
 
   private async getHeaders(): Promise<Headers> {
@@ -223,15 +245,20 @@ export class GraphDbRegistrationStore implements RegistrationStore {
     return new Promise((resolve, reject) => {
       getWriter(quads).end(async (error, result) => {
         try {
-          await this.client.request(
-            'DELETE',
-            '/statements?' +
+          await this.client.request({
+            method: 'DELETE',
+            url:
+              '/statements?' +
               querystring.stringify({
                 subj: '<' + registration.url.toString() + '>',
                 context: '<' + this.registrationsGraph + '>',
-              })
-          );
-          await this.client.request('POST', '/statements', result);
+              }),
+          });
+          await this.client.request({
+            method: 'POST',
+            url: '/statements',
+            body: result,
+          });
           resolve(null);
         } catch (e) {
           reject(e);
@@ -346,12 +373,13 @@ export class GraphDbDatasetStore implements DatasetStore {
         async (error, result) => {
           try {
             resolve(
-              await this.client.request(
-                'PUT',
-                '/rdf-graphs/service?graph=' +
+              await this.client.request({
+                method: 'PUT',
+                url:
+                  '/rdf-graphs/service?graph=' +
                   encodeURIComponent(graphIri.toString()),
-                result
-              )
+                body: result,
+              })
             );
           } catch (e) {
             reject(e);
@@ -367,4 +395,38 @@ function getWriter(quads: Quad[]): Writer {
   writer.addQuads(quads);
 
   return writer;
+}
+
+export class GraphDbRatingStore implements RatingStore {
+  private readonly graph =
+    'https://data.netwerkdigitaalerfgoed.nl/registry/ratings';
+
+  constructor(private readonly client: GraphDbClient) {}
+  async store(datasetUri: URL, rating: Rating): Promise<void> {
+    await this.client.update(`
+      PREFIX schema: <http://schema.org/>
+      
+      WITH <${this.graph}>
+      DELETE {
+        ?dataset schema:contentRating ?rating .
+        ?rating ?p ?o .
+      }
+      WHERE {
+        BIND(<${datasetUri}> as ?dataset)
+        ?dataset schema:contentRating ?rating .
+        ?rating ?p ?o .
+      };
+
+      WITH <${this.graph}>
+      INSERT {
+        <${datasetUri}> schema:contentRating [
+          schema:bestRating ${rating.bestRating} ;
+          schema:worstRating ${rating.worstRating} ;
+          schema:ratingValue ${rating.score} ;
+          schema:ratingExplanation "${rating.explanation}" ;
+        ]
+      }
+      WHERE {}
+    `);
+  }
 }

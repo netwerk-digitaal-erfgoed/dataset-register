@@ -1,0 +1,16 @@
+{
+  "@context": {
+    "dcat": "http://www.w3.org/ns/dcat#",
+    "dct": "http://purl.org/dc/terms/",
+    "foaf": "http://xmlns.com/foaf/0.1/"
+  },
+  "@type": "dcat:Dataset",
+  "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
+  "dct:title": "Alba amicorum van de Koninklijke Bibliotheek",
+  "dct:license": "http://creativecommons.org/publicdomain/zero/1.0/",
+  "dct:publisher": {
+    "@id": "https://example.com/dataset-provider",
+    "@type": "foaf:Person",
+    "foaf:name": "Dataset Provider"
+  }
+}
