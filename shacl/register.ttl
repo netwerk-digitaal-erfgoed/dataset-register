@@ -320,14 +320,65 @@ dcat:DatasetShape
     sh:property [
         sh:minCount 1 ;
         sh:path dc:title
-    ], [
+    ],
+    [
         sh:path dc:alternative
-    ], [
-        sh:path dc:description
-    ], [
+    ],
+    [
+        sh:path dc:description ;
+        sh:minCount 1 ;
+        sh:severity sh:Info ;
+        sh:message "Dataset kan een beschrijving hebben"@nl, "Dataset should have a description"@en ;
+    ],
+    [
         sh:minCount 1 ;
         sh:maxCount 1 ;
         sh:path dc:license
+    ],
+    [
+        sh:path dc:created ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:severity sh:Info ;
+        sh:message "Dataset kan een aanmaakdatum hebben"@nl, "Dataset should have a creation date"@en ;
+    ],
+    [
+        sh:path dc:issued ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:severity sh:Info ;
+        sh:message "Dataset kan een uitgavedatum hebben"@nl, "Dataset should have an issued date"@en ;
+    ],
+    [
+        sh:path dc:modified ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:severity sh:Info ;
+        sh:message "Dataset kan een laatste wijzigingsdatum hebben"@nl, "Dataset should have a last modified date"@en ;
+    ],
+    [
+        sh:path dc:keyword ;
+        sh:minCount 1 ;
+        sh:severity sh:Info ;
+        sh:message "Dataset kan trefwoorden hebben"@nl, "Dataset should have keywords"@en ;
+    ],
+    [
+        sh:path dc:spatial ;
+        sh:minCount 1 ;
+        sh:severity sh:Info ;
+        sh:message "Dataset kan een gebiedsaanduiding hebben"@nl, "Dataset should have spatial coverage"@en ;
+    ],
+    [
+        sh:path dc:temporal ;
+        sh:minCount 1 ;
+        sh:severity sh:Info ;
+        sh:message "Dataset kan een tijdsaanduiding hebben"@nl, "Dataset should have temporal coverage"@en ;
+    ],
+    [
+        sh:path dc:language ;
+        sh:minCount 1 ;
+        sh:severity sh:Info ;
+        sh:message "Dataset kan een taal hebben"@nl, "Dataset should have a language"@en ;
     ],
     [
         sh:path dc:publisher ;
@@ -346,6 +397,8 @@ dcat:DatasetShape
     ],
     [
         sh:path dc:creator ;
+        sh:minCount 1 ;
+        sh:severity sh:Info ;
         sh:or (
             [
                  sh:class foaf:Organization ;
@@ -356,11 +409,15 @@ dcat:DatasetShape
                  sh:node dcat:PersonShape ;
             ]
         ) ;
+        sh:message "Dataset kan een maker hebben"@nl, "Dataset should have a creator"@en ;
     ],
     [
         sh:path dcat:distribution ;
         sh:class dcat:Distribution ;
-        sh:node dcat:DistributionShape
+        sh:node dcat:DistributionShape ;
+        sh:minCount 1 ;
+        sh:severity sh:Info ;
+        sh:message "Dataset moet een distributie hebben"@nl, "Dataset should have a distribution"@en ;
     ] ;
     sh:targetClass dcat:Dataset ;
 .

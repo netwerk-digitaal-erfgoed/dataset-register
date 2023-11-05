@@ -1,19 +1,28 @@
 import {Registration} from '../src/registration';
 import {Crawler} from '../src/crawler';
 import {URL} from 'url';
-import {file, MockDatasetStore, MockRegistrationStore} from './mock';
+import {
+  file,
+  MockDatasetStore,
+  MockRatingStore,
+  MockRegistrationStore,
+} from './mock';
 import nock from 'nock';
 import Pino from 'pino';
 import {Validator} from '../src/validator';
 import factory from 'rdf-ext';
+import {DatasetCore} from 'rdf-js';
 
 let registrationStore: MockRegistrationStore;
 let crawler: Crawler;
-const validator = (isValid: boolean): Validator => ({
+const validator = (
+  isValid: boolean,
+  errors: DatasetCore = factory.dataset()
+): Validator => ({
   validate: () =>
     Promise.resolve({
       state: isValid ? 'valid' : 'invalid',
-      errors: factory.dataset(),
+      errors,
     }),
 });
 
@@ -23,6 +32,7 @@ describe('Crawler', () => {
     crawler = new Crawler(
       registrationStore,
       new MockDatasetStore(),
+      new MockRatingStore(),
       validator(true),
       Pino({enabled: false})
     );
@@ -35,6 +45,24 @@ describe('Crawler', () => {
     nock('https://example.com')
       .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
       .get('/valid')
+      .times(2)
+      .reply(200, response);
+    await crawler.crawl(new Date('3000-01-01'));
+
+    const readRegistration = registrationStore.all()[0];
+    expect(readRegistration.statusCode).toBe(200);
+    expect(readRegistration.datasets).toEqual([
+      new URL('http://data.bibliotheken.nl/id/dataset/rise-alba'),
+    ]);
+  });
+
+  it('crawls valid URL with minimal description', async () => {
+    storeRegistrationFixture(new URL('https://example.com/minimal'));
+
+    const response = await file('dataset-schema-org-valid-minimal.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
+      .get('/minimal')
       .times(2)
       .reply(200, response);
     await crawler.crawl(new Date('3000-01-01'));
@@ -74,6 +102,7 @@ describe('Crawler', () => {
     crawler = new Crawler(
       registrationStore,
       new MockDatasetStore(),
+      new MockRatingStore(),
       validator(false),
       Pino({enabled: false})
     );
