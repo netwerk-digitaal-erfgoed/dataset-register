@@ -224,6 +224,7 @@ export async function server(
       validationsCounter.add(1, {
         status: reply.statusCode,
       });
+      return reply;
     }
   );
 
