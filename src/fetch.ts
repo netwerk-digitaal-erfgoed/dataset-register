@@ -3,11 +3,11 @@ import factory from 'rdf-ext';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import {URL} from 'url';
 import {Store} from 'n3';
-import {bindingsToQuads, selectQuery, sparqlLimit} from './query';
+import {bindingsToQuads, selectQuery, sparqlLimit} from './query.js';
 import {pipeline} from 'stream';
-import {StandardizeSchemaOrgPrefixToHttps} from './transform';
+import {StandardizeSchemaOrgPrefixToHttps} from './transform.js';
 import Pino from 'pino';
-import {rdfDereferencer} from './rdf';
+import {rdfDereferencer} from './rdf.js';
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import _ from './comunica-config.json';
 
@@ -27,7 +27,7 @@ export async function fetch(url: URL): Promise<DatasetExt[]> {
   let datasets = await doFetch(url);
   const nextPage = await findNextPage(url);
   if (nextPage !== null && nextPage !== url) {
-    datasets = [...datasets, ...(await doFetch(nextPage))];
+    datasets = [...datasets, ...(await fetch(nextPage))];
   }
 
   if (datasets.length === 0) {

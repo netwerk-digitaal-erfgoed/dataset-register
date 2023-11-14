@@ -1,26 +1,16 @@
 import rdf from 'rdf-ext';
 import {JsonLdParser} from 'jsonld-streaming-parser';
 import * as fs from 'fs';
-import {
-  InvalidDataset,
-  shacl,
-  ShaclValidator,
-  Valid,
-  Validator,
-} from '../src/validator';
+import {InvalidDataset, shacl, ShaclValidator, Valid} from '../src/validator';
 import {StreamParser} from 'n3';
 import {Transform} from 'stream';
 import {StandardizeSchemaOrgPrefixToHttps} from '../src/transform';
 import {MicrodataRdfParser} from 'microdata-rdf-streaming-parser/lib/MicrodataRdfParser';
 import {RdfaParser} from 'rdfa-streaming-parser/lib/RdfaParser';
 
-let validator: Validator;
+const validator = await ShaclValidator.fromUrl('shacl/register.ttl');
 
 describe('Validator', () => {
-  beforeAll(async () => {
-    validator = await ShaclValidator.fromUrl('shacl/register.ttl');
-  });
-
   it('accepts minimal valid Schema.org dataset', async () => {
     const report = (await validate(
       'dataset-schema-org-valid-minimal.jsonld'
@@ -177,7 +167,7 @@ describe('Validator', () => {
   });
 });
 
-const validate = async (filename: string, parser?: Transform) =>
+export const validate = async (filename: string, parser?: Transform) =>
   validator.validate(await dataset(filename, parser));
 
 const dataset = async (filename: string, parser?: Transform) => {

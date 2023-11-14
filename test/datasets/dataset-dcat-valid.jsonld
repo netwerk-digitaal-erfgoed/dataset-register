@@ -7,16 +7,25 @@
   "@type": "dcat:Dataset",
   "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
   "dct:title": "Alba amicorum van de Koninklijke Bibliotheek",
-  "dct:identifier": "http://data.bibliotheken.nl/id/dataset/rise-alba",
+  "dct:description": "Just some dataset",
   "dct:keyword": [
     "alba amicorum"
   ],
   "dct:license": "http://creativecommons.org/publicdomain/zero/1.0/",
+  "dct:created": "2021-05-27",
+  "dct:issued": "2021-06-27",
+  "dct:modified": "2021-07-27",
   "dct:publisher": {
     "@id": "https://example.com/dataset-provider",
     "@type": "foaf:Person",
     "foaf:name": "Dataset Provider"
   },
+  "dct:creator": {
+    "@type": "foaf:Organization",
+    "@id": "https://example.com/dataset-creator",
+    "foaf:name": "Dataset creator"
+  },
+  "dct:language": "nl-NL",
   "dcat:distribution": [
     {
       "@type": "dcat:Distribution",

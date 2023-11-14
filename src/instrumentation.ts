@@ -6,7 +6,7 @@ import {
   PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
 import {OTLPMetricExporter} from '@opentelemetry/exporter-metrics-otlp-proto';
-import {DatasetStore} from './dataset';
+import {DatasetStore} from './dataset.js';
 
 export function startInstrumentation(datasetStore: DatasetStore) {
   datasetsCounter.addCallback(async result =>

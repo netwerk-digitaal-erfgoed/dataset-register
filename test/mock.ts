@@ -7,6 +7,7 @@ import {URL} from 'url';
 import {DatasetStore} from '../src/dataset';
 import fs from 'fs';
 import DatasetExt from 'rdf-ext/lib/Dataset';
+import {Rating, RatingStore} from '../src/rate';
 
 export class MockRegistrationStore implements RegistrationStore {
   private readonly registrations: Map<URL, Registration> = new Map();
@@ -48,7 +49,7 @@ export class MockAllowedRegistrationDomainStore
 export class MockDatasetStore implements DatasetStore {
   private datasets: DatasetExt[] = [];
 
-  store(datasets: DatasetExt[]): void {
+  async store(datasets: DatasetExt[]): Promise<void> {
     this.datasets.push(...datasets);
   }
 
@@ -58,6 +59,13 @@ export class MockDatasetStore implements DatasetStore {
 
   countOrganisations(): Promise<number> {
     return Promise.resolve(0);
+  }
+}
+
+export class MockRatingStore implements RatingStore {
+  public readonly ratings: Rating[] = [];
+  async store(datasetUri: URL, rating: Rating): Promise<void> {
+    this.ratings.push(rating);
   }
 }
 
