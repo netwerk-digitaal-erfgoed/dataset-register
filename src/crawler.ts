@@ -38,7 +38,7 @@ export class Crawler {
           datasets.map(async dataset => {
             const dcatValidationResult = await this.validator.validate(dataset);
             const rating = rate(dcatValidationResult as Valid);
-            this.ratingStore.store(extractIri(dataset), rating);
+            await this.ratingStore.store(extractIri(dataset), rating);
           });
         }
       } catch (e) {
