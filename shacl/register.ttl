@@ -87,9 +87,29 @@ reg:OrganizationShape
         reg:OrganizationNameProperty,
         # TODO
         # Recommended properties
-        reg:SchemaAlternateNameProperty ;
+        reg:SchemaAlternateNameProperty ,
         # TODO
-        # reg:SchemaSameAsProperty
+        # reg:SchemaSameAsProperty ;
+        [
+            sh:path schema:contactPoint ;
+            sh:class schema:ContactPoint ;
+            sh:minCount 0 ;
+            sh:node [
+                a sh:NodeShape ;
+                sh:targetClass schema:ContactPoint ;
+                sh:property [
+                    sh:path schema:name ;
+                    sh:minCount 1;
+                    sh:message "ContactPoint moet een naam hebben"@nl, "ContactPoint must have a name"@en ;
+                ] ,
+                [
+                    sh:path schema:email ;
+                    sh:minCount 1;
+                    sh:message "ContactPoint moet een e-mailadres hebben"@nl, "ContactPoint must have an e-mail address"@en ;
+                ]
+            ] ;
+            sh:message "Een organisatie kan een ContactPoint hebben"@nl, "An organization should have a ContactPoint"@en ;
+        ]
 .
 
 reg:PersonShape
@@ -117,9 +137,6 @@ reg:DateTimeShape a sh:NodeShape ;
     sh:message "Datum moet van het type schema:Date/xsd:date of schema:DateTime/xsd:dateTime zijn"@nl, "Date must be schema:Date/xsd:date or schema:dateTime/xsd:dateTime"@en ;
     sh:severity sh:Warning ;
 .
-
-# TODO
-# reg:PublisherShape
 
 #
 # Property shapes
