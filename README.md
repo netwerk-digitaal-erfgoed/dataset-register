@@ -143,9 +143,10 @@ Each dataset that is found at the [`schema:EntryPoint`](#schemaentrypoint) regis
 `schema:Dataset` to the 
 [Registrations graph](https://triplestore.netwerkdigitaalerfgoed.nl/resource?uri=https:%2F%2Fdemo.netwerkdigitaalerfgoed.nl%2Fregistry%2Fregistrations&role=context).
 
-| Property | Description |
-| -------- | ----------- |
-| [`schema:dateRead`](https://schema.org/dateRead) | When the dataset was last read by the application. |
+| Property                                           | Description                                        |
+|----------------------------------------------------|----------------------------------------------------|
+| [`schema:dateRead`](https://schema.org/dateRead)   | When the dataset was last read by the application. |
+| [`schema:subjectOf`](https://schema.org/subjectOf) | From which registration URL the dataset was read.  |
 
 ### `dcat:Dataset`
 
