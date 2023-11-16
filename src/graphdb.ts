@@ -186,6 +186,12 @@ export class GraphDbRegistrationStore implements RegistrationStore {
             factory.namedNode('http://schema.org/Dataset'),
             factory.namedNode(this.registrationsGraph)
           ),
+          factory.quad(
+            factory.namedNode(datasetIri.toString()),
+            factory.namedNode('http://schema.org/subjectOf'),
+            factory.namedNode(registration.url.toString()),
+            factory.namedNode(this.registrationsGraph)
+          ),
         ];
         if (registration.dateRead !== undefined) {
           datasetQuads.push(
