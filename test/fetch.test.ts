@@ -39,7 +39,7 @@ describe('Fetch', () => {
       dataset.has(
         factory.quad(
           distributions[0].object as BlankNode,
-          dcat('mediaType'),
+          dct('format'),
           factory.literal('application/rdf+xml'),
           datasetUri
         )
