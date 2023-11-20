@@ -12,6 +12,7 @@ import {
 } from './registration.js';
 import {DatasetStore, extractIris} from './dataset.js';
 import {Rating, RatingStore} from './rate.js';
+import http from 'node:http';
 
 export type SparqlResult = {
   results: {
@@ -32,6 +33,7 @@ export class GraphDbClient {
   private token?: string;
   private username?: string;
   private password?: string;
+  private agent = new http.Agent({keepAlive: false});
 
   constructor(private url: string, private repository: string) {
     // Doesn't work with authentication: see https://github.com/Ontotext-AD/graphdb.js/issues/123
@@ -78,6 +80,7 @@ export class GraphDbClient {
     const repositoryUrl =
       this.url + '/repositories/' + this.repository + options.url;
     const response = await fetch(repositoryUrl, {
+      agent: this.agent,
       method: options.method,
       headers: headers,
       body: options.body,
