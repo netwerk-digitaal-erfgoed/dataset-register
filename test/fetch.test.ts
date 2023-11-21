@@ -39,7 +39,7 @@ describe('Fetch', () => {
       dataset.has(
         factory.quad(
           distributions[0].object as BlankNode,
-          dcat('mediaType'),
+          dct('format'),
           factory.literal('application/rdf+xml'),
           datasetUri
         )
@@ -76,7 +76,7 @@ describe('Fetch', () => {
 
     expect(datasets).toHaveLength(1);
     const dataset = datasets[0];
-    expect(dataset.size).toBe(25);
+    expect(dataset.size).toBe(26);
     expect(
       dataset.has(
         factory.quad(
@@ -105,6 +105,16 @@ describe('Fetch', () => {
           factory.namedNode('https://example.com/publisher'),
           rdf('type'),
           foaf('Organization'),
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+        )
+      )
+    ).toBe(true);
+    expect(
+      dataset.has(
+        factory.quad(
+          factory.namedNode('https://example.com/publisher'),
+          foaf('mbox'),
+          factory.literal('datasets@example.com'),
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
         )
       )

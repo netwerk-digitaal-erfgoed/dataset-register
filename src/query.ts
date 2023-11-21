@@ -272,6 +272,9 @@ function schemaOrgQuery(prefix: string): string {
       ?${publisher} a ?organizationOrPerson ;
         a ?publisherType ;
         ${prefix}:name ?${publisherName} .
+      OPTIONAL {
+        ?${publisher} ${prefix}:contactPoint/${prefix}:email ?${publisherEmail} .  
+      }
     }
     
     VALUES ?organizationOrPerson { ${prefix}:Organization ${prefix}:Person }  

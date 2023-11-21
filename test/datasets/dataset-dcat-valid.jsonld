@@ -29,7 +29,7 @@
   "dcat:distribution": [
     {
       "@type": "dcat:Distribution",
-      "dcat:mediaType": "application/rdf+xml",
+      "dct:format": ["application/rdf+xml", "text/turtle"],
       "dcat:accessURL": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
     }
   ]
