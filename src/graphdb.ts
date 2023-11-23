@@ -154,7 +154,7 @@ export class GraphDbRegistrationStore implements RegistrationStore {
 
   constructor(private client: GraphDbClient) {}
 
-  async store(registration: Registration) {
+  async store(registration: Registration): Promise<void> {
     const quads = [
       this.registrationQuad(
         registration,
@@ -268,7 +268,7 @@ export class GraphDbRegistrationStore implements RegistrationStore {
             url: '/statements',
             body: result,
           });
-          resolve(null);
+          resolve();
         } catch (e) {
           reject(e);
         }
