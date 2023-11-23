@@ -31,7 +31,7 @@ export class MockRegistrationStore implements RegistrationStore {
     );
   }
 
-  store(registration: Registration): void {
+  async store(registration: Registration): Promise<void> {
     this.registrations.set(registration.url, registration);
   }
 }

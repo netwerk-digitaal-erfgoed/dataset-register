@@ -23,7 +23,7 @@ export class Crawler {
     const registrations =
       await this.registrationStore.findRegistrationsReadBefore(dateLastRead);
     for (const registration of registrations) {
-      this.logger.info(`Crawling registration URL ${registration.url}`);
+      this.logger.info(`Crawling registration URL ${registration.url}...`);
       let datasets: DatasetExt[] = [];
       let statusCode = 200;
       let isValid = false;
@@ -33,6 +33,7 @@ export class Crawler {
         const validationResult = await this.validator.validate(data);
         isValid = validationResult.state === 'valid';
         if (isValid) {
+          this.logger.info(`${registration.url} passes validation`);
           datasets = await fetch(registration.url);
           await this.datasetStore.store(datasets);
           datasets.map(async dataset => {
@@ -40,14 +41,20 @@ export class Crawler {
             const rating = rate(dcatValidationResult as Valid);
             await this.ratingStore.store(extractIri(dataset), rating);
           });
+        } else {
+          this.logger.info(`${registration.url} does not pass validation`);
         }
       } catch (e) {
         if (e instanceof HttpError) {
           statusCode = e.statusCode;
+          this.logger.info(
+            `${registration.url} returned HTTP error ${statusCode}`
+          );
         }
 
         if (e instanceof NoDatasetFoundAtUrl) {
           // Request was successful, but no datasets exist any longer at the URL.
+          this.logger.info(`${registration.url} has no datasets`);
         }
       }
 

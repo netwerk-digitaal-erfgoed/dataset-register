@@ -52,7 +52,7 @@ export interface RegistrationStore {
   /**
    * Store a {@see Registration}, replacing any Registrations with the same URL.
    */
-  store(registration: Registration): void;
+  store(registration: Registration): Promise<void>;
   findRegistrationsReadBefore(date: Date): Promise<Registration[]>;
 }
 
