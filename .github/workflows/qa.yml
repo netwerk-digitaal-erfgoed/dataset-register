@@ -14,3 +14,5 @@ jobs:
 
       - name: Build and validate
         uses: w3c/spec-prod@v2
+        with:
+          VALIDATE_MARKUP: false

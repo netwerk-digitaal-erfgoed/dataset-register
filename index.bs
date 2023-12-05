@@ -364,8 +364,9 @@ The person/organization data is then included as the dataset’s publisher:
 > Therefore, publishers *SHOULD* add at least one distribution.
 > Each distribution *MUST* have at least a MIME format and the URL where the distribution can be accessed.
 
-Distributions can be data dumps in RDF or some other format such as CSV, live SPARQL endpoints,
-OAI-PMH endpoints or other [=web APIs=].
+Examples of distributions are data dumps in one or more RDF serializations, such as JSON-LD and Turtle,
+CSV files, SPARQL endpoints, OAI-PMH endpoints or other [=web APIs=].
+All distributions of a dataset *MUST* contain broadly the same data.
 
 <div class="example">
     A minimal definition of a SPARQL endpoint distribution.
