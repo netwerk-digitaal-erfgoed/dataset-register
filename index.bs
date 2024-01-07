@@ -655,7 +655,7 @@ This is an overview of required and recommended attributes.
         </tr>
         <tr>     
             <th scope="row">[schema:mainEntityOfPage](https://schema.org/mainEntityOfPage)</th>
-            <td>URL of a webpage where the dataset is described.</td>
+            <td>URL of a landing page where the dataset is described.</td>
             <td>0..1</td>
             <td>Recommended</td>
         </tr>
