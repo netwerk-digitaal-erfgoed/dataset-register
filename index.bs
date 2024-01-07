@@ -158,8 +158,8 @@ See also [[DWBP-UCR#R-FormatMachineRead]].
 
 [=Consumers=] want to refer to datasets. They prefer to do so by linking to them.
 
-> Therefore, publishers *must* maintain a permanent and unique identifier for each [=dataset=].
-> Publishers *must* use HTTP [[IRI|IRIs]] as identifiers.
+> Therefore, publishers *MUST* maintain a permanent and unique identifier for each [=dataset=].
+> Publishers *MUST* use HTTP [[IRI|IRIs]] as identifiers.
 
 See also [[DWBP-UCR#R-UniqueIdentifier]] and [[DWBP-UCR#R-PersistentIdentification]].
 
@@ -169,7 +169,7 @@ Datasets will be used by all kinds of [=consumers=] and their systems.
 For stability, users must be able to trust that the datasets will remain available
 so they can be consulted in the future.
 
-> Therefore, publishers *must* ensure information remains available in the future.
+> Therefore, publishers *MUST* ensure information remains available in the future.
 
 ## Dataset information ## {#dataset-information}
 
@@ -280,7 +280,7 @@ Providing information about the person/organization behind the dataset (the ) an
 - Which person/organization has published this dataset? How reliable and credible does that make the dataset?
 - How can I contact the person/organization for questions or feedback?
 
-> Therefore, publishers *must* publish basic information about the person/organization.
+> Therefore, publishers *MUST* publish basic information about the person/organization.
 > At the least, the organization’s name and HTTP IRI must be provided. 
 
 <div class="example">
