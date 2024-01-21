@@ -1,6 +1,7 @@
 import {BlankNode, NamedNode, Quad, Quad_Object, Term} from 'rdf-js';
 import factory from 'rdf-ext';
 import {BlankNodeScoped} from '@comunica/data-factory';
+import {convertToXsdDate} from './literal.js';
 
 const dataset = 'dataset';
 const identifier = 'identifier';
@@ -109,6 +110,7 @@ export const selectQuery = `
   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
   PREFIX schema: <https://schema.org/>
   PREFIX httpSchema: <http://schema.org/>
+  PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
   SELECT * WHERE {
     {
       ${schemaOrgQuery('schema')}
@@ -139,8 +141,12 @@ export const selectQuery = `
           
         OPTIONAL { ?${distribution} dct:format ?${distributionFormat} }
         OPTIONAL { ?${distribution} dcat:mediaType ?${distributionMediaType} }
-        OPTIONAL { ?${distribution} dct:issued ?${distributionDatePublished} }
-        OPTIONAL { ?${distribution} dct:modified ?${distributionDateModified} }
+        OPTIONAL { ?${distribution} dct:issued ${convertToXsdDate(
+  distributionDatePublished
+)} }
+        OPTIONAL { ?${distribution} dct:modified ${convertToXsdDate(
+  distributionDateModified
+)} }
         OPTIONAL { ?${distribution} dct:description ?${distributionDescription} }
         OPTIONAL { ?${distribution} dct:language ?${distributionLanguage} }
         OPTIONAL { ?${distribution} dct:license ?${distributionLicense} }
@@ -151,9 +157,9 @@ export const selectQuery = `
       OPTIONAL { ?${dataset} dct:description ?${description} }
       OPTIONAL { ?${dataset} dct:identifier ?${identifier} }
       OPTIONAL { ?${dataset} dct:alternative ?${alternateName} }
-      OPTIONAL { ?${dataset} dct:created ?${dateCreated} }
-      OPTIONAL { ?${dataset} dct:issued ?${datePublished} }
-      OPTIONAL { ?${dataset} dct:modified ?${dateModified} }
+      OPTIONAL { ?${dataset} dct:created ${convertToXsdDate(dateCreated)} }
+      OPTIONAL { ?${dataset} dct:issued ${convertToXsdDate(datePublished)} }
+      OPTIONAL { ?${dataset} dct:modified ${convertToXsdDate(dateModified)} }
       OPTIONAL { ?${dataset} dct:language ?${language} }
       OPTIONAL { ?${dataset} dct:source ?${source} }
       OPTIONAL { ?${dataset} dcat:keyword ?${keyword} }
@@ -286,8 +292,12 @@ function schemaOrgQuery(prefix: string): string {
         ${prefix}:encodingFormat ?${distributionFormat} .
         
       OPTIONAL { ?${distribution} ${prefix}:fileFormat ?${distributionMediaType} }
-      OPTIONAL { ?${distribution} ${prefix}:datePublished ?${distributionDatePublished} }
-      OPTIONAL { ?${distribution} ${prefix}:dateModified ?${distributionDateModified} }
+      OPTIONAL { ?${distribution} ${prefix}:datePublished ${convertToXsdDate(
+    distributionDatePublished
+  )} }
+      OPTIONAL { ?${distribution} ${prefix}:dateModified ${convertToXsdDate(
+    distributionDateModified
+  )} }
       OPTIONAL { ?${distribution} ${prefix}:description ?${distributionDescription} }
       OPTIONAL { ?${distribution} ${prefix}:inLanguage ?${distributionLanguage} }
       OPTIONAL { ?${distribution} ${prefix}:license ?${distributionLicense} }
@@ -298,9 +308,15 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL { ?${dataset} ${prefix}:description ?${description} } 
     OPTIONAL { ?${dataset} ${prefix}:identifier ?${identifier} }
     OPTIONAL { ?${dataset} ${prefix}:alternateName ?${alternateName} }
-    OPTIONAL { ?${dataset} ${prefix}:dateCreated ?${dateCreated} }
-    OPTIONAL { ?${dataset} ${prefix}:datePublished ?${datePublished} }
-    OPTIONAL { ?${dataset} ${prefix}:dateModified ?${dateModified} }
+    OPTIONAL { ?${dataset} ${prefix}:dateCreated ${convertToXsdDate(
+    dateCreated
+  )} }
+    OPTIONAL { ?${dataset} ${prefix}:datePublished ${convertToXsdDate(
+    datePublished
+  )} }
+    OPTIONAL { ?${dataset} ${prefix}:dateModified ${convertToXsdDate(
+    dateModified
+  )} }
     OPTIONAL { ?${dataset} ${prefix}:inLanguage ?${language} }
     OPTIONAL { ?${dataset} ${prefix}:isBasedOn ?${source} }
     OPTIONAL { ?${dataset} ${prefix}:isBasedOnUrl ?${source} } 
