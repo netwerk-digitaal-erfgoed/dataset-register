@@ -93,6 +93,45 @@ describe('Fetch', () => {
       dataset.has(
         factory.quad(
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
+          dct('created'),
+          factory.literal(
+            '2021-05-27',
+            factory.namedNode('http://www.w3.org/2001/XMLSchema#date')
+          ),
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+        )
+      )
+    ).toBe(true);
+    expect(
+      dataset.has(
+        factory.quad(
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
+          dct('issued'),
+          factory.literal(
+            '2021-05-28',
+            factory.namedNode('http://www.w3.org/2001/XMLSchema#date')
+          ),
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+        )
+      )
+    ).toBe(true);
+    expect(
+      dataset.has(
+        factory.quad(
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
+          dct('modified'),
+          factory.literal(
+            '2021-05-27T09:56:21.370767',
+            factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime')
+          ),
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+        )
+      )
+    ).toBe(true);
+    expect(
+      dataset.has(
+        factory.quad(
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
           dct('publisher'),
           factory.namedNode('https://example.com/publisher'),
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
