@@ -7,7 +7,7 @@ const penalties = new Map([
   [[dct('creator')], 10],
   [[dct('created'), dct('issued')], 10],
   [[dct('modified')], 5],
-  [[dct('keyword'), dct('spatial'), dct('temporal')], 5],
+  [[dcat('keyword'), dct('spatial'), dct('temporal')], 5],
   [[dct('language')], 5],
 ]);
 

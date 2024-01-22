@@ -374,7 +374,7 @@ dcat:DatasetShape
         sh:message "Dataset kan een laatste wijzigingsdatum hebben"@nl, "Dataset should have a last modified date"@en ;
     ],
     [
-        sh:path dc:keyword ;
+        sh:path dcat:keyword ;
         sh:minCount 1 ;
         sh:severity sh:Info ;
         sh:message "Dataset kan trefwoorden hebben"@nl, "Dataset should have keywords"@en ;
