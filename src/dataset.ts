@@ -44,7 +44,7 @@ export async function load(
 ) {
   const parser =
     contentType === 'application/ld+json'
-      ? (new JsonLdParser() as Transform)
+      ? (new JsonLdParser() as unknown as Transform)
       : new StreamParser();
 
   return new Promise((resolve, reject) =>
