@@ -174,7 +174,7 @@ const dataset = async (filename: string, parser?: Transform) => {
   return await rdf.dataset().import(
     fs
       .createReadStream(`test/datasets/${filename}`)
-      .pipe(parser ?? (new JsonLdParser() as Transform))
+      .pipe(parser ?? (new JsonLdParser() as unknown as Transform))
       .pipe(new StandardizeSchemaOrgPrefixToHttps())
   );
 };
