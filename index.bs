@@ -8,7 +8,7 @@ URL: https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/
 Editor: 
     David de Boer, Netwerk Digitaal Erfgoed https://www.netwerkdigitaalerfgoed.nl, david@ddeboer.nl, https://github.com/ddeboer
     Bob Coret, Netwerk Digitaal Erfgoed https://netwerkdigitaalerfgoed.nl, bob.coret@netwerkdigitaalerfgoed.nl, https://twitter.com/coret
-Abstract: This document describes requirements for publishing datasets. 
+Abstract: This document describes requirements for publishing dataset descriptions. 
     By following these requirements, publishers enable users to find and use their datasets.
 </pre>
 
@@ -18,14 +18,14 @@ Introduction {#introduction}
 *This section is non-normative.*
 
 To enable [=datasets=] to be found and used,
-they must be published according to a well-documented,
+they must be described according to a well-documented,
 shared and [=machine-readability|machine-readable=] publication model.
 
 This document describes such a model and its rules.
-When [=publishers=] make their datasets adhere to these rules,
-they enable consumers – both humans and machines – to use the published data in new and better ways.
+When [=publishers=] make their [=dataset descriptions=] adhere to these rules,
+they enable consumers – both humans and machines – to use the datasets in new and better ways.
 
-The requirements prescribe the metadata that publishers should provide with their data.
+These requirements prescribe the metadata that publishers must provide for their dataset.
 This metadata tells [=consumers=]:
 
 - what the dataset is called and under what license it is published ([[#dataset-information]]);
@@ -39,7 +39,7 @@ This document is mainly geared towards two groups of readers.
  
 Digital heritage collection managers can follow the requirements in this document to make their published datasets findable and usable, 
 for instance through [Google Dataset Search](https://datasetsearch.research.google.com) 
-and the [NDE Registry](https://www.netwerkdigitaalerfgoed.nl/kennis-en-voorzieningen/digitaal-erfgoed-bruikbaar/register/).
+and the [NDE Dataset Register](https://datasetregister.netwerkdigitaalerfgoed.nl/?lang=en).
 
 Suppliers of collection management systems can implement these requirements in their software
 to help collection managers using it to publish datasets in the correct format.
@@ -68,24 +68,27 @@ Definitions {#definitions}
 ==========================
 
 : <dfn>Dataset</dfn>
-:: The description of a collection of data.
-    A set of metadata that includes the dataset’s name and [=publisher=].
-    The data objects themselves are not part of the dataset proper but provided in its [=distributions=].
-    
+:: A collection of data objects. These are made available through the dataset’s [=distributions=].
+
+: <dfn>Dataset description</dfn>
+:: Metadata about the [=dataset=], including the dataset’s name and [=publisher=].
+    This description must be distinguished from the data objects themselves.
+
     For example: imagine a dataset of Van Gogh paintings called ‘Sunflowers’,
     which is published by the Van Gogh Museum under a specific license.
-    These are all part of the dataset.
-    The dataset also tells us the URLs of distributions where we can download or query the data.
-    If we consult the data provided by one of these distributions, we’ve left the sphere of the dataset proper.
-    That is to say, the data itself, which may include descriptions of paintings, persons and places,
-    are *not* properties of the dataset.
+    The name, license and publishers are all part of the dataset description.
+    The dataset description also tells us the URLs of distributions where we can download or query the data.
+    Using these distributions, we can access the data objects themselves,
+    which may include descriptions of paintings, persons, places etc. 
+    These are *not* part of the dataset description. 
 
 : <dfn>Data catalog</dfn>
-:: A collection of [=datasets=].
+:: A collection of [=dataset descriptions=].
 
 : <dfn>Distribution</dfn>
-:: A channel through which a [=dataset=] is available, 
-    for example a CSV file download or a [[SPARQL11-OVERVIEW|SPARQL]] endpoint.
+:: A channel through which a [=dataset=] is made available,
+    either for downloading (such as a CSV file download or RDF dump),
+    or for querying (such as a [[SPARQL11-OVERVIEW|SPARQL]] endpoint).
 
 : <dfn>Web API</dfn>
 :: An API that is available over HTTP, for example an OAI-PMH, OpenAPI or SPARQL endpoint. 
@@ -106,7 +109,7 @@ Conceptual model {#conceptual-model}
 ===============
 
 The model consists of four resource types: [=publisher|organizations=] publish [=datasets=], which are available in [=distributions=].
-Optionally, the datasets are grouped in [=data catalogs=].
+Optionally, the datasets are grouped in data catalogs.
 
 <pre class=include>
 path: model.svg
@@ -121,7 +124,7 @@ For [=machine-readability|machine-readable=] access to data,
 it needs to be published in an [[RDF11-PRIMER#section-graph-syntax|RDF format]].
 RDF formats include [[JSON-LD]], [[N3]] and [[Turtle]].
 
-> [=Publishers=] *MUST* make their [=dataset=] description available in RDF.
+> [=Publishers=] *MUST* make their [=dataset description=] available in RDF.
 
 Both the Schema.org and DCAT vocabularies *MAY* be used;
 Schema.org is [[#examples|recommended]].
@@ -221,7 +224,7 @@ See also [[DWBP-UCR#R-LicenseAvailable]].
 
 ### Creation, publication and modification dates ### {#dataset-date}
 
-Publishers *SHOULD* make known when the dataset description was originally created, published and when it was last updated.
+Publishers *SHOULD* make known when the [=dataset description=] was originally created, published and when it was last updated.
 
 <div class="example">
     Specify dataset description dates:
@@ -239,7 +242,7 @@ Publishers *SHOULD* make known when the dataset description was originally creat
 
 ### Version ### {#dataset-versions}
 
-A dataset description may change over time.
+A [=dataset description=] may change over time.
 [=Consumers=], such as researchers, may want to determine which information was valid at a certain moment.
 
 > Therefore, publishers *SHOULD* not only publish the current version of the dataset description,
@@ -275,7 +278,7 @@ See [[#dataset-overview]] for an overview of attributes.
 
 Users want to know where the [=dataset=] came from ([[DWBP#provenance|provenance]]).
 The dataset’s creator and/or [=publisher=] is either a person or an organization.
-Providing information about the person/organization behind the dataset (the ) answers user questions such as:
+Providing information about the person/organization behind the dataset answers user questions such as:
 
 - Which person/organization has published this dataset? How reliable and credible does that make the dataset?
 - How can I contact the person/organization for questions or feedback?
@@ -476,7 +479,8 @@ See also [[DWBP-UCR#R-APIDocumented]].
 
 ## Data catalog ## {#data-catalog-info}
 
-A [=data catalog=] provides [=consumers=] with a complete overview of available datasets, which improves discoverability.
+A [=data catalog=] provides [=consumers=] with a complete overview of available [=dataset descriptions=],
+which improves discoverability.
 
 > Therefore, publishers *SHOULD* provide a catalog.
 
@@ -885,7 +889,7 @@ When the distribution is compressed, the compression format (e.g. zip, gzip) sho
 ### Full example ### {#dataset-example}
 
 <div class="example">
-    A full dataset description that includes [[#dataset-overview|required and recommended attributes]].
+    A full [=dataset description=] that includes [[#dataset-overview|required and recommended attributes]].
 
     <pre class=include-code>
     path: examples/dataset.jsonld
