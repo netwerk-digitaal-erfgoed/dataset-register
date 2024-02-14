@@ -167,8 +167,13 @@ reg:DistributionContentUrlProperty a sh:PropertyShape ;
     rdfs:comment "De URL waar de distributie rechtstreeks toegankelijk is."@nl, "The URL where the distribution can be directly accessed."@en ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:pattern "^https?://" ;
+    sh:severity sh:Warning ;
+    # will become a sh:Violation in the near future
     sh:path schema:contentUrl ;
-    sh:message "Een dataset distributie dient een content URL te bevatten"@nl, "A dataset distribution should contain an content URL"@en ;
+    sh:message "Een dataset distributie dient een content URL te bevatten (in de vorm van een IRI, niet een literal)"@nl, "A dataset distribution should contain a content URL (this should b
+e an IRI, not a literal)"@en ;
 .
 
 reg:DistributionEncodingFormatProperty a sh:PropertyShape ;
