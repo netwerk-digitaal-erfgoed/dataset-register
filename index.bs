@@ -68,17 +68,17 @@ Definitions {#definitions}
 ==========================
 
 : <dfn>Dataset</dfn>
-:: A collection of data objects. These are made available through the dataset’s [=distributions=].
+:: A collection of metadata records. These are made available through the dataset’s [=distributions=].
 
 : <dfn>Dataset description</dfn>
 :: Metadata about the [=dataset=], including the dataset’s name and [=publisher=].
-    This description must be distinguished from the data objects themselves.
+    This description must be distinguished from the metadata records themselves.
 
     For example: imagine a dataset of Van Gogh paintings called ‘Sunflowers’,
     which is published by the Van Gogh Museum under a specific license.
     The name, license and publisher are all part of the dataset description.
     The dataset description also tells us the URLs of distributions where we can download or query the data.
-    Using these distributions, we can access the data objects themselves,
+    Using these distributions, we can access the metadata records themselves,
     which may include descriptions of paintings, persons, places etc. 
     These are *not* part of the dataset description. 
 
