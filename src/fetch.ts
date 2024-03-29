@@ -12,7 +12,10 @@ import {rdfDereferencer} from './rdf.js';
 import _ from './comunica-config.json';
 
 export class HttpError extends Error {
-  constructor(message: string, public readonly statusCode: number) {
+  constructor(
+    message: string,
+    public readonly statusCode: number
+  ) {
     super(message);
   }
 }
