@@ -35,7 +35,10 @@ export class GraphDbClient {
   private password?: string;
   private agent = new http.Agent({keepAlive: false});
 
-  constructor(private url: string, private repository: string) {
+  constructor(
+    private url: string,
+    private repository: string
+  ) {
     // Doesn't work with authentication: see https://github.com/Ontotext-AD/graphdb.js/issues/123
     // const config = new graphdb.repository.RepositoryClientConfig()
     //   .setEndpoints([url])
