@@ -13,7 +13,7 @@ export interface DatasetStore {
   /**
    * Store an array of dataset descriptions, replacing any triples that were previously stored for the datasets.
    */
-  store(datasets: DatasetExt[]): void;
+  store(datasets: DatasetExt[]): Promise<void>;
 
   countDatasets(): Promise<number>;
 

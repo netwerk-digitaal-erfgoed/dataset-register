@@ -23,7 +23,12 @@
     "@type": "Organization",
     "@id": "https://example.com/publisher",
     "name": "Koninklijke Bibliotheek",
-    "sameAs": "https://ror.org/02w4jbg70"
+    "sameAs": "https://ror.org/02w4jbg70",
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "name": "Datasets Manager",
+      "email": "datasets@example.com"
+    }
   },
   "creator": [
     {

@@ -66,6 +66,7 @@ reg:DistributionShape
     sh:property
         # Required properties
         reg:DistributionContentUrlProperty,
+        reg:DistributionContentUrlIriProperty,        
         reg:DistributionEncodingFormatProperty,
         # Recommended properties
         reg:SchemaDistributionNameProperty,
@@ -87,9 +88,29 @@ reg:OrganizationShape
         reg:OrganizationNameProperty,
         # TODO
         # Recommended properties
-        reg:SchemaAlternateNameProperty ;
+        reg:SchemaAlternateNameProperty ,
         # TODO
-        # reg:SchemaSameAsProperty
+        # reg:SchemaSameAsProperty ;
+        [
+            sh:path schema:contactPoint ;
+            sh:class schema:ContactPoint ;
+            sh:minCount 0 ;
+            sh:node [
+                a sh:NodeShape ;
+                sh:targetClass schema:ContactPoint ;
+                sh:property [
+                    sh:path schema:name ;
+                    sh:minCount 1;
+                    sh:message "ContactPoint moet een naam hebben"@nl, "ContactPoint must have a name"@en ;
+                ] ,
+                [
+                    sh:path schema:email ;
+                    sh:minCount 1;
+                    sh:message "ContactPoint moet een e-mailadres hebben"@nl, "ContactPoint must have an e-mail address"@en ;
+                ]
+            ] ;
+            sh:message "Een organisatie kan een ContactPoint hebben"@nl, "An organization should have a ContactPoint"@en ;
+        ]
 .
 
 reg:PersonShape
@@ -117,9 +138,6 @@ reg:DateTimeShape a sh:NodeShape ;
     sh:message "Datum moet van het type schema:Date/xsd:date of schema:DateTime/xsd:dateTime zijn"@nl, "Date must be schema:Date/xsd:date or schema:dateTime/xsd:dateTime"@en ;
     sh:severity sh:Warning ;
 .
-
-# TODO
-# reg:PublisherShape
 
 #
 # Property shapes
@@ -151,7 +169,16 @@ reg:DistributionContentUrlProperty a sh:PropertyShape ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:path schema:contentUrl ;
-    sh:message "Een dataset distributie dient een content URL te bevatten"@nl, "A dataset distribution should contain an content URL"@en ;
+    sh:message "Een dataset distributie dient een content URL te bevatten"@nl, "A dataset distribution should contain a content URL"@en ;
+.
+
+reg:DistributionContentUrlIriProperty a sh:PropertyShape ;
+    rdfs:comment "De URL waar de distributie rechtstreeks toegankelijk is."@nl, "The URL where the distribution can be directly accessed."@en ;
+    sh:nodeKind sh:IRI ;
+    sh:pattern "^https?://" ;
+    sh:severity sh:Warning ;  # will become a sh:Violation in near future, to be communicated
+    sh:path schema:contentUrl ;
+    sh:message "Een dataset distributie dient een content URL te bevatten in de vorm van een IRI, niet een literal."@nl, "A dataset distribution should contain a content URL, this should be an IRI, not a literal."@en ;
 .
 
 reg:DistributionEncodingFormatProperty a sh:PropertyShape ;
@@ -357,7 +384,7 @@ dcat:DatasetShape
         sh:message "Dataset kan een laatste wijzigingsdatum hebben"@nl, "Dataset should have a last modified date"@en ;
     ],
     [
-        sh:path dc:keyword ;
+        sh:path dcat:keyword ;
         sh:minCount 1 ;
         sh:severity sh:Info ;
         sh:message "Dataset kan trefwoorden hebben"@nl, "Dataset should have keywords"@en ;
@@ -442,12 +469,10 @@ dcat:DistributionShape
     sh:or (
         [ sh:property [
             sh:minCount 1 ;
-            sh:maxCount 1 ;
             sh:path dcat:mediaType
         ] ]
         [ sh:property [
             sh:minCount 1 ;
-            sh:maxCount 1 ;
             sh:path dc:format
         ] ]
     ) .

@@ -39,7 +39,7 @@ describe('Fetch', () => {
       dataset.has(
         factory.quad(
           distributions[0].object as BlankNode,
-          dcat('mediaType'),
+          dct('format'),
           factory.literal('application/rdf+xml'),
           datasetUri
         )
@@ -76,7 +76,7 @@ describe('Fetch', () => {
 
     expect(datasets).toHaveLength(1);
     const dataset = datasets[0];
-    expect(dataset.size).toBe(25);
+    expect(dataset.size).toBe(26);
     expect(
       dataset.has(
         factory.quad(
@@ -84,6 +84,45 @@ describe('Fetch', () => {
           dct('license'),
           factory.namedNode(
             'http://creativecommons.org/publicdomain/zero/1.0/'
+          ),
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+        )
+      )
+    ).toBe(true);
+    expect(
+      dataset.has(
+        factory.quad(
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
+          dct('created'),
+          factory.literal(
+            '2021-05-27',
+            factory.namedNode('http://www.w3.org/2001/XMLSchema#date')
+          ),
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+        )
+      )
+    ).toBe(true);
+    expect(
+      dataset.has(
+        factory.quad(
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
+          dct('issued'),
+          factory.literal(
+            '2021-05-28',
+            factory.namedNode('http://www.w3.org/2001/XMLSchema#date')
+          ),
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+        )
+      )
+    ).toBe(true);
+    expect(
+      dataset.has(
+        factory.quad(
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
+          dct('modified'),
+          factory.literal(
+            '2021-05-27T09:56:21.370767',
+            factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime')
           ),
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
         )
@@ -105,6 +144,16 @@ describe('Fetch', () => {
           factory.namedNode('https://example.com/publisher'),
           rdf('type'),
           foaf('Organization'),
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+        )
+      )
+    ).toBe(true);
+    expect(
+      dataset.has(
+        factory.quad(
+          factory.namedNode('https://example.com/publisher'),
+          foaf('mbox'),
+          factory.literal('datasets@example.com'),
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
         )
       )

@@ -31,7 +31,7 @@ export class MockRegistrationStore implements RegistrationStore {
     );
   }
 
-  store(registration: Registration): void {
+  async store(registration: Registration): Promise<void> {
     this.registrations.set(registration.url, registration);
   }
 }
@@ -49,7 +49,7 @@ export class MockAllowedRegistrationDomainStore
 export class MockDatasetStore implements DatasetStore {
   private datasets: DatasetExt[] = [];
 
-  store(datasets: DatasetExt[]): void {
+  async store(datasets: DatasetExt[]): Promise<void> {
     this.datasets.push(...datasets);
   }
 
