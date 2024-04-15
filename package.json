@@ -26,8 +26,8 @@
     "shacl/"
   ],
   "dependencies": {
-    "@comunica/data-factory": "^2.0.1",
-    "@comunica/query-sparql": "^2.0.5",
+    "@comunica/data-factory": "^3.0.1",
+    "@comunica/query-sparql": "^3.0.3",
     "@fastify/accepts-serializer": "^5.0.0",
     "@fastify/cors": "^8.0.0",
     "@fastify/swagger": "^8.3.1",
