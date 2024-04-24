@@ -755,7 +755,7 @@ This is an overview of required and recommended attributes.
             <th scope="row">[schema:contactPoint](https://schema.org/contactPoint)</th>
             <td>Where [=consumers=] can reach the organization for questions and suggestions about the dataset.</td>
             <td>1</td>
-            <td>Recommended</td>
+            <td>Recommended (scheduled to become Required)</td>
         </tr>
     </tbody>
 </table>
