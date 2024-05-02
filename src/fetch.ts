@@ -66,7 +66,8 @@ export async function dereference(url: URL): Promise<DatasetExt> {
 }
 
 // Use custom config to disable "ccqs:config/rdf-resolve-hypermedia-links/actors.json", which causes
-// many duplicate bindings and does not find any datasets on the second page ff.
+// many duplicate bindings and does not find any datasets on subsequent pages.
+// This is also a workaround for https://github.com/comunica/comunica/issues/1180.
 const engine = await new QueryEngineFactory().create({
   configPath: new URL('comunica-config.json', import.meta.url).toString(),
 });
