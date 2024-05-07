@@ -419,6 +419,26 @@ The distributions are then included under the `distribution` attribute with the 
 
 See [[#distribution-attributes]] for a full overview.
 
+### Creation and modification dates ### {#distribution-date}
+
+Publishers *SHOULD* make known when the [=distribution=] was originally created and when it was last updated.
+Please note that this is different from [[#dataset-date|dataset description’s dates]].
+Datetimes (‘2019-08-15T08:05:00Z’) are preferred because they offer greater precision, 
+but simple dates (‘2019-04-14’) are also allowed.
+
+<div class="example">
+    Specify distribution dates:
+
+    <pre highlight=json-ld>
+        {
+          "@context": "https://schema.org/",
+          "@type": "Distribution",
+          "dateCreated": "2019-04-14",
+          "dateModified": "2019-08-15T08:05:00"
+        }
+    </pre>
+</div>
+
 ### Developer documentation ### {#developer-docs}
 
 Publishers *SHOULD* link to documentation URLs via the [schema:usageInfo](https://schema.org/usageInfo) attribute. For datadumps this should be documentation about the 

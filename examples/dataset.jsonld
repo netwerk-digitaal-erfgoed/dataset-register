@@ -41,14 +41,16 @@
     {
       "@type": "DataDownload",
       "encodingFormat": "application/sparql-query",
-      "contentUrl": "http://data.bibliotheken.nl/sparql"
+      "contentUrl": "http://data.bibliotheken.nl/sparql",
+      "dateCreated": "2023-06-01T08:00:00+01:00",
+      "dateModified": "2024-03-04T01:09:00+01:00"
     },
     {
       "@type": "DataDownload",
       "encodingFormat": "text/turtle",
       "contentUrl": "http://data.bibliotheken.nl/files/alba_20201016.ttl.gz",
       "name": "Datadump Alba Amicorum",
-      "datePublished": "2019-05-21",
+      "dateCreated": "2019-05-21",
       "dateModified": "2019-08-15",
       "contentSize": "614K"
     }
