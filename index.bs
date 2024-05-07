@@ -315,12 +315,40 @@ See [[#organization-overview]] for a full overview of organization attributes.
     </pre>
 </div>
 
+### Contact information ### {#contact}
+
+Publishers *SHOULD* include contact information so [=consumers=] can reach them with questions or feedback.
+The e-mail address *SHOULD* be functional (i.e. non-personal) because of GDPR reasons. 
+
+<div class="example">
+    A publisher with contact information.
+
+    <pre highlight=json-ld line-numbers line-highlight="9-14">
+        {
+          "@context": "https://schema.org/",
+          "@type": "Dataset",
+          "publisher": {
+            "@type": "Organization",
+            "@id": "https://www.kb.nl",
+            "name": "Koninklijke Bibliotheek",
+            "alternateName": "KB",
+            "contactPoint": {
+              "@type": "ContactPoint",
+              "name": "Datasets Department",
+              "email": "datasets@kb.nl",
+              "telephone": "+31 6 12345678"
+            }
+          }
+        }
+    </pre>
+</div>
+
 ### Dataset publisher ### {#dataset-publisher}
 
 The person/organization data is then included as the dataset’s publisher:
 
 <div class="example">
-    A dataset with an organization as publisher. The publisher has some optional attributes.
+    A dataset with an organization as publisher.
 
     <pre highlight=json-ld>
         {
@@ -333,7 +361,7 @@ The person/organization data is then included as the dataset’s publisher:
             "alternateName": "KB",
             "contactPoint": {
               "@type": "ContactPoint",
-              "name": "Dataset manager’s name",
+              "name": "Datasets Department",
               "email": "datasets@kb.nl",
               "telephone": "+31 6 12345678"
             }
@@ -343,7 +371,7 @@ The person/organization data is then included as the dataset’s publisher:
 </div>
 
 <div class="example">
-    A dataset with a person as publisher. The publisher has some optional attributes.
+    A dataset with a person as publisher.
 
     <pre highlight=json-ld>
         {
