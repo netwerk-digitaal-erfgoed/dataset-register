@@ -20,13 +20,21 @@
   "publisher": {
     "@type": "Organization",
     "@id": "https://www.kb.nl",
+    "identifier": "NL-HaKB",
     "name": "Koninklijke Bibliotheek",
     "alternateName": "KB",
-    "sameAs": "https://ror.org/02w4jbg70"
+    "sameAs": "https://ror.org/02w4jbg70",
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "name": "Dataset manager’s name",
+      "email": "datasets@kb.nl",
+      "telephone": "+31 6 12345678"
+    }
   },
   "creator": {
     "@type": "Organization",
     "@id": "https://www.kb.nl",
+    "identifier": "NL-HaKB",
     "name": "Koninklijke Bibliotheek",
     "alternateName": "KB",
     "sameAs": "https://ror.org/02w4jbg70",

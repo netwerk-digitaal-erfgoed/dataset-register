@@ -315,6 +315,23 @@ See [[#organization-overview]] for a full overview of organization attributes.
     </pre>
 </div>
 
+### ISIL identifier ### {#isil}
+
+> Publishers *SHOULD* include the organization’s [ISIL code](https://www.nationaalarchief.nl/archiveren/kennisbank/isil-codes).
+
+<div class="example">
+    An organization with an ISIL code:
+
+    <pre highlight=json-ld>
+      {
+        "@context": "https://schema.org/",
+        "@type": "Organization",
+        "@id": "https://www.kb.nl",
+        "identifier": "NL-HaKB"
+      }
+    </pre>
+</div> 
+
 ### Contact information ### {#contact}
 
 Publishers *SHOULD* include contact information so [=consumers=] can reach them with questions or feedback.
@@ -357,6 +374,7 @@ The person/organization data is then included as the dataset’s publisher:
           "publisher": {
             "@type": "Organization",
             "@id": "https://www.kb.nl",
+            "identifier": "NL-HaKB"
             "name": "Koninklijke Bibliotheek",
             "alternateName": "KB",
             "contactPoint": {
@@ -782,6 +800,12 @@ This is an overview of required and recommended attributes.
             <td>Required</td>
         </tr>
         <tr>
+            <th scope="row">[schema:identifier](https://schema.org/identifier)</th>
+            <td>Identifier(s) of the organization, at least its <a href="https://www.nationaalarchief.nl/archiveren/kennisbank/isil-codes">ISIL code</a></td>
+            <td>1..n</td>
+            <td>Recommended (will become required)</td>
+        </tr>
+        <tr>
             <th scope="row">[schema:name](https://schema.org/name)</th>
             <td>The organization’s full name.</td>
             <td>1</td>
@@ -803,7 +827,7 @@ This is an overview of required and recommended attributes.
             <th scope="row">[schema:contactPoint](https://schema.org/contactPoint)</th>
             <td>Where [=consumers=] can reach the organization for questions and suggestions about the dataset.</td>
             <td>1</td>
-            <td>Recommended (scheduled to become Required for schema:publisher)</td>
+            <td>Recommended (will become required for schema:publisher)</td>
         </tr>
     </tbody>
 </table>
@@ -845,7 +869,7 @@ When the distribution is compressed, the compression format (e.g. zip, gzip) sho
         </tr>
         <tr>
             <th scope="row">[schema:description](https://schema.org/description)</th>
-            <td>A description of the the distribution.</td>
+            <td>A description of the distribution.</td>
             <td>0..1</td>            
             <td>Recommended</td>
         </tr>        
