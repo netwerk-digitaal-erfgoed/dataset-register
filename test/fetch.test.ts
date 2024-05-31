@@ -168,6 +168,16 @@ describe('Fetch', () => {
         )
       )
     ).toBe(true);
+    expect(
+      dataset.has(
+        factory.quad(
+          factory.namedNode('https://example.com/creator2'),
+          rdf('type'),
+          foaf('Person'),
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+        )
+      )
+    ).toBe(true);
     expect([
       ...dataset.match(
         factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),

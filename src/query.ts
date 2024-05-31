@@ -266,12 +266,12 @@ function schemaOrgQuery(prefix: string): string {
       
     FILTER (!isBlank(?${license}))
 
+    VALUES ?organizationOrPerson { ${prefix}:Organization ${prefix}:Person }          
     OPTIONAL { 
       ?${dataset} ${prefix}:creator ?${creator} .        
       ?${creator} a ?organizationOrPerson ;
         a ?creatorType ; 
         ${prefix}:name ?${creatorName} .
-      VALUES ?organizationOrPerson { ${prefix}:Organization ${prefix}:Person }          
     }
       
     OPTIONAL { 
@@ -279,7 +279,6 @@ function schemaOrgQuery(prefix: string): string {
       ?${publisher} a ?organizationOrPerson ;
         a ?publisherType ;
         ${prefix}:name ?${publisherName} .
-      VALUES ?organizationOrPerson { ${prefix}:Organization ${prefix}:Person }  
       OPTIONAL {
         ?${publisher} ${prefix}:contactPoint/${prefix}:email ?${publisherEmail} .  
       }
