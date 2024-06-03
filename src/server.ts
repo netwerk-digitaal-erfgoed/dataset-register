@@ -1,5 +1,4 @@
 import fastify, {
-  FastifyContextConfig,
   FastifyError,
   FastifyInstance,
   FastifyReply,
@@ -270,8 +269,7 @@ export async function server(
   return server;
 }
 
-
-declare module "fastify" {
+declare module 'fastify' {
   export interface FastifyContextConfig {
     /**
      * If enabled, the RDF request body will be parsed into a DatasetExt object by the content parser.
