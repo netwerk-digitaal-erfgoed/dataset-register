@@ -1,9 +1,8 @@
-import {DatasetCore} from 'rdf-js';
 import factory from 'rdf-ext';
 import SHACLValidator from 'rdf-validate-shacl';
-import DatasetExt from 'rdf-ext/lib/Dataset';
 import ValidationReport from 'rdf-validate-shacl/src/validation-report';
 import {rdfDereferencer} from './rdf.js';
+import {Dataset, DatasetCore} from '@rdfjs/types';
 
 export interface Validator {
   /**
@@ -23,7 +22,7 @@ export class ShaclValidator implements Validator {
     this.inner = new SHACLValidator(dataset);
   }
 
-  public async validate(dataset: DatasetExt): Promise<ValidationResult> {
+  public async validate(dataset: Dataset): Promise<ValidationResult> {
     const datasetIris = dataset.filter(
       quad =>
         quad.subject.termType === 'NamedNode' && // Prevent blank nodes

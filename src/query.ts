@@ -1,7 +1,7 @@
-import {BlankNode, NamedNode, Quad, Quad_Object, Term} from 'rdf-js';
 import factory from 'rdf-ext';
 import {BlankNodeScoped} from '@comunica/data-factory';
 import {convertToXsdDate} from './literal.js';
+import {BlankNode, NamedNode, Quad, Quad_Object, Term} from '@rdfjs/types';
 
 const dataset = 'dataset';
 const identifier = 'identifier';

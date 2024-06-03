@@ -21,10 +21,10 @@ import * as psl from 'psl';
 import {rdfSerializer} from './rdf.js';
 import fastifySwagger from '@fastify/swagger';
 import fastifyCors from '@fastify/cors';
-import {DatasetCore} from 'rdf-js';
 import acceptsSerializer from '@fastify/accepts-serializer';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import {registrationsCounter, validationsCounter} from './instrumentation.js';
+import {DatasetCore} from '@rdfjs/types';
 
 const serializer =
   (contentType: string) =>
