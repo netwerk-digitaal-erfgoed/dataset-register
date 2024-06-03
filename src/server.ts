@@ -242,7 +242,7 @@ export async function server(
   server.addContentTypeParser(
     ['application/ld+json', 'text/turtle', 'text/n3', 'application/trig'],
     async (request: FastifyRequest, payload: IncomingMessage) => {
-      if ((request.routeConfig as CustomConfig).parseRdf ?? false) {
+      if (request.routeConfig.parseRdf ?? false) {
         try {
           return await load(
             request.raw,
@@ -270,9 +270,12 @@ export async function server(
   return server;
 }
 
-export interface CustomConfig extends FastifyContextConfig {
-  /**
-   * If enabled, the RDF request body will be parsed into a DatasetExt object by the content parser.
-   */
-  parseRdf: boolean;
+
+declare module "fastify" {
+  export interface FastifyContextConfig {
+    /**
+     * If enabled, the RDF request body will be parsed into a DatasetExt object by the content parser.
+     */
+    parseRdf?: boolean;
+  }
 }
