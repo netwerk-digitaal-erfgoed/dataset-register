@@ -1,9 +1,7 @@
 import fetch, {Headers, Response} from 'node-fetch';
-import DatasetExt from 'rdf-ext/lib/Dataset';
 import factory from 'rdf-ext';
 import {URL} from 'url';
 import querystring from 'querystring';
-import {Quad, Quad_Object, Quad_Predicate} from 'rdf-js';
 import {Writer} from 'n3';
 import {
   AllowedRegistrationDomainStore,
@@ -13,6 +11,7 @@ import {
 import {DatasetStore, extractIris} from './dataset.js';
 import {Rating, RatingStore} from './rate.js';
 import http from 'node:http';
+import {DatasetCore, Quad, Quad_Object, Quad_Predicate} from '@rdfjs/types';
 
 export type SparqlResult = {
   results: {
@@ -371,7 +370,7 @@ export class GraphDbDatasetStore implements DatasetStore {
    *
    * @see https://graphdb.ontotext.com/documentation/standard/replace-graph.html
    */
-  public async store(datasets: DatasetExt[]) {
+  public async store(datasets: DatasetCore[]) {
     // Find each Dataset’s IRI.
     for (const [iri, dataset] of [...extractIris(datasets)]) {
       // Serialize requests: wait for each response before sending next request to prevent GraphDB from running OOM.
@@ -379,7 +378,7 @@ export class GraphDbDatasetStore implements DatasetStore {
     }
   }
 
-  private async storeDataset(dataset: DatasetExt, graphIri: URL) {
+  private async storeDataset(dataset: DatasetCore, graphIri: URL) {
     await new Promise((resolve, reject) => {
       getWriter([...dataset.match(null, null, null, null)]).end(
         async (error, result) => {

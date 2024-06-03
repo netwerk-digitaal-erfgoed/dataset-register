@@ -1,7 +1,7 @@
 import {Transform, TransformCallback} from 'stream';
-import {Quad, Quad_Object} from 'rdf-js';
 import factory from 'rdf-ext';
 import {NamedNode} from 'n3';
+import {Quad, Quad_Object} from '@rdfjs/types';
 
 /**
  * Convert http://schema.org prefix to https://schema.org for consistency.

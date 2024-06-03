@@ -4,7 +4,7 @@ import nock from 'nock';
 import {dcat, dct, foaf, rdf} from '../src/query';
 import factory from 'rdf-ext';
 import {file} from './mock';
-import {BlankNode} from 'rdf-js';
+import {BlankNode} from '@rdfjs/types';
 
 describe('Fetch', () => {
   it('must accept valid DCAT dataset descriptions', async () => {
