@@ -16,7 +16,8 @@
     "clean": "gts clean",
     "compile": "tsc",
     "fix": "gts fix",
-    "posttest": "jest-coverage-thresholds-bumper --silent"
+    "posttest": "jest-coverage-thresholds-bumper --silent",
+    "prepare": "husky"
   },
   "keywords": [],
   "author": "",
@@ -66,6 +67,7 @@
     "@types/rdfjs__dataset": "^2.0.0",
     "chokidar": "^3.5.2",
     "gts": "^5.2.0",
+    "husky": "^9.0.11",
     "jest": "^29.5.0",
     "jest-coverage-thresholds-bumper": "^1.1.0",
     "jsonld-streaming-parser": "^3.0.0",
