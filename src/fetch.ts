@@ -26,23 +26,22 @@ export class NoDatasetFoundAtUrl extends Error {
   }
 }
 
-export async function fetch(url: URL): Promise<DatasetExt[]> {
-  let datasets = await doFetch(url);
+export async function* fetch(url: URL): AsyncGenerator<DatasetExt> {
+  yield* doFetch(url);
+
   const nextPage = await findNextPage(url);
   if (nextPage !== null && nextPage !== url) {
-    datasets = [...datasets, ...(await fetch(nextPage))];
+    yield* fetch(nextPage);
   }
-
-  if (datasets.length === 0) {
-    throw new NoDatasetFoundAtUrl();
-  }
-
-  return datasets;
 }
 
-export async function doFetch(url: URL) {
+export async function* doFetch(url: URL) {
+  let datasets: DatasetExt[];
   try {
-    return await query(url);
+    datasets = await query(url);
+    for (const dataset of datasets) {
+      yield dataset;
+    }
   } catch (e) {
     handleComunicaError(e);
   }

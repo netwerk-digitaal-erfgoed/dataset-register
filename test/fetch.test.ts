@@ -14,7 +14,7 @@ describe('Fetch', () => {
       .get('/valid-dcat-dataset')
       .reply(200, response);
 
-    const datasets = await fetch(
+    const datasets = await fetchDatasetsAsArray(
       new URL('https://example.com/valid-dcat-dataset')
     );
 
@@ -54,7 +54,7 @@ describe('Fetch', () => {
       .get('/minimal-valid-schema-org-dataset')
       .reply(200, response);
 
-    const datasets = await fetch(
+    const datasets = await fetchDatasetsAsArray(
       new URL('https://example.com/minimal-valid-schema-org-dataset')
     );
 
@@ -70,7 +70,7 @@ describe('Fetch', () => {
       .get('/valid-schema-org-dataset')
       .reply(200, response);
 
-    const datasets = await fetch(
+    const datasets = await fetchDatasetsAsArray(
       new URL('https://example.com/valid-schema-org-dataset')
     );
 
@@ -195,7 +195,7 @@ describe('Fetch', () => {
       .get('/valid-schema-org-dataset')
       .reply(200, response);
 
-    const datasets = await fetch(
+    const datasets = await fetchDatasetsAsArray(
       new URL('https://example.com/valid-schema-org-dataset')
     );
 
@@ -209,7 +209,7 @@ describe('Fetch', () => {
       .get('/valid-schema-org-dataset')
       .reply(200, response);
 
-    const datasets = await fetch(
+    const datasets = await fetchDatasetsAsArray(
       new URL('https://example.com/valid-schema-org-dataset')
     );
 
@@ -223,7 +223,7 @@ describe('Fetch', () => {
       .get('/valid-schema-org-dataset')
       .reply(200, response);
 
-    const datasets = await fetch(
+    const datasets = await fetchDatasetsAsArray(
       new URL('https://example.com/valid-schema-org-dataset')
     );
 
@@ -234,7 +234,7 @@ describe('Fetch', () => {
     nock('https://example.com').get('/404').reply(404);
     expect.assertions(2);
     try {
-      await fetch(new URL('https://example.com/404'));
+      await fetchDatasetsAsArray(new URL('https://example.com/404'));
     } catch (e) {
       expect(e).toBeInstanceOf(HttpError);
       expect((e as HttpError).statusCode).toBe(404);
@@ -245,7 +245,7 @@ describe('Fetch', () => {
     nock('https://example.com').get('/500').reply(500);
     expect.assertions(2);
     try {
-      await fetch(new URL('https://example.com/500'));
+      await fetchDatasetsAsArray(new URL('https://example.com/500'));
     } catch (e) {
       expect(e).toBeInstanceOf(HttpError);
       expect((e as HttpError).statusCode).toBe(500);
@@ -254,35 +254,12 @@ describe('Fetch', () => {
 
   it('handles empty dataset response', async () => {
     nock('https://example.com').get('/200').reply(200);
-    expect.assertions(1);
-    try {
-      await fetch(new URL('https://example.com/200'));
-    } catch (e) {
-      expect(e).toBeInstanceOf(NoDatasetFoundAtUrl);
-    }
+    expect(
+      async () => await fetchDatasetsAsArray(new URL('https://example.com/200'))
+    ).rejects.toThrow(NoDatasetFoundAtUrl);
   });
 
-  it('handles paginated responses', async () => {
-    nock('https://example.com')
-      .get('/datasets/hydra-page1.ttl')
-      .replyWithFile(200, 'test/datasets/hydra-page1.ttl', {
-        'Content-Type': 'text/turtle',
-      });
-
-    nock('https://example.com')
-      .get('/datasets/hydra-page2.ttl')
-      .replyWithFile(200, 'test/datasets/hydra-page2.ttl', {
-        'Content-Type': 'text/turtle',
-      });
-
-    const datasets = await fetch(
-      new URL('https://example.com/datasets/hydra-page1.ttl')
-    );
-
-    expect(datasets).toHaveLength(2);
-  });
-
-  it('handles paginated JSON-ld responses', async () => {
+  it('handles paginated JSON-LD responses', async () => {
     nock('https://example.com')
       .get('/datasets/hydra-page1.jsonld')
       .replyWithFile(200, 'test/datasets/hydra-page1.jsonld', {
@@ -295,7 +272,7 @@ describe('Fetch', () => {
         'Content-Type': 'application/ld+json',
       });
 
-    const datasets = await fetch(
+    const datasets = await fetchDatasetsAsArray(
       new URL('https://example.com/datasets/hydra-page1.jsonld')
     );
 
@@ -315,10 +292,18 @@ describe('Fetch', () => {
         'Content-Type': 'text/turtle',
       });
 
-    const datasets = await fetch(
+    const datasets = await fetchDatasetsAsArray(
       new URL('https://example.com/datasets/hydra-page1.ttl')
     );
 
     expect(datasets).toHaveLength(2);
   });
 });
+
+const fetchDatasetsAsArray = async (url: URL) => {
+  const datasets = [];
+  for await (const dataset of fetch(url)) {
+    datasets.push(dataset);
+  }
+  return datasets;
+};

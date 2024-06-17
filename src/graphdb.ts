@@ -8,7 +8,7 @@ import {
   Registration,
   RegistrationStore,
 } from './registration.js';
-import {DatasetStore, extractIris} from './dataset.js';
+import {DatasetStore, extractIri} from './dataset.js';
 import {Rating, RatingStore} from './rate.js';
 import http from 'node:http';
 import {DatasetCore, Quad, Quad_Object, Quad_Predicate} from '@rdfjs/types';
@@ -370,12 +370,9 @@ export class GraphDbDatasetStore implements DatasetStore {
    *
    * @see https://graphdb.ontotext.com/documentation/standard/replace-graph.html
    */
-  public async store(datasets: DatasetCore[]) {
+  public async store(dataset: DatasetCore) {
     // Find each Dataset’s IRI.
-    for (const [iri, dataset] of [...extractIris(datasets)]) {
-      // Serialize requests: wait for each response before sending next request to prevent GraphDB from running OOM.
-      await this.storeDataset(dataset, iri);
-    }
+    await this.storeDataset(dataset, extractIri(dataset));
   }
 
   private async storeDataset(dataset: DatasetCore, graphIri: URL) {
