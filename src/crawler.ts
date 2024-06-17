@@ -1,7 +1,6 @@
 import {RegistrationStore} from './registration.js';
-import {DatasetStore, extractIri, extractIris} from './dataset.js';
+import {DatasetStore, extractIri} from './dataset.js';
 import {dereference, fetch, HttpError, NoDatasetFoundAtUrl} from './fetch.js';
-import DatasetExt from 'rdf-ext/lib/Dataset';
 import Pino from 'pino';
 import {Valid, Validator} from './validator.js';
 import {crawlCounter} from './instrumentation.js';
@@ -24,9 +23,9 @@ export class Crawler {
       await this.registrationStore.findRegistrationsReadBefore(dateLastRead);
     for (const registration of registrations) {
       this.logger.info(`Crawling registration URL ${registration.url}...`);
-      let datasets: DatasetExt[] = [];
       let statusCode = 200;
       let isValid = false;
+      const datasetIris: URL[] = [];
 
       try {
         const data = await dereference(registration.url);
@@ -34,13 +33,13 @@ export class Crawler {
         isValid = validationResult.state === 'valid';
         if (isValid) {
           this.logger.info(`${registration.url} passes validation`);
-          datasets = await fetch(registration.url);
-          await this.datasetStore.store(datasets);
-          datasets.map(async dataset => {
+          for await (const dataset of fetch(registration.url)) {
+            datasetIris.push(extractIri(dataset));
+            await this.datasetStore.store(dataset);
             const dcatValidationResult = await this.validator.validate(dataset);
             const rating = rate(dcatValidationResult as Valid);
             await this.ratingStore.store(extractIri(dataset), rating);
-          });
+          }
         } else {
           this.logger.info(`${registration.url} does not pass validation`);
         }
@@ -64,7 +63,7 @@ export class Crawler {
       });
 
       const updatedRegistration = registration.read(
-        [...extractIris(datasets).keys()],
+        datasetIris,
         statusCode,
         isValid
       );

@@ -12,7 +12,7 @@ export interface DatasetStore {
   /**
    * Store an array of dataset descriptions, replacing any triples that were previously stored for the datasets.
    */
-  store(datasets: DatasetCore[]): Promise<void>;
+  store(dataset: DatasetCore): Promise<void>;
 
   countDatasets(): Promise<number>;
 
@@ -28,13 +28,6 @@ export function extractIri(dataset: DatasetCore): URL {
     ),
   ][0];
   return new URL(quad.subject.value);
-}
-
-export function extractIris(datasets: DatasetCore[]): Map<URL, DatasetCore> {
-  return datasets.reduce((map, dataset) => {
-    map.set(extractIri(dataset), dataset);
-    return map;
-  }, new Map<URL, DatasetCore>());
 }
 
 export async function load(

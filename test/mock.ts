@@ -49,8 +49,8 @@ export class MockAllowedRegistrationDomainStore
 export class MockDatasetStore implements DatasetStore {
   private datasets: DatasetExt[] = [];
 
-  async store(datasets: DatasetExt[]): Promise<void> {
-    this.datasets.push(...datasets);
+  async store(datasets: DatasetExt): Promise<void> {
+    this.datasets.push(datasets);
   }
 
   countDatasets(): Promise<number> {

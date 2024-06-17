@@ -15,7 +15,7 @@ import {
   Registration,
   RegistrationStore,
 } from './registration.js';
-import {DatasetStore, extractIris, load} from './dataset.js';
+import {DatasetStore, extractIri, load} from './dataset.js';
 import {IncomingMessage, Server} from 'http';
 import * as psl from 'psl';
 import {rdfSerializer} from './rdf.js';
@@ -169,18 +169,18 @@ export async function server(
         await registrationStore.store(registration);
 
         // Fetch dataset descriptions and store them.
-        const datasets = await fetch(url);
+        const datasetIris: URL[] = [];
+        for await (const dataset of fetch(url)) {
+          datasetIris.push(extractIri(dataset));
+          await datasetStore.store(dataset);
+        }
+
         request.log.info(
-          `Found ${datasets.length} datasets at ${url.toString()}`
+          `Found ${datasetIris.length} datasets at ${url.toString()}`
         );
-        await datasetStore.store(datasets);
 
         // Update registration with dataset descriptions that we found.
-        const updatedRegistration = registration.read(
-          [...extractIris(datasets).keys()],
-          200,
-          true
-        );
+        const updatedRegistration = registration.read(datasetIris, 200, true);
         await registrationStore.store(updatedRegistration);
       }
 
