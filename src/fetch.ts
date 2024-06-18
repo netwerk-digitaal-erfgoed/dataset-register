@@ -77,6 +77,7 @@ const engine = await new QueryEngineFactory().create({
 async function query(url: URL): Promise<DatasetExt[]> {
   const bindingsStream = await engine.queryBindings(selectQuery, {
     sources: [url.toString()],
+    noCache: true, // Don’t cache HTTP responses because they may be large, especially for catalogs.
   });
 
   // Write results to an N3 Store for deduplication and partitioning by dataset.
@@ -193,6 +194,7 @@ async function findNextPage(url: URL): Promise<URL | null> {
     `,
     {
       sources: [url.toString()],
+      noCache: true, // Don’t cache HTTP responses because they may be large, especially for catalogs.
     }
   );
   const bindings = await bindingsStream.toArray();
