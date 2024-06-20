@@ -77,7 +77,6 @@ const engine = await new QueryEngineFactory().create({
 async function query(url: URL): Promise<DatasetExt[]> {
   const bindingsStream = await engine.queryBindings(selectQuery, {
     sources: [url.toString()],
-    noCache: true, // Don’t cache HTTP responses because they may be large, especially for catalogs.
   });
 
   // Write results to an N3 Store for deduplication and partitioning by dataset.
@@ -194,11 +193,15 @@ async function findNextPage(url: URL): Promise<URL | null> {
     `,
     {
       sources: [url.toString()],
-      noCache: true, // Don’t cache HTTP responses because they may be large, especially for catalogs.
+      // noCache: true does not seem to work, so call invalidateHttpCache() instead (see below).
     }
   );
   const bindings = await bindingsStream.toArray();
   const nextPage = bindings[0]?.get('nextPage')?.value;
+
+  // Invalidate the page because this was the last query to it and pages may be large,
+  // especially in the case of catalogs.
+  await engine.invalidateHttpCache(url.toString());
 
   return nextPage ? new URL(nextPage) : null;
 }
