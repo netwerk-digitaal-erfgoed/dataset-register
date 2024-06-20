@@ -6,31 +6,72 @@
   },
   "@type": "dcat:Dataset",
   "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
-  "dct:title": "Alba amicorum van de Koninklijke Bibliotheek",
-  "dct:description": "Just some dataset",
+  "dct:title": [
+    {
+      "@value": "Alba amicorum van de Koninklijke Bibliotheek",
+      "@language": "nl"
+    },
+    {
+      "@value": "Alba amicorum of the Dutch Royal Library",
+      "@language": "en"
+    }
+  ],
+  "dct:description": {
+    "@value": "Description only in English",
+    "@language": "en"
+  },
   "dcat:keyword": [
     "alba amicorum"
   ],
-  "dct:license": "http://creativecommons.org/publicdomain/zero/1.0/",
-  "dct:created": "2021-05-27",
-  "dct:issued": "2021-06-27",
-  "dct:modified": "2021-07-27",
+  "dct:identifier": "http://data.bibliotheken.nl/id/dataset/rise-alba",
+  "dct:license": {
+    "@id": "http://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "dct:created": {
+    "@type": "http://www.w3.org/2001/XMLSchema#date",
+    "@value": "2021-05-27"
+  },
+  "dct:issued": {
+    "@type": "http://www.w3.org/2001/XMLSchema#date",
+    "@value": "2021-05-28"
+  },
+  "dct:modified": {
+    "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+    "@value": "2021-05-27T09:56:21.370767"
+  },
   "dct:publisher": {
-    "@id": "https://example.com/dataset-provider",
-    "@type": "foaf:Person",
-    "foaf:name": "Dataset Provider"
-  },
-  "dct:creator": {
+    "@id": "https://example.com/publisher",
     "@type": "foaf:Organization",
-    "@id": "https://example.com/dataset-creator",
-    "foaf:name": "Dataset creator"
+    "foaf:name": "Koninklijke Bibliotheek",
+    "foaf:mbox": "datasets@example.com"
   },
-  "dct:language": "nl-NL",
+  "dct:creator": [
+    {
+      "@id": "https://example.com/creator1",
+      "@type": "foaf:Person",
+      "foaf:name": "Creator 1"
+    },
+    {
+      "@id": "https://example.com/creator2",
+      "@type": "foaf:Person",
+      "foaf:name": "Creator 2"
+    }
+  ],
+  "dct:language": ["nl-NL", "en-GB"],
   "dcat:distribution": [
     {
       "@type": "dcat:Distribution",
       "dct:format": ["application/rdf+xml", "text/turtle"],
-      "dcat:accessURL": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
+      "dcat:accessURL": {
+        "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
+      }
+    },
+    {
+      "@type": "dcat:Distribution",
+      "dct:format": ["application/ld+json"],
+      "dcat:accessURL": {
+        "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld"
+      }
     }
   ]
 }

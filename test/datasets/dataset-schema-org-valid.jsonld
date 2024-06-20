@@ -13,12 +13,14 @@
     }
   ],
   "description": {
-    "@value": "en",
-    "@language": "Description only in English"
+    "@value": "Description only in English",
+    "@language": "en"
   },
+  "keywords": "alba amicorum",
   "url": "https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum",
   "identifier": "http://data.bibliotheken.nl/id/dataset/rise-alba",
   "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+  "inLanguage": ["nl-NL", "en-GB"],
   "publisher": {
     "@type": "Organization",
     "@id": "https://example.com/publisher",
@@ -51,7 +53,7 @@
   "distribution": [
     {
       "@type": "DataDownload",
-      "encodingFormat": "application/rdf+xml",
+      "encodingFormat": ["application/rdf+xml", "text/turtle"],
       "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
     },
     {
