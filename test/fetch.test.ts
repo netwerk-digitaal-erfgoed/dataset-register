@@ -5,6 +5,10 @@ import {dcat, dct, foaf, rdf} from '../src/query';
 import factory from 'rdf-ext';
 import {file} from './mock';
 import {BlankNode} from '@rdfjs/types';
+import DatasetExt from 'rdf-ext/lib/Dataset';
+import {rdfDereferencer} from '../src/rdf';
+import {pipeline} from 'stream';
+import {StandardizeSchemaOrgPrefixToHttps} from '../src/transform';
 
 describe('Fetch', () => {
   it('must accept valid DCAT dataset descriptions', async () => {
@@ -24,15 +28,13 @@ describe('Fetch', () => {
     );
     const dataset = datasets[0];
     expect(
-      dataset.has(
-        factory.quad(datasetUri, rdf('type'), dcat('Dataset'), datasetUri)
-      )
+      dataset.has(factory.quad(datasetUri, rdf('type'), dcat('Dataset')))
     ).toBe(true);
 
     const distributions = [
-      ...dataset.match(datasetUri, dcat('distribution'), null, datasetUri),
+      ...dataset.match(datasetUri, dcat('distribution'), null),
     ];
-    expect(distributions).toHaveLength(1);
+    expect(distributions).toHaveLength(2);
 
     // dcat:
     expect(
@@ -40,8 +42,7 @@ describe('Fetch', () => {
         factory.quad(
           distributions[0].object as BlankNode,
           dct('format'),
-          factory.literal('application/rdf+xml'),
-          datasetUri
+          factory.literal('application/rdf+xml')
         )
       )
     ).toBe(true);
@@ -76,16 +77,19 @@ describe('Fetch', () => {
 
     expect(datasets).toHaveLength(1);
     const dataset = datasets[0];
-    expect(dataset.size).toBe(26);
+    expect(dataset.size).toBe(31);
+
+    const dcatEquivalent = await dereference(
+      'test/datasets/dataset-dcat-valid.jsonld'
+    );
+    expect(dataset.toCanonical()).toStrictEqual(dcatEquivalent.toCanonical());
+
     expect(
       dataset.has(
         factory.quad(
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
           dct('license'),
-          factory.namedNode(
-            'http://creativecommons.org/publicdomain/zero/1.0/'
-          ),
-          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+          factory.namedNode('http://creativecommons.org/publicdomain/zero/1.0/')
         )
       )
     ).toBe(true);
@@ -97,8 +101,7 @@ describe('Fetch', () => {
           factory.literal(
             '2021-05-27',
             factory.namedNode('http://www.w3.org/2001/XMLSchema#date')
-          ),
-          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+          )
         )
       )
     ).toBe(true);
@@ -110,8 +113,7 @@ describe('Fetch', () => {
           factory.literal(
             '2021-05-28',
             factory.namedNode('http://www.w3.org/2001/XMLSchema#date')
-          ),
-          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+          )
         )
       )
     ).toBe(true);
@@ -123,8 +125,7 @@ describe('Fetch', () => {
           factory.literal(
             '2021-05-27T09:56:21.370767',
             factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime')
-          ),
-          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+          )
         )
       )
     ).toBe(true);
@@ -133,8 +134,7 @@ describe('Fetch', () => {
         factory.quad(
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
           dct('publisher'),
-          factory.namedNode('https://example.com/publisher'),
-          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+          factory.namedNode('https://example.com/publisher')
         )
       )
     ).toBe(true);
@@ -143,8 +143,7 @@ describe('Fetch', () => {
         factory.quad(
           factory.namedNode('https://example.com/publisher'),
           rdf('type'),
-          foaf('Organization'),
-          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+          foaf('Organization')
         )
       )
     ).toBe(true);
@@ -153,8 +152,7 @@ describe('Fetch', () => {
         factory.quad(
           factory.namedNode('https://example.com/publisher'),
           foaf('mbox'),
-          factory.literal('datasets@example.com'),
-          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+          factory.literal('datasets@example.com')
         )
       )
     ).toBe(true);
@@ -163,8 +161,7 @@ describe('Fetch', () => {
         factory.quad(
           factory.namedNode('https://example.com/creator1'),
           rdf('type'),
-          foaf('Person'),
-          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+          foaf('Person')
         )
       )
     ).toBe(true);
@@ -173,8 +170,7 @@ describe('Fetch', () => {
         factory.quad(
           factory.namedNode('https://example.com/creator2'),
           rdf('type'),
-          foaf('Person'),
-          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+          foaf('Person')
         )
       )
     ).toBe(true);
@@ -182,8 +178,7 @@ describe('Fetch', () => {
       ...dataset.match(
         factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
         dcat('distribution'),
-        null,
-        factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba')
+        null
       ),
     ]).toHaveLength(2);
   });
@@ -276,7 +271,7 @@ describe('Fetch', () => {
       new URL('https://example.com/datasets/hydra-page1.jsonld')
     );
 
-    expect(datasets).toHaveLength(2);
+    expect(datasets).toHaveLength(3);
   });
 
   it('handles paginated Turtle responses', async () => {
@@ -307,3 +302,13 @@ const fetchDatasetsAsArray = async (url: URL) => {
   }
   return datasets;
 };
+
+async function dereference(file: string): Promise<DatasetExt> {
+  const {data} = await rdfDereferencer.dereference(file, {localFiles: true});
+  const stream = pipeline(
+    data,
+    new StandardizeSchemaOrgPrefixToHttps(),
+    () => {} // Noop, just throw errors.
+  );
+  return await factory.dataset().import(stream);
+}

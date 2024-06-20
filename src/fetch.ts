@@ -2,11 +2,9 @@ import {QueryEngineFactory} from '@comunica/query-sparql';
 import factory from 'rdf-ext';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import {URL} from 'url';
-import {Store} from 'n3';
-import {bindingsToQuads, selectQuery, sparqlLimit} from './query.js';
+import {constructQuery, dcat, rdf} from './query.js';
 import {pipeline} from 'stream';
 import {StandardizeSchemaOrgPrefixToHttps} from './transform.js';
-import Pino from 'pino';
 import {rdfDereferencer} from './rdf.js';
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import _ from './comunica-config.json';
@@ -36,12 +34,8 @@ export async function* fetch(url: URL): AsyncGenerator<DatasetExt> {
 }
 
 export async function* doFetch(url: URL) {
-  let datasets: DatasetExt[];
   try {
-    datasets = await query(url);
-    for (const dataset of datasets) {
-      yield dataset;
-    }
+    yield* query(url);
   } catch (e) {
     handleComunicaError(e);
   }
@@ -71,93 +65,33 @@ const engine = await new QueryEngineFactory().create({
   configPath: new URL('comunica-config.json', import.meta.url).toString(),
 });
 
-/**
- * Fetch dataset descriptions by executing a SPARQL SELECT query.
- */
-async function query(url: URL): Promise<DatasetExt[]> {
-  const bindingsStream = await engine.queryBindings(selectQuery, {
+async function* query(url: URL) {
+  const quadStream = await engine.queryQuads(constructQuery, {
     sources: [url.toString()],
   });
+  let datasetQuads = [];
+  let currentDataset: string | undefined;
+  for await (const quad of quadStream) {
+    if (
+      quad.predicate.equals(rdf('type')) &&
+      quad.object.equals(dcat('Dataset'))
+    ) {
+      currentDataset ??= quad.subject.value; // Set currentDataset to first dataset.
 
-  // Write results to an N3 Store for deduplication and partitioning by dataset.
-  const store = new Store();
-  let count = 0;
-  return new Promise(resolve => {
-    bindingsStream
-      .on('data', binding => {
-        count++;
-        store.addQuads(bindingsToQuads(binding));
-      })
-      .on('end', async () => {
-        if (count === sparqlLimit) {
-          Pino().error(
-            `SPARQL query result for ${url.toString()} reached the SPARQL limit of ${sparqlLimit}`
-          );
-        }
+      if (quad.subject.value !== currentDataset) {
+        // Start of a new dataset.
+        currentDataset = quad.subject.value;
+        yield factory.dataset(datasetQuads);
+        datasetQuads = [];
+      }
+    }
+    datasetQuads.push(quad);
+  }
 
-        // Each dataset description is stored in its own graph, so separate them out now.
-        const datasets: DatasetExt[] = await Promise.all(
-          store
-            .getGraphs(null, null, null)
-            .map(
-              async graph =>
-                await factory
-                  .dataset()
-                  .import(store.match(undefined, undefined, undefined, graph))
-            )
-        );
-
-        resolve(datasets);
-      });
-  });
+  if (datasetQuads.length > 0) {
+    yield factory.dataset(datasetQuads);
+  }
 }
-
-/**
- * Retrieve the dataset description through a CONSTRUCT SPARQL query.
- *
- * Currently unusable; see https://github.com/comunica/comunica/issues/773.
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-// async function construct(url: URL) {
-//   const comunica = newEngine();
-//   const result = (await comunica.query(
-//     `
-//       CONSTRUCT {
-//         ?s a schema:Dataset ;
-//           schema:name ?name ;
-//           schema:description ?description ;
-//           schema:creator ?creator ;
-//           schema:license ?license ;
-//           schema:distribution ?distribution .
-//         ?distribution a schema:DataDownload ;
-//           schema:encodingFormat ?encodingFormat ;
-//           schema:contentUrl ?contentUrl .
-//         ?creator a schema:Organization ;
-//           schema:name ?creatorName .
-//       }
-//       WHERE {
-//         {
-//           ?s a schema:Dataset ;
-//             schema:identifier ?identifier ;
-//             schema:name ?name ;
-//             schema:description ?description ;
-//             schema:creator ?creator ;
-//             schema:license ?license ;
-//             schema:distribution ?distribution .
-//           ?distribution a schema:DataDownload ;
-//             schema:encodingFormat ?encodingFormat ;
-//             schema:contentUrl ?contentUrl .
-//           ?creator a schema:Organization ;
-//             schema:name ?creatorName .
-//           OPTIONAL { ?s schema:url ?url . }
-//           OPTIONAL { ?s schema:keywords ?keywords . }
-//         }
-//       }`,
-//     {sources: [url.toString()]}
-//   )) as IQueryResultQuads;
-//
-//   return await factory.dataset().import(result.quadStream);
-// }
 
 /**
  * Parse Comunica error response to throw a specific error class.

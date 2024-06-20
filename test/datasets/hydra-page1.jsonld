@@ -36,6 +36,15 @@
           "publisher": {
             "@id": "/publisher"
           }
+        },
+        {
+          "@type": "Dataset",
+          "@id": "https://example.com/dataset/2",
+          "name": "Dataset 2",
+          "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+          "publisher": {
+            "@id": "/publisher"
+          }
         }
       ]
     }

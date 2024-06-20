@@ -30,8 +30,8 @@
       "dataset": [
         {
           "@type": "Dataset",
-          "@id": "https://example.com/dataset/2",
-          "name": "Dataset 2",
+          "@id": "https://example.com/dataset/3",
+          "name": "Dataset 3",
           "license": "http://creativecommons.org/publicdomain/zero/1.0/",
           "publisher": {
             "@id": "/publisher"
