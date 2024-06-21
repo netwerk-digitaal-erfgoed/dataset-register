@@ -1,5 +1,5 @@
 import factory from 'rdf-ext';
-import {convertToXsdDate} from './literal.js';
+import {convertToIri, convertToXsdDate} from './literal.js';
 import {NamedNode} from '@rdfjs/types';
 
 const dataset = 'dataset';
@@ -124,7 +124,7 @@ export const constructQuery = `
       OPTIONAL {  
         ?${dataset} dcat:distribution ?${distribution} .
         ?${distribution} a dcat:Distribution ;
-          dcat:accessURL ?${distributionUrl} .
+          dcat:accessURL ?${convertToIri(distributionUrl)} .
           
         OPTIONAL { ?${distribution} dct:format ?${distributionFormat} }
         OPTIONAL { ?${distribution} dcat:mediaType ?${distributionMediaType} }
@@ -206,8 +206,8 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL {
       ?${dataset} ${prefix}:distribution ?${distribution} .
       ?${distribution} a ${prefix}:DataDownload ;
-        ${prefix}:contentUrl ?${distributionUrl} ;
-        ${prefix}:encodingFormat ?${distributionFormat} .
+        ${prefix}:encodingFormat ?${distributionFormat} ;
+        ${prefix}:contentUrl ?${convertToIri(distributionUrl)} .
         
       OPTIONAL { ?${distribution} ${prefix}:fileFormat ?${distributionMediaType} }
       OPTIONAL { ?${distribution} ${prefix}:datePublished ${convertToXsdDate(

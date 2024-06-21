@@ -12,4 +12,8 @@ const dateTimeRegex = '^\\\\d{4}-\\\\d{2}-\\\\d{2}T';
  */
 export const convertToXsdDate = (variable: string) =>
   `?${variable}Raw ;
-        BIND(STRDT(STR(?${variable}Raw), IF(REGEX(STR(?${variable}Raw), "${dateTimeRegex}"), xsd:dateTime, xsd:date)) as ?${variable})`;
+        BIND(STRDT(STR(?${variable}Raw), IF(REGEX(STR(?${variable}Raw), "${dateTimeRegex}"), xsd:dateTime, xsd:date)) AS ?${variable})`;
+
+export const convertToIri = (variable: string) =>
+  `?${variable}Raw ;
+        BIND(IRI(?${variable}Raw) AS ?${variable})`;

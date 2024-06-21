@@ -11,7 +11,7 @@ import {pipeline} from 'stream';
 import {StandardizeSchemaOrgPrefixToHttps} from '../src/transform';
 
 describe('Fetch', () => {
-  it('must accept valid DCAT dataset descriptions', async () => {
+  it('accepts accept valid DCAT dataset descriptions', async () => {
     const response = await file('dataset-dcat-valid.jsonld');
     nock('https://example.com')
       .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
@@ -195,6 +195,22 @@ describe('Fetch', () => {
     );
 
     expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+
+    // accessURL must be converted from literal to IRI.
+    expect(
+      dataset.has(
+        factory.quad(
+          factory.namedNode(
+            'https://www.goudatijdmachine.nl/data/api/items/144'
+          ),
+          dcat('accessURL'),
+          factory.namedNode(
+            'https://www.goudatijdmachine.nl/wp-content/uploads/sites/7/2021/09/Totaal_perceel_Plaand_EPSG_4326.geojson'
+          )
+        )
+      )
+    ).toBe(true);
   });
 
   it('accepts valid HTTP Schema.org dataset in JSON-LD', async () => {
