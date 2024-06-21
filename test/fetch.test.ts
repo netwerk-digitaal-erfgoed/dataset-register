@@ -77,11 +77,11 @@ describe('Fetch', () => {
 
     expect(datasets).toHaveLength(1);
     const dataset = datasets[0];
-    expect(dataset.size).toBe(31);
 
     const dcatEquivalent = await dereference(
       'test/datasets/dataset-dcat-valid.jsonld'
     );
+    expect(dataset.size).toStrictEqual(dcatEquivalent.size);
     expect(dataset.toCanonical()).toStrictEqual(dcatEquivalent.toCanonical());
 
     expect(

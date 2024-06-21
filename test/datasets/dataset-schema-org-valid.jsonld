@@ -17,10 +17,15 @@
     "@language": "en"
   },
   "keywords": "alba amicorum",
+  "genre": "Interesting data",
   "url": "https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum",
   "identifier": "http://data.bibliotheken.nl/id/dataset/rise-alba",
   "license": "http://creativecommons.org/publicdomain/zero/1.0/",
   "inLanguage": ["nl-NL", "en-GB"],
+  "spatialCoverage": {
+    "@id": "https://sws.geonames.org/2750405/"
+  },
+  "temporalCoverage": "1939/1945",
   "publisher": {
     "@type": "Organization",
     "@id": "https://example.com/publisher",

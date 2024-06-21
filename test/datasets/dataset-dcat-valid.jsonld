@@ -58,6 +58,11 @@
     }
   ],
   "dct:language": ["nl-NL", "en-GB"],
+  "dct:spatial": {
+    "@id": "https://sws.geonames.org/2750405/"
+  },
+  "dct:temporal": "1939/1945",
+  "dct:type": "Interesting data",
   "dcat:distribution": [
     {
       "@type": "dcat:Distribution",
