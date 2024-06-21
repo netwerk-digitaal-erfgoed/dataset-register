@@ -49,7 +49,7 @@ export const rdf = (property: string): NamedNode =>
   factory.namedNode(`http://www.w3.org/1999/02/22-rdf-syntax-ns#${property}`);
 
 export const datasetType = dcat('Dataset');
-export const sparqlLimit = 50000;
+export const sparqlLimit = 1_000_000;
 
 export const constructQuery = `
   PREFIX dcat: <http://www.w3.org/ns/dcat#>
@@ -99,62 +99,65 @@ export const constructQuery = `
       dct:title ?${distributionName} ;
       dcat:byteSize ?${distributionSize} .
   } WHERE {
-    {
-      ${schemaOrgQuery('schema')}
-    } UNION {
-      ${schemaOrgQuery('httpSchema')}
-    } UNION { 
-      ?${dataset} a dcat:Dataset ;
-        dct:title ?${name} ;
-        dct:license ?${license} ;
-        dct:publisher ?${publisher} .
-        
-      ?${publisher} a ?foafOrganizationOrPerson ;
-        a ?${publisherType} ;
-        foaf:name ?${publisherName} .
-      
-      OPTIONAL {
-        ?${creator} a ?foafOrganizationOrPerson ;
-          a ?${creatorType} ;
-          foaf:name ?${creatorName} .
-      }
-        
-      VALUES ?foafOrganizationOrPerson { foaf:Organization foaf:Person }
-
-      OPTIONAL {  
-        ?${dataset} dcat:distribution ?${distribution} .
-        ?${distribution} a dcat:Distribution ;
-          dcat:accessURL ?${convertToIri(distributionUrl)} .
+    SELECT * WHERE {
+      {
+        ${schemaOrgQuery('schema')}
+      } UNION {
+        ${schemaOrgQuery('httpSchema')}
+      } UNION { 
+        ?${dataset} a dcat:Dataset ;
+          dct:title ?${name} ;
+          dct:license ?${license} ;
+          dct:publisher ?${publisher} .
           
-        OPTIONAL { ?${distribution} dct:format ?${distributionFormat} }
-        OPTIONAL { ?${distribution} dcat:mediaType ?${distributionMediaType} }
-        OPTIONAL { ?${distribution} dct:issued ${convertToXsdDate(
-          distributionDatePublished
-        )} }
-        OPTIONAL { ?${distribution} dct:modified ${convertToXsdDate(
-          distributionDateModified
-        )} }
-        OPTIONAL { ?${distribution} dct:description ?${distributionDescription} }
-        OPTIONAL { ?${distribution} dct:language ?${distributionLanguage} }
-        OPTIONAL { ?${distribution} dct:license ?${distributionLicense} }
-        OPTIONAL { ?${distribution} dct:title ?${distributionName} }
-        OPTIONAL { ?${distribution} dcat:byteSize ?${distributionSize} }
-      }
+        ?${publisher} a ?foafOrganizationOrPerson ;
+          a ?${publisherType} ;
+          foaf:name ?${publisherName} .
         
-      OPTIONAL { ?${dataset} dct:description ?${description} }
-      OPTIONAL { ?${dataset} dct:identifier ?${identifier} }
-      OPTIONAL { ?${dataset} dct:alternative ?${alternateName} }
-      OPTIONAL { ?${dataset} dct:created ${convertToXsdDate(dateCreated)} }
-      OPTIONAL { ?${dataset} dct:issued ${convertToXsdDate(datePublished)} }
-      OPTIONAL { ?${dataset} dct:modified ${convertToXsdDate(dateModified)} }
-      OPTIONAL { ?${dataset} dct:language ?${language} }
-      OPTIONAL { ?${dataset} dct:source ?${source} }
-      OPTIONAL { ?${dataset} dcat:keyword ?${keyword} }
-      OPTIONAL { ?${dataset} owl:versionInfo ?${version} }
-      OPTIONAL { ?${dataset} dct:isPartOf ?${includedInDataCatalog} }
-      OPTIONAL { ?${dataset} dcat:landingPage ?${mainEntityOfPage} }
+        OPTIONAL {
+          ?${creator} a ?foafOrganizationOrPerson ;
+            a ?${creatorType} ;
+            foaf:name ?${creatorName} .
+        }
+          
+        VALUES ?foafOrganizationOrPerson { foaf:Organization foaf:Person }
+  
+        OPTIONAL {  
+          ?${dataset} dcat:distribution ?${distribution} .
+          ?${distribution} a dcat:Distribution ;
+            dcat:accessURL ?${convertToIri(distributionUrl)} .
+            
+          OPTIONAL { ?${distribution} dct:format ?${distributionFormat} }
+          OPTIONAL { ?${distribution} dcat:mediaType ?${distributionMediaType} }
+          OPTIONAL { ?${distribution} dct:issued ${convertToXsdDate(
+            distributionDatePublished
+          )} }
+          OPTIONAL { ?${distribution} dct:modified ${convertToXsdDate(
+            distributionDateModified
+          )} }
+          OPTIONAL { ?${distribution} dct:description ?${distributionDescription} }
+          OPTIONAL { ?${distribution} dct:language ?${distributionLanguage} }
+          OPTIONAL { ?${distribution} dct:license ?${distributionLicense} }
+          OPTIONAL { ?${distribution} dct:title ?${distributionName} }
+          OPTIONAL { ?${distribution} dcat:byteSize ?${distributionSize} }
+        }
+          
+        OPTIONAL { ?${dataset} dct:description ?${description} }
+        OPTIONAL { ?${dataset} dct:identifier ?${identifier} }
+        OPTIONAL { ?${dataset} dct:alternative ?${alternateName} }
+        OPTIONAL { ?${dataset} dct:created ${convertToXsdDate(dateCreated)} }
+        OPTIONAL { ?${dataset} dct:issued ${convertToXsdDate(datePublished)} }
+        OPTIONAL { ?${dataset} dct:modified ${convertToXsdDate(dateModified)} }
+        OPTIONAL { ?${dataset} dct:language ?${language} }
+        OPTIONAL { ?${dataset} dct:source ?${source} }
+        OPTIONAL { ?${dataset} dcat:keyword ?${keyword} }
+        OPTIONAL { ?${dataset} owl:versionInfo ?${version} }
+        OPTIONAL { ?${dataset} dct:isPartOf ?${includedInDataCatalog} }
+        OPTIONAL { ?${dataset} dcat:landingPage ?${mainEntityOfPage} }
+      }
     }
-  } LIMIT ${sparqlLimit}`;
+    LIMIT ${sparqlLimit}
+  }`;
 
 function schemaOrgQuery(prefix: string): string {
   return `
