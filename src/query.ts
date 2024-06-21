@@ -17,6 +17,9 @@ const dateModified = 'dateModified';
 const language = 'language';
 const source = 'source';
 const keyword = 'keyword';
+const spatialCoverage = 'spatialCoverage';
+const temporalCoverage = 'temporalCoverage';
+const genre = 'genre';
 const mainEntityOfPage = 'mainEntityOfPage';
 const version = 'version';
 const includedInDataCatalog = 'includedInDataCatalog';
@@ -74,6 +77,9 @@ export const constructQuery = `
       dct:source ?${source} ;
       dcat:keyword ?${keyword} ;
       dcat:landingPage ?${mainEntityOfPage} ;
+      dct:spatial ?${spatialCoverage} ;
+      dct:temporal ?${temporalCoverage} ;
+      dct:type ?${genre} ;
       owl:versionInfo ?${version} ;
       dct:isPartOf ?${includedInDataCatalog} ;
       dct:publisher ?${publisher} ;
@@ -151,6 +157,9 @@ export const constructQuery = `
         OPTIONAL { ?${dataset} dct:language ?${language} }
         OPTIONAL { ?${dataset} dct:source ?${source} }
         OPTIONAL { ?${dataset} dcat:keyword ?${keyword} }
+        OPTIONAL { ?${dataset} dct:spatial ?${spatialCoverage} }
+        OPTIONAL { ?${dataset} dct:temporal ?${temporalCoverage} }
+        OPTIONAL { ?${dataset} dct:genre ?${genre} }
         OPTIONAL { ?${dataset} owl:versionInfo ?${version} }
         OPTIONAL { ?${dataset} dct:isPartOf ?${includedInDataCatalog} }
         OPTIONAL { ?${dataset} dcat:landingPage ?${mainEntityOfPage} }
@@ -242,6 +251,9 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL { ?${dataset} ${prefix}:isBasedOn ?${source} }
     OPTIONAL { ?${dataset} ${prefix}:isBasedOnUrl ?${source} } 
     OPTIONAL { ?${dataset} ${prefix}:keywords ?${keyword} }
+    OPTIONAL { ?${dataset} ${prefix}:spatialCoverage ?${spatialCoverage} }
+    OPTIONAL { ?${dataset} ${prefix}:temporalCoverage ?${temporalCoverage} }
+    OPTIONAL { ?${dataset} ${prefix}:genre ?${genre} }
     OPTIONAL { ?${dataset} ${prefix}:version ?${version} }
     OPTIONAL { ?${dataset} ${prefix}:includedInDataCatalog ?${includedInDataCatalog} }
     OPTIONAL { ?${dataset} ${prefix}:mainEntityOfPage ?${mainEntityOfPage} }
