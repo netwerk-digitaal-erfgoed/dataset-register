@@ -1,7 +1,10 @@
 import {shacl, Valid} from './validator.js';
 import {dcat, dct} from './query.js';
+import {NamedNode} from '@rdfjs/types';
 
-const penalties = new Map([
+// If at least one of the properties in the map’s key is missing (e.g. either created or issued), apply the penalty
+// specified in the map’s value (e.g. 10) is applied.
+const penalties = new Map<NamedNode[], number>([
   [[dct('description')], 20],
   [[dcat('distribution')], 20],
   [[dct('creator')], 10],
@@ -63,7 +66,7 @@ export class Rating {
   public readonly explanation: string;
 
   public constructor(
-    private readonly penalties: Penalty[],
+    readonly penalties: Penalty[],
     public readonly worstRating: number,
     public readonly bestRating = 100
   ) {
