@@ -103,7 +103,7 @@ Definitions {#definitions}
     This would probably be ‘heritage institution’ in <a href="https://www.netwerkdigitaalerfgoed.nl/wp-content/uploads/2019/05/190513-DERA2.0-ENG.pdf">DERA</a>.
 
 : <dfn>Consumer</dfn>
-:: On organization or an individual that uses one or more [=datasets=] that are provided by a [=publisher=].
+:: On organization, individual or service platform that uses one or more [=datasets=] that are provided by a [=publisher=].
 
 Conceptual model {#conceptual-model}
 ===============
@@ -467,7 +467,8 @@ See [[#distribution-attributes]] for a full overview.
 
 ### Creation and modification dates ### {#distribution-date}
 
-Publishers *SHOULD* make known when the [=distribution=] was originally created and when it was last updated.
+Publishers *SHOULD* make known when the [=distribution=] was originally created and when it was last updated,
+so [=consumers=] can efficiently stay up-to-date with the latest changes. 
 Please note that this is different from [[#dataset-date|dataset description’s dates]].
 Datetimes (‘2019-08-15T08:05:00Z’) are preferred because they offer greater precision, 
 but simple dates (‘2019-04-14’) are also allowed.
