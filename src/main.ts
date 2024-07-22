@@ -30,7 +30,7 @@ const client = new GraphDbClient(
   const ratingStore = new GraphDbRatingStore(client);
   const allowedRegistrationDomainStore =
     new GraphDbAllowedRegistrationDomainStore(client);
-  await startInstrumentation(datasetStore);
+  startInstrumentation(datasetStore);
   const shacl = await readUrl('shacl/register.ttl');
   const validator = new ShaclValidator(shacl);
   const crawler = new Crawler(
