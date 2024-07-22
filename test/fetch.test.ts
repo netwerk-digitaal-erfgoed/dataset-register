@@ -6,7 +6,7 @@ import factory from 'rdf-ext';
 import {file} from './mock';
 import {BlankNode} from '@rdfjs/types';
 import DatasetExt from 'rdf-ext/lib/Dataset';
-import {rdfDereferencer} from '../src/rdf';
+import {rdfDereferencer} from 'rdf-dereference';
 import {pipeline} from 'stream';
 import {StandardizeSchemaOrgPrefixToHttps} from '../src/transform';
 

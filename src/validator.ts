@@ -1,7 +1,7 @@
 import factory from 'rdf-ext';
 import SHACLValidator from 'rdf-validate-shacl';
 import ValidationReport from 'rdf-validate-shacl/src/validation-report';
-import {rdfDereferencer} from './rdf.js';
+import {rdfDereferencer} from 'rdf-dereference';
 import {Dataset, DatasetCore} from '@rdfjs/types';
 
 export interface Validator {
