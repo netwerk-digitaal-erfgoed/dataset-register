@@ -53,7 +53,6 @@ export async function server(
       },
     })
     .register(fastifySwaggerUi, {
-      baseDir: process.cwd(),
       routePrefix: docsUrl,
     })
     .register(acceptsSerializer, {
