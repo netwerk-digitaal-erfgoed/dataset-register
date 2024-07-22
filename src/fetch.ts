@@ -5,7 +5,7 @@ import {URL} from 'url';
 import {constructQuery, dcat, rdf} from './query.js';
 import {pipeline} from 'stream';
 import {StandardizeSchemaOrgPrefixToHttps} from './transform.js';
-import {rdfDereferencer} from './rdf.js';
+import {rdfDereferencer} from 'rdf-dereference';
 /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 import _ from './comunica-config.json';
 

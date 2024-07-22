@@ -18,7 +18,7 @@ import {
 import {DatasetStore, extractIri, load} from './dataset.js';
 import {IncomingMessage, Server} from 'http';
 import * as psl from 'psl';
-import {rdfSerializer} from './rdf.js';
+import {rdfSerializer} from 'rdf-serialize';
 import fastifySwagger from '@fastify/swagger';
 import fastifyCors from '@fastify/cors';
 import acceptsSerializer from '@fastify/accepts-serializer';
