@@ -25,12 +25,12 @@ a client application for this repository’s HTTP API, for more background infor
 ### Validate dataset descriptions
 
 Dataset descriptions must adhere to the [Requirements for Datasets](https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/).
-You can check validity using the [validate API call](https://datasetregister.netwerkdigitaalerfgoed.nl/api/static/index.html#/default/validate).
+You can check validity using the [validate API call](https://datasetregister.netwerkdigitaalerfgoed.nl/api#/default/validate).
 
 ### Submit dataset descriptions
 
 To submit your dataset descriptions to the Dataset Register,
-use the [datasets API call](https://datasetregister.netwerkdigitaalerfgoed.nl/api/static/index.html#/default/post_datasets).
+use the [datasets API call](https://datasetregister.netwerkdigitaalerfgoed.nl/api#/default/post_datasets).
 URLs must be [allowed](#allow-list) before they can be added to the Register.
 
 ### Search dataset descriptions
