@@ -57,7 +57,7 @@
   "devDependencies": {
     "@rdfjs/types": "^1.0.1",
     "@types/jest": "^29.5.1",
-    "@types/node": "^20.1.0",
+    "@types/node": "^22.0.0",
     "@types/node-schedule": "^2.1.0",
     "@types/psl": "^1.1.0",
     "@types/rdf-dataset-ext": "^1.0.1",
