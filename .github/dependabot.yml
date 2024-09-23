@@ -13,3 +13,7 @@ updates:
       comunica:
         patterns:
           - "@comunica/*"
+      fastify:
+        patterns:
+            - "@fastify/*"
+            - 'fastify'
