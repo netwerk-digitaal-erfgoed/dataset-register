@@ -240,7 +240,7 @@ export async function server(
   server.addContentTypeParser(
     ['application/ld+json', 'text/turtle', 'text/n3', 'application/trig'],
     async (request: FastifyRequest, payload: IncomingMessage) => {
-      if (request.routeConfig.parseRdf ?? false) {
+      if (request.routeOptions.config.parseRdf ?? false) {
         try {
           return await load(
             request.raw,
