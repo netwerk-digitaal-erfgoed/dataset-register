@@ -6,7 +6,6 @@ import {DataFactory, StreamParser} from 'n3';
 import {JsonLdParser} from 'jsonld-streaming-parser';
 import {StandardizeSchemaOrgPrefixToHttps} from './transform.js';
 import {DatasetCore} from '@rdfjs/types';
-import namedNode = DataFactory.namedNode;
 
 export interface DatasetStore {
   /**
@@ -23,7 +22,7 @@ export function extractIri(dataset: DatasetCore): URL {
   const quad = [
     ...dataset.match(
       null,
-      namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+      DataFactory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
       datasetType
     ),
   ][0];
