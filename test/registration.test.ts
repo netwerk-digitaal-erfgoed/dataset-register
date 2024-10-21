@@ -5,7 +5,7 @@ describe('Registration', () => {
   it('must toggle from valid to invalid', () => {
     const registration = new Registration(
       new URL('https://example.com/registration'),
-      new Date()
+      new Date(),
     );
 
     const updatedRegistration = registration.read([], 200, true);

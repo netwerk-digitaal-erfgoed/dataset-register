@@ -40,7 +40,7 @@ export async function server(
   validator: Validator,
   shacl: DatasetCore,
   docsUrl = '/',
-  options?: FastifyServerOptions
+  options?: FastifyServerOptions,
 ): Promise<FastifyInstance<Server>> {
   const server = fastify(options);
 
@@ -91,27 +91,27 @@ export async function server(
 
   async function resolveDataset(
     url: URL,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<DatasetExt | null> {
     try {
       return await dereference(url);
     } catch (e) {
       if (e instanceof HttpError) {
         reply.log.info(
-          `Error at URL ${url.toString()}: ${e.statusCode} ${e.message}`
+          `Error at URL ${url.toString()}: ${e.statusCode} ${e.message}`,
         );
         if (e.statusCode === 404) {
-          reply.code(404).send();
+          return reply.code(404).send();
         } else {
-          reply.code(406).send();
+          return reply.code(406).send();
         }
       }
 
       if (e instanceof NoDatasetFoundAtUrl) {
         reply.log.info(
-          `No dataset found at URL ${url.toString()}: ${e.message}`
+          `No dataset found at URL ${url.toString()}: ${e.message}`,
         );
-        reply.code(406).send();
+        return reply.code(406).send();
       }
 
       return null;
@@ -123,13 +123,13 @@ export async function server(
 
     switch (validation.state) {
       case 'valid':
-        reply.send(validation.errors);
+        await reply.send(validation.errors);
         return true;
       case 'no-dataset':
-        reply.code(406).send();
+        await reply.code(406).send();
         return false;
       case 'invalid': {
-        reply.code(400).send(validation.errors);
+        await reply.code(400).send(validation.errors);
         return false;
       }
     }
@@ -143,7 +143,7 @@ export async function server(
 
     return await allowedRegistrationDomainStore.contains(
       result.domain,
-      result.input
+      result.input,
     );
   }
 
@@ -153,13 +153,11 @@ export async function server(
     async (request, reply) => {
       const url = new URL((request.body as {'@id': string})['@id']);
       if (!(await domainIsAllowed(url))) {
-        reply.code(403).send();
-        return;
+        return reply.code(403).send();
       }
 
-      reply.code(202); // The validate function will reply.send() with any validation warnings.
       const dataset = await resolveDataset(url, reply);
-      const valid = dataset ? await validate(dataset, reply) : false;
+      const valid = dataset ? await validate(dataset, reply.code(202)) : false;
       if (dataset && valid) {
         // The URL has validated, so any problems with processing the dataset are now ours. Therefore, make sure to
         // store the registration so we can come back to that when crawling, even if fetching the datasets fails.
@@ -175,7 +173,7 @@ export async function server(
         }
 
         request.log.info(
-          `Found ${datasetIris.length} datasets at ${url.toString()}`
+          `Found ${datasetIris.length} datasets at ${url.toString()}`,
         );
 
         // Update registration with dataset descriptions that we found.
@@ -189,7 +187,7 @@ export async function server(
 
       // If the dataset did not validate, the validate() function has set a 4xx status code.
       return reply;
-    }
+    },
   );
 
   server.put(
@@ -207,11 +205,11 @@ export async function server(
       });
       request.log.info(
         `Validated at ${Math.round(
-          process.memoryUsage().rss / 1024 / 1024
-        )} MB memory`
+          process.memoryUsage().rss / 1024 / 1024,
+        )} MB memory`,
       );
       return reply;
-    }
+    },
   );
 
   server.post(
@@ -223,7 +221,7 @@ export async function server(
         status: reply.statusCode,
       });
       return reply;
-    }
+    },
   );
 
   server.get(
@@ -231,7 +229,7 @@ export async function server(
     {config: rdfSerializerConfig},
     async (request, reply) => {
       return reply.send(shacl);
-    }
+    },
   );
 
   /**
@@ -244,7 +242,7 @@ export async function server(
         try {
           return await load(
             request.raw,
-            request.headers['content-type'] ?? 'application/ld+json'
+            request.headers['content-type'] ?? 'application/ld+json',
           );
         } catch (e) {
           (e as FastifyError).statusCode = 400;
@@ -262,7 +260,7 @@ export async function server(
           resolve(JSON.parse(data));
         });
       });
-    }
+    },
   );
 
   return server;

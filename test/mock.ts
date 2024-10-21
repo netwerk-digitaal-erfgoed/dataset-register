@@ -20,14 +20,14 @@ export class MockRegistrationStore implements RegistrationStore {
     return Promise.resolve(
       [...this.registrations.values()].filter(
         (registration: Registration) =>
-          registration.dateRead && registration.dateRead < date
-      )
+          registration.dateRead && registration.dateRead < date,
+      ),
     );
   }
 
   isRegistered(url: URL) {
     return this.all().some(
-      registration => registration.url.toString() === url.toString()
+      registration => registration.url.toString() === url.toString(),
     );
   }
 

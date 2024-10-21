@@ -23,7 +23,7 @@ export function extractIri(dataset: DatasetCore): URL {
     ...dataset.match(
       null,
       DataFactory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-      datasetType
+      datasetType,
     ),
   ][0];
   return new URL(quad.subject.value);
@@ -31,7 +31,7 @@ export function extractIri(dataset: DatasetCore): URL {
 
 export async function load(
   stream: Readable,
-  contentType: 'application/ld+json' | string
+  contentType: 'application/ld+json' | string,
 ) {
   const parser =
     contentType === 'application/ld+json'
@@ -45,8 +45,8 @@ export async function load(
         stream
           .pipe(parser)
           .on('error', error => reject(error))
-          .pipe(new StandardizeSchemaOrgPrefixToHttps())
+          .pipe(new StandardizeSchemaOrgPrefixToHttps()),
       )
-      .then(data => resolve(data))
+      .then(data => resolve(data)),
   );
 }

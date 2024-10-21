@@ -12,7 +12,7 @@ export class Crawler {
     private datasetStore: DatasetStore,
     private ratingStore: RatingStore,
     private validator: Validator,
-    private logger: Pino.Logger
+    private logger: Pino.Logger,
   ) {}
 
   /**
@@ -47,7 +47,7 @@ export class Crawler {
         if (e instanceof HttpError) {
           statusCode = e.statusCode;
           this.logger.info(
-            `${registration.url} returned HTTP error ${statusCode}`
+            `${registration.url} returned HTTP error ${statusCode}`,
           );
         }
 
@@ -65,7 +65,7 @@ export class Crawler {
       const updatedRegistration = registration.read(
         datasetIris,
         statusCode,
-        isValid
+        isValid,
       );
       await this.registrationStore.store(updatedRegistration);
     }

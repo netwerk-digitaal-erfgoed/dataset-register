@@ -24,7 +24,7 @@ describe('Server', () => {
       new ShaclValidator(shacl),
       shacl,
       '/',
-      {logger: true}
+      {logger: true},
     );
 
     nock.back.fixtures = dirname(fileURLToPath(import.meta.url)) + '/http';
@@ -233,13 +233,15 @@ describe('Server', () => {
       }),
     });
     nockDone();
+    // sleep 2 seconds to allow the async store to complete
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Validation succeeds, so 202 to the client, even if fetching datasets fails.
     expect(response.statusCode).toEqual(202);
     expect(
       registrationStore.isRegistered(
-        new URL('https://netwerkdigitaalerfgoed.nl/fails')
-      )
+        new URL('https://netwerkdigitaalerfgoed.nl/fails'),
+      ),
     ).toBe(true);
   });
 

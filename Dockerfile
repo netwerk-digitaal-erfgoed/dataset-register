@@ -11,7 +11,7 @@ ENV NODE_ENV=production
 WORKDIR /app/
 COPY package*.json ./
 RUN npm ci --ignore-scripts
-COPY --from=build /app/build /app/build
+COPY --from=build /app/build/src /app/build/src
 COPY --from=build /app/shacl /app/shacl
 COPY --from=build /app/assets /app/assets
 USER node
