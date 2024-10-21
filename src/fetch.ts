@@ -1,4 +1,4 @@
-import {QueryEngineFactory} from '@comunica/query-sparql';
+import {QueryEngine} from '@comunica/query-sparql';
 import factory from 'rdf-ext';
 import DatasetExt from 'rdf-ext/lib/Dataset';
 import {URL} from 'url';
@@ -6,8 +6,6 @@ import {constructQuery, dcat, rdf} from './query.js';
 import {pipeline} from 'stream';
 import {StandardizeSchemaOrgPrefixToHttps} from './transform.js';
 import {rdfDereferencer} from 'rdf-dereference';
-/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-import _ from './comunica-config.json';
 
 export class HttpError extends Error {
   constructor(
@@ -25,15 +23,6 @@ export class NoDatasetFoundAtUrl extends Error {
 }
 
 export async function* fetch(url: URL): AsyncGenerator<DatasetExt> {
-  yield* doFetch(url);
-
-  const nextPage = await findNextPage(url);
-  if (nextPage !== null && nextPage !== url) {
-    yield* fetch(nextPage);
-  }
-}
-
-export async function* doFetch(url: URL) {
   try {
     yield* query(url);
   } catch (e) {
@@ -64,9 +53,10 @@ export async function dereference(url: URL): Promise<DatasetExt> {
  * This is also a workaround for https://github.com/comunica/comunica/issues/1180.
  * The config file is based on https://github.com/comunica/comunica/blob/master/engines/config-query-sparql/config/config-default.json
  */
-const engine = await new QueryEngineFactory().create({
-  configPath: new URL('comunica-config.json', import.meta.url).toString(),
-});
+// const engine = await new QueryEngineFactory().create({
+//   configPath: new URL('comunica-config.json', import.meta.url).toString(),
+// });
+const engine = new QueryEngine();
 
 async function* query(url: URL) {
   const quadStream = await engine.queryQuads(constructQuery, {
@@ -116,29 +106,4 @@ function handleComunicaError(e: unknown): never {
   }
 
   throw e;
-}
-
-async function findNextPage(url: URL): Promise<URL | null> {
-  const bindingsStream = await engine.queryBindings(
-    `
-    PREFIX hydra: <http://www.w3.org/ns/hydra/core#>
-    
-    SELECT ?nextPage { 
-        ?s ?nextPagePredicate ?nextPage 
-        VALUES ?nextPagePredicate { hydra:next hydra:nextPage }
-    }
-    `,
-    {
-      sources: [url.toString()],
-      // noCache: true does not seem to work, so call invalidateHttpCache() instead (see below).
-    }
-  );
-  const bindings = await bindingsStream.toArray();
-  const nextPage = bindings[0]?.get('nextPage')?.value;
-
-  // Invalidate the page because this was the last query to it and pages may be large,
-  // especially in the case of catalogs.
-  await engine.invalidateHttpCache(url.toString());
-
-  return nextPage ? new URL(nextPage) : null;
 }
