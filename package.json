@@ -28,7 +28,7 @@
   ],
   "dependencies": {
     "@comunica/data-factory": "^3.0.1",
-    "@comunica/query-sparql": "^3.0.3",
+    "@comunica/query-sparql": "^4.0.2",
     "@fastify/accepts-serializer": "^6.0.1",
     "@fastify/cors": "^10.0.1",
     "@fastify/swagger": "^9.0.0",

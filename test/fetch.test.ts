@@ -187,11 +187,11 @@ describe('Fetch', () => {
     const response = await file('dataset-schema-org-valid.ttl');
     nock('https://example.com')
       .defaultReplyHeaders({'Content-Type': 'text/turtle'})
-      .get('/valid-schema-org-dataset')
+      .get('/valid-schema-org-dataset.ttl')
       .reply(200, response);
 
     const datasets = await fetchDatasetsAsArray(
-      new URL('https://example.com/valid-schema-org-dataset')
+      new URL('https://example.com/valid-schema-org-dataset.ttl')
     );
 
     expect(datasets).toHaveLength(1);

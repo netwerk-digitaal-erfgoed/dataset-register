@@ -16,7 +16,7 @@
 @prefix xml: <http://www.w3.org/XML/1998/namespace> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-</datasets/hydra-page2.ttl> a hydra:PartialCollectionView ;
+</datasets/hydra-page1.ttl> a hydra:PartialCollectionView ;
     hydra:next </datasets/hydra-page2.ttl> .
 
 <https://www.goudatijdmachine.nl/data/api/items/145>
