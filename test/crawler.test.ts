@@ -17,7 +17,7 @@ let registrationStore: MockRegistrationStore;
 let crawler: Crawler;
 const validator = (
   isValid: boolean,
-  errors: DatasetCore = factory.dataset()
+  errors: DatasetCore = factory.dataset(),
 ): Validator => ({
   validate: () =>
     Promise.resolve({
@@ -34,12 +34,12 @@ describe('Crawler', () => {
       new MockDatasetStore(),
       new MockRatingStore(),
       validator(true),
-      Pino({enabled: false})
+      Pino({enabled: false}),
     );
   });
 
   it('crawls valid URLs', async () => {
-    storeRegistrationFixture(new URL('https://example.com/valid'));
+    await storeRegistrationFixture(new URL('https://example.com/valid'));
 
     const response = await file('dataset-schema-org-valid.jsonld');
     nock('https://example.com')
@@ -57,7 +57,7 @@ describe('Crawler', () => {
   });
 
   it('crawls valid URL with minimal description', async () => {
-    storeRegistrationFixture(new URL('https://example.com/minimal'));
+    await storeRegistrationFixture(new URL('https://example.com/minimal'));
 
     const response = await file('dataset-schema-org-valid-minimal.jsonld');
     nock('https://example.com')
@@ -75,7 +75,9 @@ describe('Crawler', () => {
   });
 
   it('stores error HTTP response status code', async () => {
-    storeRegistrationFixture(new URL('https://example.com/registered-url'));
+    await storeRegistrationFixture(
+      new URL('https://example.com/registered-url'),
+    );
 
     nock('https://example.com').get('/registered-url').reply(404);
     await crawler.crawl(new Date('3000-01-01'));
@@ -86,7 +88,9 @@ describe('Crawler', () => {
   });
 
   it('ignores datasets no longer available', async () => {
-    storeRegistrationFixture(new URL('https://example.com/no-more-datasets'));
+    await storeRegistrationFixture(
+      new URL('https://example.com/no-more-datasets'),
+    );
 
     nock('https://example.com')
       .get('/no-more-datasets')
@@ -104,9 +108,9 @@ describe('Crawler', () => {
       new MockDatasetStore(),
       new MockRatingStore(),
       validator(false),
-      Pino({enabled: false})
+      Pino({enabled: false}),
     );
-    storeRegistrationFixture(new URL('https://example.com/invalid'));
+    await storeRegistrationFixture(new URL('https://example.com/invalid'));
 
     nock('https://example.com')
       .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
@@ -119,13 +123,13 @@ describe('Crawler', () => {
   });
 });
 
-function storeRegistrationFixture(url: URL) {
+async function storeRegistrationFixture(url: URL) {
   const registration = new Registration(url, new Date());
   const updatedRegistration = registration.read(
     [new URL('https://example.com/dataset1')],
     200,
     true,
-    new Date('2000-01-01')
+    new Date('2000-01-01'),
   );
-  registrationStore.store(updatedRegistration);
+  await registrationStore.store(updatedRegistration);
 }

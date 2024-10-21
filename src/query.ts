@@ -136,10 +136,10 @@ export const constructQuery = `
           OPTIONAL { ?${distribution} dct:format ?${distributionFormat} }
           OPTIONAL { ?${distribution} dcat:mediaType ?${distributionMediaType} }
           OPTIONAL { ?${distribution} dct:issued ${convertToXsdDate(
-            distributionDatePublished
+            distributionDatePublished,
           )} }
           OPTIONAL { ?${distribution} dct:modified ${convertToXsdDate(
-            distributionDateModified
+            distributionDateModified,
           )} }
           OPTIONAL { ?${distribution} dct:description ?${distributionDescription} }
           OPTIONAL { ?${distribution} dct:language ?${distributionLanguage} }
@@ -223,10 +223,10 @@ function schemaOrgQuery(prefix: string): string {
         
       OPTIONAL { ?${distribution} ${prefix}:fileFormat ?${distributionMediaType} }
       OPTIONAL { ?${distribution} ${prefix}:datePublished ${convertToXsdDate(
-        distributionDatePublished
+        distributionDatePublished,
       )} }
       OPTIONAL { ?${distribution} ${prefix}:dateModified ${convertToXsdDate(
-        distributionDateModified
+        distributionDateModified,
       )} }
       OPTIONAL { ?${distribution} ${prefix}:description ?${distributionDescription} }
       OPTIONAL { ?${distribution} ${prefix}:inLanguage ?${distributionLanguage} }
@@ -239,13 +239,13 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL { ?${dataset} ${prefix}:identifier ?${identifier} }
     OPTIONAL { ?${dataset} ${prefix}:alternateName ?${alternateName} }
     OPTIONAL { ?${dataset} ${prefix}:dateCreated ${convertToXsdDate(
-      dateCreated
+      dateCreated,
     )} }
     OPTIONAL { ?${dataset} ${prefix}:datePublished ${convertToXsdDate(
-      datePublished
+      datePublished,
     )} }
     OPTIONAL { ?${dataset} ${prefix}:dateModified ${convertToXsdDate(
-      dateModified
+      dateModified,
     )} }
     OPTIONAL { ?${dataset} ${prefix}:inLanguage ?${language} }
     OPTIONAL { ?${dataset} ${prefix}:isBasedOn ?${source} }

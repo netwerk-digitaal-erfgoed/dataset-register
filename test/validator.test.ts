@@ -14,7 +14,7 @@ const validator = await ShaclValidator.fromUrl('shacl/register.ttl');
 describe('Validator', () => {
   it('accepts minimal valid Schema.org dataset', async () => {
     const report = (await validate(
-      'dataset-schema-org-valid-minimal.jsonld'
+      'dataset-schema-org-valid-minimal.jsonld',
     )) as Valid;
     expect(report.state).toEqual('valid');
     expectViolations(report, ['https://schema.org/description']);
@@ -24,7 +24,7 @@ describe('Validator', () => {
   it('accepts minimal valid Schema.org dataset in Turtle', async () => {
     const report = await validate(
       'dataset-http-schema-org-valid.ttl',
-      new StreamParser()
+      new StreamParser(),
     );
     expect(report.state).toEqual('valid');
   });
@@ -32,7 +32,7 @@ describe('Validator', () => {
   it('accepts minimal valid Schema.org dataset in Microdata', async () => {
     const report = await validate(
       'dataset-schema-org-valid-microdata.html',
-      new MicrodataRdfParser()
+      new MicrodataRdfParser(),
     );
     expect(report.state).toEqual('valid');
   });
@@ -40,14 +40,14 @@ describe('Validator', () => {
   it('accepts minimal valid Schema.org dataset in HTML+RDFa', async () => {
     const report = await validate(
       'dataset-schema-org-valid-rdfa.html',
-      new RdfaParser()
+      new RdfaParser(),
     );
     expect(report.state).toEqual('valid');
   });
 
   it('accepts minimal valid Schema.org dataset with separate organization', async () => {
     const report = await validate(
-      'dataset-schema-org-valid-plus-organization.jsonld'
+      'dataset-schema-org-valid-plus-organization.jsonld',
     );
     expect(report.state).toEqual('valid');
   });
@@ -64,7 +64,7 @@ describe('Validator', () => {
 
   it('accepts valid Schema.org dataset without publisher', async () => {
     const report = await validate(
-      'dataset-schema-org-valid-no-publisher.jsonld'
+      'dataset-schema-org-valid-no-publisher.jsonld',
     );
     expect(report.state).toEqual('valid');
     expect(report.state === 'valid');
@@ -72,8 +72,8 @@ describe('Validator', () => {
       (report as Valid).errors.match(
         null,
         shacl('resultSeverity'),
-        shacl('Warning')
-      ).size
+        shacl('Warning'),
+      ).size,
     ).toEqual(1);
   });
 
@@ -176,20 +176,20 @@ const dataset = async (filename: string, parser?: Transform) => {
     fs
       .createReadStream(`test/datasets/${filename}`)
       .pipe(parser ?? (new JsonLdParser() as unknown as Transform))
-      .pipe(new StandardizeSchemaOrgPrefixToHttps())
+      .pipe(new StandardizeSchemaOrgPrefixToHttps()),
   )) as unknown as Dataset;
 };
 
 const expectViolations = (
   report: InvalidDataset | Valid,
-  violationPaths: string[]
+  violationPaths: string[],
 ) =>
   violationPaths.forEach(violationPath =>
     expect(
       report.errors.match(
         null,
         shacl('resultPath'),
-        rdf.namedNode(violationPath)
-      ).size
-    ).toEqual(1)
+        rdf.namedNode(violationPath),
+      ).size,
+    ).toEqual(1),
   );

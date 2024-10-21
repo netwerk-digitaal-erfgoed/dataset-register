@@ -10,7 +10,7 @@ import {rdfDereferencer} from 'rdf-dereference';
 export class HttpError extends Error {
   constructor(
     message: string,
-    public readonly statusCode: number
+    public readonly statusCode: number,
   ) {
     super(message);
   }
@@ -39,7 +39,7 @@ export async function dereference(url: URL): Promise<DatasetExt> {
     const stream = pipeline(
       data,
       new StandardizeSchemaOrgPrefixToHttps(),
-      () => {} // Noop because errors are caught below.
+      () => {}, // Noop because errors are caught below.
     );
     return await factory.dataset().import(stream);
   } catch (e) {

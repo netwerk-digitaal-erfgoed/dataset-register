@@ -10,17 +10,17 @@ import {DatasetStore} from './dataset.js';
 
 export function startInstrumentation(datasetStore: DatasetStore) {
   datasetsCounter.addCallback(async result =>
-    result.observe(await datasetStore.countDatasets())
+    result.observe(await datasetStore.countDatasets()),
   );
   organisationsCounter.addCallback(async result =>
-    result.observe(await datasetStore.countOrganisations())
+    result.observe(await datasetStore.countOrganisations()),
   );
 }
 const meterProvider = new MeterProvider({
   resource: Resource.default().merge(
     new Resource({
       [SemanticResourceAttributes.SERVICE_NAME]: 'dataset-register',
-    })
+    }),
   ),
 });
 
@@ -44,7 +44,7 @@ const organisationsCounter = meter.createObservableCounter(
   {
     description: 'Number of organisations',
     valueType: ValueType.INT,
-  }
+  },
 );
 
 export const registrationsCounter = meter.createCounter(
@@ -52,7 +52,7 @@ export const registrationsCounter = meter.createCounter(
   {
     description: 'Number of times a dataset/catalog was submitted',
     valueType: ValueType.INT,
-  }
+  },
 );
 
 export const validationsCounter = meter.createCounter('validations.counter', {

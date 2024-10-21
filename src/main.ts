@@ -14,13 +14,13 @@ import {startInstrumentation} from './instrumentation.js';
 
 const client = new GraphDbClient(
   process.env.GRAPHDB_URL || 'http://127.0.0.1:7200',
-  'registry'
+  'registry',
 );
-(async () => {
+await (async () => {
   if (process.env.GRAPHDB_USERNAME && process.env.GRAPHDB_PASSWORD) {
     await client.authenticate(
       process.env.GRAPHDB_USERNAME,
-      process.env.GRAPHDB_PASSWORD
+      process.env.GRAPHDB_PASSWORD,
     );
   }
 
@@ -38,15 +38,15 @@ const client = new GraphDbClient(
     datasetStore,
     ratingStore,
     validator,
-    logger
+    logger,
   );
 
   // Schedule crawler to check every hour for CRAWLER_INTERVAL that have expired their REGISTRATION_URL_TTL.
   const ttl = ((process.env.REGISTRATION_URL_TTL || 86400) as number) * 1000;
   if (process.env.CRAWLER_SCHEDULE !== undefined) {
     logger.info(`Crawler scheduled at ${process.env.CRAWLER_SCHEDULE}`);
-    scheduleJob(process.env.CRAWLER_SCHEDULE, () => {
-      crawler.crawl(new Date(Date.now() - ttl));
+    scheduleJob(process.env.CRAWLER_SCHEDULE, async () => {
+      await crawler.crawl(new Date(Date.now() - ttl));
     });
   }
 
@@ -62,7 +62,7 @@ const client = new GraphDbClient(
       {
         logger: process.env.LOG !== 'false',
         trustProxy: process.env.TRUST_PROXY === 'true',
-      }
+      },
     );
     await httpServer.listen({port: 3000, host: '0.0.0.0'});
   } catch (err) {

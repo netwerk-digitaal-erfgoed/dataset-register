@@ -11,7 +11,7 @@ export class Registration {
     /**
      * If the Registration has become invalid, the date at which it did so.
      */
-    public readonly validUntil?: Date
+    public readonly validUntil?: Date,
   ) {}
 
   /**
@@ -21,12 +21,12 @@ export class Registration {
     datasets: URL[],
     statusCode: number,
     valid: boolean,
-    date: Date = new Date()
+    date: Date = new Date(),
   ): Registration {
     const registration = new Registration(
       this.url,
       this.datePosted,
-      valid ? undefined : this.validUntil ?? date
+      valid ? undefined : (this.validUntil ?? date),
     );
     registration._datasets = datasets;
     registration._statusCode = statusCode;

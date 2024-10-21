@@ -36,7 +36,7 @@ export class GraphDbClient {
 
   constructor(
     private url: string,
-    private repository: string
+    private repository: string,
   ) {
     // Doesn't work with authentication: see https://github.com/Ontotext-AD/graphdb.js/issues/123
     // const config = new graphdb.repository.RepositoryClientConfig()
@@ -60,7 +60,7 @@ export class GraphDbClient {
         'Could not authenticate username ' +
           this.username +
           ' with GraphDB; got status code ' +
-          response.status
+          response.status,
       );
     }
 
@@ -105,7 +105,7 @@ export class GraphDbClient {
           ' for ' +
           options.method +
           ' ' +
-          repositoryUrl
+          repositoryUrl,
       );
     }
 
@@ -132,7 +132,7 @@ export class GraphDbClient {
 
     if (!response.ok) {
       console.error(
-        `${response.status} response for SPARQL update ${payload})`
+        `${response.status} response for SPARQL update ${payload})`,
       );
     }
   }
@@ -163,39 +163,39 @@ export class GraphDbRegistrationStore implements RegistrationStore {
         factory.namedNode('http://schema.org/datePosted'),
         factory.literal(
           registration.datePosted.toISOString(),
-          factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime')
-        )
+          factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime'),
+        ),
       ),
       this.registrationQuad(
         registration,
         factory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-        factory.namedNode('http://schema.org/EntryPoint')
+        factory.namedNode('http://schema.org/EntryPoint'),
       ),
       this.registrationQuad(
         registration,
         factory.namedNode('http://schema.org/encoding'),
-        factory.namedNode('http://schema.org') // Currently the only vocabulary that we support.
+        factory.namedNode('http://schema.org'), // Currently the only vocabulary that we support.
       ),
       ...registration.datasets.flatMap(datasetIri => {
         const datasetQuads = [
           this.registrationQuad(
             registration,
             factory.namedNode('http://schema.org/about'),
-            factory.namedNode(datasetIri.toString())
+            factory.namedNode(datasetIri.toString()),
           ),
           factory.quad(
             factory.namedNode(datasetIri.toString()),
             factory.namedNode(
-              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
+              'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
             ),
             factory.namedNode('http://schema.org/Dataset'),
-            factory.namedNode(this.registrationsGraph)
+            factory.namedNode(this.registrationsGraph),
           ),
           factory.quad(
             factory.namedNode(datasetIri.toString()),
             factory.namedNode('http://schema.org/subjectOf'),
             factory.namedNode(registration.url.toString()),
-            factory.namedNode(this.registrationsGraph)
+            factory.namedNode(this.registrationsGraph),
           ),
         ];
         if (registration.dateRead !== undefined) {
@@ -205,10 +205,10 @@ export class GraphDbRegistrationStore implements RegistrationStore {
               factory.namedNode('http://schema.org/dateRead'),
               factory.literal(
                 registration.dateRead.toISOString(),
-                factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime')
+                factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime'),
               ),
-              factory.namedNode(this.registrationsGraph)
-            )
+              factory.namedNode(this.registrationsGraph),
+            ),
           );
         }
         return datasetQuads;
@@ -221,9 +221,9 @@ export class GraphDbRegistrationStore implements RegistrationStore {
           factory.namedNode('http://schema.org/dateRead'),
           factory.literal(
             registration.dateRead.toISOString(),
-            factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime')
-          )
-        )
+            factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime'),
+          ),
+        ),
       );
     }
 
@@ -234,9 +234,9 @@ export class GraphDbRegistrationStore implements RegistrationStore {
           factory.namedNode('http://schema.org/status'),
           factory.literal(
             registration.statusCode.toString(),
-            factory.namedNode('http://www.w3.org/2001/XMLSchema#integer')
-          )
-        )
+            factory.namedNode('http://www.w3.org/2001/XMLSchema#integer'),
+          ),
+        ),
       );
     }
 
@@ -247,9 +247,9 @@ export class GraphDbRegistrationStore implements RegistrationStore {
           factory.namedNode('http://schema.org/validUntil'),
           factory.literal(
             registration.validUntil.toISOString(),
-            factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime')
-          )
-        )
+            factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime'),
+          ),
+        ),
       );
     }
 
@@ -297,21 +297,21 @@ export class GraphDbRegistrationStore implements RegistrationStore {
         new Registration(
           new URL(binding.s.value),
           new Date(binding.datePosted.value),
-          binding.validUntil ? new Date(binding.validUntil.value) : undefined
-        )
+          binding.validUntil ? new Date(binding.validUntil.value) : undefined,
+        ),
     );
   }
 
   private registrationQuad = (
     registration: Registration,
     predicate: Quad_Predicate,
-    object: Quad_Object
+    object: Quad_Object,
   ) =>
     factory.quad(
       factory.namedNode(registration.url.toString()),
       predicate,
       object,
-      factory.namedNode(this.registrationsGraph)
+      factory.namedNode(this.registrationsGraph),
     );
 }
 
@@ -320,7 +320,7 @@ export class GraphDbAllowedRegistrationDomainStore
 {
   constructor(
     private readonly client: GraphDbClient,
-    private readonly allowedDomainNamesGraph = 'https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names'
+    private readonly allowedDomainNamesGraph = 'https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names',
   ) {}
 
   async contains(...domainNames: Array<string>) {
@@ -387,12 +387,12 @@ export class GraphDbDatasetStore implements DatasetStore {
                   '/rdf-graphs/service?graph=' +
                   encodeURIComponent(graphIri.toString()),
                 body: result,
-              })
+              }),
             );
           } catch (e) {
             reject(e);
           }
-        }
+        },
       );
     });
   }

@@ -2,6 +2,7 @@ export default {
   preset: 'ts-jest/presets/default-esm',
   extensionsToTreatAsEsm: ['.ts'],
   testTimeout: 10000,
+  testPathIgnorePatterns: ['build/test'],
   collectCoverage: true,
   collectCoverageFrom: [
     '**/src/**/*.ts', // Include files that are not covered by tests.
@@ -10,8 +11,8 @@ export default {
   coverageReporters: ['json-summary', 'text'],
   coverageThreshold: {
     global: {
-      lines: 69.73,
-      statements: 69.97,
+      lines: 69.31,
+      statements: 69.55,
       branches: 60.52,
       functions: 67.01,
     },

@@ -29,7 +29,7 @@ export class ShaclValidator implements Validator {
         quad.predicate.value ===
           'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' &&
         (quad.object.value === 'https://schema.org/Dataset' ||
-          quad.object.value === 'http://www.w3.org/ns/dcat#Dataset')
+          quad.object.value === 'http://www.w3.org/ns/dcat#Dataset'),
     );
     if (datasetIris.size === 0) {
       return {state: 'no-dataset'};
@@ -82,7 +82,7 @@ const hasViolation = (report: ValidationReport) =>
   report.results.some(result => resultIsViolation(result));
 
 const resultIsViolation = (
-  result: ValidationReport.ValidationResult
+  result: ValidationReport.ValidationResult,
 ): boolean => {
   return (
     result.severity?.value === shacl('Violation').value ||

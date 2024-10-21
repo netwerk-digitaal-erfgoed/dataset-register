@@ -19,16 +19,16 @@ describe('Fetch', () => {
       .reply(200, response);
 
     const datasets = await fetchDatasetsAsArray(
-      new URL('https://example.com/valid-dcat-dataset')
+      new URL('https://example.com/valid-dcat-dataset'),
     );
 
     expect(datasets).toHaveLength(1);
     const datasetUri = factory.namedNode(
-      'http://data.bibliotheken.nl/id/dataset/rise-alba'
+      'http://data.bibliotheken.nl/id/dataset/rise-alba',
     );
     const dataset = datasets[0];
     expect(
-      dataset.has(factory.quad(datasetUri, rdf('type'), dcat('Dataset')))
+      dataset.has(factory.quad(datasetUri, rdf('type'), dcat('Dataset'))),
     ).toBe(true);
 
     const distributions = [
@@ -42,9 +42,9 @@ describe('Fetch', () => {
         factory.quad(
           distributions[0].object as BlankNode,
           dct('format'),
-          factory.literal('application/rdf+xml')
-        )
-      )
+          factory.literal('application/rdf+xml'),
+        ),
+      ),
     ).toBe(true);
   });
 
@@ -56,7 +56,7 @@ describe('Fetch', () => {
       .reply(200, response);
 
     const datasets = await fetchDatasetsAsArray(
-      new URL('https://example.com/minimal-valid-schema-org-dataset')
+      new URL('https://example.com/minimal-valid-schema-org-dataset'),
     );
 
     expect(datasets).toHaveLength(1);
@@ -72,14 +72,14 @@ describe('Fetch', () => {
       .reply(200, response);
 
     const datasets = await fetchDatasetsAsArray(
-      new URL('https://example.com/valid-schema-org-dataset')
+      new URL('https://example.com/valid-schema-org-dataset'),
     );
 
     expect(datasets).toHaveLength(1);
     const dataset = datasets[0];
 
     const dcatEquivalent = await dereference(
-      'test/datasets/dataset-dcat-valid.jsonld'
+      'test/datasets/dataset-dcat-valid.jsonld',
     );
     expect(dataset.size).toStrictEqual(dcatEquivalent.size);
     expect(dataset.toCanonical()).toStrictEqual(dcatEquivalent.toCanonical());
@@ -89,9 +89,11 @@ describe('Fetch', () => {
         factory.quad(
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
           dct('license'),
-          factory.namedNode('http://creativecommons.org/publicdomain/zero/1.0/')
-        )
-      )
+          factory.namedNode(
+            'http://creativecommons.org/publicdomain/zero/1.0/',
+          ),
+        ),
+      ),
     ).toBe(true);
     expect(
       dataset.has(
@@ -100,10 +102,10 @@ describe('Fetch', () => {
           dct('created'),
           factory.literal(
             '2021-05-27',
-            factory.namedNode('http://www.w3.org/2001/XMLSchema#date')
-          )
-        )
-      )
+            factory.namedNode('http://www.w3.org/2001/XMLSchema#date'),
+          ),
+        ),
+      ),
     ).toBe(true);
     expect(
       dataset.has(
@@ -112,10 +114,10 @@ describe('Fetch', () => {
           dct('issued'),
           factory.literal(
             '2021-05-28',
-            factory.namedNode('http://www.w3.org/2001/XMLSchema#date')
-          )
-        )
-      )
+            factory.namedNode('http://www.w3.org/2001/XMLSchema#date'),
+          ),
+        ),
+      ),
     ).toBe(true);
     expect(
       dataset.has(
@@ -124,61 +126,61 @@ describe('Fetch', () => {
           dct('modified'),
           factory.literal(
             '2021-05-27T09:56:21.370767',
-            factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime')
-          )
-        )
-      )
+            factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime'),
+          ),
+        ),
+      ),
     ).toBe(true);
     expect(
       dataset.has(
         factory.quad(
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
           dct('publisher'),
-          factory.namedNode('https://example.com/publisher')
-        )
-      )
+          factory.namedNode('https://example.com/publisher'),
+        ),
+      ),
     ).toBe(true);
     expect(
       dataset.has(
         factory.quad(
           factory.namedNode('https://example.com/publisher'),
           rdf('type'),
-          foaf('Organization')
-        )
-      )
+          foaf('Organization'),
+        ),
+      ),
     ).toBe(true);
     expect(
       dataset.has(
         factory.quad(
           factory.namedNode('https://example.com/publisher'),
           foaf('mbox'),
-          factory.literal('datasets@example.com')
-        )
-      )
+          factory.literal('datasets@example.com'),
+        ),
+      ),
     ).toBe(true);
     expect(
       dataset.has(
         factory.quad(
           factory.namedNode('https://example.com/creator1'),
           rdf('type'),
-          foaf('Person')
-        )
-      )
+          foaf('Person'),
+        ),
+      ),
     ).toBe(true);
     expect(
       dataset.has(
         factory.quad(
           factory.namedNode('https://example.com/creator2'),
           rdf('type'),
-          foaf('Person')
-        )
-      )
+          foaf('Person'),
+        ),
+      ),
     ).toBe(true);
     expect([
       ...dataset.match(
         factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
         dcat('distribution'),
-        null
+        null,
       ),
     ]).toHaveLength(2);
   });
@@ -191,7 +193,7 @@ describe('Fetch', () => {
       .reply(200, response);
 
     const datasets = await fetchDatasetsAsArray(
-      new URL('https://example.com/valid-schema-org-dataset.ttl')
+      new URL('https://example.com/valid-schema-org-dataset.ttl'),
     );
 
     expect(datasets).toHaveLength(1);
@@ -202,14 +204,14 @@ describe('Fetch', () => {
       dataset.has(
         factory.quad(
           factory.namedNode(
-            'https://www.goudatijdmachine.nl/data/api/items/144'
+            'https://www.goudatijdmachine.nl/data/api/items/144',
           ),
           dcat('accessURL'),
           factory.namedNode(
-            'https://www.goudatijdmachine.nl/wp-content/uploads/sites/7/2021/09/Totaal_perceel_Plaand_EPSG_4326.geojson'
-          )
-        )
-      )
+            'https://www.goudatijdmachine.nl/wp-content/uploads/sites/7/2021/09/Totaal_perceel_Plaand_EPSG_4326.geojson',
+          ),
+        ),
+      ),
     ).toBe(true);
   });
 
@@ -221,7 +223,7 @@ describe('Fetch', () => {
       .reply(200, response);
 
     const datasets = await fetchDatasetsAsArray(
-      new URL('https://example.com/valid-schema-org-dataset')
+      new URL('https://example.com/valid-schema-org-dataset'),
     );
 
     expect(datasets).toHaveLength(1);
@@ -235,7 +237,7 @@ describe('Fetch', () => {
       .reply(200, response);
 
     const datasets = await fetchDatasetsAsArray(
-      new URL('https://example.com/valid-schema-org-dataset')
+      new URL('https://example.com/valid-schema-org-dataset'),
     );
 
     expect(datasets).toHaveLength(1);
@@ -265,8 +267,8 @@ describe('Fetch', () => {
 
   it('handles empty dataset response', async () => {
     nock('https://example.com').get('/200').reply(200);
-    expect(
-      async () => await fetchDatasetsAsArray(new URL('https://example.com/200'))
+    await expect(
+      fetchDatasetsAsArray(new URL('https://example.com/200')),
     ).rejects.toThrow(NoDatasetFoundAtUrl);
   });
 
@@ -284,7 +286,7 @@ describe('Fetch', () => {
       });
 
     const datasets = await fetchDatasetsAsArray(
-      new URL('https://example.com/datasets/hydra-page1.jsonld')
+      new URL('https://example.com/datasets/hydra-page1.jsonld'),
     );
 
     expect(datasets).toHaveLength(3);
@@ -304,7 +306,7 @@ describe('Fetch', () => {
       });
 
     const datasets = await fetchDatasetsAsArray(
-      new URL('https://example.com/datasets/hydra-page1.ttl')
+      new URL('https://example.com/datasets/hydra-page1.ttl'),
     );
 
     expect(datasets).toHaveLength(2);
@@ -324,7 +326,7 @@ async function dereference(file: string): Promise<DatasetExt> {
   const stream = pipeline(
     data,
     new StandardizeSchemaOrgPrefixToHttps(),
-    () => {} // Noop, just throw errors.
+    () => {}, // Noop, just throw errors.
   );
   return await factory.dataset().import(stream);
 }

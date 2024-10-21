@@ -16,7 +16,7 @@ const penalties = new Map<NamedNode[], number>([
 
 const worstRating = [...penalties].reduce(
   (score, [, penalty]) => score - penalty,
-  100
+  100,
 );
 
 export function rate(validationResult: Valid): Rating {
@@ -28,14 +28,14 @@ export function rate(validationResult: Valid): Rating {
           [
             ...validationResult.errors.match(
               quad.subject,
-              shacl('resultMessage')
+              shacl('resultMessage'),
             ),
-          ][0]?.value
+          ][0]?.value,
         );
       }
       return map;
     },
-    new Map()
+    new Map(),
   );
 
   const appliedPenalties = [...penalties].reduce(
@@ -48,7 +48,7 @@ export function rate(validationResult: Valid): Rating {
 
       return [...appliedPenalties, new Penalty(properties[0].value, penalty)];
     },
-    new Array<Penalty>()
+    new Array<Penalty>(),
   );
 
   return new Rating(appliedPenalties, worstRating);
@@ -57,7 +57,7 @@ export function rate(validationResult: Valid): Rating {
 export class Penalty {
   public constructor(
     public readonly path: string,
-    public readonly score: number
+    public readonly score: number,
   ) {}
 }
 
@@ -68,11 +68,11 @@ export class Rating {
   public constructor(
     readonly penalties: Penalty[],
     public readonly worstRating: number,
-    public readonly bestRating = 100
+    public readonly bestRating = 100,
   ) {
     this.score = penalties.reduce(
       (score, penalty) => score - penalty.score,
-      100
+      100,
     );
     this.explanation = penalties.map(penalty => penalty.path).join(', ');
   }

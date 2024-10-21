@@ -16,7 +16,7 @@ export class StandardizeSchemaOrgPrefixToHttps extends Transform {
   _transform(
     chunk: Quad,
     encoding: BufferEncoding,
-    callback: TransformCallback
+    callback: TransformCallback,
   ) {
     const quad = factory.quad(
       chunk.subject,
@@ -24,14 +24,14 @@ export class StandardizeSchemaOrgPrefixToHttps extends Transform {
         ? this.replace(chunk.predicate as NamedNode)
         : chunk.predicate,
       this.object(chunk.object),
-      chunk.graph
+      chunk.graph,
     );
     callback(null, quad);
   }
 
   replace(node: NamedNode) {
     return factory.namedNode(
-      node.value.replace('http://schema.org', 'https://schema.org')
+      node.value.replace('http://schema.org', 'https://schema.org'),
     );
   }
 
@@ -39,7 +39,7 @@ export class StandardizeSchemaOrgPrefixToHttps extends Transform {
     if (object.termType === 'Literal') {
       return factory.literal(
         object.value,
-        object.language || this.replace(object.datatype as NamedNode)
+        object.language || this.replace(object.datatype as NamedNode),
       );
     }
 
