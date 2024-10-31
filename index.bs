@@ -726,7 +726,10 @@ This is an overview of required and recommended attributes.
         </tr>
         <tr>     
             <th scope="row">[schema:mainEntityOfPage](https://schema.org/mainEntityOfPage)</th>
-            <td>URL of a landing page where the dataset is described.</td>
+            <td>
+                URL of a landing page where the dataset is described for human users.
+                The human-readable description *MUST* be consistent with and include at least all details (such as distributions) from the RDF dataset description.
+            </td>
             <td>0..1</td>
             <td>Recommended</td>
         </tr>
