@@ -37,7 +37,7 @@
     "@opentelemetry/exporter-metrics-otlp-proto": "^0.57.0",
     "@opentelemetry/resources": "^1.14.0",
     "@opentelemetry/sdk-metrics": "^1.14.0",
-    "@opentelemetry/sdk-node": "^0.56.0",
+    "@opentelemetry/sdk-node": "^0.57.0",
     "@opentelemetry/semantic-conventions": "^1.14.0",
     "@types/rdf-validate-shacl": "^0.4.0",
     "asynciterator": "^3.2.0",
