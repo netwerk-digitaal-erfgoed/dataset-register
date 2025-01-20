@@ -70,7 +70,7 @@
     "jsonld-streaming-parser": "^5.0.0",
     "microdata-rdf-streaming-parser": "^2.0.0",
     "nock": "^13.2.6",
-    "rdfa-streaming-parser": "^2.0.0",
+    "rdfa-streaming-parser": "^3.0.1",
     "ts-jest": "^29.1.0",
     "ts-node": "^10.4.0",
     "tsc-watch": "^6.0.0",
