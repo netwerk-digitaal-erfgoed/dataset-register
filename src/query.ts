@@ -32,6 +32,9 @@ const creatorType = 'creator_type';
 const publisherType = 'publisher_type';
 const publisherName = 'publisher_name';
 const publisherEmail = 'publisher_email';
+const publisherIdentifier = 'publisher_identifier';
+const publisherAlternateName = 'publisher_alternateName';
+const publisherSameAs = 'publisher_sameAs';
 
 const distributionContentUrl = 'distribution_url';
 const distributionMediaType = 'distribution_mediaType';
@@ -93,7 +96,10 @@ export const constructQuery = `
       
     ?${publisher} a ?${publisherType} ;
       foaf:name ?${publisherName} ;
-      foaf:mbox ?${publisherEmail} .
+      foaf:mbox ?${publisherEmail} ;
+      dct:identifier ?${publisherIdentifier} ;
+      foaf:name ?${publisherAlternateName} ;
+      owl:sameAs ?${publisherSameAs} .
 
     ?${creator} a ?${creatorType} ;
       foaf:name ?${creatorName} .
@@ -221,6 +227,15 @@ function schemaOrgQuery(prefix: string): string {
       FILTER(?${publisherType} != "")
       OPTIONAL {
         ?${publisher} ${prefix}:contactPoint/${prefix}:email ?${publisherEmail} .  
+      }
+      OPTIONAL {
+        ?${publisher} ${prefix}:identifier ?${publisherIdentifier} .  
+      }
+      OPTIONAL {
+        ?${publisher} ${prefix}:alternateName ?${publisherAlternateName} .  
+      }
+      OPTIONAL {
+        ?${publisher} ${prefix}:sameAs ?${publisherSameAs} .  
       }
     }
         
