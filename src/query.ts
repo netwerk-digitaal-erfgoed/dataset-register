@@ -33,7 +33,7 @@ const publisherType = 'publisher_type';
 const publisherName = 'publisher_name';
 const publisherEmail = 'publisher_email';
 
-const distributionUrl = 'distribution_url';
+const distributionContentUrl = 'distribution_url';
 const distributionMediaType = 'distribution_mediaType';
 const distributionFormat = 'distribution_format';
 const distributionDatePublished = 'distribution_datePublished';
@@ -98,7 +98,7 @@ export const constructQuery = `
       foaf:name ?${creatorName} .
       
     ?${distribution} a dcat:Distribution ;
-      dcat:accessURL ?${distributionUrl} ;
+      dcat:accessURL ?${distributionContentUrl} ;
       dcat:mediaType ?${distributionMediaType} ;
       dct:format ?${distributionFormat} ;
       dct:issued ?${distributionDatePublished} ;
@@ -135,7 +135,7 @@ export const constructQuery = `
         OPTIONAL {  
           ?${dataset} dcat:distribution ?${distribution} .
           ?${distribution} a dcat:Distribution ;
-            dcat:accessURL ?${convertToIri(distributionUrl)} .
+            dcat:accessURL ?${convertToIri(distributionContentUrl)} .
             
           OPTIONAL { ?${distribution} dct:format ?${distributionFormat} }
           OPTIONAL { ?${distribution} dcat:mediaType ?${distributionMediaType} }
@@ -225,7 +225,7 @@ function schemaOrgQuery(prefix: string): string {
       ?${dataset} ${prefix}:distribution ?${distribution} .
       ?${distribution} a ${prefix}:DataDownload ;
         ${prefix}:encodingFormat ?${distributionFormat} ;
-        ${prefix}:contentUrl ?${convertToIri(distributionUrl)} .
+        ${prefix}:contentUrl ?${convertToIri(distributionContentUrl)} .
         
       OPTIONAL { ?${distribution} ${prefix}:fileFormat ?${distributionMediaType} }
       OPTIONAL { ?${distribution} ${prefix}:datePublished ${convertToXsdDate(
