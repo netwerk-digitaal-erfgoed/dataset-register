@@ -39,7 +39,7 @@ const distributionFormat = 'distribution_format';
 const distributionDatePublished = 'distribution_datePublished';
 const distributionDateModified = 'distribution_dateModified';
 const distributionDescription = 'distribution_description';
-const distributionLanguage = 'distribution_language';
+const distributionInLanguage = 'distribution_language';
 const distributionLicense = 'distribution_license';
 const distributionName = 'distribution_name';
 const distributionSize = 'distribution_size';
@@ -104,7 +104,7 @@ export const constructQuery = `
       dct:issued ?${distributionDatePublished} ;
       dct:modified ?${distributionDateModified} ;
       dct:description ?${distributionDescription} ;
-      dct:language ?${distributionLanguage} ;
+      dct:language ?${distributionInLanguage} ;
       dct:license ?${distributionLicense} ;
       dct:title ?${distributionName} ;
       dcat:byteSize ?${distributionSize} .
@@ -146,7 +146,7 @@ export const constructQuery = `
             distributionDateModified,
           )} }
           OPTIONAL { ?${distribution} dct:description ?${distributionDescription} }
-          OPTIONAL { ?${distribution} dct:language ?${distributionLanguage} }
+          OPTIONAL { ?${distribution} dct:language ?${distributionInLanguage} }
           OPTIONAL { ?${distribution} dct:license ?${distributionLicense} }
           OPTIONAL { ?${distribution} dct:title ?${distributionName} }
           OPTIONAL { ?${distribution} dcat:byteSize ?${distributionSize} }
@@ -235,7 +235,7 @@ function schemaOrgQuery(prefix: string): string {
         distributionDateModified,
       )} }
       OPTIONAL { ?${distribution} ${prefix}:description ?${distributionDescription} }
-      OPTIONAL { ?${distribution} ${prefix}:inLanguage ?${distributionLanguage} }
+      OPTIONAL { ?${distribution} ${prefix}:inLanguage ?${distributionInLanguage} }
       OPTIONAL { ?${distribution} ${prefix}:license ?${distributionLicense} }
       OPTIONAL { ?${distribution} ${prefix}:name ?${distributionName} }
       OPTIONAL { ?${distribution} ${prefix}:contentSize ?${distributionSize} }
