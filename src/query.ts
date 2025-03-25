@@ -42,7 +42,7 @@ const distributionDescription = 'distribution_description';
 const distributionInLanguage = 'distribution_language';
 const distributionLicense = 'distribution_license';
 const distributionName = 'distribution_name';
-const distributionSize = 'distribution_size';
+const distributionContentSize = 'distribution_size';
 
 export const dcat = (property: string): NamedNode =>
   factory.namedNode(`http://www.w3.org/ns/dcat#${property}`);
@@ -107,7 +107,7 @@ export const constructQuery = `
       dct:language ?${distributionInLanguage} ;
       dct:license ?${distributionLicense} ;
       dct:title ?${distributionName} ;
-      dcat:byteSize ?${distributionSize} .
+      dcat:byteSize ?${distributionContentSize} .
   } WHERE {
     SELECT * WHERE {
       {
@@ -149,7 +149,7 @@ export const constructQuery = `
           OPTIONAL { ?${distribution} dct:language ?${distributionInLanguage} }
           OPTIONAL { ?${distribution} dct:license ?${distributionLicense} }
           OPTIONAL { ?${distribution} dct:title ?${distributionName} }
-          OPTIONAL { ?${distribution} dcat:byteSize ?${distributionSize} }
+          OPTIONAL { ?${distribution} dcat:byteSize ?${distributionContentSize} }
         }
           
         OPTIONAL { ?${dataset} dct:description ?${description} }
@@ -238,7 +238,7 @@ function schemaOrgQuery(prefix: string): string {
       OPTIONAL { ?${distribution} ${prefix}:inLanguage ?${distributionInLanguage} }
       OPTIONAL { ?${distribution} ${prefix}:license ?${distributionLicense} }
       OPTIONAL { ?${distribution} ${prefix}:name ?${distributionName} }
-      OPTIONAL { ?${distribution} ${prefix}:contentSize ?${distributionSize} }
+      OPTIONAL { ?${distribution} ${prefix}:contentSize ?${distributionContentSize} }
     } 
      
     OPTIONAL { ?${dataset} ${prefix}:description ?${description} } 
