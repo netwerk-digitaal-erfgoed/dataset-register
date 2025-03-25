@@ -23,6 +23,7 @@ const genre = 'genre';
 const mainEntityOfPage = 'mainEntityOfPage';
 const version = 'version';
 const includedInDataCatalog = 'includedInDataCatalog';
+const citation = 'citation';
 
 const creatorName = 'creator_name';
 const creatorType = 'creator_type';
@@ -81,6 +82,7 @@ export const constructQuery = `
       dct:temporal ?${temporalCoverage} ;
       dct:type ?${genre} ;
       owl:versionInfo ?${version} ;
+      dct:isReferencedBy ?${citation} ;
       dct:isPartOf ?${includedInDataCatalog} ;
       dct:publisher ?${publisher} ;
       dct:creator ?${creator} ;
@@ -161,6 +163,7 @@ export const constructQuery = `
         OPTIONAL { ?${dataset} dct:temporal ?${temporalCoverage} }
         OPTIONAL { ?${dataset} dct:genre ?${genre} }
         OPTIONAL { ?${dataset} owl:versionInfo ?${version} }
+        OPTIONAL { ?${dataset} dct:isReferencedBy ?${citation} }
         OPTIONAL { ?${dataset} dct:isPartOf ?${includedInDataCatalog} }
         OPTIONAL { ?${dataset} dcat:landingPage ?${mainEntityOfPage} }
       }
@@ -255,6 +258,7 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL { ?${dataset} ${prefix}:temporalCoverage ?${temporalCoverage} }
     OPTIONAL { ?${dataset} ${prefix}:genre ?${genre} }
     OPTIONAL { ?${dataset} ${prefix}:version ?${version} }
+    OPTIONAL { ?${dataset} ${prefix}:citation ?${citation} }
     OPTIONAL { ?${dataset} ${prefix}:includedInDataCatalog ?${includedInDataCatalog} }
     OPTIONAL { ?${dataset} ${prefix}:mainEntityOfPage ?${mainEntityOfPage} }
 `;
