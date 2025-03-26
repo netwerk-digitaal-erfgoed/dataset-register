@@ -33,7 +33,6 @@ const publisherEmail = 'publisher_email';
 
 const distributionUrl = 'distribution_url';
 const distributionMediaType = 'distribution_mediaType';
-const distributionFormat = 'distribution_format';
 const distributionDatePublished = 'distribution_datePublished';
 const distributionDateModified = 'distribution_dateModified';
 const distributionDescription = 'distribution_description';
@@ -96,7 +95,6 @@ export const constructQuery = `
     ?${distribution} a dcat:Distribution ;
       dcat:accessURL ?${distributionUrl} ;
       dcat:mediaType ?${distributionMediaType} ;
-      dct:format ?${distributionFormat} ;
       dct:issued ?${distributionDatePublished} ;
       dct:modified ?${distributionDateModified} ;
       dct:description ?${distributionDescription} ;
@@ -133,7 +131,6 @@ export const constructQuery = `
           ?${distribution} a dcat:Distribution ;
             dcat:accessURL ?${convertToIri(distributionUrl)} .
             
-          OPTIONAL { ?${distribution} dct:format ?${distributionFormat} }
           OPTIONAL { ?${distribution} dcat:mediaType ?${distributionMediaType} }
           OPTIONAL { ?${distribution} dct:issued ${convertToXsdDate(
             distributionDatePublished,
@@ -218,10 +215,9 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL {
       ?${dataset} ${prefix}:distribution ?${distribution} .
       ?${distribution} a ${prefix}:DataDownload ;
-        ${prefix}:encodingFormat ?${distributionFormat} ;
+        ${prefix}:encodingFormat ?${distributionMediaType} ;
         ${prefix}:contentUrl ?${convertToIri(distributionUrl)} .
         
-      OPTIONAL { ?${distribution} ${prefix}:fileFormat ?${distributionMediaType} }
       OPTIONAL { ?${distribution} ${prefix}:datePublished ${convertToXsdDate(
         distributionDatePublished,
       )} }

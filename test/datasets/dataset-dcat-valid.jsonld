@@ -66,14 +66,14 @@
   "dcat:distribution": [
     {
       "@type": "dcat:Distribution",
-      "dct:format": ["application/rdf+xml", "text/turtle"],
+      "dcat:mediaType": ["application/rdf+xml", "text/turtle"],
       "dcat:accessURL": {
         "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
       }
     },
     {
       "@type": "dcat:Distribution",
-      "dct:format": ["application/ld+json"],
+      "dcat:mediaType": ["application/ld+json"],
       "dcat:accessURL": {
         "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld"
       }
