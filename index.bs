@@ -695,12 +695,6 @@ This is an overview of required and recommended attributes.
             <td>Recommended</td>
         </tr>
         <tr>
-            <th scope="row">[schema:funder](https://schema.org/funder)</th>
-            <td>An organization that supports (sponsors) something through some kind of financial contribution.</td>
-            <td>0..n</td>
-            <td>Recommended</td>
-        </tr>
-        <tr>
             <th scope="row">[schema:dateCreated](https://schema.org/dateCreated)</th>
             <td>See [[#dataset-date]].</td>
             <td>0..1</td>
