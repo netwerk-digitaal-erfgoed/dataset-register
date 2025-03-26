@@ -128,6 +128,7 @@ reg:PersonShape
             [ sh:datatype xsd:string ]
             [ sh:datatype rdf:langString ]
         ) ;
+        sh:uniqueLang true ;
         sh:message "Een persoon moet een naam hebben"@nl, "A person must have a name"@en ;
     ] .
 
@@ -154,6 +155,7 @@ reg:SchemaCatalogNameProperty a sh:PropertyShape ;
         [ sh:datatype xsd:string ]
         [ sh:datatype rdf:langString ]
     ) ;
+    sh:uniqueLang true ;
     sh:name "Naam van de datacatalogus"@nl, "Name of the data catalog"@en ;
     sh:message "Een datacatalogus moet een naam hebben"@nl, "A data catalog must have a name"@en ;
 .
@@ -165,6 +167,7 @@ reg:OrganizationNameProperty a sh:PropertyShape ;
         [ sh:datatype xsd:string ]
         [ sh:datatype rdf:langString ]
     ) ;
+    sh:uniqueLang true ;
     sh:message "Een organisatie moet een naam hebben"@nl, "An organization must contain a name"@en ;
 .
 
@@ -209,6 +212,7 @@ reg:SchemaDatasetNameProperty a sh:PropertyShape ;
         [ sh:datatype xsd:string ]
         [ sh:datatype rdf:langString ]
     ) ;
+    sh:uniqueLang true ;
     sh:name "Naam van de dataset"@nl, "Name of the dataset"@en ;
     sh:message "Een datasetbeschrijving dient een naam te bevatten"@nl, "A dataset description should have a name"@en ;
 .
@@ -219,6 +223,7 @@ reg:SchemaDistributionNameProperty a sh:PropertyShape ;
         [ sh:datatype xsd:string ]
         [ sh:datatype rdf:langString ]
     ) ;
+    sh:uniqueLang true ;
     sh:name "Naam van de distributie"@nl, "Name of the distributie"@en ;
     sh:message "Een distributie mag maximaal een naam te bevatten"@nl, "A dataset distributie can have one or no name"@en ;
 .
@@ -229,6 +234,7 @@ reg:SchemaAlternateNameProperty a sh:PropertyShape ;
         [ sh:datatype xsd:string ]
         [ sh:datatype rdf:langString ]
     ) ;
+    sh:uniqueLang true ;
     sh:name "Alternatieve naam van de dataset"@nl, "Alternative name of the dataset"@en ;
     sh:message "Een datasetbeschrijving kan meerdere alternatieve naam te bevatten"@nl, "A dataset description can contain multiple alternative names"@en ;
 .
@@ -239,6 +245,7 @@ reg:SchemaDescriptionProperty a sh:PropertyShape ;
         [ sh:datatype xsd:string ]
         [ sh:datatype rdf:langString ]
     );
+    sh:uniqueLang true ;
     sh:message "Moet precies één beschrijving hebben van type string of langString"@nl, "Must have a single description of type string or langString"@en ;
 .
 
@@ -520,6 +527,7 @@ dcat:OrganizationShape
             [ sh:datatype xsd:string ]
             [ sh:datatype rdf:langString ]
         ) ;
+        sh:uniqueLang true ;
         sh:message "Een organisatie moet een naam hebben"@nl, "An organization must have a name"@en ;
     ] .
 
@@ -534,5 +542,6 @@ dcat:PersonShape
             [ sh:datatype xsd:string ]
             [ sh:datatype rdf:langString ]
         ) ;
+        sh:uniqueLang true ;
         sh:message "Een persoon moet een naam hebben"@nl, "A person must have a name"@en ;
     ] .
