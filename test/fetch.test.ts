@@ -36,12 +36,11 @@ describe('Fetch', () => {
     ];
     expect(distributions).toHaveLength(2);
 
-    // dcat:
     expect(
       dataset.has(
         factory.quad(
           distributions[0].object as BlankNode,
-          dct('format'),
+          dcat('mediaType'),
           factory.literal('application/rdf+xml'),
         ),
       ),
