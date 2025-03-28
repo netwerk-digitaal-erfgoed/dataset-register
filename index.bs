@@ -667,7 +667,7 @@ This is an overview of required and recommended attributes.
         <tr>
             <th scope="row">[schema:description](https://schema.org/description)</th>
             <td>See [[#dataset-basic]].</td>
-            <td>0..1</td>
+            <td>1..n</td>
             <td>Recommended</td>
         </tr>
         <tr>
@@ -775,6 +775,18 @@ This is an overview of required and recommended attributes.
             <td>0..n</td>
             <td>Recommended</td>
         </tr>
+        <tr>    
+            <th scope="row">[schema:includedInDataCatalog](https://schema.org/includedInDataCatalog)</th>
+            <td>The HTTP [[IRI]] of the data catalog(s) that the dataset belongs to.</td>
+            <td>0..n</td>
+            <td>Recommended</td>
+        </tr>        
+        <tr>    
+            <th scope="row">[schema:hasPart](https://schema.org/hasPart)</th>
+            <td>Indicates a dataset that is part of this dataset and also available as a separate dataset.</td>
+            <td>0..n</td>
+            <td>Recommended</td>
+        </tr>
     </tbody>
 </table>
 
@@ -806,7 +818,7 @@ This is an overview of required and recommended attributes.
         <tr>
             <th scope="row">[schema:name](https://schema.org/name)</th>
             <td>The organization’s full name.</td>
-            <td>1</td>
+            <td>1..n</td>
             <td>Required</td>
         </tr>
         <tr>
@@ -926,7 +938,7 @@ When the distribution is compressed, the compression format (e.g. zip, gzip) sho
         <tr>
             <th scope="row">@id</th>
             <td>The HTTP [[IRI]] of the data catalog.</td>
-            <td>1</td>
+            <td>1..n</td>
             <td>Required</td>
         </tr>
         <tr>
