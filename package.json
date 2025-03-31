@@ -34,7 +34,7 @@
     "@fastify/swagger": "^9.0.0",
     "@fastify/swagger-ui": "^5.0.1",
     "@opentelemetry/api": "^1.4.1",
-    "@opentelemetry/exporter-metrics-otlp-proto": "^0.57.0",
+    "@opentelemetry/exporter-metrics-otlp-proto": "^0.200.0",
     "@opentelemetry/resources": "^1.14.0",
     "@opentelemetry/sdk-metrics": "^1.14.0",
     "@opentelemetry/sdk-node": "^0.200.0",
