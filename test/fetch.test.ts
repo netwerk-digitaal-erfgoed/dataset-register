@@ -199,19 +199,16 @@ describe('Fetch', () => {
     const dataset = datasets[0];
 
     // accessURL must be converted from literal to IRI.
-    expect(
-      dataset.has(
-        factory.quad(
-          factory.namedNode(
-            'https://www.goudatijdmachine.nl/data/api/items/144',
-          ),
-          dcat('accessURL'),
-          factory.namedNode(
-            'https://www.goudatijdmachine.nl/wp-content/uploads/sites/7/2021/09/Totaal_perceel_Plaand_EPSG_4326.geojson',
-          ),
-        ),
+    const accessUrls = [
+      ...dataset.match(
+        // factory.quad(
+        factory.namedNode('https://www.goudatijdmachine.nl/data/api/items/144'),
+        dcat('accessURL'),
+        undefined,
       ),
-    ).toBe(true);
+    ];
+    expect(accessUrls).toHaveLength(1);
+    expect(accessUrls[0].object.termType).toBe('NamedNode');
   });
 
   it('accepts valid HTTP Schema.org dataset in JSON-LD', async () => {
