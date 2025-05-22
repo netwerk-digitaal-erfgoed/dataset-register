@@ -129,7 +129,7 @@ export const constructQuery = `
         OPTIONAL {  
           ?${dataset} dcat:distribution ?${distribution} .
           ?${distribution} a dcat:Distribution ;
-            dcat:accessURL ?${convertToIri(distributionUrl)} .
+            dcat:accessURL ${convertToIri(distributionUrl)} .
             
           OPTIONAL { ?${distribution} dcat:mediaType ?${distributionMediaType} }
           OPTIONAL { ?${distribution} dct:issued ${convertToXsdDate(
@@ -216,7 +216,7 @@ function schemaOrgQuery(prefix: string): string {
       ?${dataset} ${prefix}:distribution ?${distribution} .
       ?${distribution} a ${prefix}:DataDownload ;
         ${prefix}:encodingFormat ?${distributionMediaType} ;
-        ${prefix}:contentUrl ?${convertToIri(distributionUrl)} .
+        ${prefix}:contentUrl ${convertToIri(distributionUrl)} .
         
       OPTIONAL { ?${distribution} ${prefix}:datePublished ${convertToXsdDate(
         distributionDatePublished,
