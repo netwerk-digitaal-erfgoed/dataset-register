@@ -1,18 +1,10 @@
-name: QA
+name: Validate
 
 on:
-  pull_request:
+  push:
     branches:
       - master
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Build and validate
-        uses: w3c/spec-prod@v2
-        with:
-          VALIDATE_MARKUP: false
+  deploy:
+    uses: netwerk-digitaal-erfgoed/workflows/.github/workflows/spec-validate.yml@main
