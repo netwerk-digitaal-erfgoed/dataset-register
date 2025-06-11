@@ -129,12 +129,12 @@ Any URL [registered by clients](#submit-dataset-descriptions) is added as a `sch
 
 Datasets are fetched from this URL on registration and when [crawling](#crawler) it.
 
-| Property | Description |
-| ------------- | ------------- |
-| [`schema:datePosted`](https://schema.org/datePosted) | When the URL was registered. |
-| [`schema:dateRead`](https://schema.org/dateRead) | When the URL was last read by the application. The [crawler](#crawler) updates this value when fetching descriptions. |
-| [`schema:status`](https://schema.org/status) | The HTTP status code last encountered when fetching the URL. |
-| [`schema:validUntil`](https://schema.org/validUntil) | If the URL has become [invalid](#validate-dataset-descriptions), the date at which it did so. |
+| Property | Description                                                                                                                                  |
+| ------------- |----------------------------------------------------------------------------------------------------------------------------------------------|
+| [`schema:datePosted`](https://schema.org/datePosted) | UTC datetime when the URL was registered.                                                                                                    |
+| [`schema:dateRead`](https://schema.org/dateRead) | UTC datetime when the URL was last read by the application. The [crawler](#crawler) updates this value when fetching descriptions.           |
+| [`schema:status`](https://schema.org/status) | The HTTP status code last encountered when fetching the URL.                                                                                 |
+| [`schema:validUntil`](https://schema.org/validUntil) | If the URL has become [invalid](#validate-dataset-descriptions), the UTC datetime at which it did so.                                        |
 | [`schema:about`](https://schema.org/about) | The set of [`schema:Dataset`s](#schemadataset) that the URL contains. The [crawler](#crawler) updates this value when fetching descriptions. |
 
 ### `schema:Dataset`
@@ -143,10 +143,10 @@ Each dataset that is found at the [`schema:EntryPoint`](#schemaentrypoint) regis
 `schema:Dataset` to the 
 [Registrations graph](https://triplestore.netwerkdigitaalerfgoed.nl/resource?uri=https:%2F%2Fdemo.netwerkdigitaalerfgoed.nl%2Fregistry%2Fregistrations&role=context).
 
-| Property                                           | Description                                        |
-|----------------------------------------------------|----------------------------------------------------|
-| [`schema:dateRead`](https://schema.org/dateRead)   | When the dataset was last read by the application. |
-| [`schema:subjectOf`](https://schema.org/subjectOf) | From which registration URL the dataset was read.  |
+| Property                                           | Description                                                     |
+|----------------------------------------------------|-----------------------------------------------------------------|
+| [`schema:dateRead`](https://schema.org/dateRead)   | UTC datetime when the dataset was last read by the application. |
+| [`schema:subjectOf`](https://schema.org/subjectOf) | From which registration URL the dataset was read.               |
 
 ### `dcat:Dataset`
 
