@@ -616,7 +616,7 @@ even if that resource is the same on all pages.
             "@type": "hydra:PartialCollectionView",
             "hydra:first": {"@id": "/catalog?page=1"},
             "hydra:next": {"@id": "/catalog?page=2"},
-            "hydra:first": {"@id": "/catalog?page=498"}
+            "hydra:last": {"@id": "/catalog?page=498"}
           },
           "dataset": [
             {
