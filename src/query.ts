@@ -113,8 +113,8 @@ export const constructQuery = `
       } UNION { 
         ?${dataset} a dcat:Dataset ;
           dct:title ?${name} ;
-          dct:license ?${license} ;
-          dct:publisher ?${publisher} .
+          dct:publisher ?${publisher} ;
+          dct:license ${convertToIri(license)} .
           
         ?${publisher} a ?foafOrganizationOrPerson ;
           a ?${publisherType} ;
@@ -148,7 +148,7 @@ export const constructQuery = `
           )} }
           OPTIONAL { ?${distribution} dct:description ?${distributionDescription} }
           OPTIONAL { ?${distribution} dct:language ?${distributionLanguage} }
-          OPTIONAL { ?${distribution} dct:license ?${distributionLicense} }
+          OPTIONAL { ?${distribution} dct:license ${convertToIri(distributionLicense)} }
           OPTIONAL { ?${distribution} dct:title ?${distributionName} }
           OPTIONAL { ?${distribution} dcat:byteSize ?${distributionSize} }
         }
@@ -177,9 +177,7 @@ function schemaOrgQuery(prefix: string): string {
   return `
     ?${dataset} a ${prefix}:Dataset ;
       ${prefix}:name ?${name} ; 
-      ${prefix}:license ?${license} .
-      
-    FILTER (!isBlank(?${license}))
+      ${prefix}:license ${convertToIri(license)} .
 
     OPTIONAL { 
       ?${dataset} ${prefix}:creator ?${creator} .        
@@ -242,7 +240,7 @@ function schemaOrgQuery(prefix: string): string {
       )} }
       OPTIONAL { ?${distribution} ${prefix}:description ?${distributionDescription} }
       OPTIONAL { ?${distribution} ${prefix}:inLanguage ?${distributionLanguage} }
-      OPTIONAL { ?${distribution} ${prefix}:license ?${distributionLicense} }
+      OPTIONAL { ?${distribution} ${prefix}:license ${convertToIri(distributionLicense)} }
       OPTIONAL { ?${distribution} ${prefix}:name ?${distributionName} }
       OPTIONAL { ?${distribution} ${prefix}:contentSize ?${distributionSize} }
     } 
