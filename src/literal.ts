@@ -17,3 +17,15 @@ export const convertToXsdDate = (variable: string) =>
 export const convertToIri = (variable: string) =>
   `?${variable}Raw ;
         BIND(IRI(?${variable}Raw) AS ?${variable})`;
+
+/**
+ * https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1141
+ */
+export const normalizeLicense = (variable: string) =>
+  `?${variable}Raw ;
+        BIND(
+          IRI(
+            REPLACE(REPLACE(STR(?${variable}Raw), "deed.nl", ""), "http://creativecommons.org", "https://creativecommons.org")
+          )
+          AS ?${variable}
+        )`;
