@@ -1,5 +1,5 @@
 import factory from 'rdf-ext';
-import {convertToIri, convertToXsdDate} from './literal.js';
+import {convertToIri, convertToXsdDate, normalizeLicense} from './literal.js';
 import {NamedNode} from '@rdfjs/types';
 
 const dataset = 'dataset';
@@ -114,7 +114,7 @@ export const constructQuery = `
         ?${dataset} a dcat:Dataset ;
           dct:title ?${name} ;
           dct:publisher ?${publisher} ;
-          dct:license ${convertToIri(license)} .
+          dct:license ${normalizeLicense(license)} .
           
         ?${publisher} a ?foafOrganizationOrPerson ;
           a ?${publisherType} ;
@@ -148,7 +148,7 @@ export const constructQuery = `
           )} }
           OPTIONAL { ?${distribution} dct:description ?${distributionDescription} }
           OPTIONAL { ?${distribution} dct:language ?${distributionLanguage} }
-          OPTIONAL { ?${distribution} dct:license ${convertToIri(distributionLicense)} }
+          OPTIONAL { ?${distribution} dct:license ${normalizeLicense(distributionLicense)} }
           OPTIONAL { ?${distribution} dct:title ?${distributionName} }
           OPTIONAL { ?${distribution} dcat:byteSize ?${distributionSize} }
         }
@@ -177,7 +177,7 @@ function schemaOrgQuery(prefix: string): string {
   return `
     ?${dataset} a ${prefix}:Dataset ;
       ${prefix}:name ?${name} ; 
-      ${prefix}:license ${convertToIri(license)} .
+      ${prefix}:license ${normalizeLicense(license)} .
 
     OPTIONAL { 
       ?${dataset} ${prefix}:creator ?${creator} .        
@@ -240,7 +240,7 @@ function schemaOrgQuery(prefix: string): string {
       )} }
       OPTIONAL { ?${distribution} ${prefix}:description ?${distributionDescription} }
       OPTIONAL { ?${distribution} ${prefix}:inLanguage ?${distributionLanguage} }
-      OPTIONAL { ?${distribution} ${prefix}:license ${convertToIri(distributionLicense)} }
+      OPTIONAL { ?${distribution} ${prefix}:license ${normalizeLicense(distributionLicense)} }
       OPTIONAL { ?${distribution} ${prefix}:name ?${distributionName} }
       OPTIONAL { ?${distribution} ${prefix}:contentSize ?${distributionSize} }
     } 

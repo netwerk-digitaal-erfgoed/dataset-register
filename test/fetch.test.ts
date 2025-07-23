@@ -89,7 +89,7 @@ describe('Fetch', () => {
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
           dct('license'),
           factory.namedNode(
-            'http://creativecommons.org/publicdomain/zero/1.0/',
+            'https://creativecommons.org/publicdomain/zero/1.0/',
           ),
         ),
       ),
