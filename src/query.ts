@@ -33,6 +33,7 @@ const publisherEmail = 'publisher_email';
 
 const distributionUrl = 'distribution_url';
 const distributionMediaType = 'distribution_mediaType';
+const distributionConformsTo = 'distribution_conformsTo';
 const distributionDatePublished = 'distribution_datePublished';
 const distributionDateModified = 'distribution_dateModified';
 const distributionDescription = 'distribution_description';
@@ -95,6 +96,7 @@ export const constructQuery = `
     ?${distribution} a dcat:Distribution ;
       dcat:accessURL ?${distributionUrl} ;
       dcat:mediaType ?${distributionMediaType} ;
+      dct:conformsTo ?${distributionConformsTo} ;
       dct:issued ?${distributionDatePublished} ;
       dct:modified ?${distributionDateModified} ;
       dct:description ?${distributionDescription} ;
@@ -129,9 +131,15 @@ export const constructQuery = `
         OPTIONAL {  
           ?${dataset} dcat:distribution ?${distribution} .
           ?${distribution} a dcat:Distribution ;
+            dcat:mediaType ?${distributionMediaType} ;
             dcat:accessURL ${convertToIri(distributionUrl)} .
-            
-          OPTIONAL { ?${distribution} dcat:mediaType ?${distributionMediaType} }
+          BIND(
+            IF(
+              CONTAINS(STR(?${distributionMediaType}), "sparql"),
+              <https://www.w3.org/TR/sparql11-protocol/>,
+              ?unbound
+            ) AS ?${distributionConformsTo} 
+          )            
           OPTIONAL { ?${distribution} dct:issued ${convertToXsdDate(
             distributionDatePublished,
           )} }
@@ -217,6 +225,14 @@ function schemaOrgQuery(prefix: string): string {
       ?${distribution} a ${prefix}:DataDownload ;
         ${prefix}:encodingFormat ?${distributionMediaType} ;
         ${prefix}:contentUrl ${convertToIri(distributionUrl)} .
+
+      BIND(
+        IF(
+          CONTAINS(STR(?${distributionMediaType}), "sparql"),
+          <https://www.w3.org/TR/sparql11-protocol/>,
+          ?unbound
+        ) AS ?${distributionConformsTo} 
+      )
         
       OPTIONAL { ?${distribution} ${prefix}:datePublished ${convertToXsdDate(
         distributionDatePublished,

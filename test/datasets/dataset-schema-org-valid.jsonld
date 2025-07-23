@@ -65,6 +65,11 @@
       "@type": "DataDownload",
       "encodingFormat": "application/ld+json",
       "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld"
+    },
+    {
+      "@type": "DataDownload",
+      "encodingFormat": "application/sparql-query",
+      "contentUrl": "http://data.bibliotheken.nl/id/dataset/sparql"
     }
   ]
 }
