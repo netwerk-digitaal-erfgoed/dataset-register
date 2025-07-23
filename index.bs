@@ -60,7 +60,7 @@ Code examples {#examples}
 
 RDF code examples are in the [[SCHEMA-ORG]] vocabulary, serialized as [[JSON-LD]].
 
-While other vocabularies, such as [[VOCAB-DCAT-2]] can also be used,
+While other vocabularies, such as [[VOCAB-DCAT-3]] can also be used,
 Schema.org has the advantage that it’s [better picked up by search engines](https://github.com/netwerk-digitaal-erfgoed/project-organisations-datasets/tree/master/publication-model#considerations),
 improving findability, one of the main goals of publishing datasets on the web.
 
@@ -111,7 +111,7 @@ Conceptual model {#conceptual-model}
 The model consists of four resource types: [=publisher|organizations=] publish [=datasets=], which are available in [=distributions=].
 Optionally, the datasets are grouped in data catalogs.
 
-<pre class=include>
+<pre class=include-raw>
 path: model.svg
 </pre>
 
