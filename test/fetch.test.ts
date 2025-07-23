@@ -34,7 +34,7 @@ describe('Fetch', () => {
     const distributions = [
       ...dataset.match(datasetUri, dcat('distribution'), null),
     ];
-    expect(distributions).toHaveLength(2);
+    expect(distributions).toHaveLength(3);
 
     expect(
       dataset.has(
@@ -175,13 +175,24 @@ describe('Fetch', () => {
         ),
       ),
     ).toBe(true);
-    expect([
+
+    const distributions = [
       ...dataset.match(
         factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
         dcat('distribution'),
         null,
       ),
-    ]).toHaveLength(2);
+    ];
+    expect(distributions).toHaveLength(3);
+    expect(
+      dataset.has(
+        factory.quad(
+          distributions[2].object as BlankNode,
+          dct('conformsTo'),
+          factory.namedNode('https://www.w3.org/TR/sparql11-protocol/'),
+        ),
+      ),
+    ).toBe(true);
   });
 
   it('accepts valid Schema.org dataset in Turtle', async () => {
