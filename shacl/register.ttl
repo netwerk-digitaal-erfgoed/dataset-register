@@ -234,7 +234,6 @@ reg:SchemaAlternateNameProperty a sh:PropertyShape ;
         [ sh:datatype xsd:string ]
         [ sh:datatype rdf:langString ]
     ) ;
-    sh:uniqueLang true ;
     sh:name "Alternatieve naam van de dataset"@nl, "Alternative name of the dataset"@en ;
     sh:message "Een datasetbeschrijving kan meerdere alternatieve naam te bevatten"@nl, "A dataset description can contain multiple alternative names"@en ;
 .
