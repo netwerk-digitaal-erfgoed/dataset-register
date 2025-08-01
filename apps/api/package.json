@@ -1,0 +1,90 @@
+{
+  "name": "@dataset-register/api",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "nx": {
+    "targets": {
+      "build": {
+        "executor": "@nx/esbuild:esbuild",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "defaultConfiguration": "production",
+        "options": {
+          "platform": "node",
+          "outputPath": "apps/api/dist",
+          "bundle": false,
+          "main": "apps/api/src/main.ts",
+          "tsConfig": "apps/api/tsconfig.app.json",
+          "assets": [
+            "apps/api/assets/*",
+            "spec/shacl.ttl"
+          ],
+          "esbuildOptions": {
+            "sourcemap": true,
+            "outExtension": {
+              ".js": ".js"
+            }
+          }
+        },
+        "configurations": {
+          "development": {},
+          "production": {
+            "esbuildOptions": {
+              "sourcemap": false,
+              "outExtension": {
+                ".js": ".js"
+              }
+            }
+          }
+        }
+      },
+      "serve": {
+        "continuous": true,
+        "executor": "@nx/js:node",
+        "defaultConfiguration": "development",
+        "dependsOn": [
+          "build"
+        ],
+        "options": {
+          "buildTarget": "@dataset-register/api:build",
+          "runBuildTargetDependencies": false
+        },
+        "configurations": {
+          "development": {
+            "buildTarget": "@dataset-register/api:build:development"
+          },
+          "production": {
+            "buildTarget": "@dataset-register/api:build:production"
+          }
+        }
+      },
+      "docker": {
+        "executor": "@nx/docker:docker",
+        "dependsOn": [
+          "build"
+        ],
+        "options": {
+          "context": ".",
+          "dockerfile": "apps/api/Dockerfile",
+          "tags": [
+            "dataset-register-api:latest"
+          ]
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "@dataset-register/core": "0.0.1",
+    "@fastify/accepts-serializer": "^6.0.1",
+    "@fastify/cors": "^11.0.0",
+    "@fastify/swagger": "^9.0.0",
+    "@fastify/swagger-ui": "^5.0.1",
+    "@rdfjs/types": "2.0.1",
+    "fastify": "^5.0.0",
+    "psl": "1.10.0",
+    "rdf-ext": "2.5.2",
+    "rdf-serialize": "4.0.1"
+  }
+}
