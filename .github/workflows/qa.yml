@@ -33,6 +33,9 @@ jobs:
           cache: 'npm'
 
       - run: npm ci
+      - run: rm -rf node_modules package-lock.json
+      - run: npm install
+      - run: npm install @rollup/rollup-linux-x64-gnu --save-optional
 
       - uses: nrwl/nx-set-shas@v4
 
