@@ -42,7 +42,6 @@
     "@types/node-schedule": "^2.1.0",
     "@types/psl": "^1.1.0",
     "@types/rdf-ext": "^2.0.1",
-    "@types/rdf-validate-shacl": "^0.4.9",
     "microdata-rdf-streaming-parser": "^3.0.0",
     "nock": "^14.0.1",
     "rdfa-streaming-parser": "^3.0.1"

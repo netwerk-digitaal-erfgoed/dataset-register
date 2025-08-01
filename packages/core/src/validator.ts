@@ -1,6 +1,6 @@
 import factory from 'rdf-ext';
 import SHACLValidator from 'rdf-validate-shacl';
-import ValidationReport from 'rdf-validate-shacl/src/validation-report.js';
+import type {ValidationReport, ValidationResult as InnerValidationResult} from 'rdf-validate-shacl/src/validation-report.js';
 import {rdfDereferencer} from 'rdf-dereference';
 import {Dataset, DatasetCore} from '@rdfjs/types';
 
@@ -19,7 +19,7 @@ export class ShaclValidator implements Validator {
   }
 
   public constructor(dataset: DatasetCore) {
-    this.inner = new SHACLValidator(dataset);
+    this.inner = new SHACLValidator(dataset, {});
   }
 
   public async validate(dataset: Dataset): Promise<ValidationResult> {
@@ -82,7 +82,7 @@ const hasViolation = (report: ValidationReport) =>
   report.results.some((result) => resultIsViolation(result));
 
 const resultIsViolation = (
-  result: ValidationReport.ValidationResult,
+  result: InnerValidationResult,
 ): boolean => {
   return (
     result.severity?.value === shacl('Violation').value ||
