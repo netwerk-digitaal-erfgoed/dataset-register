@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  main:
+  test:
     runs-on: ubuntu-latest
     env:
       NX_VERBOSE_LOGGING: 'true'
