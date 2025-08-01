@@ -1,0 +1,72 @@
+{
+  "name": "@dataset-register/crawler",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "nx": {
+    "targets": {
+      "build": {
+        "executor": "@nx/esbuild:esbuild",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "defaultConfiguration": "production",
+        "options": {
+          "platform": "node",
+          "outputPath": "apps/crawler/dist",
+          "format": [
+            "esm"
+          ],
+          "bundle": false,
+          "main": "apps/crawler/src/main.ts",
+          "tsConfig": "apps/crawler/tsconfig.app.json",
+          "assets": [
+            "spec/shacl.ttl"
+          ],
+          "esbuildOptions": {
+            "sourcemap": true,
+            "outExtension": {
+              ".js": ".js"
+            }
+          }
+        },
+        "configurations": {
+          "development": {},
+          "production": {
+            "esbuildOptions": {
+              "sourcemap": false,
+              "outExtension": {
+                ".js": ".js"
+              }
+            }
+          }
+        }
+      },
+      "serve": {
+        "continuous": true,
+        "executor": "@nx/js:node",
+        "defaultConfiguration": "development",
+        "dependsOn": [
+          "build"
+        ],
+        "options": {
+          "buildTarget": "@dataset-register/crawler:build",
+          "runBuildTargetDependencies": false
+        },
+        "configurations": {
+          "development": {
+            "buildTarget": "@dataset-register/crawler:build:development"
+          },
+          "production": {
+            "buildTarget": "@dataset-register/crawler:build:production"
+          }
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "@dataset-register/core": "0.0.1",
+    "@types/node-schedule": "2.1.7",
+    "pino": "^9.7.0"
+  }
+}

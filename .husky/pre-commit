@@ -1,1 +1,1 @@
-npm run fix
+npx nx affected -t lint --fix

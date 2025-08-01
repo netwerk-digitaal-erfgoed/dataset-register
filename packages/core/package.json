@@ -1,0 +1,49 @@
+{
+  "name": "@dataset-register/core",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./test-utils": {
+      "development": "./src/test-utils.ts",
+      "types": "./dist/test-utils.d.ts",
+      "import": "./dist/test-utils.js",
+      "default": "./dist/test-utils.js"
+    }
+  },
+  "dependencies": {
+    "@comunica/query-sparql": "^4.0.2",
+    "@opentelemetry/api": "^1.4.1",
+    "@opentelemetry/exporter-metrics-otlp-proto": "^0.57.0",
+    "@opentelemetry/resources": "^1.14.0",
+    "@opentelemetry/sdk-metrics": "^1.14.0",
+    "@opentelemetry/semantic-conventions": "^1.14.0",
+    "@rdfjs/types": "2.0.1",
+    "jsonld-streaming-parser": "^5.0.0",
+    "n3": "^1.10.0",
+    "node-fetch": "^3.3.1",
+    "rdf-dereference": "^3.0.0",
+    "rdf-ext": "^2.0.1",
+    "rdf-validate-shacl": "^0.5.1",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@rdfjs/types": "^2.0.1",
+    "@types/node-schedule": "^2.1.0",
+    "@types/psl": "^1.1.0",
+    "@types/rdf-ext": "^2.0.1",
+    "microdata-rdf-streaming-parser": "^3.0.0",
+    "nock": "^14.0.1",
+    "rdfa-streaming-parser": "^3.0.1"
+  }
+}

@@ -70,7 +70,7 @@ When GraphDB runs, you can start the application in development mode. Clone this
 
 ```
 npm install
-npm run dev
+npx nx serve api
 ```
 
 ### Run in production
@@ -79,7 +79,7 @@ To run the application in production, first compile and then run it. You may wan
 by default:
 
 ```
-npm run compile
+npx nx build api --configuration=production
 LOG=false npm start
 ```
 
