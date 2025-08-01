@@ -18,6 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          filter: tree:0
           fetch-depth: 0
 
       # This enables task distribution via Nx Cloud
@@ -33,14 +34,12 @@ jobs:
           cache: 'npm'
 
       - run: npm ci
-      - run: rm -rf node_modules package-lock.json
-      - run: npm install
-      - run: npm install @rollup/rollup-linux-x64-gnu --save-optional
+#      - run: rm -rf node_modules package-lock.json
+#      - run: npm install
+#      - run: npm install @rollup/rollup-linux-x64-gnu --save-optional
 
       - uses: nrwl/nx-set-shas@v4
 
       # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
       # - run: npx nx-cloud record -- echo Hello World
-      - run: npx nx reset
-      - run: npx nx daemon --stop || true
       - run: npx nx affected -t lint test typecheck build
