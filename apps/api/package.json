@@ -17,7 +17,6 @@
           "bundle": false,
           "main": "apps/api/src/main.ts",
           "tsConfig": "apps/api/tsconfig.app.json",
-          "skipTypeCheck": true,
           "assets": [
             "apps/api/assets/*",
             "spec/shacl.ttl"
