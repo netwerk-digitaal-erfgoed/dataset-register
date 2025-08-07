@@ -16,7 +16,7 @@ let httpServer: FastifyInstance<Server>;
 const registrationStore = new MockRegistrationStore();
 describe('Server', () => {
   beforeAll(async () => {
-    const shacl = await readUrl('../../spec/shacl.ttl');
+    const shacl = await readUrl('../../requirements/shacl.ttl');
     httpServer = await server(
       new MockDatasetStore(),
       registrationStore,

@@ -9,7 +9,7 @@ import rdf from 'rdf-ext';
 import {Dataset} from '@rdfjs/types';
 import {file} from '../src/test-utils.js';
 
-const validator = await ShaclValidator.fromUrl('../../spec/shacl.ttl');
+const validator = await ShaclValidator.fromUrl('../../requirements/shacl.ttl');
 
 describe('Validator', () => {
   it('accepts minimal valid Schema.org dataset', async () => {

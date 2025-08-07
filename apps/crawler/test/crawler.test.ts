@@ -8,7 +8,7 @@ import {
   MockRegistrationStore,
 } from '@dataset-register/core/test-utils';
 import nock from 'nock';
-import Pino from 'pino';
+import { pino } from 'pino';
 import {Validator} from '@dataset-register/core';
 import factory from 'rdf-ext';
 import {DatasetCore} from '@rdfjs/types';
@@ -34,7 +34,7 @@ describe('Crawler', () => {
       new MockDatasetStore(),
       new MockRatingStore(),
       validator(true),
-      Pino({enabled: false}),
+      pino({enabled: false}),
     );
   });
 
@@ -108,7 +108,7 @@ describe('Crawler', () => {
       new MockDatasetStore(),
       new MockRatingStore(),
       validator(false),
-      Pino({enabled: false}),
+      pino({enabled: false}),
     );
     await storeRegistrationFixture(new URL('https://example.com/invalid'));
 

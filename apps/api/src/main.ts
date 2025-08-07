@@ -26,7 +26,7 @@ await (async () => {
   const allowedRegistrationDomainStore =
     new GraphDbAllowedRegistrationDomainStore(client);
   startInstrumentation(datasetStore);
-  const shacl = await readUrl('spec/shacl.ttl');
+  const shacl = await readUrl('requirements/shacl.ttl');
   const validator = new ShaclValidator(shacl);
 
   try {
