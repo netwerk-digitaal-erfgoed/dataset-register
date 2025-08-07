@@ -21,6 +21,7 @@ jobs:
         uses: w3c/spec-prod@v2
         with:
           VALIDATE_MARKUP: false
+          SOURCE: requirements/index.bs
 
       - name: Deploy to requirements-datasets GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
