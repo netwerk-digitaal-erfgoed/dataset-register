@@ -33,13 +33,12 @@
     "n3": "^1.10.0",
     "node-fetch": "^3.3.1",
     "rdf-dereference": "^3.0.0",
-    "rdf-ext": "^2.0.1",
+    "rdf-ext": "^2.5.2",
     "rdf-validate-shacl": "^0.5.1",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
     "@rdfjs/types": "^2.0.1",
-    "@types/node-schedule": "^2.1.0",
     "@types/psl": "^1.1.0",
     "@types/rdf-ext": "^2.0.1",
     "microdata-rdf-streaming-parser": "^3.0.0",

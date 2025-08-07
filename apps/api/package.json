@@ -15,10 +15,17 @@
           "platform": "node",
           "outputPath": "apps/api/dist",
           "bundle": false,
+          "format": [
+            "esm"
+          ],
           "main": "apps/api/src/main.ts",
           "tsConfig": "apps/api/tsconfig.app.json",
           "assets": [
-            "apps/api/assets/*",
+            {
+              "input": "apps/api/src/assets",
+              "glob": "*",
+              "output": "assets"
+            },
             "requirements/shacl.ttl"
           ],
           "esbuildOptions": {
@@ -60,19 +67,8 @@
           }
         }
       },
-      "docker": {
-        "executor": "@nx/docker:docker",
-        "dependsOn": [
-          "build"
-        ],
-        "options": {
-          "context": ".",
-          "dockerfile": "apps/api/Dockerfile",
-          "tags": [
-            "dataset-register-api:latest"
-          ]
-        }
-      }
+      "copy-workspace-modules": {},
+      "prune-lockfile": {}
     }
   },
   "dependencies": {

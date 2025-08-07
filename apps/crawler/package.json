@@ -14,10 +14,10 @@
         "options": {
           "platform": "node",
           "outputPath": "apps/crawler/dist",
+          "bundle": false,
           "format": [
             "esm"
           ],
-          "bundle": false,
           "main": "apps/crawler/src/main.ts",
           "tsConfig": "apps/crawler/tsconfig.app.json",
           "assets": [
@@ -61,12 +61,18 @@
             "buildTarget": "@dataset-register/crawler:build:production"
           }
         }
-      }
+      },
+      "copy-workspace-modules": {},
+      "prune-lockfile": {}
     }
   },
   "dependencies": {
-    "@dataset-register/core": "0.0.1",
-    "@types/node-schedule": "2.1.7",
-    "pino": "^9.7.0"
+    "@dataset-register/core": "*",
+    "node-schedule": "^2.1.1",
+    "pino": "^9.8.0"
+  },
+  "devDependencies": {
+    "@types/node-schedule": "^2.1.8",
+    "rdf-ext": "^2.5.2"
   }
 }
