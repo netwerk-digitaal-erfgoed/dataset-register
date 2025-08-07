@@ -19,7 +19,7 @@
           "tsConfig": "apps/api/tsconfig.app.json",
           "assets": [
             "apps/api/assets/*",
-            "spec/shacl.ttl"
+            "requirements/shacl.ttl"
           ],
           "esbuildOptions": {
             "sourcemap": true,

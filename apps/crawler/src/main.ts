@@ -22,7 +22,7 @@ await (async () => {
   }
 });
 
-const shacl = await readUrl('spec/shacl.ttl');
+const shacl = await readUrl('requirements/shacl.ttl');
 const registrationStore = new GraphDbRegistrationStore(client);
 const datasetStore = new GraphDbDatasetStore(client);
 const ratingStore = new GraphDbRatingStore(client);

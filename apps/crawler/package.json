@@ -21,7 +21,7 @@
           "main": "apps/crawler/src/main.ts",
           "tsConfig": "apps/crawler/tsconfig.app.json",
           "assets": [
-            "spec/shacl.ttl"
+            "requirements/shacl.ttl"
           ],
           "esbuildOptions": {
             "sourcemap": true,

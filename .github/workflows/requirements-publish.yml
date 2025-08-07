@@ -1,0 +1,31 @@
+name: Publish Requirements
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'requirements/**'
+
+defaults:
+  run:
+    working-directory: requirements
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and validate
+        uses: w3c/spec-prod@v2
+        with:
+          VALIDATE_MARKUP: false
+
+      - name: Deploy to requirements-datasets GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          external_repository: netwerk-digitaal-erfgoed/requirements-datasets
+          personal_token: ${{ secrets.DATASET_REGISTER_PUBLISH_REQUIREMENTS }}
+          publish_dir: ./requirements
+          publish_branch: master

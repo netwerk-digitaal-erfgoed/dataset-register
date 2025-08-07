@@ -11,7 +11,6 @@
     ],
     "sharedGlobals": ["{workspaceRoot}/.github/workflows/qa.yml"]
   },
-  "nxCloudId": "688b7e34d4c1131ecd518d48",
   "plugins": [
     {
       "plugin": "@nx/js/typescript",
@@ -61,9 +60,6 @@
     }
   },
   "targetDefaults": {
-    "test": {
-      "dependsOn": ["^build"]
-    },
     "@nx/esbuild:esbuild": {
       "cache": true,
       "dependsOn": ["^build"],
