@@ -37,7 +37,7 @@ jobs:
 #        uses: docker/setup-buildx-action@v3
 
       - name: Build and publish Docker images
-        run: npx nx release --dockerVersionScheme=production
+        run: npx nx release --dockerVersionScheme=production --yes
 
       - uses: digitalocean/action-doctl@v2
         with:
