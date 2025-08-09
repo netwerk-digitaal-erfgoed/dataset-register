@@ -11,11 +11,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          filter: tree:0
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
           cache: 'npm'
+
+      - run: npm ci
 
       - uses: nrwl/nx-set-shas@v4
 
