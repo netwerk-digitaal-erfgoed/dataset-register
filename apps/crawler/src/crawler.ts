@@ -1,7 +1,7 @@
 import {RegistrationStore} from '@dataset-register/core';
 import {DatasetStore, extractIri} from '@dataset-register/core';
 import {dereference, fetch, HttpError, NoDatasetFoundAtUrl} from '@dataset-register/core';
-import Pino from 'pino';
+import pino from 'pino';
 import {Valid, Validator} from '@dataset-register/core';
 import {crawlCounter} from '@dataset-register/core';
 import {rate, RatingStore} from '@dataset-register/core';
@@ -12,7 +12,7 @@ export class Crawler {
     private datasetStore: DatasetStore,
     private ratingStore: RatingStore,
     private validator: Validator,
-    private logger: Pino.Logger,
+    private logger: pino.Logger,
   ) {}
 
   /**

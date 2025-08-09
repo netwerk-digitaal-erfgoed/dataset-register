@@ -8,7 +8,7 @@ import {
   MockRegistrationStore,
 } from '@dataset-register/core/test-utils';
 import nock from 'nock';
-import { pino } from 'pino';
+import pino from 'pino';
 import {Validator} from '@dataset-register/core';
 import factory from 'rdf-ext';
 import {DatasetCore} from '@rdfjs/types';

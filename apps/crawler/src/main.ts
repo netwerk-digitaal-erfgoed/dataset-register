@@ -7,7 +7,7 @@ import {
   GraphDbRegistrationStore, readUrl,
   ShaclValidator
 } from '@dataset-register/core';
-import { pino } from 'pino';
+import pino from 'pino';
 
 const client = new GraphDbClient(
   process.env.GRAPHDB_URL || 'http://127.0.0.1:7200',

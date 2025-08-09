@@ -55,8 +55,15 @@
     }
   ],
   "release": {
-    "version": {
-      "preVersionCommand": "npx nx run-many -t build"
+    "projects": ["api", "crawler"],
+    "projectsRelationship": "independent",
+    "releaseTagPattern": "release/{projectName}/{version}",
+    "docker": {
+      "skipVersionActions": true,
+      "registryUrl": "ghcr.io/netwerk-digitaal-erfgoed/dataset-register",
+      "versionSchemes": {
+        "production": "{currentDate|YYYYMMDDHHmm}-{shortCommitSha}"
+      }
     }
   },
   "targetDefaults": {
@@ -64,6 +71,17 @@
       "cache": true,
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"]
+    },
+    "copy-workspace-modules": {
+      "executor": "@nx/js:copy-workspace-modules",
+      "dependsOn": ["build"]
+    },
+    "prune-lockfile": {
+      "executor": "@nx/js:prune-lockfile",
+      "dependsOn": ["build"]
+    },
+    "docker:build": {
+      "dependsOn": ["copy-workspace-modules", "prune-lockfile"]
     }
   }
 }

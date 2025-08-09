@@ -47,13 +47,12 @@ export async function server(
   const server = fastify(options);
 
   const __dirname = dirname(fileURLToPath(import.meta.url));
-  console.log(__dirname);
 
   server
     .register(fastifySwagger, {
       mode: 'static',
       specification: {
-        path: __dirname + '/../assets/api.yaml',
+        path: __dirname + '/assets/api.yaml',
         baseDir: __dirname,
       },
     })
