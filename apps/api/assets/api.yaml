@@ -48,7 +48,7 @@ paths:
         400:
           description: One or more dataset descriptions are invalid according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a>. The response body contains a list of [SHACL](https://www.w3.org/TR/shacl/) violations.
         403:
-          description: The submitted URL is not on the domain name allow list. [Contact us](mailto:bob.coret@netwerkdigitaalerfgoed.nl) to have your intitution’s domain name added.
+          description: The submitted URL is not on the domain name allow list. [Contact us](mailto:bob.coret@netwerkdigitaalerfgoed.nl) to have your institution’s domain name added.
         404:
           description: The URL cannot be resolved.
         406:
