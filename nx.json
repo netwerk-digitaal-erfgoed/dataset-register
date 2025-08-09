@@ -55,6 +55,10 @@
     }
   ],
   "release": {
+    "git": {
+      "commit": false,
+      "tag": false
+    },
     "projects": ["api", "crawler"],
     "projectsRelationship": "independent",
     "releaseTagPattern": "release/{projectName}/{version}",
