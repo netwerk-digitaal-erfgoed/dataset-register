@@ -47,7 +47,7 @@
           }
         }
       },
-      "serve": {
+      "dev": {
         "continuous": true,
         "executor": "@nx/js:node",
         "defaultConfiguration": "development",
@@ -65,6 +65,12 @@
           "production": {
             "buildTarget": "@dataset-register/api:build:production"
           }
+        }
+      },
+      "serve": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "npx nodemon --watch requirements/shacl.ttl --exec 'npx nx dev api'"
         }
       },
       "copy-workspace-modules": {},
