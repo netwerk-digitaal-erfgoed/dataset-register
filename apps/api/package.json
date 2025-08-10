@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "nx": {
+    "projectType": "application",
     "targets": {
       "build": {
         "executor": "@nx/esbuild:esbuild",
