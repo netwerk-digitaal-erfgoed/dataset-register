@@ -6,7 +6,7 @@ import {StandardizeSchemaOrgPrefixToHttps} from '../src/transform.js';
 import {MicrodataRdfParser} from 'microdata-rdf-streaming-parser/lib/MicrodataRdfParser.js';
 import {RdfaParser} from 'rdfa-streaming-parser/lib/RdfaParser.js';
 import rdf from 'rdf-ext';
-import {Dataset} from '@rdfjs/types';
+import type {Dataset} from '@rdfjs/types';
 import {file} from '../src/test-utils.js';
 
 const validator = await ShaclValidator.fromUrl('../../requirements/shacl.ttl');

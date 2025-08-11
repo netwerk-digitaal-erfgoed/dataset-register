@@ -1,13 +1,13 @@
-import {
+import type {
   AllowedRegistrationDomainStore,
   Registration,
   RegistrationStore,
-} from './registration.js';
-import {URL} from 'url';
-import {DatasetStore} from './dataset.js';
-import fs from 'fs';
+} from './registration.ts';
+import {URL} from 'node:url';
+import type {DatasetStore} from './dataset.ts';
+import fs from 'node:fs';
 import DatasetExt from 'rdf-ext/lib/Dataset.js';
-import {Rating, RatingStore} from './rate.js';
+import type {Rating, RatingStore} from './rate.ts';
 
 export class MockRegistrationStore implements RegistrationStore {
   private readonly registrations: Map<URL, Registration> = new Map();

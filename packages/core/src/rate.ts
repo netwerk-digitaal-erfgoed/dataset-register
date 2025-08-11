@@ -1,6 +1,7 @@
-import {shacl, Valid} from './validator.js';
-import {dcat, dct} from './query.js';
-import {NamedNode} from '@rdfjs/types';
+import {shacl} from './validator.ts';
+import type {Valid} from './validator.ts';
+import {dcat, dct} from './query.ts';
+import type {NamedNode} from '@rdfjs/types';
 
 // If at least one of the properties in the map’s key is missing (e.g. either created or issued), apply the penalty
 // specified in the map’s value (e.g. 10) is applied.
@@ -55,21 +56,30 @@ export function rate(validationResult: Valid): Rating {
 }
 
 export class Penalty {
-  public constructor(
-    public readonly path: string,
-    public readonly score: number,
-  ) {}
+  public readonly path: string;
+  public readonly score: number;
+
+  public constructor(path: string, score: number) {
+    this.path = path;
+    this.score = score;
+  }
 }
 
 export class Rating {
   public readonly score: number;
   public readonly explanation: string;
+  readonly penalties: Penalty[];
+  public readonly worstRating: number;
+  public readonly bestRating: number;
 
   public constructor(
-    readonly penalties: Penalty[],
-    public readonly worstRating: number,
-    public readonly bestRating = 100,
+    penalties: Penalty[],
+    worstRating: number,
+    bestRating = 100,
   ) {
+    this.penalties = penalties;
+    this.worstRating = worstRating;
+    this.bestRating = bestRating;
     this.score = penalties.reduce(
       (score, penalty) => score - penalty.score,
       100,

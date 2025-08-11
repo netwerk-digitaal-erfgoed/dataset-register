@@ -1,11 +1,11 @@
 import rdf from 'rdf-ext';
-import {URL} from 'url';
-import {datasetType} from './query.js';
-import {Readable, Transform} from 'stream';
+import {URL} from 'node:url';
+import {datasetType} from './query.ts';
+import {Readable, Transform} from 'node:stream';
 import {DataFactory, StreamParser} from 'n3';
 import {JsonLdParser} from 'jsonld-streaming-parser';
-import {StandardizeSchemaOrgPrefixToHttps} from './transform.js';
-import {DatasetCore} from '@rdfjs/types';
+import {StandardizeSchemaOrgPrefixToHttps} from './transform.ts';
+import type {DatasetCore} from '@rdfjs/types';
 
 export interface DatasetStore {
   /**

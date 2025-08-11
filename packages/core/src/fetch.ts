@@ -1,18 +1,21 @@
 import {QueryEngine} from '@comunica/query-sparql';
 import factory from 'rdf-ext';
-import {URL} from 'url';
-import {constructQuery, dcat, rdf} from './query.js';
-import {pipeline} from 'stream';
-import {StandardizeSchemaOrgPrefixToHttps} from './transform.js';
+import {URL} from 'node:url';
+import {constructQuery, dcat, rdf} from './query.ts';
+import {pipeline} from 'node:stream';
+import {StandardizeSchemaOrgPrefixToHttps} from './transform.ts';
 import {rdfDereferencer} from 'rdf-dereference';
 import type DatasetExt from 'rdf-ext/lib/Dataset.js';
 
 export class HttpError extends Error {
+  public readonly statusCode: number;
+
   constructor(
     message: string,
-    public readonly statusCode: number,
+    statusCode: number,
   ) {
     super(message);
+    this.statusCode = statusCode;
   }
 }
 

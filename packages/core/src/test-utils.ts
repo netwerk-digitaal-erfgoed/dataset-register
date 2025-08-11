@@ -1,5 +1,5 @@
-import { fileURLToPath } from 'url';
-import { join, dirname } from 'path';
+import { fileURLToPath } from 'node:url';
+import { join, dirname } from 'node:path';
 import { readFile } from 'fs/promises';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -15,4 +15,4 @@ export {
   MockAllowedRegistrationDomainStore,
   MockDatasetStore,
   MockRatingStore,
-} from './mock.js';
+} from './mock.ts';

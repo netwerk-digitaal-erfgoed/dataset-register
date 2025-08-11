@@ -23,7 +23,7 @@ import fastifyCors from '@fastify/cors';
 import acceptsSerializer from '@fastify/accepts-serializer';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import {registrationsCounter, validationsCounter} from '@dataset-register/core';
-import {DatasetCore} from '@rdfjs/types';
+import type {DatasetCore} from '@rdfjs/types';
 import { Readable } from 'node:stream';
 import { dirname } from 'node:path';
 

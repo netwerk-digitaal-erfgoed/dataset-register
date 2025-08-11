@@ -1,6 +1,6 @@
 import factory from 'rdf-ext';
-import {convertToIri, convertToXsdDate, normalizeLicense} from './literal.js';
-import {NamedNode} from '@rdfjs/types';
+import {convertToIri, convertToXsdDate, normalizeLicense} from './literal.ts';
+import type {NamedNode} from '@rdfjs/types';
 
 const dataset = 'dataset';
 const identifier = 'identifier';
