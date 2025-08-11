@@ -1,18 +1,21 @@
-import {URL} from 'url';
+import {URL} from 'node:url';
 
 export class Registration {
   private _dateRead?: Date;
   private _statusCode?: number;
   private _datasets: URL[] = [];
+  public readonly url: URL;
+  public readonly datePosted: Date;
+  /**
+   * If the Registration has become invalid, the date at which it did so.
+   */
+  public readonly validUntil?: Date;
 
-  constructor(
-    public readonly url: URL,
-    public readonly datePosted: Date,
-    /**
-     * If the Registration has become invalid, the date at which it did so.
-     */
-    public readonly validUntil?: Date,
-  ) {}
+  constructor(url: URL, datePosted: Date, validUntil?: Date) {
+    this.url = url;
+    this.datePosted = datePosted;
+    this.validUntil = validUntil;
+  }
 
   /**
    * Mark the Registration as read at a date.

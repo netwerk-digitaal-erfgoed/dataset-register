@@ -4,7 +4,7 @@ import nock from 'nock';
 import {dcat, dct, foaf, rdf} from '../src/query.js';
 import factory from 'rdf-ext';
 import {file} from '../src/test-utils.js';
-import {BlankNode} from '@rdfjs/types';
+import type {BlankNode} from '@rdfjs/types';
 import type DatasetExt from 'rdf-ext/lib/Dataset.js';
 import {rdfDereferencer} from 'rdf-dereference';
 import {pipeline} from 'stream';

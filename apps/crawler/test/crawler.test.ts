@@ -11,7 +11,7 @@ import nock from 'nock';
 import pino from 'pino';
 import {Validator} from '@dataset-register/core';
 import factory from 'rdf-ext';
-import {DatasetCore} from '@rdfjs/types';
+import type {DatasetCore} from '@rdfjs/types';
 
 let registrationStore: MockRegistrationStore;
 let crawler: Crawler;

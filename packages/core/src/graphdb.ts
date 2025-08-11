@@ -3,15 +3,17 @@ import factory from 'rdf-ext';
 import {URL} from 'url';
 import querystring from 'querystring';
 import {Writer} from 'n3';
-import {
+import {Registration} from './registration.ts';
+import type {
   AllowedRegistrationDomainStore,
-  Registration,
   RegistrationStore,
-} from './registration.js';
-import {DatasetStore, extractIri} from './dataset.js';
-import {Rating, RatingStore} from './rate.js';
+} from './registration.ts';
+import {extractIri} from './dataset.ts';
+import type {DatasetStore} from './dataset.ts';
+import {Rating} from './rate.ts';
+import type {RatingStore} from './rate.ts';
 import http from 'node:http';
-import {DatasetCore, Quad, Quad_Object, Quad_Predicate} from '@rdfjs/types';
+import type {DatasetCore, Quad, Quad_Object, Quad_Predicate} from '@rdfjs/types';
 
 export type SparqlResult = {
   results: {
@@ -34,11 +36,13 @@ export class GraphDbClient {
   private password?: string;
   private agent = new http.Agent({keepAlive: false});
 
-  constructor(
-    private url: string,
-    private repository: string,
-  ) {
-    // Doesn't work with authentication: see https://github.com/Ontotext-AD/graphdb.js/issues/123
+  private url: string;
+  private repository: string;
+
+  constructor(url: string, repository: string) {
+    this.url = url;
+    this.repository = repository;
+    // Doesn't work with authentication: see https://github.com/Ontotext-AD/graphdb.ts/issues/123
     // const config = new graphdb.repository.RepositoryClientConfig()
     //   .setEndpoints([url])
     //   .setUsername(username)
@@ -154,7 +158,11 @@ export class GraphDbRegistrationStore implements RegistrationStore {
   private readonly registrationsGraph =
     'https://demo.netwerkdigitaalerfgoed.nl/registry/registrations';
 
-  constructor(private client: GraphDbClient) {}
+  private client: GraphDbClient;
+
+  constructor(client: GraphDbClient) {
+    this.client = client;
+  }
 
   async store(registration: Registration): Promise<void> {
     const quads = [
@@ -318,10 +326,16 @@ export class GraphDbRegistrationStore implements RegistrationStore {
 export class GraphDbAllowedRegistrationDomainStore
   implements AllowedRegistrationDomainStore
 {
+  private readonly client: GraphDbClient;
+  private readonly allowedDomainNamesGraph: string;
+
   constructor(
-    private readonly client: GraphDbClient,
-    private readonly allowedDomainNamesGraph = 'https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names',
-  ) {}
+    client: GraphDbClient,
+    allowedDomainNamesGraph = 'https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names',
+  ) {
+    this.client = client;
+    this.allowedDomainNamesGraph = allowedDomainNamesGraph;
+  }
 
   async contains(...domainNames: Array<string>) {
     const result = await this.client.query(`
@@ -339,7 +353,11 @@ export class GraphDbAllowedRegistrationDomainStore
 }
 
 export class GraphDbDatasetStore implements DatasetStore {
-  constructor(private readonly client: GraphDbClient) {}
+  private readonly client: GraphDbClient;
+
+  constructor(client: GraphDbClient) {
+    this.client = client;
+  }
 
   public async countDatasets(): Promise<number> {
     const result = await this.client.query(`
@@ -409,7 +427,11 @@ export class GraphDbRatingStore implements RatingStore {
   private readonly graph =
     'https://data.netwerkdigitaalerfgoed.nl/registry/ratings';
 
-  constructor(private readonly client: GraphDbClient) {}
+  private readonly client: GraphDbClient;
+
+  constructor(client: GraphDbClient) {
+    this.client = client;
+  }
   async store(datasetUri: URL, rating: Rating): Promise<void> {
     await this.client.update(`
       PREFIX schema: <http://schema.org/>

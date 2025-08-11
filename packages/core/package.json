@@ -3,23 +3,20 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./src/index.ts",
+  "types": "./src/index.d.ts",
   "exports": {
-    "./package.json": "./package.json",
     ".": {
-      "development": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
     },
     "./test-utils": {
-      "development": "./src/test-utils.ts",
-      "types": "./dist/test-utils.d.ts",
-      "import": "./dist/test-utils.js",
-      "default": "./dist/test-utils.js"
-    }
+      "types": "./src/test-utils.ts",
+      "import": "./src/test-utils.ts",
+      "default": "./src/test-utils.ts"
+    },
+    "./package.json": "./package.json"
   },
   "dependencies": {
     "@comunica/query-sparql": "^4.0.2",

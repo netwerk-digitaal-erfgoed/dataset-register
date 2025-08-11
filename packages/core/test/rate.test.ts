@@ -1,5 +1,5 @@
 import {rate} from '../src/rate.js';
-import {Valid} from '../src/validator.js';
+import type {Valid} from '../src/validator.js';
 import {validate} from './validator.test.js';
 
 describe('Rate', () => {

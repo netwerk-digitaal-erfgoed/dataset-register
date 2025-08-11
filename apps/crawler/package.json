@@ -15,11 +15,12 @@
         "options": {
           "platform": "node",
           "outputPath": "apps/crawler/dist",
-          "bundle": false,
+          "bundle": true,
           "format": [
             "esm"
           ],
           "main": "apps/crawler/src/main.ts",
+          "declarationRootDir": "apps/crawler/src",
           "tsConfig": "apps/crawler/tsconfig.app.json",
           "assets": [
             "requirements/shacl.ttl"

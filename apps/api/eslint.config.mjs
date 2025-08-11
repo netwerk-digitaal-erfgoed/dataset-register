@@ -12,6 +12,9 @@ export default [
             '{projectRoot}/eslint.config.{js,cjs,mjs}',
             '{projectRoot}/vite.config.{js,ts,mjs,mts}',
           ],
+          ignoredDependencies: [
+            '@dataset-register/core'
+          ],
         },
       ],
     },
