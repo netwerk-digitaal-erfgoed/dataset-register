@@ -92,7 +92,16 @@ reg:OrganizationShape
         reg:OrganizationNameProperty,
         # TODO
         # Recommended properties
-        reg:SchemaAlternateNameProperty ,
+        [
+            sh:path schema:alternateName ;
+            sh:or (
+                [ sh:datatype xsd:string ]
+                [ sh:datatype rdf:langString ]
+            ) ;
+            sh:uniqueLang true ;
+            sh:name "Alternatieve naam van de organisatie"@nl, "Alternative name of the organization"@en ;
+            sh:message "Een organisatie kan één of meer alternatieve namen hebben; maximaal 1 per taal"@nl, "An organization can have one or more alternative names; at most one per language"@en ;
+        ] ,
         # TODO
         # reg:SchemaSameAsProperty ;
         [
@@ -236,7 +245,7 @@ reg:SchemaAlternateNameProperty a sh:PropertyShape ;
     ) ;
     sh:uniqueLang true ;
     sh:name "Alternatieve naam van de dataset"@nl, "Alternative name of the dataset"@en ;
-    sh:message "Een datasetbeschrijving kan meerdere alternatieve naam te bevatten"@nl, "A dataset description can contain multiple alternative names"@en ;
+    sh:message "Een datasetbeschrijving kan één of meer alternatieve namen hebben"@nl, "A dataset description can have one or more alternative names"@en ;
 .
 
 reg:SchemaDescriptionProperty a sh:PropertyShape ;

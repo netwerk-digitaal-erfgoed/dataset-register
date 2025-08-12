@@ -4,8 +4,9 @@ import {
   GraphDbClient,
   GraphDbDatasetStore,
   GraphDbRatingStore,
-  GraphDbRegistrationStore, readUrl,
-  ShaclValidator
+  GraphDbRegistrationStore,
+  readUrl,
+  ShaclEngineValidator
 } from '@dataset-register/core';
 import pino from 'pino';
 
@@ -27,7 +28,7 @@ const registrationStore = new GraphDbRegistrationStore(client);
 const datasetStore = new GraphDbDatasetStore(client);
 const ratingStore = new GraphDbRatingStore(client);
 const logger = pino();
-const validator = new ShaclValidator(shacl);
+const validator = new ShaclEngineValidator(shacl);
 
 const crawler = new Crawler(
   registrationStore,

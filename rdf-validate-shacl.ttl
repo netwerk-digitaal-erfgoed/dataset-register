@@ -1,0 +1,75 @@
+_:c14n0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/shacl#ValidationResult> .
+_:c14n0 <http://www.w3.org/ns/shacl#focusNode> <https://data.example.org/id/dataset/test-alternate-names> .
+_:c14n0 <http://www.w3.org/ns/shacl#resultMessage> "A dataset description should have a creator"@en .
+_:c14n0 <http://www.w3.org/ns/shacl#resultMessage> "Een datasetbeschrijving dient een maker te bevatten"@nl .
+_:c14n0 <http://www.w3.org/ns/shacl#resultPath> <https://schema.org/creator> .
+_:c14n0 <http://www.w3.org/ns/shacl#resultSeverity> <http://www.w3.org/ns/shacl#Warning> .
+_:c14n0 <http://www.w3.org/ns/shacl#sourceConstraintComponent> <http://www.w3.org/ns/shacl#OrConstraintComponent> .
+_:c14n0 <http://www.w3.org/ns/shacl#sourceShape> <http://terms.netwerkdigitaalerfgoed.nl/ns/register#SchemaCreatorProperty> .
+_:c14n0 <http://www.w3.org/ns/shacl#value> <https://example.org/organization/kb> .
+_:c14n1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/shacl#ValidationResult> .
+_:c14n1 <http://www.w3.org/ns/shacl#focusNode> <https://data.example.org/id/dataset/test-alternate-names> .
+_:c14n1 <http://www.w3.org/ns/shacl#resultMessage> "A publisher must be specified"@en .
+_:c14n1 <http://www.w3.org/ns/shacl#resultMessage> "Er moet een uitgever gespecificeerd zijn"@nl .
+_:c14n1 <http://www.w3.org/ns/shacl#resultPath> <https://schema.org/publisher> .
+_:c14n1 <http://www.w3.org/ns/shacl#resultSeverity> <http://www.w3.org/ns/shacl#Warning> .
+_:c14n1 <http://www.w3.org/ns/shacl#sourceConstraintComponent> <http://www.w3.org/ns/shacl#MinCountConstraintComponent> .
+_:c14n1 <http://www.w3.org/ns/shacl#sourceShape> <http://terms.netwerkdigitaalerfgoed.nl/ns/register#SchemaPublisherProperty> .
+_:c14n2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/shacl#ValidationResult> .
+_:c14n2 <http://www.w3.org/ns/shacl#focusNode> <https://data.example.org/id/dataset/test-alternate-names> .
+_:c14n2 <http://www.w3.org/ns/shacl#resultMessage> "Kan een beschrijving hebben"@nl .
+_:c14n2 <http://www.w3.org/ns/shacl#resultMessage> "Should have a description"@en .
+_:c14n2 <http://www.w3.org/ns/shacl#resultPath> <https://schema.org/description> .
+_:c14n2 <http://www.w3.org/ns/shacl#resultSeverity> <http://www.w3.org/ns/shacl#Info> .
+_:c14n2 <http://www.w3.org/ns/shacl#sourceConstraintComponent> <http://www.w3.org/ns/shacl#MinCountConstraintComponent> .
+_:c14n2 <http://www.w3.org/ns/shacl#sourceShape> <http://terms.netwerkdigitaalerfgoed.nl/ns/register#SchemaDescriptionPropertyShouldExist> .
+_:c14n3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/shacl#ValidationResult> .
+_:c14n3 <http://www.w3.org/ns/shacl#focusNode> <https://data.example.org/id/dataset/test-alternate-names> .
+_:c14n3 <http://www.w3.org/ns/shacl#resultMessage> "A dataset description may contain genres"@en .
+_:c14n3 <http://www.w3.org/ns/shacl#resultMessage> "Een datasetbeschrijving kan genres bevatten"@nl .
+_:c14n3 <http://www.w3.org/ns/shacl#resultPath> <https://schema.org/genre> .
+_:c14n3 <http://www.w3.org/ns/shacl#resultSeverity> <http://www.w3.org/ns/shacl#Info> .
+_:c14n3 <http://www.w3.org/ns/shacl#sourceConstraintComponent> <http://www.w3.org/ns/shacl#MinCountConstraintComponent> .
+_:c14n3 <http://www.w3.org/ns/shacl#sourceShape> <http://terms.netwerkdigitaalerfgoed.nl/ns/register#SchemaGenreProperty> .
+_:c14n4 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/shacl#ValidationReport> .
+_:c14n4 <http://www.w3.org/ns/shacl#conforms> "false"^^<http://www.w3.org/2001/XMLSchema#boolean> .
+_:c14n4 <http://www.w3.org/ns/shacl#result> _:c14n0 .
+_:c14n4 <http://www.w3.org/ns/shacl#result> _:c14n1 .
+_:c14n4 <http://www.w3.org/ns/shacl#result> _:c14n2 .
+_:c14n4 <http://www.w3.org/ns/shacl#result> _:c14n3 .
+_:c14n4 <http://www.w3.org/ns/shacl#result> _:c14n5 .
+_:c14n4 <http://www.w3.org/ns/shacl#result> _:c14n6 .
+_:c14n4 <http://www.w3.org/ns/shacl#result> _:c14n7 .
+_:c14n4 <http://www.w3.org/ns/shacl#result> _:c14n8 .
+_:c14n5 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/shacl#ValidationResult> .
+_:c14n5 <http://www.w3.org/ns/shacl#focusNode> <https://data.example.org/id/dataset/test-alternate-names> .
+_:c14n5 <http://www.w3.org/ns/shacl#resultMessage> "A dataset description may contain spatial coverage"@en .
+_:c14n5 <http://www.w3.org/ns/shacl#resultMessage> "Een datasetbeschrijving kan een gebiedsaanduidingen bevatten"@nl .
+_:c14n5 <http://www.w3.org/ns/shacl#resultPath> <https://schema.org/spatialCoverage> .
+_:c14n5 <http://www.w3.org/ns/shacl#resultSeverity> <http://www.w3.org/ns/shacl#Info> .
+_:c14n5 <http://www.w3.org/ns/shacl#sourceConstraintComponent> <http://www.w3.org/ns/shacl#MinCountConstraintComponent> .
+_:c14n5 <http://www.w3.org/ns/shacl#sourceShape> <http://terms.netwerkdigitaalerfgoed.nl/ns/register#SchemaSpatialCoverageProperty> .
+_:c14n6 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/shacl#ValidationResult> .
+_:c14n6 <http://www.w3.org/ns/shacl#focusNode> _:c14n9 .
+_:c14n6 <http://www.w3.org/ns/shacl#resultMessage> "Kan een beschrijving hebben"@nl .
+_:c14n6 <http://www.w3.org/ns/shacl#resultMessage> "Should have a description"@en .
+_:c14n6 <http://www.w3.org/ns/shacl#resultPath> <https://schema.org/description> .
+_:c14n6 <http://www.w3.org/ns/shacl#resultSeverity> <http://www.w3.org/ns/shacl#Info> .
+_:c14n6 <http://www.w3.org/ns/shacl#sourceConstraintComponent> <http://www.w3.org/ns/shacl#MinCountConstraintComponent> .
+_:c14n6 <http://www.w3.org/ns/shacl#sourceShape> <http://terms.netwerkdigitaalerfgoed.nl/ns/register#SchemaDescriptionPropertyShouldExist> .
+_:c14n7 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/shacl#ValidationResult> .
+_:c14n7 <http://www.w3.org/ns/shacl#focusNode> <https://data.example.org/id/dataset/test-alternate-names> .
+_:c14n7 <http://www.w3.org/ns/shacl#resultMessage> "A dataset description may contain temporal coverage"@en .
+_:c14n7 <http://www.w3.org/ns/shacl#resultMessage> "Een datasetbeschrijving kan tijdsaanduidingen bevatten"@nl .
+_:c14n7 <http://www.w3.org/ns/shacl#resultPath> <https://schema.org/temporalCoverage> .
+_:c14n7 <http://www.w3.org/ns/shacl#resultSeverity> <http://www.w3.org/ns/shacl#Info> .
+_:c14n7 <http://www.w3.org/ns/shacl#sourceConstraintComponent> <http://www.w3.org/ns/shacl#MinCountConstraintComponent> .
+_:c14n7 <http://www.w3.org/ns/shacl#sourceShape> <http://terms.netwerkdigitaalerfgoed.nl/ns/register#SchemaTemporalCoverageProperty> .
+_:c14n8 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/shacl#ValidationResult> .
+_:c14n8 <http://www.w3.org/ns/shacl#focusNode> <https://data.example.org/id/dataset/test-alternate-names> .
+_:c14n8 <http://www.w3.org/ns/shacl#resultMessage> "A dataset description may contain keywords"@en .
+_:c14n8 <http://www.w3.org/ns/shacl#resultMessage> "Een datasetbeschrijving kan trefwoorden bevatten"@nl .
+_:c14n8 <http://www.w3.org/ns/shacl#resultPath> <https://schema.org/keywords> .
+_:c14n8 <http://www.w3.org/ns/shacl#resultSeverity> <http://www.w3.org/ns/shacl#Info> .
+_:c14n8 <http://www.w3.org/ns/shacl#sourceConstraintComponent> <http://www.w3.org/ns/shacl#MinCountConstraintComponent> .
+_:c14n8 <http://www.w3.org/ns/shacl#sourceShape> <http://terms.netwerkdigitaalerfgoed.nl/ns/register#SchemaKeywordsProperty> .

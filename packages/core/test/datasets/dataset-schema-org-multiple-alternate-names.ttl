@@ -1,0 +1,20 @@
+@prefix schema: <https://schema.org/> .
+
+<https://data.example.org/id/dataset/test-alternate-names>
+    a schema:Dataset ;
+    schema:name "Test" ;
+    schema:license <http://creativecommons.org/publicdomain/zero/1.0/> ;
+    schema:creator <https://example.org/organization/kb> ;
+    schema:publisher <https://example.org/organization/kb> ;
+    schema:distribution [
+        a schema:DataDownload ;
+        schema:encodingFormat "application/ld+json" ;
+        schema:contentUrl <https://data.example.org/test-data.jsonld>
+    ] .
+
+<https://example.org/organization/kb>
+    a schema:Organization ;
+    schema:name "Organisation with duplicate alternateNames" ;
+    schema:alternateName "Koninklijke Bibliotheek (Den Haag)"@nl ;
+    schema:alternateName "KB (Den Haag)"@nl ;
+    schema:alternateName "KB (The Hague)"@en .
