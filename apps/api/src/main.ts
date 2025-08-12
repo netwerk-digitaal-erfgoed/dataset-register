@@ -4,7 +4,7 @@ import {
   GraphDbDatasetStore,
   GraphDbRegistrationStore,
   readUrl,
-  ShaclValidator,
+  ShaclEngineValidator,
   startInstrumentation
 } from '@dataset-register/core';
 import { server } from './server.js';
@@ -27,7 +27,7 @@ await (async () => {
     new GraphDbAllowedRegistrationDomainStore(client);
   startInstrumentation(datasetStore);
   const shacl = await readUrl('requirements/shacl.ttl');
-  const validator = new ShaclValidator(shacl);
+  const validator = new ShaclEngineValidator(shacl);
 
   try {
     // Start web server.

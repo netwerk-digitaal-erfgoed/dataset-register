@@ -1,8 +1,11 @@
+/* eslint-disable-next-line @typescript-eslint/triple-slash-reference */
+/// <reference path="./shacl-engine.d.ts" />
+
 import factory from 'rdf-ext';
-import SHACLValidator from 'rdf-validate-shacl';
-import type {ValidationReport, ValidationResult as InnerValidationResult} from 'rdf-validate-shacl/src/validation-report.js';
-import {rdfDereferencer} from 'rdf-dereference';
-import type {Dataset, DatasetCore} from '@rdfjs/types';
+import { rdfDereferencer } from 'rdf-dereference';
+import type { Dataset, DatasetCore } from '@rdfjs/types';
+import { Validator as ShaclValidator } from 'shacl-engine';
+import type { ValidationReport, ValidationResult as ShaclValidationResult } from 'shacl-engine';
 
 export interface Validator {
   /**
@@ -11,15 +14,20 @@ export interface Validator {
   validate(datasets: DatasetCore): Promise<ValidationResult>;
 }
 
-export class ShaclValidator implements Validator {
-  private inner: SHACLValidator;
-
-  public static async fromUrl(url: string): Promise<ShaclValidator> {
-    return new this(await readUrl(url));
-  }
+/**
+ * Use shacl-engine instead of rdf-validate-shacl because it:
+ * - supports detailed results for sh:node shapes nested in sh:or clauses;
+ * - performs better.
+ */
+export class ShaclEngineValidator implements Validator {
+  private inner: ShaclValidator;
 
   public constructor(dataset: DatasetCore) {
-    this.inner = new SHACLValidator(dataset, {});
+    this.inner = new ShaclValidator(dataset, { factory, details: true });
+  }
+
+  public static async fromUrl(url: string): Promise<ShaclEngineValidator> {
+    return new this(await readUrl(url));
   }
 
   public async validate(dataset: Dataset): Promise<ValidationResult> {
@@ -35,14 +43,12 @@ export class ShaclValidator implements Validator {
       return {state: 'no-dataset'};
     }
 
-    const queryResultValidationReport = this.inner.validate(dataset);
-    const state = hasViolation(queryResultValidationReport)
-      ? 'invalid'
-      : 'valid';
+    const report = await this.inner.validate({ dataset });
+    const state = hasViolation(report) ? 'invalid' : 'valid';
 
     return {
-      state: state,
-      errors: queryResultValidationReport.dataset,
+      state,
+      errors: report.dataset,
     };
   }
 }
@@ -82,10 +88,10 @@ const hasViolation = (report: ValidationReport) =>
   report.results.some((result) => resultIsViolation(result));
 
 const resultIsViolation = (
-  result: InnerValidationResult,
+  result: ShaclValidationResult,
 ): boolean => {
   return (
     result.severity?.value === shacl('Violation').value ||
-    result.detail?.some((detail) => resultIsViolation(detail))
+    (result.results.some((nestedResult) => resultIsViolation(nestedResult)))
   );
 };

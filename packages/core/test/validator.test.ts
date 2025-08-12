@@ -1,5 +1,5 @@
 import {JsonLdParser} from 'jsonld-streaming-parser';
-import {InvalidDataset, shacl, ShaclValidator, Valid} from '../src/validator.js';
+import {InvalidDataset, shacl, ShaclEngineValidator, Valid} from '../src/validator.js';
 import {StreamParser} from 'n3';
 import {Transform} from 'stream';
 import {StandardizeSchemaOrgPrefixToHttps} from '../src/transform.js';
@@ -9,7 +9,7 @@ import rdf from 'rdf-ext';
 import type {Dataset} from '@rdfjs/types';
 import {file} from '../src/test-utils.js';
 
-const validator = await ShaclValidator.fromUrl('../../requirements/shacl.ttl');
+const validator = await ShaclEngineValidator.fromUrl('../../requirements/shacl.ttl');
 
 describe('Validator', () => {
   it('accepts minimal valid Schema.org dataset', async () => {
@@ -166,6 +166,16 @@ describe('Validator', () => {
     const report = await validate('dataset-invalid-no-http-iri.jsonld');
     expect(report.state).toEqual('no-dataset');
   });
+
+  it('reports nested violations', async () => {
+    const report = (await validate(
+      'dataset-schema-org-multiple-alternate-names.ttl',
+      new StreamParser(),
+    )) as InvalidDataset;
+
+    // Once for creator and once for publisher.
+    expectViolations(report, ['https://schema.org/alternateName'], 2);
+  });
 });
 
 export const validate = async (filename: string, parser?: Transform) =>
@@ -186,13 +196,15 @@ const dataset = async (filename: string, parser?: Transform) => {
 const expectViolations = (
   report: InvalidDataset | Valid,
   violationPaths: string[],
+  number = 1
 ) =>
-  violationPaths.forEach(violationPath =>
-    expect(
-      report.errors.match(
+  violationPaths.forEach(violationPath => {
+      const violations = report.errors.match(
         null,
         shacl('resultPath'),
         rdf.namedNode(violationPath),
-      ).size,
-    ).toEqual(1),
+      );
+
+      expect(violations.size).toEqual(number);
+    }
   );

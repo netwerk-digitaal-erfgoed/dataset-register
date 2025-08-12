@@ -2,7 +2,7 @@ import nock from 'nock';
 import {FastifyInstance} from 'fastify';
 import {Server} from 'http';
 import {server} from '../src/server.js';
-import {readUrl, ShaclValidator} from '@dataset-register/core';
+import {readUrl, ShaclEngineValidator} from '@dataset-register/core';
 import {
   file,
   MockAllowedRegistrationDomainStore,
@@ -21,7 +21,7 @@ describe('Server', () => {
       new MockDatasetStore(),
       registrationStore,
       new MockAllowedRegistrationDomainStore(),
-      new ShaclValidator(shacl),
+      new ShaclEngineValidator(shacl),
       shacl,
       '/',
       {logger: true},
