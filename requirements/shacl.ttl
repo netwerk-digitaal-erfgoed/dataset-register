@@ -85,6 +85,7 @@ reg:DistributionShape
 
 reg:OrganizationShape
     a sh:NodeShape ;
+    sh:class schema:Organization ;
     sh:nodeKind sh:IRI ;
     sh:pattern "^https?://" ;
     sh:property
@@ -98,9 +99,13 @@ reg:OrganizationShape
                 [ sh:datatype xsd:string ]
                 [ sh:datatype rdf:langString ]
             ) ;
-            sh:uniqueLang true ;
             sh:name "Alternatieve naam van de organisatie"@nl, "Alternative name of the organization"@en ;
             sh:message "Een organisatie kan één of meer alternatieve namen hebben; maximaal 1 per taal"@nl, "An organization can have one or more alternative names; at most one per language"@en ;
+        ] ,
+        [
+            sh:path schema:alternateName ;
+            sh:uniqueLang true ;
+            sh:severity sh:Warning ;
         ] ,
         # TODO
         # reg:SchemaSameAsProperty ;
@@ -128,6 +133,7 @@ reg:OrganizationShape
 
 reg:PersonShape
     a sh:NodeShape ;
+    sh:class schema:Person ;
     sh:nodeKind sh:IRI ;
     sh:pattern "^https?://" ;
     sh:property [
@@ -294,11 +300,9 @@ reg:SchemaCreatorProperty a sh:PropertyShape ;
     sh:minCount 0 ;
     sh:or (
         [
-            sh:class schema:Organization ;
             sh:node reg:OrganizationShape ;
         ]
         [
-            sh:class schema:Person ;
             sh:node reg:PersonShape ;
         ]
     ) ;
@@ -315,11 +319,9 @@ reg:SchemaPublisherProperty a sh:PropertyShape ;
     sh:message "Er moet een uitgever gespecificeerd zijn"@nl, "A publisher must be specified"@en ;
     sh:or (
         [
-            sh:class schema:Organization ;
             sh:node reg:OrganizationShape ;
         ]
         [
-            sh:class schema:Person ;
             sh:node reg:PersonShape ;
         ]
     ) ;
