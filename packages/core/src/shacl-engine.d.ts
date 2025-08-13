@@ -1,5 +1,5 @@
 declare module 'shacl-engine' {
-  import type { DatasetCore } from '@rdfjs/types';
+  import type { DatasetCore, NamedNode } from '@rdfjs/types';
 
   export interface ValidatorOptions {
     factory?: unknown;
@@ -7,9 +7,8 @@ declare module 'shacl-engine' {
   }
 
   export interface ValidationResult {
-    severity?: {
-      value: string;
-    };
+    severity: NamedNode;
+    constraintComponent: NamedNode;
     results: ValidationResult[];
   }
 

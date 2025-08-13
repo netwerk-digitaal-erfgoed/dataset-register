@@ -173,8 +173,15 @@ describe('Validator', () => {
       new StreamParser(),
     )) as InvalidDataset;
 
+    expect(report.state).toEqual('valid');
+
     // Once for creator and once for publisher.
     expectViolations(report, ['https://schema.org/alternateName'], 2);
+  });
+
+  it('reports missing class', async () => {
+    const report = await validate('dataset-schema-missing-publisher-class.ttl', new StreamParser());
+    expect(report.state).toEqual('invalid');
   });
 });
 
