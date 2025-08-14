@@ -26,8 +26,9 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: spec-prod-result-requirements
+          path: requirements/
 
-      - name: Deploy to requirements-datasets GitHub Pages
+      - name: Deploy to docs.nde.nl
         uses: peaceiris/actions-gh-pages@v4
         with:
           external_repository: netwerk-digitaal-erfgoed/netwerk-digitaal-erfgoed.github.io
