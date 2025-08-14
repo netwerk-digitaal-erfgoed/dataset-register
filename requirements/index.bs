@@ -1052,3 +1052,4 @@ The [[SHACL]] shape graph used to validate datasets and catalogs is available at
 
 Google’s [Rich Results Test](https://search.google.com/test/rich-results) (previously Structured Data Testing Tool)
 can help with testing RDF metadata in general.
+
