@@ -26,12 +26,12 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: spec-prod-result-requirements
-          path: static/requirements-datasets/
 
       - name: Deploy to requirements-datasets GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           external_repository: netwerk-digitaal-erfgoed/netwerk-digitaal-erfgoed.github.io
           personal_token: ${{ secrets.DATASET_REGISTER_PUBLISH_REQUIREMENTS }}
-          publish_dir: ./static/requirements-datasets
+          publish_dir: requirements/
           publish_branch: main
+          destination_dir: static/requirements-datasets/
