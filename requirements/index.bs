@@ -242,6 +242,7 @@ See also [[DWBP-UCR#R-LicenseAvailable]].
 ### Creation, publication and modification dates ### {#dataset-date}
 
 Publishers *SHOULD* make known when the [=dataset description=] was originally created, published and when it was last updated.
+The dates *MUST* be valid according to [[!ISO8601]].
 
 <div class="example">
     Specify dataset description dates:
