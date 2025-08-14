@@ -36,3 +36,4 @@ jobs:
           publish_dir: requirements/
           publish_branch: main
           destination_dir: static/requirements-datasets/
+          exclude_assets: '.github,.gitignore,index.bs,Makefile'
