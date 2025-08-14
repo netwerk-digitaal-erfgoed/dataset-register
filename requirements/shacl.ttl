@@ -333,7 +333,7 @@ reg:SchemaDatasetLicenseProperty a sh:PropertyShape ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:name "Licentie die van toepassing is op de datasetbeschrijving"@nl, "License applicable to the dataset description"@en ;
-    sh:message "Een datasetbeschrijving dient een licentie te bevatten (in de vorm van een URI)"@nl, "A dataset description should have one license (in the form of a URL)"@en ;
+    sh:message "Een datasetbeschrijving moet één licentie hebben (in de vorm van een URI)"@nl, "A dataset description must have one license (in the form of a URI)"@en ;
 .
 
 reg:SchemaDistributionLicenseProperty a sh:PropertyShape ;
