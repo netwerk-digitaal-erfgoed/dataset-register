@@ -119,6 +119,11 @@ reg:OrganizationShape
                 sh:property [
                     sh:path schema:name ;
                     sh:minCount 1;
+                    sh:or (
+                      [ sh:datatype xsd:string ]
+                      [ sh:datatype rdf:langString ]
+                    ) ;
+                    sh:uniqueLang true ;
                     sh:message "ContactPoint moet een naam hebben"@nl, "ContactPoint must have a name"@en ;
                 ] ,
                 [
@@ -154,8 +159,9 @@ reg:DateTimeShape a sh:NodeShape ;
         [ sh:datatype xsd:dateTime ]
         [ sh:datatype xsd:date ]
     ) ;
+    sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
     sh:name "dateTime" ;
-    sh:message "Datum moet van het type schema:Date/xsd:date of schema:DateTime/xsd:dateTime zijn"@nl, "Date must be schema:Date/xsd:date or schema:dateTime/xsd:dateTime"@en ;
+    sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
     sh:severity sh:Warning ;
 .
 

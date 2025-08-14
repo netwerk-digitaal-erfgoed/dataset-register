@@ -58,8 +58,12 @@ describe('Validator', () => {
   });
 
   it('reports invalid Schema.org dataset', async () => {
-    const report = await validate('dataset-schema-org-invalid.jsonld');
+    const report = await validate('dataset-schema-org-invalid.jsonld') as InvalidDataset;
     expect(report.state).toBe('invalid');
+    expectViolations(report, ['https://schema.org/contentUrl']);
+    expectViolations(report, ['https://schema.org/dateCreated']);
+    expectViolations(report, ['https://schema.org/datePublished']);
+    expectViolations(report, ['https://schema.org/dateModified']);
   });
 
   it('accepts valid Schema.org dataset without publisher', async () => {
