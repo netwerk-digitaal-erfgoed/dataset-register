@@ -144,7 +144,10 @@ Schema.org is [[#examples|recommended]].
                 "@context": "https://schema.org/",
                 "@type": "Organization",
                 "@id": "https://www.kb.nl",
-                "name": "Koninklijke Bibliotheek"
+                "name": {
+                  "@value": "Koninklijke Bibliotheek",
+                  "@language": "nl"
+                }
               }
             </script>
           </head>
@@ -197,7 +200,16 @@ Publishers *MUST* include basic information about the dataset, at the very minim
           "@context": "https://schema.org/",
           "@type": "Dataset",
           "@id": "http://data.bibliotheken.nl/doc/dataset/rise-alba",
-          "name": "Alba amicorum van de Koninklijke Bibliotheek"
+          "name": [
+            {
+              "@value": "Alba amicorum van de Koninklijke Bibliotheek", 
+              "@language": "nl"
+            },
+            {
+              "@value": "Alba amicorum of the Dutch Royal Library",
+              "@language": "en"
+            }
+          ]
         }
     </pre>
 </div>
@@ -268,7 +280,10 @@ If more information is available, publishers *SHOULD* add it.
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
-          "description": "Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.",
+          "description": {
+            "@value": "Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.",
+            "@language": "nl"
+          },
           "url": "https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum",
           "keywords": [
             "alba amicorum"
@@ -299,8 +314,14 @@ Providing information about the person/organization behind the dataset answers u
         "@context": "https://schema.org/",
         "@type": "Organization",
         "@id": "https://www.kb.nl",
-        "name": "Koninklijke Bibliotheek",
-        "alternateName": "KB"
+        "name": {
+          "@value": "Koninklijke Bibliotheek",
+          "@language": "nl"
+        },
+        "alternateName": {
+          "@value": "KB",
+          "@language": "nl"
+        }
       }
     </pre>
 </div>
@@ -315,7 +336,10 @@ See [[#organization-overview]] for a full overview of organization attributes.
         "@context": "https://schema.org/",
         "@type": "Person",
         "@id": "https://example.com",
-        "name": "Jan Jansen"
+        "name": {
+            "@value": "Jan Jansen",
+            "@language": "nl"
+        }
       }
     </pre>
 </div>
@@ -346,7 +370,7 @@ The e-mail address *SHOULD* be an organizational or departmental address rather 
 <div class="example">
     A publisher with contact information.
 
-    <pre highlight=json-ld line-numbers line-highlight="9-14">
+    <pre highlight=json-ld line-numbers line-highlight="9-17">
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
@@ -357,7 +381,10 @@ The e-mail address *SHOULD* be an organizational or departmental address rather 
             "alternateName": "KB",
             "contactPoint": {
               "@type": "ContactPoint",
-              "name": "Datasets Department",
+              "name": {
+                "@value": "Datasets Department",
+                "@language": "en"
+              },
               "email": "datasets@kb.nl",
               "telephone": "+31 6 12345678"
             }
@@ -381,11 +408,20 @@ The person/organization data is then included as the dataset’s publisher:
             "@type": "Organization",
             "@id": "https://www.kb.nl",
             "identifier": "NL-HaKB"
-            "name": "Koninklijke Bibliotheek",
-            "alternateName": "KB",
+            "name": {
+                "@value": "Koninklijke Bibliotheek",
+                "language": "nl"
+            },
+            "alternateName": {
+                "@value": "KB",
+                "@language": "nl"
+            },
             "contactPoint": {
               "@type": "ContactPoint",
-              "name": "Datasets Department",
+              "name": {
+                "@value": "Datasets Department",
+                "@language": "en"
+              },
               "email": "datasets@kb.nl",
               "telephone": "+31 6 12345678"
             }
@@ -404,7 +440,10 @@ The person/organization data is then included as the dataset’s publisher:
           "publisher": {
             "@type": "Person",
             "@id": "https://example.com",
-            "name": "Jan Jansen"
+            "name": {
+              "@value": "Jan Jansen",
+              "@language": "nl"
+            }
           }
         }
     </pre>
@@ -565,12 +604,21 @@ which improves discoverability.
           "@context": "https://schema.org/",
           "@type": "DataCatalog",
           "@id": "http://data.bibliotheken.nl/id/datacatalog",
-          "name": "Linked Data KB",
-          "description": "Alle linked data zoals beschikbaar gesteld door de Koninklijke Bibliotheek.",
+          "name": {
+            "@value": "Linked Data van de KB",
+            "@language": "nl"
+          },
+          "description": {
+            "@value": "Alle linked data zoals beschikbaar gesteld door de Koninklijke Bibliotheek.",
+            "@language": "nl"
+          },
           "publisher": {
             "@type": "Organization",
             "@id": "https://www.kb.nl/",
-            "name": "Koninklijke Bibliotheek"
+            "name": {
+              "@value": "Koninklijke Bibliotheek",
+              "@language": "nl"
+            }
           },
           "dataset": [
             {
@@ -602,7 +650,7 @@ even if that resource is the same on all pages.
 <div class="example">
     A paginated catalog:
 
-    <pre highlight=json-ld line-numbers line-highlight="4,6,15-21">
+    <pre highlight=json-ld line-numbers line-highlight="4,6,16-23">
         {
           "@context": [
             "https://schema.org/",
@@ -610,12 +658,21 @@ even if that resource is the same on all pages.
           ],
           "@type": ["DataCatalog", "hydra:Collection"],
           "@id": "https://example.com/catalog",
-          "name": "Paginated catalog of datasets",
-          "description": "This catalog is paginated using the Hydra Core Vocabulary.",
+          "name": {
+            "@value": "Paginated catalog of datasets",
+            "@language": "en"
+          },
+          "description": {
+            "@value": "This catalog is paginated using the Hydra Core Vocabulary.",
+            "@language": "en"
+          },
           "publisher": {
             "@type": "Organization",
             "@id": "/publisher",
-            "name": "Example Publisher"
+            "name": {
+              "@value": "Example Publisher",
+              "@language": "en"
+            }
           },
           "hydra:view": {
             "@id": "/catalog?page=1",
