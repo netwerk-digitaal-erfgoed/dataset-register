@@ -340,7 +340,8 @@ See [[#organization-overview]] for a full overview of organization attributes.
 ### Contact information ### {#contact}
 
 Publishers *SHOULD* include contact information so [=consumers=] can reach them with questions or feedback.
-The e-mail address *SHOULD* be functional (i.e. non-personal) because of GDPR reasons. 
+If contact information is provided, it *MUST* include a name and e-mail address. 
+The e-mail address *SHOULD* be an organizational or departmental address rather than a personal one for GDPR compliance.
 
 <div class="example">
     A publisher with contact information.
