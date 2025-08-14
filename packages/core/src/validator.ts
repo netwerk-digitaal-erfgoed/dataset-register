@@ -6,6 +6,7 @@ import { rdfDereferencer } from 'rdf-dereference';
 import type { Dataset, DatasetCore } from '@rdfjs/types';
 import { Validator as ShaclValidator } from 'shacl-engine';
 import type { ValidationReport, ValidationResult as ShaclValidationResult } from 'shacl-engine';
+import DatasetExt from 'rdf-ext/lib/Dataset.js';
 
 export interface Validator {
   /**
@@ -74,7 +75,7 @@ type NoDataset = {
 
 export type InvalidDataset = {
   state: 'invalid';
-  errors: DatasetCore;
+  errors: DatasetExt;
 };
 
 export const shacl = (property: string) =>
