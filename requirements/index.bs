@@ -513,7 +513,7 @@ protocol which also types the distribution such as OAI-PMH, SPARQL and REST.
         </tr>
         <tr>
             <th scope="row">SPARQL</th>
-            <td>https://www.w3.org/TR/sparql11-query/</td>
+            <td>https://www.w3.org/TR/sparql11-protocol/</td>
         </tr>
         <tr>
             <th scope="row">TPF</th>
@@ -543,7 +543,7 @@ protocol which also types the distribution such as OAI-PMH, SPARQL and REST.
           "@type": "DataDownload",
           "encodingFormat": "application/sparql-results+json",
           "contentUrl": "http://vocab.getty.edu/sparql",
-          "usageInfo": [ "https://www.w3.org/TR/sparql11-query/", "https://vocab.getty.edu/" ]
+          "usageInfo": [ "https://www.w3.org/TR/sparql11-protocol/", "https://vocab.getty.edu/" ]
         }
     </pre>
 </div>
