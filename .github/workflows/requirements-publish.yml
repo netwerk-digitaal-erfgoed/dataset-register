@@ -23,10 +23,15 @@ jobs:
           VALIDATE_MARKUP: false
           SOURCE: requirements/index.bs
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: spec-prod-result
+          path: static/requirements-datasets/
+
       - name: Deploy to requirements-datasets GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
-          external_repository: netwerk-digitaal-erfgoed/requirements-datasets
+          external_repository: netwerk-digitaal-erfgoed/netwerk-digitaal-erfgoed.github.io
           personal_token: ${{ secrets.DATASET_REGISTER_PUBLISH_REQUIREMENTS }}
-          publish_dir: ./requirements
-          publish_branch: master
+          publish_dir: ./static/requirements-datasets
+          publish_branch: main
