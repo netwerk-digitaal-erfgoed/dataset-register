@@ -1,30 +1,12 @@
-import {
-  GraphDbAllowedRegistrationDomainStore,
-  GraphDbClient,
-  GraphDbDatasetStore,
-  GraphDbRegistrationStore,
-  readUrl,
-  ShaclEngineValidator,
-  startInstrumentation
-} from '@dataset-register/core';
+import { readUrl, ShaclEngineValidator, startInstrumentation, stores } from '@dataset-register/core';
+
 import { server } from './server.js';
 
-const client = new GraphDbClient(
-  process.env.GRAPHDB_URL || 'http://127.0.0.1:7200',
-  'registry',
-);
 await (async () => {
-  if (process.env.GRAPHDB_USERNAME && process.env.GRAPHDB_PASSWORD) {
-    await client.authenticate(
-      process.env.GRAPHDB_USERNAME,
-      process.env.GRAPHDB_PASSWORD,
-    );
-  }
-
-  const datasetStore = new GraphDbDatasetStore(client);
-  const registrationStore = new GraphDbRegistrationStore(client);
-  const allowedRegistrationDomainStore =
-    new GraphDbAllowedRegistrationDomainStore(client);
+  const { datasetStore, registrationStore, allowedRegistrationDomainStore } = stores(
+    process.env.SPARQL_URL || 'http://127.0.0.1:7001',
+    process.env.SPARQL_ACCESS_TOKEN
+  );
   startInstrumentation(datasetStore);
   const shacl = await readUrl('requirements/shacl.ttl');
   const validator = new ShaclEngineValidator(shacl);

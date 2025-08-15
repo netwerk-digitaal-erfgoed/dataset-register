@@ -9,7 +9,7 @@ import type {DatasetCore} from '@rdfjs/types';
 
 export interface DatasetStore {
   /**
-   * Store an array of dataset descriptions, replacing any triples that were previously stored for the datasets.
+   * Store a dataset description, replacing any triples that were previously stored for it.
    */
   store(dataset: DatasetCore): Promise<void>;
 

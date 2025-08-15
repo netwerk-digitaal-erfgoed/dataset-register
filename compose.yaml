@@ -1,0 +1,30 @@
+services:
+  qlever:
+    build: ./docker/qlever
+    volumes:
+      - ./docker/qlever/index.settings.json:/config/index.settings.json
+      - qlever-data:/data
+    ports:
+      - "7001:7001"
+    command:
+      - sh
+      - -c
+      - |
+        echo "" | IndexBuilderMain --index-basename local -s /config/index.settings.json -F nt -f -
+        ServerMain --index-basename local --port 7001 --access-token ${QLEVER_ACCESS_TOKEN:-SECRET_TOKEN}
+
+  qlever-ui:
+    image: adfreiburg/qlever-ui:latest
+    volumes:
+      - ./docker/qlever-ui/entrypoint.sh:/app/entrypoint.sh
+      - ./docker/qlever-ui/Qleverfile-ui.yml:/app/Qleverfile-ui.yml
+    entrypoint: /app/entrypoint.sh
+    ports:
+      - "7002:7000"
+    environment:
+      - DJANGO_SUPERUSER_USERNAME=root # QLever UI is Django-based.
+      - DJANGO_SUPERUSER_PASSWORD=admin
+      - DJANGO_SUPERUSER_EMAIL=root@localhost
+
+volumes:
+  qlever-data:

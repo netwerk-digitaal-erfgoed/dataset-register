@@ -3,12 +3,8 @@ import {fetch, HttpError, NoDatasetFoundAtUrl} from '../src/fetch.js';
 import nock from 'nock';
 import {dcat, dct, foaf, rdf} from '../src/query.js';
 import factory from 'rdf-ext';
-import {file} from '../src/test-utils.js';
+import { dereference, file } from '../src/test-utils.js';
 import type {BlankNode} from '@rdfjs/types';
-import type DatasetExt from 'rdf-ext/lib/Dataset.js';
-import {rdfDereferencer} from 'rdf-dereference';
-import {pipeline} from 'stream';
-import {StandardizeSchemaOrgPrefixToHttps} from '../src/transform.js';
 
 describe('Fetch', () => {
   it('accepts accept valid DCAT dataset descriptions', async () => {
@@ -327,14 +323,3 @@ const fetchDatasetsAsArray = async (url: URL) => {
   }
   return datasets;
 };
-
-async function dereference(file: string): Promise<DatasetExt> {
-  const {data} = await rdfDereferencer.dereference(file, {localFiles: true});
-  const stream = pipeline(
-    data,
-    new StandardizeSchemaOrgPrefixToHttps(),
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    () => {}, // Noop, just throw errors.
-  );
-  return await factory.dataset().import(stream);
-}
