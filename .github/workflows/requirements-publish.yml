@@ -23,7 +23,7 @@ jobs:
           VALIDATE_MARKUP: false
           SOURCE: requirements/index.bs
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: spec-prod-result-requirements
           path: requirements/
