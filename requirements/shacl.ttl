@@ -19,16 +19,15 @@
 reg:DatacatalogShape
     a sh:NodeShape ;
     sh:targetClass schema:DataCatalog ;
+    sh:nodeKind sh:IRI ;
     rdfs:label "Datacatalogus"@nl, "Data catalog"@en ;
-    rdfs:comment "Een datacatalogus bestaat uit een set van datasetbeschrijvingen"@nl, "A data catalog consists of a set of dataset descriptions"@en ;
+    sh:description "Een datacatalogus bestaat uit een set van datasetbeschrijvingen"@nl, "A data catalog consists of a set of dataset descriptions"@en ;
     sh:property
-        # Required properties
-        reg:SchemaDatasetProperty,
         reg:SchemaCatalogNameProperty,
-        reg:SchemaPublisherProperty,
-        # Recommended properties
         reg:SchemaDescriptionProperty,
-        reg:SchemaDescriptionPropertyShouldExist ;
+        reg:SchemaDescriptionPropertyShouldExist,
+        reg:SchemaPublisherProperty ,
+        reg:SchemaDatasetProperty
 .
 
 reg:DatasetShape
@@ -36,32 +35,89 @@ reg:DatasetShape
     sh:targetClass schema:Dataset ;
     sh:nodeKind sh:IRI ;
     sh:pattern "^https?://" ;
-    rdfs:label "Datasetbeschrijving"@nl, "Dataset description"@en ;
-    rdfs:comment "Een datasetbeschrijving bestaat uit een elementen die de dataset beschrijft"@nl, "A dataset description consists of elements that describe the dataset"@en ;
+    sh:name "Datasetbeschrijving"@nl, "Dataset description"@en ;
+    sh:description "Een datasetbeschrijving bestaat uit elementen die de dataset beschrijven"@nl, "A dataset description consists of elements that describe the dataset"@en ;
 
     sh:property
         # Required properties
         reg:SchemaDatasetNameProperty,
-        reg:SchemaDatasetLicenseProperty,
-        reg:SchemaPublisherProperty,
-        # Recommended properties
         reg:SchemaDescriptionProperty,
         reg:SchemaDescriptionPropertyShouldExist,
+        reg:SchemaPublisherProperty,
+        reg:SchemaDatasetLicenseProperty,
+        # Recommended properties
         reg:SchemaDistributionProperty,
         reg:SchemaCreatorProperty,
-        reg:SchemaDateCreatedProperty,
         reg:SchemaDatePublishedProperty,
+        reg:SchemaDateCreatedProperty,
         reg:SchemaDateModifiedProperty,
-        reg:SchemaAlternateNameProperty,
+        [
+            a sh:PropertyShape ;
+            sh:path schema:version ;
+            sh:name "Version"@en ;
+            sh:minCount 0 ;
+            sh:maxCount 1 ;
+            sh:message "Een datasetbeschrijving kan een versie bevatten"@nl, "A dataset description may contain a version"@en ;
+        ] ,
+        [
+            a sh:PropertyShape ;
+            sh:path schema:inLanguage ;
+            sh:minCount 0 ;
+            sh:name "Language"@en ;
+            sh:description """
+                Language or languages in which the dataset is available. Use one of the language codes from the [[BCP47]], such as "nl-NL".
+            """@en ;
+        ] ,
+        [
+            a sh:PropertyShape ;
+            sh:path schema:mainEntityOfPage ;
+            sh:minCount 0 ;
+            sh:maxCount 1 ;
+            sh:name "Main entity of page"@en ;
+            sh:description """
+                URL of a landing page where the dataset is described for human users.
+                The human-readable description *MUST* be consistent with and include at least all details (such as distributions) from the RDF dataset description.
+            """@en ;
+        ] ,
+        [
+            a sh:PropertyShape ;
+            sh:path schema:isBasedOn ;
+            sh:minCount 0 ;
+            sh:name "Is based on"@en ;
+            sh:description """
+                The URL of dataset this dataset is based on (previously schema:isBasedOnUrl).
+            """@en ;
+        ] ,
+        [
+            a sh:PropertyShape ;
+            sh:path schema:citation ;
+            sh:minCount 0 ;
+            sh:maxCount 1 ;
+            sh:name "Citation"@en ;
+            sh:description """
+                A citation or reference for the dataset.
+            """@en ;
+        ] ,
+        reg:SchemaGenreProperty,
         reg:SchemaKeywordsProperty,
         reg:SchemaSpatialCoverageProperty,
         reg:SchemaTemporalCoverageProperty,
-        reg:SchemaGenreProperty;
-
-        # TODO
-        # reg:SchemaVersionProperty, reg:SchemaManEntityOfPageProperty, reg:SchemaInLanguageProperty, reg:SchemaIsBasedOnUrlProperty, reg:SchemaCitationProperty,
-        # reg:SchemaIncludedInDataCatalogProperty,
-
+        [
+            a sh:PropertyShape ;
+            sh:path schema:hasPart ;
+            sh:minCount 0 ;
+            sh:description """
+                Indicates a dataset that is part of this dataset and also available as a separate dataset.
+            """@en ;
+        ] ,
+        [
+            a sh:PropertyShape ;
+            sh:path schema:includedInDataCatalog ;
+            sh:minCount 0 ;
+            sh:description """
+                The HTTP [[IRI]] of the data catalog(s) that the dataset belongs to.
+            """@en ;
+        ]
 .
 
 reg:DistributionShape
@@ -74,13 +130,58 @@ reg:DistributionShape
         reg:DistributionEncodingFormatProperty,
         # Recommended properties
         reg:SchemaDistributionNameProperty,
-        reg:SchemaDescriptionProperty,
-        reg:SchemaDescriptionPropertyShouldExist,
-        reg:SchemaDatePublishedProperty,
-        reg:SchemaDateModifiedProperty,
-        reg:SchemaDistributionLicenseProperty ;
-        # TODO
-        # reg:SchemaInLanguageProperty, reg:SchemaContentSizeProperty
+        [
+            sh:path schema:description ;
+            sh:or (
+                      [ sh:datatype xsd:string ]
+                      [ sh:datatype rdf:langString ]
+                  );
+            sh:uniqueLang true ;
+            sh:name "Distribution description"@en ;
+            sh:description "A description of the distribution."@en ;
+            sh:message "Moet precies één beschrijving hebben van type string of langString"@nl, "Must have a single description of type string or langString"@en ;
+        ] ,
+        [
+            a sh:PropertyShape ;
+            sh:path schema:datePublished ;
+            sh:minCount 0 ;
+            sh:maxCount 1 ;
+            sh:node reg:DateTimeShape ;
+            sh:description "Date (or datetime) the distribution was published"@en ;
+        ] ,
+        [
+            a sh:PropertyShape ;
+            sh:path schema:dateModified ;
+            sh:minCount 0 ;
+            sh:maxCount 1 ;
+            sh:node reg:DateTimeShape ;
+            sh:description "Date (or datetime) the distribution was last modified"@en ;
+        ] ,
+        [
+            a sh:PropertyShape ;
+            sh:path schema:inLanguage ;
+            sh:minCount 0 ;
+            sh:name "Language"@en ;
+            sh:description """
+                Language or languages in which the distribution is available. Use one of the language codes from the [[BCP47]], such as "nl-NL".
+            """@en ;
+        ] ,
+        reg:SchemaDistributionLicenseProperty ,
+        [
+            a sh:PropertyShape ;
+            sh:path schema:contentSize ;
+            sh:minCount 0 ;
+            sh:maxCount 1 ;
+            sh:description "A measure indicating the size of the distribution."@en ;
+        ] ,
+        [
+            a sh:PropertyShape ;
+            sh:path schema:usageInfo ;
+            sh:minCount 0 ;
+            sh:maxCount 1 ;
+            sh:description "A link to the [=web API=] documentation; see [[#developer-docs]]."@en ;
+        ] ,
+        reg:SchemaDescriptionPropertyShouldExist
 .
 
 reg:OrganizationShape
@@ -89,30 +190,18 @@ reg:OrganizationShape
     sh:nodeKind sh:IRI ;
     sh:pattern "^https?://" ;
     sh:property
-        # Required properties
         reg:OrganizationNameProperty,
-        # TODO
-        # Recommended properties
-        [
-            sh:path schema:alternateName ;
-            sh:or (
-                [ sh:datatype xsd:string ]
-                [ sh:datatype rdf:langString ]
-            ) ;
-            sh:name "Alternatieve naam van de organisatie"@nl, "Alternative name of the organization"@en ;
-            sh:message "Een organisatie kan één of meer alternatieve namen hebben; maximaal 1 per taal"@nl, "An organization can have one or more alternative names; at most one per language"@en ;
-        ] ,
         [
             sh:path schema:alternateName ;
             sh:uniqueLang true ;
             sh:severity sh:Warning ;
         ] ,
-        # TODO
-        # reg:SchemaSameAsProperty ;
         [
             sh:path schema:contactPoint ;
             sh:class schema:ContactPoint ;
-            sh:minCount 0 ;
+            sh:minCount 1 ;
+            sh:maxCount 1 ;
+            sh:severity sh:Warning ;
             sh:node [
                 a sh:NodeShape ;
                 sh:targetClass schema:ContactPoint ;
@@ -132,7 +221,43 @@ reg:OrganizationShape
                     sh:message "ContactPoint moet een e-mailadres hebben"@nl, "ContactPoint must have an e-mail address"@en ;
                 ]
             ] ;
+            sh:description """
+                Where [=consumers=] can reach the organization for questions and suggestions about the dataset.
+            """@en ;
             sh:message "Een organisatie kan een ContactPoint hebben"@nl, "An organization should have a ContactPoint"@en ;
+        ] ,
+        [
+            sh:path schema:identifier ;
+            sh:datatype xsd:string ;
+            sh:minCount 1 ;
+            sh:severity sh:Warning ;
+            sh:name "Identifier"@en ;
+            sh:description """
+                Identifier(s) of the organization, at least its <a href="https://www.nationaalarchief.nl/archiveren/kennisbank/isil-codes">ISIL code</a>.
+            """@en ;
+            sh:message "Een organisatie kan één of meer alternatieve namen hebben; maximaal 1 per taal"@nl, "An organization can have one or more alternative names; at most one per language"@en ;
+        ] ,
+        [
+            sh:path schema:alternateName ;
+            sh:or (
+                      [ sh:datatype xsd:string ]
+                      [ sh:datatype rdf:langString ]
+                  ) ;
+            sh:minCount 0 ;
+            sh:name "Alternatieve naam van de organisatie"@nl, "Alternative name of the organization"@en ;
+            sh:description "Alternative names such as an abbreviation that the organization is known under."@en ;
+            sh:message "Een organisatie kan één of meer alternatieve namen hebben; maximaal 1 per taal"@nl, "An organization can have one or more alternative names; at most one per language"@en ;
+        ] ,
+        [
+            sh:path schema:sameAs ;
+            sh:nodeKind sh:IRI ;
+            sh:minCount 0 ;
+            sh:severity sh:Info ;
+            sh:name "Same as"@en ;
+            sh:description """
+                Links to the organization in other databases.
+            """@en ;
+            sh:message "Een organisatie kan één of meer alternatieve namen hebben; maximaal 1 per taal"@nl, "An organization can have one or more alternative names; at most one per language"@en ;
         ]
 .
 
@@ -172,12 +297,14 @@ reg:DateTimeShape a sh:NodeShape ;
 reg:SchemaCatalogNameProperty a sh:PropertyShape ;
     sh:path schema:name ;
     sh:minCount 1 ;
+    sh:maxCount 1;
     sh:or (
         [ sh:datatype xsd:string ]
         [ sh:datatype rdf:langString ]
     ) ;
     sh:uniqueLang true ;
     sh:name "Naam van de datacatalogus"@nl, "Name of the data catalog"@en ;
+    sh:description "The name of the data catalog."@en ;
     sh:message "Een datacatalogus moet een naam hebben"@nl, "A data catalog must have a name"@en ;
 .
 
@@ -189,30 +316,40 @@ reg:OrganizationNameProperty a sh:PropertyShape ;
         [ sh:datatype rdf:langString ]
     ) ;
     sh:uniqueLang true ;
+    sh:description "The organization’s full name."@en ;
     sh:message "Een organisatie moet een naam hebben"@nl, "An organization must contain a name"@en ;
 .
 
 reg:DistributionContentUrlProperty a sh:PropertyShape ;
-    rdfs:comment "De URL waar de distributie rechtstreeks toegankelijk is."@nl, "The URL where the distribution can be directly accessed."@en ;
+    sh:path schema:contentUrl ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
-    sh:path schema:contentUrl ;
+    sh:description "De URL waar de distributie rechtstreeks toegankelijk is."@nl, "The URL where the distribution can be directly accessed."@en ;
     sh:message "Een dataset distributie dient een content URL te bevatten"@nl, "A dataset distribution should contain a content URL"@en ;
 .
 
 reg:DistributionContentUrlIriProperty a sh:PropertyShape ;
-    rdfs:comment "De URL waar de distributie rechtstreeks toegankelijk is."@nl, "The URL where the distribution can be directly accessed."@en ;
+    sh:path schema:contentUrl ;
     sh:nodeKind sh:IRI ;
     sh:pattern "^https?://" ;
     sh:severity sh:Warning ;  # will become a sh:Violation in near future, to be communicated
-    sh:path schema:contentUrl ;
+    sh:description "De URL waar de distributie rechtstreeks toegankelijk is."@nl, "The URL where the distribution can be directly accessed."@en ;
     sh:message "Een dataset distributie dient een content URL te bevatten in de vorm van een IRI, niet een literal."@nl, "A dataset distribution should contain a content URL, this should be an IRI, not a literal."@en ;
 .
 
 reg:DistributionEncodingFormatProperty a sh:PropertyShape ;
-    rdfs:comment "Het MIME-formaat van de distributie, bijvoorbeeld application/sparql-query voor een SPARQL-endpoint of application/ld+json voor een datadump die is geserialiseerd als JSON-LD."@nl, "The distribution's MIME format, for example application/sparql-query for a SPARQL endpoint or application/ld+json for a data dump serialized as JSON-LD."@en ;
     sh:minCount 1 ;
     sh:path schema:encodingFormat ;
+    sh:description """
+        Het MIME-formaat van de distributie, bijvoorbeeld `application/sparql-query` voor een SPARQL-endpoint
+        of `application/ld+json` voor een datadump die is geserialiseerd als JSON-LD."""@nl ,
+    """The distribution's MIME format, for example `application/sparql-query` for a SPARQL endpoint
+    or `application/ld+json` for a data dump serialized as JSON-LD.
+    Use a value from the [[IANA-MEDIA-TYPES]] list.
+    The value should indicate the Media type of the response of the schema:contentUrl when no Accept header is included in the request.
+    It is recommended to provide an URL of documentation via the schema:usageInfo property in which the supported encoding formats which can be requested via an Accept HTTP header are listed.
+    When the distribution is compressed, the compression format (e.g. zip, gzip) should be added to the `schema:encodingFormat` (e.g. `text/turtle+gzip`).
+    """@en ;
     sh:message "Een dataset distributie dient minstens 1 encoding format te bevatten"@nl, "A dataset distribution must contain at least one encoding format"@en ;
 .
 
@@ -222,6 +359,7 @@ reg:SchemaDatasetProperty a sh:PropertyShape ;
     sh:minCount 1 ;
     sh:node reg:DatasetShape ;
     sh:name "Dataset(s) in de datacatalogus"@nl, "Dataset(s) in the data catalog"@en ;
+    sh:description "The datasets that are contained in the data catalog."@en ;
     sh:message "Een datacatalogus dient minimaal een dataset te bevatten"@nl, "A data catalog should contain at least one dataset"@en ;
     sh:severity sh:Warning ;
 .
@@ -235,7 +373,7 @@ reg:SchemaDatasetNameProperty a sh:PropertyShape ;
     ) ;
     sh:uniqueLang true ;
     sh:name "Naam van de dataset"@nl, "Name of the dataset"@en ;
-    sh:message "Een datasetbeschrijving dient een naam te bevatten"@nl, "A dataset description should have a name"@en ;
+    sh:message "Een datasetbeschrijving moet een naam hebben"@nl, "A dataset description must have a name"@en ;
 .
 
 reg:SchemaDistributionNameProperty a sh:PropertyShape ;
@@ -245,19 +383,10 @@ reg:SchemaDistributionNameProperty a sh:PropertyShape ;
         [ sh:datatype rdf:langString ]
     ) ;
     sh:uniqueLang true ;
-    sh:name "Naam van de distributie"@nl, "Name of the distributie"@en ;
+    sh:minCount 0 ;
+    sh:maxCount 1 ;
+    sh:description "Name of the distribution, depicting the type of distribution."@en ;
     sh:message "Een distributie mag maximaal een naam te bevatten"@nl, "A dataset distributie can have one or no name"@en ;
-.
-
-reg:SchemaAlternateNameProperty a sh:PropertyShape ;
-    sh:path schema:alternateName ;
-    sh:or (
-        [ sh:datatype xsd:string ]
-        [ sh:datatype rdf:langString ]
-    ) ;
-    sh:uniqueLang true ;
-    sh:name "Alternatieve naam van de dataset"@nl, "Alternative name of the dataset"@en ;
-    sh:message "Een datasetbeschrijving kan één of meer alternatieve namen hebben"@nl, "A dataset description can have one or more alternative names"@en ;
 .
 
 reg:SchemaDescriptionProperty a sh:PropertyShape ;
@@ -267,43 +396,49 @@ reg:SchemaDescriptionProperty a sh:PropertyShape ;
         [ sh:datatype rdf:langString ]
     );
     sh:uniqueLang true ;
+    sh:name "Description"@en ;
+    sh:description "Description."@en ;
     sh:message "Moet precies één beschrijving hebben van type string of langString"@nl, "Must have a single description of type string or langString"@en ;
 .
 
 reg:SchemaDescriptionPropertyShouldExist a sh:PropertyShape ;
-  sh:path schema:description ;
-  sh:minCount 1 ;
-  sh:severity sh:Info ;
-  sh:message "Kan een beschrijving hebben"@nl, "Should have a description"@en ;
+    sh:path schema:description ;
+    sh:minCount 1 ;
+    sh:severity sh:Info ;
+    sh:message "Kan een beschrijving hebben"@nl, "Should have a description"@en ;
 .
 
 reg:SchemaDateCreatedProperty a sh:PropertyShape ;
     sh:path schema:dateCreated ;
-    sh:minCount 0 ;
+    sh:minCount 1 ;
     sh:maxCount 1 ;
+    sh:severity sh:Info ;
     sh:node reg:DateTimeShape ;
     sh:name "Aanmaakdatum van de datasetbeschrijving"@nl, "Creation date of the dataset description"@en ;
 .
 
 reg:SchemaDatePublishedProperty a sh:PropertyShape ;
     sh:path schema:datePublished ;
-    sh:minCount 0 ;
+    sh:minCount 1 ;
     sh:maxCount 1 ;
+    sh:severity sh:Info ;
     sh:node reg:DateTimeShape ;
     sh:name "Publicatiedatum van de datasetbeschrijving"@nl, "Publication date of the dataset description"@en ;
 .
 
 reg:SchemaDateModifiedProperty a sh:PropertyShape ;
     sh:path schema:dateModified ;
-    sh:minCount 0 ;
+    sh:minCount 1 ;
     sh:maxCount 1 ;
+    sh:severity sh:Info ;
     sh:node reg:DateTimeShape ;
     sh:name "Datum waarop de datasetbeschrijving voor het laatst is gewijzigd"@nl, "Date on which the dataset description was last modified"@en ;
 .
 
 reg:SchemaCreatorProperty a sh:PropertyShape ;
     sh:path schema:creator ;
-    sh:minCount 0 ;
+    sh:minCount 1 ;
+    sh:severity sh:Info ;
     sh:or (
         [
             sh:node reg:OrganizationShape ;
@@ -313,6 +448,9 @@ reg:SchemaCreatorProperty a sh:PropertyShape ;
         ]
     ) ;
     sh:name "Persoon of organisatie die de dataset heeft gemaakt"@nl, "Person or organization which created the dataset"@en ;
+    sh:description """
+        The owner of the dataset.
+    """@en ;
     sh:message "Een datasetbeschrijving dient een maker te bevatten"@nl, "A dataset description should have a creator"@en ;
 .
 
@@ -322,6 +460,9 @@ reg:SchemaPublisherProperty a sh:PropertyShape ;
     sh:maxCount 1 ;
     sh:severity sh:Warning ;
     sh:name "Persoon of organisatie die de dataset heeft gepubliceerd"@nl, "Person or organization that published the dataset"@en ;
+    sh:description """
+        The publisher of the dataset.
+    """@en ;
     sh:message "Er moet een uitgever gespecificeerd zijn"@nl, "A publisher must be specified"@en ;
     sh:or (
         [
@@ -338,7 +479,17 @@ reg:SchemaDatasetLicenseProperty a sh:PropertyShape ;
     sh:nodeKind sh:IRIOrLiteral ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
-    sh:name "Licentie die van toepassing is op de datasetbeschrijving"@nl, "License applicable to the dataset description"@en ;
+    sh:name "Licentie"@nl, "License"@en ;
+    sh:description "Licentie die van toepassing is op de datasetbeschrijving"@nl, """
+        Publishers *MUST* make known under which [[DWBP#licenses|license]] the dataset can be used.
+
+        The value *MUST* be the canonical URI of a license.
+        For example, use https://creativecommons.org/licenses/by/4.0/ instead
+        of http://creativecommons.org/licenses/by/4.0/deed.nl.
+
+        The value *SHOULD* be an open license that allows the data to used by [=consumers=],
+        for example one of the [Creative Commons](https://creativecommons.org/choose/) licenses.
+        """@en ;
     sh:message "Een datasetbeschrijving moet één licentie hebben (in de vorm van een URI)"@nl, "A dataset description must have one license (in the form of a URI)"@en ;
 .
 
@@ -347,7 +498,7 @@ reg:SchemaDistributionLicenseProperty a sh:PropertyShape ;
     sh:nodeKind sh:IRIOrLiteral ;
     sh:minCount 0 ;
     sh:maxCount 1 ;
-    sh:name "Licentie die van toepassing is op de datasetdistributie"@nl, "License applicable to the dataset distributie"@en ;
+    sh:description "Licentie die van toepassing is op de datasetdistributie."@nl, "License applicable to the dataset distribution."@en ;
     sh:message "Een distributie kan maximaal een licentie bevatten (in de vorm van een URI)"@nl, "A distribution can have a maximum of only one license (in the form of a URL)"@en ;
 .
 
@@ -356,7 +507,7 @@ reg:SchemaDistributionProperty a sh:PropertyShape ;
     sh:minCount 1 ;
     sh:severity sh:Info ;
     sh:path schema:distribution ;
-    sh:name "Distributies van een dataset"@nl ;
+    sh:name "Dataset distributions"@en , "Distributies van een dataset"@nl ;
     # No ‘sh:node reg:DistributionShape’ here on purpose, because that causes violations on child nodes where we expect
     # infos, for example on a missing distribution description. The report will be valid while containing violations,
     # which is confusing to users.
@@ -366,6 +517,9 @@ reg:SchemaKeywordsProperty a sh:PropertyShape ;
     sh:path schema:keywords ;
     sh:minCount 1 ;
     sh:severity sh:Info ;
+    sh:description """
+        The keyword or keywords which describe the dataset.
+    """@en ;
     sh:message "Een datasetbeschrijving kan trefwoorden bevatten"@nl, "A dataset description may contain keywords"@en ;
 .
 
@@ -373,6 +527,9 @@ reg:SchemaSpatialCoverageProperty a sh:PropertyShape ;
     sh:path schema:spatialCoverage ;
     sh:minCount 1 ;
     sh:severity sh:Info ;
+    sh:description """
+        Indicates the place(s) which are the focus of the dataset.
+    """@en ;
     sh:message "Een datasetbeschrijving kan een gebiedsaanduidingen bevatten"@nl, "A dataset description may contain spatial coverage"@en ;
 .
 
@@ -380,6 +537,9 @@ reg:SchemaTemporalCoverageProperty a sh:PropertyShape ;
     sh:path schema:temporalCoverage ;
     sh:minCount 1 ;
     sh:severity sh:Info ;
+    sh:description """
+        Indicates the period that the dataset applies to.
+    """@en ;
     sh:message "Een datasetbeschrijving kan tijdsaanduidingen bevatten"@nl, "A dataset description may contain temporal coverage"@en ;
 .
 
@@ -387,6 +547,9 @@ reg:SchemaGenreProperty a sh:PropertyShape ;
     sh:path schema:genre ;
     sh:minCount 1 ;
     sh:severity sh:Info ;
+    sh:description """
+        The genre or genres which describe the dataset.
+    """@en ;
     sh:message "Een datasetbeschrijving kan genres bevatten"@nl, "A dataset description may contain genres"@en ;
 .
 
@@ -400,6 +563,7 @@ reg:SchemaGenreProperty a sh:PropertyShape ;
 
 dcat:DatasetShape
     a sh:NodeShape ;
+    sh:name "Dataset" ;
     sh:property [
         sh:minCount 1 ;
         sh:path dc:title
