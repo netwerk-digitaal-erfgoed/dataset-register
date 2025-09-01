@@ -1,0 +1,76 @@
+### {{ name }} attributes ### {#{{ name | downcase }}-attributes}
+
+<table>
+    {% assign class = nodeShape.targetClass | default: nodeShape.class -%}
+    <caption>[{{ class }}]({{ class | replace: 'schema:', 'https://schema.org/' }}) properties</caption>
+    <thead>
+        <tr>
+            <th>Property</th>
+            <th>Description</th>
+            <th>Cardinality</th>
+            <th>Usage</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% if nodeShape.nodeKind == "IRI" %}
+        <tr>
+            <th scope="row">@id</th>
+            <td>The HTTP [[IRI]] of the {{ name }}.</td>
+            <td>1</td>
+            <td>Required</td>
+        </tr>
+        {% endif %}
+        {% assign merged_properties = nodeShape.property | mergePropertiesByPath -%}
+        {% for property in merged_properties %}
+        <tr>
+            <th scope="row">[{{ property.path }}]({{ property.path | replace: "schema:", "https://schema.org/" }})</th>
+            <td>
+                {%- if property.node == "http://terms.netwerkdigitaalerfgoed.nl/ns/register#DateTimeShape" or property.node['@id'] == "http://terms.netwerkdigitaalerfgoed.nl/ns/register#DateTimeShape" -%}
+                    See [[#dataset-date]].
+                {%- elsif property.path == "schema:publisher" or property.path == "schema:creator" -%}
+                    {{ property.name | lang: "en" }}. See [[#creator-publisher-information]].
+                {%- elsif property.path == "schema:contactPoint" -%}
+                    {{ property.description | lang: "en" }} See [[#contact]].
+                {%- elsif name == 'Dataset' -%}
+                    {%- if property.path == "schema:name" or property.path == "schema:description" -%}
+                        {{ property.name | lang: "en" }}. See [[#dataset-basic]].
+                    {%- elsif property.path == "schema:license" -%}
+                        See [[#dataset-license]].
+                    {%- elsif property.path == "schema:distribution" -%}
+                        See [[#dataset-distributions]].
+                    {%- elsif property.path == "schema:version" -%}
+                        See [[#dataset-versions]].
+                    {%- elsif property.node == "http://terms.netwerkdigitaalerfgoed.nl/ns/register#DateTimeShape" or property.node['@id'] == "http://terms.netwerkdigitaalerfgoed.nl/ns/register#DateTimeShape" -%}
+                        See [[#dataset-date]].
+                    {%- else -%}
+                        {{ property.description | lang: "en" }}
+                    {%- endif -%}
+                {%- else -%}
+                    {{ property.description | lang: "en" }}
+                {%- endif -%}
+            </td>
+            <td>
+                {% if property.minCount -%}
+                    {% if property.minCount == property.maxCount -%}
+                        {{ property.minCount }}
+                    {% else -%}
+                        {{ property.minCount }}..{{ property.maxCount | default: "n" }}
+                    {% endif -%}
+                {% endif -%}
+            </td>
+            <td>
+                {% if property.minCount > 0 -%}
+                    {% assign severity = property.severity | default: "Violation" -%}
+                    {% if severity == "Violation" or property.severity == "Warning" -%}
+                        Required
+                    {% else -%}
+                        Recommended
+                    {% endif -%}
+                {% else -%}
+                    Recommended
+                {% endif -%}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

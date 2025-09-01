@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
     paths:
       - 'requirements/**'
 
@@ -12,10 +15,16 @@ defaults:
     working-directory: requirements
 
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+      - run: npx --yes @lde/docgen@latest from-shacl shacl.ttl index.bs.liquid > index.bs
 
       - name: Build and validate
         uses: w3c/spec-prod@v2
@@ -23,6 +32,11 @@ jobs:
           VALIDATE_MARKUP: false
           SOURCE: requirements/index.bs
 
+  publish:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
       - uses: actions/download-artifact@v5
         with:
           name: spec-prod-result-requirements
