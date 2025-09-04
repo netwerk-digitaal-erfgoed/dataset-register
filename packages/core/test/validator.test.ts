@@ -58,23 +58,28 @@ describe('Validator', () => {
   });
 
   it('reports invalid Schema.org dataset', async () => {
-    const report = await validate('dataset-schema-org-invalid.jsonld');
+    const report = await validate('dataset-schema-org-invalid.jsonld') as InvalidDataset;
     expect(report.state).toBe('invalid');
+    expectViolations(report, ['https://schema.org/contentUrl']);
+    expectViolations(report, ['https://schema.org/dateCreated']);
+    expectViolations(report, ['https://schema.org/datePublished']);
+    expectViolations(report, ['https://schema.org/dateModified']);
   });
 
   it('accepts valid Schema.org dataset without publisher', async () => {
     const report = await validate(
       'dataset-schema-org-valid-no-publisher.jsonld',
-    );
+    ) as Valid;
     expect(report.state).toEqual('valid');
     expect(report.state === 'valid');
+    expectViolations(report, ['https://schema.org/publisher']);
     expect(
       (report as Valid).errors.match(
         null,
         shacl('resultSeverity'),
         shacl('Warning'),
       ).size,
-    ).toEqual(1);
+    ).toEqual(3);
   });
 
   it('accepts valid HTTP Schema.org dataset', async () => {
@@ -173,8 +178,15 @@ describe('Validator', () => {
       new StreamParser(),
     )) as InvalidDataset;
 
+    expect(report.state).toEqual('valid');
+
     // Once for creator and once for publisher.
     expectViolations(report, ['https://schema.org/alternateName'], 2);
+  });
+
+  it('reports missing class', async () => {
+    const report = await validate('dataset-schema-missing-publisher-class.ttl', new StreamParser());
+    expect(report.state).toEqual('invalid');
   });
 });
 

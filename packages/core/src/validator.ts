@@ -4,8 +4,8 @@
 import factory from 'rdf-ext';
 import { rdfDereferencer } from 'rdf-dereference';
 import type { Dataset, DatasetCore } from '@rdfjs/types';
-import { Validator as ShaclValidator } from 'shacl-engine';
 import type { ValidationReport, ValidationResult as ShaclValidationResult } from 'shacl-engine';
+import { Validator as ShaclValidator } from 'shacl-engine';
 
 export interface Validator {
   /**
@@ -81,7 +81,7 @@ export const shacl = (property: string) =>
   factory.namedNode(`http://www.w3.org/ns/shacl#${property}`);
 
 /**
- * Check for severity Violation rather than {@see ValidationReport.conforms} because the latter is false on any
+ * Check for severity Violation rather than {@link ValidationReport.conforms} because the latter is false on any
  * violation, including Info and Warning.
  */
 const hasViolation = (report: ValidationReport) =>
@@ -90,8 +90,20 @@ const hasViolation = (report: ValidationReport) =>
 const resultIsViolation = (
   result: ShaclValidationResult,
 ): boolean => {
-  return (
-    result.severity?.value === shacl('Violation').value ||
-    (result.results.some((nestedResult) => resultIsViolation(nestedResult)))
-  );
+  const isViolation = result.severity.equals(shacl('Violation'));
+  const hasChildren = result.results.length > 0;
+
+  if (isViolation && !hasChildren) {
+    return true;
+  }
+
+  return result.results
+    // shacl-engine returns spurious NodeConstraintComponents, so only select the first one.
+    .filter((item, index, self) => {
+      if (item.constraintComponent.equals(shacl('NodeConstraintComponent'))) {
+        return index === self.findIndex(t => t.constraintComponent.equals(shacl('NodeConstraintComponent')));
+      }
+      return true;
+    })
+    .some((nestedResult) => resultIsViolation(nestedResult));
 };

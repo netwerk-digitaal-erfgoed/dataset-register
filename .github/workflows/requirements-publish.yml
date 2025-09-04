@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
     paths:
       - 'requirements/**'
 
@@ -12,10 +15,16 @@ defaults:
     working-directory: requirements
 
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+      - run: npx --yes @lde/docgen@latest from-shacl shacl.ttl index.bs.liquid > index.bs
 
       - name: Build and validate
         uses: w3c/spec-prod@v2
@@ -23,10 +32,22 @@ jobs:
           VALIDATE_MARKUP: false
           SOURCE: requirements/index.bs
 
-      - name: Deploy to requirements-datasets GitHub Pages
+  publish:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: spec-prod-result-requirements
+          path: requirements/
+
+      - name: Deploy to docs.nde.nl
         uses: peaceiris/actions-gh-pages@v4
         with:
-          external_repository: netwerk-digitaal-erfgoed/requirements-datasets
+          external_repository: netwerk-digitaal-erfgoed/netwerk-digitaal-erfgoed.github.io
           personal_token: ${{ secrets.DATASET_REGISTER_PUBLISH_REQUIREMENTS }}
-          publish_dir: ./requirements
-          publish_branch: master
+          publish_dir: requirements/
+          publish_branch: main
+          destination_dir: static/requirements-datasets/
+          exclude_assets: '.github,.gitignore,index.bs,Makefile'
