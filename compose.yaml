@@ -11,7 +11,7 @@ services:
       - -c
       - |
         echo "" | IndexBuilderMain --index-basename local -s /config/index.settings.json -F nt -f -
-        ServerMain --index-basename local --port 7001 --access-token ${QLEVER_ACCESS_TOKEN:-SECRET_TOKEN}
+        ServerMain --index-basename local --port 7001 --persist-updates --access-token ${QLEVER_ACCESS_TOKEN:-SECRET_TOKEN}
 
   qlever-ui:
     image: adfreiburg/qlever-ui:latest
