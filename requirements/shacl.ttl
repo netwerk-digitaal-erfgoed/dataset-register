@@ -19,7 +19,6 @@
 reg:DatacatalogShape
     a sh:NodeShape ;
     sh:targetClass schema:DataCatalog ;
-    sh:nodeKind sh:IRI ;
     rdfs:label "Datacatalogus"@nl, "Data catalog"@en ;
     sh:description "Een datacatalogus bestaat uit een set van datasetbeschrijvingen"@nl, "A data catalog consists of a set of dataset descriptions"@en ;
     sh:property
@@ -193,8 +192,20 @@ reg:OrganizationShape
         reg:OrganizationNameProperty,
         [
             sh:path schema:alternateName ;
+            sh:or (
+                [ sh:datatype xsd:string ]
+                [ sh:datatype rdf:langString ]
+            ) ;
+            sh:minCount 0 ;
+            sh:name "Alternatieve naam van de organisatie"@nl, "Alternative name of the organization"@en ;
+            sh:description "Alternative names such as an abbreviation that the organization is known under."@en ;
+            sh:message "Een organisatie kan één of meer alternatieve namen hebben; maximaal 1 per taal"@nl, "An organization can have one or more alternative names; at most one per language"@en ;
+        ] ,
+        [
+            sh:path schema:alternateName ;
             sh:uniqueLang true ;
             sh:severity sh:Warning ;
+            sh:message "Een organisatie moet maximaal één alternatieve naam per taal hebben"@nl, "An organization must not have more then one alternative name per language"@en ;
         ] ,
         [
             sh:path schema:contactPoint ;
@@ -235,18 +246,7 @@ reg:OrganizationShape
             sh:description """
                 Identifier(s) of the organization, at least its <a href="https://www.nationaalarchief.nl/archiveren/kennisbank/isil-codes">ISIL code</a>.
             """@en ;
-            sh:message "Een organisatie kan één of meer alternatieve namen hebben; maximaal 1 per taal"@nl, "An organization can have one or more alternative names; at most one per language"@en ;
-        ] ,
-        [
-            sh:path schema:alternateName ;
-            sh:or (
-                      [ sh:datatype xsd:string ]
-                      [ sh:datatype rdf:langString ]
-                  ) ;
-            sh:minCount 0 ;
-            sh:name "Alternatieve naam van de organisatie"@nl, "Alternative name of the organization"@en ;
-            sh:description "Alternative names such as an abbreviation that the organization is known under."@en ;
-            sh:message "Een organisatie kan één of meer alternatieve namen hebben; maximaal 1 per taal"@nl, "An organization can have one or more alternative names; at most one per language"@en ;
+            sh:message "Een organisatie kan één of meer identifiers hebben"@nl, "An organization can have one or more identifier"@en ;
         ] ,
         [
             sh:path schema:sameAs ;
@@ -257,7 +257,7 @@ reg:OrganizationShape
             sh:description """
                 Links to the organization in other databases.
             """@en ;
-            sh:message "Een organisatie kan één of meer alternatieve namen hebben; maximaal 1 per taal"@nl, "An organization can have one or more alternative names; at most one per language"@en ;
+            sh:message "Een organisatie kan één of meer links hebben"@nl , "An organization can have one or more links"@en ;
         ]
 .
 

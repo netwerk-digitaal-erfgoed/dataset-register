@@ -69,16 +69,17 @@ describe('Validator', () => {
   it('accepts valid Schema.org dataset without publisher', async () => {
     const report = await validate(
       'dataset-schema-org-valid-no-publisher.jsonld',
-    );
+    ) as Valid;
     expect(report.state).toEqual('valid');
     expect(report.state === 'valid');
+    expectViolations(report, ['https://schema.org/publisher']);
     expect(
       (report as Valid).errors.match(
         null,
         shacl('resultSeverity'),
         shacl('Warning'),
       ).size,
-    ).toEqual(1);
+    ).toEqual(3);
   });
 
   it('accepts valid HTTP Schema.org dataset', async () => {
