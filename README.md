@@ -71,6 +71,8 @@ npm install
 npx nx serve api
 ```
 
+You can open a local QLever UI at http://localhost:7002/default.
+
 ### Run in production
 
 To run the application in production, first compile and then run it. You may want to disable logging, which is enabled
