@@ -8,9 +8,6 @@ import type { ValidationReport, ValidationResult as ShaclValidationResult } from
 import { Validator as ShaclValidator } from 'shacl-engine';
 
 export interface Validator {
-  /**
-   * Returns `null` if all datasets are valid or `DatasetCore` with failed constraints of the first invalid dataset.
-   */
   validate(datasets: DatasetCore): Promise<ValidationResult>;
 }
 
@@ -46,10 +43,10 @@ export class ShaclEngineValidator implements Validator {
     const report = await this.inner.validate({ dataset });
     const state = hasViolation(report) ? 'invalid' : 'valid';
 
-    return {
+    return filterOutViolations({
       state,
       errors: report.dataset,
-    };
+    });
   }
 }
 
@@ -65,7 +62,7 @@ type ValidationResult = Valid | NoDataset | InvalidDataset;
 
 export type Valid = {
   state: 'valid';
-  errors: DatasetCore;
+  errors: Dataset;
 };
 
 type NoDataset = {
@@ -74,7 +71,7 @@ type NoDataset = {
 
 export type InvalidDataset = {
   state: 'invalid';
-  errors: DatasetCore;
+  errors: Dataset;
 };
 
 export const shacl = (property: string) =>
@@ -107,3 +104,24 @@ const resultIsViolation = (
     })
     .some((nestedResult) => resultIsViolation(nestedResult));
 };
+
+/**
+ * If the result is valid, make sure to downgrade parent shapes (which have sh:details)
+ * with severity violation to warning.
+ */
+const filterOutViolations = (validationResult: ValidationResult) => {
+  if (validationResult.state === 'no-dataset' || validationResult.state === 'invalid') {
+    return validationResult;
+  }
+
+  return {
+    state: validationResult.state,
+    errors: validationResult.errors.map((quad, dataset) => {
+      if (quad.predicate.equals(shacl('resultSeverity')) && quad.object.equals(shacl('Violation'))) {
+        quad.object = shacl('Warning');
+      }
+
+      return quad;
+    })
+  }
+}
