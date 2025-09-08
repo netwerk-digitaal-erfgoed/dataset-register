@@ -1,32 +1,14 @@
 import { scheduleJob } from 'node-schedule';
 import { Crawler } from './crawler.js';
-import {
-  GraphDbClient,
-  GraphDbDatasetStore,
-  GraphDbRatingStore,
-  GraphDbRegistrationStore,
-  readUrl,
-  ShaclEngineValidator
-} from '@dataset-register/core';
+import { readUrl, ShaclEngineValidator, stores } from '@dataset-register/core';
 import pino from 'pino';
 
-const client = new GraphDbClient(
-  process.env.GRAPHDB_URL || 'http://127.0.0.1:7200',
-  'registry',
+const { datasetStore, registrationStore, ratingStore } = stores(
+  process.env.SPARQL_URL || 'http://127.0.0.1:7001',
+  process.env.SPARQL_ACCESS_TOKEN
 );
-await (async () => {
-  if (process.env.GRAPHDB_USERNAME && process.env.GRAPHDB_PASSWORD) {
-    await client.authenticate(
-      process.env.GRAPHDB_USERNAME,
-      process.env.GRAPHDB_PASSWORD,
-    );
-  }
-});
 
 const shacl = await readUrl('requirements/shacl.ttl');
-const registrationStore = new GraphDbRegistrationStore(client);
-const datasetStore = new GraphDbDatasetStore(client);
-const ratingStore = new GraphDbRatingStore(client);
 const logger = pino();
 const validator = new ShaclEngineValidator(shacl);
 

@@ -16,7 +16,7 @@
     "vite.config.mts",
     "vitest.config.ts",
     "vitest.config.mts",
-    "test/**/*.test.ts",
+    "test/**/*.ts",
     "src/**/*.d.ts"
   ],
   "references": [

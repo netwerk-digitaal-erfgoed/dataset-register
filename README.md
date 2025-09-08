@@ -35,17 +35,15 @@ URLs must be [allowed](#allow-list) before they can be added to the Register.
 
 ### Search dataset descriptions
 
-You can retrieve dataset descriptions registered by yourself and others
-from our [triple store’s web interface](https://triplestore.netwerkdigitaalerfgoed.nl/sparql?savedQueryName=Full%20dataset%20descriptions%20for%20publisher&owner=admin).
+You can retrieve dataset descriptions registered by yourself and others from the SPARQL endpoint at `https://datasetregister.netwerkdigitaalerfgoed.nl/sparql`.
 
-Alternatively, use the SPARQL endpoint at `https://triplestore.netwerkdigitaalerfgoed.nl/repositories/registry` directly.
 For example using [Comunica](https://comunica.dev):
 
-    comunica-sparql sparql@https://triplestore.netwerkdigitaalerfgoed.nl/repositories/registry 'select * {?s a <http://www.w3.org/ns/dcat#Dataset> . ?s ?p ?o . } limit 100'
+    comunica-sparql sparql@https://datasetregister.netwerkdigitaalerfgoed.nl/sparql 'select * {?s a <http://www.w3.org/ns/dcat#Dataset> . ?s ?p ?o . } limit 100'
 
 Or curl:
 
-    curl -H Accept:application/sparql-results+json --data-urlencode 'query=select * {?s a <http://www.w3.org/ns/dcat#Dataset> . ?s ?p ?o . } limit 100'  https://triplestore.netwerkdigitaalerfgoed.nl/repositories/registry
+    curl -H Accept:application/sparql-results+json --data-urlencode 'query=select * {?s a <http://www.w3.org/ns/dcat#Dataset> . ?s ?p ?o . } limit 100' https://datasetregister.netwerkdigitaalerfgoed.nl/sparql 
 
 ### Automate registrations
 
@@ -59,19 +57,21 @@ To run the application yourself (for instance if you’d like to contribute, whi
 follow these steps.
 (As mentioned above, find the hosted version at https://datasetregister.netwerkdigitaalerfgoed.nl/api).
 
-This application stores data in a [GraphDB](https://graphdb.ontotext.com) RDF store, so you need to have that running
-locally:
+This application stores data in a [QLever](https://github.com/ad-freiburg/qlever) SPARQL store,
+so you need to have that running locally:
 
 ```
-docker run -p 7200:7200 docker-registry.ontotext.com/graphdb-free:9.6.0-adoptopenjdk11
+docker compose up
 ```
 
-When GraphDB runs, you can start the application in development mode. Clone this repository and run:
+When it runs, you can start the application in development mode. Clone this repository and run:
 
 ```
 npm install
 npx nx serve api
 ```
+
+You can open a local QLever UI at http://localhost:7002/default.
 
 ### Run in production
 
@@ -87,9 +87,8 @@ LOG=false npm start
 
 You can configure the application through environment variables:
 
-- `GRAPHDB_URL`: the URL at which your GraphDB instance runs (default: `http://localhost:7200`).
-- `GRAPHDB_USERNAME`: if using authentication, your GraphDB username (default: empty).
-- `GRAPHDB_PASSWORD`: if using authentication, your GraphDB password (default: empty).
+- `SPARQL_URL`: URL to the SPARQL store.
+- `SPARQL_ACCESS_TOKEN`: access token for write operations on SPARQL Store.
 - `LOG`: enable/disable logging (default: `true`).
 - `CRAWLER_SCHEDULE`: a schedule in Cron format; for example `0 * * * *` to [crawl](#crawler) every hour
   (default: crawling disabled).
@@ -118,7 +117,7 @@ The crawler will then check all registration URLs according to that schedule to 
 A registration URL is considered outdated if it has been last read longer than
 [`REGISTRATION_URL_TTL`](#configuration) ago (its `schema:dateRead` is older).
 
-If any outdated registration URLs are found, they are fetched and updated in the RDF Store.
+If any outdated registration URLs are found, they are fetched and updated in the SPARQL store.
 
 ## Data model
 
