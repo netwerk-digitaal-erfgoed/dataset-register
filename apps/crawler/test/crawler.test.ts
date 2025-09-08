@@ -1,28 +1,21 @@
-import {Registration} from '@dataset-register/core';
-import {Crawler} from '../src/crawler.js';
-import {URL} from 'url';
-import {
-  file,
-  MockDatasetStore,
-  MockRatingStore,
-  MockRegistrationStore,
-} from '@dataset-register/core/test-utils';
+import { Registration, Validator } from '@dataset-register/core';
+import { Crawler } from '../src/crawler.js';
+import { URL } from 'url';
+import { file, MockDatasetStore, MockRatingStore, MockRegistrationStore } from '@dataset-register/core/test-utils';
 import nock from 'nock';
 import pino from 'pino';
-import {Validator} from '@dataset-register/core';
-import factory from 'rdf-ext';
-import type {DatasetCore} from '@rdfjs/types';
+import { Store } from 'n3';
 
 let registrationStore: MockRegistrationStore;
 let crawler: Crawler;
 const validator = (
   isValid: boolean,
-  errors: DatasetCore = factory.dataset(),
+  errors = new Store(),
 ): Validator => ({
   validate: () =>
     Promise.resolve({
       state: isValid ? 'valid' : 'invalid',
-      errors,
+      errors: errors,
     }),
 });
 
