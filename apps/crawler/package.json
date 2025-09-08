@@ -75,6 +75,6 @@
   },
   "devDependencies": {
     "@types/node-schedule": "^2.1.8",
-    "rdf-ext": "^2.5.2"
+    "rdf-ext": "^2.6.0"
   }
 }
