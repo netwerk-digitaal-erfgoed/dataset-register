@@ -76,8 +76,15 @@ describe('Fetch', () => {
     const dcatEquivalent = await dereference(
       'test/datasets/dataset-dcat-valid.jsonld',
     );
-    expect(dataset.size).toStrictEqual(dcatEquivalent.size);
-    expect(dataset.toCanonical()).toStrictEqual(dcatEquivalent.toCanonical());
+    // The Schema.org dataset should have one more triple than the DCAT equivalent due to SPARQL conformsTo
+    expect(dataset.size).toEqual(dcatEquivalent.size + 1);
+
+    // Check that SPARQL endpoint has conformsTo triple
+    const sparqlConformsToTriples = [...dataset].filter(quad =>
+      quad.predicate.equals(factory.namedNode('http://purl.org/dc/terms/conformsTo')) &&
+      quad.object.equals(factory.namedNode('https://www.w3.org/TR/sparql11-protocol/'))
+    );
+    expect(sparqlConformsToTriples).toHaveLength(1);
 
     expect(
       dataset.has(
