@@ -124,7 +124,7 @@ If any outdated registration URLs are found, they are fetched and updated in the
 ### `schema:EntryPoint`
 
 Any URL [registered by clients](#submit-dataset-descriptions) is added as a `schema:EntryPoint` to the
-[Registrations graph](https://triplestore.netwerkdigitaalerfgoed.nl/resource?uri=https:%2F%2Fdemo.netwerkdigitaalerfgoed.nl%2Fregistry%2Fregistrations&role=context).
+[Registrations graph](https://qlever-ui.demo.netwerkdigitaalerfgoed.nl/chqohW?exec=true).
 
 Datasets are fetched from this URL on registration and when [crawling](#crawler) it.
 
@@ -140,7 +140,7 @@ Datasets are fetched from this URL on registration and when [crawling](#crawler)
 
 Each dataset that is found at the [`schema:EntryPoint`](#schemaentrypoint) registration URL gets added as a
 `schema:Dataset` to the 
-[Registrations graph](https://triplestore.netwerkdigitaalerfgoed.nl/resource?uri=https:%2F%2Fdemo.netwerkdigitaalerfgoed.nl%2Fregistry%2Fregistrations&role=context).
+[Registrations graph](https://qlever-ui.demo.netwerkdigitaalerfgoed.nl/datasetregister/chqohW?exec=true).
 
 | Property                                           | Description                                                     |
 |----------------------------------------------------|-----------------------------------------------------------------|
@@ -213,7 +213,7 @@ See the [Requirements for Datasets](https://netwerk-digitaal-erfgoed.github.io/r
 
 A registration URL must be on a domain that is allowed before it can be added to the Register.
 Allowed domains are administered in the 
-[https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names RDF graph](https://triplestore.netwerkdigitaalerfgoed.nl/resource?uri=https:%2F%2Fdata.netwerkdigitaalerfgoed.nl%2Fregistry%2Fallowed_domain_names&role=context).
+[https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names RDF graph](https://qlever-ui.demo.netwerkdigitaalerfgoed.nl/datasetregister/CYjX1Y?exec=true).
 
 To add a URL:
 

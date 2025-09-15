@@ -23,6 +23,8 @@ const genre = 'genre';
 const mainEntityOfPage = 'mainEntityOfPage';
 const version = 'version';
 const includedInDataCatalog = 'includedInDataCatalog';
+const hasPart = 'hasPart';
+const isReferencedBy = 'isReferencedBy';
 
 const creatorName = 'creator_name';
 const creatorType = 'creator_type';
@@ -30,10 +32,14 @@ const creatorType = 'creator_type';
 const publisherType = 'publisher_type';
 const publisherName = 'publisher_name';
 const publisherEmail = 'publisher_email';
+const publisherIdentifier = 'publisher_identifier';
+const publisherAlternateName = 'publisher_alternate_name';
+const publisherSameAs = 'publisher_sameAs';
 
 const distributionUrl = 'distribution_url';
 const distributionMediaType = 'distribution_mediaType';
 const distributionConformsTo = 'distribution_conformsTo';
+const distributionConformsToSparql = 'distribution_conformsTo_sparql';
 const distributionDatePublished = 'distribution_datePublished';
 const distributionDateModified = 'distribution_dateModified';
 const distributionDescription = 'distribution_description';
@@ -82,13 +88,18 @@ export const constructQuery = `
       dct:type ?${genre} ;
       owl:versionInfo ?${version} ;
       dct:isPartOf ?${includedInDataCatalog} ;
+      dct:hasPart ?${hasPart} ;
+      dct:isReferencedBy ?${isReferencedBy} ;
       dct:publisher ?${publisher} ;
       dct:creator ?${creator} ;
       dcat:distribution ?${distribution} .
       
     ?${publisher} a ?${publisherType} ;
       foaf:name ?${publisherName} ;
-      foaf:mbox ?${publisherEmail} .
+      foaf:nick ?${publisherAlternateName} ;
+      dct:identifier ?${publisherIdentifier} ;
+      foaf:mbox ?${publisherEmail} ;
+      owl:sameAs ?${publisherSameAs} .
 
     ?${creator} a ?${creatorType} ;
       foaf:name ?${creatorName} .
@@ -97,6 +108,7 @@ export const constructQuery = `
       dcat:accessURL ?${distributionUrl} ;
       dcat:mediaType ?${distributionMediaType} ;
       dct:conformsTo ?${distributionConformsTo} ;
+      dct:conformsTo ?${distributionConformsToSparql} ;
       dct:issued ?${distributionDatePublished} ;
       dct:modified ?${distributionDateModified} ;
       dct:description ?${distributionDescription} ;
@@ -119,6 +131,11 @@ export const constructQuery = `
         ?${publisher} a ?foafOrganizationOrPerson ;
           a ?${publisherType} ;
           foaf:name ?${publisherName} .
+          
+        OPTIONAL { ?${publisher} foaf:nick ?${publisherAlternateName} ; }
+        OPTIONAL { ?${publisher} dct:identifier ?${publisherIdentifier} ; }
+        OPTIONAL { ?${publisher} foaf:mbox ?${publisherEmail} ; }
+        OPTIONAL { ?${publisher} owl:sameAs ?${publisherSameAs} ; }
         
         OPTIONAL {
           ?${creator} a ?foafOrganizationOrPerson ;
@@ -133,12 +150,13 @@ export const constructQuery = `
           ?${distribution} a dcat:Distribution ;
             dcat:mediaType ?${distributionMediaType} ;
             dcat:accessURL ${convertToIri(distributionUrl)} .
+          OPTIONAL { ?${distribution} dct:conformsTo ?${distributionConformsTo} . }
           BIND(
             IF(
               CONTAINS(STR(?${distributionMediaType}), "sparql"),
               <https://www.w3.org/TR/sparql11-protocol/>,
               ?unbound
-            ) AS ?${distributionConformsTo} 
+            ) AS ?${distributionConformsToSparql} 
           )            
           OPTIONAL { ?${distribution} dct:issued ${convertToXsdDate(
             distributionDatePublished,
@@ -167,6 +185,8 @@ export const constructQuery = `
         OPTIONAL { ?${dataset} dct:genre ?${genre} }
         OPTIONAL { ?${dataset} owl:versionInfo ?${version} }
         OPTIONAL { ?${dataset} dct:isPartOf ?${includedInDataCatalog} }
+        OPTIONAL { ?${dataset} dct:hasPart ?${hasPart} }
+        OPTIONAL { ?${dataset} dct:isReferencedBy ?${isReferencedBy} }
         OPTIONAL { ?${dataset} dcat:landingPage ?${mainEntityOfPage} }
       }
     }
@@ -201,6 +221,12 @@ function schemaOrgQuery(prefix: string): string {
       ?${dataset} ${prefix}:publisher ?${publisher} .
       ?${publisher} a ?publisherTypeRaw ;
         ${prefix}:name ?${publisherName} .
+      OPTIONAL { ?${publisher} ${prefix}:alternateName ?${publisherAlternateName} . }
+      OPTIONAL { ?${publisher} ${prefix}:identifier ?${publisherIdentifier} . }
+      OPTIONAL { 
+        ?${publisher} ${prefix}:sameAs ?${publisherSameAs} .
+        FILTER(isIRI(?${publisherSameAs}))
+      }
       BIND(
         IF(
           ?publisherTypeRaw = ${prefix}:Organization,
@@ -229,7 +255,7 @@ function schemaOrgQuery(prefix: string): string {
           CONTAINS(STR(?${distributionMediaType}), "sparql"),
           <https://www.w3.org/TR/sparql11-protocol/>,
           ?unbound
-        ) AS ?${distributionConformsTo} 
+        ) AS ?${distributionConformsToSparql} 
       )
         
       OPTIONAL { ?${distribution} ${prefix}:datePublished ${convertToXsdDate(
@@ -243,6 +269,10 @@ function schemaOrgQuery(prefix: string): string {
       OPTIONAL { ?${distribution} ${prefix}:license ${normalizeLicense(distributionLicense)} }
       OPTIONAL { ?${distribution} ${prefix}:name ?${distributionName} }
       OPTIONAL { ?${distribution} ${prefix}:contentSize ?${distributionSize} }
+      OPTIONAL { 
+        ?${distribution} ${prefix}:usageInfo ?${distributionConformsTo} .
+        FILTER(isIRI(?${distributionConformsTo}))  
+      }
     } 
      
     OPTIONAL { ?${dataset} ${prefix}:description ?${description} } 
@@ -266,6 +296,8 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL { ?${dataset} ${prefix}:genre ?${genre} }
     OPTIONAL { ?${dataset} ${prefix}:version ?${version} }
     OPTIONAL { ?${dataset} ${prefix}:includedInDataCatalog ?${includedInDataCatalog} }
+    OPTIONAL { ?${dataset} ${prefix}:hasPart ?${hasPart} }
+    OPTIONAL { ?${dataset} ${prefix}:citation ?${isReferencedBy} }
     OPTIONAL { ?${dataset} ${prefix}:mainEntityOfPage ?${mainEntityOfPage} }
 `;
 }

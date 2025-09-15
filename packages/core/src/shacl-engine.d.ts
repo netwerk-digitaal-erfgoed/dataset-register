@@ -1,5 +1,5 @@
 declare module 'shacl-engine' {
-  import type { DatasetCore, NamedNode } from '@rdfjs/types';
+  import type { Dataset, DatasetCore, NamedNode } from '@rdfjs/types';
   import DatasetExt from 'rdf-ext/lib/Dataset.js';
 
   export interface ValidatorOptions {
@@ -14,13 +14,13 @@ declare module 'shacl-engine' {
   }
 
   export interface ValidationReport {
-    dataset: DatasetExt;
+    dataset: Dataset;
     results: ValidationResult[];
     conforms: boolean;
   }
 
   export class Validator {
     constructor(shapes: DatasetCore, options?: ValidatorOptions);
-    validate(options: { dataset: DatasetCore }): Promise<ValidationReport>;
+    validate(options: { dataset: Dataset }): Promise<ValidationReport>;
   }
 }

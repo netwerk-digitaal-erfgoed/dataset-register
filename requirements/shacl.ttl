@@ -246,7 +246,7 @@ reg:OrganizationShape
             sh:description """
                 Identifier(s) of the organization, at least its <a href="https://www.nationaalarchief.nl/archiveren/kennisbank/isil-codes">ISIL code</a>.
             """@en ;
-            sh:message "Een organisatie kan één of meer identifiers hebben"@nl, "An organization can have one or more identifier"@en ;
+            sh:message "Een organisatie kan één of meer identifiers hebben"@nl, "An organization can have one or more identifiers"@en ;
         ] ,
         [
             sh:path schema:sameAs ;

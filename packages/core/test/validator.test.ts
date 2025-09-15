@@ -79,7 +79,7 @@ describe('Validator', () => {
         shacl('resultSeverity'),
         shacl('Warning'),
       ).size,
-    ).toEqual(3);
+    ).toEqual(6);
   });
 
   it('accepts valid HTTP Schema.org dataset', async () => {
@@ -176,12 +176,21 @@ describe('Validator', () => {
     const report = (await validate(
       'dataset-schema-org-multiple-alternate-names.ttl',
       new StreamParser(),
-    )) as InvalidDataset;
+    )) as Valid;
 
     expect(report.state).toEqual('valid');
 
     // Once for creator and once for publisher.
     expectViolations(report, ['https://schema.org/alternateName'], 2);
+
+    // If dataset is valid, any parent violations must be removed.
+    expect(
+      report.errors.match(
+        null,
+        shacl('resultSeverity'),
+        shacl('Violation'),
+      ).size,
+    ).toEqual(0);
   });
 
   it('reports missing class', async () => {
