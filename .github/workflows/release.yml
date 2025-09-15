@@ -37,8 +37,11 @@ jobs:
         id: docker
         run: |
           npx nx release --dockerVersionScheme=production --yes
-          IMAGES=$(docker image ls ghcr.io/netwerk-digitaal-erfgoed/dataset-register/* --format "{{.Repository}}:{{.Tag}}")
-          echo "images=$IMAGES" >> $GITHUB_OUTPUT
+          {
+            echo 'images<<EOF'
+            docker image ls ghcr.io/netwerk-digitaal-erfgoed/dataset-register/apps-* --format "{{.Repository}}:{{.Tag}}"
+            echo EOF
+          } >> $GITHUB_OUTPUT
 
       - name: Tag latest images
         if: steps.docker.outputs.images
