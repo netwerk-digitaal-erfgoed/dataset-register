@@ -1,12 +1,9 @@
-import {metrics, ValueType} from '@opentelemetry/api';
-import {Resource} from '@opentelemetry/resources';
-import {SemanticResourceAttributes} from '@opentelemetry/semantic-conventions';
-import {
-  MeterProvider,
-  PeriodicExportingMetricReader,
-} from '@opentelemetry/sdk-metrics';
-import {OTLPMetricExporter} from '@opentelemetry/exporter-metrics-otlp-proto';
-import type {DatasetStore} from './dataset.ts';
+import { metrics, ValueType } from '@opentelemetry/api';
+import { defaultResource, resourceFromAttributes } from '@opentelemetry/resources';
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
+import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-proto';
+import type { DatasetStore } from './dataset.ts';
 
 export function startInstrumentation(datasetStore: DatasetStore) {
   datasetsCounter.addCallback(async result =>
@@ -17,19 +14,17 @@ export function startInstrumentation(datasetStore: DatasetStore) {
   );
 }
 const meterProvider = new MeterProvider({
-  resource: Resource.default().merge(
-    new Resource({
-      [SemanticResourceAttributes.SERVICE_NAME]: 'dataset-register',
-    }),
+  resource: defaultResource().merge(
+    resourceFromAttributes({[ATTR_SERVICE_NAME]: 'dataset-register'}),
   ),
+  readers: [
+    new PeriodicExportingMetricReader({
+      exporter: new OTLPMetricExporter(),
+      exportIntervalMillis: 60000,
+    })
+  ]
 });
 
-const metricReader = new PeriodicExportingMetricReader({
-  exporter: new OTLPMetricExporter(),
-  exportIntervalMillis: 60000,
-});
-
-meterProvider.addMetricReader(metricReader);
 metrics.setGlobalMeterProvider(meterProvider);
 
 const meter = metrics.getMeter('default');
