@@ -33,47 +33,51 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.CONTAINER_REGISTRY_TOKEN }}
 
-#      - name: Set up Docker Buildx
-#        uses: docker/setup-buildx-action@v3
-
       - name: Build and publish Docker images
-        run: npx nx release --dockerVersionScheme=production --yes
+        id: docker
+        run: |
+          npx nx release --dockerVersionScheme=production --yes
+          IMAGES=$(docker image ls ghcr.io/netwerk-digitaal-erfgoed/dataset-register/* --format "{{.Repository}}:{{.Tag}}")
+          echo "images=$IMAGES" >> $GITHUB_OUTPUT
+
+      - name: Tag latest images
+        if: steps.docker.outputs.images
+        run: |
+          echo "🏷️ Tagging images as latest..."
+          while IFS= read -r image; do
+            REPO=$(echo "$image" | cut -d':' -f1)
+            echo "Tagging $REPO:latest"
+            docker tag "$image" "$REPO:latest"
+            docker push "$REPO:latest"
+          done <<< "${{ steps.docker.outputs.images }}"
 
       - uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
-      - name: Discover published Docker images
-        id: vars
+      - name: Deploy to Kubernetes
+        if: steps.docker.outputs.images
         run: |
-          # Get all images published to our registry (recently created)
-          IMAGES=$(docker image ls ghcr.io/netwerk-digitaal-erfgoed/dataset-register/* --format "{{.Repository}}:{{.Tag}}")
-          
-          if [ -z "$IMAGES" ]; then
-            echo "ℹ️ No Docker images were published"
-          else
-            doctl kubernetes cluster kubeconfig save nde
-            echo "🚀 Deploying discovered images to Kubernetes..."
-            
-            # Deploy all images in parallel
-            while IFS= read -r image; do
-              case "$image" in
-                *apps-api*)
-                  echo "🚀 Deploying registry-api: $image"
-                  kubectl set image deployment/registry-api app=$image --record &
-                  ;;
-                *apps-crawler*)  
-                  echo "🚀 Deploying registry-crawler: $image"
-                  kubectl set image deployment/registry-crawler app=$image --record &
-                  ;;
-                *)
-                  echo "⚠️ Unknown image pattern: $image - skipping"
-                  ;;
-              esac
-            done <<< "$IMAGES"
-            
-            # Verify all deployments
-            echo "✅ Verifying deployments..."
-            kubectl rollout status deployment/registry-api deployment/registry-crawler 2>/dev/null || true
-            echo "✅ All deployments completed"
-          fi
+          doctl kubernetes cluster kubeconfig save nde
+          echo "🚀 Deploying discovered images to Kubernetes..."
+
+          while IFS= read -r image; do
+            case "$image" in
+              *apps-api*)
+                echo "🚀 Deploying registry-api: $image"
+                kubectl set image deployment/registry-api app=$image --record &
+                ;;
+              *apps-crawler*)
+                echo "🚀 Deploying registry-crawler: $image"
+                kubectl set image deployment/registry-crawler app=$image --record &
+                ;;
+              *)
+                echo "⚠️ Unknown image pattern: $image - skipping"
+                ;;
+            esac
+          done <<< "${{ steps.docker.outputs.images }}"
+
+          # Verify all deployments
+          echo "✅ Verifying deployments..."
+          kubectl rollout status deployment/registry-api deployment/registry-crawler 2>/dev/null || true
+          echo "✅ All deployments completed"
