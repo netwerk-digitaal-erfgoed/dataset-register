@@ -22,7 +22,7 @@
     "@comunica/query-sparql": "^4.0.2",
     "@opentelemetry/api": "^1.4.1",
     "@opentelemetry/exporter-metrics-otlp-proto": "^0.57.0",
-    "@opentelemetry/resources": "^1.14.0",
+    "@opentelemetry/resources": "^2.1.0",
     "@opentelemetry/sdk-metrics": "^1.14.0",
     "@opentelemetry/semantic-conventions": "^1.14.0",
     "@rdfjs/types": "2.0.1",
