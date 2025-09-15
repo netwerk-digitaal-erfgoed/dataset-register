@@ -71,7 +71,7 @@
   "dependencies": {
     "@dataset-register/core": "*",
     "node-schedule": "^2.1.1",
-    "pino": "^9.8.0"
+    "pino": "^9.9.5"
   },
   "devDependencies": {
     "@types/node-schedule": "^2.1.8",
