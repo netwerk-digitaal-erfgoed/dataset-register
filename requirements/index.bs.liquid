@@ -74,7 +74,7 @@ Definitions {#definitions}
 :: Metadata about the [=dataset=], including the dataset's name and [=publisher=].
     This description must be distinguished from the metadata records themselves.
 
-    For example: imagine a dataset of Van Gogh paintings called 'Sunflowers',
+    For example: imagine a dataset of Van Gogh paintings called ‘Sunflowers’,
     which is published by the Van Gogh Museum under a specific license.
     The name, license and publisher are all part of the dataset description.
     The dataset description also tells us the URLs of distributions where we can download or query the data.
@@ -214,9 +214,9 @@ Publishers *MUST* include basic information about the dataset, at the very minim
     </pre>
 </div>
 
-{% assign dataset = nodeShapes | where: 'targetClass', 'schema:Dataset' | first -%}
+{% assign dataset = nodeShapes | where: 'targetClass', 'https://schema.org/Dataset' | first -%}
 
-{% assign license = dataset.property | where: 'path', 'schema:license' | first -%}
+{% assign license = dataset.property | where: 'path', 'https://schema.org/license' | first -%}
 
 ### {{ license.name | lang: 'en' }} ### {#dataset-{{ license.name | lang: 'en' | downcase }}}
 
@@ -512,8 +512,8 @@ See [[#distribution-attributes]] for a full overview.
 Publishers *SHOULD* make known when the [=distribution=] was originally created and when it was last updated,
 so [=consumers=] can efficiently stay up-to-date with the latest changes.
 Please note that this is different from [[#dataset-date|dataset description's dates]].
-Datetimes ('2019-08-15T08:05:00Z') are preferred because they offer greater precision,
-but simple dates ('2019-04-14') are also allowed.
+Datetimes (`2019-08-15T08:05:00Z`) are preferred because they offer greater precision,
+but simple dates (`2019-04-14`) are also allowed.
 
 <div class="example">
     Specify distribution dates:
@@ -530,7 +530,7 @@ but simple dates ('2019-04-14') are also allowed.
 
 ### Developer documentation ### {#developer-docs}
 
-Publishers *SHOULD* link to documentation URLs via the [schema:usageInfo](https://schema.org/usageInfo) attribute. For datadumps this should be documentation about the
+Publishers *SHOULD* link to documentation URLs via the [https://schema.org/usageInfo](https://schema.org/usageInfo) attribute. For datadumps this should be documentation about the
 data model. For [=web APIs=] this should be documentation about the specific capabilities of the API (like content-type support) *AND* the generic specification of the
 protocol which also types the distribution such as OAI-PMH, SPARQL and REST.
 
@@ -699,16 +699,16 @@ even if that resource is the same on all pages.
 
 This is an overview of required and recommended attributes.
 
-{% assign datasetShape = nodeShapes | where: 'targetClass', 'schema:Dataset' | first -%}
+{% assign datasetShape = nodeShapes | where: 'targetClass', 'https://schema.org/Dataset' | first -%}
 {% render 'attributes', name: 'Dataset', nodeShape: datasetShape %}
 
-{% assign organizationShape = nodeShapes | where: 'class', 'schema:Organization' | first -%}
+{% assign organizationShape = nodeShapes | where: 'class', 'https://schema.org/Organization' | first -%}
 {% render 'attributes', name: 'Organization', nodeShape: organizationShape %}
 
-{% assign distributionShape = nodeShapes| where: "targetClass", "schema:DataDownload" | first -%}
+{% assign distributionShape = nodeShapes| where: 'targetClass', 'https://schema.org/DataDownload' | first -%}
 {% render 'attributes', name: 'Distribution', nodeShape: distributionShape %}
 
-{% assign catalogShape = nodeShapes | where: "targetClass", "schema:DataCatalog" | first -%}
+{% assign catalogShape = nodeShapes | where: 'targetClass', 'https://schema.org/DataCatalog' | first -%}
 {% render 'attributes', name: 'DataCatalog', nodeShape: catalogShape %}
 
 ### Full example ### {#dataset-example}
