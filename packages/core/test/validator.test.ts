@@ -66,22 +66,6 @@ describe('Validator', () => {
     expectViolations(report, ['https://schema.org/dateModified']);
   });
 
-  it('accepts valid Schema.org dataset without publisher', async () => {
-    const report = await validate(
-      'dataset-schema-org-valid-no-publisher.jsonld',
-    ) as Valid;
-    expect(report.state).toEqual('valid');
-    expect(report.state === 'valid');
-    expectViolations(report, ['https://schema.org/publisher']);
-    expect(
-      (report as Valid).errors.match(
-        null,
-        shacl('resultSeverity'),
-        shacl('Warning'),
-      ).size,
-    ).toEqual(6);
-  });
-
   it('accepts valid HTTP Schema.org dataset', async () => {
     const report = await validate('dataset-http-schema-org-valid.jsonld');
     expect(report.state).toEqual('valid');

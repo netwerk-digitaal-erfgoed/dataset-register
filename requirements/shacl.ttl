@@ -25,7 +25,25 @@ reg:DatacatalogShape
         reg:SchemaCatalogNameProperty,
         reg:SchemaDescriptionProperty,
         reg:SchemaDescriptionPropertyShouldExist,
-        reg:SchemaPublisherProperty ,
+        [
+            sh:path schema:publisher ;
+            sh:minCount 1 ;
+            sh:maxCount 1 ;
+            sh:severity sh:Warning ;
+            sh:name "Persoon of organisatie die de datacatalogus heeft gepubliceerd"@nl, "Person or organization that published the data catalog"@en ;
+            sh:description """
+                The publisher of the data catalog.
+            """@en ;
+            sh:message "Er moet een uitgever van de datacatalogus gespecificeerd zijn"@nl, "A publisher of the data catalog must be specified"@en ;
+            sh:or (
+                [
+                    sh:node reg:OrganizationShape ;
+                ]
+                [
+                    sh:node reg:PersonShape ;
+                ]
+            ) ;
+        ] ,
         reg:SchemaDatasetProperty
 .
 
@@ -458,7 +476,6 @@ reg:SchemaPublisherProperty a sh:PropertyShape ;
     sh:path schema:publisher ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
-    sh:severity sh:Warning ;
     sh:name "Persoon of organisatie die de dataset heeft gepubliceerd"@nl, "Person or organization that published the dataset"@en ;
     sh:description """
         The publisher of the dataset.
