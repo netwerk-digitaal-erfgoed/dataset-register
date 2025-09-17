@@ -486,7 +486,7 @@ reg:SchemaPublisherProperty a sh:PropertyShape ;
     sh:description """
         The publisher of the dataset.
     """@en ;
-    sh:message "Een dataset description moet een geldige uitgever hebben"@nl, "A dataset description must have a valid publisher"@en ;
+    sh:message "Een dataset description moet een geldige uitgever bevatten (zonder waarschuwingen)"@nl, "A dataset description must contain a valid publisher (without warnings)"@en ;
     sh:or (
         [
             sh:node reg:OrganizationShape ;
