@@ -53,8 +53,22 @@ describe('Validator', () => {
   });
 
   it('accepts valid Schema.org dataset', async () => {
-    const report = await validate('dataset-schema-org-valid.jsonld');
-    expect(report.state).toEqual('valid');
+    const report = await validate('dataset-schema-org-valid.jsonld') as Valid;
+
+    const blankNode = rdf.blankNode();
+    const expectedDataset = rdf.dataset([
+      rdf.quad(
+        blankNode,
+        rdf.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        shacl('ValidationReport')
+      ),
+      rdf.quad(
+        blankNode,
+        shacl('conforms'),
+        rdf.literal('true', rdf.namedNode('http://www.w3.org/2001/XMLSchema#boolean'))
+      )
+    ]) as unknown as Dataset;
+    expect(report.errors.toCanonical()).toEqual(expectedDataset.toCanonical());
   });
 
   it('reports invalid Schema.org dataset', async () => {
