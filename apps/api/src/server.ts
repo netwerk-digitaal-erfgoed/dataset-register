@@ -62,7 +62,9 @@ export async function server(
     .register(acceptsSerializer, {
       default: 'application/ld+json', // default doesn't work, so Accept header is required.
     })
-    .register(fastifyCors)
+    .register(fastifyCors, {
+      methods: ['GET', 'HEAD', 'POST', 'PUT']
+    })
     .addHook('onRequest', async request => {
       if (request.headers.accept === undefined) {
         request.headers.accept = 'application/ld+json';
