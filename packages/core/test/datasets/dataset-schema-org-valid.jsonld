@@ -29,6 +29,7 @@
   "publisher": {
     "@type": "Organization",
     "@id": "https://example.com/publisher",
+    "identifier": "test",
     "name": "Koninklijke Bibliotheek",
     "sameAs": "https://ror.org/02w4jbg70",
     "contactPoint": {
@@ -59,17 +60,20 @@
     {
       "@type": "DataDownload",
       "encodingFormat": ["application/rdf+xml", "text/turtle"],
-      "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
+      "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf",
+      "description": "Turtle dump"
     },
     {
       "@type": "DataDownload",
       "encodingFormat": "application/ld+json",
-      "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld"
+      "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld",
+      "description": "JSON-LD dump"
     },
     {
       "@type": "DataDownload",
       "encodingFormat": "application/sparql-query",
-      "contentUrl": "http://data.bibliotheken.nl/id/dataset/sparql"
+      "contentUrl": "http://data.bibliotheken.nl/id/dataset/sparql",
+      "description": "SPARQL endpoint"
     }
   ]
 }
