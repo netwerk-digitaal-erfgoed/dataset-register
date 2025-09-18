@@ -1,7 +1,13 @@
 import { Registration, Validator } from '@dataset-register/core';
 import { Crawler } from '../src/crawler.js';
 import { URL } from 'url';
-import { file, MockDatasetStore, MockRatingStore, MockRegistrationStore } from '@dataset-register/core/test-utils';
+import {
+  file,
+  MockDatasetStore,
+  MockRatingStore,
+  MockRegistrationStore,
+  validSchemaOrgDataset
+} from '@dataset-register/core/test-utils';
 import nock from 'nock';
 import pino from 'pino';
 import { Store } from 'n3';
@@ -34,7 +40,7 @@ describe('Crawler', () => {
   it('crawls valid URLs', async () => {
     await storeRegistrationFixture(new URL('https://example.com/valid'));
 
-    const response = await file('dataset-schema-org-valid.jsonld');
+    const response = await validSchemaOrgDataset();
     nock('https://example.com')
       .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
       .get('/valid')

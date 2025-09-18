@@ -1,0 +1,95 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Dataset",
+      "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
+      "name": [
+        {
+          "@value": "Alba amicorum van de Koninklijke Bibliotheek",
+          "@language": "nl"
+        },
+        {
+          "@value": "Alba amicorum of the Dutch Royal Library",
+          "@language": "en"
+        }
+      ],
+      "description": {
+        "@value": "Description only in English",
+        "@language": "en"
+      },
+      "keywords": "alba amicorum",
+      "genre": "Interesting data",
+      "url": "https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum",
+      "identifier": "http://data.bibliotheken.nl/id/dataset/rise-alba",
+      "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+      "inLanguage": [
+        "nl-NL",
+        "en-GB"
+      ],
+      "spatialCoverage": {
+        "@id": "https://sws.geonames.org/2750405/"
+      },
+      "temporalCoverage": "1939/1945",
+      "publisher": {
+        "@id": "https://example.com"
+      },
+      "creator": [
+        {
+          "@type": "Person",
+          "@id": "https://example.com/creator1",
+          "name": "Creator 1"
+        },
+        {
+          "@type": "Person",
+          "@id": "https://example.com/creator2",
+          "name": "Creator 2"
+        },
+        {
+          "@id": "https://example.com"
+        }
+      ],
+      "dateModified": "2021-05-27T09:56:21.370767",
+      "datePublished": "2021-05-28",
+      "dateCreated": {
+        "@type": "http://www.w3.org/2001/XMLSchema#date",
+        "@value": "2021-05-27"
+      },
+      "distribution": [
+        {
+          "@type": "DataDownload",
+          "encodingFormat": [
+            "application/rdf+xml",
+            "text/turtle"
+          ],
+          "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf",
+          "description": "Turtle dump"
+        },
+        {
+          "@type": "DataDownload",
+          "encodingFormat": "application/ld+json",
+          "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld",
+          "description": "JSON-LD dump"
+        },
+        {
+          "@type": "DataDownload",
+          "encodingFormat": "application/sparql-query",
+          "contentUrl": "http://data.bibliotheken.nl/id/dataset/sparql",
+          "description": "SPARQL endpoint"
+        }
+      ]
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://example.com",
+      "identifier": "test",
+      "name": "Koninklijke Bibliotheek",
+      "sameAs": "https://ror.org/02w4jbg70",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "name": "Datasets Manager",
+        "email": "datasets@example.com"
+      }
+    }
+  ]
+}
