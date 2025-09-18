@@ -8,6 +8,7 @@ import {RdfaParser} from 'rdfa-streaming-parser/lib/RdfaParser.js';
 import rdf from 'rdf-ext';
 import type {Dataset} from '@rdfjs/types';
 import {file} from '../src/test-utils.js';
+import { Readable } from 'node:stream';
 
 const validator = await ShaclEngineValidator.fromUrl('../../requirements/shacl.ttl');
 
@@ -53,7 +54,7 @@ describe('Validator', () => {
   });
 
   it('accepts valid Schema.org dataset', async () => {
-    const report = await validate('dataset-schema-org-valid.jsonld') as Valid;
+    const report = await validate('../../../../requirements/examples/dataset-schema-org-valid.jsonld') as Valid;
 
     const blankNode = rdf.blankNode();
     const expectedDataset = rdf.dataset([
@@ -202,8 +203,7 @@ export const validate = async (filename: string, parser?: Transform) =>
 
 const dataset = async (filename: string, parser?: Transform) => {
   const content = await file(filename);
-  const {Readable} = await import('stream');
-  const stream = Readable.from([content]);
+  const stream = Readable.from(content);
 
   return (await rdf.dataset().import(
     stream

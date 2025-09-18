@@ -223,7 +223,6 @@ reg:OrganizationShape
         ] ,
         [
             sh:path schema:alternateName ;
-            sh:maxCount 1 ;
             sh:uniqueLang true ;
             sh:severity sh:Warning ;
             sh:message "Een organisatie mag maximaal één alternatieve naam (per taal) hebben"@nl, "An organization may have at most one alternative name (per language)"@en ;

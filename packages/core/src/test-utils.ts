@@ -14,6 +14,8 @@ export const file = async (filename: string) => {
   return await readFile(path, 'utf-8');
 };
 
+export const validSchemaOrgDataset = () => file('../../../../requirements/examples/dataset-schema-org-valid.jsonld');
+
 export const dereference = async (file: string): Promise<DatasetExt> => {
   const { data } = await rdfDereferencer.dereference(file, { localFiles: true });
   const stream = pipeline(

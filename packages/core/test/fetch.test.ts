@@ -3,7 +3,7 @@ import {fetch, HttpError, NoDatasetFoundAtUrl} from '../src/fetch.js';
 import nock from 'nock';
 import {dcat, dct, foaf, rdf} from '../src/query.js';
 import factory from 'rdf-ext';
-import { dereference, file } from '../src/test-utils.js';
+import { dereference, file, validSchemaOrgDataset } from '../src/test-utils.js';
 import type {BlankNode} from '@rdfjs/types';
 
 describe('Fetch', () => {
@@ -60,7 +60,7 @@ describe('Fetch', () => {
   });
 
   it('accepts valid Schema.org dataset description', async () => {
-    const response = await file('dataset-schema-org-valid.jsonld');
+    const response = await validSchemaOrgDataset();
     nock('https://example.com')
       .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
       .get('/valid-schema-org-dataset')
@@ -138,14 +138,14 @@ describe('Fetch', () => {
         factory.quad(
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
           dct('publisher'),
-          factory.namedNode('https://example.com/publisher'),
+          factory.namedNode('https://example.com'),
         ),
       ),
     ).toBe(true);
     expect(
       dataset.has(
         factory.quad(
-          factory.namedNode('https://example.com/publisher'),
+          factory.namedNode('https://example.com'),
           rdf('type'),
           foaf('Organization'),
         ),
@@ -154,7 +154,7 @@ describe('Fetch', () => {
     expect(
       dataset.has(
         factory.quad(
-          factory.namedNode('https://example.com/publisher'),
+          factory.namedNode('https://example.com'),
           foaf('mbox'),
           factory.literal('datasets@example.com'),
         ),
