@@ -19,7 +19,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@comunica/query-sparql": "^4.0.2",
+    "@comunica/query-sparql": "^4.4.0",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/exporter-metrics-otlp-proto": "^0.205.0",
     "@opentelemetry/resources": "^2.1.0",
