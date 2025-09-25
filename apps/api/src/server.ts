@@ -242,7 +242,7 @@ export async function server(
    * If a route has enabled `parseRdf`, parse RDF into a DatasetExt object. If not, parse as JSON.
    */
   server.addContentTypeParser(
-    ['application/ld+json', 'text/turtle', 'text/n3', 'application/trig'],
+    ['application/ld+json', 'text/turtle', 'text/n3', 'application/trig', 'application/n-triples', 'application/n-quads'],
     async (request: FastifyRequest, payload: IncomingMessage) => {
       if (request.routeOptions.config.parseRdf ?? false) {
         try {
