@@ -89,7 +89,6 @@ reg:DatasetShape
             a sh:PropertyShape ;
             sh:path schema:mainEntityOfPage ;
             sh:minCount 0 ;
-            sh:maxCount 1 ;
             sh:name "Main entity of page"@en ;
             sh:description """
                 URL of a landing page where the dataset is described for human users.
@@ -378,7 +377,7 @@ reg:SchemaDatasetProperty a sh:PropertyShape ;
     sh:node reg:DatasetShape ;
     sh:name "Dataset(s) in de datacatalogus"@nl, "Dataset(s) in the data catalog"@en ;
     sh:description "The datasets that are contained in the data catalog."@en ;
-    sh:message "Een datacatalogus moet minimaal één dataset te bevatten"@nl, "A data catalog must have at least one dataset"@en ;
+    sh:message "Een datacatalogus moet minimaal één dataset bevatten"@nl, "A data catalog must have at least one dataset"@en ;
     sh:severity sh:Warning ;
 .
 
