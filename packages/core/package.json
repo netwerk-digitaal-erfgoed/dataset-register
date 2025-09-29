@@ -41,6 +41,6 @@
     "microdata-rdf-streaming-parser": "^3.0.0",
     "nock": "^14.0.10",
     "rdfa-streaming-parser": "^3.0.1",
-    "testcontainers": "^11.5.1"
+    "testcontainers": "^11.7.0"
   }
 }
