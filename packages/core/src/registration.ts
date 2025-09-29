@@ -1,4 +1,4 @@
-import {URL} from 'node:url';
+import { URL } from 'node:url';
 import factory from 'rdf-ext';
 
 export class Registration {
@@ -89,7 +89,7 @@ export function toRdf(registration: Registration) {
       factory.namedNode('http://schema.org/encoding'),
       factory.namedNode('http://schema.org'), // Currently the only vocabulary that we support.
     ),
-    ...registration.datasets.flatMap(datasetIri => {
+    ...registration.datasets.flatMap((datasetIri) => {
       const datasetQuads = [
         factory.quad(
           iri,
@@ -98,9 +98,7 @@ export function toRdf(registration: Registration) {
         ),
         factory.quad(
           factory.namedNode(datasetIri.toString()),
-          factory.namedNode(
-            'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
-          ),
+          factory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
           factory.namedNode('http://schema.org/Dataset'),
         ),
         factory.quad(

@@ -1,7 +1,12 @@
 import { DatasetStore, extractIri } from './dataset.js';
 import { QueryEngine } from '@comunica/query-sparql';
 import { Writer } from 'n3';
-import { AllowedRegistrationDomainStore, Registration, RegistrationStore, toRdf } from './registration.js';
+import {
+  AllowedRegistrationDomainStore,
+  Registration,
+  RegistrationStore,
+  toRdf,
+} from './registration.js';
 import type { RequestInfo, RequestInit, Response } from 'node-fetch';
 import fetch, { Headers } from 'node-fetch';
 import { Rating, RatingStore } from './rate.js';
@@ -16,21 +21,25 @@ export function stores(
   registrationsGraphIri = 'https://demo.netwerkdigitaalerfgoed.nl/registry/registrations',
   allowedRegistrationDomainsGraphIri = 'https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names',
   ratingGraphIri = 'https://data.netwerkdigitaalerfgoed.nl/registry/ratings',
-  )
-{
+) {
   const client = new SparqlClient(url, accessToken);
 
   return {
     datasetStore: new SparqlDatasetStore(client),
-    registrationStore: new SparqlRegistrationStore(client, registrationsGraphIri),
-    allowedRegistrationDomainStore: new SparqlAllowedRegistrationDomainStore(client, allowedRegistrationDomainsGraphIri),
+    registrationStore: new SparqlRegistrationStore(
+      client,
+      registrationsGraphIri,
+    ),
+    allowedRegistrationDomainStore: new SparqlAllowedRegistrationDomainStore(
+      client,
+      allowedRegistrationDomainsGraphIri,
+    ),
     ratingStore: new SparqlRatingStore(client, ratingGraphIri),
-  }
+  };
 }
 
 export class SparqlDatasetStore implements DatasetStore {
-  constructor(private readonly client: SparqlClient) {
-  }
+  constructor(private readonly client: SparqlClient) {}
 
   async countDatasets(): Promise<number> {
     const result = await this.client.query(`
@@ -38,8 +47,7 @@ export class SparqlDatasetStore implements DatasetStore {
 
       SELECT (COUNT(?s) AS ?count) WHERE {
         ?s a dcat:Dataset .
-      }`,
-    );
+      }`);
     const bindings = await result.toArray();
 
     return parseInt(bindings[0]!.get('count')!.value);
@@ -53,8 +61,7 @@ export class SparqlDatasetStore implements DatasetStore {
       SELECT (COUNT(DISTINCT(?publisher)) AS ?count) WHERE {
         ?s a dcat:Dataset ;
           dct:publisher ?publisher .
-      }`
-    );
+      }`);
     const bindings = await result.toArray();
 
     return parseInt(bindings[0]!.get('count')!.value);
@@ -80,9 +87,8 @@ export class SparqlDatasetStore implements DatasetStore {
 export class SparqlRegistrationStore implements RegistrationStore {
   constructor(
     private readonly client: SparqlClient,
-    private readonly graphIri: string
-  ) {
-  }
+    private readonly graphIri: string,
+  ) {}
 
   async findRegistrationsReadBefore(date: Date): Promise<Registration[]> {
     const result = await this.client.query(`
@@ -97,18 +103,19 @@ export class SparqlRegistrationStore implements RegistrationStore {
           FILTER (STR(?dateRead) < "${date.toISOString()}")  
         }
       } GROUP BY ?s ?datePosted ?validUntil
-    `
-    );
+    `);
 
     const bindings = await result.toArray();
 
     return bindings.map(
-      binding =>
+      (binding) =>
         new Registration(
           new URL(binding.get('s')!.value),
           new Date(binding.get('datePosted')!.value),
-          binding.get('validUntil') ? new Date(binding.get('validUntil')!.value) : undefined
-        )
+          binding.get('validUntil')
+            ? new Date(binding.get('validUntil')!.value)
+            : undefined,
+        ),
     );
   }
 
@@ -150,9 +157,8 @@ export class SparqlRegistrationStore implements RegistrationStore {
 export class SparqlRatingStore implements RatingStore {
   constructor(
     private readonly client: SparqlClient,
-    private readonly graphIri: string
-  ) {
-  }
+    private readonly graphIri: string,
+  ) {}
 
   async store(datasetUri: URL, rating: Rating): Promise<void> {
     await this.client.update(`
@@ -179,45 +185,48 @@ export class SparqlRatingStore implements RatingStore {
           ]
         }
       }
-      `
-    );
+      `);
   }
 }
 
 export class SparqlClient {
-  private readonly sources : [{type: 'sparql', value: string}];
+  private readonly sources: [{ type: 'sparql'; value: string }];
 
-  constructor(private readonly url: string, private readonly accessToken?: string) {
+  constructor(
+    private readonly url: string,
+    private readonly accessToken?: string,
+  ) {
     this.sources = [
       {
         type: 'sparql',
         value: this.url,
-      }
+      },
     ];
   }
 
   async query(query: string) {
-    return await queryEngine.queryBindings(query, {sources: this.sources});
+    return await queryEngine.queryBindings(query, { sources: this.sources });
   }
 
   async queryBoolean(query: string) {
-    return await queryEngine.queryBoolean(query, {sources: this.sources});
+    return await queryEngine.queryBoolean(query, { sources: this.sources });
   }
 
   async update(operations: string) {
     await queryEngine.queryVoid(operations, {
       sources: this.sources,
-      ...(this.accessToken && { fetch: authenticatedFetch(this.accessToken) })
+      ...(this.accessToken && { fetch: authenticatedFetch(this.accessToken) }),
     });
   }
 }
 
-export class SparqlAllowedRegistrationDomainStore implements AllowedRegistrationDomainStore {
+export class SparqlAllowedRegistrationDomainStore
+  implements AllowedRegistrationDomainStore
+{
   constructor(
     private readonly client: SparqlClient,
-    private readonly graphIri: string
-  ) {
-  }
+    private readonly graphIri: string,
+  ) {}
 
   async contains(...domainNames: Array<string>) {
     return await this.client.queryBoolean(`
@@ -225,8 +234,8 @@ export class SparqlAllowedRegistrationDomainStore implements AllowedRegistration
         GRAPH <${this.graphIri}> {
           ?s <https://data.netwerkdigitaalerfgoed.nl/allowed_domain_names/def/domain_name> ?domainNames .
           VALUES ?domainNames { ${domainNames
-      .map(domainName => `"${domainName}"`)
-      .join(' ')} 
+            .map((domainName) => `"${domainName}"`)
+            .join(' ')} 
           }
         }
       }`);
@@ -234,13 +243,16 @@ export class SparqlAllowedRegistrationDomainStore implements AllowedRegistration
 }
 
 export function authenticatedFetch(accessToken: string): typeof fetch {
-  return async (url: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  return async (
+    url: RequestInfo | URL,
+    init?: RequestInit,
+  ): Promise<Response> => {
     const headers = new Headers(init?.headers);
     headers.set('Authorization', `Bearer ${accessToken}`);
 
     return fetch(url, {
       ...init,
-      headers
+      headers,
     });
   };
 }

@@ -43,7 +43,7 @@ For example using [Comunica](https://comunica.dev):
 
 Or curl:
 
-    curl -H Accept:application/sparql-results+json --data-urlencode 'query=select * {?s a <http://www.w3.org/ns/dcat#Dataset> . ?s ?p ?o . } limit 100' https://datasetregister.netwerkdigitaalerfgoed.nl/sparql 
+    curl -H Accept:application/sparql-results+json --data-urlencode 'query=select * {?s a <http://www.w3.org/ns/dcat#Dataset> . ?s ?p ?o . } limit 100' https://datasetregister.netwerkdigitaalerfgoed.nl/sparql
 
 ### Automate registrations
 
@@ -88,7 +88,7 @@ LOG=false npm start
 You can configure the application through environment variables:
 
 - `SPARQL_URL`: URL to the SPARQL store.
-- `SPARQL_ACCESS_TOKEN`: access token for write operations on SPARQL Store.
+- `SPARQL_ACCESS_TOKEN`: access token for write operations on SPARQL Store (default: `SECRET_TOKEN`).
 - `LOG`: enable/disable logging (default: `true`).
 - `CRAWLER_SCHEDULE`: a schedule in Cron format; for example `0 * * * *` to [crawl](#crawler) every hour
   (default: crawling disabled).
@@ -110,7 +110,7 @@ npm test
 
 ### Crawler
 
-The crawler will periodically fetch registration URLs ([`schema:EntryPoint`](#schemaentrypoint)) to update the dataset descriptions stored in the Dataset Register. 
+The crawler will periodically fetch registration URLs ([`schema:EntryPoint`](#schemaentrypoint)) to update the dataset descriptions stored in the Dataset Register.
 
 To enable the crawler, set [the `CRAWLER_SCHEDULE` configuration variable](#configuration).
 The crawler will then check all registration URLs according to that schedule to see if any of the URLs have become outdated.
@@ -128,22 +128,22 @@ Any URL [registered by clients](#submit-dataset-descriptions) is added as a `sch
 
 Datasets are fetched from this URL on registration and when [crawling](#crawler) it.
 
-| Property | Description                                                                                                                                  |
-| ------------- |----------------------------------------------------------------------------------------------------------------------------------------------|
+| Property                                             | Description                                                                                                                                  |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`schema:datePosted`](https://schema.org/datePosted) | UTC datetime when the URL was registered.                                                                                                    |
-| [`schema:dateRead`](https://schema.org/dateRead) | UTC datetime when the URL was last read by the application. The [crawler](#crawler) updates this value when fetching descriptions.           |
-| [`schema:status`](https://schema.org/status) | The HTTP status code last encountered when fetching the URL.                                                                                 |
+| [`schema:dateRead`](https://schema.org/dateRead)     | UTC datetime when the URL was last read by the application. The [crawler](#crawler) updates this value when fetching descriptions.           |
+| [`schema:status`](https://schema.org/status)         | The HTTP status code last encountered when fetching the URL.                                                                                 |
 | [`schema:validUntil`](https://schema.org/validUntil) | If the URL has become [invalid](#validate-dataset-descriptions), the UTC datetime at which it did so.                                        |
-| [`schema:about`](https://schema.org/about) | The set of [`schema:Dataset`s](#schemadataset) that the URL contains. The [crawler](#crawler) updates this value when fetching descriptions. |
+| [`schema:about`](https://schema.org/about)           | The set of [`schema:Dataset`s](#schemadataset) that the URL contains. The [crawler](#crawler) updates this value when fetching descriptions. |
 
 ### `schema:Dataset`
 
 Each dataset that is found at the [`schema:EntryPoint`](#schemaentrypoint) registration URL gets added as a
-`schema:Dataset` to the 
+`schema:Dataset` to the
 [Registrations graph](https://qlever-ui.demo.netwerkdigitaalerfgoed.nl/datasetregister/chqohW?exec=true).
 
 | Property                                           | Description                                                     |
-|----------------------------------------------------|-----------------------------------------------------------------|
+| -------------------------------------------------- | --------------------------------------------------------------- |
 | [`schema:dateRead`](https://schema.org/dateRead)   | UTC datetime when the dataset was last read by the application. |
 | [`schema:subjectOf`](https://schema.org/subjectOf) | From which registration URL the dataset was read.               |
 
@@ -156,24 +156,24 @@ If the dataset’s description is provided in Schema.org rather than DCAT, the d
 ‘Based on’ column shows the corresponding Schema.org property.
 See the [Requirements for Datasets](https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/) for more details.
 
-| Property | Description | Based on |
-| -------- | ----------- | -------- |
-| [`dct:title`](http://purl.org/dc/terms/title) | Dataset title. | [`schema:name`](https://schema.org/name) |
-| [`dct:alternative`](http://purl.org/dc/terms/alternative) | Dataset alternate title. | [`schema:alternateName`](https://schema.org/alternateName) |
-| [`dct:identifier`](http://purl.org/dc/terms/identifier) | Dataset identifier. | [`schema:identifier`](https://schema.org/identifier) |
-| [`dct:description`](http://purl.org/dc/terms/description) | Dataset description. | [`schema:description`](https://schema.org/description) |
-| [`dct:license`](http://purl.org/dc/terms/license) | Dataset license. | [`schema:license`](https://schema.org/license) |
-| [`dct:language`](http://purl.org/dc/terms/language) | Language(s) in which the dataset is available. | [`schema:inLanguage`](https://schema.org/inLanguage) |
-| [`dcat:keyword`](https://www.w3.org/TR/vocab-dcat-3/#Property:resource_keyword) | Keywords or tags that describe the dataset. | [`schema:keywords`](https://schema.org/keywords) |
+| Property                                                                                 | Description                                      | Based on                                                         |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------- |
+| [`dct:title`](http://purl.org/dc/terms/title)                                            | Dataset title.                                   | [`schema:name`](https://schema.org/name)                         |
+| [`dct:alternative`](http://purl.org/dc/terms/alternative)                                | Dataset alternate title.                         | [`schema:alternateName`](https://schema.org/alternateName)       |
+| [`dct:identifier`](http://purl.org/dc/terms/identifier)                                  | Dataset identifier.                              | [`schema:identifier`](https://schema.org/identifier)             |
+| [`dct:description`](http://purl.org/dc/terms/description)                                | Dataset description.                             | [`schema:description`](https://schema.org/description)           |
+| [`dct:license`](http://purl.org/dc/terms/license)                                        | Dataset license.                                 | [`schema:license`](https://schema.org/license)                   |
+| [`dct:language`](http://purl.org/dc/terms/language)                                      | Language(s) in which the dataset is available.   | [`schema:inLanguage`](https://schema.org/inLanguage)             |
+| [`dcat:keyword`](https://www.w3.org/TR/vocab-dcat-3/#Property:resource_keyword)          | Keywords or tags that describe the dataset.      | [`schema:keywords`](https://schema.org/keywords)                 |
 | [`dcat:landingPage`](https://www.w3.org/TR/vocab-dcat-3/#Property:resource_landing_page) | URL of a webpage where the dataset is described. | [`schema:mainEntityOfPage`](https://schema.org/mainEntityOfPage) |
-| [`dct:source`](http://purl.org/dc/terms/source) | URL(s) of datasets the dataset is based on. | [`schema:isBasedOn`](https://schema.org/isBasedOn) |
-| [`dct:created`](http://purl.org/dc/terms/created) | Dataset creation date. | [`schema:dateCreated`](https://schema.org/dateCreated) |
-| [`dct:issued`](http://purl.org/dc/terms/issued) | Dataset publication date. | [`schema:datePublished`](https://schema.org/datePublished) |
-| [`dct:modified`](http://purl.org/dc/terms/modified) | Dataset last modification date. | [`schema:dateModified`](https://schema.org/dateModifed) |
-| [`owl:versionInfo`](https://www.w3.org/2002/07/owl#versionInfo) | Dataset version | [`schema:version`](https://schema.org/version) |
-| [`dct:creator`](http://purl.org/dc/terms/creator) | Dataset [creator](#foaforganization). | [`schema:creator`](https://schema.org/creator) |
-| [`dct:publisher`](http://purl.org/dc/terms/publisher) | Dataset [publisher](#foaforganization). | [`schema:publisher`](https://schema.org/publisher) |
-| [`dcat:distribution`](https://www.w3.org/TR/vocab-dcat-3/#Property:dataset_distribution) | Dataset [distributions](#dcatdistribution). | [`schema:distribution`](https://schema.org/distribution) |
+| [`dct:source`](http://purl.org/dc/terms/source)                                          | URL(s) of datasets the dataset is based on.      | [`schema:isBasedOn`](https://schema.org/isBasedOn)               |
+| [`dct:created`](http://purl.org/dc/terms/created)                                        | Dataset creation date.                           | [`schema:dateCreated`](https://schema.org/dateCreated)           |
+| [`dct:issued`](http://purl.org/dc/terms/issued)                                          | Dataset publication date.                        | [`schema:datePublished`](https://schema.org/datePublished)       |
+| [`dct:modified`](http://purl.org/dc/terms/modified)                                      | Dataset last modification date.                  | [`schema:dateModified`](https://schema.org/dateModifed)          |
+| [`owl:versionInfo`](https://www.w3.org/2002/07/owl#versionInfo)                          | Dataset version                                  | [`schema:version`](https://schema.org/version)                   |
+| [`dct:creator`](http://purl.org/dc/terms/creator)                                        | Dataset [creator](#foaforganization).            | [`schema:creator`](https://schema.org/creator)                   |
+| [`dct:publisher`](http://purl.org/dc/terms/publisher)                                    | Dataset [publisher](#foaforganization).          | [`schema:publisher`](https://schema.org/publisher)               |
+| [`dcat:distribution`](https://www.w3.org/TR/vocab-dcat-3/#Property:dataset_distribution) | Dataset [distributions](#dcatdistribution).      | [`schema:distribution`](https://schema.org/distribution)         |
 
 ### `foaf:Organization`
 
@@ -183,10 +183,9 @@ If the dataset’s organizations are provided in Schema.org rather than DCAT, th
 DCAT. The ‘Based on’ column shows the corresponding Schema.org property.
 See the [Requirements for Datasets](https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/) for more details.
 
-| Property | Description | Based on |
-| -------- | ----------- | -------- |
+| Property                                      | Description        | Based on                                 |
+| --------------------------------------------- | ------------------ | ---------------------------------------- |
 | [`foaf:name`](http://xmlns.com/foaf/0.1/name) | Organization name. | [`schema:name`](https://schema.org/name) |
-
 
 ### `dcat:Distribution`
 
@@ -196,30 +195,30 @@ If the dataset’s distributions are provided in Schema.org rather than DCAT, th
 DCAT. The ‘Based on’ column shows the corresponding Schema.org property.
 See the [Requirements for Datasets](https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/) for more details.
 
-| Property                                                  | Description                                                        | Based on |
-|-----------------------------------------------------------|--------------------------------------------------------------------| -------- |
-| [`dcat:accessURL`](https://www.w3.org/TR/vocab-dcat-3/)   | Distribution URL.                                                  | [`schema:contentUrl`](https://schema.org/contentUrl) |
-| [`dcat:mediaType`](https://www.w3.org/TR/vocab-dcat-3/)   | Distribution’s IANA media type.                                    | [`schema:fileFormat`](https://schema.org/fileFormat) |
+| Property                                                  | Description                                                        | Based on                                                     |
+| --------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------ |
+| [`dcat:accessURL`](https://www.w3.org/TR/vocab-dcat-3/)   | Distribution URL.                                                  | [`schema:contentUrl`](https://schema.org/contentUrl)         |
+| [`dcat:mediaType`](https://www.w3.org/TR/vocab-dcat-3/)   | Distribution’s IANA media type.                                    | [`schema:fileFormat`](https://schema.org/fileFormat)         |
 | [`dct:conformsTo`](http://purl.org/dc/terms/format)       | `<https://www.w3.org/TR/sparql11-protocol/>` for SPARQL endpoints. | [`schema:encodingFormat`](https://schema.org/encodingFormat) |
-| [`dct:issued`](http://purl.org/dc/terms/issued)           | Distribution publication date.                                     | [`schema:datePublished`](https://schema.org/datePublished) |
-| [`dct:modified`](http://purl.org/dc/terms/issued)         | Distribution last modification date.                               | [`schema:dateModified`](https://schema.org/dateModified) |
-| [`dct:description`](http://purl.org/dc/terms/description) | Distribution description.                                          | [`schema:description`](https://schema.org/description) |
-| [`dct:language`](http://purl.org/dc/terms/language)       | Distribution language.                                             | [`schema:inLanguage`](https://schema.org/inLanguage) |
-| [`dct:license`](http://purl.org/dc/terms/license)         | Distribution license.                                              | [`schema:license`](https://schema.org/license) |
-| [`dct:title`](http://purl.org/dc/terms/title)             | Distribution title.                                                | [`schema:name`](https://schema.org/name) |
-| [`dcat:byteSize`](https://www.w3.org/TR/vocab-dcat-3/)    | Distribution’s download size in bytes.                             | [`schema:contentSize`](https://schema.org/contentSize) |
+| [`dct:issued`](http://purl.org/dc/terms/issued)           | Distribution publication date.                                     | [`schema:datePublished`](https://schema.org/datePublished)   |
+| [`dct:modified`](http://purl.org/dc/terms/issued)         | Distribution last modification date.                               | [`schema:dateModified`](https://schema.org/dateModified)     |
+| [`dct:description`](http://purl.org/dc/terms/description) | Distribution description.                                          | [`schema:description`](https://schema.org/description)       |
+| [`dct:language`](http://purl.org/dc/terms/language)       | Distribution language.                                             | [`schema:inLanguage`](https://schema.org/inLanguage)         |
+| [`dct:license`](http://purl.org/dc/terms/license)         | Distribution license.                                              | [`schema:license`](https://schema.org/license)               |
+| [`dct:title`](http://purl.org/dc/terms/title)             | Distribution title.                                                | [`schema:name`](https://schema.org/name)                     |
+| [`dcat:byteSize`](https://www.w3.org/TR/vocab-dcat-3/)    | Distribution’s download size in bytes.                             | [`schema:contentSize`](https://schema.org/contentSize)       |
 
 ### Allow list
 
 A registration URL must be on a domain that is allowed before it can be added to the Register.
-Allowed domains are administered in the 
+Allowed domains are administered in the
 [https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names RDF graph](https://qlever-ui.demo.netwerkdigitaalerfgoed.nl/datasetregister/CYjX1Y?exec=true).
 
 To add a URL:
 
 ```sparql
-INSERT DATA { 
-    GRAPH <https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names> { 
+INSERT DATA {
+    GRAPH <https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names> {
         [] <https://data.netwerkdigitaalerfgoed.nl/allowed_domain_names/def/domain_name> "your-domain.com" .
     }
 }

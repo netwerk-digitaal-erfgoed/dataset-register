@@ -1,7 +1,7 @@
-import {shacl} from './validator.ts';
-import type {Valid} from './validator.ts';
-import {dcat, dct} from './query.ts';
-import type {NamedNode} from '@rdfjs/types';
+import { shacl } from './validator.ts';
+import type { Valid } from './validator.ts';
+import { dcat, dct } from './query.ts';
+import type { NamedNode } from '@rdfjs/types';
 
 // If at least one of the properties in the map’s key is missing (e.g. either created or issued), apply the penalty
 // specified in the map’s value (e.g. 10) is applied.
@@ -84,7 +84,7 @@ export class Rating {
       (score, penalty) => score - penalty.score,
       100,
     );
-    this.explanation = penalties.map(penalty => penalty.path).join(', ');
+    this.explanation = penalties.map((penalty) => penalty.path).join(', ');
   }
 }
 

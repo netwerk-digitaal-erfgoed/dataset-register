@@ -1,81 +1,78 @@
 {
-    "@context": [
-        "https://doi.org/10.5063/schema/codemeta-2.0",
-        "https://w3id.org/software-iodata",
-        "https://raw.githubusercontent.com/jantman/repostatus.org/master/badges/latest/ontology.jsonld",
-        "https://schema.org",
-        "https://w3id.org/software-types"
-    ],
-    "@type": "SoftwareSourceCode",
-    "applicationCategory": {
-        "@id": "https://vocabs.dariah.eu/tadirah/discovering",
-        "http://www.w3.org/2004/02/skos/core#inScheme": {
-            "@id":  "https://vocabs.dariah.eu/tadirah/"
-        }
+  "@context": [
+    "https://doi.org/10.5063/schema/codemeta-2.0",
+    "https://w3id.org/software-iodata",
+    "https://raw.githubusercontent.com/jantman/repostatus.org/master/badges/latest/ontology.jsonld",
+    "https://schema.org",
+    "https://w3id.org/software-types"
+  ],
+  "@type": "SoftwareSourceCode",
+  "applicationCategory": {
+    "@id": "https://vocabs.dariah.eu/tadirah/discovering",
+    "http://www.w3.org/2004/02/skos/core#inScheme": {
+      "@id": "https://vocabs.dariah.eu/tadirah/"
+    }
+  },
+  "author": [
+    {
+      "@type": "Person",
+      "email": "david@ddeboer.nl",
+      "familyName": "de Boer",
+      "givenName": "David"
     },
-    "author": [
-        {
-            "@type": "Person",
-            "email": "david@ddeboer.nl",
-            "familyName": "de Boer",
-            "givenName": "David"
-        },
-        {
-            "@type": "Person",
-            "email": "bob.coret+github@gmail.com",
-            "familyName": "Coret",
-            "givenName": "Bob"
-        }
-    ],
-    "codeRepository": "https://github.com/netwerk-digitaal-erfgoed/dataset-register.git",
-    "contIntegration": "https://github.com/netwerk-digitaal-erfgoed/dataset-register/actions",
-    "dateCreated": "2020-12-14T21:59:30Z+0100",
-    "description": "Live index of heritage datasets",
-    "developmentStatus": [
-        "https://www.repostatus.org/#active",
-        {
-            "@id":  "https://w3id.org/research-technology-readiness-levels#Level9Proven",
-            "http://www.w3.org/2004/02/skos/core#inScheme": {
-                "@id":  "https://w3id.org/research-technology-readiness-levels"
-            }
-        }
-    ],
-    "issueTracker": "https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues",
-    "funding": {
-        "@type": "Grant",
-        "funder": {
-            "@id": "https://identifier.overheid.nl/tooi/id/ministerie/mnre1109",
-            "@type": "Organization",
-            "name": "Ministerie van Onderwijs, Cultuur en Wetenschap",
-            "url": "https://www.rijksoverheid.nl/ministeries/ministerie-van-onderwijs-cultuur-en-wetenschap"
-        }
-    },
-    "keywords": [
-        "nde",
-        "datasets"
-    ],
-    "license": "https://spdx.org/licenses/EUPL-1.2",
-    "name": "Dataset Register",
-    "producer": {
-        "@type": "Organization",
-        "name": "Netwerk Digitaal Erfgoed",
-        "url": "https://www.netwerkdigitaalerfgoed.nl"
-    },
-    "programmingLanguage": "TypeScript",
-    "readme": "https://github.com/netwerk-digitaal-erfgoed/dataset-register#readme",
-    "runtimePlatform": "node >=16",
-    "softwareHelp": {
-        "@id": "https://datasetregister.netwerkdigitaalerfgoed.nl/?lang=en",
-        "@type": "WebSite",
-        "url": "https://datasetregister.netwerkdigitaalerfgoed.nl/?lang=en"
-    },
-    "targetProduct": [
-        {
-            "@id": "https://datasetregister.netwerkdigitaalerfgoed.nl/api",
-            "@type": "WebApplication",
-            "name": "Dataset Register OpenAPI",
-            "url": "https://datasetregister.netwerkdigitaalerfgoed.nl/api"
-        }
-    ],
-    "url": "https://github.com/netwerk-digitaal-erfgoed/dataset-register.git"
+    {
+      "@type": "Person",
+      "email": "bob.coret+github@gmail.com",
+      "familyName": "Coret",
+      "givenName": "Bob"
+    }
+  ],
+  "codeRepository": "https://github.com/netwerk-digitaal-erfgoed/dataset-register.git",
+  "contIntegration": "https://github.com/netwerk-digitaal-erfgoed/dataset-register/actions",
+  "dateCreated": "2020-12-14T21:59:30Z+0100",
+  "description": "Live index of heritage datasets",
+  "developmentStatus": [
+    "https://www.repostatus.org/#active",
+    {
+      "@id": "https://w3id.org/research-technology-readiness-levels#Level9Proven",
+      "http://www.w3.org/2004/02/skos/core#inScheme": {
+        "@id": "https://w3id.org/research-technology-readiness-levels"
+      }
+    }
+  ],
+  "issueTracker": "https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues",
+  "funding": {
+    "@type": "Grant",
+    "funder": {
+      "@id": "https://identifier.overheid.nl/tooi/id/ministerie/mnre1109",
+      "@type": "Organization",
+      "name": "Ministerie van Onderwijs, Cultuur en Wetenschap",
+      "url": "https://www.rijksoverheid.nl/ministeries/ministerie-van-onderwijs-cultuur-en-wetenschap"
+    }
+  },
+  "keywords": ["nde", "datasets"],
+  "license": "https://spdx.org/licenses/EUPL-1.2",
+  "name": "Dataset Register",
+  "producer": {
+    "@type": "Organization",
+    "name": "Netwerk Digitaal Erfgoed",
+    "url": "https://www.netwerkdigitaalerfgoed.nl"
+  },
+  "programmingLanguage": "TypeScript",
+  "readme": "https://github.com/netwerk-digitaal-erfgoed/dataset-register#readme",
+  "runtimePlatform": "node >=16",
+  "softwareHelp": {
+    "@id": "https://datasetregister.netwerkdigitaalerfgoed.nl/?lang=en",
+    "@type": "WebSite",
+    "url": "https://datasetregister.netwerkdigitaalerfgoed.nl/?lang=en"
+  },
+  "targetProduct": [
+    {
+      "@id": "https://datasetregister.netwerkdigitaalerfgoed.nl/api",
+      "@type": "WebApplication",
+      "name": "Dataset Register OpenAPI",
+      "url": "https://datasetregister.netwerkdigitaalerfgoed.nl/api"
+    }
+  ],
+  "url": "https://github.com/netwerk-digitaal-erfgoed/dataset-register.git"
 }

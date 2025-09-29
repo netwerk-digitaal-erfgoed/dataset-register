@@ -1,6 +1,6 @@
-import {rate} from '../src/rate.js';
-import type {Valid} from '../src/validator.js';
-import {validate} from './validator.test.js';
+import { rate } from '../src/rate.js';
+import type { Valid } from '../src/validator.js';
+import { validate } from './validator.test.js';
 
 describe('Rate', () => {
   it('rates minimal dataset description', async () => {
