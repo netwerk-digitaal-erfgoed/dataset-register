@@ -1,8 +1,21 @@
 {
   "name": "@dataset-register/api",
   "version": "0.0.1",
-  "type": "module",
   "private": true,
+  "type": "module",
+  "dependencies": {
+    "@dataset-register/core": "*",
+    "@fastify/accepts-serializer": "^6.0.1",
+    "@fastify/cors": "^11.0.0",
+    "@fastify/swagger": "^9.0.0",
+    "@fastify/swagger-ui": "^5.0.1",
+    "@rdfjs/types": "2.0.1",
+    "env-schema": "^6.0.1",
+    "fastify": "^5.6.0",
+    "psl": "1.10.0",
+    "rdf-ext": "2.6.0",
+    "rdf-serialize": "4.0.1"
+  },
   "nx": {
     "projectType": "application",
     "targets": {
@@ -75,18 +88,5 @@
       "copy-workspace-modules": {},
       "prune-lockfile": {}
     }
-  },
-  "dependencies": {
-    "@dataset-register/core": "*",
-    "@fastify/accepts-serializer": "^6.0.1",
-    "@fastify/cors": "^11.0.0",
-    "@fastify/swagger": "^9.0.0",
-    "@fastify/swagger-ui": "^5.0.1",
-    "@rdfjs/types": "2.0.1",
-    "env-schema": "^6.0.1",
-    "fastify": "^5.6.0",
-    "psl": "1.10.0",
-    "rdf-ext": "2.6.0",
-    "rdf-serialize": "4.0.1"
   }
 }

@@ -1,8 +1,8 @@
-import {Transform} from 'node:stream';
-import type {TransformCallback} from 'node:stream';
+import { Transform } from 'node:stream';
+import type { TransformCallback } from 'node:stream';
 import factory from 'rdf-ext';
-import {NamedNode} from 'n3';
-import type {Quad, Quad_Object} from '@rdfjs/types';
+import { NamedNode } from 'n3';
+import type { Quad, Quad_Object } from '@rdfjs/types';
 
 /**
  * Convert http://schema.org prefix to https://schema.org for consistency.
@@ -11,7 +11,7 @@ import type {Quad, Quad_Object} from '@rdfjs/types';
  */
 export class StandardizeSchemaOrgPrefixToHttps extends Transform {
   constructor() {
-    super({objectMode: true});
+    super({ objectMode: true });
   }
 
   override _transform(
