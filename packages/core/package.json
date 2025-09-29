@@ -19,7 +19,7 @@
   "main": "./src/index.ts",
   "types": "./src/index.d.ts",
   "dependencies": {
-    "@comunica/query-sparql": "^4.4.0",
+    "@comunica/query-sparql": "^4.4.1",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/exporter-metrics-otlp-proto": "^0.205.0",
     "@opentelemetry/resources": "^2.1.0",
