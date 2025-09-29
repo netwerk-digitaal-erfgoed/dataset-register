@@ -13,7 +13,15 @@ updates:
       comunica:
         patterns:
           - "@comunica/*"
+      eslint:
+        patterns:
+          - "@typescript-eslint/*"
+          - "eslint"
       fastify:
         patterns:
             - "@fastify/*"
-            - 'fastify'
+            - "fastify"
+      nx:
+        patterns:
+          - "@nx/*"
+          - "nx"
