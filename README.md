@@ -88,7 +88,7 @@ LOG=false npm start
 You can configure the application through environment variables:
 
 - `SPARQL_URL`: URL to the SPARQL store.
-- `SPARQL_ACCESS_TOKEN`: access token for write operations on SPARQL Store.
+- `SPARQL_ACCESS_TOKEN`: access token for write operations on SPARQL Store (default: `SECRET_TOKEN`).
 - `LOG`: enable/disable logging (default: `true`).
 - `CRAWLER_SCHEDULE`: a schedule in Cron format; for example `0 * * * *` to [crawl](#crawler) every hour
   (default: crawling disabled).

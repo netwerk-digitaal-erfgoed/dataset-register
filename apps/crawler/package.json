@@ -1,8 +1,18 @@
 {
   "name": "@dataset-register/crawler",
   "version": "0.0.1",
-  "type": "module",
   "private": true,
+  "type": "module",
+  "dependencies": {
+    "@dataset-register/core": "*",
+    "env-schema": "^6.0.1",
+    "node-schedule": "^2.1.1",
+    "pino": "^9.9.5"
+  },
+  "devDependencies": {
+    "@types/node-schedule": "^2.1.8",
+    "rdf-ext": "^2.6.0"
+  },
   "nx": {
     "projectType": "application",
     "targets": {
@@ -67,14 +77,5 @@
       "copy-workspace-modules": {},
       "prune-lockfile": {}
     }
-  },
-  "dependencies": {
-    "@dataset-register/core": "*",
-    "node-schedule": "^2.1.1",
-    "pino": "^9.9.5"
-  },
-  "devDependencies": {
-    "@types/node-schedule": "^2.1.8",
-    "rdf-ext": "^2.6.0"
   }
 }
