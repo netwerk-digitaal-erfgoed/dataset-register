@@ -5,7 +5,7 @@ services:
       - ./docker/qlever/index.settings.json:/config/index.settings.json
       - qlever-data:/data
     ports:
-      - "7001:7001"
+      - '7001:7001'
     command:
       - sh
       - -c
@@ -20,7 +20,7 @@ services:
       - ./docker/qlever-ui/Qleverfile-ui.yml:/app/Qleverfile-ui.yml
     entrypoint: /app/entrypoint.sh
     ports:
-      - "7002:7000"
+      - '7002:7000'
     environment:
       - DJANGO_SUPERUSER_USERNAME=root # QLever UI is Django-based.
       - DJANGO_SUPERUSER_PASSWORD=admin

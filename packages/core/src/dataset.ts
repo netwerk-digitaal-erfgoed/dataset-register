@@ -1,11 +1,11 @@
 import rdf from 'rdf-ext';
-import {URL} from 'node:url';
-import {datasetType} from './query.ts';
-import {Readable, Transform} from 'node:stream';
-import {DataFactory, StreamParser} from 'n3';
-import {JsonLdParser} from 'jsonld-streaming-parser';
-import {StandardizeSchemaOrgPrefixToHttps} from './transform.ts';
-import type {DatasetCore} from '@rdfjs/types';
+import { URL } from 'node:url';
+import { datasetType } from './query.ts';
+import { Readable, Transform } from 'node:stream';
+import { DataFactory, StreamParser } from 'n3';
+import { JsonLdParser } from 'jsonld-streaming-parser';
+import { StandardizeSchemaOrgPrefixToHttps } from './transform.ts';
+import type { DatasetCore } from '@rdfjs/types';
 
 export interface DatasetStore {
   /**
@@ -44,9 +44,9 @@ export async function load(
       .import(
         stream
           .pipe(parser)
-          .on('error', error => reject(error))
+          .on('error', (error) => reject(error))
           .pipe(new StandardizeSchemaOrgPrefixToHttps()),
       )
-      .then(data => resolve(data)),
+      .then((data) => resolve(data)),
   );
 }

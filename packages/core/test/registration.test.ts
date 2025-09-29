@@ -1,5 +1,5 @@
-import {Registration} from '../src/registration.js';
-import {URL} from 'url';
+import { Registration } from '../src/registration.js';
+import { URL } from 'url';
 
 describe('Registration', () => {
   it('must toggle from valid to invalid', () => {

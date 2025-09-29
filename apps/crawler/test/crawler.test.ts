@@ -6,7 +6,7 @@ import {
   MockDatasetStore,
   MockRatingStore,
   MockRegistrationStore,
-  validSchemaOrgDataset
+  validSchemaOrgDataset,
 } from '@dataset-register/core/test-utils';
 import nock from 'nock';
 import pino from 'pino';
@@ -14,10 +14,7 @@ import { Store } from 'n3';
 
 let registrationStore: MockRegistrationStore;
 let crawler: Crawler;
-const validator = (
-  isValid: boolean,
-  errors = new Store(),
-): Validator => ({
+const validator = (isValid: boolean, errors = new Store()): Validator => ({
   validate: () =>
     Promise.resolve({
       state: isValid ? 'valid' : 'invalid',
@@ -33,7 +30,7 @@ describe('Crawler', () => {
       new MockDatasetStore(),
       new MockRatingStore(),
       validator(true),
-      pino({enabled: false}),
+      pino({ enabled: false }),
     );
   });
 
@@ -42,7 +39,7 @@ describe('Crawler', () => {
 
     const response = await validSchemaOrgDataset();
     nock('https://example.com')
-      .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
       .get('/valid')
       .times(2)
       .reply(200, response);
@@ -60,7 +57,7 @@ describe('Crawler', () => {
 
     const response = await file('dataset-schema-org-valid-minimal.jsonld');
     nock('https://example.com')
-      .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
       .get('/minimal')
       .times(2)
       .reply(200, response);
@@ -107,12 +104,12 @@ describe('Crawler', () => {
       new MockDatasetStore(),
       new MockRatingStore(),
       validator(false),
-      pino({enabled: false}),
+      pino({ enabled: false }),
     );
     await storeRegistrationFixture(new URL('https://example.com/invalid'));
 
     nock('https://example.com')
-      .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
       .get('/invalid')
       .reply(200);
     await crawler.crawl(new Date('3000-01-01'));

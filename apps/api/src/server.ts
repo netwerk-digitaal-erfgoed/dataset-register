@@ -5,8 +5,13 @@ import fastify, {
   FastifyRequest,
   FastifyServerOptions,
 } from 'fastify';
-import {Validator} from '@dataset-register/core';
-import {dereference, fetch, HttpError, NoDatasetFoundAtUrl} from '@dataset-register/core';
+import { Validator } from '@dataset-register/core';
+import {
+  dereference,
+  fetch,
+  HttpError,
+  NoDatasetFoundAtUrl,
+} from '@dataset-register/core';
 import DatasetExt from 'rdf-ext/lib/Dataset.js';
 import { fileURLToPath, URL } from 'url';
 import {
@@ -14,16 +19,19 @@ import {
   Registration,
   RegistrationStore,
 } from '@dataset-register/core';
-import {DatasetStore, extractIri, load} from '@dataset-register/core';
-import {IncomingMessage, Server} from 'http';
+import { DatasetStore, extractIri, load } from '@dataset-register/core';
+import { IncomingMessage, Server } from 'http';
 import * as psl from 'psl';
-import {rdfSerializer} from 'rdf-serialize';
+import { rdfSerializer } from 'rdf-serialize';
 import fastifySwagger from '@fastify/swagger';
 import fastifyCors from '@fastify/cors';
 import acceptsSerializer from '@fastify/accepts-serializer';
 import fastifySwaggerUi from '@fastify/swagger-ui';
-import {registrationsCounter, validationsCounter} from '@dataset-register/core';
-import type {DatasetCore} from '@rdfjs/types';
+import {
+  registrationsCounter,
+  validationsCounter,
+} from '@dataset-register/core';
+import type { DatasetCore } from '@rdfjs/types';
 import { Readable } from 'node:stream';
 import { dirname } from 'node:path';
 
@@ -33,7 +41,7 @@ const serializer =
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (dataset: DatasetCore): any => {
     return rdfSerializer.serialize(Readable.from(dataset), { contentType });
-  }
+  };
 
 export async function server(
   datasetStore: DatasetStore,
@@ -63,9 +71,9 @@ export async function server(
       default: 'application/ld+json', // default doesn't work, so Accept header is required.
     })
     .register(fastifyCors, {
-      methods: ['GET', 'HEAD', 'POST', 'PUT']
+      methods: ['GET', 'HEAD', 'POST', 'PUT'],
     })
-    .addHook('onRequest', async request => {
+    .addHook('onRequest', async (request) => {
       if (request.headers.accept === undefined) {
         request.headers.accept = 'application/ld+json';
       }
@@ -74,7 +82,7 @@ export async function server(
   const rdfSerializerConfig = {
     default: 'application/ld+json',
     serializers: [
-      ...(await rdfSerializer.getContentTypes()).map(contentType => {
+      ...(await rdfSerializer.getContentTypes()).map((contentType) => {
         return {
           regex: new RegExp(contentType.replace('+', '\\+')),
           serializer: serializer(contentType),
@@ -89,7 +97,7 @@ export async function server(
         type: 'object',
         required: ['@id'],
         properties: {
-          '@id': {type: 'string'},
+          '@id': { type: 'string' },
         },
       },
     },
@@ -155,9 +163,9 @@ export async function server(
 
   server.post(
     '/datasets',
-    {...datasetsRequest, config: rdfSerializerConfig},
+    { ...datasetsRequest, config: rdfSerializerConfig },
     async (request, reply) => {
-      const url = new URL((request.body as {'@id': string})['@id']);
+      const url = new URL((request.body as { '@id': string })['@id']);
       if (!(await domainIsAllowed(url))) {
         return reply.code(403).send();
       }
@@ -198,9 +206,9 @@ export async function server(
 
   server.put(
     '/datasets/validate',
-    {...datasetsRequest, config: rdfSerializerConfig},
+    { ...datasetsRequest, config: rdfSerializerConfig },
     async (request, reply) => {
-      const url = new URL((request.body as {'@id': string})['@id']);
+      const url = new URL((request.body as { '@id': string })['@id']);
       request.log.info(url.toString());
       const dataset = await resolveDataset(url, reply);
       if (dataset) {
@@ -220,7 +228,7 @@ export async function server(
 
   server.post(
     '/datasets/validate',
-    {config: {...rdfSerializerConfig, parseRdf: true}},
+    { config: { ...rdfSerializerConfig, parseRdf: true } },
     async (request, reply) => {
       await validate(request.body as DatasetExt, reply);
       validationsCounter.add(1, {
@@ -232,7 +240,7 @@ export async function server(
 
   server.get(
     '/shacl',
-    {config: rdfSerializerConfig},
+    { config: rdfSerializerConfig },
     async (request, reply) => {
       return reply.send(shacl);
     },
@@ -242,7 +250,14 @@ export async function server(
    * If a route has enabled `parseRdf`, parse RDF into a DatasetExt object. If not, parse as JSON.
    */
   server.addContentTypeParser(
-    ['application/ld+json', 'text/turtle', 'text/n3', 'application/trig', 'application/n-triples', 'application/n-quads'],
+    [
+      'application/ld+json',
+      'text/turtle',
+      'text/n3',
+      'application/trig',
+      'application/n-triples',
+      'application/n-quads',
+    ],
     async (request: FastifyRequest, payload: IncomingMessage) => {
       if (request.routeOptions.config.parseRdf ?? false) {
         try {
@@ -257,9 +272,9 @@ export async function server(
       }
 
       // Parse simple JSON-LD as JSON.
-      return new Promise(resolve => {
+      return new Promise((resolve) => {
         let data = '';
-        payload.on('data', chunk => {
+        payload.on('data', (chunk) => {
           data += chunk;
         });
         payload.on('end', () => {
