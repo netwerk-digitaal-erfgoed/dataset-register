@@ -8,11 +8,9 @@ info:
     url: 'https://datasetregister.netwerkdigitaalerfgoed.nl/faq.php'
     email: bob.coret@netwerkdigitaalerfgoed.nl
 servers:
-  -
-    url: 'https://datasetregister.netwerkdigitaalerfgoed.nl/api'
+  - url: 'https://datasetregister.netwerkdigitaalerfgoed.nl/api'
     description: 'Dataset Register API'
-  -
-    url: 'http://localhost:3000'
+  - url: 'http://localhost:3000'
     description: 'Local development Dataset Register API'
 paths:
   /datasets:
@@ -36,10 +34,16 @@ paths:
             examples:
               valid:
                 summary: A valid dataset
-                value: {"@id": "https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html"}
+                value:
+                  {
+                    '@id': 'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html',
+                  }
               invalid:
                 summary: An invalid dataset
-                value: {"@id": "https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2a.html"}
+                value:
+                  {
+                    '@id': 'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2a.html',
+                  }
       responses:
         202:
           description: All dataset descriptions at the submitted URL are valid according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a>. The datasets will added to the Dataset Register shortly.
@@ -69,16 +73,17 @@ paths:
                 summary: A valid dataset in the request body
                 value:
                   {
-                    "@context": "https://schema.org/",
-                    "@type": "Dataset",
-                    "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
-                    "name": "Alba amicorum van de Koninklijke Bibliotheek",
-                    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
-                    "publisher": {
-                      "@type": "Organization",
-                      "@id": "https://example.com/publisher",
-                      "name": "Koninklijke Bibliotheek"
-                    }
+                    '@context': 'https://schema.org/',
+                    '@type': 'Dataset',
+                    '@id': 'http://data.bibliotheken.nl/id/dataset/rise-alba',
+                    'name': 'Alba amicorum van de Koninklijke Bibliotheek',
+                    'license': 'http://creativecommons.org/publicdomain/zero/1.0/',
+                    'publisher':
+                      {
+                        '@type': 'Organization',
+                        '@id': 'https://example.com/publisher',
+                        'name': 'Koninklijke Bibliotheek',
+                      },
                   }
       responses:
         200:
@@ -109,10 +114,16 @@ paths:
             examples:
               valid:
                 summary: A valid dataset
-                value: {"@id": "https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html"}
+                value:
+                  {
+                    '@id': 'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html',
+                  }
               invalid:
                 summary: An invalid dataset
-                value: {"@id": "https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2a.html"}
+                value:
+                  {
+                    '@id': 'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2a.html',
+                  }
       responses:
         200:
           $ref: '#/components/responses/Valid'
@@ -163,8 +174,7 @@ paths:
 components:
   responses:
     Valid:
-      description:
-        All dataset descriptions are valid according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a>.
+      description: All dataset descriptions are valid according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a>.
       content:
         application/ld+json:
           example:
@@ -172,7 +182,7 @@ components:
               '@type':
                 - 'http://www.w3.org/ns/shacl#ValidationReport'
               'http://www.w3.org/ns/shacl#conforms':
-                - '@value': "true"
+                - '@value': 'true'
                   '@type': 'http://www.w3.org/2001/XMLSchema#boolean'
         text/turtle:
           example: |-

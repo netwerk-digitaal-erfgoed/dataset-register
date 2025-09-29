@@ -4,7 +4,10 @@
 import factory from 'rdf-ext';
 import { rdfDereferencer } from 'rdf-dereference';
 import type { Dataset, DatasetCore } from '@rdfjs/types';
-import type { ValidationReport, ValidationResult as ShaclValidationResult } from 'shacl-engine';
+import type {
+  ValidationReport,
+  ValidationResult as ShaclValidationResult,
+} from 'shacl-engine';
 import { Validator as ShaclValidator } from 'shacl-engine';
 
 export interface Validator {
@@ -29,7 +32,7 @@ export class ShaclEngineValidator implements Validator {
 
   public async validate(dataset: Dataset): Promise<ValidationResult> {
     const datasetIris = dataset.filter(
-      quad =>
+      (quad) =>
         quad.subject.termType === 'NamedNode' && // Prevent blank nodes
         quad.predicate.value ===
           'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' &&
@@ -37,7 +40,7 @@ export class ShaclEngineValidator implements Validator {
           quad.object.value === 'http://www.w3.org/ns/dcat#Dataset'),
     );
     if (datasetIris.size === 0) {
-      return {state: 'no-dataset'};
+      return { state: 'no-dataset' };
     }
 
     const report = await this.inner.validate({ dataset });
@@ -51,7 +54,7 @@ export class ShaclEngineValidator implements Validator {
 }
 
 export async function readUrl(url: string): Promise<DatasetCore> {
-  const {data} = await rdfDereferencer.dereference(url.toString(), {
+  const { data } = await rdfDereferencer.dereference(url.toString(), {
     localFiles: true,
   });
 
@@ -84,9 +87,7 @@ export const shacl = (property: string) =>
 const hasViolation = (report: ValidationReport) =>
   report.results.some((result) => resultIsViolation(result));
 
-const resultIsViolation = (
-  result: ShaclValidationResult,
-): boolean => {
+const resultIsViolation = (result: ShaclValidationResult): boolean => {
   const isViolation = result.severity.equals(shacl('Violation'));
   const hasChildren = result.results.length > 0;
 
@@ -94,15 +95,22 @@ const resultIsViolation = (
     return true;
   }
 
-  return result.results
-    // shacl-engine returns spurious NodeConstraintComponents, so only select the first one.
-    .filter((item, index, self) => {
-      if (item.constraintComponent.equals(shacl('NodeConstraintComponent'))) {
-        return index === self.findIndex(t => t.constraintComponent.equals(shacl('NodeConstraintComponent')));
-      }
-      return true;
-    })
-    .some((nestedResult) => resultIsViolation(nestedResult));
+  return (
+    result.results
+      // shacl-engine returns spurious NodeConstraintComponents, so only select the first one.
+      .filter((item, index, self) => {
+        if (item.constraintComponent.equals(shacl('NodeConstraintComponent'))) {
+          return (
+            index ===
+            self.findIndex((t) =>
+              t.constraintComponent.equals(shacl('NodeConstraintComponent')),
+            )
+          );
+        }
+        return true;
+      })
+      .some((nestedResult) => resultIsViolation(nestedResult))
+  );
 };
 
 /**
@@ -110,18 +118,24 @@ const resultIsViolation = (
  * with severity violation to warning.
  */
 const filterOutViolations = (validationResult: ValidationResult) => {
-  if (validationResult.state === 'no-dataset' || validationResult.state === 'invalid') {
+  if (
+    validationResult.state === 'no-dataset' ||
+    validationResult.state === 'invalid'
+  ) {
     return validationResult;
   }
 
   return {
     state: validationResult.state,
     errors: validationResult.errors.map((quad, dataset) => {
-      if (quad.predicate.equals(shacl('resultSeverity')) && quad.object.equals(shacl('Violation'))) {
+      if (
+        quad.predicate.equals(shacl('resultSeverity')) &&
+        quad.object.equals(shacl('Violation'))
+      ) {
         quad.object = shacl('Warning');
       }
 
       return quad;
-    })
-  }
-}
+    }),
+  };
+};

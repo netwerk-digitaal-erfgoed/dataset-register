@@ -1,19 +1,16 @@
-import {QueryEngine} from '@comunica/query-sparql';
+import { QueryEngine } from '@comunica/query-sparql';
 import factory from 'rdf-ext';
-import {URL} from 'node:url';
-import {constructQuery, dcat, rdf} from './query.ts';
-import {pipeline} from 'node:stream';
-import {StandardizeSchemaOrgPrefixToHttps} from './transform.ts';
-import {rdfDereferencer} from 'rdf-dereference';
+import { URL } from 'node:url';
+import { constructQuery, dcat, rdf } from './query.ts';
+import { pipeline } from 'node:stream';
+import { StandardizeSchemaOrgPrefixToHttps } from './transform.ts';
+import { rdfDereferencer } from 'rdf-dereference';
 import type DatasetExt from 'rdf-ext/lib/Dataset.js';
 
 export class HttpError extends Error {
   public readonly statusCode: number;
 
-  constructor(
-    message: string,
-    statusCode: number,
-  ) {
+  constructor(message: string, statusCode: number) {
     super(message);
     this.statusCode = statusCode;
   }
@@ -38,14 +35,14 @@ export async function* fetch(url: URL): AsyncGenerator<DatasetExt> {
  */
 export async function dereference(url: URL): Promise<DatasetExt> {
   try {
-    const {data} = await rdfDereferencer.dereference(url.toString());
+    const { data } = await rdfDereferencer.dereference(url.toString());
     const stream = pipeline(
       data,
       new StandardizeSchemaOrgPrefixToHttps(),
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       () => {}, // Noop because errors are caught below.
     );
-    const r =  await factory.dataset().import(stream);
+    const r = await factory.dataset().import(stream);
 
     return r;
   } catch (e) {

@@ -1,16 +1,16 @@
-import {URL} from 'url';
-import {fetch, HttpError, NoDatasetFoundAtUrl} from '../src/fetch.js';
+import { URL } from 'url';
+import { fetch, HttpError, NoDatasetFoundAtUrl } from '../src/fetch.js';
 import nock from 'nock';
-import {dcat, dct, foaf, rdf} from '../src/query.js';
+import { dcat, dct, foaf, rdf } from '../src/query.js';
 import factory from 'rdf-ext';
 import { dereference, file, validSchemaOrgDataset } from '../src/test-utils.js';
-import type {BlankNode} from '@rdfjs/types';
+import type { BlankNode } from '@rdfjs/types';
 
 describe('Fetch', () => {
   it('accepts accept valid DCAT dataset descriptions', async () => {
     const response = await file('dataset-dcat-valid.jsonld');
     nock('https://example.com')
-      .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
       .get('/valid-dcat-dataset')
       .reply(200, response);
 
@@ -46,7 +46,7 @@ describe('Fetch', () => {
   it('accepts minimal valid Schema.org dataset', async () => {
     const response = await file('dataset-schema-org-valid-minimal.jsonld');
     nock('https://example.com')
-      .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
       .get('/minimal-valid-schema-org-dataset')
       .reply(200, response);
 
@@ -62,7 +62,7 @@ describe('Fetch', () => {
   it('accepts valid Schema.org dataset description', async () => {
     const response = await validSchemaOrgDataset();
     nock('https://example.com')
-      .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
       .get('/valid-schema-org-dataset')
       .reply(200, response);
 
@@ -80,9 +80,14 @@ describe('Fetch', () => {
     expect(dataset.size).toEqual(dcatEquivalent.size + 1);
 
     // Check that SPARQL endpoint has conformsTo triple
-    const sparqlConformsToTriples = [...dataset].filter(quad =>
-      quad.predicate.equals(factory.namedNode('http://purl.org/dc/terms/conformsTo')) &&
-      quad.object.equals(factory.namedNode('https://www.w3.org/TR/sparql11-protocol/'))
+    const sparqlConformsToTriples = [...dataset].filter(
+      (quad) =>
+        quad.predicate.equals(
+          factory.namedNode('http://purl.org/dc/terms/conformsTo'),
+        ) &&
+        quad.object.equals(
+          factory.namedNode('https://www.w3.org/TR/sparql11-protocol/'),
+        ),
     );
     expect(sparqlConformsToTriples).toHaveLength(1);
 
@@ -201,7 +206,7 @@ describe('Fetch', () => {
   it('accepts valid Schema.org dataset in Turtle', async () => {
     const response = await file('dataset-schema-org-valid.ttl');
     nock('https://example.com')
-      .defaultReplyHeaders({'Content-Type': 'text/turtle'})
+      .defaultReplyHeaders({ 'Content-Type': 'text/turtle' })
       .get('/valid-schema-org-dataset.ttl')
       .reply(200, response);
 
@@ -228,7 +233,7 @@ describe('Fetch', () => {
   it('accepts valid HTTP Schema.org dataset in JSON-LD', async () => {
     const response = await file('dataset-http-schema-org-valid.jsonld');
     nock('https://example.com')
-      .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
       .get('/valid-schema-org-dataset')
       .reply(200, response);
 
@@ -242,7 +247,7 @@ describe('Fetch', () => {
   it('accepts valid HTTP Schema.org dataset in Turtle', async () => {
     const response = await file('dataset-http-schema-org-valid.ttl');
     nock('https://example.com')
-      .defaultReplyHeaders({'Content-Type': 'text/turtle'})
+      .defaultReplyHeaders({ 'Content-Type': 'text/turtle' })
       .get('/valid-schema-org-dataset')
       .reply(200, response);
 

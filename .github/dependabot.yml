@@ -1,27 +1,27 @@
 version: 2
 updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
 
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     groups:
       comunica:
         patterns:
-          - "@comunica/*"
+          - '@comunica/*'
       eslint:
         patterns:
-          - "@typescript-eslint/*"
-          - "eslint"
+          - '@typescript-eslint/*'
+          - 'eslint'
       fastify:
         patterns:
-            - "@fastify/*"
-            - "fastify"
+          - '@fastify/*'
+          - 'fastify'
       nx:
         patterns:
-          - "@nx/*"
-          - "nx"
+          - '@nx/*'
+          - 'nx'

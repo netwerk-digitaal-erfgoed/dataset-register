@@ -14,16 +14,18 @@ export const file = async (filename: string) => {
   return await readFile(path, 'utf-8');
 };
 
-export const validSchemaOrgDataset = () => file('../../../../requirements/examples/dataset-schema-org-valid.jsonld');
+export const validSchemaOrgDataset = () =>
+  file('../../../../requirements/examples/dataset-schema-org-valid.jsonld');
 
 export const dereference = async (file: string): Promise<DatasetExt> => {
-  const { data } = await rdfDereferencer.dereference(file, { localFiles: true });
+  const { data } = await rdfDereferencer.dereference(file, {
+    localFiles: true,
+  });
   const stream = pipeline(
     data,
     new StandardizeSchemaOrgPrefixToHttps(),
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    () => {
-    } // Noop, just throw errors.
+    () => {}, // Noop, just throw errors.
   );
   return await factory.dataset().import(stream);
 };
@@ -33,5 +35,5 @@ export {
   MockRegistrationStore,
   MockAllowedRegistrationDomainStore,
   MockDatasetStore,
-  MockRatingStore
+  MockRatingStore,
 } from './mock.ts';

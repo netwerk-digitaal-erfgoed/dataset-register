@@ -17,7 +17,7 @@ export class QLeverContainer {
       .withCommand([
         '-c',
         `echo "" | /qlever/IndexBuilderMain --index-basename test -F nt -f - \
-          && /qlever/ServerMain --index-basename test --port ${this.port} --access-token ${this.accessToken}`
+          && /qlever/ServerMain --index-basename test --port ${this.port} --access-token ${this.accessToken}`,
       ])
       .start();
 
@@ -55,13 +55,15 @@ export class QLeverContainer {
       method: 'POST',
       headers: {
         'Content-Type': 'application/sparql-update',
-        'Authorization': `Bearer ${this.accessToken}`,
+        Authorization: `Bearer ${this.accessToken}`,
       },
       body: 'CLEAR ALL',
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to clear QLever data: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Failed to clear QLever data: ${response.status} ${response.statusText}`,
+      );
     }
   }
 }

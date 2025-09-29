@@ -1,16 +1,16 @@
 import nock from 'nock';
-import {FastifyInstance} from 'fastify';
-import {Server} from 'http';
-import {server} from '../src/server.js';
-import {readUrl, ShaclEngineValidator} from '@dataset-register/core';
+import { FastifyInstance } from 'fastify';
+import { Server } from 'http';
+import { server } from '../src/server.js';
+import { readUrl, ShaclEngineValidator } from '@dataset-register/core';
 import {
   file,
   MockAllowedRegistrationDomainStore,
   MockDatasetStore,
   MockRegistrationStore,
 } from '@dataset-register/core/test-utils';
-import {fileURLToPath, URL} from 'url';
-import {dirname} from 'path';
+import { fileURLToPath, URL } from 'url';
+import { dirname } from 'path';
 
 let httpServer: FastifyInstance<Server>;
 const registrationStore = new MockRegistrationStore();
@@ -24,7 +24,7 @@ describe('Server', () => {
       new ShaclEngineValidator(shacl),
       shacl,
       '/',
-      {logger: true},
+      { logger: true },
     );
 
     nock.back.fixtures = dirname(fileURLToPath(import.meta.url)) + '/http';
@@ -39,7 +39,7 @@ describe('Server', () => {
     const redirect = await httpServer.inject({
       method: 'GET',
       url: '/',
-      headers: {Accept: '*/*'},
+      headers: { Accept: '*/*' },
     });
     expect(redirect.statusCode).toEqual(200);
   });
@@ -57,7 +57,7 @@ describe('Server', () => {
     const response = await httpServer.inject({
       method: 'PUT',
       url: '/datasets/validate',
-      headers: {'Content-Type': 'application/ld+json'},
+      headers: { 'Content-Type': 'application/ld+json' },
       payload: JSON.stringify({
         '@id': 'https://example.com/404',
       }),
@@ -70,7 +70,7 @@ describe('Server', () => {
     const response = await httpServer.inject({
       method: 'PUT',
       url: '/datasets/validate',
-      headers: {'Content-Type': 'application/ld+json'},
+      headers: { 'Content-Type': 'application/ld+json' },
       payload: JSON.stringify({
         '@id': 'https://example.com/200',
       }),
@@ -79,11 +79,11 @@ describe('Server', () => {
   });
 
   it('responds with 200 to valid dataset requests', async () => {
-    const {nockDone} = await nock.back('valid-dataset.json');
+    const { nockDone } = await nock.back('valid-dataset.json');
     const response = await httpServer.inject({
       method: 'PUT',
       url: '/datasets/validate',
-      headers: {'Content-Type': 'application/ld+json'},
+      headers: { 'Content-Type': 'application/ld+json' },
       payload: JSON.stringify({
         '@id': 'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html',
       }),
@@ -97,7 +97,7 @@ describe('Server', () => {
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets/validate',
-      headers: {'Content-Type': 'application/ld+json'},
+      headers: { 'Content-Type': 'application/ld+json' },
       payload: await file('dataset-schema-org-invalid.jsonld'),
     });
     expect(response.statusCode).toEqual(400);
@@ -107,7 +107,7 @@ describe('Server', () => {
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets/validate',
-      headers: {'Content-Type': 'text/turtle'},
+      headers: { 'Content-Type': 'text/turtle' },
       payload: await file('dataset-schema-org-valid.ttl'),
     });
     expect(response.statusCode).toEqual(200);
@@ -117,7 +117,7 @@ describe('Server', () => {
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets/validate',
-      headers: {'Content-Type': 'application/ld+json'},
+      headers: { 'Content-Type': 'application/ld+json' },
       payload: 'This is not JSON-LD',
     });
     expect(response.statusCode).toEqual(400);
@@ -127,18 +127,18 @@ describe('Server', () => {
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets/validate',
-      headers: {'Content-Type': 'text/turtle'},
+      headers: { 'Content-Type': 'text/turtle' },
       payload: 'This is not Turtle',
     });
     expect(response.statusCode).toEqual(400);
   });
 
   it('responds with validation errors to invalid dataset requests', async () => {
-    const {nockDone} = await nock.back('invalid-dataset.json');
+    const { nockDone } = await nock.back('invalid-dataset.json');
     const response = await httpServer.inject({
       method: 'PUT',
       url: '/datasets/validate',
-      headers: {'Content-Type': 'application/ld+json', Accept: 'text/turtle'},
+      headers: { 'Content-Type': 'application/ld+json', Accept: 'text/turtle' },
       payload: JSON.stringify({
         '@id': 'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2a.html',
       }),
@@ -150,11 +150,11 @@ describe('Server', () => {
   });
 
   it('ignores UTF-8 BOMs', async () => {
-    const {nockDone} = await nock.back('utf8-bom.json');
+    const { nockDone } = await nock.back('utf8-bom.json');
     const response = await httpServer.inject({
       method: 'PUT',
       url: '/datasets/validate',
-      headers: {'Content-Type': 'application/ld+json'},
+      headers: { 'Content-Type': 'application/ld+json' },
       payload: JSON.stringify({
         '@id':
           'https://littest.hosting.deventit.net/Atlantispubliek/data/set/catalog.ttl',
@@ -168,11 +168,11 @@ describe('Server', () => {
     nock('https://example.com')
       .get('/200')
       // {"@id": null} is an example to trip up JsonLdParser, which throws Found illegal @id 'null'.
-      .reply(200, {'@id': null}, {'Content-Type': 'application/ld+json'});
+      .reply(200, { '@id': null }, { 'Content-Type': 'application/ld+json' });
     const response = await httpServer.inject({
       method: 'PUT',
       url: '/datasets/validate',
-      headers: {'Content-Type': 'application/ld+json'},
+      headers: { 'Content-Type': 'application/ld+json' },
       payload: JSON.stringify({
         '@id': 'https://example.com/200',
       }),
@@ -184,7 +184,7 @@ describe('Server', () => {
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets',
-      headers: {'Content-Type': 'application/ld+json'},
+      headers: { 'Content-Type': 'application/ld+json' },
       payload: JSON.stringify({
         '@id': 'https://subdomain.not-allowed.com/dataset',
       }),
@@ -193,11 +193,11 @@ describe('Server', () => {
   });
 
   it('accepts authorized domains', async () => {
-    const {nockDone} = await nock.back('post-dataset.json');
+    const { nockDone } = await nock.back('post-dataset.json');
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets',
-      headers: {'Content-Type': 'application/ld+json'},
+      headers: { 'Content-Type': 'application/ld+json' },
       payload: JSON.stringify({
         '@id': 'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html',
       }),
@@ -208,11 +208,11 @@ describe('Server', () => {
   });
 
   it('responds with validation errors when adding an invalid dataset', async () => {
-    const {nockDone} = await nock.back('invalid-dataset.json');
+    const { nockDone } = await nock.back('invalid-dataset.json');
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets',
-      headers: {'Content-Type': 'application/ld+json', Accept: 'text/turtle'},
+      headers: { 'Content-Type': 'application/ld+json', Accept: 'text/turtle' },
       payload: JSON.stringify({
         '@id': 'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2a.html',
       }),
@@ -223,18 +223,18 @@ describe('Server', () => {
   });
 
   it('stores registration even if fetching datasets fails', async () => {
-    const {nockDone} = await nock.back('post-dataset-query-fails.json');
+    const { nockDone } = await nock.back('post-dataset-query-fails.json');
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets',
-      headers: {'Content-Type': 'application/ld+json'},
+      headers: { 'Content-Type': 'application/ld+json' },
       payload: JSON.stringify({
         '@id': 'https://netwerkdigitaalerfgoed.nl/fails',
       }),
     });
     nockDone();
     // sleep 2 seconds to allow the async store to complete
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Validation succeeds, so 202 to the client, even if fetching datasets fails.
     expect(response.statusCode).toEqual(202);
@@ -249,7 +249,7 @@ describe('Server', () => {
     const response = await httpServer.inject({
       method: 'GET',
       url: '/shacl',
-      headers: {'Content-Type': 'text/turtle'},
+      headers: { 'Content-Type': 'text/turtle' },
     });
     expect(response.statusCode).toEqual(200);
     expect(response.payload).not.toEqual('');

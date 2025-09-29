@@ -1,16 +1,23 @@
-import {JsonLdParser} from 'jsonld-streaming-parser';
-import {InvalidDataset, shacl, ShaclEngineValidator, Valid} from '../src/validator.js';
-import {StreamParser} from 'n3';
-import {Transform} from 'stream';
-import {StandardizeSchemaOrgPrefixToHttps} from '../src/transform.js';
-import {MicrodataRdfParser} from 'microdata-rdf-streaming-parser/lib/MicrodataRdfParser.js';
-import {RdfaParser} from 'rdfa-streaming-parser/lib/RdfaParser.js';
+import { JsonLdParser } from 'jsonld-streaming-parser';
+import {
+  InvalidDataset,
+  shacl,
+  ShaclEngineValidator,
+  Valid,
+} from '../src/validator.js';
+import { StreamParser } from 'n3';
+import { Transform } from 'stream';
+import { StandardizeSchemaOrgPrefixToHttps } from '../src/transform.js';
+import { MicrodataRdfParser } from 'microdata-rdf-streaming-parser/lib/MicrodataRdfParser.js';
+import { RdfaParser } from 'rdfa-streaming-parser/lib/RdfaParser.js';
 import rdf from 'rdf-ext';
-import type {Dataset} from '@rdfjs/types';
-import {file} from '../src/test-utils.js';
+import type { Dataset } from '@rdfjs/types';
+import { file } from '../src/test-utils.js';
 import { Readable } from 'node:stream';
 
-const validator = await ShaclEngineValidator.fromUrl('../../requirements/shacl.ttl');
+const validator = await ShaclEngineValidator.fromUrl(
+  '../../requirements/shacl.ttl',
+);
 
 describe('Validator', () => {
   it('accepts minimal valid Schema.org dataset', async () => {
@@ -54,26 +61,33 @@ describe('Validator', () => {
   });
 
   it('accepts valid Schema.org dataset', async () => {
-    const report = await validate('../../../../requirements/examples/dataset-schema-org-valid.jsonld') as Valid;
+    const report = (await validate(
+      '../../../../requirements/examples/dataset-schema-org-valid.jsonld',
+    )) as Valid;
 
     const blankNode = rdf.blankNode();
     const expectedDataset = rdf.dataset([
       rdf.quad(
         blankNode,
         rdf.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-        shacl('ValidationReport')
+        shacl('ValidationReport'),
       ),
       rdf.quad(
         blankNode,
         shacl('conforms'),
-        rdf.literal('true', rdf.namedNode('http://www.w3.org/2001/XMLSchema#boolean'))
-      )
+        rdf.literal(
+          'true',
+          rdf.namedNode('http://www.w3.org/2001/XMLSchema#boolean'),
+        ),
+      ),
     ]) as unknown as Dataset;
     expect(report.errors.toCanonical()).toEqual(expectedDataset.toCanonical());
   });
 
   it('reports invalid Schema.org dataset', async () => {
-    const report = await validate('dataset-schema-org-invalid.jsonld') as InvalidDataset;
+    const report = (await validate(
+      'dataset-schema-org-invalid.jsonld',
+    )) as InvalidDataset;
     expect(report.state).toBe('invalid');
     expectViolations(report, ['https://schema.org/contentUrl']);
     expectViolations(report, ['https://schema.org/dateCreated']);
@@ -184,16 +198,16 @@ describe('Validator', () => {
 
     // If dataset is valid, any parent violations must be removed.
     expect(
-      report.errors.match(
-        null,
-        shacl('resultSeverity'),
-        shacl('Violation'),
-      ).size,
+      report.errors.match(null, shacl('resultSeverity'), shacl('Violation'))
+        .size,
     ).toEqual(0);
   });
 
   it('reports missing class', async () => {
-    const report = await validate('dataset-schema-missing-publisher-class.ttl', new StreamParser());
+    const report = await validate(
+      'dataset-schema-missing-publisher-class.ttl',
+      new StreamParser(),
+    );
     expect(report.state).toEqual('invalid');
   });
 });
@@ -205,25 +219,26 @@ const dataset = async (filename: string, parser?: Transform) => {
   const content = await file(filename);
   const stream = Readable.from(content);
 
-  return (await rdf.dataset().import(
-    stream
-      .pipe(parser ?? (new JsonLdParser() as unknown as Transform))
-      .pipe(new StandardizeSchemaOrgPrefixToHttps()),
-  )) as unknown as Dataset;
+  return (await rdf
+    .dataset()
+    .import(
+      stream
+        .pipe(parser ?? (new JsonLdParser() as unknown as Transform))
+        .pipe(new StandardizeSchemaOrgPrefixToHttps()),
+    )) as unknown as Dataset;
 };
 
 const expectViolations = (
   report: InvalidDataset | Valid,
   violationPaths: string[],
-  number = 1
+  number = 1,
 ) =>
-  violationPaths.forEach(violationPath => {
-      const violations = report.errors.match(
-        null,
-        shacl('resultPath'),
-        rdf.namedNode(violationPath),
-      );
+  violationPaths.forEach((violationPath) => {
+    const violations = report.errors.match(
+      null,
+      shacl('resultPath'),
+      rdf.namedNode(violationPath),
+    );
 
-      expect(violations.size).toEqual(number);
-    }
-  );
+    expect(violations.size).toEqual(number);
+  });

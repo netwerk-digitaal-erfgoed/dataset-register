@@ -3,11 +3,11 @@ import type {
   Registration,
   RegistrationStore,
 } from './registration.ts';
-import {URL} from 'node:url';
-import type {DatasetStore} from './dataset.ts';
+import { URL } from 'node:url';
+import type { DatasetStore } from './dataset.ts';
 import fs from 'node:fs';
 import DatasetExt from 'rdf-ext/lib/Dataset.js';
-import type {Rating, RatingStore} from './rate.ts';
+import type { Rating, RatingStore } from './rate.ts';
 
 export class MockRegistrationStore implements RegistrationStore {
   private readonly registrations: Map<URL, Registration> = new Map();
@@ -27,7 +27,7 @@ export class MockRegistrationStore implements RegistrationStore {
 
   isRegistered(url: URL) {
     return this.all().some(
-      registration => registration.url.toString() === url.toString(),
+      (registration) => registration.url.toString() === url.toString(),
     );
   }
 
