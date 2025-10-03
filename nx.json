@@ -38,7 +38,8 @@
         "typecheckTargetName": "typecheck",
         "buildDepsTargetName": "build-deps",
         "watchDepsTargetName": "watch-deps"
-      }
+      },
+      "exclude": ["apps/browser/**"]
     },
     {
       "plugin": "@nx/docker",

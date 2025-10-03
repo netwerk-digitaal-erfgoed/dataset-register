@@ -3,6 +3,7 @@
 /coverage
 /.nx/cache
 /.nx/workspace-data
+.svelte-kit
 requirements
 docker
 LICENSE.md
