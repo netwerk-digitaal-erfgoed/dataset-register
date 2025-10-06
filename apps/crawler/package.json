@@ -7,7 +7,7 @@
     "@dataset-register/core": "*",
     "env-schema": "^6.0.1",
     "node-schedule": "^2.1.1",
-    "pino": "^9.9.5"
+    "pino": "^10.0.0"
   },
   "devDependencies": {
     "@types/node-schedule": "^2.1.8",
