@@ -4,31 +4,22 @@ A faceted search app for finding datasets from the Netwerk Digitaal Erfgoed (NDE
 
 ## Data
 
-Retrieves data from h
+This app retrieves data from the [NDE Dataset Register SPARQL endpoint](../../README.md#search-dataset-descriptions).
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+## Tech stack
 
-## Creating a project
+- A SvelteKit 2 app with Tailwind CSS.
+- Paraglide is used for translations.
+- Relies on [@lde/dataset-registry-client](https://www.npmjs.com/package/@lde/dataset-registry-client)
+  and [LDKit](https://ldkit.io) for retrieving and mapping data.
 
-If you're seeing this, you've probably already done this step. Congrats!
-
-```sh
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+## Development
 
 ```sh
-npm run dev
+nx dev browser
 
 # or start the server and open the app in a new browser tab
-npm run dev -- --open
+nx dev browser -- --open
 ```
 
 ## Building

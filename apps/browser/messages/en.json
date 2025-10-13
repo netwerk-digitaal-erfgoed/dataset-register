@@ -1,4 +1,48 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-  "hello_world": "Hello, {name} from en!"
+  "header": {
+    "title": "Dataset Register",
+    "tagline": "Discover cultural heritage datasets"
+  },
+  "nav": {
+    "create": "Create",
+    "validate": "Validate",
+    "submit": "Submit",
+    "search": "Search",
+    "faq": "FAQ"
+  },
+  "distribution": {
+    "rdf": "This dataset provides an RDF download",
+    "sparql": "This dataset provides a SPARQL endpoint"
+  },
+  "search": {
+    "no_datasets": "Found no datasets",
+    "search_placeholder": "Search datasets...",
+    "datasets_found": [
+      {
+        "declarations": ["input count", "local countPlural = count: plural"],
+        "selectors": ["countPlural"],
+        "match": {
+          "countPlural=zero": "Found no datasets",
+          "countPlural=one": "Found 1 dataset",
+          "countPlural=other": "Found {count} datasets"
+        }
+      }
+    ]
+  },
+  "dataset_publisher": "Publisher",
+  "dataset_languages": "Languages",
+  "loading_datasets": "Loading datasets...",
+  "loading_more": "Loading more...",
+  "language_nl": "Dutch",
+  "language_en": "English",
+  "lang_nl": "Dutch",
+  "lang_nl-NL": "Dutch",
+  "lang_en": "English",
+  "lang_en-US": "English (US)",
+  "lang_en-GB": "English (UK)",
+  "lang_de": "German",
+  "lang_fr": "French",
+  "lang_es": "Spanish",
+  "lang_it": "Italian"
 }
