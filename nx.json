@@ -54,7 +54,7 @@
       "commit": false,
       "tag": false
     },
-    "projects": ["api", "crawler"],
+    "projects": ["api", "browser", "crawler"],
     "projectsRelationship": "independent",
     "releaseTagPattern": "release/{projectName}/{version}",
     "docker": {
