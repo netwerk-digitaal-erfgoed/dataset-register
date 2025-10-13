@@ -15,19 +15,38 @@
     "test": "npm run test:unit -- --run",
     "test:unit": "vitest"
   },
+  "dependencies": {
+    "@lde/dataset-registry-client": "^0.4.3",
+    "fetch-sparql-endpoint": "^6.2.0",
+    "ldkit": "^2.5.1"
+  },
   "devDependencies": {
     "@eslint/compat": "^1.4.0",
     "@eslint/js": "^9.22.0",
     "@inlang/paraglide-js": "^2.0.0",
-    "@sveltejs/adapter-auto": "^6.0.0",
+    "@sveltejs/adapter-node": "^5.3.3",
     "@sveltejs/kit": "^2.46.4",
     "@sveltejs/vite-plugin-svelte": "^6.0.0",
+    "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/typography": "^0.5.18",
+    "@tailwindcss/vite": "^4.1.13",
     "@vitest/browser": "^3.2.3",
     "eslint-plugin-svelte": "^3.0.0",
     "globals": "^16.0.0",
     "prettier-plugin-svelte": "^3.3.3",
     "svelte": "^5.39.11",
     "svelte-check": "^4.0.0",
+    "tailwindcss": "^4.1.13",
     "vitest-browser-svelte": "^0.1.0"
+  },
+  "nx": {
+    "projectType": "application",
+    "targets": {
+      "prune-lockfile": {
+        "options": {
+          "outputPath": "apps/browser/build"
+        }
+      }
+    }
   }
 }

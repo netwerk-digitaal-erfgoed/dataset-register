@@ -1,4 +1,48 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-  "hello_world": "Hello, {name} from nl!"
+  "header": {
+    "title": "Datasetregister",
+    "tagline": "Ontdek datasets over cultureel erfgoed"
+  },
+  "nav": {
+    "create": "Maak",
+    "validate": "Valideer",
+    "submit": "Meld aan",
+    "search": "Doorzoek",
+    "faq": "Veel gestelde vragen"
+  },
+  "distribution": {
+    "rdf": "Deze dataset biedt een RDF-download",
+    "sparql": "Deze dataset biedt een SPARQL-endpoint"
+  },
+  "search": {
+    "no_datasets": "Geen datasets gevonden",
+    "search_placeholder": "Zoek datasets...",
+    "datasets_found": [
+      {
+        "declarations": ["input count", "local countPlural = count: plural"],
+        "selectors": ["countPlural"],
+        "match": {
+          "countPlural=zero": "Geen datasets gevonden",
+          "countPlural=one": "1 dataset gevonden",
+          "countPlural=other": "{count} datasets gevonden"
+        }
+      }
+    ]
+  },
+  "dataset_publisher": "Uitgever",
+  "dataset_languages": "Talen",
+  "loading_datasets": "Datasets laden...",
+  "loading_more": "Meer laden...",
+  "language_nl": "Nederlands",
+  "language_en": "Engels",
+  "lang_nl": "Nederlands",
+  "lang_nl-NL": "Nederlands",
+  "lang_en": "Engels",
+  "lang_en-US": "Engels (VS)",
+  "lang_en-GB": "Engels (VK)",
+  "lang_de": "Duits",
+  "lang_fr": "Frans",
+  "lang_es": "Spaans",
+  "lang_it": "Italiaans"
 }
