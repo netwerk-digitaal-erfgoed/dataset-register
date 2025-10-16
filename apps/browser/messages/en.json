@@ -34,6 +34,12 @@
   "dataset_languages": "Languages",
   "loading_datasets": "Loading datasets...",
   "loading_more": "Loading more...",
+  "facets": {
+    "publisher": "Publisher",
+    "remove_filter": "Remove filter",
+    "show_more": "Show more",
+    "show_less": "Show less"
+  },
   "language_nl": "Dutch",
   "language_en": "English",
   "lang_nl": "Dutch",

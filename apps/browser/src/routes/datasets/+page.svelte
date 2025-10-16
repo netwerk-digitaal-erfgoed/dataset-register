@@ -1,67 +1,136 @@
 <script lang="ts">
   import DatasetCard from '$lib/components/DatasetCard.svelte';
+  import SearchFacet from '$lib/components/SearchFacet.svelte';
+  import ActiveFilters from '$lib/components/ActiveFilters.svelte';
   import * as m from '$lib/paraglide/messages';
-  import type { PageData } from './$types';
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
-  import type { DatasetCard as DatasetCardType } from '$lib/services/datasets';
+  import type {
+    DatasetCard as DatasetCardType,
+    SearchRequest,
+    SearchResults,
+  } from '$lib/services/datasets';
   import { fetchDatasets } from '$lib/services/datasets';
+  import type { SelectedFacetValue } from '$lib/services/facets';
+  import type { Facets } from '$lib/services/datasets';
 
-  let { data }: { data: PageData } = $props();
+  // Derive searchRequest from URL, which is the single source of truth.
+  let searchRequest: SearchRequest = $derived({
+    query: page.url.searchParams.get('search') || undefined,
+    publisher:
+      page.url.searchParams.get('publishers')?.split(',').filter(Boolean) || [],
+    format:
+      page.url.searchParams.get('format')?.split(',').filter(Boolean) || [],
+  });
 
-  let searchValue = $state(page.url.searchParams.get('search') || '');
+  let searchResults: SearchResults | undefined = $state();
+
+  // Local state for search input (for immediate typing feedback)
+  let localQuery = $state(searchRequest.query || '');
+
+  // Cache facets to keep them visible during loading
+  let cachedFacets = $state<Facets | undefined>();
+
+  let selectedValues: { publisher: SelectedFacetValue[] } = $derived({
+    publisher: searchRequest.publisher.map((value) => {
+      // Try current search results first, then cached facets
+      const facet =
+        searchResults?.facets.publisher.find(
+          (publisher) => publisher.value === value,
+        ) ??
+        cachedFacets?.publisher.find((publisher) => publisher.value === value);
+      return {
+        value,
+        label: facet?.label ?? { '': value },
+      };
+    }),
+  });
+
   let debounceTimer: ReturnType<typeof setTimeout>;
   let inputElement = $state<HTMLInputElement>();
+  let facetsLoaded = $state(false);
 
   // Infinite scroll state
   let accumulatedDatasets = $state<DatasetCardType[]>([]);
   let currentOffset = $state(0);
   let isLoadingMore = $state(false);
   let hasMore = $state(true);
-  let totalCount = $state(0);
   let sentinelElement = $state<HTMLDivElement>();
   let observer: IntersectionObserver;
 
   const ITEMS_PER_PAGE = 24;
 
-  function handleSearch(event: Event) {
-    const input = event.target as HTMLInputElement;
-    searchValue = input.value;
+  // Single function to update URL - called from all user interactions
+  function updateURL(params: {
+    query?: string;
+    publisher?: string[];
+    format?: string[];
+  }) {
+    const url = new URL(window.location.href);
 
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(async () => {
-      // Update URL without reloading
-      const url = new URL(page.url);
-      if (searchValue) {
-        url.searchParams.set('search', searchValue);
-      } else {
-        url.searchParams.delete('search');
-      }
+    if (params.query) {
+      url.searchParams.set('search', params.query);
+    } else {
+      url.searchParams.delete('search');
+    }
 
-      await goto(url, {
-        noScroll: true,
-        replaceState: true,
-        keepFocus: true,
-      });
+    if (params.publisher && params.publisher.length > 0) {
+      url.searchParams.set('publishers', params.publisher.join(','));
+    } else {
+      url.searchParams.delete('publishers');
+    }
 
-      // Manually fetch and update results
-      const searchParam = searchValue || undefined;
-      const result = await fetchDatasets(ITEMS_PER_PAGE, searchParam, 0);
-      accumulatedDatasets = [...result.results];
-      currentOffset = result.results.length;
-      totalCount = result.total;
-      hasMore = result.results.length < result.total;
-    }, 600);
+    if (params.format && params.format.length > 0) {
+      url.searchParams.set('format', params.format.join(','));
+    } else {
+      url.searchParams.delete('format');
+    }
+
+    goto(url, {
+      noScroll: true,
+      replaceState: true,
+      keepFocus: true,
+    });
   }
 
-  // Initialize with data when promise resolves
+  // Watch local query and debounce URL updates
   $effect(() => {
-    data.datasets.then((datasets) => {
-      accumulatedDatasets = [...datasets.results];
-      currentOffset = datasets.results.length;
-      totalCount = datasets.total;
-      hasMore = datasets.results.length < datasets.total;
+    const query = localQuery;
+
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      updateURL({
+        query: query || undefined,
+        publisher: searchRequest.publisher,
+        format: searchRequest.format,
+      });
+    }, 600);
+  });
+
+  // Watch searchRequest (derived from URL) and fetch data
+  $effect(() => {
+    const request = searchRequest;
+
+    // Clear results to trigger loading state
+    searchResults = undefined;
+
+    fetchDatasets(request, ITEMS_PER_PAGE, 0).then((results) => {
+      searchResults = results;
+      accumulatedDatasets = [...results.datasets];
+      currentOffset = results.datasets.length;
+      hasMore = currentOffset < results.total;
+
+      if (!facetsLoaded) {
+        facetsLoaded = true;
+      }
     });
+  });
+
+  // Cache facets whenever search results update
+  $effect(() => {
+    if (searchResults) {
+      cachedFacets = searchResults.facets;
+    }
   });
 
   // Load more datasets
@@ -70,16 +139,15 @@
 
     isLoadingMore = true;
     try {
-      const searchParam = page.url.searchParams.get('search') || undefined;
-      const result = await fetchDatasets(
+      searchResults = await fetchDatasets(
+        searchRequest,
         ITEMS_PER_PAGE,
-        searchParam,
         currentOffset,
       );
 
-      accumulatedDatasets = [...accumulatedDatasets, ...result.results];
-      currentOffset += result.results.length;
-      hasMore = accumulatedDatasets.length < totalCount;
+      accumulatedDatasets = [...accumulatedDatasets, ...searchResults.datasets];
+      currentOffset += searchResults.datasets.length;
+      hasMore = accumulatedDatasets.length < searchResults.total;
     } catch (error) {
       console.error('Failed to load more datasets:', error);
     } finally {
@@ -122,80 +190,118 @@
 
 <svelte:head>
   <title>Datasets - Netwerk Digitaal Erfgoed</title>
-  <meta
-    content="Discover datasets from the Dutch heritage network"
-    name="description"
-  />
+  <meta content={m['header.tagline']()} name="description" />
 </svelte:head>
 
 <div class="max-w-7xl mx-auto px-8 py-8 font-sans">
   <input
     bind:this={inputElement}
-    bind:value={searchValue}
+    bind:value={localQuery}
     class="w-full px-6 py-4 text-lg border-2 border-gray-300 dark:border-gray-600 rounded-lg mb-8 transition-colors focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 placeholder:text-gray-400 dark:placeholder:text-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-    oninput={handleSearch}
     placeholder={m['search.search_placeholder']()}
     type="search"
   />
 
-  {#await data.datasets}
-    <!-- Loading state -->
-    <div class="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6">
-      {#each createSkeletons(6) as skeletonId (skeletonId)}
+  {#if cachedFacets}
+    <ActiveFilters
+      {selectedValues}
+      onRemove={(type, value) => {
+        const newPublishers = searchRequest.publisher.filter(
+          (p) => p !== value,
+        );
+        updateURL({
+          query: searchRequest.query,
+          publisher: newPublishers,
+          format: searchRequest.format,
+        });
+      }}
+    />
+  {/if}
+
+  <div class="flex gap-8">
+    <!-- Sidebar with facets - outside await block to prevent re-rendering -->
+    <aside class="w-64 flex-shrink-0">
+      {#if !facetsLoaded}
         <div
-          class="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-gray-50 dark:bg-gray-800 pointer-events-none"
-        >
-          <div
-            class="h-7 bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded mb-4 w-4/5 animate-shimmer"
-          ></div>
-          <div
-            class="h-4 bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded mb-2.5 animate-shimmer"
-          ></div>
-          <div
-            class="h-4 bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded w-3/5 animate-shimmer"
-          ></div>
+          class="h-6 bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded mb-3 w-3/4 animate-shimmer"
+        ></div>
+      {:else}
+        <SearchFacet
+          selectedValues={searchRequest.publisher}
+          values={searchResults?.facets.publisher ??
+            cachedFacets?.publisher ??
+            []}
+          title={m['facets.publisher']()}
+          onChange={(newPublishers) => {
+            updateURL({
+              query: searchRequest.query,
+              publisher: newPublishers,
+              format: searchRequest.format,
+            });
+          }}
+        />
+      {/if}
+    </aside>
+
+    <!-- Main content area -->
+    <div class="flex-1 min-w-0">
+      {#if !searchResults}
+        <!-- Loading state -->
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6">
+          {#each createSkeletons(6) as skeletonId (skeletonId)}
+            <div
+              class="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-gray-50 dark:bg-gray-800 pointer-events-none"
+            >
+              <div
+                class="h-7 bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded mb-4 w-4/5 animate-shimmer"
+              ></div>
+              <div
+                class="h-4 bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded mb-2.5 animate-shimmer"
+              ></div>
+              <div
+                class="h-4 bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded w-3/5 animate-shimmer"
+              ></div>
+            </div>
+          {/each}
         </div>
-      {/each}
-    </div>
-  {:then datasets}
-    <!-- Total count -->
-    <p
-      class="mb-6 text-gray-600 dark:text-gray-400 text-sm font-medium"
-      class:invisible={datasets.total === 0}
-    >
-      {m['search.datasets_found']({ count: datasets.total })} (in {Math.round(
-        datasets.time,
-      )} ms)
-    </p>
+      {:else}
+        <!-- Total count -->
+        <p
+          class="mb-6 text-gray-600 dark:text-gray-400 text-sm font-medium"
+          class:invisible={searchResults.total === 0}
+        >
+          {m['search.datasets_found']({ count: searchResults.total })} (in {Math.round(
+            searchResults.time,
+          )} ms)
+        </p>
 
-    {#if datasets.results.length === 0}
-      <!-- No results -->
-      <p class="text-center text-gray-600 dark:text-gray-400 py-12 text-lg">
-        {m['search.no_datasets']()}
-      </p>
-    {:else}
-      <!-- Success state: show accumulated datasets -->
-      <div class="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6">
-        {#each accumulatedDatasets as dataset (dataset.$id)}
-          <DatasetCard {dataset} />
-        {/each}
-      </div>
-
-      <!-- Infinite scroll sentinel -->
-      <div bind:this={sentinelElement} class="py-8 text-center">
-        {#if isLoadingMore}
-          <p class="text-gray-600 dark:text-gray-400 text-sm">
-            {m.loading_more()}
+        {#if searchResults.datasets.length === 0}
+          <!-- No results -->
+          <p class="text-center text-gray-600 dark:text-gray-400 py-12 text-lg">
+            {m['search.no_datasets']()}
           </p>
+        {:else}
+          <!-- Success state: show accumulated datasets -->
+          <div
+            class="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6"
+          >
+            {#each accumulatedDatasets as dataset (dataset.$id)}
+              <DatasetCard {dataset} />
+            {/each}
+          </div>
+
+          <!-- Infinite scroll sentinel -->
+          <div bind:this={sentinelElement} class="py-8 text-center">
+            {#if isLoadingMore}
+              <p class="text-gray-600 dark:text-gray-400 text-sm">
+                {m.loading_more()}
+              </p>
+            {/if}
+          </div>
         {/if}
-      </div>
-    {/if}
-  {:catch error}
-    <!-- Error state -->
-    <p class="text-center text-red-600 dark:text-red-400 py-12">
-      Error loading datasets: {error.message}
-    </p>
-  {/await}
+      {/if}
+    </div>
+  </div>
 </div>
 
 <style>

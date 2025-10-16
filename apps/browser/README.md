@@ -2,9 +2,10 @@
 
 A faceted search app for finding datasets from the Netwerk Digitaal Erfgoed (NDE) Dataset Register.
 
-## Data
+## Functionality
 
-This app retrieves data from the [NDE Dataset Register SPARQL endpoint](../../README.md#search-dataset-descriptions).
+- This app retrieves data from the [NDE Dataset Register SPARQL endpoint](../../README.md#search-dataset-descriptions).
+- Search state is kept in the URL, so users can bookmark and share search results.
 
 ## Tech stack
 

@@ -34,6 +34,12 @@
   "dataset_languages": "Talen",
   "loading_datasets": "Datasets laden...",
   "loading_more": "Meer laden...",
+  "facets": {
+    "publisher": "Uitgever",
+    "remove_filter": "Filter verwijderen",
+    "show_more": "Toon meer",
+    "show_less": "Toon minder"
+  },
   "language_nl": "Nederlands",
   "language_en": "Engels",
   "lang_nl": "Nederlands",

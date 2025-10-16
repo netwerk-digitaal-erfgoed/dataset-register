@@ -2,9 +2,14 @@ import { dcat } from '@lde/dataset-registry-client';
 import { dcterms, foaf, ldkit } from 'ldkit/namespaces';
 import { createLens, type SchemaInterface } from 'ldkit';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
+import {
+  type FacetKey,
+  type FacetValue,
+  fetchFacets,
+} from '$lib/services/facets';
+import { PUBLIC_SPARQL_ENDPOINT } from '$env/static/public';
 
-const SPARQL_ENDPOINT =
-  'https://datasetregister.netwerkdigitaalerfgoed.nl/sparql';
+export const SPARQL_ENDPOINT = PUBLIC_SPARQL_ENDPOINT;
 const fetcher = new SparqlEndpointFetcher();
 
 export const DatasetCardSchema = {
@@ -73,18 +78,21 @@ const datasetCards = createLens(DatasetCardSchema, {
   sources: [SPARQL_ENDPOINT],
 });
 
-const prefixes = `
+export const prefixes = `
 PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
-PREFIX foaf: <http://xmlns.com/foaf/0.1/>			
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>			
 PREFIX schema: <http://schema.org/>
 `;
 
-interface SearchFilters {
+export interface SearchRequest {
   query?: string;
+  publisher: string[];
+  format: string[];
 }
 
-async function countDatasets(filters: SearchFilters) {
+async function countDatasets(filters: SearchRequest) {
   const query = `
   ${prefixes}
 
@@ -95,13 +103,16 @@ async function countDatasets(filters: SearchFilters) {
 
   // COUNT query returns exactly one binding
   for await (const binding of bindings) {
-    return parseInt(binding.count.value);
+    const typedBinding = binding as unknown as {
+      count: { value: string };
+    };
+    return parseInt(typedBinding.count.value);
   }
   return 0;
 }
 
 const datasetCardsQuery = (
-  filters: SearchFilters,
+  filters: SearchRequest,
   limit: number,
   offset = 0,
 ) => `
@@ -152,7 +163,7 @@ const datasetCardsQuery = (
   ORDER BY ?title  
 `;
 
-const filterDatasets = (filters: SearchFilters) =>
+export const filterDatasets = (filters: SearchRequest) =>
   `?dataset a dcat:Dataset ;
     schema:subjectOf ?registrationUrl .
     
@@ -161,42 +172,65 @@ const filterDatasets = (filters: SearchFilters) =>
   ${filterClauses(filters)}
 `;
 
+export type Facets = Record<FacetKey, FacetValue[]>;
+
+export interface SearchResults {
+  datasets: DatasetCard[];
+  facets: Facets;
+  total: number;
+  time: number;
+}
+
 export async function fetchDatasets(
+  searchFilters: SearchRequest,
   limit: number,
-  search?: string,
   offset = 0,
-) {
-  const searchFilters = {
-    query: search,
-  };
+): Promise<SearchResults> {
   const startTime = performance.now();
-  const total = await countDatasets(searchFilters);
-  const query = datasetCardsQuery(searchFilters, limit, offset);
-  const results = await datasetCards.query(query);
+
+  // Start all queries in parallel using Promise.all
+  const [total, datasets, facets] = await Promise.all([
+    countDatasets(searchFilters),
+    datasetCards.query(datasetCardsQuery(searchFilters, limit, offset)),
+    fetchFacets(searchFilters),
+  ]);
 
   return {
+    datasets,
+    facets,
     total,
-    results,
     time: performance.now() - startTime,
   };
 }
 
-function filterClauses(searchFilters: SearchFilters) {
+function filterClauses(searchFilters: SearchRequest) {
+  if (!searchFilters) {
+    return '';
+  }
+
   const filterClausesArray: string[] = [];
 
-  const { query } = searchFilters;
+  const { query, publisher } = searchFilters;
 
-  if (query !== undefined) {
+  if (query !== undefined && query.length > 0) {
     filterClausesArray.push(
       `?dataset dct:title ?title ;
         dct:description ?description .
       ?dataset dct:publisher/foaf:name ?publisher_name .
-       
-       FILTER(CONTAINS(LCASE(?title), LCASE("${query}")) 
+
+       FILTER(CONTAINS(LCASE(?title), LCASE("${query}"))
         || CONTAINS(LCASE(?description), LCASE("${query}"))
         || CONTAINS(LCASE(?publisher_name), LCASE("${query}")))`,
     );
   }
 
-  return filterClausesArray;
+  if (publisher && publisher.length > 0) {
+    const publisherValues = publisher.map((p) => `<${p}>`).join(', ');
+    filterClausesArray.push(
+      `?dataset dct:publisher ?publisher .
+       FILTER(?publisher IN (${publisherValues}))`,
+    );
+  }
+
+  return filterClausesArray.join('\n  ');
 }
