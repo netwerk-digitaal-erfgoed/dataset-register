@@ -2,6 +2,7 @@
   import * as m from '$lib/paraglide/messages';
   import { getLocale } from '$lib/paraglide/runtime';
   import { type DatasetCard } from '$lib/services/datasets';
+  import { getLocalizedValue } from '$lib/utils/i18n';
 
   let { dataset }: { dataset: DatasetCard } = $props();
 
@@ -39,21 +40,6 @@
         ].includes(distribution.mediaType),
     ),
   );
-
-  function getLocalizedValue(
-    values: Record<string, string> | undefined,
-  ): string | null {
-    if (!values) return null;
-
-    const locale = getLocale();
-    if (values[locale]) return values[locale];
-
-    // Fallback to Dutch, then English, then first available
-    if (values['nl']) return values['nl'];
-    if (values['en']) return values['en'];
-
-    return Object.values(values)[0] || null;
-  }
 </script>
 
 <a
