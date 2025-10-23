@@ -1,46 +1,36 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-  "header": {
-    "title": "Dataset Register",
-    "tagline": "Discover cultural heritage datasets"
-  },
-  "nav": {
-    "create": "Create",
-    "validate": "Validate",
-    "submit": "Submit",
-    "search": "Search",
-    "faq": "FAQ"
-  },
-  "distribution": {
-    "rdf": "This dataset provides an RDF download",
-    "sparql": "This dataset provides a SPARQL endpoint"
-  },
-  "search": {
-    "no_datasets": "Found no datasets",
-    "search_placeholder": "Search datasets...",
-    "datasets_found": [
-      {
-        "declarations": ["input count", "local countPlural = count: plural"],
-        "selectors": ["countPlural"],
-        "match": {
-          "countPlural=zero": "Found no datasets",
-          "countPlural=one": "Found 1 dataset",
-          "countPlural=other": "Found {count} datasets"
-        }
+  "header_title": "Dataset Register",
+  "header_tagline": "Discover cultural heritage datasets",
+  "nav_create": "Create",
+  "nav_validate": "Validate",
+  "nav_submit": "Submit",
+  "nav_search": "Search",
+  "nav_faq": "FAQ",
+  "distribution_rdf": "This dataset provides an RDF download",
+  "distribution_sparql": "This dataset provides a SPARQL endpoint",
+  "search_no_datasets": "Found no datasets",
+  "search_placeholder": "Search datasets...",
+  "search_datasets_found": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=zero": "Found no datasets",
+        "countPlural=one": "Found 1 dataset",
+        "countPlural=other": "Found {count} datasets"
       }
-    ]
-  },
+    }
+  ],
   "dataset_publisher": "Publisher",
   "dataset_languages": "Languages",
   "loading_datasets": "Loading datasets...",
   "loading_more": "Loading more...",
-  "facets": {
-    "publisher": "Publisher",
-    "format": "Format",
-    "remove_filter": "Remove filter",
-    "show_more": "Show more",
-    "show_less": "Show less"
-  },
+  "facets_publisher": "Publisher",
+  "facets_format": "Format",
+  "facets_remove_filter": "Remove filter",
+  "facets_show_more": "Show more",
+  "facets_show_less": "Show less",
   "group:rdf": "RDF download",
   "group:sparql": "SPARQL endpoint",
   "language_nl": "Dutch",

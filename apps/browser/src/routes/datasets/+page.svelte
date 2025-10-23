@@ -198,7 +198,7 @@
 
 <svelte:head>
   <title>Datasets - Netwerk Digitaal Erfgoed</title>
-  <meta content={m['header.tagline']()} name="description" />
+  <meta content={m.header_tagline()} name="description" />
 </svelte:head>
 
 <div class="max-w-7xl mx-auto px-8 py-8 font-sans">
@@ -206,7 +206,7 @@
     bind:this={inputElement}
     bind:value={localQuery}
     class="w-full px-6 py-4 text-lg border-2 border-gray-300 dark:border-gray-600 rounded-lg mb-8 transition-colors focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 placeholder:text-gray-400 dark:placeholder:text-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-    placeholder={m['search.search_placeholder']()}
+    placeholder={m.search_placeholder()}
     type="search"
   />
 
@@ -249,7 +249,7 @@
             values={searchResults?.facets.publisher ??
               cachedFacets?.publisher ??
               []}
-            title={m['facets.publisher']()}
+            title={m.facets_publisher()}
             onChange={(newPublishers) => {
               updateURL({
                 query: searchRequest.query,
@@ -263,7 +263,7 @@
           <SearchFacet
             selectedValues={searchRequest.format}
             values={searchResults?.facets.format ?? cachedFacets?.format ?? []}
-            title={m['facets.format']()}
+            title={m.facets_format()}
             onChange={(newFormats) => {
               updateURL({
                 query: searchRequest.query,
@@ -303,7 +303,7 @@
           class="mb-6 text-gray-600 dark:text-gray-400 text-sm font-medium"
           class:invisible={searchResults.total === 0}
         >
-          {m['search.datasets_found']({ count: searchResults.total })} (in {Math.round(
+          {m.search_datasets_found({ count: searchResults.total })} (in {Math.round(
             searchResults.time,
           )} ms)
         </p>
@@ -311,7 +311,7 @@
         {#if searchResults.datasets.length === 0}
           <!-- No results -->
           <p class="text-center text-gray-600 dark:text-gray-400 py-12 text-lg">
-            {m['search.no_datasets']()}
+            {m.search_no_datasets()}
           </p>
         {:else}
           <!-- Success state: show accumulated datasets -->

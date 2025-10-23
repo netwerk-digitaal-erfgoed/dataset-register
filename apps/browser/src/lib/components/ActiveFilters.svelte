@@ -45,7 +45,7 @@
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
-          aria-label={m['facets.remove_filter']()}
+          aria-label={m.facets_remove_filter()}
         >
           <path
             stroke-linecap="round"
