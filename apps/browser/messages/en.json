@@ -36,10 +36,13 @@
   "loading_more": "Loading more...",
   "facets": {
     "publisher": "Publisher",
+    "format": "Format",
     "remove_filter": "Remove filter",
     "show_more": "Show more",
     "show_less": "Show less"
   },
+  "group:rdf": "RDF download",
+  "group:sparql": "SPARQL endpoint",
   "language_nl": "Dutch",
   "language_en": "English",
   "lang_nl": "Dutch",

@@ -11,7 +11,7 @@
     SearchResults,
   } from '$lib/services/datasets';
   import { fetchDatasets } from '$lib/services/datasets';
-  import type { SelectedFacetValue } from '$lib/services/facets';
+  import type { FacetValue } from '$lib/services/facets';
   import type { Facets } from '$lib/services/datasets';
 
   // Derive searchRequest from URL, which is the single source of truth.
@@ -25,13 +25,16 @@
 
   let searchResults: SearchResults | undefined = $state();
 
-  // Local state for search input (for immediate typing feedback)
-  let localQuery = $state(searchRequest.query || '');
+  // Writable derived - reads from URL, can be written to for local updates
+  let localQuery = $derived(searchRequest.query || '');
 
   // Cache facets to keep them visible during loading
   let cachedFacets = $state<Facets | undefined>();
 
-  let selectedValues: { publisher: SelectedFacetValue[] } = $derived({
+  let selectedValues: {
+    publisher: FacetValue[];
+    format: FacetValue[];
+  } = $derived({
     publisher: searchRequest.publisher.map((value) => {
       // Try current search results first, then cached facets
       const facet =
@@ -41,7 +44,12 @@
         cachedFacets?.publisher.find((publisher) => publisher.value === value);
       return {
         value,
-        label: facet?.label ?? { '': value },
+        label: facet?.label || { '': value },
+      };
+    }),
+    format: searchRequest.format.map((value) => {
+      return {
+        value,
       };
     }),
   });
@@ -93,7 +101,7 @@
     });
   }
 
-  // Watch local query and debounce URL updates
+  // Watch localQuery writes and debounce URL updates
   $effect(() => {
     const query = localQuery;
 
@@ -206,14 +214,23 @@
     <ActiveFilters
       {selectedValues}
       onRemove={(type, value) => {
-        const newPublishers = searchRequest.publisher.filter(
-          (p) => p !== value,
-        );
-        updateURL({
-          query: searchRequest.query,
-          publisher: newPublishers,
-          format: searchRequest.format,
-        });
+        if (type === 'publisher') {
+          const newPublishers = searchRequest.publisher.filter(
+            (p) => p !== value,
+          );
+          updateURL({
+            query: searchRequest.query,
+            publisher: newPublishers,
+            format: searchRequest.format,
+          });
+        } else if (type === 'format') {
+          const newFormats = searchRequest.format.filter((f) => f !== value);
+          updateURL({
+            query: searchRequest.query,
+            publisher: searchRequest.publisher,
+            format: newFormats,
+          });
+        }
       }}
     />
   {/if}
@@ -226,20 +243,36 @@
           class="h-6 bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded mb-3 w-3/4 animate-shimmer"
         ></div>
       {:else}
-        <SearchFacet
-          selectedValues={searchRequest.publisher}
-          values={searchResults?.facets.publisher ??
-            cachedFacets?.publisher ??
-            []}
-          title={m['facets.publisher']()}
-          onChange={(newPublishers) => {
-            updateURL({
-              query: searchRequest.query,
-              publisher: newPublishers,
-              format: searchRequest.format,
-            });
-          }}
-        />
+        {#if (searchResults?.facets.publisher ?? cachedFacets?.publisher ?? []).length > 0 || searchRequest.publisher.length > 0}
+          <SearchFacet
+            selectedValues={searchRequest.publisher}
+            values={searchResults?.facets.publisher ??
+              cachedFacets?.publisher ??
+              []}
+            title={m['facets.publisher']()}
+            onChange={(newPublishers) => {
+              updateURL({
+                query: searchRequest.query,
+                publisher: newPublishers,
+                format: searchRequest.format,
+              });
+            }}
+          />
+        {/if}
+        {#if (searchResults?.facets.format ?? cachedFacets?.format ?? []).length > 0 || searchRequest.format.length > 0}
+          <SearchFacet
+            selectedValues={searchRequest.format}
+            values={searchResults?.facets.format ?? cachedFacets?.format ?? []}
+            title={m['facets.format']()}
+            onChange={(newFormats) => {
+              updateURL({
+                query: searchRequest.query,
+                publisher: searchRequest.publisher,
+                format: newFormats,
+              });
+            }}
+          />
+        {/if}
       {/if}
     </aside>
 

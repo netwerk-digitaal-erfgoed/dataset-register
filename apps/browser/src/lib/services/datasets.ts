@@ -3,8 +3,9 @@ import { dcterms, foaf, ldkit } from 'ldkit/namespaces';
 import { createLens, type SchemaInterface } from 'ldkit';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import {
+  type CountedFacetValue,
+  facetConfigs,
   type FacetKey,
-  type FacetValue,
   fetchFacets,
 } from '$lib/services/facets';
 import { PUBLIC_SPARQL_ENDPOINT } from '$env/static/public';
@@ -172,7 +173,7 @@ export const filterDatasets = (filters: SearchRequest) =>
   ${filterClauses(filters)}
 `;
 
-export type Facets = Record<FacetKey, FacetValue[]>;
+export type Facets = Record<FacetKey, CountedFacetValue[]>;
 
 export interface SearchResults {
   datasets: DatasetCard[];
@@ -210,7 +211,7 @@ function filterClauses(searchFilters: SearchRequest) {
 
   const filterClausesArray: string[] = [];
 
-  const { query, publisher } = searchFilters;
+  const { query, publisher, format } = searchFilters;
 
   if (query !== undefined && query.length > 0) {
     filterClausesArray.push(
@@ -224,12 +225,12 @@ function filterClauses(searchFilters: SearchRequest) {
     );
   }
 
-  if (publisher && publisher.length > 0) {
-    const publisherValues = publisher.map((p) => `<${p}>`).join(', ');
-    filterClausesArray.push(
-      `?dataset dct:publisher ?publisher .
-       FILTER(?publisher IN (${publisherValues}))`,
-    );
+  if (publisher.length > 0) {
+    filterClausesArray.push(facetConfigs.publisher.filterClause(publisher));
+  }
+
+  if (format.length > 0) {
+    filterClausesArray.push(facetConfigs.format.filterClause(format));
   }
 
   return filterClausesArray.join('\n  ');

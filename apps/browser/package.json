@@ -42,6 +42,12 @@
   "nx": {
     "projectType": "application",
     "targets": {
+      "typecheck": {
+        "command": "npm run check",
+        "options": {
+          "cwd": "apps/browser"
+        }
+      },
       "prune-lockfile": {
         "options": {
           "outputPath": "apps/browser/build"
