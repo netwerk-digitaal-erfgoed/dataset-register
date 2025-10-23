@@ -3,14 +3,16 @@
   import { getLocale } from '$lib/paraglide/runtime';
   import { type DatasetCard } from '$lib/services/datasets';
   import { getLocalizedValue } from '$lib/utils/i18n';
+  import { RDF_MEDIA_TYPES } from '$lib/constants.js';
 
   let { dataset }: { dataset: DatasetCard } = $props();
 
   const languages = $derived(
     dataset.language.map((lang) => {
-      const key = `lang_${lang}` as keyof typeof m;
+      const key: keyof typeof m = `lang_${lang}` as keyof typeof m;
       // Try to get translation, fall back to original language code.
-      return m[key] ? m[key!]() : lang;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (m as any)[key]?.() ?? lang;
     }),
   );
 
@@ -30,14 +32,9 @@
     dataset.distribution.some(
       (distribution) =>
         distribution.mediaType !== null &&
-        [
-          'text/turtle',
-          'application/rdf+xml',
-          'application/n-triples',
-          'application/n-quads',
-          'application/trig',
-          'application/ld+json',
-        ].includes(distribution.mediaType),
+        RDF_MEDIA_TYPES.includes(
+          distribution.mediaType as (typeof RDF_MEDIA_TYPES)[number],
+        ),
     ),
   );
 </script>

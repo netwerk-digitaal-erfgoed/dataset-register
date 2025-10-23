@@ -1,21 +1,31 @@
 <script lang="ts">
   import * as m from '$lib/paraglide/messages';
-  import type { FacetKey, SelectedFacetValue } from '$lib/services/facets';
-  import { getLocalizedValue } from '$lib/utils/i18n';
+  import {
+    facetDisplayValue,
+    type FacetKey,
+    type FacetValue,
+  } from '$lib/services/facets';
 
   let {
     selectedValues,
     onRemove,
   }: {
     selectedValues: {
-      publisher: SelectedFacetValue[];
+      publisher: FacetValue[];
+      format: FacetValue[];
     };
     onRemove: (type: FacetKey, value: string) => void;
   } = $props();
 
+  console.log(selectedValues.format);
+
   let allSelectedValues = $derived([
-    ...selectedValues.publisher.map((facet: SelectedFacetValue) => ({
+    ...selectedValues.publisher.map((facet: FacetValue) => ({
       type: 'publisher' as FacetKey,
+      facet,
+    })),
+    ...selectedValues.format.map((facet: FacetValue) => ({
+      type: 'format' as FacetKey,
       facet,
     })),
   ]);
@@ -29,7 +39,7 @@
         onclick={() => onRemove(selectedValue.type, selectedValue.facet.value)}
         type="button"
       >
-        <span>{getLocalizedValue(selectedValue.facet.label)}</span>
+        <span>{facetDisplayValue(selectedValue.facet)}</span>
         <svg
           class="w-3.5 h-3.5"
           fill="none"
