@@ -134,7 +134,7 @@
                 class="no-underline"
                 style="color: rgb(23, 42, 89); font-size: 16.1px; font-weight: 400; padding: 38px 18px; display: inline-block; line-height: 24px;"
               >
-                {m['nav.create']()}
+                {m.nav_create()}
               </a>
             </li>
             <li>
@@ -144,7 +144,7 @@
                 class="no-underline"
                 style="color: rgb(23, 42, 89); font-size: 16.1px; font-weight: 400; padding: 38px 18px; display: inline-block; line-height: 24px;"
               >
-                {m['nav.validate']()}
+                {m.nav_validate()}
               </a>
             </li>
             <li>
@@ -154,7 +154,7 @@
                 class="no-underline"
                 style="color: rgb(23, 42, 89); font-size: 16.1px; font-weight: 400; padding: 38px 18px; display: inline-block; line-height: 24px;"
               >
-                {m['nav.submit']()}
+                {m.nav_submit()}
               </a>
             </li>
             <li>
@@ -164,7 +164,7 @@
                 class="no-underline"
                 style="color: rgb(23, 42, 89); font-size: 16.1px; font-weight: 400; padding: 38px 18px; display: inline-block; line-height: 24px;"
               >
-                {m['nav.search']()}
+                {m.nav_search()}
               </a>
             </li>
             <li>
@@ -174,7 +174,7 @@
                 class="no-underline"
                 style="color: rgb(23, 42, 89); font-size: 16.1px; font-weight: 400; padding: 38px 18px; display: inline-block; line-height: 24px;"
               >
-                {m['nav.faq']()}
+                {m.nav_faq()}
               </a>
             </li>
             <li>

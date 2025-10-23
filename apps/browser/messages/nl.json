@@ -1,46 +1,36 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-  "header": {
-    "title": "Datasetregister",
-    "tagline": "Ontdek datasets over cultureel erfgoed"
-  },
-  "nav": {
-    "create": "Maak",
-    "validate": "Valideer",
-    "submit": "Meld aan",
-    "search": "Doorzoek",
-    "faq": "Veel gestelde vragen"
-  },
-  "distribution": {
-    "rdf": "Deze dataset biedt een RDF-download",
-    "sparql": "Deze dataset biedt een SPARQL-endpoint"
-  },
-  "search": {
-    "no_datasets": "Geen datasets gevonden",
-    "search_placeholder": "Zoek datasets...",
-    "datasets_found": [
-      {
-        "declarations": ["input count", "local countPlural = count: plural"],
-        "selectors": ["countPlural"],
-        "match": {
-          "countPlural=zero": "Geen datasets gevonden",
-          "countPlural=one": "1 dataset gevonden",
-          "countPlural=other": "{count} datasets gevonden"
-        }
+  "header_title": "Datasetregister",
+  "header_tagline": "Ontdek datasets over cultureel erfgoed",
+  "nav_create": "Maak",
+  "nav_validate": "Valideer",
+  "nav_submit": "Meld aan",
+  "nav_search": "Doorzoek",
+  "nav_faq": "Veel gestelde vragen",
+  "distribution_rdf": "Deze dataset biedt een RDF-download",
+  "distribution_sparql": "Deze dataset biedt een SPARQL-endpoint",
+  "search_no_datasets": "Geen datasets gevonden",
+  "search_placeholder": "Zoek datasets...",
+  "search_datasets_found": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=zero": "Geen datasets gevonden",
+        "countPlural=one": "1 dataset gevonden",
+        "countPlural=other": "{count} datasets gevonden"
       }
-    ]
-  },
+    }
+  ],
   "dataset_publisher": "Uitgever",
   "dataset_languages": "Talen",
   "loading_datasets": "Datasets laden...",
   "loading_more": "Meer laden...",
-  "facets": {
-    "publisher": "Uitgever",
-    "format": "Formaat",
-    "remove_filter": "Filter verwijderen",
-    "show_more": "Toon meer",
-    "show_less": "Toon minder"
-  },
+  "facets_publisher": "Uitgever",
+  "facets_format": "Formaat",
+  "facets_remove_filter": "Filter verwijderen",
+  "facets_show_more": "Toon meer",
+  "facets_show_less": "Toon minder",
   "group:rdf": "RDF-download",
   "group:sparql": "SPARQL-endpoint",
   "language_nl": "Nederlands",
