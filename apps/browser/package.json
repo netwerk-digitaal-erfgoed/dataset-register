@@ -46,7 +46,10 @@
         "command": "npm run check",
         "options": {
           "cwd": "apps/browser"
-        }
+        },
+        "dependsOn": [
+          "build"
+        ]
       },
       "prune-lockfile": {
         "options": {
