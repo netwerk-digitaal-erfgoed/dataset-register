@@ -106,7 +106,9 @@ export const facetConfigs: Record<string, FacetConfig> = {
       const filterClauses = [];
 
       if (selectedGroups.includes(GROUP_SPARQL)) {
-        selectClauses.push('?distribution dct:conformsTo ?conformsTo');
+        selectClauses.push(
+          'OPTIONAL { ?distribution dct:conformsTo ?conformsTo }',
+        );
         filterClauses.push(`?conformsTo = ${SPARQL_PROTOCOL_URI}`);
       }
 
