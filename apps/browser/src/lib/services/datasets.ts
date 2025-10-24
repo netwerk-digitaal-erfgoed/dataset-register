@@ -215,9 +215,9 @@ function filterClauses(searchFilters: SearchRequest) {
 
   if (query !== undefined && query.length > 0) {
     filterClausesArray.push(
-      `?dataset dct:title ?title ;
-        dct:description ?description .
+      `?dataset dct:title ?title .
       ?dataset dct:publisher/foaf:name ?publisher_name .
+      OPTIONAL { ?dataset dct:description ?description }
 
        FILTER(CONTAINS(LCASE(?title), LCASE("${query}"))
         || CONTAINS(LCASE(?description), LCASE("${query}"))
