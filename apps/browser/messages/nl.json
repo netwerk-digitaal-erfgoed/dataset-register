@@ -9,6 +9,7 @@
   "nav_faq": "Veel gestelde vragen",
   "distribution_rdf": "Deze dataset biedt een RDF-download",
   "distribution_sparql": "Deze dataset biedt een SPARQL-endpoint",
+  "sparql_view_query": "Bekijk SPARQL-query bij de triplestore",
   "search_no_datasets": "Geen datasets gevonden",
   "search_placeholder": "Zoek datasets...",
   "search_datasets_found": [

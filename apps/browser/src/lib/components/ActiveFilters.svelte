@@ -17,8 +17,6 @@
     onRemove: (type: FacetKey, value: string) => void;
   } = $props();
 
-  console.log(selectedValues.format);
-
   let allSelectedValues = $derived([
     ...selectedValues.publisher.map((facet: FacetValue) => ({
       type: 'publisher' as FacetKey,
