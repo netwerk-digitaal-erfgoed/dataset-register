@@ -9,6 +9,7 @@
   "nav_faq": "FAQ",
   "distribution_rdf": "This dataset provides an RDF download",
   "distribution_sparql": "This dataset provides a SPARQL endpoint",
+  "sparql_view_query": "View SPARQL query in the triple store",
   "search_no_datasets": "Found no datasets",
   "search_placeholder": "Search datasets...",
   "search_datasets_found": [

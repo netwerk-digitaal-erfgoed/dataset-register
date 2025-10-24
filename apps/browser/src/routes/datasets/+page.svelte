@@ -2,6 +2,7 @@
   import DatasetCard from '$lib/components/DatasetCard.svelte';
   import SearchFacet from '$lib/components/SearchFacet.svelte';
   import ActiveFilters from '$lib/components/ActiveFilters.svelte';
+  import RunSparqlButton from '$lib/components/RunSparqlButton.svelte';
   import * as m from '$lib/paraglide/messages';
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
@@ -298,15 +299,17 @@
           {/each}
         </div>
       {:else}
-        <!-- Total count -->
-        <p
-          class="mb-6 text-gray-600 dark:text-gray-400 text-sm font-medium"
-          class:invisible={searchResults.total === 0}
-        >
-          {m.search_datasets_found({ count: searchResults.total })} (in {Math.round(
-            searchResults.time,
-          )} ms)
-        </p>
+        <div class="mb-6 flex items-center justify-between">
+          <p
+            class="text-gray-600 dark:text-gray-400 text-sm font-medium"
+            class:invisible={searchResults.total === 0}
+          >
+            {m.search_datasets_found({ count: searchResults.total })} (in {Math.round(
+              searchResults.time,
+            )} ms)
+          </p>
+          <RunSparqlButton {searchRequest} />
+        </div>
 
         {#if searchResults.datasets.length === 0}
           <!-- No results -->

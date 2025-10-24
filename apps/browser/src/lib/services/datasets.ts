@@ -112,7 +112,7 @@ async function countDatasets(filters: SearchRequest) {
   return 0;
 }
 
-const datasetCardsQuery = (
+export const datasetCardsQuery = (
   filters: SearchRequest,
   limit: number,
   offset = 0,
