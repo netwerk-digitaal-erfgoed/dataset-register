@@ -27,7 +27,7 @@
   let searchResults: SearchResults | undefined = $state();
 
   // Writable derived - reads from URL, can be written to for local updates
-  let localQuery = $derived(searchRequest.query || '');
+  let localQuery = $derived(searchRequest.query);
 
   // Cache facets to keep them visible during loading
   let cachedFacets = $state<Facets | undefined>();
@@ -93,6 +93,11 @@
       url.searchParams.set('format', params.format.join(','));
     } else {
       url.searchParams.delete('format');
+    }
+
+    // Only navigate if URL actually changed
+    if (url.href === window.location.href) {
+      return;
     }
 
     goto(url, {
