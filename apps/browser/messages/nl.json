@@ -25,10 +25,24 @@
   ],
   "dataset_publisher": "Uitgever",
   "dataset_languages": "Talen",
+  "dataset_size": "Grootte",
+  "dataset_triples": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "feit",
+        "countPlural=other": "feiten"
+      }
+    }
+  ],
   "loading_datasets": "Datasets laden...",
   "loading_more": "Meer laden...",
   "facets_publisher": "Uitgever",
   "facets_format": "Formaat",
+  "facets_size": "Grootte",
+  "facets_size_min": "Min",
+  "facets_size_max": "Max",
   "facets_remove_filter": "Filter verwijderen",
   "facets_show_more": "Toon meer",
   "facets_show_less": "Toon minder",

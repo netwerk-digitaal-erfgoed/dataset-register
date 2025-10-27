@@ -1,21 +1,14 @@
-import { createLens, createNamespace, type SchemaInterface } from 'ldkit';
+import { createLens, type SchemaInterface } from 'ldkit';
 import { ldkit, rdf, rdfs, xsd } from 'ldkit/namespaces';
-import {
-  type Facets,
-  filterDatasets,
-  prefixes,
-  type SearchRequest,
-} from './datasets.js';
+import { filterDatasets, prefixes, type SearchRequest } from './datasets.js';
 import { PUBLIC_SPARQL_ENDPOINT } from '$env/static/public';
 import { RDF_MEDIA_TYPES } from '$lib/constants.js';
 import { getLocalizedValue } from '$lib/utils/i18n';
 import * as m from '$lib/paraglide/messages';
+import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
+import { voidNs } from '../rdf.js';
 
-export const voidNs = createNamespace({
-  iri: 'http://rdfs.org/ns/void#',
-  prefix: 'void:',
-  terms: ['Dataset', 'distinctSubjects'],
-} as const);
+const fetcher = new SparqlEndpointFetcher();
 
 const FacetSchema = {
   '@type': voidNs.Dataset,
@@ -36,11 +29,16 @@ const facets = createLens(FacetSchema, {
   // logQuery: (query: string) => console.log(query),
 });
 
-export type CountedFacetValue = SchemaInterface<typeof FacetSchema>;
-
 export interface FacetValue {
   value: string;
   label?: Record<string, string>;
+}
+
+export type CountedFacetValue = SchemaInterface<typeof FacetSchema>;
+
+export interface Histogram {
+  range: FacetValueRange;
+  bins: HistogramBin[];
 }
 
 // Build regex pattern for RDF media types
@@ -133,9 +131,14 @@ export const facetConfigs: Record<string, FacetConfig> = {
 
 export type FacetKey = keyof typeof facetConfigs;
 
+export type Facets = {
+  publisher: CountedFacetValue[];
+  format: CountedFacetValue[];
+  size: Histogram;
+};
+
 export const facetQuery = (facet: string, searchFiltersQuery: string) => `
   ${prefixes}
-  PREFIX void: <${voidNs.$iri}>
   PREFIX rdf: <${rdf.$iri}>
 
   CONSTRUCT {
@@ -163,13 +166,24 @@ export async function fetchFacets(
   const facetKeys = Object.keys(facetConfigs) as Array<FacetKey>;
 
   // Fetch all facets in parallel and build the result object in one pass
-  const facetEntries = await Promise.all(
-    facetKeys.map(
-      async (key) => [key, await fetchFacetValues(key, searchFilters)] as const,
+  const [facetEntries, sizeRange, sizeHistogram] = await Promise.all([
+    Promise.all(
+      facetKeys.map(
+        async (key) =>
+          [key, await fetchFacetValues(key, searchFilters)] as const,
+      ),
     ),
-  );
+    fetchSizeRange(),
+    fetchSizeHistogram(searchFilters),
+  ]);
 
-  return Object.fromEntries(facetEntries) as Facets;
+  return {
+    ...Object.fromEntries(facetEntries),
+    size: {
+      range: sizeRange,
+      bins: sizeHistogram,
+    },
+  } as Facets;
 }
 
 export async function fetchFacetValues(
@@ -183,6 +197,120 @@ export async function fetchFacetValues(
   return await facets.query(query);
 }
 
+export interface FacetValueRange {
+  min: number;
+  max: number;
+}
+
+export interface HistogramBin {
+  bin: number;
+  count: number;
+}
+
+/**
+ * Query the Dataset Knowledge Graph for dataset size.
+ *
+ * We query globally (unfiltered) to get the absolute range for the slider.
+ */
+export async function fetchSizeRange(): Promise<FacetValueRange> {
+  const query = `
+    PREFIX void: <http://rdfs.org/ns/void#>
+
+    SELECT (MIN(?size) as ?minSize) (MAX(?size) as ?maxSize)
+    WHERE {
+      ?dataset void:triples ?size .
+      FILTER(?size > 0)
+    }
+  `;
+
+  try {
+    const bindings = await fetcher.fetchBindings(
+      'https://triplestore.netwerkdigitaalerfgoed.nl/repositories/dataset-knowledge-graph',
+      query,
+    );
+
+    for await (const binding of bindings) {
+      const typedBinding = binding as unknown as {
+        minSize: { value: string };
+        maxSize: { value: string };
+      };
+      return {
+        min: parseInt(typedBinding.minSize.value),
+        max: parseInt(typedBinding.maxSize.value),
+      };
+    }
+  } catch (error) {
+    console.warn(
+      'Failed to fetch size range from Dataset Knowledge Graph:',
+      error,
+    );
+  }
+
+  // Fallback to reasonable defaults if query fails
+  return {
+    min: 1,
+    max: 1000000000, // 1B triples as fallback
+  };
+}
+
+/**
+ * Fetches histogram data showing the distribution of dataset sizes across logarithmic bins.
+ * Applies current search filters (publisher, format, search query) but excludes size filters
+ * to show the full distribution of matching datasets.
+ */
+export async function fetchSizeHistogram(
+  searchFilters: SearchRequest,
+): Promise<HistogramBin[]> {
+  // Remove size filters for histogram - we want to show full distribution
+  const filtersWithoutSize = {
+    ...searchFilters,
+    size: { min: undefined, max: undefined },
+  };
+
+  const query = `
+    ${prefixes}
+
+    SELECT ?bin (COUNT(DISTINCT ?dataset) as ?count) WHERE {
+      ${filterDatasets(filtersWithoutSize)}
+
+      SERVICE <https://triplestore.netwerkdigitaalerfgoed.nl/repositories/dataset-knowledge-graph> {
+        ?dataset void:triples ?size .
+      }
+
+      # Bin sizes into logarithmic buckets using nested IF conditions
+      BIND(
+        IF(?size < 10, 0,
+        IF(?size < 100, 1,
+        IF(?size < 1000, 2,
+        IF(?size < 10000, 3,
+        IF(?size < 100000, 4,
+        IF(?size < 1000000, 5,
+        IF(?size < 10000000, 6,
+        IF(?size < 100000000, 7,
+        IF(?size < 1000000000, 8, 9)))))))))
+      as ?bin)
+    }
+    GROUP BY ?bin
+    ORDER BY ?bin
+  `;
+
+  const bindings = await fetcher.fetchBindings(PUBLIC_SPARQL_ENDPOINT, query);
+
+  const histogram: HistogramBin[] = [];
+  for await (const binding of bindings) {
+    const typedBinding = binding as unknown as {
+      bin: { value: string };
+      count: { value: string };
+    };
+    histogram.push({
+      bin: parseInt(typedBinding.bin.value),
+      count: parseInt(typedBinding.count.value),
+    });
+  }
+
+  return histogram;
+}
+
 const groupMessages = {
   [GROUP_RDF]: m['group:rdf'],
   [GROUP_SPARQL]: m['group:sparql'],
@@ -194,4 +322,12 @@ export function facetDisplayValue(facetValue: FacetValue) {
     getLocalizedValue(facetValue.label) ??
     facetValue.value
   );
+}
+
+export function formatNumber(num: number, locale = 'en'): string {
+  const formatter = new Intl.NumberFormat(locale, {
+    notation: 'compact',
+    compactDisplay: 'short',
+  });
+  return formatter.format(num);
 }

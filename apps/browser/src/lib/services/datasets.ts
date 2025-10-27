@@ -1,14 +1,10 @@
 import { dcat } from '@lde/dataset-registry-client';
-import { dcterms, foaf, ldkit } from 'ldkit/namespaces';
+import { dcterms, foaf, ldkit, xsd } from 'ldkit/namespaces';
 import { createLens, type SchemaInterface } from 'ldkit';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
-import {
-  type CountedFacetValue,
-  facetConfigs,
-  type FacetKey,
-  fetchFacets,
-} from '$lib/services/facets';
+import { facetConfigs, type Facets, fetchFacets } from '$lib/services/facets';
 import { PUBLIC_SPARQL_ENDPOINT } from '$env/static/public';
+import { voidNs } from '../rdf.js';
 
 export const SPARQL_ENDPOINT = PUBLIC_SPARQL_ENDPOINT;
 const fetcher = new SparqlEndpointFetcher();
@@ -71,6 +67,11 @@ export const DatasetCardSchema = {
       },
     },
   },
+  size: {
+    '@id': voidNs.triples,
+    '@type': xsd.integer,
+    '@optional': true,
+  },
 } as const;
 
 export type DatasetCard = SchemaInterface<typeof DatasetCardSchema>;
@@ -85,12 +86,17 @@ PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>			
 PREFIX schema: <http://schema.org/>
+PREFIX void: <http://rdfs.org/ns/void#>
 `;
 
 export interface SearchRequest {
   query?: string;
   publisher: string[];
   format: string[];
+  size: {
+    min?: number;
+    max?: number;
+  };
 }
 
 async function countDatasets(filters: SearchRequest) {
@@ -126,12 +132,13 @@ export const datasetCardsQuery = (
       dct:language ?language ;
       dct:publisher ?publisher ;
       dct:license ?license ;
-      dcat:distribution ?distribution .
+      dcat:distribution ?distribution ;
+      void:triples ?size .
     ?publisher a foaf:Agent ;
       foaf:name ?publisherName .
     ?distribution a dcat:Distribution ;
       dcat:mediaType ?mediaType ;
-      dct:conformsTo ?conformsTo .    
+      dct:conformsTo ?conformsTo .
   }
   WHERE {		
     # Inside the default graph, which contains the registry’s metadata.
@@ -159,9 +166,16 @@ export const datasetCardsQuery = (
         OPTIONAL { ?distribution dcat:mediaType ?mediaType }
         OPTIONAL { ?distribution dct:conformsTo ?conformsTo }
       }
-    }		
+    }
+
+    # Fetch dataset size from Dataset Knowledge Graph via SPARQL Federation
+    OPTIONAL {
+      SERVICE <https://triplestore.netwerkdigitaalerfgoed.nl/repositories/dataset-knowledge-graph> {
+        ?dataset void:triples ?size .
+      }
+    }
   }
-  ORDER BY ?title  
+  ORDER BY ?title
 `;
 
 export const filterDatasets = (filters: SearchRequest) =>
@@ -172,8 +186,6 @@ export const filterDatasets = (filters: SearchRequest) =>
         
   ${filterClauses(filters)}
 `;
-
-export type Facets = Record<FacetKey, CountedFacetValue[]>;
 
 export interface SearchResults {
   datasets: DatasetCard[];
@@ -211,7 +223,7 @@ function filterClauses(searchFilters: SearchRequest) {
 
   const filterClausesArray: string[] = [];
 
-  const { query, publisher, format } = searchFilters;
+  const { query, publisher, format, size } = searchFilters;
 
   if (query !== undefined && query.length > 0) {
     filterClausesArray.push(
@@ -231,6 +243,29 @@ function filterClauses(searchFilters: SearchRequest) {
 
   if (format.length > 0) {
     filterClausesArray.push(facetConfigs.format.filterClause(format));
+  }
+
+  if (size.min !== undefined || size.max !== undefined) {
+    const sizeFilters: string[] = [];
+
+    // When filtering by size, require datasets to have size data (not OPTIONAL).
+    // This ensures only datasets with known sizes are returned in filtered results.
+    filterClausesArray.push(`
+      SERVICE <https://triplestore.netwerkdigitaalerfgoed.nl/repositories/dataset-knowledge-graph> {
+        ?dataset void:triples ?datasetSize .
+      }
+    `);
+
+    if (size.min !== undefined) {
+      sizeFilters.push(`?datasetSize >= ${size.min}`);
+    }
+    if (size.max !== undefined) {
+      sizeFilters.push(`?datasetSize <= ${size.max}`);
+    }
+
+    if (sizeFilters.length > 0) {
+      filterClausesArray.push(`FILTER(${sizeFilters.join(' && ')})`);
+    }
   }
 
   return filterClausesArray.join('\n  ');
