@@ -25,10 +25,24 @@
   ],
   "dataset_publisher": "Publisher",
   "dataset_languages": "Languages",
+  "dataset_size": "Size",
+  "dataset_triples": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "triple",
+        "countPlural=other": "triples"
+      }
+    }
+  ],
   "loading_datasets": "Loading datasets...",
   "loading_more": "Loading more...",
   "facets_publisher": "Publisher",
   "facets_format": "Format",
+  "facets_size": "Size",
+  "facets_size_min": "Min",
+  "facets_size_max": "Max",
   "facets_remove_filter": "Remove filter",
   "facets_show_more": "Show more",
   "facets_show_less": "Show less",

@@ -1,6 +1,7 @@
 <script lang="ts">
   import DatasetCard from '$lib/components/DatasetCard.svelte';
   import SearchFacet from '$lib/components/SearchFacet.svelte';
+  import SizeRangeFacet from '$lib/components/SizeRangeFacet.svelte';
   import ActiveFilters from '$lib/components/ActiveFilters.svelte';
   import RunSparqlButton from '$lib/components/RunSparqlButton.svelte';
   import * as m from '$lib/paraglide/messages';
@@ -12,16 +13,15 @@
     SearchResults,
   } from '$lib/services/datasets';
   import { fetchDatasets } from '$lib/services/datasets';
-  import type { FacetValue } from '$lib/services/facets';
-  import type { Facets } from '$lib/services/datasets';
+  import type { FacetValue, Facets } from '$lib/services/facets';
+  import { decodeDiscreteParam, decodeRangeParam } from '$lib/url';
 
   // Derive searchRequest from URL, which is the single source of truth.
   let searchRequest: SearchRequest = $derived({
     query: page.url.searchParams.get('search') || undefined,
-    publisher:
-      page.url.searchParams.get('publishers')?.split(',').filter(Boolean) || [],
-    format:
-      page.url.searchParams.get('format')?.split(',').filter(Boolean) || [],
+    publisher: decodeDiscreteParam('publishers'),
+    format: decodeDiscreteParam('format'),
+    size: decodeRangeParam('size'),
   });
 
   let searchResults: SearchResults | undefined = $state();
@@ -35,6 +35,7 @@
   let selectedValues: {
     publisher: FacetValue[];
     format: FacetValue[];
+    size: { min?: number; max?: number };
   } = $derived({
     publisher: searchRequest.publisher.map((value) => {
       // Try current search results first, then cached facets
@@ -53,6 +54,16 @@
         value,
       };
     }),
+    size: {
+      min:
+        cachedFacets?.size === searchRequest.size.min
+          ? undefined
+          : searchRequest.size.min,
+      max:
+        cachedFacets?.size === searchRequest.size.max
+          ? undefined
+          : searchRequest.size.max,
+    },
   });
 
   let debounceTimer: ReturnType<typeof setTimeout>;
@@ -70,12 +81,12 @@
   const ITEMS_PER_PAGE = 24;
 
   // Single function to update URL - called from all user interactions
-  function updateURL(params: {
-    query?: string;
-    publisher?: string[];
-    format?: string[];
-  }) {
+  function updateURL(
+    previous: SearchRequest,
+    newValue: Partial<SearchRequest>,
+  ) {
     const url = new URL(window.location.href);
+    const params = { ...previous, ...newValue };
 
     if (params.query) {
       url.searchParams.set('search', params.query);
@@ -93,6 +104,15 @@
       url.searchParams.set('format', params.format.join(','));
     } else {
       url.searchParams.delete('format');
+    }
+
+    if (params.size?.min !== undefined || params.size?.max !== undefined) {
+      url.searchParams.set(
+        'size',
+        `${params.size?.min ?? ''}-${params.size?.max ?? ''}`,
+      );
+    } else {
+      url.searchParams.delete('size');
     }
 
     // Only navigate if URL actually changed
@@ -113,11 +133,7 @@
 
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-      updateURL({
-        query: query || undefined,
-        publisher: searchRequest.publisher,
-        format: searchRequest.format,
-      });
+      updateURL(searchRequest, { query });
     }, 600);
   });
 
@@ -224,17 +240,13 @@
           const newPublishers = searchRequest.publisher.filter(
             (p) => p !== value,
           );
-          updateURL({
-            query: searchRequest.query,
-            publisher: newPublishers,
-            format: searchRequest.format,
-          });
+          updateURL(searchRequest, { publisher: newPublishers });
         } else if (type === 'format') {
           const newFormats = searchRequest.format.filter((f) => f !== value);
-          updateURL({
-            query: searchRequest.query,
-            publisher: searchRequest.publisher,
-            format: newFormats,
+          updateURL(searchRequest, { format: newFormats });
+        } else if (type === 'size') {
+          updateURL(searchRequest, {
+            size: { min: undefined, max: undefined },
           });
         }
       }}
@@ -257,11 +269,7 @@
               []}
             title={m.facets_publisher()}
             onChange={(newPublishers) => {
-              updateURL({
-                query: searchRequest.query,
-                publisher: newPublishers,
-                format: searchRequest.format,
-              });
+              updateURL(searchRequest, { publisher: newPublishers });
             }}
           />
         {/if}
@@ -271,11 +279,16 @@
             values={searchResults?.facets.format ?? cachedFacets?.format ?? []}
             title={m.facets_format()}
             onChange={(newFormats) => {
-              updateURL({
-                query: searchRequest.query,
-                publisher: searchRequest.publisher,
-                format: newFormats,
-              });
+              updateURL(searchRequest, { format: newFormats });
+            }}
+          />
+        {/if}
+        {#if (searchResults?.facets.size ?? cachedFacets?.size) && (searchResults?.facets.size.bins ?? cachedFacets?.size.bins ?? []).length > 0}
+          <SizeRangeFacet
+            selectedValues={searchRequest.size}
+            histogram={(searchResults?.facets.size ?? cachedFacets?.size)!}
+            onChange={(min, max) => {
+              updateURL(searchRequest, { size: { min, max } });
             }}
           />
         {/if}

@@ -4,6 +4,7 @@
   import { type DatasetCard } from '$lib/services/datasets';
   import { getLocalizedValue } from '$lib/utils/i18n';
   import { RDF_MEDIA_TYPES } from '$lib/constants.js';
+  import { formatNumber } from '$lib/services/facets';
 
   let { dataset }: { dataset: DatasetCard } = $props();
 
@@ -79,7 +80,7 @@
   {/if}
 
   {#if languages.length > 0}
-    <div class="mb-0 text-[0.9375rem] leading-[1.5] flex items-center gap-2">
+    <div class="mb-2.5 text-[0.9375rem] leading-[1.5] flex items-center gap-2">
       <svg
         class="w-4 h-4 text-gray-600 dark:text-gray-400 flex-shrink-0"
         fill="none"
@@ -100,7 +101,7 @@
     </div>
   {/if}
 
-  {#if hasSparqlDistribution || hasRdfDistribution}
+  {#if hasSparqlDistribution || hasRdfDistribution || dataset.size}
     <div class="mt-2.5 text-[0.9375rem] leading-[1.5] flex items-center gap-4">
       {#if hasSparqlDistribution}
         <div class="group relative flex items-center gap-1.5">
@@ -153,6 +154,39 @@
             />
           </svg>
           <span class="text-gray-700 dark:text-gray-300">RDF</span>
+        </div>
+      {/if}
+
+      {#if dataset.size}
+        <div class="group relative flex items-center gap-1.5">
+          <div
+            class="invisible absolute bottom-full left-1/2 mb-2 -translate-x-1/2 transform rounded bg-gray-800 px-2 py-1 text-xs whitespace-nowrap text-white opacity-0 transition-opacity duration-200 group-hover:visible group-hover:opacity-100"
+          >
+            {m.dataset_size()}
+            <div
+              class="absolute top-full left-1/2 h-0 w-0 -translate-x-1/2 border-t-4 border-r-4 border-l-4 border-t-gray-800 border-r-transparent border-l-transparent"
+            ></div>
+          </div>
+          <svg
+            class="w-4 h-4 text-gray-600 dark:text-gray-400 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <!-- RDF triple graph: 3 nodes connected in triangle -->
+            <circle cx="6" cy="8" r="2" stroke-width="2" />
+            <circle cx="18" cy="8" r="2" stroke-width="2" />
+            <circle cx="12" cy="16" r="2" stroke-width="2" />
+            <path
+              stroke-linecap="round"
+              stroke-width="2"
+              d="M8 8L16 8M17 9L13 15M11 15L7 9"
+            ></path>
+          </svg>
+          <span class="text-gray-700 dark:text-gray-300"
+            >{formatNumber(dataset.size, getLocale())}
+            {m.dataset_triples({ count: dataset.size })}</span
+          >
         </div>
       {/if}
     </div>
