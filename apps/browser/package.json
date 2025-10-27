@@ -19,7 +19,8 @@
     "@lde/dataset-registry-client": "^0.4.3",
     "fetch-sparql-endpoint": "^6.2.0",
     "ldkit": "^2.5.1",
-    "sparqljs": "^3.7.3"
+    "sparqljs": "^3.7.3",
+    "svelte-range-slider-pips": "^4.1.0"
   },
   "devDependencies": {
     "@eslint/compat": "^1.4.0",

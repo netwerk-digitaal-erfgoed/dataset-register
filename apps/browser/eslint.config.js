@@ -41,6 +41,9 @@ export default defineConfig(
 
       // Disable buggy rule
       'svelte/no-navigation-without-resolve': 'off',
+
+      // Allow THSP for ActiveFilters range.
+      'no-irregular-whitespace': ['error', { skipTemplates: true }],
     },
   },
   {

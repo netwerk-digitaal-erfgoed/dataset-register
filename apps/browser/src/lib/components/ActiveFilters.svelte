@@ -1,9 +1,11 @@
 <script lang="ts">
   import * as m from '$lib/paraglide/messages';
+  import { getLocale } from '$lib/paraglide/runtime';
   import {
     facetDisplayValue,
     type FacetKey,
     type FacetValue,
+    formatNumber,
   } from '$lib/services/facets';
 
   let {
@@ -13,9 +15,32 @@
     selectedValues: {
       publisher: FacetValue[];
       format: FacetValue[];
+      size: {
+        min?: number;
+        max?: number;
+      };
     };
-    onRemove: (type: FacetKey, value: string) => void;
+    onRemove: (type: FacetKey | 'size', value?: string) => void;
   } = $props();
+
+  const locale = $derived(getLocale());
+
+  function getSizeDisplay(): string | null {
+    const min = selectedValues.size.min;
+    const max = selectedValues.size.max;
+    const hasMin = min !== undefined;
+    const hasMax = max !== undefined;
+
+    if (hasMin && hasMax) {
+      return `${m.facets_size()}: ${formatNumber(min, locale)} – ${formatNumber(max, locale)} ${m.dataset_triples({ count: max })}`;
+    } else if (hasMin) {
+      return `${m.facets_size()}: ≥ ${formatNumber(min, locale)} ${m.dataset_triples({ count: min })}`;
+    } else if (hasMax) {
+      return `${m.facets_size()}: ≤ ${formatNumber(max, locale)} ${m.dataset_triples({ count: max })}`;
+    }
+
+    return null;
+  }
 
   let allSelectedValues = $derived([
     ...selectedValues.publisher.map((facet: FacetValue) => ({
@@ -26,6 +51,17 @@
       type: 'format' as FacetKey,
       facet,
     })),
+    ...(getSizeDisplay()
+      ? [
+          {
+            type: 'size' as const,
+            facet: {
+              value: 'size',
+              label: { '': getSizeDisplay() as string },
+            },
+          },
+        ]
+      : []),
   ]);
 </script>
 
