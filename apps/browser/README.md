@@ -23,12 +23,10 @@ nx dev browser
 nx dev browser -- --open
 ```
 
-## Building
+## Build
 
-To create a production version of your app:
+To create a production version of the app:
 
 ```sh
-npm run build
+nx build browser
 ```
-
-You can preview the production build with `npm run preview`.
