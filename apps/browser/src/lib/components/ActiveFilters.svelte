@@ -14,6 +14,7 @@
   }: {
     selectedValues: {
       publisher: FacetValue[];
+      keyword: FacetValue[];
       format: FacetValue[];
       size: {
         min?: number;
@@ -47,6 +48,10 @@
       type: 'publisher' as FacetKey,
       facet,
     })),
+    ...selectedValues.keyword.map((facet: FacetValue) => ({
+      type: 'keyword' as FacetKey,
+      facet,
+    })),
     ...selectedValues.format.map((facet: FacetValue) => ({
       type: 'format' as FacetKey,
       facet,
@@ -69,7 +74,9 @@
   <div class="mb-6 flex flex-wrap gap-2 items-center">
     {#each allSelectedValues as selectedValue (selectedValue.type + ':' + selectedValue.facet.value)}
       {@const displayValue = facetDisplayValue(selectedValue.facet)}
-      {@const breakClass = displayValue.includes(' ') ? 'break-words' : 'break-all'}
+      {@const breakClass = displayValue.includes(' ')
+        ? 'break-words'
+        : 'break-all'}
       <button
         class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors cursor-pointer"
         onclick={() => onRemove(selectedValue.type, selectedValue.facet.value)}

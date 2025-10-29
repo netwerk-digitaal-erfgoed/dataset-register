@@ -7,6 +7,8 @@ import { getLocalizedValue } from '$lib/utils/i18n';
 import * as m from '$lib/paraglide/messages';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { voidNs } from '../rdf.js';
+import { inLiterals } from '$lib/utils/sparql';
+import { getLocale } from '$lib/paraglide/runtime';
 
 const fetcher = new SparqlEndpointFetcher();
 
@@ -127,12 +129,21 @@ export const facetConfigs: Record<string, FacetConfig> = {
         FILTER(${filterClauses.join('||')})`;
     },
   },
+  keyword: {
+    where: `?dataset dcat:keyword ?value .
+      FILTER(LANG(?value) = "" || LANG(?value) = "${getLocale()}")`,
+    filterClause: (values) => {
+      return `?dataset dcat:keyword ?keyword .
+        FILTER(STR(?keyword) IN (${inLiterals(values)}))`;
+    },
+  },
 };
 
 export type FacetKey = keyof typeof facetConfigs;
 
 export type Facets = {
   publisher: CountedFacetValue[];
+  keyword: CountedFacetValue[];
   format: CountedFacetValue[];
   size: Histogram;
 };
@@ -153,11 +164,11 @@ export const facetQuery = (facet: string, searchFiltersQuery: string) => `
         ${searchFiltersQuery}
         ${facetConfigs[facet as FacetKey].where}
       }
-      GROUP BY ?value ?label     
+      GROUP BY ?value ?label
     }
-    BIND(IRI(CONCAT('urn:facet:', STR(?value))) AS ?valueUri)
+    BIND(IRI(CONCAT('urn:facet:', ENCODE_FOR_URI(STR(?value)))) AS ?valueUri)
   }
-  ORDER BY DESC(?count)
+  ORDER BY DESC(?count) ?value
 `;
 
 export async function fetchFacets(

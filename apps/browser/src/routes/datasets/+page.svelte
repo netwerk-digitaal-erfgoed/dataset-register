@@ -20,6 +20,7 @@
   let searchRequest: SearchRequest = $derived({
     query: page.url.searchParams.get('search') || undefined,
     publisher: decodeDiscreteParam('publishers'),
+    keyword: decodeDiscreteParam('keywords'),
     format: decodeDiscreteParam('format'),
     size: decodeRangeParam('size'),
   });
@@ -34,6 +35,7 @@
 
   let selectedValues: {
     publisher: FacetValue[];
+    keyword: FacetValue[];
     format: FacetValue[];
     size: { min?: number; max?: number };
   } = $derived({
@@ -44,6 +46,17 @@
           (publisher) => publisher.value === value,
         ) ??
         cachedFacets?.publisher.find((publisher) => publisher.value === value);
+      return {
+        value,
+        label: facet?.label || { '': value },
+      };
+    }),
+    keyword: searchRequest.keyword.map((value) => {
+      // Try current search results first, then cached facets
+      const facet =
+        searchResults?.facets.keyword.find(
+          (keyword) => keyword.value === value,
+        ) ?? cachedFacets?.keyword.find((keyword) => keyword.value === value);
       return {
         value,
         label: facet?.label || { '': value },
@@ -98,6 +111,12 @@
       url.searchParams.set('publishers', params.publisher.join(','));
     } else {
       url.searchParams.delete('publishers');
+    }
+
+    if (params.keyword && params.keyword.length > 0) {
+      url.searchParams.set('keywords', params.keyword.join(','));
+    } else {
+      url.searchParams.delete('keywords');
     }
 
     if (params.format && params.format.length > 0) {
@@ -241,6 +260,9 @@
             (p) => p !== value,
           );
           updateURL(searchRequest, { publisher: newPublishers });
+        } else if (type === 'keyword') {
+          const newKeywords = searchRequest.keyword.filter((k) => k !== value);
+          updateURL(searchRequest, { keyword: newKeywords });
         } else if (type === 'format') {
           const newFormats = searchRequest.format.filter((f) => f !== value);
           updateURL(searchRequest, { format: newFormats });
@@ -270,6 +292,18 @@
             title={m.facets_publisher()}
             onChange={(newPublishers) => {
               updateURL(searchRequest, { publisher: newPublishers });
+            }}
+          />
+        {/if}
+        {#if (searchResults?.facets.keyword ?? cachedFacets?.keyword ?? []).length > 0 || searchRequest.keyword.length > 0}
+          <SearchFacet
+            selectedValues={searchRequest.keyword}
+            values={searchResults?.facets.keyword ??
+              cachedFacets?.keyword ??
+              []}
+            title={m.facets_keyword()}
+            onChange={(newKeywords) => {
+              updateURL(searchRequest, { keyword: newKeywords });
             }}
           />
         {/if}

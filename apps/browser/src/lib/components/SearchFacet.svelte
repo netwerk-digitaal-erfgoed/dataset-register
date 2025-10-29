@@ -2,6 +2,7 @@
   import type { CountedFacetValue } from '$lib/services/facets';
   import FacetItem from './FacetItem.svelte';
   import * as m from '$lib/paraglide/messages';
+  import { facetDisplayValue } from '$lib/services/facets';
 
   let {
     title,
@@ -15,15 +16,29 @@
     onChange: (newValues: string[]) => void;
   } = $props();
 
-  const FOLD_LIMIT = 10;
+  const FOLD_LIMIT = 6;
   let isExpanded = $state(false);
+  let searchQuery = $state('');
 
-  // Separate group values from individual values
+  // Filter values based on search query
+  const filterBySearch = (facetValues: CountedFacetValue[]) => {
+    if (!searchQuery.trim()) return facetValues;
+
+    const query = searchQuery.toLowerCase();
+    return facetValues.filter((v) => {
+      const displayValue = facetDisplayValue(v).toLowerCase();
+      return (
+        displayValue.includes(query) || v.value.toLowerCase().includes(query)
+      );
+    });
+  };
+
+  // Separate group values from individual values, then filter by search
   const groupValues = $derived(() =>
-    values.filter((v) => v.value.startsWith('group:')),
+    filterBySearch(values.filter((v) => v.value.startsWith('group:'))),
   );
   const individualValues = $derived(() =>
-    values.filter((v) => !v.value.startsWith('group:')),
+    filterBySearch(values.filter((v) => !v.value.startsWith('group:'))),
   );
 
   // Sort individual values: checked items first, then by count
@@ -39,9 +54,8 @@
 
   const hasGroups = $derived(groupValues().length > 0);
 
-  // Groups are always shown above the fold
-  // If groups exist, selected individual values stay above fold
-  // If no groups, show first FOLD_LIMIT individual values above fold
+  // Groups are always shown
+  // Individual values: show first FOLD_LIMIT when collapsed, all when expanded
   const displayedIndividualValues = $derived(() => {
     const sorted = sortedIndividualValues();
 
@@ -97,7 +111,27 @@
   >
     {title}
   </h3>
-  <div class="space-y-1">
+
+  <!-- Search/Filter Input -->
+  {#if values.length > FOLD_LIMIT}
+    <input
+      type="text"
+      bind:value={searchQuery}
+      placeholder={m.facets_search()}
+      class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded mb-3 transition-colors focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 placeholder:text-gray-400 dark:placeholder:text-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+      onkeydown={(e) => {
+        if (e.key === 'Escape') {
+          searchQuery = '';
+        }
+      }}
+    />
+  {/if}
+
+  <!-- Scrollable facet list with max height -->
+  <div
+    class="space-y-1 overflow-y-auto pr-2"
+    style="max-height: {isExpanded ? '400px' : 'none'}"
+  >
     {#each displayedValues() as value (value.value)}
       <FacetItem
         {value}
