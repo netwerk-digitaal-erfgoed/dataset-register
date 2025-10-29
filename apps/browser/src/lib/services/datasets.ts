@@ -1,5 +1,5 @@
 import { dcat } from '@lde/dataset-registry-client';
-import { dcterms, foaf, ldkit } from 'ldkit/namespaces';
+import { dcterms, foaf, ldkit, schema } from 'ldkit/namespaces';
 import { createLens, type SchemaInterface } from 'ldkit';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import {
@@ -69,6 +69,17 @@ export const DatasetCardSchema = {
         '@array': true,
         '@optional': true,
       },
+    },
+  },
+  registrationUrl: {
+    '@id': schema.subjectOf,
+    validUntil: {
+      '@id': schema.validUntil,
+      '@optional': true,
+    },
+    datePosted: {
+      '@id': schema.datePosted,
+      // TODO: optional?
     },
   },
 } as const;
