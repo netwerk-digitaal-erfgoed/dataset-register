@@ -92,6 +92,7 @@ PREFIX void: <http://rdfs.org/ns/void#>
 export interface SearchRequest {
   query?: string;
   publisher: string[];
+  keyword: string[];
   format: string[];
   size: {
     min?: number;
@@ -223,7 +224,7 @@ function filterClauses(searchFilters: SearchRequest) {
 
   const filterClausesArray: string[] = [];
 
-  const { query, publisher, format, size } = searchFilters;
+  const { query, publisher, keyword, format, size } = searchFilters;
 
   if (query !== undefined && query.length > 0) {
     filterClausesArray.push(
@@ -239,6 +240,10 @@ function filterClauses(searchFilters: SearchRequest) {
 
   if (publisher.length > 0) {
     filterClausesArray.push(facetConfigs.publisher.filterClause(publisher));
+  }
+
+  if (keyword.length > 0) {
+    filterClausesArray.push(facetConfigs.keyword.filterClause(keyword));
   }
 
   if (format.length > 0) {

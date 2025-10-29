@@ -17,7 +17,9 @@
 
   const locale = $derived(getLocale());
   const displayValue = $derived(facetDisplayValue(value));
-  const breakClass = $derived(displayValue.includes(' ') ? 'break-words' : 'break-all');
+  const breakClass = $derived(
+    displayValue.includes(' ') ? 'break-words' : 'break-all',
+  );
 
   function formatCount(count: number): string {
     return count.toLocaleString(locale);

@@ -41,3 +41,6 @@ function isIriTerm(term: unknown): term is IriTerm {
     term.termType === 'NamedNode'
   );
 }
+
+export const inLiterals = (values: string[]) =>
+  values.map((v) => `"${v}"`).join(', ');
