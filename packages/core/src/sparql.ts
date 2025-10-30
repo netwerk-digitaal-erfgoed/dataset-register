@@ -93,6 +93,7 @@ export class SparqlRegistrationStore implements RegistrationStore {
   async findRegistrationsReadBefore(date: Date): Promise<Registration[]> {
     const result = await this.client.query(`
       PREFIX schema: <http://schema.org/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 
 
       SELECT ?s ?datePosted ?validUntil WHERE {
         GRAPH <${this.graphIri}> {
@@ -100,7 +101,7 @@ export class SparqlRegistrationStore implements RegistrationStore {
             schema:datePosted ?datePosted ;
             schema:dateRead ?dateRead .
           OPTIONAL { ?s schema:validUntil ?validUntil . }
-          FILTER (STR(?dateRead) < "${date.toISOString()}")  
+          FILTER (?dateRead < "${date.toISOString()}"^^xsd:dateTime)  
         }
       } GROUP BY ?s ?datePosted ?validUntil
     `);
