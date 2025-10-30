@@ -19,6 +19,8 @@
   const FOLD_LIMIT = 6;
   let isExpanded = $state(false);
   let searchQuery = $state('');
+  let scrollContainer: HTMLDivElement;
+  let showGradient = $state(false);
 
   // Filter values based on search query
   const filterBySearch = (facetValues: CountedFacetValue[]) => {
@@ -103,6 +105,29 @@
       : selectedValues.filter((v) => v !== value);
     onChange(newValues);
   }
+
+  function checkScrollGradient() {
+    if (!scrollContainer || !isExpanded) {
+      showGradient = false;
+      return;
+    }
+
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
+    const isScrollable = scrollHeight > clientHeight;
+    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1; // -1 for rounding
+
+    showGradient = isScrollable && !isAtBottom;
+  }
+
+  // Check gradient whenever expansion state changes or values change
+  $effect(() => {
+    // Watch these reactive values
+    void isExpanded;
+    void displayedValues();
+
+    // Use setTimeout to ensure DOM has updated
+    setTimeout(() => checkScrollGradient(), 0);
+  });
 </script>
 
 <div class="mb-6">
@@ -127,10 +152,14 @@
     />
   {/if}
 
-  <!-- Scrollable facet list with max height -->
+  <!-- Scrollable facet list with max height and text fade -->
   <div
+    bind:this={scrollContainer}
     class="space-y-1 overflow-y-auto pr-2"
-    style="max-height: {isExpanded ? '400px' : 'none'}"
+    onscroll={checkScrollGradient}
+    style="max-height: {isExpanded ? '400px' : 'none'}; {showGradient
+      ? 'mask-image: linear-gradient(to bottom, black calc(100% - 4rem), transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 4rem), transparent 100%);'
+      : ''}"
   >
     {#each displayedValues() as value (value.value)}
       <FacetItem
