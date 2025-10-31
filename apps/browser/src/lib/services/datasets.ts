@@ -1,5 +1,5 @@
 import { dcat } from '@lde/dataset-registry-client';
-import { dcterms, foaf, ldkit, xsd } from 'ldkit/namespaces';
+import { dcterms, foaf, ldkit, schema, xsd } from 'ldkit/namespaces';
 import { createLens, type SchemaInterface } from 'ldkit';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { facetConfigs, type Facets, fetchFacets } from '$lib/services/facets';
@@ -72,6 +72,10 @@ export const DatasetCardSchema = {
     '@type': xsd.integer,
     '@optional': true,
   },
+  status: {
+    '@id': schema.status,
+    '@optional': true,
+  },
 } as const;
 
 export type DatasetCard = SchemaInterface<typeof DatasetCardSchema>;
@@ -134,7 +138,8 @@ export const datasetCardsQuery = (
       dct:publisher ?publisher ;
       dct:license ?license ;
       dcat:distribution ?distribution ;
-      void:triples ?size .
+      void:triples ?size ;
+      schema:status ?status .
     ?publisher a foaf:Agent ;
       foaf:name ?publisherName .
     ?distribution a dcat:Distribution ;
@@ -149,6 +154,14 @@ export const datasetCardsQuery = (
       }
       LIMIT ${limit}
       OFFSET ${offset}
+    }
+    
+    ?dataset a dcat:Dataset ;
+      schema:subjectOf ?registrationUrl .
+   
+    OPTIONAL { 
+      ?registrationUrl schema:validUntil ?validUntil . 
+      BIND("archived" as ?status)  
     }
   
     # Inside the dataset named graph.
@@ -183,8 +196,6 @@ export const filterDatasets = (filters: SearchRequest) =>
   `?dataset a dcat:Dataset ;
     schema:subjectOf ?registrationUrl .
     
-  OPTIONAL { ?registrationUrl schema:validUntil ?validUntil }  
-        
   ${filterClauses(filters)}
 `;
 

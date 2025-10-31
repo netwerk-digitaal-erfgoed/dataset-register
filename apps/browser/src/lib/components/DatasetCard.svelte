@@ -41,10 +41,24 @@
 </script>
 
 <a
-  class="block border border-gray-300 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-800 transition-all hover:shadow-lg hover:border-gray-400 dark:hover:border-gray-600 cursor-pointer no-underline"
+  class="relative block border border-gray-300 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-800 transition-all hover:shadow-lg hover:border-gray-400 dark:hover:border-gray-600 cursor-pointer no-underline overflow-hidden"
   href={detailUrl}
   rel="external"
 >
+  {#if dataset.status}
+    <div
+      class="absolute top-0 right-0 overflow-hidden w-32 h-32 pointer-events-none"
+    >
+      <div
+        class="absolute top-7 -right-10 w-48 py-2 flex items-center justify-center text-white text-xs font-bold uppercase tracking-wider transform rotate-45 bg-red-600 dark:bg-red-700 shadow-lg"
+      >
+        {#if dataset.status === 'archived'}
+          {m.dataset_status_archived()}
+        {/if}
+      </div>
+    </div>
+  {/if}
+
   <h2
     class="m-0 mb-4 text-[1.375rem] font-semibold text-gray-900 dark:text-gray-100 leading-[1.4] tracking-[-0.015em]"
   >
