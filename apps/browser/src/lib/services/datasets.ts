@@ -151,7 +151,14 @@ export const datasetCardsQuery = (
     {
       SELECT DISTINCT ?dataset WHERE {
         ${filterDatasets(filters)}
+        
+        OPTIONAL { 
+          ?registrationUrl schema:validUntil ?validUntil . 
+          BIND("archived" as ?status)  
+        }
+        ?dataset dct:title ?title .
       }
+      ORDER BY ?status ?title
       LIMIT ${limit}
       OFFSET ${offset}
     }
