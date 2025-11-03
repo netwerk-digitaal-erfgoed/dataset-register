@@ -302,6 +302,7 @@
               cachedFacets?.publisher ??
               []}
             title={m.facets_publisher()}
+            explanation={m.publisher_explanation()}
             onChange={(newPublishers) => {
               updateURL(searchRequest, { publisher: newPublishers });
             }}
@@ -314,6 +315,7 @@
               cachedFacets?.keyword ??
               []}
             title={m.facets_keyword()}
+            explanation={m.keyword_explanation()}
             onChange={(newKeywords) => {
               updateURL(searchRequest, { keyword: newKeywords });
             }}
@@ -324,6 +326,7 @@
             selectedValues={searchRequest.format}
             values={searchResults?.facets.format ?? cachedFacets?.format ?? []}
             title={m.facets_format()}
+            explanation={m.format_explanation()}
             onChange={(newFormats) => {
               updateURL(searchRequest, { format: newFormats });
             }}
@@ -334,6 +337,7 @@
             selectedValues={searchRequest.class}
             values={searchResults?.facets.class ?? cachedFacets?.class ?? []}
             title={m.facets_class()}
+            explanation={m.class_explanation()}
             onChange={(newClasses) => {
               updateURL(searchRequest, { class: newClasses });
             }}
@@ -343,6 +347,7 @@
           <SizeRangeFacet
             selectedValues={searchRequest.size}
             histogram={(searchResults?.facets.size ?? cachedFacets?.size)!}
+            explanation={m.size_explanation()}
             onChange={(min, max) => {
               updateURL(searchRequest, { size: { min, max } });
             }}
