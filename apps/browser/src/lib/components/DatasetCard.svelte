@@ -41,7 +41,7 @@
 </script>
 
 <a
-  class="relative block border border-gray-300 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-800 transition-all hover:shadow-lg hover:border-gray-400 dark:hover:border-gray-600 cursor-pointer no-underline overflow-hidden"
+  class="relative block border border-gray-300 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-800 transition-all hover:shadow-lg hover:border-gray-400 dark:hover:border-gray-600 cursor-pointer no-underline overflow-visible"
   href={detailUrl}
   rel="external"
 >
