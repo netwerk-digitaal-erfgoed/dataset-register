@@ -416,7 +416,7 @@
 
 <style>
   /* Make the clear button (X) in search input show pointer cursor */
-  input[type='search']::-webkit-search-cancel-button {
+  :global(input[type='search']::-webkit-search-cancel-button) {
     cursor: pointer;
   }
 </style>

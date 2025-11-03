@@ -140,15 +140,10 @@
   <!-- Search/Filter Input -->
   {#if values.length > FOLD_LIMIT}
     <input
-      type="text"
+      type="search"
       bind:value={searchQuery}
       placeholder={m.facets_search()}
       class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded mb-3 transition-colors focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 placeholder:text-gray-400 dark:placeholder:text-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-      onkeydown={(e) => {
-        if (e.key === 'Escape') {
-          searchQuery = '';
-        }
-      }}
     />
   {/if}
 
