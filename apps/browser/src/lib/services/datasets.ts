@@ -98,6 +98,7 @@ export interface SearchRequest {
   publisher: string[];
   keyword: string[];
   format: string[];
+  class: string[];
   size: {
     min?: number;
     max?: number;
@@ -242,7 +243,14 @@ function filterClauses(searchFilters: SearchRequest) {
 
   const filterClausesArray: string[] = [];
 
-  const { query, publisher, keyword, format, size } = searchFilters;
+  const {
+    query,
+    publisher,
+    keyword,
+    format,
+    class: classFilter,
+    size,
+  } = searchFilters;
 
   if (query !== undefined && query.length > 0) {
     filterClausesArray.push(
@@ -266,6 +274,10 @@ function filterClauses(searchFilters: SearchRequest) {
 
   if (format.length > 0) {
     filterClausesArray.push(facetConfigs.format.filterClause(format));
+  }
+
+  if (classFilter.length > 0) {
+    filterClausesArray.push(facetConfigs.class.filterClause(classFilter));
   }
 
   if (size.min !== undefined || size.max !== undefined) {
