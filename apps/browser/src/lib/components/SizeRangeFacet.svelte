@@ -3,6 +3,7 @@
   import * as m from '$lib/paraglide/messages';
   import { getLocale } from '$lib/paraglide/runtime';
   import { onMount } from 'svelte';
+  import FacetHelper from './FacetHelper.svelte';
 
   // Dynamically import to avoid SSR issues
   type RangeSliderComponent = typeof import('svelte-range-slider-pips').default;
@@ -19,10 +20,12 @@
     histogram,
     selectedValues,
     onChange,
+    explanation,
   }: {
     selectedValues: { min?: number; max?: number };
     histogram: Histogram;
     onChange: (min?: number, max?: number) => void;
+    explanation?: string;
   } = $props();
 
   const locale = $derived(getLocale());
@@ -129,9 +132,12 @@
 
 <div class="mb-6">
   <h3
-    class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 tracking-tight"
+    class="relative text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 tracking-tight flex items-center"
   >
     {m.facets_size()}
+    {#if explanation}
+      <FacetHelper {explanation} />
+    {/if}
   </h3>
 
   <div class="space-y-4">

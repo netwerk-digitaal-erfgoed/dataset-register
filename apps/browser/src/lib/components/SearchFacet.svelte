@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { CountedFacetValue } from '$lib/services/facets';
   import FacetItem from './FacetItem.svelte';
+  import FacetHelper from './FacetHelper.svelte';
   import * as m from '$lib/paraglide/messages';
   import { facetDisplayValue } from '$lib/services/facets';
 
@@ -9,11 +10,13 @@
     values,
     selectedValues,
     onChange,
+    explanation,
   }: {
     title: string;
     values: CountedFacetValue[];
     selectedValues: string[];
     onChange: (newValues: string[]) => void;
+    explanation?: string;
   } = $props();
 
   const FOLD_LIMIT = 6;
@@ -132,9 +135,12 @@
 
 <div class="mb-6">
   <h3
-    class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 tracking-tight"
+    class="relative text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 tracking-tight flex items-center"
   >
     {title}
+    {#if explanation}
+      <FacetHelper {explanation} />
+    {/if}
   </h3>
 
   <!-- Search/Filter Input -->
