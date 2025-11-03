@@ -16,6 +16,7 @@
       publisher: FacetValue[];
       keyword: FacetValue[];
       format: FacetValue[];
+      class: FacetValue[];
       size: {
         min?: number;
         max?: number;
@@ -54,6 +55,10 @@
     })),
     ...selectedValues.format.map((facet: FacetValue) => ({
       type: 'format' as FacetKey,
+      facet,
+    })),
+    ...selectedValues.class.map((facet: FacetValue) => ({
+      type: 'class' as FacetKey,
       facet,
     })),
     ...(getSizeDisplay()

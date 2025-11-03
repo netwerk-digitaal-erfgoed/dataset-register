@@ -52,6 +52,84 @@ const SPARQL_PROTOCOL_URI = '<https://www.w3.org/TR/sparql11-protocol/>';
 const GROUP_RDF = 'group:rdf';
 const GROUP_SPARQL = 'group:sparql';
 
+// Class groups
+const GROUP_PERSON = 'group:person';
+const GROUP_ORGANIZATION = 'group:organization';
+const GROUP_MEDIA = 'group:media';
+const GROUP_CONCEPT = 'group:concept';
+const GROUP_CREATIVE_WORK = 'group:creative-work';
+const GROUP_PLACE = 'group:place';
+const GROUP_DATE = 'group:date';
+const GROUP_PROVENANCE = 'group:provenance';
+const GROUP_EVENT = 'group:event';
+
+// Mapping of class URIs to groups (supporting both http and https for schema.org)
+const classGroups = {
+  [GROUP_PERSON]: [
+    'http://schema.org/Person',
+    'https://schema.org/Person',
+    'http://www.cidoc-crm.org/cidoc-crm/E21_Person',
+    'http://www.cidoc-crm.org/cidoc-crm/E39_Actor',
+  ],
+  [GROUP_ORGANIZATION]: [
+    'http://schema.org/Organization',
+    'https://schema.org/Organization',
+    'http://www.cidoc-crm.org/cidoc-crm/E39_Actor',
+  ],
+  [GROUP_MEDIA]: [
+    'http://schema.org/MediaObject',
+    'https://schema.org/MediaObject',
+    'http://schema.org/AudioObject',
+    'https://schema.org/AudioObject',
+    'http://schema.org/ImageObject',
+    'https://schema.org/ImageObject',
+    'http://www.cidoc-crm.org/cidoc-crm/E36_Visual_Item',
+  ],
+  [GROUP_CONCEPT]: ['http://www.w3.org/2004/02/skos/core#Concept'],
+  [GROUP_CREATIVE_WORK]: [
+    'http://schema.org/CreativeWork',
+    'https://schema.org/CreativeWork',
+    'http://schema.org/Article',
+    'https://schema.org/Article',
+    'http://schema.org/Book',
+    'https://schema.org/Book',
+    'http://schema.org/MusicComposition',
+    'https://schema.org/MusicComposition',
+    'http://www.cidoc-crm.org/cidoc-crm/E65_Creation',
+  ],
+  [GROUP_PLACE]: [
+    'http://schema.org/Place',
+    'https://schema.org/Place',
+    'http://schema.org/Country',
+    'https://schema.org/Country',
+    'http://schema.org/Periodical',
+    'https://schema.org/Periodical',
+    'http://schema.org/PostalAddress',
+    'https://schema.org/PostalAddress',
+    'http://www.cidoc-crm.org/cidoc-crm/E53_Place',
+    'http://www.europeana.eu/schemas/edm/Place',
+  ],
+  [GROUP_DATE]: [
+    'https://www.ica.org/standards/RiC/ontology#DateRange',
+    'https://www.ica.org/standards/RiC/ontology#SingleDate',
+    'http://www.cidoc-crm.org/cidoc-crm/E52_Time-Span',
+    'http://www.europeana.eu/schemas/edm/TimeSpan',
+  ],
+  [GROUP_PROVENANCE]: [
+    'http://www.w3.org/ns/prov#Activity',
+    'http://www.w3.org/ns/prov#Agent',
+    'http://www.w3.org/ns/prov#Entity',
+  ],
+  [GROUP_EVENT]: [
+    'http://www.cidoc-crm.org/cidoc-crm/E65_Creation',
+    'http://www.cidoc-crm.org/cidoc-crm/E8_Acquisition',
+    'http://schema.org/Event',
+    'https://schema.org/Event',
+    'http://schema.org/PublicationEvent',
+    'https://schema.org/PublicationEvent',
+  ],
+};
+
 interface FacetConfig {
   /**
    * SPARQL WHERE clause that reads values.
@@ -137,6 +215,54 @@ export const facetConfigs: Record<string, FacetConfig> = {
         FILTER(STR(?keyword) IN (${inLiterals(values)}))`;
     },
   },
+  class: {
+    where: `{
+      SERVICE <https://triplestore.netwerkdigitaalerfgoed.nl/repositories/dataset-knowledge-graph> {
+        {
+          ?dataset void:classPartition ?partition .
+          ?partition void:class ?value .
+          OPTIONAL { ?value rdfs:label ?label }
+      }${Object.keys(classGroups)
+        .map(
+          (group) => ` UNION {
+        ?dataset void:classPartition ?partition .
+        ?partition void:class ?class .
+        FILTER(?class IN (${classGroups[group as keyof typeof classGroups].map((c) => `<${c}>`).join(', ')}))
+        BIND("${group}" AS ?value)
+      }`,
+        )
+        .join('')}
+    }
+    }`,
+    filterClause: (values) => {
+      if (values.length === 0) {
+        return '';
+      }
+
+      const selectedGroups = values.filter((v) => v.startsWith('group:'));
+      const selectedClasses = values.filter((v) => !v.startsWith('group:'));
+
+      // Expand groups to their member classes
+      for (const group of selectedGroups) {
+        const groupClasses = classGroups[group as keyof typeof classGroups];
+        if (groupClasses) {
+          selectedClasses.push(...groupClasses);
+        }
+      }
+
+      if (selectedClasses.length === 0) {
+        return '';
+      }
+
+      const classValues = selectedClasses.map((c) => `<${c}>`).join(', ');
+
+      return `SERVICE <https://triplestore.netwerkdigitaalerfgoed.nl/repositories/dataset-knowledge-graph> {
+        ?dataset void:classPartition ?partition .
+        ?partition void:class ?class .
+        FILTER(?class IN (${classValues}))
+      }`;
+    },
+  },
 };
 
 export type FacetKey = keyof typeof facetConfigs;
@@ -145,6 +271,7 @@ export type Facets = {
   publisher: CountedFacetValue[];
   keyword: CountedFacetValue[];
   format: CountedFacetValue[];
+  class: CountedFacetValue[];
   size: Histogram;
 };
 
@@ -325,6 +452,15 @@ export async function fetchSizeHistogram(
 const groupMessages = {
   [GROUP_RDF]: m['group:rdf'],
   [GROUP_SPARQL]: m['group:sparql'],
+  [GROUP_PERSON]: m['group:person'],
+  [GROUP_ORGANIZATION]: m['group:organization'],
+  [GROUP_MEDIA]: m['group:media'],
+  [GROUP_CONCEPT]: m['group:concept'],
+  [GROUP_CREATIVE_WORK]: m['group:creative-work'],
+  [GROUP_PLACE]: m['group:place'],
+  [GROUP_DATE]: m['group:date'],
+  [GROUP_PROVENANCE]: m['group:provenance'],
+  [GROUP_EVENT]: m['group:event'],
 };
 
 export function facetDisplayValue(facetValue: FacetValue) {

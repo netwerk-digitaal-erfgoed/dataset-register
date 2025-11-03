@@ -22,6 +22,7 @@
     publisher: decodeDiscreteParam('publishers'),
     keyword: decodeDiscreteParam('keywords'),
     format: decodeDiscreteParam('format'),
+    class: decodeDiscreteParam('class'),
     size: decodeRangeParam('size'),
   });
 
@@ -37,6 +38,7 @@
     publisher: FacetValue[];
     keyword: FacetValue[];
     format: FacetValue[];
+    class: FacetValue[];
     size: { min?: number; max?: number };
   } = $derived({
     publisher: searchRequest.publisher.map((value) => {
@@ -67,6 +69,7 @@
         value,
       };
     }),
+    class: searchRequest.class.map((value) => ({ value })),
     size: {
       min:
         cachedFacets?.size === searchRequest.size.min
@@ -123,6 +126,12 @@
       url.searchParams.set('format', params.format.join(','));
     } else {
       url.searchParams.delete('format');
+    }
+
+    if (params.class && params.class.length > 0) {
+      url.searchParams.set('class', params.class.join(','));
+    } else {
+      url.searchParams.delete('class');
     }
 
     if (params.size?.min !== undefined || params.size?.max !== undefined) {
@@ -266,6 +275,9 @@
         } else if (type === 'format') {
           const newFormats = searchRequest.format.filter((f) => f !== value);
           updateURL(searchRequest, { format: newFormats });
+        } else if (type === 'class') {
+          const newClasses = searchRequest.class.filter((c) => c !== value);
+          updateURL(searchRequest, { class: newClasses });
         } else if (type === 'size') {
           updateURL(searchRequest, {
             size: { min: undefined, max: undefined },
@@ -314,6 +326,16 @@
             title={m.facets_format()}
             onChange={(newFormats) => {
               updateURL(searchRequest, { format: newFormats });
+            }}
+          />
+        {/if}
+        {#if (searchResults?.facets.class ?? cachedFacets?.class ?? []).length > 0 || searchRequest.class.length > 0}
+          <SearchFacet
+            selectedValues={searchRequest.class}
+            values={searchResults?.facets.class ?? cachedFacets?.class ?? []}
+            title={m.facets_class()}
+            onChange={(newClasses) => {
+              updateURL(searchRequest, { class: newClasses });
             }}
           />
         {/if}
