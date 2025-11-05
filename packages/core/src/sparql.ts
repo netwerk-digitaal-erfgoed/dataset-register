@@ -7,8 +7,6 @@ import {
   RegistrationStore,
   toRdf,
 } from './registration.js';
-import type { RequestInfo, RequestInit, Response } from 'node-fetch';
-import fetch, { Headers } from 'node-fetch';
 import { Rating, RatingStore } from './rate.js';
 import type { DatasetCore, Quad } from '@rdfjs/types';
 import { URL } from 'node:url';
@@ -243,15 +241,14 @@ export class SparqlAllowedRegistrationDomainStore
   }
 }
 
-export function authenticatedFetch(accessToken: string): typeof fetch {
-  return async (
-    url: RequestInfo | URL,
-    init?: RequestInit,
-  ): Promise<Response> => {
+export function authenticatedFetch(
+  accessToken: string,
+): typeof globalThis.fetch {
+  return async (input, init) => {
     const headers = new Headers(init?.headers);
     headers.set('Authorization', `Bearer ${accessToken}`);
 
-    return fetch(url, {
+    return globalThis.fetch(input, {
       ...init,
       headers,
     });
