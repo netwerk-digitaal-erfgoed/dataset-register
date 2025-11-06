@@ -99,6 +99,7 @@ export interface SearchRequest {
   keyword: string[];
   format: string[];
   class: string[];
+  terminologySource: string[];
   size: {
     min?: number;
     max?: number;
@@ -249,6 +250,7 @@ function filterClauses(searchFilters: SearchRequest) {
     keyword,
     format,
     class: classFilter,
+    terminologySource,
     size,
   } = searchFilters;
 
@@ -278,6 +280,12 @@ function filterClauses(searchFilters: SearchRequest) {
 
   if (classFilter.length > 0) {
     filterClausesArray.push(facetConfigs.class.filterClause(classFilter));
+  }
+
+  if (terminologySource.length > 0) {
+    filterClausesArray.push(
+      facetConfigs.terminologySource.filterClause(terminologySource),
+    );
   }
 
   if (size.min !== undefined || size.max !== undefined) {

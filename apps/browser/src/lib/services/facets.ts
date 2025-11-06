@@ -1,7 +1,10 @@
 import { createLens, type SchemaInterface } from 'ldkit';
 import { ldkit, rdf, rdfs, xsd } from 'ldkit/namespaces';
 import { filterDatasets, prefixes, type SearchRequest } from './datasets.js';
-import { PUBLIC_SPARQL_ENDPOINT } from '$env/static/public';
+import {
+  PUBLIC_SPARQL_ENDPOINT,
+  PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+} from '$env/static/public';
 import { RDF_MEDIA_TYPES } from '$lib/constants.js';
 import { getLocalizedValue } from '$lib/utils/i18n';
 import * as m from '$lib/paraglide/messages';
@@ -217,11 +220,10 @@ export const facetConfigs: Record<string, FacetConfig> = {
   },
   class: {
     where: `{
-      SERVICE <https://triplestore.netwerkdigitaalerfgoed.nl/repositories/dataset-knowledge-graph> {
+      SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
         {
           ?dataset void:classPartition ?partition .
           ?partition void:class ?value .
-          OPTIONAL { ?value rdfs:label ?label }
       }${Object.keys(classGroups)
         .map(
           (group) => ` UNION {
@@ -256,10 +258,34 @@ export const facetConfigs: Record<string, FacetConfig> = {
 
       const classValues = selectedClasses.map((c) => `<${c}>`).join(', ');
 
-      return `SERVICE <https://triplestore.netwerkdigitaalerfgoed.nl/repositories/dataset-knowledge-graph> {
+      return `SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
         ?dataset void:classPartition ?partition .
         ?partition void:class ?class .
         FILTER(?class IN (${classValues}))
+      }`;
+    },
+  },
+  terminologySource: {
+    where: `{
+      SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
+        [] a void:Linkset ;
+          void:subjectsTarget ?dataset ;
+          void:objectsTarget ?value .
+        OPTIONAL { ?value dct:name ?label }
+      }
+    }`,
+    filterClause: (values) => {
+      if (values.length === 0) {
+        return '';
+      }
+
+      const sourceValues = values.map((s) => `<${s}>`).join(', ');
+
+      return `SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
+        [] a void:Linkset ;
+          void:subjectsTarget ?dataset ;
+          void:objectsTarget ?terminologySource .
+        FILTER(?terminologySource IN (${sourceValues}))
       }`;
     },
   },
@@ -272,6 +298,7 @@ export type Facets = {
   keyword: CountedFacetValue[];
   format: CountedFacetValue[];
   class: CountedFacetValue[];
+  terminologySource: CountedFacetValue[];
   size: Histogram;
 };
 
@@ -363,7 +390,7 @@ export async function fetchSizeRange(): Promise<FacetValueRange> {
 
   try {
     const bindings = await fetcher.fetchBindings(
-      'https://triplestore.netwerkdigitaalerfgoed.nl/repositories/dataset-knowledge-graph',
+      PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
       query,
     );
 
@@ -411,7 +438,7 @@ export async function fetchSizeHistogram(
     SELECT ?bin (COUNT(DISTINCT ?dataset) as ?count) WHERE {
       ${filterDatasets(filtersWithoutSize)}
 
-      SERVICE <https://triplestore.netwerkdigitaalerfgoed.nl/repositories/dataset-knowledge-graph> {
+      SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
         ?dataset void:triples ?size .
       }
 
