@@ -99,6 +99,8 @@ const classGroups = {
     'http://schema.org/MusicComposition',
     'https://schema.org/MusicComposition',
     'http://www.cidoc-crm.org/cidoc-crm/E65_Creation',
+    'http://www.cidoc-crm.org/cidoc-crm/E22_Human-Made_Object',
+    'http://www.cidoc-crm.org/cidoc-crm/E12_Production',
   ],
   [GROUP_PLACE]: [
     'http://schema.org/Place',
