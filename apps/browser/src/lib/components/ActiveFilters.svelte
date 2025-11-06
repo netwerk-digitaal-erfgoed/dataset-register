@@ -17,6 +17,7 @@
       keyword: FacetValue[];
       format: FacetValue[];
       class: FacetValue[];
+      terminologySource: FacetValue[];
       size: {
         min?: number;
         max?: number;
@@ -59,6 +60,10 @@
     })),
     ...selectedValues.class.map((facet: FacetValue) => ({
       type: 'class' as FacetKey,
+      facet,
+    })),
+    ...selectedValues.terminologySource.map((facet: FacetValue) => ({
+      type: 'terminologySource' as FacetKey,
       facet,
     })),
     ...(getSizeDisplay()

@@ -23,6 +23,7 @@
     keyword: decodeDiscreteParam('keywords'),
     format: decodeDiscreteParam('format'),
     class: decodeDiscreteParam('class'),
+    terminologySource: decodeDiscreteParam('terminologySource'),
     size: decodeRangeParam('size'),
   });
 
@@ -39,6 +40,7 @@
     keyword: FacetValue[];
     format: FacetValue[];
     class: FacetValue[];
+    terminologySource: FacetValue[];
     size: { min?: number; max?: number };
   } = $derived({
     publisher: searchRequest.publisher.map((value) => {
@@ -70,6 +72,9 @@
       };
     }),
     class: searchRequest.class.map((value) => ({ value })),
+    terminologySource: searchRequest.terminologySource.map((value) => ({
+      value,
+    })),
     size: {
       min:
         cachedFacets?.size === searchRequest.size.min
@@ -132,6 +137,15 @@
       url.searchParams.set('class', params.class.join(','));
     } else {
       url.searchParams.delete('class');
+    }
+
+    if (params.terminologySource && params.terminologySource.length > 0) {
+      url.searchParams.set(
+        'terminologySource',
+        params.terminologySource.join(','),
+      );
+    } else {
+      url.searchParams.delete('terminologySource');
     }
 
     if (params.size?.min !== undefined || params.size?.max !== undefined) {
@@ -278,6 +292,11 @@
         } else if (type === 'class') {
           const newClasses = searchRequest.class.filter((c) => c !== value);
           updateURL(searchRequest, { class: newClasses });
+        } else if (type === 'terminologySource') {
+          const newSources = searchRequest.terminologySource.filter(
+            (s) => s !== value,
+          );
+          updateURL(searchRequest, { terminologySource: newSources });
         } else if (type === 'size') {
           updateURL(searchRequest, {
             size: { min: undefined, max: undefined },
@@ -340,6 +359,19 @@
             explanation={m.class_explanation()}
             onChange={(newClasses) => {
               updateURL(searchRequest, { class: newClasses });
+            }}
+          />
+        {/if}
+        {#if (searchResults?.facets.terminologySource ?? cachedFacets?.terminologySource ?? []).length > 0 || searchRequest.terminologySource.length > 0}
+          <SearchFacet
+            selectedValues={searchRequest.terminologySource}
+            values={searchResults?.facets.terminologySource ??
+              cachedFacets?.terminologySource ??
+              []}
+            title={m.facets_terminology_source()}
+            explanation={m.terminology_source_explanation()}
+            onChange={(newSources) => {
+              updateURL(searchRequest, { terminologySource: newSources });
             }}
           />
         {/if}
