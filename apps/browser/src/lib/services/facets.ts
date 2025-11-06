@@ -273,7 +273,7 @@ export const facetConfigs: Record<string, FacetConfig> = {
         [] a void:Linkset ;
           void:subjectsTarget ?dataset ;
           void:objectsTarget ?value .
-        OPTIONAL { ?value dct:name ?label }
+        OPTIONAL { ?value dct:title ?label }
       }
     }`,
     filterClause: (values) => {
