@@ -10,7 +10,7 @@ A faceted search app for finding datasets from the Netwerk Digitaal Erfgoed (NDE
 
 ## Tech stack
 
-- A SvelteKit 2 app with Tailwind CSS.
+- A SvelteKit 2 app with Svelte 5 and Tailwind CSS.
 - Paraglide is used for translations.
 - Relies on [@lde/dataset-registry-client](https://www.npmjs.com/package/@lde/dataset-registry-client)
   and [LDKit](https://ldkit.io) for retrieving and mapping data.
@@ -23,6 +23,8 @@ nx dev browser
 # or start the server and open the app in a new browser tab
 nx dev browser -- --open
 ```
+
+In the browser, navigate to http://localhost:{port}/datasets.
 
 ## Build
 

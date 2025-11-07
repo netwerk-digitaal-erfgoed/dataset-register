@@ -1,7 +1,6 @@
 <script lang="ts">
   import DatasetCard from '$lib/components/DatasetCard.svelte';
-  import SearchFacet from '$lib/components/SearchFacet.svelte';
-  import SizeRangeFacet from '$lib/components/SizeRangeFacet.svelte';
+  import FacetsPanel from '$lib/components/FacetsPanel.svelte';
   import ActiveFilters from '$lib/components/ActiveFilters.svelte';
   import RunSparqlButton from '$lib/components/RunSparqlButton.svelte';
   import * as m from '$lib/paraglide/messages';
@@ -13,7 +12,7 @@
     SearchResults,
   } from '$lib/services/datasets';
   import { fetchDatasets } from '$lib/services/datasets';
-  import type { FacetValue, Facets } from '$lib/services/facets';
+  import type { SelectedFacetValue, Facets } from '$lib/services/facets';
   import { decodeDiscreteParam, decodeRangeParam } from '$lib/url';
 
   // Derive searchRequest from URL, which is the single source of truth.
@@ -36,11 +35,11 @@
   let cachedFacets = $state<Facets | undefined>();
 
   let selectedValues: {
-    publisher: FacetValue[];
-    keyword: FacetValue[];
-    format: FacetValue[];
-    class: FacetValue[];
-    terminologySource: FacetValue[];
+    publisher: SelectedFacetValue[];
+    keyword: SelectedFacetValue[];
+    format: SelectedFacetValue[];
+    class: SelectedFacetValue[];
+    terminologySource: SelectedFacetValue[];
     size: { min?: number; max?: number };
   } = $derived({
     publisher: searchRequest.publisher.map((value) => {
@@ -90,6 +89,34 @@
   let debounceTimer: ReturnType<typeof setTimeout>;
   let inputElement = $state<HTMLInputElement>();
   let facetsLoaded = $state(false);
+
+  // Mobile filters drawer state
+  let mobileFiltersOpen = $state(false);
+
+  function toggleMobileFilters() {
+    mobileFiltersOpen = !mobileFiltersOpen;
+  }
+
+  // Close mobile filters on Escape key
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape' && mobileFiltersOpen) {
+      mobileFiltersOpen = false;
+    }
+  }
+
+  // Body scroll lock when mobile filters are open
+  $effect(() => {
+    if (mobileFiltersOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    // Cleanup
+    return () => {
+      document.body.style.overflow = '';
+    };
+  });
 
   // Infinite scroll state
   let accumulatedDatasets = $state<DatasetCardType[]>([]);
@@ -260,12 +287,14 @@
   }
 </script>
 
+<svelte:window onkeydown={handleKeydown} />
+
 <svelte:head>
   <title>Datasets - Netwerk Digitaal Erfgoed</title>
   <meta content={m.header_tagline()} name="description" />
 </svelte:head>
 
-<div class="max-w-7xl mx-auto px-8 py-8 font-sans">
+<div class="max-w-7xl mx-auto px-4 lg:px-8 py-8 font-sans">
   <input
     bind:this={inputElement}
     bind:value={localQuery}
@@ -306,86 +335,24 @@
     />
   {/if}
 
-  <div class="flex gap-8">
-    <!-- Sidebar with facets - outside await block to prevent re-rendering -->
-    <aside class="w-64 flex-shrink-0">
-      {#if !facetsLoaded}
-        <div
-          class="h-6 bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded mb-3 w-3/4 animate-shimmer"
-        ></div>
-      {:else}
-        {#if (searchResults?.facets.publisher ?? cachedFacets?.publisher ?? []).length > 0 || searchRequest.publisher.length > 0}
-          <SearchFacet
-            selectedValues={searchRequest.publisher}
-            values={searchResults?.facets.publisher ??
-              cachedFacets?.publisher ??
-              []}
-            title={m.facets_publisher()}
-            explanation={m.publisher_explanation()}
-            onChange={(newPublishers) => {
-              updateURL(searchRequest, { publisher: newPublishers });
-            }}
-          />
-        {/if}
-        {#if (searchResults?.facets.keyword ?? cachedFacets?.keyword ?? []).length > 0 || searchRequest.keyword.length > 0}
-          <SearchFacet
-            selectedValues={searchRequest.keyword}
-            values={searchResults?.facets.keyword ??
-              cachedFacets?.keyword ??
-              []}
-            title={m.facets_keyword()}
-            explanation={m.keyword_explanation()}
-            onChange={(newKeywords) => {
-              updateURL(searchRequest, { keyword: newKeywords });
-            }}
-          />
-        {/if}
-        {#if (searchResults?.facets.format ?? cachedFacets?.format ?? []).length > 0 || searchRequest.format.length > 0}
-          <SearchFacet
-            selectedValues={searchRequest.format}
-            values={searchResults?.facets.format ?? cachedFacets?.format ?? []}
-            title={m.facets_format()}
-            explanation={m.format_explanation()}
-            onChange={(newFormats) => {
-              updateURL(searchRequest, { format: newFormats });
-            }}
-          />
-        {/if}
-        {#if (searchResults?.facets.class ?? cachedFacets?.class ?? []).length > 0 || searchRequest.class.length > 0}
-          <SearchFacet
-            selectedValues={searchRequest.class}
-            values={searchResults?.facets.class ?? cachedFacets?.class ?? []}
-            title={m.facets_class()}
-            explanation={m.class_explanation()}
-            onChange={(newClasses) => {
-              updateURL(searchRequest, { class: newClasses });
-            }}
-          />
-        {/if}
-        {#if (searchResults?.facets.terminologySource ?? cachedFacets?.terminologySource ?? []).length > 0 || searchRequest.terminologySource.length > 0}
-          <SearchFacet
-            selectedValues={searchRequest.terminologySource}
-            values={searchResults?.facets.terminologySource ??
-              cachedFacets?.terminologySource ??
-              []}
-            title={m.facets_terminology_source()}
-            explanation={m.terminology_source_explanation()}
-            onChange={(newSources) => {
-              updateURL(searchRequest, { terminologySource: newSources });
-            }}
-          />
-        {/if}
-        {#if (searchResults?.facets.size ?? cachedFacets?.size) && (searchResults?.facets.size.bins ?? cachedFacets?.size.bins ?? []).length > 0}
-          <SizeRangeFacet
-            selectedValues={searchRequest.size}
-            histogram={(searchResults?.facets.size ?? cachedFacets?.size)!}
-            explanation={m.size_explanation()}
-            onChange={(min, max) => {
-              updateURL(searchRequest, { size: { min, max } });
-            }}
-          />
-        {/if}
-      {/if}
+  <div class="flex gap-4 lg:gap-8">
+    <!-- Sidebar with facets -->
+    <aside class="hidden lg:block w-64 flex-shrink-0">
+      <FacetsPanel
+        facets={searchResults?.facets ?? cachedFacets}
+        selectedValues={{
+          publisher: searchRequest.publisher,
+          keyword: searchRequest.keyword,
+          format: searchRequest.format,
+          class: searchRequest.class,
+          terminologySource: searchRequest.terminologySource,
+          size: searchRequest.size,
+        }}
+        loading={!facetsLoaded}
+        onChange={(facetKey, value) => {
+          updateURL(searchRequest, { [facetKey]: value });
+        }}
+      />
     </aside>
 
     <!-- Main content area -->
@@ -449,7 +416,146 @@
       {/if}
     </div>
   </div>
+
+  <!-- Mobile Filters Button (Fixed, bottom-right) -->
+  <button
+    class="lg:hidden fixed bottom-6 right-6 z-50 flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg cursor-pointer transition-colors"
+    onclick={toggleMobileFilters}
+    aria-label="Open filters"
+  >
+    <!-- Filter Icon (Funnel) -->
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+      />
+    </svg>
+    <span class="font-semibold">
+      Filters
+      {#if Object.values(selectedValues).filter( (v) => (Array.isArray(v) ? v.length > 0 : v.min !== undefined || v.max !== undefined), ).length > 0}
+        <span class="ml-1"
+          >({Object.values(selectedValues).filter((v) =>
+            Array.isArray(v)
+              ? v.length > 0
+              : v.min !== undefined || v.max !== undefined,
+          ).length})</span
+        >
+      {/if}
+    </span>
+  </button>
 </div>
+
+<!-- Mobile Filters Drawer -->
+<!-- Backdrop -->
+<div
+  class="lg:hidden fixed inset-0 bg-black z-40 transition-opacity duration-300 {mobileFiltersOpen
+    ? 'opacity-50'
+    : 'opacity-0 pointer-events-none'}"
+  onclick={toggleMobileFilters}
+  onkeydown={(e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleMobileFilters();
+    }
+  }}
+  role="button"
+  tabindex="-1"
+  aria-label="Close filters"
+></div>
+
+<!-- Drawer -->
+<aside
+  class="lg:hidden fixed top-0 left-0 bottom-0 z-50 w-[85%] max-w-sm bg-white dark:bg-gray-900 shadow-2xl overflow-y-auto transition-transform duration-300 {mobileFiltersOpen
+    ? 'translate-x-0'
+    : '-translate-x-full'}"
+>
+  <!-- Drawer Header -->
+  <div
+    class="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between"
+  >
+    <div>
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+        Filters
+      </h2>
+      {#if Object.values(selectedValues).filter( (v) => (Array.isArray(v) ? v.length > 0 : v.min !== undefined || v.max !== undefined), ).length > 0}
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          {Object.values(selectedValues).filter((v) =>
+            Array.isArray(v)
+              ? v.length > 0
+              : v.min !== undefined || v.max !== undefined,
+          ).length} active
+        </p>
+      {/if}
+    </div>
+    <button
+      onclick={toggleMobileFilters}
+      class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
+      aria-label="Close filters"
+    >
+      <svg
+        class="w-6 h-6 text-gray-600 dark:text-gray-400"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M6 18L18 6M6 6l12 12"
+        />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Drawer Content (Facets) -->
+  <div class="px-6 py-4">
+    <FacetsPanel
+      facets={searchResults?.facets ?? cachedFacets}
+      selectedValues={{
+        publisher: searchRequest.publisher,
+        keyword: searchRequest.keyword,
+        format: searchRequest.format,
+        class: searchRequest.class,
+        terminologySource: searchRequest.terminologySource,
+        size: searchRequest.size,
+      }}
+      loading={!facetsLoaded}
+      onChange={(facetKey, value) => {
+        updateURL(searchRequest, { [facetKey]: value });
+      }}
+    />
+  </div>
+
+  <!-- Drawer Footer -->
+  <div
+    class="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-6 py-4 space-y-3"
+  >
+    <button
+      onclick={toggleMobileFilters}
+      class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors cursor-pointer"
+    >
+      Apply Filters
+    </button>
+    <button
+      onclick={() => {
+        updateURL(searchRequest, {
+          publisher: [],
+          keyword: [],
+          format: [],
+          class: [],
+          terminologySource: [],
+          size: { min: undefined, max: undefined },
+        });
+      }}
+      class="w-full px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-semibold rounded-lg transition-colors cursor-pointer"
+    >
+      Clear All
+    </button>
+  </div>
+</aside>
 
 <style>
   /* Make the clear button (X) in search input show pointer cursor */

@@ -10,10 +10,9 @@
 </script>
 
 <a
-  class="no-underline"
+  class="text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 px-4 py-2 text-base font-normal no-underline inline-block transition-colors"
   data-sveltekit-preload-data="off"
   href={url}
-  style="color: rgb(23, 42, 89); font-size: 16.1px; font-weight: 400; padding: 38px 18px; display: inline-block; line-height: 24px; font-family: Poppins, Helvetica, Arial, sans-serif;"
 >
   {#if currentLocale === 'nl'}
     <strong>NL</strong> • EN
