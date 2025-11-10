@@ -537,7 +537,7 @@
       onclick={toggleMobileFilters}
       class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors cursor-pointer"
     >
-      Apply Filters
+      {m.facets_apply_filters()}
     </button>
     <button
       onclick={() => {
@@ -552,7 +552,7 @@
       }}
       class="w-full px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-semibold rounded-lg transition-colors cursor-pointer"
     >
-      Clear All
+      {m.facets_clear_all()}
     </button>
   </div>
 </aside>
