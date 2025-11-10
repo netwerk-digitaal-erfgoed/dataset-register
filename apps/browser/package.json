@@ -39,7 +39,7 @@
     "svelte": "^5.43.5",
     "svelte-check": "^4.3.3",
     "tailwindcss": "^4.1.17",
-    "vitest-browser-svelte": "^0.1.0"
+    "vitest-browser-svelte": "^2.0.1"
   },
   "nx": {
     "projectType": "application",
