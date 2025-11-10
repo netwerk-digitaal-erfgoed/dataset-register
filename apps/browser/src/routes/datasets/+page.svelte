@@ -12,7 +12,7 @@
     SearchResults,
   } from '$lib/services/datasets';
   import { fetchDatasets } from '$lib/services/datasets';
-  import type { SelectedFacetValue, Facets } from '$lib/services/facets';
+  import type { SelectedFacetValue } from '$lib/services/facets';
   import { decodeDiscreteParam, decodeRangeParam } from '$lib/url';
 
   // Derive searchRequest from URL, which is the single source of truth.
@@ -27,12 +27,10 @@
   });
 
   let searchResults: SearchResults | undefined = $state();
+  let isLoading = $state(false);
 
   // Writable derived - reads from URL, can be written to for local updates
   let localQuery = $derived(searchRequest.query);
-
-  // Cache facets to keep them visible during loading
-  let cachedFacets = $state<Facets | undefined>();
 
   let selectedValues: {
     publisher: SelectedFacetValue[];
@@ -43,23 +41,18 @@
     size: { min?: number; max?: number };
   } = $derived({
     publisher: searchRequest.publisher.map((value) => {
-      // Try current search results first, then cached facets
-      const facet =
-        searchResults?.facets.publisher.find(
-          (publisher) => publisher.value === value,
-        ) ??
-        cachedFacets?.publisher.find((publisher) => publisher.value === value);
+      const facet = searchResults?.facets.publisher.find(
+        (publisher) => publisher.value === value,
+      );
       return {
         value,
         label: facet?.label || { '': value },
       };
     }),
     keyword: searchRequest.keyword.map((value) => {
-      // Try current search results first, then cached facets
-      const facet =
-        searchResults?.facets.keyword.find(
-          (keyword) => keyword.value === value,
-        ) ?? cachedFacets?.keyword.find((keyword) => keyword.value === value);
+      const facet = searchResults?.facets.keyword.find(
+        (keyword) => keyword.value === value,
+      );
       return {
         value,
         label: facet?.label || { '': value },
@@ -70,19 +63,27 @@
         value,
       };
     }),
-    class: searchRequest.class.map((value) => ({ value })),
-    terminologySource: searchRequest.terminologySource.map((value) => ({
-      value,
-    })),
+    class: searchRequest.class.map((value) => {
+      const facet = searchResults?.facets.class.find(
+        (cls) => cls.value === value,
+      );
+      return {
+        value,
+        label: facet?.label || { '': value },
+      };
+    }),
+    terminologySource: searchRequest.terminologySource.map((value) => {
+      const facet = searchResults?.facets.terminologySource.find(
+        (terminologySource) => terminologySource.value === value,
+      );
+      return {
+        value,
+        label: facet?.label || { '': value },
+      };
+    }),
     size: {
-      min:
-        cachedFacets?.size === searchRequest.size.min
-          ? undefined
-          : searchRequest.size.min,
-      max:
-        cachedFacets?.size === searchRequest.size.max
-          ? undefined
-          : searchRequest.size.max,
+      min: searchRequest.size.min,
+      max: searchRequest.size.max,
     },
   });
 
@@ -210,26 +211,20 @@
   $effect(() => {
     const request = searchRequest;
 
-    // Clear results to trigger loading state
-    searchResults = undefined;
+    // Set loading state
+    isLoading = true;
 
     fetchDatasets(request, ITEMS_PER_PAGE, 0).then((results) => {
       searchResults = results;
       accumulatedDatasets = [...results.datasets];
       currentOffset = results.datasets.length;
       hasMore = currentOffset < results.total;
+      isLoading = false;
 
       if (!facetsLoaded) {
         facetsLoaded = true;
       }
     });
-  });
-
-  // Cache facets whenever search results update
-  $effect(() => {
-    if (searchResults) {
-      cachedFacets = searchResults.facets;
-    }
   });
 
   // Load more datasets
@@ -303,7 +298,7 @@
     type="search"
   />
 
-  {#if cachedFacets}
+  {#if searchResults}
     <ActiveFilters
       {selectedValues}
       onRemove={(type, value) => {
@@ -339,7 +334,7 @@
     <!-- Sidebar with facets -->
     <aside class="hidden lg:block w-64 flex-shrink-0">
       <FacetsPanel
-        facets={searchResults?.facets ?? cachedFacets}
+        facets={searchResults?.facets}
         selectedValues={{
           publisher: searchRequest.publisher,
           keyword: searchRequest.keyword,
@@ -348,7 +343,7 @@
           terminologySource: searchRequest.terminologySource,
           size: searchRequest.size,
         }}
-        loading={!facetsLoaded}
+        loading={isLoading}
         onChange={(facetKey, value) => {
           updateURL(searchRequest, { [facetKey]: value });
         }}
@@ -357,7 +352,7 @@
 
     <!-- Main content area -->
     <div class="flex-1 min-w-0">
-      {#if !searchResults}
+      {#if isLoading && !searchResults}
         <!-- Loading state -->
         <div class="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6">
           {#each createSkeletons(6) as skeletonId (skeletonId)}
@@ -376,7 +371,7 @@
             </div>
           {/each}
         </div>
-      {:else}
+      {:else if searchResults}
         <div class="mb-6 flex items-center justify-between">
           <p
             class="text-gray-600 dark:text-gray-400 text-sm font-medium"
@@ -513,7 +508,7 @@
   <!-- Drawer Content (Facets) -->
   <div class="px-6 py-4">
     <FacetsPanel
-      facets={searchResults?.facets ?? cachedFacets}
+      facets={searchResults?.facets}
       selectedValues={{
         publisher: searchRequest.publisher,
         keyword: searchRequest.keyword,
@@ -522,7 +517,7 @@
         terminologySource: searchRequest.terminologySource,
         size: searchRequest.size,
       }}
-      loading={!facetsLoaded}
+      loading={isLoading}
       onChange={(facetKey, value) => {
         updateURL(searchRequest, { [facetKey]: value });
       }}
