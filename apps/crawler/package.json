@@ -5,7 +5,7 @@
   "type": "module",
   "dependencies": {
     "@dataset-register/core": "*",
-    "env-schema": "^6.1.0",
+    "env-schema": "^7.0.0",
     "node-schedule": "^2.1.1",
     "pino": "^10.0.0"
   },
