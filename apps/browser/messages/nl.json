@@ -50,6 +50,8 @@
   "facets_search": "Zoek...",
   "facets_show_more": "Toon meer",
   "facets_show_less": "Toon minder",
+  "facets_apply_filters": "Filters toepassen",
+  "facets_clear_all": "Alle filters wissen",
   "publisher_explanation": "De organisatie die de dataset publiceert.",
   "keyword_explanation": "Trefwoorden die de dataset beschrijven.",
   "format_explanation": "Formaten waarin de dataset gedownload of bevraagd kan worden.",

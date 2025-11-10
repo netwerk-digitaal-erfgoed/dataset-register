@@ -50,6 +50,8 @@
   "facets_search": "Search...",
   "facets_show_more": "Show more",
   "facets_show_less": "Show less",
+  "facets_apply_filters": "Apply Filters",
+  "facets_clear_all": "Clear All",
   "publisher_explanation": "The organization that publishes the dataset.",
   "keyword_explanation": "Keywords that describe the dataset.",
   "format_explanation": "Formats in which the dataset is made available for downloading or querying.",
