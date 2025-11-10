@@ -4,7 +4,7 @@
   import {
     facetDisplayValue,
     type FacetKey,
-    type FacetValue,
+    type SelectedFacetValue,
     formatNumber,
   } from '$lib/services/facets';
 
@@ -13,11 +13,11 @@
     onRemove,
   }: {
     selectedValues: {
-      publisher: FacetValue[];
-      keyword: FacetValue[];
-      format: FacetValue[];
-      class: FacetValue[];
-      terminologySource: FacetValue[];
+      publisher: SelectedFacetValue[];
+      keyword: SelectedFacetValue[];
+      format: SelectedFacetValue[];
+      class: SelectedFacetValue[];
+      terminologySource: SelectedFacetValue[];
       size: {
         min?: number;
         max?: number;
@@ -46,23 +46,23 @@
   }
 
   let allSelectedValues = $derived([
-    ...selectedValues.publisher.map((facet: FacetValue) => ({
+    ...selectedValues.publisher.map((facet: SelectedFacetValue) => ({
       type: 'publisher' as FacetKey,
       facet,
     })),
-    ...selectedValues.keyword.map((facet: FacetValue) => ({
+    ...selectedValues.keyword.map((facet: SelectedFacetValue) => ({
       type: 'keyword' as FacetKey,
       facet,
     })),
-    ...selectedValues.format.map((facet: FacetValue) => ({
+    ...selectedValues.format.map((facet: SelectedFacetValue) => ({
       type: 'format' as FacetKey,
       facet,
     })),
-    ...selectedValues.class.map((facet: FacetValue) => ({
+    ...selectedValues.class.map((facet: SelectedFacetValue) => ({
       type: 'class' as FacetKey,
       facet,
     })),
-    ...selectedValues.terminologySource.map((facet: FacetValue) => ({
+    ...selectedValues.terminologySource.map((facet: SelectedFacetValue) => ({
       type: 'terminologySource' as FacetKey,
       facet,
     })),
@@ -81,7 +81,7 @@
 </script>
 
 {#if allSelectedValues.length > 0}
-  <div class="mb-6 flex flex-wrap gap-2 items-center">
+  <div class="mb-6 hidden lg:flex flex-wrap gap-2 items-center">
     {#each allSelectedValues as selectedValue (selectedValue.type + ':' + selectedValue.facet.value)}
       {@const displayValue = facetDisplayValue(selectedValue.facet)}
       {@const breakClass = displayValue.includes(' ')

@@ -34,11 +34,21 @@ const facets = createLens(FacetSchema, {
   // logQuery: (query: string) => console.log(query),
 });
 
-export interface FacetValue {
+/**
+ * A facet value selected by the user.
+ */
+export interface SelectedFacetValue {
   value: string;
   label?: Record<string, string>;
 }
 
+export type FacetValueOptions = string[];
+
+export type SelectedFacetValues = FacetValueOptions | FacetValueRange;
+
+/**
+ * A facet with counts for each value based on the current search query, returned by the server.
+ */
 export type CountedFacetValue = SchemaInterface<typeof FacetSchema>;
 
 export interface Histogram {
@@ -293,7 +303,7 @@ export const facetConfigs: Record<string, FacetConfig> = {
   },
 };
 
-export type FacetKey = keyof typeof facetConfigs;
+export type FacetKey = keyof typeof facetConfigs | 'size';
 
 export type Facets = {
   publisher: CountedFacetValue[];
@@ -492,7 +502,7 @@ const groupMessages = {
   [GROUP_EVENT]: m['group:event'],
 };
 
-export function facetDisplayValue(facetValue: FacetValue) {
+export function facetDisplayValue(facetValue: SelectedFacetValue) {
   return (
     groupMessages[facetValue.value as keyof typeof groupMessages]?.() ??
     getLocalizedValue(facetValue.label) ??
