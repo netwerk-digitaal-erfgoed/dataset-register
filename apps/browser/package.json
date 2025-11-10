@@ -39,7 +39,7 @@
     "prettier-plugin-svelte": "^3.3.3",
     "svelte": "^5.43.5",
     "svelte-check": "^4.3.3",
-    "tailwindcss": "^4.1.13",
+    "tailwindcss": "^4.1.17",
     "vitest-browser-svelte": "^0.1.0"
   },
   "nx": {
