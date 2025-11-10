@@ -25,3 +25,7 @@ updates:
         patterns:
           - '@nx/*'
           - 'nx'
+      vitest:
+        patterns:
+          - '@vitest/*'
+          - 'vitest'
