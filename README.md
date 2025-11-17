@@ -147,6 +147,17 @@ Each dataset that is found at the [`schema:EntryPoint`](#schemaentrypoint) regis
 | [`schema:dateRead`](https://schema.org/dateRead)   | UTC datetime when the dataset was last read by the application. |
 | [`schema:subjectOf`](https://schema.org/subjectOf) | From which registration URL the dataset was read.               |
 
+### `schema:contentRating`
+
+A separate named graph keeps ratings for each dataset description to indicate how complete the description is.
+
+| Property                                                           |     | Description                                               |
+| ------------------------------------------------------------------ | :-- | --------------------------------------------------------- |
+| [`schema:bestRating`](https://schema.org/bestRating)               |     | The highest possible rating.                              |
+| [`schema:worstRating`](https://schema.org/worstRating)             |     | The lowest possible rating.                               |
+| [`schema:ratingValue`](https://schema.org/ratingValue)             |     | Rating for the dataset description.                       |
+| [`schema:ratingExplanation`](https://schema.org/ratingExplanation) |     | Explanation for the rating: which properties are missing? |
+
 ### `dcat:Dataset`
 
 When a dataset’s RDF description is fetched and validated, it is added as a `dcat:Dataset` to its own graph. The URL
