@@ -70,7 +70,14 @@
   "dcat:distribution": [
     {
       "@type": "dcat:Distribution",
-      "dcat:mediaType": ["application/rdf+xml", "text/turtle"],
+      "dcat:mediaType": [
+        {
+          "@id": "https://www.iana.org/assignments/media-types/application/rdf+xml"
+        },
+        {
+          "@id": "https://www.iana.org/assignments/media-types/text/turtle"
+        }
+      ],
       "dcat:accessURL": {
         "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
       },
@@ -78,7 +85,9 @@
     },
     {
       "@type": "dcat:Distribution",
-      "dcat:mediaType": ["application/ld+json"],
+      "dcat:mediaType": {
+        "@id": "https://www.iana.org/assignments/media-types/application/ld+json"
+      },
       "dcat:accessURL": {
         "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld"
       },
@@ -86,7 +95,9 @@
     },
     {
       "@type": "dcat:Distribution",
-      "dcat:mediaType": ["application/sparql-query"],
+      "dcat:mediaType": {
+        "@id": "https://www.iana.org/assignments/media-types/application/sparql-query"
+      },
       "dcat:accessURL": {
         "@id": "http://data.bibliotheken.nl/id/dataset/sparql"
       },

@@ -29,3 +29,29 @@ export const normalizeLicense = (variable: string) =>
           )
           AS ?${variable}
         )`;
+
+/**
+ * Normalize mediaType to IANA URI format.
+ *
+ * DCAT-3 requires dcat:mediaType to be URIs pointing to the IANA media type registry.
+ * This function converts:
+ * - Text literals like "application/ld+json" to https://www.iana.org/assignments/media-types/application/ld+json
+ * - Already-formed IANA URIs pass through unchanged
+ * - Normalizes http:// to https:// for consistency
+ * - Strips parameters (e.g., "text/html; charset=utf-8" becomes "text/html")
+ */
+export const normalizeMediaType = (variable: string) =>
+  `?${variable}Raw ;
+        BIND(
+          IF(
+            isIRI(?${variable}Raw),
+            IRI(REPLACE(STR(?${variable}Raw), "^http://", "https://")),
+            IRI(
+              CONCAT(
+                "https://www.iana.org/assignments/media-types/",
+                REPLACE(STR(?${variable}Raw), ";.*$", "")
+              )
+            )
+          )
+          AS ?${variable}
+        )`;

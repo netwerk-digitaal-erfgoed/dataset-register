@@ -23,8 +23,12 @@
       "dcat:distribution": [
         {
           "@type": "dcat:Distribution",
-          "dcat:mediaType": "application/rdf+xml",
-          "dcat:accessURL": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
+          "dcat:mediaType": {
+            "@id": "https://www.iana.org/assignments/media-types/application/rdf+xml"
+          },
+          "dcat:accessURL": {
+            "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
+          }
         }
       ]
     }

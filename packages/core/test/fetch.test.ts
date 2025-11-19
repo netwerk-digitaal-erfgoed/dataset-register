@@ -37,7 +37,9 @@ describe('Fetch', () => {
         factory.quad(
           distributions[0].object as BlankNode,
           dcat('mediaType'),
-          factory.literal('application/rdf+xml'),
+          factory.namedNode(
+            'https://www.iana.org/assignments/media-types/application/rdf+xml',
+          ),
         ),
       ),
     ).toBe(true);
