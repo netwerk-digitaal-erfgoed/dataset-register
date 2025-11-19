@@ -1,5 +1,10 @@
 import factory from 'rdf-ext';
-import { convertToIri, convertToXsdDate, normalizeLicense } from './literal.ts';
+import {
+  convertToIri,
+  convertToXsdDate,
+  normalizeLicense,
+  normalizeMediaType,
+} from './literal.ts';
 import type { NamedNode } from '@rdfjs/types';
 
 const dataset = 'dataset';
@@ -145,11 +150,11 @@ export const constructQuery = `
           
         VALUES ?foafOrganizationOrPerson { foaf:Organization foaf:Person }
   
-        OPTIONAL {  
+        OPTIONAL {
           ?${dataset} dcat:distribution ?${distribution} .
-          ?${distribution} a dcat:Distribution ;
-            dcat:mediaType ?${distributionMediaType} ;
-            dcat:accessURL ${convertToIri(distributionUrl)} .
+          ?${distribution} a dcat:Distribution .
+          ?${distribution} dcat:mediaType ${normalizeMediaType(distributionMediaType)} .
+          ?${distribution} dcat:accessURL ${convertToIri(distributionUrl)} .
           OPTIONAL { ?${distribution} dct:conformsTo ?${distributionConformsTo} . }
           BIND(
             IF(
@@ -246,9 +251,9 @@ function schemaOrgQuery(prefix: string): string {
         
     OPTIONAL {
       ?${dataset} ${prefix}:distribution ?${distribution} .
-      ?${distribution} a ${prefix}:DataDownload ;
-        ${prefix}:encodingFormat ?${distributionMediaType} ;
-        ${prefix}:contentUrl ${convertToIri(distributionUrl)} .
+      ?${distribution} a ${prefix}:DataDownload .
+      ?${distribution} ${prefix}:encodingFormat ${normalizeMediaType(distributionMediaType)} .
+      ?${distribution} ${prefix}:contentUrl ${convertToIri(distributionUrl)} .
 
       BIND(
         IF(
