@@ -2,6 +2,7 @@
   "$schema": "https://inlang.com/schema/inlang-message-format",
   "header_title": "Dataset Register",
   "header_tagline": "Discover cultural heritage datasets",
+  "organization": "Dutch Heritage Network",
   "nav_create": "Create",
   "nav_validate": "Validate",
   "nav_submit": "Submit",
@@ -80,5 +81,15 @@
   "lang_fr": "French",
   "lang_es": "Spanish",
   "lang_it": "Italian",
-  "dataset_status_archived": "Archived"
+  "dataset_status_archived": "Archived",
+  "rss_subscribe": "Subscribe to RSS feed for this search query",
+  "rss_feed_title": "RSS feed for search results",
+  "rss_filter_search": "Search",
+  "rss_filter_publishers": "Publishers",
+  "rss_filter_keywords": "Keywords",
+  "rss_filter_formats": "Formats",
+  "rss_filter_classes": "Classes",
+  "rss_filter_terminology_sources": "Terminology sources",
+  "rss_filter_size": "Size",
+  "rss_triples": "triples"
 }

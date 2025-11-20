@@ -76,6 +76,10 @@ export const DatasetCardSchema = {
     '@id': schema.status,
     '@optional': true,
   },
+  datePosted: {
+    '@id': schema.datePosted,
+    '@type': xsd.dateTime,
+  },
 } as const;
 
 export type DatasetCard = SchemaInterface<typeof DatasetCardSchema>;
@@ -125,11 +129,18 @@ async function countDatasets(filters: SearchRequest) {
   return 0;
 }
 
-export const datasetCardsQuery = (
+export type OrderBy = 'title' | 'datePosted';
+
+export function datasetCardsQuery(
   filters: SearchRequest,
   limit: number,
   offset = 0,
-) => `
+  orderBy: OrderBy = 'title',
+) {
+  const orderByClause =
+    orderBy === 'datePosted' ? 'DESC(?datePosted)' : '?status ?title';
+
+  return `
   ${prefixes}
 
   CONSTRUCT {
@@ -141,18 +152,21 @@ export const datasetCardsQuery = (
       dct:license ?license ;
       dcat:distribution ?distribution ;
       void:triples ?size ;
-      schema:status ?status .
+      schema:status ?status ;
+      schema:datePosted ?datePosted .
     ?publisher a foaf:Agent ;
       foaf:name ?publisherName .
     ?distribution a dcat:Distribution ;
       dcat:mediaType ?mediaType ;
       dct:conformsTo ?conformsTo .
   }
-  WHERE {		
-    # Inside the default graph, which contains the registry’s metadata.
+  WHERE {
+    # Inside the default graph, which contains the registry's metadata.
     {
       SELECT DISTINCT ?dataset WHERE {
         ${filterDatasets(filters)}
+        
+        ?registrationUrl schema:datePosted ?datePosted .
         
         OPTIONAL { 
           ?registrationUrl schema:validUntil ?validUntil . 
@@ -160,14 +174,16 @@ export const datasetCardsQuery = (
         }
         ?dataset dct:title ?title .
       }
-      ORDER BY ?status ?title
+      ORDER BY ${orderByClause}
       LIMIT ${limit}
       OFFSET ${offset}
     }
-    
+
     ?dataset a dcat:Dataset ;
       schema:subjectOf ?registrationUrl .
-   
+
+    ?registrationUrl schema:datePosted ?datePosted .
+
     OPTIONAL { 
       ?registrationUrl schema:validUntil ?validUntil . 
       BIND("archived" as ?status)  
@@ -198,8 +214,9 @@ export const datasetCardsQuery = (
       }
     }
   }
-  ORDER BY ?title
+  ORDER BY ${orderByClause}
 `;
+}
 
 export const filterDatasets = (filters: SearchRequest) =>
   `?dataset a dcat:Dataset ;
@@ -219,13 +236,16 @@ export async function fetchDatasets(
   searchFilters: SearchRequest,
   limit: number,
   offset = 0,
+  orderBy: OrderBy = 'title',
 ): Promise<SearchResults> {
   const startTime = performance.now();
 
   // Start all queries in parallel using Promise.all
   const [total, datasets, facets] = await Promise.all([
     countDatasets(searchFilters),
-    datasetCards.query(datasetCardsQuery(searchFilters, limit, offset)),
+    datasetCards.query(
+      datasetCardsQuery(searchFilters, limit, offset, orderBy),
+    ),
     fetchFacets(searchFilters),
   ]);
 

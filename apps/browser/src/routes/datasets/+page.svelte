@@ -3,6 +3,7 @@
   import FacetsPanel from '$lib/components/FacetsPanel.svelte';
   import ActiveFilters from '$lib/components/ActiveFilters.svelte';
   import RunSparqlButton from '$lib/components/RunSparqlButton.svelte';
+  import RssButton from '$lib/components/RssButton.svelte';
   import * as m from '$lib/paraglide/messages';
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
@@ -287,6 +288,12 @@
 <svelte:head>
   <title>Datasets - Netwerk Digitaal Erfgoed</title>
   <meta content={m.header_tagline()} name="description" />
+  <link
+    rel="alternate"
+    type="application/rss+xml"
+    title={m.rss_feed_title()}
+    href={`/datasets/rss${page.url.search}`}
+  />
 </svelte:head>
 
 <div class="max-w-7xl mx-auto px-4 lg:px-8 py-8 font-sans">
@@ -381,7 +388,10 @@
               searchResults.time,
             )} ms)
           </p>
-          <RunSparqlButton {searchRequest} />
+          <div class="flex items-center gap-2">
+            <RssButton />
+            <RunSparqlButton {searchRequest} />
+          </div>
         </div>
 
         {#if searchResults.datasets.length === 0}
