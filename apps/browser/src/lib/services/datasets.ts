@@ -201,8 +201,8 @@ export function datasetCardsQuery(
       OPTIONAL { ?dataset dct:license ?license }
                  
       OPTIONAL {
-        ?dataset dcat:distribution ?distribution .
-        OPTIONAL { ?distribution dcat:mediaType ?mediaType }
+        ?dataset dcat:distribution ?distribution ;
+          dcat:mediaType ?mediaType .
         OPTIONAL { ?distribution dct:conformsTo ?conformsTo }
       }
     }
