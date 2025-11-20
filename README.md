@@ -207,9 +207,9 @@ DCAT. The ‘Based on’ column shows the corresponding Schema.org property.
 See the [Requirements for Datasets](https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/) for more details.
 
 | Property                                                  | Description                                                        | Based on                                                     |
-| --------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------ |
+| --------------------------------------------------------- | ------------------------------------------------------------------ |--------------------------------------------------------------|
 | [`dcat:accessURL`](https://www.w3.org/TR/vocab-dcat-3/)   | Distribution URL.                                                  | [`schema:contentUrl`](https://schema.org/contentUrl)         |
-| [`dcat:mediaType`](https://www.w3.org/TR/vocab-dcat-3/)   | Distribution’s IANA media type.                                    | [`schema:fileFormat`](https://schema.org/fileFormat)         |
+| [`dcat:mediaType`](https://www.w3.org/TR/vocab-dcat-3/)   | Distribution’s IANA media type.                                    | [`schema:fileFormat`](https://schema.org/encodingFormat)     |
 | [`dct:conformsTo`](http://purl.org/dc/terms/format)       | `<https://www.w3.org/TR/sparql11-protocol/>` for SPARQL endpoints. | [`schema:encodingFormat`](https://schema.org/encodingFormat) |
 | [`dct:issued`](http://purl.org/dc/terms/issued)           | Distribution publication date.                                     | [`schema:datePublished`](https://schema.org/datePublished)   |
 | [`dct:modified`](http://purl.org/dc/terms/issued)         | Distribution last modification date.                               | [`schema:dateModified`](https://schema.org/dateModified)     |

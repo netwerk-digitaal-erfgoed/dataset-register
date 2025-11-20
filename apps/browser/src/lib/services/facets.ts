@@ -182,7 +182,7 @@ export const facetConfigs: Record<string, FacetConfig> = {
         BIND("${GROUP_SPARQL}" AS ?value)
        } UNION {
         ?dataset dcat:distribution ?distribution .
-        ?distribution dcat:mediaType ?rdf
+        ?distribution dcat:mediaType ?rdf .
         FILTER(REGEX(?rdf, "^(${rdfMediaTypesPattern})$"))
         BIND("${GROUP_RDF}" AS ?value)
        }
