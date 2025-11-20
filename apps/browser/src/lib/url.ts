@@ -1,7 +1,10 @@
 import { page } from '$app/state';
 
-export function decodeRangeParam(name: string): { min?: number; max?: number } {
-  const param = page.url.searchParams.get(name);
+export function decodeRangeParam(
+  name: string,
+  urlSearchParams: URLSearchParams = page.url.searchParams,
+): { min?: number; max?: number } {
+  const param = urlSearchParams.get(name);
   const [min, max] = param
     ?.split('-')
     .map((s) => (s ? parseInt(s) : undefined)) ?? [undefined, undefined];
@@ -9,6 +12,9 @@ export function decodeRangeParam(name: string): { min?: number; max?: number } {
   return { min, max };
 }
 
-export function decodeDiscreteParam(name: string) {
-  return page.url.searchParams.get(name)?.split(',').filter(Boolean) || [];
+export function decodeDiscreteParam(
+  name: string,
+  urlSearchParams: URLSearchParams = page.url.searchParams,
+) {
+  return urlSearchParams.get(name)?.split(',').filter(Boolean) || [];
 }

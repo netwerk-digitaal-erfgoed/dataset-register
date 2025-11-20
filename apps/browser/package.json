@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@lde/dataset-registry-client": "^0.4.3",
+    "feed": "^5.1.0",
     "fetch-sparql-endpoint": "^6.2.0",
     "ldkit": "^2.5.1",
     "sparqljs": "^3.7.3",

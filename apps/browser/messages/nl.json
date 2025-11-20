@@ -2,6 +2,7 @@
   "$schema": "https://inlang.com/schema/inlang-message-format",
   "header_title": "Datasetregister",
   "header_tagline": "Ontdek datasets over cultureel erfgoed",
+  "organization": "Netwerk Digitaal Erfgoed",
   "nav_create": "Maak",
   "nav_validate": "Valideer",
   "nav_submit": "Meld aan",
@@ -80,5 +81,15 @@
   "lang_fr": "Frans",
   "lang_es": "Spaans",
   "lang_it": "Italiaans",
-  "dataset_status_archived": "Gearchiveerd"
+  "dataset_status_archived": "Gearchiveerd",
+  "rss_subscribe": "Abonneer op RSS-feed voor deze zoekopdracht",
+  "rss_feed_title": "RSS-feed voor zoekresultaten",
+  "rss_filter_search": "Zoeken",
+  "rss_filter_publishers": "Uitgevers",
+  "rss_filter_keywords": "Trefwoorden",
+  "rss_filter_formats": "Formaten",
+  "rss_filter_classes": "Klassen",
+  "rss_filter_terminology_sources": "Terminologiebronnen",
+  "rss_filter_size": "Grootte",
+  "rss_triples": "triples"
 }
