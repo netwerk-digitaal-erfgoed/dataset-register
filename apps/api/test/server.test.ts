@@ -66,7 +66,9 @@ describe('Server', () => {
   });
 
   it('rejects validation requests that point to URL with empty response', async () => {
-    nock('https://example.com/').get('/200').reply(200, '');
+    nock('https://example.com/')
+      .get('/200')
+      .reply(200, '', { 'Content-Type': 'text/turtle' });
     const response = await httpServer.inject({
       method: 'PUT',
       url: '/datasets/validate',
@@ -76,6 +78,33 @@ describe('Server', () => {
       }),
     });
     expect(response.statusCode).toEqual(406);
+    expect(response.json()['title']).toEqual(
+      'No dataset found at URL https://example.com/200',
+    );
+    expect(response.json()['description']).toContain(
+      'The provided URL does not contain either a schema:Dataset or a dcat:Dataset.',
+    );
+  });
+
+  it('rejects validation requests that point to URL with invalid Content-Type', async () => {
+    nock('https://example.com/')
+      .get('/invalid-content-type')
+      .reply(200, '', { 'Content-Type': 'nope' });
+    const response = await httpServer.inject({
+      method: 'PUT',
+      url: '/datasets/validate',
+      headers: { 'Content-Type': 'application/ld+json' },
+      payload: JSON.stringify({
+        '@id': 'https://example.com/invalid-content-type',
+      }),
+    });
+    expect(response.statusCode).toEqual(406);
+    expect(response.json()['title']).toEqual(
+      'Invalid Content-Type at https://example.com/invalid-content-type',
+    );
+    expect(response.json()['description']).toContain(
+      'URL returned an unrecognized or invalid Content-Type header: nope.',
+    );
   });
 
   it('responds with 200 to valid dataset requests', async () => {
@@ -253,5 +282,8 @@ describe('Server', () => {
     });
     expect(response.statusCode).toEqual(200);
     expect(response.payload).not.toEqual('');
+    expect(response.json()['@context']['@vocab']).toEqual(
+      'http://www.w3.org/ns/shacl#',
+    );
   });
 });
