@@ -1,24 +1,37 @@
 import { QueryEngine } from '@comunica/query-sparql';
 import factory from 'rdf-ext';
-import { URL } from 'node:url';
 import { constructQuery, dcat, rdf } from './query.ts';
 import { pipeline } from 'node:stream';
 import { StandardizeSchemaOrgPrefixToHttps } from './transform.ts';
 import { rdfDereferencer } from 'rdf-dereference';
 import type DatasetExt from 'rdf-ext/lib/Dataset.js';
 
-export class HttpError extends Error {
+export class FetchError extends Error {}
+
+export class HttpError extends FetchError {
   public readonly statusCode: number;
 
-  constructor(message: string, statusCode: number) {
-    super(message);
+  constructor(url: URL, message: string, statusCode: number) {
+    super(`URL ${url.toString()} returned HTTP error`, {
+      cause: `The provided URL ${url.toString()} returned HTTP status code ${statusCode}: ${message}`,
+    });
     this.statusCode = statusCode;
   }
 }
 
-export class NoDatasetFoundAtUrl extends Error {
-  constructor(message = '') {
-    super(`No dataset found at URL: ${message}`);
+export class NoDatasetFoundAtUrl extends FetchError {
+  constructor(url: URL, message?: string) {
+    super(`No dataset found at URL ${url.toString()}`, {
+      cause: `The provided URL does not contain either a schema:Dataset or a dcat:Dataset${message ? ': ' + message : ''}. Please ensure your submitted URL includes at least one dataset description.`,
+    });
+  }
+}
+
+export class InvalidContentType extends FetchError {
+  constructor(url: URL, mediaType: string) {
+    super(`Invalid Content-Type at ${url.toString()}`, {
+      cause: `URL returned an unrecognized or invalid Content-Type header: ${mediaType}. Please ensure the URL returns a valid RDF content type such as text/turtle or application/ld+json.`,
+    });
   }
 }
 
@@ -26,7 +39,7 @@ export async function* fetch(url: URL): AsyncGenerator<DatasetExt> {
   try {
     yield* query(url);
   } catch (e) {
-    handleComunicaError(e);
+    handleComunicaError(e, url);
   }
 }
 
@@ -42,11 +55,9 @@ export async function dereference(url: URL): Promise<DatasetExt> {
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       () => {}, // Noop because errors are caught below.
     );
-    const r = await factory.dataset().import(stream);
-
-    return r;
+    return await factory.dataset().import(stream);
   } catch (e) {
-    handleComunicaError(e);
+    handleComunicaError(e, url);
   }
 }
 
@@ -92,20 +103,26 @@ async function* query(url: URL) {
 /**
  * Parse Comunica error response to throw a specific error class.
  */
-function handleComunicaError(e: unknown): never {
+function handleComunicaError(e: unknown, url: URL): never {
   if (e instanceof Error) {
     // Match error thrown in Comunica’s ActorRdfDereferenceHttpParseBase.
     if (e.message.match(/404: unknown error/)) {
-      throw new HttpError(e.message, 404);
+      throw new HttpError(url, e.message, 404);
     }
 
     const matches = e.message.match(/HTTP status (\d+)/);
     if (matches) {
       const statusCode = parseInt(matches[1]);
-      throw new HttpError(e.message, statusCode);
+      throw new HttpError(url, e.message, statusCode);
     }
 
-    throw new NoDatasetFoundAtUrl(e.message);
+    // Extract media type from "Unrecognized media type: <type>" errors.
+    const mediaTypeMatch = e.message.match(/Unrecognized media type: (.+)/);
+    if (mediaTypeMatch) {
+      throw new InvalidContentType(url, mediaTypeMatch[1]);
+    }
+
+    throw new NoDatasetFoundAtUrl(url, e.message);
   }
 
   throw e;
