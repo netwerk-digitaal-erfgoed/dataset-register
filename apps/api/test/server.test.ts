@@ -35,13 +35,25 @@ describe('Server', () => {
     nock.restore();
   });
 
-  it('shows documentation', async () => {
-    const redirect = await httpServer.inject({
+  it('shows documentation as HTML', async () => {
+    const response = await httpServer.inject({
       method: 'GET',
       url: '/',
       headers: { Accept: '*/*' },
     });
-    expect(redirect.statusCode).toEqual(200);
+    expect(response.statusCode).toEqual(200);
+    expect(response.headers['content-type']).toEqual(
+      'text/html; charset=utf-8',
+    );
+  });
+
+  it('shows documentation as JSON', async () => {
+    const response = await httpServer.inject({
+      method: 'GET',
+      url: '/json',
+      headers: { Accept: '*/*' },
+    });
+    expect(response.statusCode).toEqual(200);
   });
 
   it('rejects validation requests without URL', async () => {

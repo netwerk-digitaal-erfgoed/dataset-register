@@ -48,7 +48,6 @@ export async function server(
   const __dirname = dirname(fileURLToPath(import.meta.url));
 
   server
-    .addHook('preSerialization', rdfPreSerializationHook)
     .register(fastifySwagger, {
       mode: 'static',
       specification: {
@@ -140,68 +139,85 @@ export async function server(
     );
   }
 
-  server.post('/datasets', datasetsRequest, async (request, reply) => {
-    const url = new URL((request.body as { '@id': string })['@id']);
-    if (!(await domainIsAllowed(url))) {
-      return reply.code(403).send();
-    }
-
-    const dataset = await resolveDataset(url, reply);
-    const valid = dataset
-      ? await validate(dataset, reply.code(202), url)
-      : false;
-    if (dataset && valid) {
-      // The URL has validated, so any problems with processing the dataset are now ours. Therefore, make sure to
-      // store the registration so we can come back to that when crawling, even if fetching the datasets fails.
-      // Store first rather than wrapping in a try/catch to cope with OOMs.
-      const registration = new Registration(url, new Date());
-      await registrationStore.store(registration);
-
-      // Fetch dataset descriptions and store them.
-      const datasetIris: URL[] = [];
-      for await (const dataset of fetch(url)) {
-        datasetIris.push(extractIri(dataset));
-        await datasetStore.store(dataset);
+  server.post(
+    '/datasets',
+    {
+      ...datasetsRequest,
+      preSerialization: rdfPreSerializationHook,
+    },
+    async (request, reply) => {
+      const url = new URL((request.body as { '@id': string })['@id']);
+      if (!(await domainIsAllowed(url))) {
+        return reply.code(403).send();
       }
 
+      const dataset = await resolveDataset(url, reply);
+      const valid = dataset
+        ? await validate(dataset, reply.code(202), url)
+        : false;
+      if (dataset && valid) {
+        // The URL has validated, so any problems with processing the dataset are now ours. Therefore, make sure to
+        // store the registration so we can come back to that when crawling, even if fetching the datasets fails.
+        // Store first rather than wrapping in a try/catch to cope with OOMs.
+        const registration = new Registration(url, new Date());
+        await registrationStore.store(registration);
+
+        // Fetch dataset descriptions and store them.
+        const datasetIris: URL[] = [];
+        for await (const dataset of fetch(url)) {
+          datasetIris.push(extractIri(dataset));
+          await datasetStore.store(dataset);
+        }
+
+        request.log.info(
+          `Found ${datasetIris.length} datasets at ${url.toString()}`,
+        );
+
+        // Update registration with dataset descriptions that we found.
+        const updatedRegistration = registration.read(datasetIris, 200, true);
+        await registrationStore.store(updatedRegistration);
+      }
+
+      registrationsCounter.add(1, {
+        valid,
+      });
+
+      // If the dataset did not validate, the validate() function has set a 4xx status code.
+      return reply;
+    },
+  );
+
+  server.put(
+    '/datasets/validate',
+    {
+      ...datasetsRequest,
+      preSerialization: rdfPreSerializationHook,
+    },
+    async (request, reply) => {
+      const url = new URL((request.body as { '@id': string })['@id']);
+      request.log.info(url.toString());
+      const dataset = await resolveDataset(url, reply);
+      if (dataset) {
+        await validate(dataset, reply, url);
+      }
+      validationsCounter.add(1, {
+        status: reply.statusCode,
+      });
       request.log.info(
-        `Found ${datasetIris.length} datasets at ${url.toString()}`,
+        `Validated at ${Math.round(
+          process.memoryUsage().rss / 1024 / 1024,
+        )} MB memory`,
       );
-
-      // Update registration with dataset descriptions that we found.
-      const updatedRegistration = registration.read(datasetIris, 200, true);
-      await registrationStore.store(updatedRegistration);
-    }
-
-    registrationsCounter.add(1, {
-      valid,
-    });
-
-    // If the dataset did not validate, the validate() function has set a 4xx status code.
-    return reply;
-  });
-
-  server.put('/datasets/validate', datasetsRequest, async (request, reply) => {
-    const url = new URL((request.body as { '@id': string })['@id']);
-    request.log.info(url.toString());
-    const dataset = await resolveDataset(url, reply);
-    if (dataset) {
-      await validate(dataset, reply, url);
-    }
-    validationsCounter.add(1, {
-      status: reply.statusCode,
-    });
-    request.log.info(
-      `Validated at ${Math.round(
-        process.memoryUsage().rss / 1024 / 1024,
-      )} MB memory`,
-    );
-    return reply;
-  });
+      return reply;
+    },
+  );
 
   server.post(
     '/datasets/validate',
-    { config: { parseRdf: true } },
+    {
+      config: { parseRdf: true },
+      preSerialization: rdfPreSerializationHook,
+    },
     async (request, reply) => {
       await validate(request.body as DatasetExt, reply);
       validationsCounter.add(1, {
@@ -211,9 +227,15 @@ export async function server(
     },
   );
 
-  server.get('/shacl', async (request, reply) => {
-    return reply.send(shacl);
-  });
+  server.get(
+    '/shacl',
+    {
+      preSerialization: rdfPreSerializationHook,
+    },
+    async (request, reply) => {
+      return reply.send(shacl);
+    },
+  );
 
   /**
    * If a route has enabled `parseRdf`, parse RDF into a DatasetExt object. If not, parse as JSON.
