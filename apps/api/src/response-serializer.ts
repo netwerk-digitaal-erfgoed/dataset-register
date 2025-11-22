@@ -4,6 +4,7 @@ import { Readable } from 'node:stream';
 import jsonld from 'jsonld';
 import type { FastifyReply, preSerializationHookHandler } from 'fastify';
 import { createHydraError, ErrorResponse } from './error.ts';
+import streamToString from 'stream-to-string';
 
 const HYDRA_CONTEXT = {
   '@context': { '@vocab': 'http://www.w3.org/ns/hydra/core#' },
@@ -24,23 +25,26 @@ const SHACL_CONTEXT = {
   },
 };
 
-/**
- * Get supported RDF content types, with JSON-LD prioritized.
- */
-const allContentTypes = await rdfSerializer.getContentTypes();
 const supportedContentTypes = [
   'application/ld+json',
-  ...allContentTypes.filter((t) => t !== 'application/ld+json'),
+  'application/n-quads',
+  'application/n-triples',
+  'application/trig',
+  'text/turtle',
+  'text/n3',
 ];
 
 /**
- * Serialize RDF dataset to a stream for non-JSON-LD formats.
+ * Serialize RDF dataset to a string for non-JSON-LD formats.
  */
-const serializeToStream = (
+const serializeToRdf = async (
   dataset: DatasetCore,
   contentType: string,
-): NodeJS.ReadableStream => {
-  return rdfSerializer.serialize(Readable.from(dataset), { contentType });
+): Promise<string> => {
+  const stream = rdfSerializer.serialize(Readable.from(dataset), {
+    contentType,
+  });
+  return await streamToString(stream);
 };
 
 /**
@@ -64,9 +68,9 @@ const serializeToJsonLd = async (
 /**
  * Fastify preSerialization hook that handles content negotiation and RDF serialization.
  *
- * We have to ue a preSerialization hook instead of @fastify/accepts-serializer
+ * We use a preSerialization hook instead of @fastify/accepts-serializer
  * because the latter does not support async serializers, which we need for
- * in our use of the jsonld library.
+ * our use of the jsonld library and stream-to-string conversion.
  */
 export const rdfPreSerializationHook: preSerializationHookHandler = async (
   request,
@@ -91,5 +95,5 @@ export const rdfPreSerializationHook: preSerializationHookHandler = async (
     );
   }
 
-  return serializeToStream(rdf, contentType as string);
+  return serializeToRdf(rdf, contentType as string);
 };
