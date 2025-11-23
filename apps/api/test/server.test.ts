@@ -131,6 +131,8 @@ describe('Server', () => {
     });
     nockDone();
     expect(response.statusCode).toEqual(200);
+    expect(response.headers['content-type']).toEqual('application/ld+json');
+    console.log(response.body);
     expect(response.payload).not.toEqual('');
   });
 
@@ -148,10 +150,14 @@ describe('Server', () => {
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets/validate',
-      headers: { 'Content-Type': 'text/turtle' },
+      headers: { 'Content-Type': 'text/turtle', Accept: 'text/turtle' },
       payload: await file('dataset-schema-org-valid.ttl'),
     });
     expect(response.statusCode).toEqual(200);
+    expect(response.headers['content-type']).toEqual('text/turtle');
+    expect(response.body).toContain(
+      'a <http://www.w3.org/ns/shacl#ValidationReport>',
+    );
   });
 
   it('handles invalid JSON-LD in request body', async () => {
