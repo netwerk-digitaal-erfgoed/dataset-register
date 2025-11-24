@@ -33,7 +33,9 @@ import fastifySwaggerUi from '@fastify/swagger-ui';
 import type { DatasetCore } from '@rdfjs/types';
 import { Readable } from 'node:stream';
 import { dirname } from 'node:path';
-import { createHydraError } from './error.js';
+import { createHydraError } from './error.ts';
+import streamToString from 'stream-to-string';
+import jsonld from 'jsonld';
 
 const serializer =
   (contentType: string) =>
@@ -79,6 +81,18 @@ export async function server(
       if (request.headers.accept === undefined) {
         request.headers.accept = 'application/ld+json';
       }
+    })
+    .addHook('onSend', async (_request, reply, payload) => {
+      if (
+        reply.getHeader('content-type') !== 'application/ld+json' ||
+        !reply.isError
+      ) {
+        return payload;
+      }
+
+      return await handleJsonLdHydraErrorResponse(
+        payload as NodeJS.ReadableStream,
+      );
     });
 
   const rdfSerializerConfig = {
@@ -117,14 +131,14 @@ export async function server(
           `Error at URL ${url.toString()}: ${e.statusCode} ${e.message}`,
         );
         const statusCode = e.statusCode === 404 ? 404 : 406;
-        return reply.code(statusCode).send(createHydraError(e));
+        return sendError(reply.code(statusCode), e);
       }
 
       if (e instanceof FetchError) {
         reply.log.info(
           `No dataset found at URL ${url.toString()}: ${e.message}`,
         );
-        return reply.code(406).send(createHydraError(e));
+        return sendError(reply.code(406), e);
       }
 
       return null;
@@ -145,7 +159,7 @@ export async function server(
               cause:
                 'The provided data does not contain any dcat:Dataset or schema:Dataset resources. Please ensure your data includes at least one dataset description.',
             });
-        await reply.code(406).send(createHydraError(error));
+        await sendError(reply.code(406), error);
         return false;
       }
       case 'invalid': {
@@ -302,4 +316,33 @@ declare module 'fastify' {
      */
     parseRdf?: boolean;
   }
+
+  export interface FastifyReply {
+    isError: boolean;
+  }
+}
+
+/**
+ * Mark reply as Hydra error response and convert Error object to a Hydra Core Vocabulary dataset.
+ */
+async function sendError(reply: FastifyReply, error: Error) {
+  const hydra = createHydraError(error);
+  reply.isError = true;
+  return reply.send(hydra);
+}
+
+/**
+ * Compact JSON-LD Hydra error responses for better readability.
+ */
+async function handleJsonLdHydraErrorResponse(payload: NodeJS.ReadableStream) {
+  const rdfString = await streamToString(payload);
+  const doc = JSON.parse(rdfString);
+  const compacted = await jsonld.compact(doc, {
+    '@vocab': 'http://www.w3.org/ns/hydra/core#',
+  });
+
+  // Remove @id blank node that may be confusing.
+  delete compacted['@id'];
+
+  return JSON.stringify(compacted);
 }
