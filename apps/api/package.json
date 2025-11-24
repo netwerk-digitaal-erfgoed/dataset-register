@@ -5,7 +5,7 @@
   "type": "module",
   "dependencies": {
     "@dataset-register/core": "*",
-    "@fastify/accepts": "^5.0.3",
+    "@fastify/accepts-serializer": "^6.0.3",
     "@fastify/cors": "^11.0.0",
     "@fastify/swagger": "^9.6.1",
     "@fastify/swagger-ui": "^5.0.1",
@@ -15,7 +15,8 @@
     "jsonld": "^8.3.3",
     "psl": "1.10.0",
     "rdf-ext": "2.6.0",
-    "rdf-serialize": "4.0.1"
+    "rdf-serialize": "4.0.1",
+    "stream-to-string": "^1.2.1"
   },
   "nx": {
     "projectType": "application",

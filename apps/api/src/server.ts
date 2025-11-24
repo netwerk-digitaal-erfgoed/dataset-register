@@ -25,14 +25,27 @@ import DatasetExt from 'rdf-ext/lib/Dataset.js';
 import { fileURLToPath, URL } from 'url';
 import { IncomingMessage, Server } from 'http';
 import * as psl from 'psl';
+import { rdfSerializer } from 'rdf-serialize';
 import fastifySwagger from '@fastify/swagger';
 import fastifyCors from '@fastify/cors';
+import acceptsSerializer from '@fastify/accepts-serializer';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import type { DatasetCore } from '@rdfjs/types';
+import { Readable } from 'node:stream';
 import { dirname } from 'node:path';
-import { rdfPreSerializationHook } from './response-serializer.js';
-import { fastifyAccepts } from '@fastify/accepts';
-import { ErrorResponse } from './error.js';
+import { createHydraError } from './error.ts';
+import streamToString from 'stream-to-string';
+import jsonld from 'jsonld';
+
+const serializer =
+  (contentType: string) =>
+  // Set return type any to make returning Stream work with fastify-accepts.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (dataset: DatasetCore): any => {
+    return rdfSerializer.serialize(Readable.from(dataset), {
+      contentType,
+    });
+  };
 
 export async function server(
   datasetStore: DatasetStore,
@@ -58,10 +71,41 @@ export async function server(
     .register(fastifySwaggerUi, {
       routePrefix: docsUrl,
     })
-    .register(fastifyAccepts)
+    .register(acceptsSerializer, {
+      default: 'application/ld+json', // default doesn't work, so Accept header is required.
+    })
     .register(fastifyCors, {
       methods: ['GET', 'HEAD', 'POST', 'PUT'],
+    })
+    .addHook('onRequest', async (request) => {
+      if (request.headers.accept === undefined) {
+        request.headers.accept = 'application/ld+json';
+      }
+    })
+    .addHook('onSend', async (_request, reply, payload) => {
+      if (
+        reply.getHeader('content-type') !== 'application/ld+json' ||
+        !reply.isError
+      ) {
+        return payload;
+      }
+
+      return await handleJsonLdHydraErrorResponse(
+        payload as NodeJS.ReadableStream,
+      );
     });
+
+  const rdfSerializerConfig = {
+    default: 'application/ld+json',
+    serializers: [
+      ...(await rdfSerializer.getContentTypes()).map((contentType) => {
+        return {
+          regex: new RegExp(contentType.replace('+', '\\+')),
+          serializer: serializer(contentType),
+        };
+      }),
+    ],
+  };
 
   const datasetsRequest = {
     schema: {
@@ -80,23 +124,21 @@ export async function server(
     reply: FastifyReply,
   ): Promise<DatasetExt | null> {
     try {
-      return await dereference(new URL(url));
+      return await dereference(url);
     } catch (e) {
       if (e instanceof HttpError) {
         reply.log.info(
           `Error at URL ${url.toString()}: ${e.statusCode} ${e.message}`,
         );
-        return reply
-          .code(e.statusCode === 404 ? 404 : 406)
-          .send(new ErrorResponse(e));
+        const statusCode = e.statusCode === 404 ? 404 : 406;
+        return sendError(reply.code(statusCode), e);
       }
 
       if (e instanceof FetchError) {
         reply.log.info(
           `No dataset found at URL ${url.toString()}: ${e.message}`,
         );
-
-        return reply.code(406).send(new ErrorResponse(e));
+        return sendError(reply.code(406), e);
       }
 
       return null;
@@ -117,7 +159,7 @@ export async function server(
               cause:
                 'The provided data does not contain any dcat:Dataset or schema:Dataset resources. Please ensure your data includes at least one dataset description.',
             });
-        await reply.code(406).send(new ErrorResponse(error));
+        await sendError(reply.code(406), error);
         return false;
       }
       case 'invalid': {
@@ -141,10 +183,7 @@ export async function server(
 
   server.post(
     '/datasets',
-    {
-      ...datasetsRequest,
-      preSerialization: rdfPreSerializationHook,
-    },
+    { ...datasetsRequest, config: rdfSerializerConfig },
     async (request, reply) => {
       const url = new URL((request.body as { '@id': string })['@id']);
       if (!(await domainIsAllowed(url))) {
@@ -189,10 +228,7 @@ export async function server(
 
   server.put(
     '/datasets/validate',
-    {
-      ...datasetsRequest,
-      preSerialization: rdfPreSerializationHook,
-    },
+    { ...datasetsRequest, config: rdfSerializerConfig },
     async (request, reply) => {
       const url = new URL((request.body as { '@id': string })['@id']);
       request.log.info(url.toString());
@@ -214,10 +250,7 @@ export async function server(
 
   server.post(
     '/datasets/validate',
-    {
-      config: { parseRdf: true },
-      preSerialization: rdfPreSerializationHook,
-    },
+    { config: { ...rdfSerializerConfig, parseRdf: true } },
     async (request, reply) => {
       await validate(request.body as DatasetExt, reply);
       validationsCounter.add(1, {
@@ -229,9 +262,7 @@ export async function server(
 
   server.get(
     '/shacl',
-    {
-      preSerialization: rdfPreSerializationHook,
-    },
+    { config: rdfSerializerConfig },
     async (request, reply) => {
       return reply.send(shacl);
     },
@@ -285,4 +316,33 @@ declare module 'fastify' {
      */
     parseRdf?: boolean;
   }
+
+  export interface FastifyReply {
+    isError: boolean;
+  }
+}
+
+/**
+ * Mark reply as Hydra error response and convert Error object to a Hydra Core Vocabulary dataset.
+ */
+async function sendError(reply: FastifyReply, error: Error) {
+  const hydra = createHydraError(error);
+  reply.isError = true;
+  return reply.send(hydra);
+}
+
+/**
+ * Compact JSON-LD Hydra error responses for better readability.
+ */
+async function handleJsonLdHydraErrorResponse(payload: NodeJS.ReadableStream) {
+  const rdfString = await streamToString(payload);
+  const doc = JSON.parse(rdfString);
+  const compacted = await jsonld.compact(doc, {
+    '@vocab': 'http://www.w3.org/ns/hydra/core#',
+  });
+
+  // Remove @id blank node that may be confusing.
+  delete compacted['@id'];
+
+  return JSON.stringify(compacted);
 }

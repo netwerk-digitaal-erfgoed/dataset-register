@@ -5,13 +5,6 @@ const hydra = (term: string) =>
   factory.namedNode(`http://www.w3.org/ns/hydra/core#${term}`);
 
 /**
- * Wrapper for Error objects that should be serialized as Hydra errors.
- */
-export class ErrorResponse {
-  constructor(public readonly error: Error) {}
-}
-
-/**
  * Create an RDF dataset representing a Hydra error.
  */
 export function createHydraError(error: Error): DatasetCore {

@@ -90,6 +90,9 @@ describe('Server', () => {
       }),
     });
     expect(response.statusCode).toEqual(406);
+    expect(response.payload).toEqual(
+      '{"@context":{"@vocab":"http://www.w3.org/ns/hydra/core#"},"@type":"Error","description":"The provided URL does not contain either a schema:Dataset or a dcat:Dataset. Please ensure your submitted URL includes at least one dataset description.","title":"No dataset found at URL https://example.com/200"}',
+    );
     expect(response.json()['title']).toEqual(
       'No dataset found at URL https://example.com/200',
     );
@@ -131,6 +134,8 @@ describe('Server', () => {
     });
     nockDone();
     expect(response.statusCode).toEqual(200);
+    expect(response.headers['content-type']).toEqual('application/ld+json');
+    console.log(response.body);
     expect(response.payload).not.toEqual('');
   });
 
@@ -148,10 +153,14 @@ describe('Server', () => {
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets/validate',
-      headers: { 'Content-Type': 'text/turtle' },
+      headers: { 'Content-Type': 'text/turtle', Accept: 'text/turtle' },
       payload: await file('dataset-schema-org-valid.ttl'),
     });
     expect(response.statusCode).toEqual(200);
+    expect(response.headers['content-type']).toEqual('text/turtle');
+    expect(response.body).toContain(
+      'a <http://www.w3.org/ns/shacl#ValidationReport>',
+    );
   });
 
   it('handles invalid JSON-LD in request body', async () => {
@@ -290,12 +299,9 @@ describe('Server', () => {
     const response = await httpServer.inject({
       method: 'GET',
       url: '/shacl',
-      headers: { 'Content-Type': 'text/turtle' },
     });
     expect(response.statusCode).toEqual(200);
     expect(response.payload).not.toEqual('');
-    expect(response.json()['@context']['@vocab']).toEqual(
-      'http://www.w3.org/ns/shacl#',
-    );
+    expect(response.json().length).toBeGreaterThan(100);
   });
 });
