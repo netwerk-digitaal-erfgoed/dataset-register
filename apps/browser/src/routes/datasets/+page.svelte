@@ -350,7 +350,7 @@
           terminologySource: searchRequest.terminologySource,
           size: searchRequest.size,
         }}
-        loading={isLoading}
+        loading={!searchResults?.facets}
         onChange={(facetKey, value) => {
           updateURL(searchRequest, { [facetKey]: value });
         }}
@@ -359,7 +359,7 @@
 
     <!-- Main content area -->
     <div class="flex-1 min-w-0">
-      {#if isLoading && !searchResults}
+      {#if isLoading}
         <!-- Loading state -->
         <div class="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6">
           {#each createSkeletons(6) as skeletonId (skeletonId)}
@@ -527,7 +527,7 @@
         terminologySource: searchRequest.terminologySource,
         size: searchRequest.size,
       }}
-      loading={isLoading}
+      loading={!searchResults?.facets}
       onChange={(facetKey, value) => {
         updateURL(searchRequest, { [facetKey]: value });
       }}
