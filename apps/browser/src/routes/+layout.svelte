@@ -32,10 +32,27 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <svelte:head>
-  <link href="https://datasetregister.netwerkdigitaalerfgoed.nl/assets/favicon-32x32.png" rel="icon" />
-  <link href="https://datasetregister.netwerkdigitaalerfgoed.nl/assets/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180" />
-  <link href="https://datasetregister.netwerkdigitaalerfgoed.nl/assets/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
-  <link href="https://datasetregister.netwerkdigitaalerfgoed.nl/assets/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+  <link
+    href="https://datasetregister.netwerkdigitaalerfgoed.nl/assets/favicon-32x32.png"
+    rel="icon"
+  />
+  <link
+    href="https://datasetregister.netwerkdigitaalerfgoed.nl/assets/apple-touch-icon.png"
+    rel="apple-touch-icon"
+    sizes="180x180"
+  />
+  <link
+    href="https://datasetregister.netwerkdigitaalerfgoed.nl/assets/favicon-32x32.png"
+    rel="icon"
+    sizes="32x32"
+    type="image/png"
+  />
+  <link
+    href="https://datasetregister.netwerkdigitaalerfgoed.nl/assets/favicon-16x16.png"
+    rel="icon"
+    sizes="16x16"
+    type="image/png"
+  />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link
     href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap"
