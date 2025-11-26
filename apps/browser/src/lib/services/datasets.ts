@@ -5,6 +5,7 @@ import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { facetConfigs, type Facets, fetchFacets } from '$lib/services/facets';
 import { PUBLIC_SPARQL_ENDPOINT } from '$env/static/public';
 import { voidNs } from '../rdf.js';
+import { getLocale } from '$lib/paraglide/runtime';
 
 export const SPARQL_ENDPOINT = PUBLIC_SPARQL_ENDPOINT;
 const fetcher = new SparqlEndpointFetcher();
@@ -137,9 +138,10 @@ export function datasetCardsQuery(
   limit: number,
   offset = 0,
   orderBy: OrderBy = 'title',
+  locale: string,
 ) {
   const orderByClause =
-    orderBy === 'datePosted' ? 'DESC(?datePosted)' : '?status ?title';
+    orderBy === 'datePosted' ? 'DESC(?datePosted)' : `?status ?titleForSort`;
 
   return `
   ${prefixes}
@@ -164,16 +166,27 @@ export function datasetCardsQuery(
   WHERE {
     # Inside the default graph, which contains the registry's metadata.
     {
-      SELECT DISTINCT ?dataset WHERE {
+      SELECT DISTINCT ?dataset ?titleForSort ${orderBy === 'datePosted' ? '?datePosted' : ''} WHERE {
         ${filterDatasets(filters)}
-        
+
         ${orderBy === 'datePosted' ? 'OPTIONAL { ?registrationUrl schema:datePosted ?datePosted }' : ''}
-        
-        OPTIONAL { 
-          ?registrationUrl schema:validUntil ?validUntil . 
-          BIND("archived" as ?status)  
+
+        OPTIONAL {
+          ?registrationUrl schema:validUntil ?validUntil .
+          BIND("archived" as ?status)
         }
-        ?dataset dct:title ?title .
+        
+        # Order by title to get a deterministic slice from the results.
+        OPTIONAL {
+          ?dataset dct:title ?titleInLocale .
+          FILTER(LANG(?titleInLocale) = "${locale}")
+        }
+
+        # Fallback: get any title
+        OPTIONAL { ?dataset dct:title ?titleAny }
+
+        # Bind preferred title for sorting
+        BIND(COALESCE(?titleInLocale, ?titleAny) AS ?titleForSort)
       }
       ORDER BY ${orderByClause}
       LIMIT ${limit}
@@ -240,12 +253,13 @@ export async function fetchDatasets(
   orderBy: OrderBy = 'title',
 ): Promise<SearchResults> {
   const startTime = performance.now();
+  const locale = getLocale();
 
   // Start all queries in parallel using Promise.all
   const [total, datasets, facets] = await Promise.all([
     countDatasets(searchFilters),
     datasetCards.query(
-      datasetCardsQuery(searchFilters, limit, offset, orderBy),
+      datasetCardsQuery(searchFilters, limit, offset, orderBy, locale),
     ),
     fetchFacets(searchFilters),
   ]);
