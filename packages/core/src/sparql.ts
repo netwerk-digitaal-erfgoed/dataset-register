@@ -130,15 +130,16 @@ export class SparqlRegistrationStore implements RegistrationStore {
       WITH <${this.graphIri}>
       DELETE {
         <${registration.url}> ?p ?o .
-        ?dataset schema:subjectOf <${registration.url}> .
         ?dataset ?dp ?do .
       }
       WHERE {
         {
           <${registration.url}> ?p ?o .
         } UNION {
-          <${registration.url}> schema:about ?dataset .
           ?dataset schema:subjectOf <${registration.url}> .
+          ?dataset ?dp ?do .
+        } UNION {
+          <${registration.url}> schema:about ?dataset .
           ?dataset ?dp ?do .
         }
       };
