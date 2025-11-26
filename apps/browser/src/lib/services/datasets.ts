@@ -79,6 +79,7 @@ export const DatasetCardSchema = {
   datePosted: {
     '@id': schema.datePosted,
     '@type': xsd.dateTime,
+    '@optional': true,
   },
 } as const;
 
@@ -166,7 +167,7 @@ export function datasetCardsQuery(
       SELECT DISTINCT ?dataset WHERE {
         ${filterDatasets(filters)}
         
-        ?registrationUrl schema:datePosted ?datePosted .
+        ${orderBy === 'datePosted' ? 'OPTIONAL { ?registrationUrl schema:datePosted ?datePosted }' : ''}
         
         OPTIONAL { 
           ?registrationUrl schema:validUntil ?validUntil . 
@@ -182,7 +183,7 @@ export function datasetCardsQuery(
     ?dataset a dcat:Dataset ;
       schema:subjectOf ?registrationUrl .
 
-    ?registrationUrl schema:datePosted ?datePosted .
+    ${orderBy === 'datePosted' ? 'OPTIONAL { ?registrationUrl schema:datePosted ?datePosted }' : ''}
 
     OPTIONAL { 
       ?registrationUrl schema:validUntil ?validUntil . 
