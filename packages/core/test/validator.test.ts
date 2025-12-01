@@ -27,6 +27,16 @@ describe('Validator', () => {
     expect(report.state).toEqual('valid');
     expectViolations(report, ['https://schema.org/description']);
     expectViolations(report, ['https://schema.org/distribution']);
+    expect(
+      report.errors.match(
+        null,
+        shacl('conforms'),
+        rdf.literal(
+          'false',
+          rdf.namedNode('http://www.w3.org/2001/XMLSchema#boolean'),
+        ),
+      ).size,
+    ).toEqual(1);
   });
 
   it('accepts minimal valid Schema.org dataset in Turtle', async () => {
