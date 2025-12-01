@@ -174,7 +174,11 @@ paths:
 components:
   responses:
     Valid:
-      description: All dataset descriptions are valid according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a>.
+      description: |-
+        All dataset descriptions are valid according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a>.
+        Note that `sh:conforms` is different from the dataset description’s validity: `sh:conforms` is `true` only if no violations, warnings or infos are returned.
+        A dataset description is considered valid if it has no violations, even if warnings are present. 
+        However, warnings cause `sh:conforms` to be `false`.
       content:
         application/ld+json:
           example:
