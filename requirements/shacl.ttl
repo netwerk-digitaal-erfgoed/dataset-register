@@ -347,11 +347,14 @@ reg:DistributionContentUrlProperty a sh:PropertyShape ;
 
 reg:DistributionContentUrlIriProperty a sh:PropertyShape ;
     sh:path schema:contentUrl ;
-    sh:nodeKind sh:IRI ;
+    sh:or (
+        [ sh:datatype xsd:anyURI ]      # literal preferred see https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1366
+        [ sh:nodeKind sh:IRI ]          # IRI left for backward compatibility
+    ) ;
     sh:pattern "^https?://" ;
     sh:severity sh:Warning ;  # will become a sh:Violation in near future, to be communicated
     sh:description "De URL waar de distributie rechtstreeks toegankelijk is."@nl, "The URL where the distribution may be directly accessed."@en ;
-    sh:message "De URL van de distributie moet een IRI zijn, geen letterlijke waarde"@nl, "The distribution’s content URL must be a IRI, not a literal"@en ;
+    sh:message "De URL van de distributie kan een IRI zijn of een letterlijke waarde van type xsd:anyURI."@nl, "The distribution’s content URL can be an IRI or a literal of type xsd:anyURI."@en ;
 .
 
 reg:DistributionEncodingFormatProperty a sh:PropertyShape ;
