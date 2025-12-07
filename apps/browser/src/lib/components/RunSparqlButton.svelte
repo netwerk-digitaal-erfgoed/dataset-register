@@ -22,7 +22,7 @@
   const sparqlUrl = $derived(() => {
     const cleanedQuery = cleanSparqlQuery(query);
     const encodedQuery = encodeURIComponent(cleanedQuery);
-    return `https://qlever-ui.demo.netwerkdigitaalerfgoed.nl/?query=${encodedQuery}&exec=true`;
+    return `https://qlever.netwerkdigitaalerfgoed.nl/?query=${encodedQuery}&exec=true`;
   });
 </script>
 
