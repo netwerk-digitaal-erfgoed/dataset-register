@@ -107,8 +107,6 @@ reg:DatasetShape
         [
             a sh:PropertyShape ;
             sh:path schema:citation ;
-            sh:minCount 0 ;
-            sh:maxCount 1 ;
             sh:name "Citation"@en ;
             sh:description """
                 A citation or reference for the dataset.
