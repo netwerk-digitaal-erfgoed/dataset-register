@@ -11,7 +11,11 @@ export class QLeverContainer {
   private readonly port = 7001;
 
   async start(): Promise<string> {
-    this.container = await new GenericContainer('adfreiburg/qlever:latest')
+    // Pinned to commit-dbce463 (Dec 4, 2025) due to "Illegal instruction" crash on ARM64 in later versions.
+    // See: https://github.com/ad-freiburg/qlever/issues/XXX (to be reported)
+    this.container = await new GenericContainer(
+      'adfreiburg/qlever:commit-dbce463',
+    )
       .withExposedPorts(this.port)
       .withEntrypoint(['/bin/sh'])
       .withCommand([
