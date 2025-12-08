@@ -64,7 +64,7 @@
       "skipVersionActions": true,
       "registryUrl": "ghcr.io/netwerk-digitaal-erfgoed/dataset-register",
       "versionSchemes": {
-        "production": "{currentDate|YYYYMMDDHHmm}-{shortCommitSha}"
+        "production": "{currentDate|YYYYMMDDHHmmss}-{shortCommitSha}"
       }
     }
   },
