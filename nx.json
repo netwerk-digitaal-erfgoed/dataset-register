@@ -9,7 +9,10 @@
       "!{projectRoot}/tsconfig.spec.json",
       "!{projectRoot}/src/test-setup.[jt]s"
     ],
-    "sharedGlobals": ["{workspaceRoot}/.github/workflows/qa.yml"]
+    "sharedGlobals": [
+      "{workspaceRoot}/.github/workflows/qa.yml",
+      "{workspaceRoot}/requirements/shacl.ttl"
+    ]
   },
   "plugins": [
     {

@@ -35,5 +35,5 @@
 
 <https://www.goudatijdmachine.nl/data/api/items/144>
   a schema:DataDownload ;
-  schema:contentUrl "https://www.goudatijdmachine.nl/wp-content/uploads/sites/7/2021/09/Totaal_perceel_Plaand_EPSG_4326.geojson" ;
+  schema:contentUrl "https://www.goudatijdmachine.nl/wp-content/uploads/sites/7/2021/09/Totaal_perceel_Plaand_EPSG_4326.geojson"^^xsd:anyURI ;
   schema:encodingFormat "application/geo+json" .
