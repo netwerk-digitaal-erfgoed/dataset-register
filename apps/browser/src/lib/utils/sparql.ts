@@ -44,3 +44,14 @@ function isIriTerm(term: unknown): term is IriTerm {
 
 export const inLiterals = (values: string[]) =>
   values.map((v) => `"${v}"`).join(', ');
+
+const IANA_MEDIA_TYPES_PREFIX = 'https://www.iana.org/assignments/media-types/';
+
+/**
+ * SPARQL expression to normalize IANA media type URIs to bare media types.
+ * Strips the IANA prefix if present, otherwise returns the value as-is.
+ */
+export const normalizeMediaType = (inputVar: string, outputVar: string) =>
+  `BIND(IF(STRSTARTS(STR(${inputVar}), "${IANA_MEDIA_TYPES_PREFIX}"),
+          STRAFTER(STR(${inputVar}), "${IANA_MEDIA_TYPES_PREFIX}"),
+          STR(${inputVar})) AS ${outputVar})`;
