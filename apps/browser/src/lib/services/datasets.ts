@@ -166,28 +166,34 @@ export function datasetCardsQuery(
   WHERE {
     # Inside the default graph, which contains the registry's metadata.
     {
-      SELECT DISTINCT ?dataset ?titleForSort ${orderBy === 'datePosted' ? '?datePosted' : ''} WHERE {
+      SELECT ?dataset ${orderBy === 'title' ? '(SAMPLE(?title_) AS ?titleForSort)' : '(SAMPLE(?datePosted_) AS ?datePosted)'} WHERE {
         ${filterDatasets(filters)}
-
-        ${orderBy === 'datePosted' ? 'OPTIONAL { ?registrationUrl schema:datePosted ?datePosted }' : ''}
 
         OPTIONAL {
           ?registrationUrl schema:validUntil ?validUntil .
           BIND("archived" as ?status)
         }
-        
+
+        ${
+          orderBy === 'title'
+            ? `
         # Order by title to get a deterministic slice from the results.
+        # Prefer title in user's locale.
         OPTIONAL {
           ?dataset dct:title ?titleInLocale .
           FILTER(LANG(?titleInLocale) = "${locale}")
         }
 
-        # Fallback: get any title
+        # Fall back to any title.
         OPTIONAL { ?dataset dct:title ?titleAny }
-
-        # Bind preferred title for sorting
-        BIND(COALESCE(?titleInLocale, ?titleAny) AS ?titleForSort)
+        BIND(COALESCE(?titleInLocale, ?titleAny) AS ?title_)
+        `
+            : `
+        OPTIONAL { ?registrationUrl schema:datePosted ?datePosted_ }
+        `
+        }
       }
+      GROUP BY ?dataset
       ORDER BY ${orderByClause}
       LIMIT ${limit}
       OFFSET ${offset}
