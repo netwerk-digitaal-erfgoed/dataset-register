@@ -10,7 +10,7 @@ import { getLocalizedValue } from '$lib/utils/i18n';
 import * as m from '$lib/paraglide/messages';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { voidNs } from '../rdf.js';
-import { inLiterals } from '$lib/utils/sparql';
+import { inLiterals, normalizeMediaType } from '$lib/utils/sparql';
 import { getLocale } from '$lib/paraglide/runtime';
 
 const fetcher = new SparqlEndpointFetcher();
@@ -174,7 +174,8 @@ export const facetConfigs: Record<string, FacetConfig> = {
       ?dataset dcat:distribution ?distribution .
       {
         ?dataset dcat:distribution ?distribution .
-        ?distribution dcat:mediaType ?value .
+        ?distribution dcat:mediaType ?rawMediaType .
+        ${normalizeMediaType('?rawMediaType', '?value')}
       } UNION {
         ?dataset dcat:distribution ?distribution .
         ?distribution dct:conformsTo ?conformsTo .
@@ -182,7 +183,8 @@ export const facetConfigs: Record<string, FacetConfig> = {
         BIND("${GROUP_SPARQL}" AS ?value)
        } UNION {
         ?dataset dcat:distribution ?distribution .
-        ?distribution dcat:mediaType ?rdf .
+        ?distribution dcat:mediaType ?rawRdf .
+        ${normalizeMediaType('?rawRdf', '?rdf')}
         FILTER(REGEX(?rdf, "^(${rdfMediaTypesPattern})$"))
         BIND("${GROUP_RDF}" AS ?value)
        }
@@ -210,7 +212,8 @@ export const facetConfigs: Record<string, FacetConfig> = {
       }
 
       if (selectedMediaTypes.length > 0) {
-        selectClauses.push('?distribution dcat:mediaType ?mediaType');
+        selectClauses.push(`?distribution dcat:mediaType ?rawMediaType .
+          ${normalizeMediaType('?rawMediaType', '?mediaType')}`);
 
         const selectedMediaTypesQuoted = selectedMediaTypes
           .map((type) => `"${type}"`)

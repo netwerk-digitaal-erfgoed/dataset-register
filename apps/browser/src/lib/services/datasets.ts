@@ -6,6 +6,7 @@ import { facetConfigs, type Facets, fetchFacets } from '$lib/services/facets';
 import { PUBLIC_SPARQL_ENDPOINT } from '$env/static/public';
 import { voidNs } from '../rdf.js';
 import { getLocale } from '$lib/paraglide/runtime';
+import { normalizeMediaType } from '$lib/utils/sparql';
 
 export const SPARQL_ENDPOINT = PUBLIC_SPARQL_ENDPOINT;
 const fetcher = new SparqlEndpointFetcher();
@@ -222,7 +223,8 @@ export function datasetCardsQuery(
                  
       OPTIONAL {
         ?dataset dcat:distribution ?distribution .
-        ?distribution dcat:mediaType ?mediaType .
+        ?distribution dcat:mediaType ?rawMediaType .
+        ${normalizeMediaType('?rawMediaType', '?mediaType')}
         OPTIONAL { ?distribution dct:conformsTo ?conformsTo }
       }
     }
