@@ -310,7 +310,7 @@
                     >
                       {#if dataset.publisher.email}
                         <a
-                          href={dataset.publisher.email}
+                          href="mailto:{dataset.publisher.email}"
                           class="inline-flex items-center gap-1.5 hover:text-blue-600 dark:hover:text-blue-400"
                         >
                           <svg
