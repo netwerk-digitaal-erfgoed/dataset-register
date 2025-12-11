@@ -141,7 +141,6 @@
   "detail_license": "Licentie",
   "detail_spatial_coverage": "Geografische dekking",
   "detail_temporal_coverage": "Temporele dekking",
-  "detail_classes_help": "Informatie over typeverdeling",
   "detail_classes_description": "Toont de verdeling van RDF-typen (klassen) in deze dataset.",
   "detail_object_types_help": "Informatie over objecttypen",
   "detail_object_types_description": "Toont de verdeling tussen literale waarden en URI-verwijzingen in de objectposities van de dataset.",
