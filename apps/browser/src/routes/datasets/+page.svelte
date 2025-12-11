@@ -355,10 +355,11 @@
     }
   }
 
-  // Focus search input on mount
+  // Focus search input on initial page load only (not on back navigation)
   $effect(() => {
-    if (inputElement) {
-      inputElement.focus();
+    if (inputElement && !initializedFromCache) {
+      // Use preventScroll to avoid Safari scrolling to the input
+      inputElement.focus({ preventScroll: true });
     }
   });
 
