@@ -23,7 +23,9 @@ const crawler = new Crawler(
 
 // Schedule crawler to check every hour for registrations that have expired their REGISTRATION_URL_TTL.
 const ttl = config.REGISTRATION_URL_TTL * 1000;
-if (config.CRAWLER_SCHEDULE !== undefined) {
+if (config.CRAWLER_SCHEDULE === undefined) {
+  await crawler.crawl(new Date(Date.now() - ttl));
+} else {
   logger.info(`Crawler scheduled at ${config.CRAWLER_SCHEDULE}`);
   scheduleJob(config.CRAWLER_SCHEDULE, async () => {
     await crawler.crawl(new Date(Date.now() - ttl));
