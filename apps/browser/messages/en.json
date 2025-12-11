@@ -141,7 +141,6 @@
   "detail_license": "License",
   "detail_spatial_coverage": "Spatial Coverage",
   "detail_temporal_coverage": "Temporal Coverage",
-  "detail_classes_help": "Information about class distribution",
   "detail_classes_description": "Shows the distribution of RDF types (classes) in this dataset.",
   "detail_object_types_help": "Information about object types",
   "detail_object_types_description": "Shows the distribution between literal values and URI references in the dataset's object positions.",
