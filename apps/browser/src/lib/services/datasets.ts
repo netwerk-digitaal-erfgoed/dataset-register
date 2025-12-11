@@ -11,7 +11,22 @@ import { normalizeMediaType } from '$lib/utils/sparql';
 export const SPARQL_ENDPOINT = PUBLIC_SPARQL_ENDPOINT;
 const fetcher = new SparqlEndpointFetcher();
 
-export const DatasetCardSchema = {
+// Base distribution schema with common fields
+export const BaseDistributionSchema = {
+  '@type': dcat.Distribution,
+  mediaType: {
+    '@id': dcat.mediaType,
+    '@optional': true,
+  },
+  conformsTo: {
+    '@id': dcterms.conformsTo,
+    '@array': true,
+    '@optional': true,
+  },
+} as const;
+
+// Base dataset schema with fields shared between card and detail views
+export const BaseDatasetSchema = {
   '@type': dcat.Dataset,
   title: {
     '@id': dcterms.title,
@@ -52,30 +67,23 @@ export const DatasetCardSchema = {
       },
     },
   },
+  status: {
+    '@id': schema.status,
+    '@optional': true,
+  },
+} as const;
+
+export const DatasetCardSchema = {
+  ...BaseDatasetSchema,
   distribution: {
     '@id': dcat.distribution,
     '@optional': true,
     '@array': true,
-    '@schema': {
-      '@type': dcat.Distribution,
-      mediaType: {
-        '@id': dcat.mediaType,
-        '@optional': true,
-      },
-      conformsTo: {
-        '@id': dcterms.conformsTo,
-        '@array': true,
-        '@optional': true,
-      },
-    },
+    '@schema': BaseDistributionSchema,
   },
   size: {
     '@id': voidNs.triples,
     '@type': xsd.integer,
-    '@optional': true,
-  },
-  status: {
-    '@id': schema.status,
     '@optional': true,
   },
   datePosted: {

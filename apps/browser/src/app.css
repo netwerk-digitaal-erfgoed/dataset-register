@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
+@source "../node_modules/@flowbite-svelte-plugins/chart/dist";
 
 /* Enable dark mode based on OS preference */
 @media (prefers-color-scheme: dark) {
@@ -22,4 +23,14 @@
 .animate-shimmer {
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
+}
+
+/* Fix Flowbite tooltip hover gap - creates invisible bridge between trigger and tooltip */
+.tooltip::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 0;
+  right: 0;
+  height: 10px;
 }
