@@ -1,3 +1,29 @@
+<script lang="ts" module>
+  import type {
+    DatasetCard as DatasetCardType,
+    SearchRequest,
+    SearchResults,
+  } from '$lib/services/datasets';
+  import type { Facets } from '$lib/services/facets';
+
+  // Cache interface for preserving search state across navigation
+  interface SearchCache {
+    datasets: DatasetCardType[];
+    offset: number;
+    scrollY: number;
+    total: number;
+    facets: Facets;
+    searchKey: string;
+  }
+
+  // Module-level cache that persists across component instances
+  let searchCache: SearchCache | null = null;
+
+  function getSearchKey(request: SearchRequest): string {
+    return JSON.stringify(request);
+  }
+</script>
+
 <script lang="ts">
   import DatasetCard from '$lib/components/DatasetCard.svelte';
   import FacetsPanel from '$lib/components/FacetsPanel.svelte';
@@ -6,12 +32,7 @@
   import RssButton from '$lib/components/RssButton.svelte';
   import * as m from '$lib/paraglide/messages';
   import { page } from '$app/state';
-  import { goto } from '$app/navigation';
-  import type {
-    DatasetCard as DatasetCardType,
-    SearchRequest,
-    SearchResults,
-  } from '$lib/services/datasets';
+  import { goto, beforeNavigate } from '$app/navigation';
   import { fetchDatasets } from '$lib/services/datasets';
   import type { SelectedFacetValue } from '$lib/services/facets';
   import { decodeDiscreteParam, decodeRangeParam } from '$lib/url';
@@ -27,8 +48,59 @@
     size: decodeRangeParam('size'),
   });
 
-  let searchResults: SearchResults | undefined = $state();
-  let isLoading = $state(false);
+  // Check cache synchronously to initialize state without flash
+  function getInitialStateFromCache(): {
+    searchResults: SearchResults | undefined;
+    accumulatedDatasets: DatasetCardType[];
+    currentOffset: number;
+    hasMore: boolean;
+    shouldFetch: boolean;
+    scrollY: number;
+  } {
+    const currentSearchKey = getSearchKey({
+      query: page.url.searchParams.get('search') || undefined,
+      publisher: decodeDiscreteParam('publishers'),
+      keyword: decodeDiscreteParam('keywords'),
+      format: decodeDiscreteParam('format'),
+      class: decodeDiscreteParam('class'),
+      terminologySource: decodeDiscreteParam('terminologySource'),
+      size: decodeRangeParam('size'),
+    });
+
+    if (searchCache && searchCache.searchKey === currentSearchKey) {
+      const cache = searchCache;
+      searchCache = null; // Clear cache after use
+      return {
+        searchResults: {
+          datasets: cache.datasets.slice(0, 24),
+          total: cache.total,
+          facets: cache.facets,
+          time: 0,
+        },
+        accumulatedDatasets: cache.datasets,
+        currentOffset: cache.offset,
+        hasMore: cache.offset < cache.total,
+        shouldFetch: false,
+        scrollY: cache.scrollY,
+      };
+    }
+
+    return {
+      searchResults: undefined,
+      accumulatedDatasets: [],
+      currentOffset: 0,
+      hasMore: true,
+      shouldFetch: true,
+      scrollY: 0,
+    };
+  }
+
+  // Initialize state synchronously from cache (if available)
+  const initialState = getInitialStateFromCache();
+  let searchResults: SearchResults | undefined = $state(
+    initialState.searchResults,
+  );
+  let isLoading = $state(initialState.shouldFetch);
 
   // Writable derived - reads from URL, can be written to for local updates
   let localQuery = $derived(searchRequest.query);
@@ -120,15 +192,39 @@
     };
   });
 
-  // Infinite scroll state
-  let accumulatedDatasets = $state<DatasetCardType[]>([]);
-  let currentOffset = $state(0);
+  // Infinite scroll state - initialized from cache if available
+  let accumulatedDatasets = $state<DatasetCardType[]>(
+    initialState.accumulatedDatasets,
+  );
+  let currentOffset = $state(initialState.currentOffset);
   let isLoadingMore = $state(false);
-  let hasMore = $state(true);
+  let hasMore = $state(initialState.hasMore);
   let sentinelElement = $state<HTMLDivElement>();
   let observer: IntersectionObserver;
 
+  // Restore scroll position if we initialized from cache
+  if (!initialState.shouldFetch && initialState.scrollY > 0) {
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(() => {
+      window.scrollTo(0, initialState.scrollY);
+    });
+  }
+
   const ITEMS_PER_PAGE = 24;
+
+  // Save state to module-level cache before navigating away
+  beforeNavigate(() => {
+    if (accumulatedDatasets.length > 0 && searchResults) {
+      searchCache = {
+        datasets: accumulatedDatasets,
+        offset: currentOffset,
+        scrollY: window.scrollY,
+        total: searchResults.total,
+        facets: searchResults.facets,
+        searchKey: getSearchKey(searchRequest),
+      };
+    }
+  });
 
   // Single function to update URL - called from all user interactions
   function updateURL(
@@ -208,9 +304,18 @@
     }, 600);
   });
 
+  // Track whether initial data was loaded from cache (to skip first fetch)
+  let initializedFromCache = !initialState.shouldFetch;
+
   // Watch searchRequest (derived from URL) and fetch data
   $effect(() => {
     const request = searchRequest;
+
+    // Skip the initial fetch if we already have data from cache
+    if (initializedFromCache) {
+      initializedFromCache = false;
+      return;
+    }
 
     // Set loading state
     isLoading = true;
