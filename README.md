@@ -64,14 +64,19 @@ so you need to have that running locally:
 docker compose up
 ```
 
-When it runs, you can start the application in development mode. Clone this repository and run:
+You can then open a local QLever UI at http://localhost:7002/default.
+
+With QLever running, you can start the application in development mode. Clone this repository and run:
 
 ```
 npm install
-npx nx serve api
-```
 
-You can open a local QLever UI at http://localhost:7002/default.
+# Run the API app:
+npx nx serve api
+
+# Run the crawler app:
+npx nx serve crawler
+```
 
 ### Run in production
 
@@ -207,7 +212,7 @@ DCAT. The ‘Based on’ column shows the corresponding Schema.org property.
 See the [Requirements for Datasets](https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/) for more details.
 
 | Property                                                  | Description                                                        | Based on                                                     |
-| --------------------------------------------------------- | ------------------------------------------------------------------ |--------------------------------------------------------------|
+| --------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------ |
 | [`dcat:accessURL`](https://www.w3.org/TR/vocab-dcat-3/)   | Distribution URL.                                                  | [`schema:contentUrl`](https://schema.org/contentUrl)         |
 | [`dcat:mediaType`](https://www.w3.org/TR/vocab-dcat-3/)   | Distribution’s IANA media type.                                    | [`schema:fileFormat`](https://schema.org/encodingFormat)     |
 | [`dct:conformsTo`](http://purl.org/dc/terms/format)       | `<https://www.w3.org/TR/sparql11-protocol/>` for SPARQL endpoints. | [`schema:encodingFormat`](https://schema.org/encodingFormat) |
