@@ -8,6 +8,7 @@ const handleParaglide: Handle = ({ event, resolve }) =>
     return resolve(event, {
       transformPageChunk: ({ html }) =>
         html.replace('%paraglide.lang%', locale),
+      filterSerializedResponseHeaders: (name) => name === 'content-type',
     });
   });
 

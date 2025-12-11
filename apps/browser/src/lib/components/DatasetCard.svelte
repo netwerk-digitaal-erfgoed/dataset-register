@@ -17,9 +17,7 @@
     }),
   );
 
-  const detailUrl = $derived(
-    `https://datasetregister.netwerkdigitaalerfgoed.nl/show.php?lang=${getLocale()}&uri=${encodeURIComponent(dataset.$id)}`,
-  );
+  const detailUrl = $derived(`/datasets/${dataset.$id}`);
 
   const hasSparqlDistribution = $derived(
     dataset.distribution.some((distribution) =>
@@ -43,7 +41,6 @@
 <a
   class="relative block border border-gray-300 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-800 transition-all hover:shadow-lg hover:border-gray-400 dark:hover:border-gray-600 cursor-pointer no-underline overflow-visible"
   href={detailUrl}
-  rel="external"
 >
   {#if dataset.status}
     <div
