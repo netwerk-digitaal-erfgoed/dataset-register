@@ -19,6 +19,7 @@
   import ClipboardCleanSolid from 'flowbite-svelte-icons/ClipboardCleanSolid.svelte';
   import ArrowUpRightFromSquareOutline from 'flowbite-svelte-icons/ArrowUpRightFromSquareOutline.svelte';
   import { displayMissingProperties } from '$lib/services/dataset-detail.js';
+  import { getRelativeTimeString } from '$lib/utils/relative-time';
 
   // Data is loaded server-side via +page.ts for SEO
   const { data }: { data: DatasetDetailResult } = $props();
@@ -568,64 +569,6 @@
               </div>
             {/if}
 
-            <!-- Issued -->
-            {#if dataset.issued}
-              <div
-                class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
-              >
-                <dt
-                  class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"
-                >
-                  <svg
-                    class="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  {m.detail_issued()}
-                </dt>
-                <dd class="text-sm text-gray-700 dark:text-gray-300">
-                  {new Date(dataset.issued).toLocaleDateString(getLocale())}
-                </dd>
-              </div>
-            {/if}
-
-            <!-- Modified -->
-            {#if dataset.modified}
-              <div
-                class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
-              >
-                <dt
-                  class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"
-                >
-                  <svg
-                    class="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
-                  {m.detail_modified()}
-                </dt>
-                <dd class="text-sm text-gray-700 dark:text-gray-300">
-                  {new Date(dataset.modified).toLocaleDateString(getLocale())}
-                </dd>
-              </div>
-            {/if}
-
             <!-- Language -->
             {#if dataset.language && dataset.language.length > 0}
               <div
@@ -716,6 +659,72 @@
                       {keyword}
                     </a>
                   {/each}
+                </dd>
+              </div>
+            {/if}
+
+            <!-- Issued -->
+            {#if dataset.issued}
+              <div
+                class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
+              >
+                <dt
+                  class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"
+                >
+                  <svg
+                    class="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  {m.detail_issued()}
+                </dt>
+                <dd class="text-sm text-gray-700 dark:text-gray-300">
+                  {new Date(dataset.issued).toLocaleDateString(getLocale(), {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </dd>
+              </div>
+            {/if}
+
+            <!-- Modified -->
+            {#if dataset.modified}
+              <div
+                class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
+              >
+                <dt
+                  class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"
+                >
+                  <svg
+                    class="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  {m.detail_modified()}
+                </dt>
+                <dd class="text-sm text-gray-700 dark:text-gray-300">
+                  {new Date(dataset.modified).toLocaleDateString(getLocale(), {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
                 </dd>
               </div>
             {/if}
@@ -1412,13 +1421,16 @@
                 </div>
               </dt>
               <dd class="text-sm text-gray-700 dark:text-gray-300">
-                {new Date(dataset.subjectOf.datePosted).toLocaleDateString(getLocale(), {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                {new Date(dataset.subjectOf.datePosted).toLocaleDateString(
+                  getLocale(),
+                  {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  },
+                )}
               </dd>
             </div>
           {/if}
@@ -1461,13 +1473,21 @@
                 </div>
               </dt>
               <dd class="text-sm text-gray-700 dark:text-gray-300">
-                {new Date(dataset.subjectOf.dateRead).toLocaleDateString(getLocale(), {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                <span id="dateread-relative">
+                  {getRelativeTimeString(dataset.subjectOf.dateRead)}
+                </span>
+                <Tooltip triggeredBy="#dateread-relative">
+                  {new Date(dataset.subjectOf.dateRead).toLocaleDateString(
+                    getLocale(),
+                    {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    },
+                  )}
+                </Tooltip>
               </dd>
             </div>
           {/if}
