@@ -2,7 +2,7 @@
   import '../app.css';
   import LanguageToggle from '$lib/components/LanguageToggle.svelte';
   import * as m from '$lib/paraglide/messages';
-  import { getLocale } from '$lib/paraglide/runtime';
+  import { getLocale, localizeHref } from '$lib/paraglide/runtime';
   import { page } from '$app/state';
 
   let { children, data } = $props();
@@ -211,8 +211,7 @@
           </li>
           <li>
             <a
-              href="/datasets"
-              rel="external"
+              href={localizeHref('/datasets')}
               class="text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 px-4 py-2 text-base font-normal no-underline inline-block transition-colors"
             >
               {m.nav_search()}
@@ -269,8 +268,7 @@
             {m.nav_submit()}
           </a>
           <a
-            href="/datasets"
-            rel="external"
+            href={localizeHref('/datasets')}
             class="text-gray-900 dark:text-gray-100 text-lg font-normal block py-3 no-underline"
           >
             {m.nav_search()}

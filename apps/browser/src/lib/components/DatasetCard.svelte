@@ -2,7 +2,7 @@
   import * as m from '$lib/paraglide/messages';
   import { getLocale } from '$lib/paraglide/runtime';
   import { type DatasetCard } from '$lib/services/datasets';
-  import { getLocalizedValue } from '$lib/utils/i18n';
+  import { getLocalizedValue, localizeHref } from '$lib/utils/i18n';
   import { RDF_MEDIA_TYPES } from '$lib/constants.js';
   import { formatNumber } from '$lib/services/facets';
 
@@ -17,7 +17,7 @@
     }),
   );
 
-  const detailUrl = $derived(`/datasets/${dataset.$id}`);
+  const detailUrl = $derived(localizeHref(`/datasets/${dataset.$id}`));
 
   const hasSparqlDistribution = $derived(
     dataset.distribution.some((distribution) =>
