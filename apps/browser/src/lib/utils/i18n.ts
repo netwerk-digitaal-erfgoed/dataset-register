@@ -1,4 +1,9 @@
-import { getLocale } from '$lib/paraglide/runtime';
+import {
+  getLocale,
+  localizeHref as localizeHrefDecorated,
+  deLocalizeUrl as delocalizeUrlDecorated,
+} from '$lib/paraglide/runtime';
+import { encodeDatasetPath } from './dataset-uri';
 
 /**
  * Extracts a localized string from a multilingual object.
@@ -37,4 +42,34 @@ export function getLocalizedArray(
   if (values['en']) return values['en'];
 
   return values[''] || [];
+}
+
+/**
+ * Decorate the original localizeHref to work around a Paraglide bug that
+ * corrupts "://" to ":/" in embedded URIs.
+ *
+ * Paraglide’s localizeHref uses .filter(Boolean) which removes empty path
+ * segments, collapsing "://" to ":/" in dataset URIs. Encode before
+ * localizeHref, then decode for clean URLs in the browser.
+ */
+export function localizeHref(
+  href: string,
+  options: { locale?: string },
+): string {
+  const encoded = encodeDatasetPath(href);
+  const localized = localizeHrefDecorated(encoded, {
+    locale: options?.locale ?? getLocale(),
+  });
+
+  return decodeURIComponent(localized);
+}
+
+/**
+ * Decorate the original localizeHref to work around a Paraglide bug that
+ * corrupts "://" to ":/" in embedded URIs.
+ */
+export function deLocalizeUrl(url: URL) {
+  url.pathname = encodeDatasetPath(url.pathname);
+
+  return delocalizeUrlDecorated(url);
 }
