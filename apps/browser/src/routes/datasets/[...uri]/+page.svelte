@@ -223,9 +223,11 @@
         >
           <dl class="divide-y divide-gray-200 dark:divide-gray-700">
             <!-- URI -->
-            <div class="flex items-center gap-3 px-4 py-3">
+            <div
+              class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
+            >
               <dt
-                class="flex w-48 flex-shrink-0 items-center gap-2 text-sm font-medium text-gray-900 dark:text-white"
+                class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"
               >
                 <svg
                   class="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
@@ -242,7 +244,7 @@
                 </svg>
                 {m.detail_uri()}
               </dt>
-              <dd class="flex min-w-0 flex-1 items-center gap-2 text-sm">
+              <dd class="text-sm flex items-center gap-2">
                 <a
                   href={dataset.$id}
                   target="_blank"
@@ -257,9 +259,9 @@
                       >{success ? m.detail_copied() : m.detail_copy()}</Tooltip
                     >
                     {#if success}<CheckOutline
-                        class="dark:text-gray-400"
+                        class="text-gray-500 dark:text-gray-400"
                       />{:else}<ClipboardCleanSolid
-                        class="dark:text-gray-400"
+                        class="text-gray-500 dark:text-gray-400"
                       />{/if}
                   {/snippet}
                 </Clipboard>
@@ -268,9 +270,11 @@
 
             <!-- Publisher -->
             {#if dataset.publisher?.name}
-              <div class="flex items-start gap-3 px-4 py-3">
+              <div
+                class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
+              >
                 <dt
-                  class="flex w-48 flex-shrink-0 items-center gap-2 text-sm font-medium text-gray-900 dark:text-white"
+                  class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"
                 >
                   <svg
                     class="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
@@ -287,9 +291,7 @@
                   </svg>
                   {m.detail_publisher()}
                 </dt>
-                <dd
-                  class="min-w-0 flex-1 text-sm text-gray-700 dark:text-gray-300"
-                >
+                <dd class="text-sm text-gray-700 dark:text-gray-300">
                   <a
                     href="/datasets?publishers={encodeURIComponent(
                       dataset.publisher.$id || '',
@@ -367,9 +369,11 @@
 
             <!-- Catalog -->
             {#if dataset.isPartOf?.title}
-              <div class="flex items-center gap-3 px-4 py-3">
+              <div
+                class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
+              >
                 <dt
-                  class="flex w-48 flex-shrink-0 items-center gap-2 text-sm font-medium text-gray-900 dark:text-white"
+                  class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"
                 >
                   <svg
                     class="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
@@ -386,9 +390,7 @@
                   </svg>
                   {m.detail_catalog()}
                 </dt>
-                <dd
-                  class="min-w-0 flex-1 text-sm text-gray-700 dark:text-gray-300"
-                >
+                <dd class="text-sm text-gray-700 dark:text-gray-300">
                   <a
                     href={dataset.isPartOf.$id}
                     target="_blank"
@@ -404,16 +406,18 @@
 
             <!-- Landing Page -->
             {#if dataset.landingPage}
-              <div class="flex items-center gap-3 px-4 py-3">
+              <div
+                class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
+              >
                 <dt
-                  class="flex w-48 flex-shrink-0 items-center gap-2 text-sm font-medium text-gray-900 dark:text-white"
+                  class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"
                 >
                   <ArrowUpRightFromSquareOutline
                     class="h-5 w-5 flex-shrink-0 text-gray-500 dark:text-gray-400"
                   />
                   {m.detail_landing_page()}
                 </dt>
-                <dd class="min-w-0 flex-1 truncate text-sm">
+                <dd class="text-sm truncate">
                   <a
                     href={dataset.landingPage}
                     target="_blank"
@@ -430,9 +434,11 @@
 
             <!-- License -->
             {#if dataset.license}
-              <div class="flex items-center gap-3 px-4 py-3">
+              <div
+                class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
+              >
                 <dt
-                  class="flex w-48 flex-shrink-0 items-center gap-2 text-sm font-medium text-gray-900 dark:text-white"
+                  class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"
                 >
                   <svg
                     class="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
@@ -449,7 +455,7 @@
                   </svg>
                   {m.detail_license()}
                 </dt>
-                <dd class="min-w-0 flex-1 truncate text-sm">
+                <dd class="text-sm truncate">
                   <a
                     href={dataset.license}
                     target="_blank"
@@ -465,9 +471,11 @@
 
             <!-- Spatial Coverage -->
             {#if dataset.spatial && dataset.spatial.length > 0}
-              <div class="flex items-center gap-3 px-4 py-3">
+              <div
+                class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
+              >
                 <dt
-                  class="flex w-48 flex-shrink-0 items-center gap-2 text-sm font-medium text-gray-900 dark:text-white"
+                  class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"
                 >
                   <svg
                     class="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
@@ -484,9 +492,7 @@
                   </svg>
                   {m.detail_spatial_coverage()}
                 </dt>
-                <dd
-                  class="min-w-0 flex-1 text-sm text-gray-700 dark:text-gray-300 break-all"
-                >
+                <dd class="text-sm text-gray-700 dark:text-gray-300 break-all">
                   {dataset.spatial.join(', ')}
                 </dd>
               </div>
@@ -494,9 +500,11 @@
 
             <!-- Temporal Coverage -->
             {#if dataset.temporal}
-              <div class="flex items-center gap-3 px-4 py-3">
+              <div
+                class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
+              >
                 <dt
-                  class="flex w-48 flex-shrink-0 items-center gap-2 text-sm font-medium text-gray-900 dark:text-white"
+                  class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"
                 >
                   <svg
                     class="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
@@ -521,9 +529,11 @@
 
             <!-- Issued -->
             {#if dataset.issued}
-              <div class="flex items-center gap-3 px-4 py-3">
+              <div
+                class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
+              >
                 <dt
-                  class="flex w-48 flex-shrink-0 items-center gap-2 text-sm font-medium text-gray-900 dark:text-white"
+                  class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"
                 >
                   <svg
                     class="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
@@ -548,9 +558,11 @@
 
             <!-- Modified -->
             {#if dataset.modified}
-              <div class="flex items-center gap-3 px-4 py-3">
+              <div
+                class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
+              >
                 <dt
-                  class="flex w-48 flex-shrink-0 items-center gap-2 text-sm font-medium text-gray-900 dark:text-white"
+                  class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"
                 >
                   <svg
                     class="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
@@ -575,9 +587,11 @@
 
             <!-- Language -->
             {#if dataset.language && dataset.language.length > 0}
-              <div class="flex items-center gap-3 px-4 py-3">
+              <div
+                class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
+              >
                 <dt
-                  class="flex w-48 flex-shrink-0 items-center gap-2 text-sm font-medium text-gray-900 dark:text-white"
+                  class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"
                 >
                   <svg
                     class="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
@@ -602,9 +616,11 @@
 
             <!-- Genre -->
             {#if localizedGenres.length > 0}
-              <div class="flex items-center gap-3 px-4 py-3">
+              <div
+                class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
+              >
                 <dt
-                  class="flex w-48 flex-shrink-0 items-center gap-2 text-sm font-medium text-gray-900 dark:text-white"
+                  class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"
                 >
                   <svg
                     class="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
@@ -629,9 +645,11 @@
 
             <!-- Keywords -->
             {#if localizedKeywords.length > 0}
-              <div class="flex items-start gap-3 px-4 py-3">
+              <div
+                class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
+              >
                 <dt
-                  class="flex w-48 flex-shrink-0 items-center gap-2 text-sm font-medium text-gray-900 dark:text-white"
+                  class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"
                 >
                   <svg
                     class="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
@@ -842,9 +860,9 @@
                           : m.detail_copy()}</Tooltip
                       >
                       {#if success}<CheckOutline
-                          class="dark:text-gray-400"
+                          class="text-gray-500 dark:text-gray-400"
                         />{:else}<ClipboardCleanSolid
-                          class="dark:text-gray-400"
+                          class="text-gray-500 dark:text-gray-400"
                         />{/if}
                     {/snippet}
                   </Clipboard>
