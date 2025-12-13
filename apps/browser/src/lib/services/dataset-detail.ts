@@ -129,18 +129,17 @@ export const DatasetDetailSchema = {
     '@id': schema.subjectOf,
     '@schema': {
       '@type': schema.EntryPoint,
-      validUntil: {
-        '@id': schema.validUntil,
-        '@type': xsd.dateTime,
-        '@optional': true,
-      },
       datePosted: {
         '@id': schema.datePosted,
         '@type': xsd.dateTime,
-        '@optional': true,
       },
       dateRead: {
         '@id': schema.dateRead,
+        '@type': xsd.dateTime,
+        '@optional': true,
+      },
+      validUntil: {
+        '@id': schema.validUntil,
         '@type': xsd.dateTime,
         '@optional': true,
       },
