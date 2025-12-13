@@ -185,7 +185,10 @@ export const constructQuery = `
         OPTIONAL { ?${dataset} dct:language ?${language} }
         OPTIONAL { ?${dataset} dct:source ?${source} }
         OPTIONAL { ?${dataset} dcat:keyword ?${keyword} }
-        OPTIONAL { ?${dataset} dct:spatial ?${spatialCoverage} }
+        OPTIONAL {
+          ?${dataset} dct:spatial ?${spatialCoverage} .
+          FILTER(!isBlank(?${spatialCoverage}))
+        }
         OPTIONAL { ?${dataset} dct:temporal ?${temporalCoverage} }
         OPTIONAL { ?${dataset} dct:genre ?${genre} }
         OPTIONAL { ?${dataset} owl:versionInfo ?${version} }
@@ -296,7 +299,10 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL { ?${dataset} ${prefix}:isBasedOn ?${source} }
     OPTIONAL { ?${dataset} ${prefix}:isBasedOnUrl ?${source} } 
     OPTIONAL { ?${dataset} ${prefix}:keywords ?${keyword} }
-    OPTIONAL { ?${dataset} ${prefix}:spatialCoverage ?${spatialCoverage} }
+    OPTIONAL {
+      ?${dataset} ${prefix}:spatialCoverage ?${spatialCoverage} .
+      FILTER(!isBlank(?${spatialCoverage}))
+    }
     OPTIONAL { ?${dataset} ${prefix}:temporalCoverage ?${temporalCoverage} }
     OPTIONAL { ?${dataset} ${prefix}:genre ?${genre} }
     OPTIONAL { ?${dataset} ${prefix}:version ?${version} }
