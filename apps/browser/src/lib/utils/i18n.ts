@@ -54,7 +54,7 @@ export function getLocalizedArray(
  */
 export function localizeHref(
   href: string,
-  options: { locale?: string },
+  options?: { locale?: string },
 ): string {
   const encoded = encodeDatasetPath(href);
   const localized = localizeHrefDecorated(encoded, {
