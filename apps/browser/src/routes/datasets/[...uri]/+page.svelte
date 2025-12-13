@@ -1333,7 +1333,7 @@
             </div>
           {/if}
 
-          {#if dataset.datePosted}
+          {#if dataset.subjectOf?.datePosted}
             <div
               class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
             >
@@ -1371,7 +1371,7 @@
                 </div>
               </dt>
               <dd class="text-sm text-gray-700 dark:text-gray-300">
-                {new Date(dataset.datePosted).toLocaleDateString(getLocale(), {
+                {new Date(dataset.subjectOf.datePosted).toLocaleDateString(getLocale(), {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
@@ -1382,7 +1382,7 @@
             </div>
           {/if}
 
-          {#if dataset.dateRead}
+          {#if dataset.subjectOf?.dateRead}
             <div
               class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
             >
@@ -1420,7 +1420,7 @@
                 </div>
               </dt>
               <dd class="text-sm text-gray-700 dark:text-gray-300">
-                {new Date(dataset.dateRead).toLocaleDateString(getLocale(), {
+                {new Date(dataset.subjectOf.dateRead).toLocaleDateString(getLocale(), {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
