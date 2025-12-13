@@ -136,6 +136,7 @@
   "detail_query_dataset": "Query this dataset",
   "detail_uri": "URI",
   "detail_publisher": "Publisher",
+  "detail_creator": "Creator",
   "detail_publisher_email": "Email",
   "detail_publisher_website": "Website",
   "detail_license": "License",

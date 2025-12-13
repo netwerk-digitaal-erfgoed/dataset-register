@@ -136,6 +136,7 @@
   "detail_query_dataset": "Bevraag deze dataset",
   "detail_uri": "URI",
   "detail_publisher": "Uitgever",
+  "detail_creator": "Maker",
   "detail_publisher_email": "E-mail",
   "detail_publisher_website": "Website",
   "detail_license": "Licentie",
