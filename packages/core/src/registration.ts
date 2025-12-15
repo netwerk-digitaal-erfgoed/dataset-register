@@ -58,6 +58,7 @@ export interface RegistrationStore {
    */
   store(registration: Registration): Promise<void>;
   findRegistrationsReadBefore(date: Date): Promise<Registration[]>;
+  findByUrl(url: URL): Promise<Registration | undefined>;
 }
 
 export interface AllowedRegistrationDomainStore {

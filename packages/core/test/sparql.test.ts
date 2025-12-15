@@ -235,6 +235,33 @@ describe('SPARQL', () => {
         new Date('2025-01-10T08:00:00Z'),
       );
     });
+
+    it('should find a registration by URL', async () => {
+      const registration = createTestRegistration(
+        'https://example.org/dataset1.json',
+        new Date('2025-01-01T10:00:00Z'),
+        new Date('2025-12-31T23:59:59Z'),
+        new Date('2025-01-15T08:30:00Z'),
+      );
+      await registrationStore.store(registration);
+
+      const found = await registrationStore.findByUrl(
+        new URL('https://example.org/dataset1.json'),
+      );
+
+      expect(found).toBeDefined();
+      expect(found!.url.toString()).toBe('https://example.org/dataset1.json');
+      expect(found!.datePosted).toEqual(new Date('2025-01-01T10:00:00Z'));
+      expect(found!.validUntil).toEqual(new Date('2025-12-31T23:59:59Z'));
+    });
+
+    it('should return undefined for non-existent URL', async () => {
+      const found = await registrationStore.findByUrl(
+        new URL('https://example.org/nonexistent.json'),
+      );
+
+      expect(found).toBeUndefined();
+    });
   });
 
   describe('SparqlAllowedDomainStore', () => {

@@ -34,11 +34,16 @@ export class MockRegistrationStore implements RegistrationStore {
   async store(registration: Registration): Promise<void> {
     this.registrations.set(registration.url, registration);
   }
+
+  findByUrl(url: URL): Promise<Registration | undefined> {
+    const found = [...this.registrations.values()].find(
+      (registration) => registration.url.toString() === url.toString(),
+    );
+    return Promise.resolve(found);
+  }
 }
 
-export class MockAllowedRegistrationDomainStore
-  implements AllowedRegistrationDomainStore
-{
+export class MockAllowedRegistrationDomainStore implements AllowedRegistrationDomainStore {
   private readonly domainNames: Array<string> = ['netwerkdigitaalerfgoed.nl'];
 
   contains(domainName: string): Promise<boolean> {
