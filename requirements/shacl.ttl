@@ -186,7 +186,7 @@ reg:DistributionShape
             sh:path schema:contentSize ;
             sh:minCount 0 ;
             sh:maxCount 1 ;
-            sh:description "A measure indicating the size of the distribution."@en ;
+            sh:description "Distribution file size in bytes."@en ;
         ] ,
         [
             a sh:PropertyShape ;

@@ -43,6 +43,20 @@ describe('Fetch', () => {
         ),
       ),
     ).toBe(true);
+
+    // byteSize must be normalized in literal.ts.
+    expect(
+      dataset.has(
+        factory.quad(
+          distributions[0].object as BlankNode,
+          dcat('byteSize'),
+          factory.literal(
+            '12582912',
+            factory.namedNode('http://www.w3.org/2001/XMLSchema#integer'),
+          ),
+        ),
+      ),
+    ).toBe(true);
   });
 
   it('accepts minimal valid Schema.org dataset', async () => {

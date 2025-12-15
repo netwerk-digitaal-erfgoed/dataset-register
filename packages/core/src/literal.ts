@@ -55,3 +55,31 @@ export const normalizeMediaType = (variable: string) =>
           )
           AS ?${variable}
         )`;
+
+/**
+ * Normalize byte size to xsd:integer.
+ *
+ * Some datasets provide human-readable values like "87 MB" instead of raw bytes.
+ * This converts common formats (B, KB, MB, GB, TB) to integer bytes.
+ */
+export const normalizeByteSize = (variable: string) =>
+  `?${variable}Raw ;
+        BIND(
+          IF(
+            REGEX(STR(?${variable}Raw), "^[0-9.]+\\\\s*(B|KB|MB|GB|TB)$", "i"),
+            xsd:integer(FLOOR(
+              xsd:decimal(REPLACE(STR(?${variable}Raw), "^([0-9.]+).*", "$1")) *
+              IF(REGEX(STR(?${variable}Raw), "TB", "i"), 1099511627776,
+              IF(REGEX(STR(?${variable}Raw), "GB", "i"), 1073741824,
+              IF(REGEX(STR(?${variable}Raw), "MB", "i"), 1048576,
+              IF(REGEX(STR(?${variable}Raw), "KB", "i"), 1024,
+              1))))
+            )),
+            IF(
+              REGEX(STR(?${variable}Raw), "^[0-9]+$"),
+              xsd:integer(?${variable}Raw),
+              ?${variable}Raw
+            )
+          )
+          AS ?${variable}
+        )`;
