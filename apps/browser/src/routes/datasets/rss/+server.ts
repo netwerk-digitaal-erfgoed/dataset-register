@@ -4,7 +4,7 @@ import { fetchDatasets, type SearchRequest } from '$lib/services/datasets';
 import { extractLocaleFromUrl, setLocale } from '$lib/paraglide/runtime';
 import * as m from '$lib/paraglide/messages';
 import { decodeDiscreteParam, decodeRangeParam } from '$lib/url';
-import { getLocalizedValue } from '$lib/utils/i18n';
+import { getLocalizedValue, localizeHref } from '$lib/utils/i18n';
 
 const cacheTtl = 3600;
 
@@ -58,6 +58,10 @@ export async function GET({ url }: RequestEvent) {
     feedLinks: {
       rss: url.toString(),
     },
+    image:
+      'https://datasetregister.netwerkdigitaalerfgoed.nl/assets/apple-touch-icon.png',
+    favicon:
+      'https://datasetregister.netwerkdigitaalerfgoed.nl/assets/favicon-32x32.png',
   });
 
   // Add each dataset as a feed item
@@ -69,17 +73,20 @@ export async function GET({ url }: RequestEvent) {
       : undefined;
 
     // Link to the dataset detail page
-    const datasetLink = `https://datasetregister.netwerkdigitaalerfgoed.nl/show.php?lang=${locale}&uri=${encodeURIComponent(dataset.$id)}`;
+    const datasetLink = `${url.origin}${localizeHref('/datasets/' + dataset.$id)}`;
 
     feed.addItem({
       title,
       id: dataset.$id,
+      guid: dataset.$id,
       link: datasetLink,
       description,
+      content: description,
       author: publisherName
         ? [
             {
               name: publisherName,
+              link: dataset.publisher?.$id,
             },
           ]
         : undefined,
