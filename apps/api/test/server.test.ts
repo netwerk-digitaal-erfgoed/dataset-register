@@ -64,6 +64,16 @@ describe('Server', () => {
     expect(response.statusCode).toEqual(400);
   });
 
+  it('handles malformed JSON in request body', async () => {
+    const response = await httpServer.inject({
+      method: 'PUT',
+      url: '/datasets/validate',
+      headers: { 'Content-Type': 'application/ld+json' },
+      payload: 'not valid json {',
+    });
+    expect(response.statusCode).toEqual(400);
+  });
+
   it('rejects validation requests that point to 404 URL', async () => {
     nock('https://example.com/').get('/404').reply(404);
     const response = await httpServer.inject({

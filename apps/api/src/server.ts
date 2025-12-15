@@ -297,13 +297,18 @@ export async function server(
       }
 
       // Parse simple JSON-LD as JSON.
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         let data = '';
         payload.on('data', (chunk) => {
           data += chunk;
         });
         payload.on('end', () => {
-          resolve(JSON.parse(data));
+          try {
+            resolve(JSON.parse(data));
+          } catch (e) {
+            (e as FastifyError).statusCode = 400;
+            reject(e);
+          }
         });
       });
     },
