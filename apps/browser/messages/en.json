@@ -176,5 +176,9 @@
   "detail_issued": "Issued",
   "detail_modified": "Modified",
   "detail_landing_page": "Landing Page",
-  "missing_properties": "Missing properties"
+  "missing_properties": "Missing properties",
+  "facets_status": "Status",
+  "facets_status_invalid": "Invalid datasets",
+  "facets_status_deleted": "Deleted datasets",
+  "facets_status_explanation": "By default only current datasets are shown. Here you can choose to view datasets that are no longer valid or no longer exist."
 }

@@ -176,5 +176,9 @@
   "detail_issued": "Uitgegeven",
   "detail_modified": "Gewijzigd",
   "detail_landing_page": "Landingspagina",
-  "missing_properties": "Ontbrekende eigenschappen"
+  "missing_properties": "Ontbrekende eigenschappen",
+  "facets_status": "Status",
+  "facets_status_invalid": "Ongeldige datasets",
+  "facets_status_deleted": "Verwijderde datasets",
+  "facets_status_explanation": "Standaard worden alleen actuele datasets getoond. Hier kun je kiezen datasets te bekijken die niet meer geldig of verdwenen zijn."
 }

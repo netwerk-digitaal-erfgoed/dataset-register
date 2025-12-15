@@ -1,4 +1,6 @@
 <script lang="ts">
+  import InfoCircleOutline from 'flowbite-svelte-icons/InfoCircleOutline.svelte';
+
   let { explanation }: { explanation: string } = $props();
 
   let showPopover = $state(false);
@@ -64,12 +66,11 @@
     onclick={isTouchDevice ? togglePopover : undefined}
     onmouseenter={!isTouchDevice ? showTooltip : undefined}
     onmouseleave={!isTouchDevice ? hideTooltip : undefined}
-    class="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full border-2 border-gray-400 hover:border-gray-600 hover:bg-gray-50 dark:border-gray-500 dark:hover:border-gray-300 dark:hover:bg-gray-800 transition-all focus:outline-none focus:ring-2 focus:ring-gray-400"
+    class="ml-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors focus:outline-none"
     aria-label="Show explanation"
     type="button"
   >
-    <span class="text-[10px] font-bold text-gray-600 dark:text-gray-400">?</span
-    >
+    <InfoCircleOutline class="w-5 h-5" />
   </button>
 
   {#if showPopover}

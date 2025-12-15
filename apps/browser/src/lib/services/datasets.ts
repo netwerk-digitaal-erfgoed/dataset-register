@@ -106,6 +106,7 @@ PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>			
 PREFIX schema: <http://schema.org/>
 PREFIX void: <http://rdfs.org/ns/void#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 `;
 
 export interface SearchRequest {
@@ -119,6 +120,7 @@ export interface SearchRequest {
     min?: number;
     max?: number;
   };
+  status: string[];
 }
 
 async function countDatasets(filters: SearchRequest) {
@@ -248,11 +250,11 @@ export function datasetCardsQuery(
 `;
 }
 
-export const filterDatasets = (filters: SearchRequest) =>
+export const filterDatasets = (filters: SearchRequest, skipDefaults = false) =>
   `?dataset a dcat:Dataset ;
     schema:subjectOf ?registrationUrl .
-    
-  ${filterClauses(filters)}
+
+  ${filterClauses(filters, skipDefaults)}
 `;
 
 export interface SearchResults {
@@ -288,7 +290,7 @@ export async function fetchDatasets(
   };
 }
 
-function filterClauses(searchFilters: SearchRequest) {
+function filterClauses(searchFilters: SearchRequest, skipDefaults = false) {
   if (!searchFilters) {
     return '';
   }
@@ -303,6 +305,7 @@ function filterClauses(searchFilters: SearchRequest) {
     class: classFilter,
     terminologySource,
     size,
+    status,
   } = searchFilters;
 
   if (query !== undefined && query.length > 0) {
@@ -337,6 +340,13 @@ function filterClauses(searchFilters: SearchRequest) {
     filterClausesArray.push(
       facetConfigs.terminologySource.filterClause(terminologySource),
     );
+  }
+
+  // Handle status filter with defaultClause support
+  if (status.length > 0) {
+    filterClausesArray.push(facetConfigs.status.filterClause(status));
+  } else if (!skipDefaults && facetConfigs.status.defaultClause) {
+    filterClausesArray.push(facetConfigs.status.defaultClause);
   }
 
   if (size.min !== undefined || size.max !== undefined) {

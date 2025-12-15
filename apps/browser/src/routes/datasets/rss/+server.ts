@@ -28,6 +28,7 @@ export async function GET({ url }: RequestEvent) {
       url.searchParams,
     ),
     size: decodeRangeParam('size', url.searchParams),
+    status: decodeDiscreteParam('status', url.searchParams),
   };
 
   const results = await fetchDatasets(searchRequest, 20, 0, 'datePosted');
