@@ -118,6 +118,33 @@ export class SparqlRegistrationStore implements RegistrationStore {
     );
   }
 
+  async findByUrl(url: URL): Promise<Registration | undefined> {
+    const result = await this.client.query(`
+      PREFIX schema: <http://schema.org/>
+
+      SELECT ?datePosted ?validUntil WHERE {
+        GRAPH <${this.graphIri}> {
+          <${url}> a schema:EntryPoint ;
+            schema:datePosted ?datePosted .
+          OPTIONAL { <${url}> schema:validUntil ?validUntil . }
+        }
+      }
+    `);
+
+    const bindings = await result.toArray();
+    if (bindings.length === 0) {
+      return undefined;
+    }
+
+    return new Registration(
+      url,
+      new Date(bindings[0]!.get('datePosted')!.value),
+      bindings[0]!.get('validUntil')
+        ? new Date(bindings[0]!.get('validUntil')!.value)
+        : undefined,
+    );
+  }
+
   async store(registration: Registration): Promise<void> {
     const quads = toRdf(registration);
     const triples = await quadsToSparql(quads);
@@ -220,9 +247,7 @@ export class SparqlClient {
   }
 }
 
-export class SparqlAllowedRegistrationDomainStore
-  implements AllowedRegistrationDomainStore
-{
+export class SparqlAllowedRegistrationDomainStore implements AllowedRegistrationDomainStore {
   constructor(
     private readonly client: SparqlClient,
     private readonly graphIri: string,

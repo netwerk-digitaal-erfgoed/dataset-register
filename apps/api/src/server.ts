@@ -198,7 +198,10 @@ export async function server(
         // The URL has validated, so any problems with processing the dataset are now ours. Therefore, make sure to
         // store the registration so we can come back to that when crawling, even if fetching the datasets fails.
         // Store first rather than wrapping in a try/catch to cope with OOMs.
-        const registration = new Registration(url, new Date());
+        // Keep original datePosted if re-registering an existing URL.
+        const existingRegistration = await registrationStore.findByUrl(url);
+        const datePosted = existingRegistration?.datePosted ?? new Date();
+        const registration = new Registration(url, datePosted);
         await registrationStore.store(registration);
 
         // Fetch dataset descriptions and store them.
