@@ -22,6 +22,16 @@ export class Crawler {
 
   /**
    * Crawl all registered URLs that were last read before `dateLastRead`.
+   *
+   * Scenarios:
+   * - if the registration URL is still valid, update the Registration with the
+   *   datasets currently found at the URL
+   * - if the registration URL still works but no longer validates, store a
+   *   schema:validUntil date in the Registration, keeping references to the
+   *   datasets that were previously found at the URL when it was still valid
+   * - if the registration URL no longer works, remove the references to the
+   *   datasets previously found at it, set both schema:validUntil and an HTTP
+   *   status code (schema:status).
    */
   public async crawl(dateLastRead: Date) {
     const registrations =
@@ -47,6 +57,8 @@ export class Crawler {
           }
         } else {
           this.logger.info(`${registration.url} does not pass validation`);
+          // Keep the old datasets reference for the Valid / All datasets toggle.
+          datasetIris.push(...registration.datasets);
         }
       } catch (e) {
         if (e instanceof HttpError) {
