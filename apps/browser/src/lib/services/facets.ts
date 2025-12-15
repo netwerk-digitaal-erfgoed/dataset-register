@@ -64,7 +64,10 @@ const rdfMediaTypesPattern = RDF_MEDIA_TYPES.map((type) =>
 const SPARQL_PROTOCOL_URI = '<https://www.w3.org/TR/sparql11-protocol/>';
 
 const VALUE_INVALID = 'invalid';
-const VALUE_DELETED = 'deleted';
+const VALUE_GONE = 'gone';
+
+const REGISTRATION_STATUS_BASE_URI =
+  'https://data.netwerkdigitaalerfgoed.nl/registry/';
 
 const GROUP_RDF = 'group:rdf';
 const GROUP_SPARQL = 'group:sparql';
@@ -245,40 +248,22 @@ export const facetConfigs: Record<string, FacetConfig> = {
   },
   status: {
     where: `
-    {
-      ?registrationUrl schema:validUntil ?validUntil .
-      BIND("invalid" as ?value)
-    } UNION {
-      ?registrationUrl schema:status ?status .
-      FILTER(?status > 200)
-      BIND("deleted" as ?value)
-    }`,
+      ?registrationUrl schema:additionalType ?statusType .
+      FILTER(?statusType IN (<${REGISTRATION_STATUS_BASE_URI}${VALUE_INVALID}>, <${REGISTRATION_STATUS_BASE_URI}${VALUE_GONE}>))
+      BIND(IF(?statusType = <${REGISTRATION_STATUS_BASE_URI}${VALUE_INVALID}>, "${VALUE_INVALID}", "${VALUE_GONE}") AS ?value)`,
     filterClause: (values) => {
       if (values.length === 0) {
         return ''; // Default handled separately via defaultClause
       }
 
-      const unions: string[] = [];
+      const statusUris = values
+        .map((v) => `<${REGISTRATION_STATUS_BASE_URI}${v}>`)
+        .join(', ');
 
-      if (values.includes('invalid')) {
-        unions.push(`{ ?registrationUrl schema:validUntil [] }`);
-      }
-
-      if (values.includes('deleted')) {
-        unions.push(`{
-          ?registrationUrl schema:status ?status_ .
-          FILTER(?status_ > 200)
-        }`);
-      }
-
-      if (unions.length === 0) {
-        return '';
-      }
-
-      return unions.join(' UNION ');
+      return `?registrationUrl schema:additionalType ?statusType .
+        FILTER(?statusType IN (${statusUris}))`;
     },
-    defaultClause: `?registrationUrl schema:status "200"^^xsd:integer .
-      FILTER NOT EXISTS { ?registrationUrl schema:validUntil [] }`,
+    defaultClause: `?registrationUrl schema:additionalType <${REGISTRATION_STATUS_BASE_URI}valid> .`,
   },
   class: {
     where: `{
@@ -547,7 +532,7 @@ export async function fetchSizeHistogram(
 }
 
 const valueTranslations = {
-  [VALUE_DELETED]: m['facets_status_deleted'],
+  [VALUE_GONE]: m['facets_status_gone'],
   [VALUE_INVALID]: m['facets_status_invalid'],
   [GROUP_RDF]: m['group:rdf'],
   [GROUP_SPARQL]: m['group:sparql'],

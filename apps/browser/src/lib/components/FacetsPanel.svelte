@@ -87,7 +87,7 @@
     />
   {/if}
 
-  <!-- Status facet always visible so users can toggle archived/deleted -->
+  <!-- Status facet always visible so users can toggle invalid/gone -->
   <SearchFacet
     selectedValues={selectedValues.status}
     values={facets?.status ?? []}

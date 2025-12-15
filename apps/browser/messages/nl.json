@@ -179,6 +179,6 @@
   "missing_properties": "Ontbrekende eigenschappen",
   "facets_status": "Status",
   "facets_status_invalid": "Ongeldige datasets",
-  "facets_status_deleted": "Verwijderde datasets",
+  "facets_status_gone": "Verdwenen datasets",
   "facets_status_explanation": "Standaard worden alleen actuele datasets getoond. Hier kun je kiezen datasets te bekijken die niet meer geldig of verdwenen zijn."
 }
