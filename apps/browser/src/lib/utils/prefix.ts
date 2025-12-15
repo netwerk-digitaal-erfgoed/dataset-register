@@ -5,7 +5,11 @@ import { shrink } from '@zazuko/prefixes';
  * Falls back to the original URI if no prefix is found.
  */
 export function shortenUri(uri: string): string {
-  const shortened = shrink(uri, { sdo: 'https://schema.org/' });
+  const shortened = shrink(uri, {
+    pico: 'https://personsincontext.org/model#',
+    pnv: 'https://w3id.org/pnv#',
+    sdo: 'https://schema.org/',
+  });
   return shortened || uri;
 }
 
