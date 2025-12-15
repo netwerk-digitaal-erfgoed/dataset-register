@@ -80,7 +80,7 @@ describe('Crawler', () => {
 
     const readRegistration = registrationStore.all()[0];
     expect(readRegistration.statusCode).toBe(404);
-    expect(readRegistration.datasets).toEqual([]); // Any datasets previously read at the URL are emptied.
+    expect(readRegistration.datasets).toHaveLength(1); // Any references to datasets are kept.
   });
 
   it('ignores datasets no longer available', async () => {
@@ -95,7 +95,7 @@ describe('Crawler', () => {
 
     const readRegistration = registrationStore.all()[0];
     expect(readRegistration.statusCode).toBe(200);
-    expect(readRegistration.datasets).toEqual([]); // Any datasets previously read at the URL are emptied.
+    expect(readRegistration.datasets).toHaveLength(1); // Any references to datasets are kept.
   });
 
   it('logs URLs that no longer validate', async () => {
