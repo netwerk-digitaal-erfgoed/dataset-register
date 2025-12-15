@@ -1,6 +1,9 @@
 import { URL } from 'node:url';
 import factory from 'rdf-ext';
 
+export const REGISTRATION_STATUS_BASE_URI =
+  'https://data.netwerkdigitaalerfgoed.nl/registry/';
+
 export class Registration {
   private _dateRead?: Date;
   private _statusCode?: number;
@@ -49,6 +52,22 @@ export class Registration {
 
   get datasets() {
     return this._datasets;
+  }
+
+  /**
+   * Computed registration status based on statusCode and validUntil.
+   * - 'invalid': validation failed (has validUntil)
+   * - 'gone': URL unavailable (HTTP status > 200)
+   * - 'valid': healthy registration
+   */
+  get registrationStatus(): 'valid' | 'invalid' | 'gone' {
+    if (this.validUntil !== undefined) {
+      return 'invalid';
+    }
+    if (this._statusCode !== undefined && this._statusCode > 200) {
+      return 'gone';
+    }
+    return 'valid';
   }
 }
 
@@ -161,6 +180,17 @@ export function toRdf(registration: Registration) {
       ),
     );
   }
+
+  // Emit computed registration status as schema:additionalType
+  quads.push(
+    factory.quad(
+      iri,
+      factory.namedNode('http://schema.org/additionalType'),
+      factory.namedNode(
+        `${REGISTRATION_STATUS_BASE_URI}${registration.registrationStatus}`,
+      ),
+    ),
+  );
 
   return quads;
 }

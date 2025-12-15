@@ -21,4 +21,43 @@ describe('Registration', () => {
     const becameValidAgain = stillInvalid.read([], 200, true);
     expect(becameValidAgain.validUntil).toBeUndefined();
   });
+
+  describe('registrationStatus', () => {
+    it('returns valid for healthy registration', () => {
+      const registration = new Registration(
+        new URL('https://example.com/registration'),
+        new Date(),
+      ).read([], 200, true);
+
+      expect(registration.registrationStatus).toBe('valid');
+    });
+
+    it('returns invalid when validUntil is set', () => {
+      const registration = new Registration(
+        new URL('https://example.com/registration'),
+        new Date(),
+      ).read([], 200, false);
+
+      expect(registration.registrationStatus).toBe('invalid');
+    });
+
+    it('returns gone when HTTP status > 200', () => {
+      const registration = new Registration(
+        new URL('https://example.com/registration'),
+        new Date(),
+      ).read([], 404, true);
+
+      expect(registration.registrationStatus).toBe('gone');
+    });
+
+    it('returns invalid over gone when both conditions are met', () => {
+      // When a URL returns 404 AND has validUntil, invalid takes precedence
+      const registration = new Registration(
+        new URL('https://example.com/registration'),
+        new Date(),
+      ).read([], 404, false);
+
+      expect(registration.registrationStatus).toBe('invalid');
+    });
+  });
 });
