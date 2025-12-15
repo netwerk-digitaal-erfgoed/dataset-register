@@ -3,6 +3,12 @@
 @plugin '@tailwindcss/typography';
 @source "../node_modules/@flowbite-svelte-plugins/chart/dist";
 
+/* Prevent horizontal scrolling on mobile - fixes tooltip overflow issues */
+html,
+body {
+  overflow-x: hidden;
+}
+
 /* Enable dark mode based on OS preference */
 @media (prefers-color-scheme: dark) {
   :root {
