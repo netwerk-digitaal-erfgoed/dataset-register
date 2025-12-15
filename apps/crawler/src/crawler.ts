@@ -29,9 +29,9 @@ export class Crawler {
    * - if the registration URL still works but no longer validates, store a
    *   schema:validUntil date in the Registration, keeping references to the
    *   datasets that were previously found at the URL when it was still valid
-   * - if the registration URL no longer works, remove the references to the
-   *   datasets previously found at it, set both schema:validUntil and an HTTP
-   *   status code (schema:status).
+   * - if the registration URL no longer works, set both schema:validUntil and
+   *   an HTTP status code (schema:status), keeping references to the datasets
+   *   that were previously found at the URL when it was still valid.
    */
   public async crawl(dateLastRead: Date) {
     const registrations =
@@ -40,7 +40,7 @@ export class Crawler {
       this.logger.info(`Crawling registration URL ${registration.url}...`);
       let statusCode = 200;
       let isValid = false;
-      const datasetIris: URL[] = [];
+      let datasetIris = registration.datasets;
 
       try {
         const data = await dereference(registration.url);
@@ -48,6 +48,7 @@ export class Crawler {
         isValid = validationResult.state === 'valid';
         if (isValid) {
           this.logger.info(`${registration.url} passes validation`);
+          datasetIris = []; // Start with a fresh list.
           for await (const dataset of fetch(registration.url)) {
             datasetIris.push(extractIri(dataset));
             await this.datasetStore.store(dataset);
@@ -57,8 +58,6 @@ export class Crawler {
           }
         } else {
           this.logger.info(`${registration.url} does not pass validation`);
-          // Keep the old datasets reference for the Valid / All datasets toggle.
-          datasetIris.push(...registration.datasets);
         }
       } catch (e) {
         if (e instanceof HttpError) {
