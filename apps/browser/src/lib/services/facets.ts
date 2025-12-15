@@ -62,6 +62,10 @@ const rdfMediaTypesPattern = RDF_MEDIA_TYPES.map((type) =>
 ).join('|');
 
 const SPARQL_PROTOCOL_URI = '<https://www.w3.org/TR/sparql11-protocol/>';
+
+const VALUE_INVALID = 'invalid';
+const VALUE_DELETED = 'deleted';
+
 const GROUP_RDF = 'group:rdf';
 const GROUP_SPARQL = 'group:sparql';
 
@@ -155,6 +159,12 @@ interface FacetConfig {
    * Function that takes selected values and returns a SPARQL FILTER clause.
    */
   filterClause: (values: string[]) => string;
+
+  /**
+   * Default SPARQL clause applied when filter is empty (for dataset queries only).
+   * When fetching facet counts, this default is skipped so all values are shown.
+   */
+  defaultClause?: string;
 }
 
 export const facetConfigs: Record<string, FacetConfig> = {
@@ -232,6 +242,43 @@ export const facetConfigs: Record<string, FacetConfig> = {
       return `?dataset dcat:keyword ?keyword .
         FILTER(STR(?keyword) IN (${inLiterals(values)}))`;
     },
+  },
+  status: {
+    where: `
+    {
+      ?registrationUrl schema:validUntil ?validUntil .
+      BIND("invalid" as ?value)
+    } UNION {
+      ?registrationUrl schema:status ?status .
+      FILTER(?status > 200)
+      BIND("deleted" as ?value)
+    }`,
+    filterClause: (values) => {
+      if (values.length === 0) {
+        return ''; // Default handled separately via defaultClause
+      }
+
+      const unions: string[] = [];
+
+      if (values.includes('invalid')) {
+        unions.push(`{ ?registrationUrl schema:validUntil [] }`);
+      }
+
+      if (values.includes('deleted')) {
+        unions.push(`{
+          ?registrationUrl schema:status ?status_ .
+          FILTER(?status_ > 200)
+        }`);
+      }
+
+      if (unions.length === 0) {
+        return '';
+      }
+
+      return unions.join(' UNION ');
+    },
+    defaultClause: `?registrationUrl schema:status "200"^^xsd:integer .
+      FILTER NOT EXISTS { ?registrationUrl schema:validUntil [] }`,
   },
   class: {
     where: `{
@@ -314,6 +361,7 @@ export type Facets = {
   format: CountedFacetValue[];
   class: CountedFacetValue[];
   terminologySource: CountedFacetValue[];
+  status: CountedFacetValue[];
   size: Histogram;
 };
 
@@ -371,7 +419,14 @@ export async function fetchFacetValues(
   searchFilters: SearchRequest,
 ): Promise<CountedFacetValue[]> {
   const searchFiltersExcludingFacet = { ...searchFilters, [facet]: [] };
-  const searchFiltersQuery = filterDatasets(searchFiltersExcludingFacet);
+
+  // Skip defaultClause for facets that have one (so they can show all values)
+  const facetConfig = facetConfigs[facet as keyof typeof facetConfigs];
+  const skipDefaults = facetConfig?.defaultClause !== undefined;
+  const searchFiltersQuery = filterDatasets(
+    searchFiltersExcludingFacet,
+    skipDefaults,
+  );
   const query = facetQuery(facet, searchFiltersQuery);
 
   return await facets.query(query);
@@ -491,7 +546,9 @@ export async function fetchSizeHistogram(
   return histogram;
 }
 
-const groupMessages = {
+const valueTranslations = {
+  [VALUE_DELETED]: m['facets_status_deleted'],
+  [VALUE_INVALID]: m['facets_status_invalid'],
   [GROUP_RDF]: m['group:rdf'],
   [GROUP_SPARQL]: m['group:sparql'],
   [GROUP_PERSON]: m['group:person'],
@@ -507,7 +564,7 @@ const groupMessages = {
 
 export function facetDisplayValue(facetValue: SelectedFacetValue) {
   return (
-    groupMessages[facetValue.value as keyof typeof groupMessages]?.() ??
+    valueTranslations[facetValue.value as keyof typeof valueTranslations]?.() ??
     getLocalizedValue(facetValue.label) ??
     facetValue.value
   );

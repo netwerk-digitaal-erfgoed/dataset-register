@@ -46,6 +46,7 @@
     class: decodeDiscreteParam('class'),
     terminologySource: decodeDiscreteParam('terminologySource'),
     size: decodeRangeParam('size'),
+    status: decodeDiscreteParam('status'),
   });
 
   // Check cache synchronously to initialize state without flash
@@ -65,6 +66,7 @@
       class: decodeDiscreteParam('class'),
       terminologySource: decodeDiscreteParam('terminologySource'),
       size: decodeRangeParam('size'),
+      status: decodeDiscreteParam('status'),
     });
 
     if (searchCache && searchCache.searchKey === currentSearchKey) {
@@ -273,6 +275,12 @@
       url.searchParams.delete('terminologySource');
     }
 
+    if (params.status && params.status.length > 0) {
+      url.searchParams.set('status', params.status.join(','));
+    } else {
+      url.searchParams.delete('status');
+    }
+
     if (params.size?.min !== undefined || params.size?.max !== undefined) {
       url.searchParams.set(
         'size',
@@ -455,6 +463,7 @@
           class: searchRequest.class,
           terminologySource: searchRequest.terminologySource,
           size: searchRequest.size,
+          status: searchRequest.status,
         }}
         loading={!searchResults?.facets}
         onChange={(facetKey, value) => {
@@ -632,6 +641,7 @@
         class: searchRequest.class,
         terminologySource: searchRequest.terminologySource,
         size: searchRequest.size,
+        status: searchRequest.status,
       }}
       loading={!searchResults?.facets}
       onChange={(facetKey, value) => {
@@ -659,6 +669,7 @@
           class: [],
           terminologySource: [],
           size: { min: undefined, max: undefined },
+          status: [],
         });
       }}
       class="w-full px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-semibold rounded-lg transition-colors cursor-pointer"

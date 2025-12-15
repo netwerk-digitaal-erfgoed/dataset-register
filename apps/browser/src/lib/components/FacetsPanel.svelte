@@ -18,6 +18,7 @@
       class: string[];
       terminologySource: string[];
       size: { min?: number; max?: number };
+      status: string[];
     };
     loading?: boolean;
     onChange: (
@@ -85,4 +86,13 @@
       onChange={(min, max) => onChange('size', { min, max })}
     />
   {/if}
+
+  <!-- Status facet always visible so users can toggle archived/deleted -->
+  <SearchFacet
+    selectedValues={selectedValues.status}
+    values={facets?.status ?? []}
+    title={m.facets_status()}
+    explanation={m.facets_status_explanation()}
+    onChange={(values) => onChange('status', values)}
+  />
 {/if}
