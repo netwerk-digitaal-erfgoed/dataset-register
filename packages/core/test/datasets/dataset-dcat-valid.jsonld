@@ -81,6 +81,7 @@
       "dcat:accessURL": {
         "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
       },
+      "dcat:byteSize": "12 MB",
       "dct:description": "Turtle dump"
     },
     {

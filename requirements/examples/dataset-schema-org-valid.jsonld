@@ -63,6 +63,7 @@
             "text/turtle"
           ],
           "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf",
+          "contentSize": 12582912,
           "description": "Turtle dump"
         },
         {
