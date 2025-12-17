@@ -162,7 +162,7 @@
   "detail_distributions_tooltip": "Distributions provide access to the data.",
   "lang_badge_also_in": "Also in {lang}:",
   "lang_badge_unspecified": "Unspecified",
-  "detail_catalog": "Part of catalog",
+  "detail_is_part_of": "Part of",
   "license_cc0_1_0": "CC0 1.0 Universal",
   "license_cc_by_4_0": "CC BY 4.0 International",
   "license_cc_by_3_0": "CC BY 3.0 Unported",
