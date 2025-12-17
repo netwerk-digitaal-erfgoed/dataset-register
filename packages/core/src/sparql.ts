@@ -91,29 +91,50 @@ export class SparqlRegistrationStore implements RegistrationStore {
   async findRegistrationsReadBefore(date: Date): Promise<Registration[]> {
     const result = await this.client.query(`
       PREFIX schema: <http://schema.org/>
-      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-      SELECT ?s ?datePosted ?validUntil WHERE {
+      SELECT ?s ?datePosted ?validUntil ?dataset WHERE {
         GRAPH <${this.graphIri}> {
           ?s a schema:EntryPoint ;
             schema:datePosted ?datePosted ;
             schema:dateRead ?dateRead .
           OPTIONAL { ?s schema:validUntil ?validUntil . }
-          FILTER (?dateRead < "${date.toISOString()}"^^xsd:dateTime)  
+          OPTIONAL { ?s schema:about ?dataset . }
+          FILTER (?dateRead < "${date.toISOString()}"^^xsd:dateTime)
         }
-      } GROUP BY ?s ?datePosted ?validUntil
+      }
     `);
 
     const bindings = await result.toArray();
 
-    return bindings.map(
-      (binding) =>
+    // Group by registration URL, collecting datasets
+    const registrationMap = new Map<
+      string,
+      { datePosted: string; validUntil?: string; datasets: URL[] }
+    >();
+
+    for (const binding of bindings) {
+      const url = binding.get('s')!.value;
+      if (!registrationMap.has(url)) {
+        registrationMap.set(url, {
+          datePosted: binding.get('datePosted')!.value,
+          validUntil: binding.get('validUntil')?.value,
+          datasets: [],
+        });
+      }
+      const dataset = binding.get('dataset');
+      if (dataset) {
+        registrationMap.get(url)!.datasets.push(new URL(dataset.value));
+      }
+    }
+
+    return Array.from(registrationMap.entries()).map(
+      ([url, data]) =>
         new Registration(
-          new URL(binding.get('s')!.value),
-          new Date(binding.get('datePosted')!.value),
-          binding.get('validUntil')
-            ? new Date(binding.get('validUntil')!.value)
-            : undefined,
+          new URL(url),
+          new Date(data.datePosted),
+          data.validUntil ? new Date(data.validUntil) : undefined,
+          data.datasets,
         ),
     );
   }
@@ -122,11 +143,12 @@ export class SparqlRegistrationStore implements RegistrationStore {
     const result = await this.client.query(`
       PREFIX schema: <http://schema.org/>
 
-      SELECT ?datePosted ?validUntil WHERE {
+      SELECT ?datePosted ?validUntil ?dataset WHERE {
         GRAPH <${this.graphIri}> {
           <${url}> a schema:EntryPoint ;
             schema:datePosted ?datePosted .
           OPTIONAL { <${url}> schema:validUntil ?validUntil . }
+          OPTIONAL { <${url}> schema:about ?dataset . }
         }
       }
     `);
@@ -136,12 +158,18 @@ export class SparqlRegistrationStore implements RegistrationStore {
       return undefined;
     }
 
+    const datasets = bindings
+      .map((b) => b.get('dataset')?.value)
+      .filter((d): d is string => d !== undefined)
+      .map((d) => new URL(d));
+
     return new Registration(
       url,
       new Date(bindings[0]!.get('datePosted')!.value),
       bindings[0]!.get('validUntil')
         ? new Date(bindings[0]!.get('validUntil')!.value)
         : undefined,
+      datasets,
     );
   }
 

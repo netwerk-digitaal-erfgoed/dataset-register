@@ -255,6 +255,34 @@ describe('SPARQL', () => {
       expect(found!.validUntil).toEqual(new Date('2025-12-31T23:59:59Z'));
     });
 
+    it('should find a registration with its datasets', async () => {
+      const datasets = [
+        new URL('https://example.org/dataset/1'),
+        new URL('https://example.org/dataset/2'),
+      ];
+      const registration = createTestRegistration(
+        'https://example.org/with-datasets.json',
+        new Date('2025-01-01T10:00:00Z'),
+        undefined,
+        new Date('2025-01-15T08:30:00Z'),
+        datasets,
+      );
+      await registrationStore.store(registration);
+
+      const found = await registrationStore.findByUrl(
+        new URL('https://example.org/with-datasets.json'),
+      );
+
+      expect(found).toBeDefined();
+      expect(found!.datasets).toHaveLength(2);
+      expect(found!.datasets.map((d) => d.toString())).toContain(
+        'https://example.org/dataset/1',
+      );
+      expect(found!.datasets.map((d) => d.toString())).toContain(
+        'https://example.org/dataset/2',
+      );
+    });
+
     it('should return undefined for non-existent URL', async () => {
       const found = await registrationStore.findByUrl(
         new URL('https://example.org/nonexistent.json'),
