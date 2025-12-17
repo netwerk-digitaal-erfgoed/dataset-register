@@ -1150,7 +1150,7 @@
               >
                 <div class="flex-1">{m.detail_class()}</div>
                 <div class="w-24 text-right">{m.detail_entities()}</div>
-                <div class="w-36">%</div>
+                <div class="w-12 sm:w-36">%</div>
               </div>
               <!-- Data rows -->
               {#each displayedClassRows ?? [] as row (row.className)}
@@ -1171,9 +1171,9 @@
                   >
                     {row.entities.toLocaleString(getLocale())}
                   </div>
-                  <div class="w-36 flex items-center gap-2">
+                  <div class="w-12 sm:w-36 flex items-center gap-2">
                     <div
-                      class="flex-1 h-2 bg-gray-200 rounded-full dark:bg-gray-600"
+                      class="hidden sm:block flex-1 h-2 bg-gray-200 rounded-full dark:bg-gray-600"
                     >
                       <div
                         class="h-2 bg-blue-600 rounded-full"
@@ -1181,7 +1181,7 @@
                       ></div>
                     </div>
                     <span
-                      class="text-xs w-12 text-right tabular-nums text-gray-600 dark:text-gray-400"
+                      class="text-xs w-full sm:w-12 text-right tabular-nums text-gray-600 dark:text-gray-400"
                       >{row.percent.toLocaleString(getLocale(), {
                         minimumFractionDigits: 1,
                         maximumFractionDigits: 1,
