@@ -8,6 +8,10 @@ declare global {
     // interface PageState {}
     // interface Platform {}
   }
+
+  interface Window {
+    _paq?: Array<Array<string | number>>;
+  }
 }
 
 export {};

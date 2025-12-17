@@ -4,9 +4,18 @@
   import * as m from '$lib/paraglide/messages';
   import { getLocale, localizeHref } from '$lib/paraglide/runtime';
   import { page } from '$app/state';
+  import { browser } from '$app/environment';
 
   let { children, data } = $props();
   const locale = $derived(data?.locale || getLocale());
+
+  // Track page views in Matomo on navigation
+  $effect(() => {
+    if (browser && window._paq) {
+      window._paq.push(['setCustomUrl', page.url.href]);
+      window._paq.push(['trackPageView']);
+    }
+  });
 
   // Mobile menu state
   let mobileMenuOpen = $state(false);
