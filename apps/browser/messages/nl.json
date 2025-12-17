@@ -162,7 +162,7 @@
   "detail_distributions_tooltip": "Distributies geven toegang tot de data.",
   "lang_badge_also_in": "Ook in het {lang}:",
   "lang_badge_unspecified": "Niet gespecificeerd",
-  "detail_catalog": "Onderdeel van catalogus",
+  "detail_is_part_of": "Onderdeel van",
   "license_cc0_1_0": "CC0 1.0 Universeel",
   "license_cc_by_4_0": "CC BY 4.0 Internationaal",
   "license_cc_by_3_0": "CC BY 3.0 Unported",

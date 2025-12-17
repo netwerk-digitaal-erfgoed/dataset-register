@@ -148,13 +148,6 @@ export const DatasetDetailSchema = {
   isPartOf: {
     '@id': dcterms.isPartOf,
     '@optional': true,
-    '@schema': {
-      '@type': 'http://www.w3.org/ns/dcat#Catalog',
-      title: {
-        '@id': dcterms.title,
-        '@multilang': true,
-      },
-    },
   },
   contentRating: {
     '@id': schema.contentRating,

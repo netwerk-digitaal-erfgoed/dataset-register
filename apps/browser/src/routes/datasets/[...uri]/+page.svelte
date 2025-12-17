@@ -410,7 +410,7 @@
             {/if}
 
             <!-- Catalog -->
-            {#if dataset.isPartOf?.title}
+            {#if dataset.isPartOf}
               <div
                 class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
               >
@@ -430,18 +430,17 @@
                       d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
                     />
                   </svg>
-                  {m.detail_catalog()}
+                  {m.detail_is_part_of()}
                 </dt>
                 <dd class="text-sm text-gray-700 dark:text-gray-300">
                   <a
-                    href={dataset.isPartOf.$id}
+                    href={`https://datasetregister.netwerkdigitaalerfgoed.nl/catalog.php?lang=${getLocale()}&uri=${encodeURIComponent(dataset.isPartOf)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     class="text-blue-600 hover:underline dark:text-blue-400"
                   >
-                    {getLocalizedValue(dataset.isPartOf.title)}
+                    {dataset.isPartOf}
                   </a>
-                  <LanguageBadge values={dataset.isPartOf.title} />
                 </dd>
               </div>
             {/if}
