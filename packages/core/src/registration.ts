@@ -7,7 +7,7 @@ export const REGISTRATION_STATUS_BASE_URI =
 export class Registration {
   private _dateRead?: Date;
   private _statusCode?: number;
-  private _datasets: URL[] = [];
+  private _datasets: URL[];
   public readonly url: URL;
   public readonly datePosted: Date;
   /**
@@ -15,10 +15,16 @@ export class Registration {
    */
   public readonly validUntil?: Date;
 
-  constructor(url: URL, datePosted: Date, validUntil?: Date) {
+  constructor(
+    url: URL,
+    datePosted: Date,
+    validUntil?: Date,
+    datasets: URL[] = [],
+  ) {
     this.url = url;
     this.datePosted = datePosted;
     this.validUntil = validUntil;
+    this._datasets = datasets;
   }
 
   /**
@@ -34,8 +40,8 @@ export class Registration {
       this.url,
       this.datePosted,
       valid ? undefined : (this.validUntil ?? date),
+      datasets,
     );
-    registration._datasets = datasets;
     registration._statusCode = statusCode;
     registration._dateRead = date;
 
