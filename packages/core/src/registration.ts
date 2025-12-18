@@ -67,11 +67,11 @@ export class Registration {
    * - 'valid': healthy registration
    */
   get registrationStatus(): 'valid' | 'invalid' | 'gone' {
-    if (this.validUntil !== undefined) {
-      return 'invalid';
-    }
     if (this._statusCode !== undefined && this._statusCode > 200) {
       return 'gone';
+    }
+    if (this.validUntil !== undefined) {
+      return 'invalid';
     }
     return 'valid';
   }

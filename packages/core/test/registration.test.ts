@@ -50,14 +50,15 @@ describe('Registration', () => {
       expect(registration.registrationStatus).toBe('gone');
     });
 
-    it('returns invalid over gone when both conditions are met', () => {
-      // When a URL returns 404 AND has validUntil, invalid takes precedence
+    it('returns gone over invalid when both conditions are met', () => {
+      // When a URL returns 404 AND has validUntil, gone takes precedence
+      // because an unavailable URL is definitively gone regardless of validation state
       const registration = new Registration(
         new URL('https://example.com/registration'),
         new Date(),
       ).read([], 404, false);
 
-      expect(registration.registrationStatus).toBe('invalid');
+      expect(registration.registrationStatus).toBe('gone');
     });
   });
 });
