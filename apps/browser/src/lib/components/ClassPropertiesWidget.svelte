@@ -56,6 +56,13 @@
   let classesExpanded = $state(false);
   let propertiesExpanded = $state(false);
 
+  // Check if any class has property partitions available
+  const hasAnyPropertyPartitions = $derived(
+    classPartitionTable.rows.some(
+      (row) => row.propertyPartition && row.propertyPartition.length > 0,
+    ),
+  );
+
   // Aggregate properties across all classes
   const aggregatedProperties = $derived.by(() => {
     const propMap = new SvelteMap<string, AggregatedProperty>();
@@ -252,7 +259,7 @@
           : ''} {selectionMode === 'property-selected'
           ? 'border-2 border-blue-200 dark:border-blue-800'
           : 'border-gray-200 dark:border-gray-700'}"
-        role="listbox"
+        role={hasAnyPropertyPartitions ? 'listbox' : 'list'}
         aria-label={m.detail_classes()}
       >
         <div
@@ -267,19 +274,28 @@
         </div>
         {#each displayedClasses as row (row.className)}
           <div
-            class="group flex items-center gap-4 px-4 py-3 text-sm cursor-pointer transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20 {selectedClass?.className ===
-            row.className
+            class="group flex items-center gap-4 px-4 py-3 text-sm transition-all {hasAnyPropertyPartitions
+              ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20'
+              : ''} {selectedClass?.className === row.className
               ? 'bg-blue-100 dark:bg-blue-900/30'
               : ''}"
-            role="option"
-            aria-selected={selectedClass?.className === row.className}
-            tabindex="0"
-            onclick={() => selectClass(row)}
-            onkeydown={(e) => handleClassKeydown(e, row)}
+            role={hasAnyPropertyPartitions ? 'option' : undefined}
+            aria-selected={hasAnyPropertyPartitions
+              ? selectedClass?.className === row.className
+              : undefined}
+            tabindex={hasAnyPropertyPartitions ? 0 : undefined}
+            onclick={hasAnyPropertyPartitions
+              ? () => selectClass(row)
+              : undefined}
+            onkeydown={hasAnyPropertyPartitions
+              ? (e) => handleClassKeydown(e, row)
+              : undefined}
           >
             <div class="flex-1 min-w-0 truncate">
               <span
-                class="text-blue-600 dark:text-blue-400 group-hover:underline"
+                class="text-blue-600 dark:text-blue-400 {hasAnyPropertyPartitions
+                  ? 'group-hover:underline'
+                  : ''}"
                 title={row.className}
               >
                 {shortenUri(row.className)}
@@ -307,14 +323,14 @@
                 })}%</span
               >
             </div>
-            {#if selectionMode !== 'property-selected'}
+            {#if hasAnyPropertyPartitions && selectionMode !== 'property-selected'}
               <ChevronRightOutline
                 class="h-5 w-5 flex-shrink-0 transition-colors {selectedClass?.className ===
                 row.className
                   ? 'text-blue-500'
                   : 'text-gray-300 group-hover:text-blue-400 dark:text-gray-600'}"
               />
-            {:else}
+            {:else if hasAnyPropertyPartitions}
               <div class="w-5"></div>
             {/if}
           </div>
