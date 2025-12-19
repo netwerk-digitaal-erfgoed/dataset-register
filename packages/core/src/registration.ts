@@ -1,8 +1,6 @@
 import { URL } from 'node:url';
 import factory from 'rdf-ext';
-
-export const REGISTRATION_STATUS_BASE_URI =
-  'https://data.netwerkdigitaalerfgoed.nl/registry/';
+import { REGISTRATION_STATUS_BASE_URI } from './constants.js';
 
 export class Registration {
   private _dateRead?: Date;

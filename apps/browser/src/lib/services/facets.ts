@@ -6,7 +6,7 @@ import {
   PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
 } from '$env/static/public';
 import { RDF_MEDIA_TYPES } from '$lib/constants.js';
-import { REGISTRATION_STATUS_BASE_URI } from '$lib/constants/registration.js';
+import { REGISTRATION_STATUS_BASE_URI } from '@dataset-register/core/constants';
 import { getLocalizedValue } from '$lib/utils/i18n';
 import * as m from '$lib/paraglide/messages';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
