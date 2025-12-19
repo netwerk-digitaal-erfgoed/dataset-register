@@ -14,13 +14,17 @@
   import { getMediaTypeLabel } from '$lib/utils/media-type.js';
   import LanguageBadge from '$lib/components/LanguageBadge.svelte';
   import { SvelteSet } from 'svelte/reactivity';
-  import { Clipboard, Tooltip } from 'flowbite-svelte';
+  import { Alert, Clipboard, Tooltip } from 'flowbite-svelte';
   import CheckOutline from 'flowbite-svelte-icons/CheckOutline.svelte';
   import ClipboardCleanSolid from 'flowbite-svelte-icons/ClipboardCleanSolid.svelte';
   import ArrowUpRightFromSquareOutline from 'flowbite-svelte-icons/ArrowUpRightFromSquareOutline.svelte';
   import QuestionCircleSolid from 'flowbite-svelte-icons/QuestionCircleSolid.svelte';
   import SearchOutline from 'flowbite-svelte-icons/SearchOutline.svelte';
-  import { displayMissingProperties } from '$lib/services/dataset-detail.js';
+  import ExclamationCircleOutline from 'flowbite-svelte-icons/ExclamationCircleOutline.svelte';
+  import {
+    displayMissingProperties,
+    getRegistrationStatus,
+  } from '$lib/services/dataset-detail.js';
   import { getRelativeTimeString } from '$lib/utils/relative-time';
   import ClassPropertiesWidget from '$lib/components/ClassPropertiesWidget.svelte';
 
@@ -90,6 +94,11 @@
   const localizedKeywords = getLocalizedArray(dataset.keyword);
   const localizedGenres = getLocalizedArray(dataset.type);
 
+  // Get registration status (gone, invalid, or null)
+  const registrationStatus = getRegistrationStatus(
+    dataset.subjectOf?.additionalType,
+  );
+
   // Table data for all class partitions with nested property partitions
   const classPartitionTable = $derived.by(() => {
     if (!summary?.classPartition?.length) return undefined;
@@ -131,35 +140,15 @@
 
 <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
   {#if dataset}
-    <!-- Archived Dataset Warning -->
-    {#if dataset.status === 'archived'}
-      <div
-        class="mb-6 rounded-lg border-l-4 border-yellow-500 bg-yellow-50 p-4 dark:bg-yellow-900/20"
-      >
-        <div class="flex items-center gap-3">
-          <svg
-            class="h-6 w-6 text-yellow-600 dark:text-yellow-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-            />
-          </svg>
-          <div>
-            <h3 class="font-semibold text-yellow-800 dark:text-yellow-200">
-              {m.detail_archived_warning()}
-            </h3>
-            <p class="text-sm text-yellow-700 dark:text-yellow-300">
-              {m.detail_archived_message()}
-            </p>
-          </div>
-        </div>
-      </div>
+    <!-- Gone/Invalid Dataset Warning -->
+    {#if registrationStatus === 'invalid' || registrationStatus === 'gone'}
+      <Alert border color="red" class="mb-6">
+        {#snippet icon()}
+          <ExclamationCircleOutline class="h-5 w-5" />
+        {/snippet}
+        <p class="font-semibold">{m.detail_archived_warning()}</p>
+        <p>{m.detail_archived_message()}</p>
+      </Alert>
     {/if}
 
     <!-- Dataset Header -->
@@ -1247,8 +1236,7 @@
                     )}"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="inline-flex flex-shrink-0 items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium text-white transition-colors {dataset
-                      .subjectOf.validUntil
+                    class="inline-flex flex-shrink-0 items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium text-white transition-colors {registrationStatus
                       ? 'bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600'
                       : 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600'}"
                   >
@@ -1265,9 +1253,13 @@
                         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    {dataset.subjectOf.validUntil
-                      ? m.detail_invalid()
-                      : m.detail_valid()}
+                    {#if registrationStatus === 'gone'}
+                      {m.detail_gone()}
+                    {:else if registrationStatus === 'invalid'}
+                      {m.detail_invalid()}
+                    {:else}
+                      {m.detail_valid()}
+                    {/if}
                   </a>
                 </div>
               </dd>

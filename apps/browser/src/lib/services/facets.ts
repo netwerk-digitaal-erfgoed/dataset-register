@@ -6,6 +6,7 @@ import {
   PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
 } from '$env/static/public';
 import { RDF_MEDIA_TYPES } from '$lib/constants.js';
+import { REGISTRATION_STATUS_BASE_URI } from '$lib/constants/registration.js';
 import { getLocalizedValue } from '$lib/utils/i18n';
 import * as m from '$lib/paraglide/messages';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
@@ -65,9 +66,6 @@ const SPARQL_PROTOCOL_URI = '<https://www.w3.org/TR/sparql11-protocol/>';
 
 const VALUE_INVALID = 'invalid';
 const VALUE_GONE = 'gone';
-
-const REGISTRATION_STATUS_BASE_URI =
-  'https://data.netwerkdigitaalerfgoed.nl/registry/';
 
 const GROUP_RDF = 'group:rdf';
 const GROUP_SPARQL = 'group:sparql';

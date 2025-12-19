@@ -168,6 +168,7 @@
   "detail_entities_count": "entiteiten",
   "detail_valid": "Geldig",
   "detail_invalid": "Ongeldig",
+  "detail_gone": "Verdwenen",
   "detail_verified_tooltip": "Deze distributie is gevalideerd door de Dataset Knowledge Graph.",
   "detail_distributions_tooltip": "Distributies geven toegang tot de data.",
   "lang_badge_also_in": "Ook in het {lang}:",

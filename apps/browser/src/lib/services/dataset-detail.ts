@@ -5,6 +5,7 @@ import { error } from '@sveltejs/kit';
 import { ndeNs, owlNs, voidNs } from '../rdf.js';
 import { BaseDatasetSchema, BaseDistributionSchema } from './datasets.js';
 import { shortenUri } from '$lib/utils/prefix';
+import { REGISTRATION_STATUS_BASE_URI } from '$lib/constants/registration.js';
 
 export const DATASET_REGISTER_ENDPOINT =
   'https://datasetregister.netwerkdigitaalerfgoed.nl/sparql';
@@ -142,6 +143,9 @@ export const DatasetDetailSchema = {
         '@id': schema.validUntil,
         '@type': xsd.dateTime,
         '@optional': true,
+      },
+      additionalType: {
+        '@id': schema.additionalType,
       },
     },
   },
@@ -353,4 +357,25 @@ export function displayMissingProperties(ratingExplanation: string): string[] {
   return ratingExplanation
     .split(', ')
     .map((ratingExplanation) => shortenUri(ratingExplanation));
+}
+
+export type RegistrationStatus = 'gone' | 'invalid' | null;
+
+/**
+ * Extracts the registration status from the additionalType URI.
+ * Returns 'gone', 'invalid', or null for valid/undefined statuses.
+ */
+export function getRegistrationStatus(
+  additionalType: string | undefined | null,
+): RegistrationStatus {
+  if (!additionalType) return null;
+
+  if (additionalType === `${REGISTRATION_STATUS_BASE_URI}gone`) {
+    return 'gone';
+  }
+  if (additionalType === `${REGISTRATION_STATUS_BASE_URI}invalid`) {
+    return 'invalid';
+  }
+
+  return null;
 }

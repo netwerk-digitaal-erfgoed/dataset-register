@@ -168,6 +168,7 @@
   "detail_entities_count": "entities",
   "detail_valid": "Valid",
   "detail_invalid": "Invalid",
+  "detail_gone": "Gone",
   "detail_verified_tooltip": "This distribution has been validated by the Dataset Knowledge Graph.",
   "detail_distributions_tooltip": "Distributions provide access to the data.",
   "lang_badge_also_in": "Also in {lang}:",
