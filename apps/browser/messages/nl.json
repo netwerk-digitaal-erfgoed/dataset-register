@@ -190,6 +190,8 @@
   "missing_properties": "Ontbrekende eigenschappen",
   "facets_status": "Status",
   "facets_status_invalid": "Ongeldige datasets",
+  "facets_status_invalid_tooltip": "Datasets waarvan de beschrijving niet meer voldoet aan de eisen.",
   "facets_status_gone": "Verdwenen datasets",
+  "facets_status_gone_tooltip": "Datasets waarvan de registratie-URL niet meer bereikbaar is.",
   "facets_status_explanation": "Standaard worden alleen actuele datasets getoond. Hier kun je kiezen datasets te bekijken die niet meer geldig of verdwenen zijn."
 }

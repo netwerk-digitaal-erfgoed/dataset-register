@@ -2,8 +2,11 @@
   import {
     type CountedFacetValue,
     facetDisplayValue,
+    facetValueTooltip,
   } from '$lib/services/facets';
   import { getLocale } from '$lib/paraglide/runtime';
+  import { Tooltip } from 'flowbite-svelte';
+  import InfoCircleOutline from 'flowbite-svelte-icons/InfoCircleOutline.svelte';
 
   let {
     value,
@@ -17,9 +20,11 @@
 
   const locale = $derived(getLocale());
   const displayValue = $derived(facetDisplayValue(value));
+  const tooltip = $derived(facetValueTooltip(value));
   const breakClass = $derived(
     displayValue.includes(' ') ? 'break-words' : 'break-all',
   );
+  const tooltipId = $derived(`tooltip-${value.value}`);
 
   function formatCount(count: number): string {
     return count.toLocaleString(locale);
@@ -41,10 +46,18 @@
     value={value.value}
   />
   <span
-    class="flex-1 text-sm text-gray-700 dark:text-gray-300 leading-tight {breakClass}"
+    class="flex-1 text-sm text-gray-700 dark:text-gray-300 leading-tight {breakClass} inline-flex items-center gap-1"
     title={displayValue}
   >
     {displayValue}
+    {#if tooltip}
+      <span id={tooltipId}>
+        <InfoCircleOutline
+          class="h-4 w-4 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+        />
+      </span>
+      <Tooltip triggeredBy="#{tooltipId}">{tooltip}</Tooltip>
+    {/if}
   </span>
   <span
     class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium tabular-nums rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
