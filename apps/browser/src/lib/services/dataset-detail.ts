@@ -243,6 +243,27 @@ const DatasetSummarySchema = {
         '@type': xsd.integer,
         '@optional': true,
       },
+      propertyPartition: {
+        '@id': voidNs.propertyPartition,
+        '@optional': true,
+        '@array': true,
+        '@schema': {
+          property: {
+            '@id': voidNs.property,
+            '@optional': true,
+          },
+          entities: {
+            '@id': voidNs.entities,
+            '@type': xsd.integer,
+            '@optional': true,
+          },
+          distinctObjects: {
+            '@id': voidNs.distinctObjects,
+            '@type': xsd.integer,
+            '@optional': true,
+          },
+        },
+      },
     },
   },
   vocabulary: {

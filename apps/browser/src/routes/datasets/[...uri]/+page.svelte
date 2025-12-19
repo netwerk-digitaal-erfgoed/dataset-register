@@ -22,14 +22,11 @@
   import SearchOutline from 'flowbite-svelte-icons/SearchOutline.svelte';
   import { displayMissingProperties } from '$lib/services/dataset-detail.js';
   import { getRelativeTimeString } from '$lib/utils/relative-time';
+  import ClassPropertiesWidget from '$lib/components/ClassPropertiesWidget.svelte';
 
   // Data is loaded server-side via +page.ts for SEO
   const { data }: { data: DatasetDetailResult } = $props();
   const { dataset, summary, linksets } = data;
-
-  // Fold-out state for classes table
-  const CLASSES_FOLD_LIMIT = 6;
-  let classesExpanded = $state(false);
 
   function isSparqlDistribution(distribution: DistributionDetail) {
     return distribution.conformsTo?.includes(
@@ -93,7 +90,7 @@
   const localizedKeywords = getLocalizedArray(dataset.keyword);
   const localizedGenres = getLocalizedArray(dataset.type);
 
-  // Table data for all class partitions
+  // Table data for all class partitions with nested property partitions
   const classPartitionTable = $derived.by(() => {
     if (!summary?.classPartition?.length) return undefined;
 
@@ -112,22 +109,20 @@
             : className;
         const entities = p.entities || 0;
         const percent = total > 0 ? (entities / total) * 100 : 0;
-        return { className, shortName, entities, percent };
+
+        // Include property partition data for the master-detail widget
+        const propertyPartition = p.propertyPartition?.map((pp) => ({
+          property: pp.property || 'Unknown',
+          shortProperty: shortenUri(pp.property || 'Unknown'),
+          entities: pp.entities || 0,
+          distinctObjects: pp.distinctObjects || 0,
+        }));
+
+        return { className, shortName, entities, percent, propertyPartition };
       }),
       total,
     };
   });
-
-  // Displayed class rows based on expansion state
-  const displayedClassRows = $derived(
-    classesExpanded
-      ? classPartitionTable?.rows
-      : classPartitionTable?.rows.slice(0, CLASSES_FOLD_LIMIT),
-  );
-
-  const hasMoreClasses = $derived(
-    (classPartitionTable?.rows.length ?? 0) > CLASSES_FOLD_LIMIT,
-  );
 
   onMount(() => {
     initFlowbite();
@@ -1104,88 +1099,9 @@
           {/if}
         </div>
 
-        <!-- Classes Section -->
+        <!-- Classes Section with Property Partitions -->
         {#if classPartitionTable}
-          <div class="mt-6">
-            <h3
-              class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
-            >
-              {m.detail_classes()}
-              <span id="tooltip-classes">
-                <QuestionCircleSolid
-                  class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
-                />
-              </span>
-              <Tooltip triggeredBy="#tooltip-classes"
-                >{m.detail_classes_description()}</Tooltip
-              >
-            </h3>
-
-            <div
-              class="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800 {classesExpanded
-                ? 'max-h-[400px] overflow-y-auto'
-                : ''}"
-            >
-              <!-- Header row -->
-              <div
-                class="flex items-center gap-4 px-4 py-3 bg-gray-100 dark:bg-gray-700 {classesExpanded
-                  ? 'sticky top-0'
-                  : ''} rounded-t-lg text-xs font-medium uppercase text-gray-700 dark:text-gray-300"
-              >
-                <div class="flex-1">{m.detail_class()}</div>
-                <div class="w-24 text-right">{m.detail_entities()}</div>
-                <div class="w-12 sm:w-36">%</div>
-              </div>
-              <!-- Data rows -->
-              {#each displayedClassRows ?? [] as row (row.className)}
-                <div class="flex items-center gap-4 px-4 py-3 text-sm">
-                  <div class="flex-1 min-w-0 truncate">
-                    <a
-                      href={row.className}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="text-blue-600 hover:underline dark:text-blue-400"
-                      title={row.className}
-                    >
-                      {shortenUri(row.className)}
-                    </a>
-                  </div>
-                  <div
-                    class="w-24 text-right tabular-nums text-gray-700 dark:text-gray-300"
-                  >
-                    {row.entities.toLocaleString(getLocale())}
-                  </div>
-                  <div class="w-12 sm:w-36 flex items-center gap-2">
-                    <div
-                      class="hidden sm:block flex-1 h-2 bg-gray-200 rounded-full dark:bg-gray-600"
-                    >
-                      <div
-                        class="h-2 bg-blue-600 rounded-full"
-                        style="width: {row.percent}%"
-                      ></div>
-                    </div>
-                    <span
-                      class="text-xs w-full sm:w-12 text-right tabular-nums text-gray-600 dark:text-gray-400"
-                      >{row.percent.toLocaleString(getLocale(), {
-                        minimumFractionDigits: 1,
-                        maximumFractionDigits: 1,
-                      })}%</span
-                    >
-                  </div>
-                </div>
-              {/each}
-            </div>
-
-            {#if hasMoreClasses}
-              <button
-                class="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors cursor-pointer"
-                onclick={() => (classesExpanded = !classesExpanded)}
-                type="button"
-              >
-                {classesExpanded ? m.facets_show_less() : m.facets_show_more()}
-              </button>
-            {/if}
-          </div>
+          <ClassPropertiesWidget {classPartitionTable} />
         {/if}
 
         <!-- Vocabularies Section -->
