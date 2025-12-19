@@ -1,5 +1,5 @@
 import { dcat } from '@lde/dataset-registry-client';
-import { dcterms, foaf, schema, xsd } from 'ldkit/namespaces';
+import { dcterms, foaf, ldkit, schema, xsd } from 'ldkit/namespaces';
 import { createLens, type Options, type SchemaInterface } from 'ldkit';
 import { error } from '@sveltejs/kit';
 import { ndeNs, owlNs, voidNs } from '../rdf.js';
@@ -184,9 +184,16 @@ export const LinksetSchema = {
   '@type': voidNs.Linkset,
   subjectsTarget: {
     '@id': voidNs.subjectsTarget,
+    '@type': ldkit.IRI,
   },
   objectsTarget: {
     '@id': voidNs.objectsTarget,
+    '@schema': {
+      title: {
+        '@id': dcterms.title,
+        '@multilang': true,
+      },
+    },
   },
   triples: {
     '@id': voidNs.triples,
