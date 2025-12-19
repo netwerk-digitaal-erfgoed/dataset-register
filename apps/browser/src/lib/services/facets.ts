@@ -545,6 +545,17 @@ const valueTranslations = {
   [GROUP_EVENT]: m['group:event'],
 };
 
+const valueTooltips = {
+  [VALUE_GONE]: m['facets_status_gone_tooltip'],
+  [VALUE_INVALID]: m['facets_status_invalid_tooltip'],
+};
+
+export function facetValueTooltip(
+  facetValue: SelectedFacetValue,
+): string | undefined {
+  return valueTooltips[facetValue.value as keyof typeof valueTooltips]?.();
+}
+
 export function facetDisplayValue(facetValue: SelectedFacetValue) {
   return (
     valueTranslations[facetValue.value as keyof typeof valueTranslations]?.() ??
