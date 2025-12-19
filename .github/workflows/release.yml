@@ -53,38 +53,3 @@ jobs:
             docker tag "$image" "$REPO:latest"
             docker push "$REPO:latest"
           done <<< "${{ steps.docker.outputs.images }}"
-
-      - uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-
-      - name: Deploy to Kubernetes
-        if: steps.docker.outputs.images
-        run: |
-          doctl kubernetes cluster kubeconfig save nde
-          echo "🚀 Deploying discovered images to Kubernetes..."
-
-          while IFS= read -r image; do
-            case "$image" in
-              *apps-api*)
-                echo "🚀 Deploying registry-api: $image"
-                kubectl set image deployment/registry-api app=$image --record &
-                ;;
-              *apps-browser*)
-                echo "🚀 Deploying registry-browser: $image"
-                kubectl set image deployment/registry-browser app=$image --record &
-                ;;
-              *apps-crawler*)
-                echo "🚀 Deploying registry-crawler: $image"
-                kubectl set image deployment/registry-crawler app=$image --record &
-                ;;
-              *)
-                echo "⚠️ Unknown image pattern: $image - skipping"
-                ;;
-            esac
-          done <<< "${{ steps.docker.outputs.images }}"
-
-          # Verify all deployments
-          echo "✅ Verifying deployments..."
-          kubectl rollout status deployment/registry-api deployment/registry-crawler deployment/registry-browser 2>/dev/null || true
-          echo "✅ All deployments completed"
