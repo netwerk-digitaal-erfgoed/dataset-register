@@ -35,7 +35,7 @@
 >
   <input
     checked={isChecked}
-    class="w-4 h-4 accent-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 cursor-pointer"
+    class="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 cursor-pointer"
     onchange={handleChange}
     type="checkbox"
     value={value.value}
