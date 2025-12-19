@@ -191,7 +191,10 @@ export const constructQuery = `
           FILTER(!isBlank(?${spatialCoverage}))
         }
         OPTIONAL { ?${dataset} dct:temporal ?${temporalCoverage} }
-        OPTIONAL { ?${dataset} dct:genre ?${genre} }
+        OPTIONAL { 
+          ?${dataset} dct:genre ?${genre}
+          FILTER(isLiteral(?${genre}))
+        }
         OPTIONAL { ?${dataset} owl:versionInfo ?${version} }
         OPTIONAL { ?${dataset} dct:isPartOf ?${includedInDataCatalog} }
         OPTIONAL { ?${dataset} dct:hasPart ?${hasPart} }
@@ -305,7 +308,10 @@ function schemaOrgQuery(prefix: string): string {
       FILTER(!isBlank(?${spatialCoverage}))
     }
     OPTIONAL { ?${dataset} ${prefix}:temporalCoverage ?${temporalCoverage} }
-    OPTIONAL { ?${dataset} ${prefix}:genre ?${genre} }
+    OPTIONAL { 
+      ?${dataset} ${prefix}:genre ?${genre}
+      FILTER(isLiteral(?${genre}))
+    }
     OPTIONAL { ?${dataset} ${prefix}:version ?${version} }
     OPTIONAL { ?${dataset} ${prefix}:includedInDataCatalog ?${includedInDataCatalog} }
     OPTIONAL { ?${dataset} ${prefix}:hasPart ?${hasPart} }
