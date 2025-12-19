@@ -87,12 +87,13 @@
     />
   {/if}
 
-  <!-- Status facet always visible so users can toggle invalid/gone -->
-  <SearchFacet
-    selectedValues={selectedValues.status}
-    values={facets?.status ?? []}
-    title={m.facets_status()}
-    explanation={m.facets_status_explanation()}
-    onChange={(values) => onChange('status', values)}
-  />
+  {#if (facets?.status ?? []).length > 0 || selectedValues.status.length > 0}
+    <SearchFacet
+      selectedValues={selectedValues.status}
+      values={facets?.status ?? []}
+      title={m.facets_status()}
+      explanation={m.facets_status_explanation()}
+      onChange={(values) => onChange('status', values)}
+    />
+  {/if}
 {/if}
