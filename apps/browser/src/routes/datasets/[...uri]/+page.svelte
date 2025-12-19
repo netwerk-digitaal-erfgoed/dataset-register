@@ -18,6 +18,8 @@
   import CheckOutline from 'flowbite-svelte-icons/CheckOutline.svelte';
   import ClipboardCleanSolid from 'flowbite-svelte-icons/ClipboardCleanSolid.svelte';
   import ArrowUpRightFromSquareOutline from 'flowbite-svelte-icons/ArrowUpRightFromSquareOutline.svelte';
+  import QuestionCircleSolid from 'flowbite-svelte-icons/QuestionCircleSolid.svelte';
+  import SearchOutline from 'flowbite-svelte-icons/SearchOutline.svelte';
   import { displayMissingProperties } from '$lib/services/dataset-detail.js';
   import { getRelativeTimeString } from '$lib/utils/relative-time';
 
@@ -758,18 +760,7 @@
             type="button"
             class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
           >
-            <svg
-              class="h-4 w-4"
-              aria-hidden="true"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
-                clip-rule="evenodd"
-              ></path>
-            </svg>
+            <QuestionCircleSolid class="h-5 w-5" />
             <span class="sr-only">{m.detail_show_info()}</span>
           </button>
           <div
@@ -945,18 +936,7 @@
             type="button"
             class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
           >
-            <svg
-              class="h-4 w-4"
-              aria-hidden="true"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
-                clip-rule="evenodd"
-              ></path>
-            </svg>
+            <QuestionCircleSolid class="h-5 w-5" />
             <span class="sr-only">{m.detail_show_info()}</span>
           </button>
           <div
@@ -1127,14 +1107,19 @@
         <!-- Classes Section -->
         {#if classPartitionTable}
           <div class="mt-6">
-            <div class="mb-4 flex items-center justify-between">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {m.detail_classes()}
-              </h3>
-            </div>
-            <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-              {m.detail_classes_description()}
-            </p>
+            <h3
+              class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
+            >
+              {m.detail_classes()}
+              <span id="tooltip-classes">
+                <QuestionCircleSolid
+                  class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+                />
+              </span>
+              <Tooltip triggeredBy="#tooltip-classes"
+                >{m.detail_classes_description()}</Tooltip
+              >
+            </h3>
 
             <div
               class="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800 {classesExpanded
@@ -1207,9 +1192,17 @@
         {#if summary.vocabulary && summary.vocabulary.length > 0}
           <div class="mt-6">
             <h3
-              class="mb-3 text-lg font-semibold text-gray-900 dark:text-white"
+              class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
             >
               {m.detail_vocabularies()}
+              <span id="tooltip-vocabularies">
+                <QuestionCircleSolid
+                  class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+                />
+              </span>
+              <Tooltip triggeredBy="#tooltip-vocabularies"
+                >{m.detail_vocabularies_description()}</Tooltip
+              >
             </h3>
             <ul class="space-y-2">
               {#each summary.vocabulary as vocab (vocab)}
@@ -1240,60 +1233,54 @@
             </ul>
           </div>
         {/if}
-      </div>
-    {/if}
 
-    <!-- Terminology Sources Section -->
-    {#if linksets.length > 0}
-      <div class="mb-8">
-        <h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
-          {m.detail_terminology_sources()}
-        </h2>
-        <div class="space-y-3">
-          {#each linksets as linkset (linkset.$id)}
-            {#if linkset.objectsTarget}
-              <div
-                class="flex items-center justify-between rounded-lg border border-gray-200 p-4 dark:border-gray-700"
+        <!-- Terminology Sources Section -->
+        {#if linksets.length > 0}
+          <div class="mt-6">
+            <h3
+              class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
+            >
+              {m.detail_terminology_sources()}
+              <span id="tooltip-terminology-sources">
+                <QuestionCircleSolid
+                  class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+                />
+              </span>
+              <Tooltip triggeredBy="#tooltip-terminology-sources"
+                >{m.detail_terminology_sources_description()}</Tooltip
               >
-                <div class="flex items-center gap-3 flex-1 min-w-0">
-                  <svg
-                    class="w-5 h-5 text-gray-600 dark:text-gray-400 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                    />
-                  </svg>
-                  <a
-                    href={linkset.objectsTarget}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="text-blue-600 hover:underline dark:text-blue-400 truncate"
-                  >
-                    {linkset.objectsTarget}
-                  </a>
-                </div>
-                {#if linkset.triples !== undefined && linkset.triples !== null}
-                  <div
-                    class="ml-4 flex-shrink-0 rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300"
-                  >
-                    {linkset.triples.toLocaleString(getLocale())}
-                    {m.dataset_triples({ count: linkset.triples })}
-                  </div>
+            </h3>
+            <ul class="space-y-2">
+              {#each linksets as linkset (linkset.$id)}
+                {#if linkset.objectsTarget}
+                  <li class="flex items-center gap-2 text-sm">
+                    <a
+                      href="/datasets?terminologySource={encodeURIComponent(
+                        linkset.objectsTarget.$id,
+                      )}"
+                      class="inline-flex items-center gap-1.5 text-blue-600 hover:underline dark:text-blue-400 break-all"
+                    >
+                      <SearchOutline class="w-4 h-4 flex-shrink-0" />
+                      {linkset.objectsTarget.title
+                        ? getLocalizedValue(linkset.objectsTarget.title)
+                        : linkset.objectsTarget.$id}
+                    </a>
+                    {#if linkset.triples !== undefined && linkset.triples !== null}
+                      <span class="text-gray-500 dark:text-gray-400">
+                        ({linkset.triples.toLocaleString(getLocale())}
+                        {m.dataset_triples({ count: linkset.triples })})
+                      </span>
+                    {/if}
+                  </li>
                 {/if}
-              </div>
-            {/if}
-          {/each}
-        </div>
+              {/each}
+            </ul>
+          </div>
+        {/if}
       </div>
     {/if}
 
-    <!-- Registratio Section -->
+    <!-- Registration Section -->
     <div class="mb-8">
       <h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
         {m.detail_registration()}
@@ -1316,18 +1303,7 @@
                   type="button"
                   class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                 >
-                  <svg
-                    class="h-4 w-4"
-                    aria-hidden="true"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
-                      clip-rule="evenodd"
-                    ></path>
-                  </svg>
+                  <QuestionCircleSolid class="h-4.5 w-4.5" />
                   <span class="sr-only">{m.detail_show_info()}</span>
                 </button>
                 <div
@@ -1396,18 +1372,7 @@
                   type="button"
                   class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                 >
-                  <svg
-                    class="h-4 w-4"
-                    aria-hidden="true"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
-                      clip-rule="evenodd"
-                    ></path>
-                  </svg>
+                  <QuestionCircleSolid class="h-4.5 w-4.5" />
                   <span class="sr-only">{m.detail_show_info()}</span>
                 </button>
                 <div
@@ -1448,18 +1413,7 @@
                   type="button"
                   class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                 >
-                  <svg
-                    class="h-4 w-4"
-                    aria-hidden="true"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
-                      clip-rule="evenodd"
-                    ></path>
-                  </svg>
+                  <QuestionCircleSolid class="h-4.5 w-4.5" />
                   <span class="sr-only">{m.detail_show_info()}</span>
                 </button>
                 <div
@@ -1505,18 +1459,7 @@
                   type="button"
                   class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                 >
-                  <svg
-                    class="h-4 w-4"
-                    aria-hidden="true"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
-                      clip-rule="evenodd"
-                    ></path>
-                  </svg>
+                  <QuestionCircleSolid class="h-4.5 w-4.5" />
                   <span class="sr-only">{m.detail_show_info()}</span>
                 </button>
                 <div
