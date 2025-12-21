@@ -5,12 +5,11 @@ import { error } from '@sveltejs/kit';
 import { ndeNs, owlNs, voidNs } from '../rdf.js';
 import { BaseDatasetSchema, BaseDistributionSchema } from './datasets.js';
 import { shortenUri } from '$lib/utils/prefix';
-import { REGISTRATION_STATUS_BASE_URI } from '$lib/constants/registration.js';
-
-export const DATASET_REGISTER_ENDPOINT =
-  'https://datasetregister.netwerkdigitaalerfgoed.nl/sparql';
-export const KNOWLEDGE_GRAPH_ENDPOINT =
-  'https://triplestore.netwerkdigitaalerfgoed.nl/repositories/dataset-knowledge-graph';
+import { REGISTRATION_STATUS_BASE_URI } from '@dataset-register/core/constants';
+import {
+  PUBLIC_SPARQL_ENDPOINT,
+  PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+} from '$env/static/public';
 
 // Extended distribution schema with additional fields for detail view
 const DetailDistributionSchema = {
@@ -316,19 +315,19 @@ export async function fetchDatasetDetail(
     options.fetch = fetch;
   }
 
-  // We need to create the lenses dynamically to be able to pass Svelte’s fetch.
+  // We need to create the lenses dynamically to be able to pass Svelte's fetch.
   const detailLens = createLens(DatasetDetailSchema, {
-    sources: [DATASET_REGISTER_ENDPOINT],
+    sources: [PUBLIC_SPARQL_ENDPOINT],
     ...options,
   });
 
   const summaryLens = createLens(DatasetSummarySchema, {
-    sources: [KNOWLEDGE_GRAPH_ENDPOINT],
+    sources: [PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT],
     ...options,
   });
 
   const linksLens = createLens(LinksetSchema, {
-    sources: [KNOWLEDGE_GRAPH_ENDPOINT],
+    sources: [PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT],
     ...options,
   });
 
