@@ -10,7 +10,6 @@ import {
   PUBLIC_SPARQL_ENDPOINT,
   PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
 } from '$env/static/public';
-
 // Extended distribution schema with additional fields for detail view
 const DetailDistributionSchema = {
   ...BaseDistributionSchema,
@@ -306,16 +305,17 @@ export interface DatasetDetailResult {
 // Main function to fetch all dataset detail data
 export async function fetchDatasetDetail(
   datasetUri: string,
-  fetch?: typeof globalThis.fetch,
 ): Promise<DatasetDetailResult> {
-  // Create lenses with custom fetch if provided
+  // We intentionally don't pass SvelteKit's fetch to LDkit.
+  // SvelteKit's fetch buffers entire response bodies for hydration serialization,
+  // which breaks the streaming RDF parser and causes 10x slower performance
+  // (~22s vs ~2.3s) on large SPARQL responses. Node's native fetch streams properly.
+  // SSR still works: content is rendered server-side with native fetch.
+
+  // Uncomment to enable query logging:
   // const options: Options = { logQuery: console.log };
   const options: Options = {};
-  if (fetch) {
-    options.fetch = fetch;
-  }
 
-  // We need to create the lenses dynamically to be able to pass Svelte's fetch.
   const detailLens = createLens(DatasetDetailSchema, {
     sources: [PUBLIC_SPARQL_ENDPOINT],
     ...options,
