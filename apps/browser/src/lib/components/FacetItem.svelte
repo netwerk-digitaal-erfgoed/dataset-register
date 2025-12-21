@@ -51,11 +51,16 @@
   >
     {displayValue}
     {#if tooltip}
-      <span id={tooltipId}>
+      <button
+        type="button"
+        id={tooltipId}
+        class="inline-flex items-center"
+        onclick={(e) => e.stopPropagation()}
+      >
         <InfoCircleOutline
           class="h-4 w-4 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
         />
-      </span>
+      </button>
       <Tooltip triggeredBy="#{tooltipId}">{tooltip}</Tooltip>
     {/if}
   </span>
