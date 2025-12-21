@@ -2,7 +2,7 @@ import { fetchDatasetDetail } from '$lib/services/dataset-detail';
 import { error } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
 
-export const load: PageLoad = async ({ params, fetch }) => {
+export const load: PageLoad = async ({ params }) => {
   // params.uri from [...uri] rest parameter contains the full path after /datasets/
   const datasetUri = params.uri;
 
@@ -10,5 +10,5 @@ export const load: PageLoad = async ({ params, fetch }) => {
     error(404, 'Dataset URI is required');
   }
 
-  return fetchDatasetDetail(datasetUri, fetch);
+  return fetchDatasetDetail(datasetUri);
 };
