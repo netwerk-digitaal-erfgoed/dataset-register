@@ -279,9 +279,9 @@ const DatasetSummarySchema = {
     '@optional': true,
     '@array': true,
     '@schema': {
-      // '@type': ldkit.IRI,
       contentSize: {
         '@id': 'https://schema.org/contentSize',
+        '@type': xsd.integer,
         '@optional': true,
       },
       dateModified: {
