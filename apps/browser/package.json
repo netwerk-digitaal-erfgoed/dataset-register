@@ -22,7 +22,7 @@
     "feed": "^5.1.0",
     "fetch-sparql-endpoint": "^6.2.0",
     "flowbite": "^4.0.0",
-    "flowbite-svelte": "^1.29.1",
+    "flowbite-svelte": "^1.31.0",
     "flowbite-svelte-icons": "^3.0.1",
     "ldkit": "^2.5.1",
     "sparqljs": "^3.7.3",
