@@ -240,15 +240,15 @@
                 >
                   {dataset.$id}
                 </a>
-                <Clipboard value={dataset.$id}>
+                <Clipboard value={dataset.$id} class="p-0">
                   {#snippet children(success)}
                     <Tooltip
                       >{success ? m.detail_copied() : m.detail_copy()}</Tooltip
                     >
                     {#if success}<CheckOutline
-                        class="text-gray-500 dark:text-gray-400"
+                        class="h-4 w-4 text-gray-500 dark:text-gray-400"
                       />{:else}<ClipboardCleanSolid
-                        class="text-gray-500 dark:text-gray-400"
+                        class="h-4 w-4 text-gray-500 dark:text-gray-400"
                       />{/if}
                   {/snippet}
                 </Clipboard>
@@ -876,7 +876,7 @@
                 {/if}
 
                 {#if distribution.accessURL}
-                  <Clipboard value={distribution.accessURL}>
+                  <Clipboard value={distribution.accessURL} class="p-0">
                     {#snippet children(success)}
                       <Tooltip
                         >{success
@@ -884,9 +884,9 @@
                           : m.detail_copy()}</Tooltip
                       >
                       {#if success}<CheckOutline
-                          class="text-gray-500 dark:text-gray-400"
+                          class="h-4 w-4 text-gray-500 dark:text-gray-400"
                         />{:else}<ClipboardCleanSolid
-                          class="text-gray-500 dark:text-gray-400"
+                          class="h-4 w-4 text-gray-500 dark:text-gray-400"
                         />{/if}
                     {/snippet}
                   </Clipboard>
