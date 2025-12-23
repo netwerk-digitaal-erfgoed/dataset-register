@@ -263,18 +263,18 @@
         aria-label={m.detail_classes()}
       >
         <div
-          class="flex items-center gap-4 px-4 py-3 bg-gray-100 dark:bg-gray-700 {classesExpanded ||
+          class="flex items-center gap-2 sm:gap-4 px-4 py-3 bg-gray-100 dark:bg-gray-700 {classesExpanded ||
           selectionMode === 'property-selected'
             ? 'sticky top-0'
             : ''} rounded-t-lg text-xs font-medium uppercase text-gray-700 dark:text-gray-300"
         >
           <div class="flex-1">{m.detail_class()}</div>
-          <div class="w-24 text-right">{m.detail_entities()}</div>
+          <div class="w-16 sm:w-24 text-right">{m.detail_entities()}</div>
           <div class="w-12 sm:w-20">%</div>
         </div>
         {#each displayedClasses as row (row.className)}
           <div
-            class="group flex items-center gap-4 px-4 py-3 text-sm transition-all {hasAnyPropertyPartitions
+            class="group flex items-center gap-2 sm:gap-4 px-4 py-3 text-sm transition-all {hasAnyPropertyPartitions
               ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20'
               : ''} {selectedClass?.className === row.className
               ? 'bg-blue-100 dark:bg-blue-900/30'
@@ -302,7 +302,7 @@
               </span>
             </div>
             <div
-              class="w-24 text-right tabular-nums text-gray-700 dark:text-gray-300"
+              class="w-16 sm:w-24 text-right tabular-nums text-gray-700 dark:text-gray-300"
             >
               {row.entities.toLocaleString(getLocale())}
             </div>
@@ -390,20 +390,20 @@
           aria-label={m.detail_properties_section()}
         >
           <div
-            class="flex items-center gap-4 px-4 py-3 bg-gray-100 dark:bg-gray-700 {propertiesExpanded ||
+            class="flex items-center gap-2 sm:gap-4 px-4 py-3 bg-gray-100 dark:bg-gray-700 {propertiesExpanded ||
             selectionMode === 'class-selected'
               ? 'sticky top-0'
               : ''} rounded-t-lg text-xs font-medium uppercase text-gray-700 dark:text-gray-300"
           >
             <div class="w-5"></div>
             <div class="flex-1">{m.detail_property()}</div>
-            <div class="w-24 text-right">{m.detail_entities()}</div>
+            <div class="w-16 sm:w-24 text-right">{m.detail_entities()}</div>
             <div class="w-12 sm:w-20">%</div>
           </div>
           {#each displayedProperties as prop (prop.property)}
             {@const percent = getPropertyPercent(prop.totalEntities)}
             <div
-              class="group flex items-center gap-4 px-4 py-3 text-sm cursor-pointer transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20 {selectedProperty?.property ===
+              class="group flex items-center gap-2 sm:gap-4 px-4 py-3 text-sm cursor-pointer transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20 {selectedProperty?.property ===
               prop.property
                 ? 'bg-blue-100 dark:bg-blue-900/30'
                 : ''}"
@@ -428,7 +428,7 @@
                 </span>
               </div>
               <div
-                class="w-24 text-right tabular-nums text-gray-700 dark:text-gray-300"
+                class="w-16 sm:w-24 text-right tabular-nums text-gray-700 dark:text-gray-300"
               >
                 {prop.totalEntities.toLocaleString(getLocale())}
               </div>
