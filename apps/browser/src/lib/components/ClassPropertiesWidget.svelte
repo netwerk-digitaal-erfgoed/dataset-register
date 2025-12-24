@@ -2,7 +2,7 @@
   import { SvelteMap } from 'svelte/reactivity';
   import * as m from '$lib/paraglide/messages';
   import { getLocale } from '$lib/paraglide/runtime';
-  import { shortenUri } from '$lib/utils/prefix.js';
+  import { shortenUri, truncateMiddle } from '$lib/utils/prefix.js';
   import { Tooltip } from 'flowbite-svelte';
   import QuestionCircleSolid from 'flowbite-svelte-icons/QuestionCircleSolid.svelte';
   import CloseOutline from 'flowbite-svelte-icons/CloseOutline.svelte';
@@ -291,14 +291,18 @@
               ? (e) => handleClassKeydown(e, row)
               : undefined}
           >
-            <div class="flex-1 min-w-0 truncate">
+            <div class="flex-1 min-w-0">
               <span
                 class="text-blue-600 dark:text-blue-400 {hasAnyPropertyPartitions
                   ? 'group-hover:underline'
                   : ''}"
                 title={row.className}
               >
-                {shortenUri(row.className)}
+                <span class="hidden sm:inline">{shortenUri(row.className)}</span
+                >
+                <span class="sm:hidden"
+                  >{truncateMiddle(shortenUri(row.className), 18)}</span
+                >
               </span>
             </div>
             <div
@@ -419,12 +423,15 @@
                   ? 'text-blue-500'
                   : 'text-gray-300 group-hover:text-blue-400 dark:text-gray-600'}"
               />
-              <div class="flex-1 min-w-0 truncate">
+              <div class="flex-1 min-w-0">
                 <span
                   class="text-blue-600 dark:text-blue-400 group-hover:underline"
                   title={prop.property}
                 >
-                  {prop.shortProperty}
+                  <span class="hidden sm:inline">{prop.shortProperty}</span>
+                  <span class="sm:hidden"
+                    >{truncateMiddle(prop.shortProperty, 18)}</span
+                  >
                 </span>
               </div>
               <div
