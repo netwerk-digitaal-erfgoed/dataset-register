@@ -4,14 +4,31 @@
   import * as m from '$lib/paraglide/messages';
   import { getLocale, localizeHref } from '$lib/paraglide/runtime';
   import { page } from '$app/state';
-  import { browser } from '$app/environment';
+  import { browser, dev } from '$app/environment';
 
   let { children, data } = $props();
   const locale = $derived(data?.locale || getLocale());
 
+  // Initialize Matomo (production only)
+  let matomoInitialized = false;
+  $effect(() => {
+    if (browser && !dev && !matomoInitialized) {
+      matomoInitialized = true;
+      window._paq = window._paq || [];
+      window._paq.push(['enableLinkTracking']);
+      const u = '//matomo.netwerkdigitaalerfgoed.nl/';
+      window._paq.push(['setTrackerUrl', u + 'matomo.php']);
+      window._paq.push(['setSiteId', '1']);
+      const g = document.createElement('script');
+      g.async = true;
+      g.src = u + 'matomo.js';
+      document.head.appendChild(g);
+    }
+  });
+
   // Track page views in Matomo on navigation
   $effect(() => {
-    if (browser && window._paq) {
+    if (browser && !dev && window._paq) {
       window._paq.push(['setCustomUrl', page.url.href]);
       window._paq.push(['trackPageView']);
     }
