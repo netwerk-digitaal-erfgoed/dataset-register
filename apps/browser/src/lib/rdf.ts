@@ -40,3 +40,9 @@ export const owlNs = createNamespace({
   prefix: 'owl:',
   terms: ['sameAs'],
 } as const);
+
+export const voidExtNs = createNamespace({
+  iri: 'http://ldf.fi/void-ext#',
+  prefix: 'void-ext:',
+  terms: ['datatypePartition', 'datatype', 'objectClassPartition'],
+} as const);

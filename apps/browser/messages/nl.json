@@ -193,5 +193,12 @@
   "facets_status_invalid_tooltip": "Datasets waarvan de beschrijving niet meer voldoet aan de eisen.",
   "facets_status_gone": "Verdwenen datasets",
   "facets_status_gone_tooltip": "Datasets waarvan de registratie-URL niet meer bereikbaar is.",
-  "facets_status_explanation": "Standaard worden alleen actuele datasets getoond. Hier kun je kiezen datasets te bekijken die niet meer geldig of verdwenen zijn."
+  "facets_status_explanation": "Standaard worden alleen actuele datasets getoond. Hier kun je kiezen datasets te bekijken die niet meer geldig of verdwenen zijn.",
+  "detail_value_types": "Waardetypes",
+  "detail_value_type": "Waardetype",
+  "detail_value_types_description": "De verdeling van datatypes voor literale waarden en klassen voor URI-objecten in deze dataset.",
+  "detail_value_types_for_class": "Waardetypes voor {className}",
+  "detail_value_types_for_property": "Waardetypes voor {propertyName}",
+  "detail_datatype": "Datatype (literal)",
+  "detail_object_class": "Objectklasse (URI)"
 }
