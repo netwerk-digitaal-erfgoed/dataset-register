@@ -193,5 +193,12 @@
   "facets_status_invalid_tooltip": "Datasets whose description no longer conforms to the requirements.",
   "facets_status_gone": "Gone datasets",
   "facets_status_gone_tooltip": "Datasets whose registration URL is no longer accessible.",
-  "facets_status_explanation": "By default only current datasets are shown. Here you can choose to view datasets that are no longer valid or no longer exist."
+  "facets_status_explanation": "By default only current datasets are shown. Here you can choose to view datasets that are no longer valid or no longer exist.",
+  "detail_value_types": "Value Types",
+  "detail_value_type": "Value Type",
+  "detail_value_types_description": "The distribution of data types for literal values and classes for URI objects in this dataset.",
+  "detail_value_types_for_class": "Value types for {className}",
+  "detail_value_types_for_property": "Value types for {propertyName}",
+  "detail_datatype": "Datatype (literal)",
+  "detail_object_class": "Object class (URI)"
 }

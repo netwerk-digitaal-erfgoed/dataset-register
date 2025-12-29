@@ -8,12 +8,28 @@
   import CloseOutline from 'flowbite-svelte-icons/CloseOutline.svelte';
   import ChevronRightOutline from 'flowbite-svelte-icons/ChevronRightOutline.svelte';
   import ChevronLeftOutline from 'flowbite-svelte-icons/ChevronLeftOutline.svelte';
+  import QuoteSolid from 'flowbite-svelte-icons/QuoteSolid.svelte';
+  import ShareNodesSolid from 'flowbite-svelte-icons/ShareNodesSolid.svelte';
+
+  interface DatatypeRow {
+    datatype: string;
+    shortDatatype: string;
+    triples: number;
+  }
+
+  interface ObjectClassRow {
+    class: string;
+    shortClass: string;
+    triples: number;
+  }
 
   interface PropertyRow {
     property: string;
     shortProperty: string;
     entities: number;
     distinctObjects: number;
+    datatypePartition?: DatatypeRow[];
+    objectClassPartition?: ObjectClassRow[];
   }
 
   interface ClassRow {
@@ -37,6 +53,19 @@
     classes: Array<{ className: string; shortName: string; entities: number }>;
   }
 
+  interface AggregatedValueType {
+    uri: string;
+    shortUri: string;
+    totalTriples: number;
+    type: 'datatype' | 'objectClass';
+    propertyCount: number;
+    properties: Array<{
+      property: string;
+      shortProperty: string;
+      triples: number;
+    }>;
+  }
+
   interface Props {
     classPartitionTable: ClassPartitionTable;
   }
@@ -55,6 +84,7 @@
   // Expansion states for each panel
   let classesExpanded = $state(false);
   let propertiesExpanded = $state(false);
+  let valueTypesExpanded = $state(false);
 
   // Check if any class has property partitions available
   const hasAnyPropertyPartitions = $derived(
@@ -167,6 +197,208 @@
     return (entities / totalPropertyEntities) * 100;
   }
 
+  // Check if any property has value type partitions
+  const hasAnyValueTypePartitions = $derived(
+    classPartitionTable.rows.some((cls) =>
+      cls.propertyPartition?.some(
+        (prop) =>
+          (prop.datatypePartition && prop.datatypePartition.length > 0) ||
+          (prop.objectClassPartition && prop.objectClassPartition.length > 0),
+      ),
+    ),
+  );
+
+  // Aggregate value types across all properties
+  const aggregatedValueTypes = $derived.by(() => {
+    const typeMap = new SvelteMap<string, AggregatedValueType>();
+
+    classPartitionTable.rows.forEach((cls) => {
+      cls.propertyPartition?.forEach((prop) => {
+        // Process datatype partitions
+        prop.datatypePartition?.forEach((dt) => {
+          const key = `datatype:${dt.datatype}`;
+          const existing = typeMap.get(key) || {
+            uri: dt.datatype,
+            shortUri: dt.shortDatatype,
+            totalTriples: 0,
+            type: 'datatype' as const,
+            propertyCount: 0,
+            properties: [],
+          };
+          existing.totalTriples += dt.triples;
+          existing.propertyCount++;
+          existing.properties.push({
+            property: prop.property,
+            shortProperty: prop.shortProperty,
+            triples: dt.triples,
+          });
+          typeMap.set(key, existing);
+        });
+
+        // Process object class partitions
+        prop.objectClassPartition?.forEach((oc) => {
+          const key = `objectClass:${oc.class}`;
+          const existing = typeMap.get(key) || {
+            uri: oc.class,
+            shortUri: oc.shortClass,
+            totalTriples: 0,
+            type: 'objectClass' as const,
+            propertyCount: 0,
+            properties: [],
+          };
+          existing.totalTriples += oc.triples;
+          existing.propertyCount++;
+          existing.properties.push({
+            property: prop.property,
+            shortProperty: prop.shortProperty,
+            triples: oc.triples,
+          });
+          typeMap.set(key, existing);
+        });
+      });
+    });
+
+    return [...typeMap.values()].sort(
+      (a, b) => b.totalTriples - a.totalTriples,
+    );
+  });
+
+  // Displayed value types based on selection
+  const displayedValueTypes = $derived.by(() => {
+    if (selectionMode === 'class-selected' && selectedClass) {
+      // Show value types for properties of the selected class
+      const typeMap = new SvelteMap<string, AggregatedValueType>();
+
+      selectedClass.propertyPartition?.forEach((prop) => {
+        prop.datatypePartition?.forEach((dt) => {
+          const key = `datatype:${dt.datatype}`;
+          const existing = typeMap.get(key) || {
+            uri: dt.datatype,
+            shortUri: dt.shortDatatype,
+            totalTriples: 0,
+            type: 'datatype' as const,
+            propertyCount: 0,
+            properties: [],
+          };
+          existing.totalTriples += dt.triples;
+          existing.propertyCount++;
+          existing.properties.push({
+            property: prop.property,
+            shortProperty: prop.shortProperty,
+            triples: dt.triples,
+          });
+          typeMap.set(key, existing);
+        });
+
+        prop.objectClassPartition?.forEach((oc) => {
+          const key = `objectClass:${oc.class}`;
+          const existing = typeMap.get(key) || {
+            uri: oc.class,
+            shortUri: oc.shortClass,
+            totalTriples: 0,
+            type: 'objectClass' as const,
+            propertyCount: 0,
+            properties: [],
+          };
+          existing.totalTriples += oc.triples;
+          existing.propertyCount++;
+          existing.properties.push({
+            property: prop.property,
+            shortProperty: prop.shortProperty,
+            triples: oc.triples,
+          });
+          typeMap.set(key, existing);
+        });
+      });
+
+      return [...typeMap.values()].sort(
+        (a, b) => b.totalTriples - a.totalTriples,
+      );
+    }
+
+    if (selectionMode === 'property-selected' && selectedProperty) {
+      // Show value types for the selected property across all classes
+      const result: AggregatedValueType[] = [];
+      const selectedProp = selectedProperty; // Capture for closure
+
+      classPartitionTable.rows.forEach((cls) => {
+        const prop = cls.propertyPartition?.find(
+          (p) => p.property === selectedProp.property,
+        );
+
+        prop?.datatypePartition?.forEach((dt) => {
+          const existing = result.find(
+            (r) => r.uri === dt.datatype && r.type === 'datatype',
+          );
+          if (existing) {
+            existing.totalTriples += dt.triples;
+          } else {
+            result.push({
+              uri: dt.datatype,
+              shortUri: dt.shortDatatype,
+              totalTriples: dt.triples,
+              type: 'datatype',
+              propertyCount: 1,
+              properties: [
+                {
+                  property: prop.property,
+                  shortProperty: prop.shortProperty,
+                  triples: dt.triples,
+                },
+              ],
+            });
+          }
+        });
+
+        prop?.objectClassPartition?.forEach((oc) => {
+          const existing = result.find(
+            (r) => r.uri === oc.class && r.type === 'objectClass',
+          );
+          if (existing) {
+            existing.totalTriples += oc.triples;
+          } else {
+            result.push({
+              uri: oc.class,
+              shortUri: oc.shortClass,
+              totalTriples: oc.triples,
+              type: 'objectClass',
+              propertyCount: 1,
+              properties: [
+                {
+                  property: prop.property,
+                  shortProperty: prop.shortProperty,
+                  triples: oc.triples,
+                },
+              ],
+            });
+          }
+        });
+      });
+
+      return result.sort((a, b) => b.totalTriples - a.totalTriples);
+    }
+
+    // Full aggregated list
+    const list = aggregatedValueTypes;
+    return valueTypesExpanded ? list : list.slice(0, FOLD_LIMIT);
+  });
+
+  const hasMoreValueTypes = $derived(
+    selectionMode !== 'class-selected' &&
+      selectionMode !== 'property-selected' &&
+      aggregatedValueTypes.length > FOLD_LIMIT,
+  );
+
+  // Percentage calculation for value types
+  const totalValueTypeTriples = $derived(
+    displayedValueTypes.reduce((sum, vt) => sum + vt.totalTriples, 0),
+  );
+
+  function getValueTypePercent(triples: number): number {
+    if (totalValueTypeTriples === 0) return 0;
+    return (triples / totalValueTypeTriples) * 100;
+  }
+
   function selectClass(row: ClassRow) {
     if (selectedClass?.className === row.className) {
       // Deselect
@@ -176,6 +408,7 @@
       selectedProperty = null;
       selectionMode = 'class-selected';
       propertiesExpanded = false;
+      valueTypesExpanded = false;
     }
   }
 
@@ -188,6 +421,7 @@
       selectedClass = null;
       selectionMode = 'property-selected';
       classesExpanded = false;
+      valueTypesExpanded = false;
     }
   }
 
@@ -273,6 +507,7 @@
           <div class="w-12 sm:w-20">%</div>
         </div>
         {#each displayedClasses as row (row.className)}
+          <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
           <div
             class="group flex items-center gap-2 sm:gap-4 px-4 py-3 text-sm transition-all {hasAnyPropertyPartitions
               ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20'
@@ -298,7 +533,8 @@
                   : ''}"
                 title={row.className}
               >
-                <span class="hidden sm:inline">{shortenUri(row.className)}</span
+                <span class="hidden sm:inline"
+                  >{truncateMiddle(shortenUri(row.className), 35)}</span
                 >
                 <span class="sm:hidden"
                   >{truncateMiddle(shortenUri(row.className), 18)}</span
@@ -403,6 +639,9 @@
             <div class="flex-1">{m.detail_property()}</div>
             <div class="w-16 sm:w-24 text-right">{m.detail_entities()}</div>
             <div class="w-12 sm:w-20">%</div>
+            {#if hasAnyValueTypePartitions}
+              <div class="w-5"></div>
+            {/if}
           </div>
           {#each displayedProperties as prop (prop.property)}
             {@const percent = getPropertyPercent(prop.totalEntities)}
@@ -428,7 +667,9 @@
                   class="text-blue-600 dark:text-blue-400 group-hover:underline"
                   title={prop.property}
                 >
-                  <span class="hidden sm:inline">{prop.shortProperty}</span>
+                  <span class="hidden sm:inline"
+                    >{truncateMiddle(prop.shortProperty, 35)}</span
+                  >
                   <span class="sm:hidden"
                     >{truncateMiddle(prop.shortProperty, 18)}</span
                   >
@@ -456,6 +697,14 @@
                   })}%</span
                 >
               </div>
+              {#if hasAnyValueTypePartitions}
+                <ChevronRightOutline
+                  class="h-5 w-5 flex-shrink-0 transition-colors {selectedProperty?.property ===
+                  prop.property
+                    ? 'text-blue-500'
+                    : 'text-gray-300 group-hover:text-blue-400 dark:text-gray-600'}"
+                />
+              {/if}
             </div>
           {/each}
         </div>
@@ -467,6 +716,132 @@
             type="button"
           >
             {propertiesExpanded ? m.facets_show_less() : m.facets_show_more()}
+          </button>
+        {/if}
+      </div>
+    {/if}
+
+    <!-- Value Types Panel (Right) -->
+    {#if hasAnyValueTypePartitions && aggregatedValueTypes.length > 0}
+      <div class="w-full lg:flex-1 min-w-0">
+        <h3
+          class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
+        >
+          {#if selectionMode === 'class-selected' && selectedClass}
+            {m.detail_value_types_for_class({
+              className: selectedClass.shortName,
+            })}
+          {:else if selectionMode === 'property-selected' && selectedProperty}
+            {m.detail_value_types_for_property({
+              propertyName: selectedProperty.shortProperty,
+            })}
+          {:else}
+            {m.detail_value_types()}
+            <span id="tooltip-value-types-widget">
+              <QuestionCircleSolid
+                class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+              />
+            </span>
+            <Tooltip triggeredBy="#tooltip-value-types-widget">
+              {m.detail_value_types_description()}
+            </Tooltip>
+          {/if}
+        </h3>
+
+        <div
+          class="divide-y divide-gray-200 rounded-lg border bg-white dark:divide-gray-700 dark:bg-gray-800 {valueTypesExpanded ||
+          selectionMode === 'class-selected' ||
+          selectionMode === 'property-selected'
+            ? 'max-h-[400px] overflow-y-auto'
+            : ''} {selectionMode === 'class-selected' ||
+          selectionMode === 'property-selected'
+            ? 'border-2 border-blue-200 dark:border-blue-800'
+            : 'border-gray-200 dark:border-gray-700'}"
+          role="list"
+          aria-label={m.detail_value_types()}
+        >
+          <div
+            class="flex items-center gap-2 sm:gap-4 px-4 py-3 bg-gray-100 dark:bg-gray-700 {valueTypesExpanded ||
+            selectionMode === 'class-selected' ||
+            selectionMode === 'property-selected'
+              ? 'sticky top-0'
+              : ''} rounded-t-lg text-xs font-medium uppercase text-gray-700 dark:text-gray-300"
+          >
+            <div class="w-5"></div>
+            <div class="flex-1">{m.detail_value_type()}</div>
+            <div class="w-16 sm:w-24 text-right">{m.detail_triples()}</div>
+            <div class="w-12 sm:w-20">%</div>
+          </div>
+          {#each displayedValueTypes as vt (`${vt.type}:${vt.uri}`)}
+            {@const percent = getValueTypePercent(vt.totalTriples)}
+            <div
+              class="group flex items-center gap-2 sm:gap-4 px-4 py-3 text-sm transition-all"
+              role="listitem"
+            >
+              <!-- Type indicator icon -->
+              <div class="w-5 flex-shrink-0">
+                {#if vt.type === 'datatype'}
+                  <span
+                    class="text-blue-500 dark:text-blue-400"
+                    title={m.detail_datatype()}
+                  >
+                    <QuoteSolid class="h-4 w-4" />
+                  </span>
+                {:else}
+                  <span
+                    class="text-cyan-500 dark:text-cyan-400"
+                    title={m.detail_object_class()}
+                  >
+                    <ShareNodesSolid class="h-4 w-4" />
+                  </span>
+                {/if}
+              </div>
+              <div class="flex-1 min-w-0">
+                <span class="text-blue-600 dark:text-blue-400" title={vt.uri}>
+                  <span class="hidden sm:inline"
+                    >{truncateMiddle(vt.shortUri, 35)}</span
+                  >
+                  <span class="sm:hidden"
+                    >{truncateMiddle(vt.shortUri, 18)}</span
+                  >
+                </span>
+              </div>
+              <div
+                class="w-16 sm:w-24 text-right tabular-nums text-gray-700 dark:text-gray-300"
+              >
+                {vt.totalTriples.toLocaleString(getLocale())}
+              </div>
+              <div class="w-12 sm:w-20 flex items-center gap-2">
+                <div
+                  class="hidden sm:block flex-1 h-2 bg-gray-200 rounded-full dark:bg-gray-600"
+                >
+                  <div
+                    class="h-2 {vt.type === 'datatype'
+                      ? 'bg-blue-500'
+                      : 'bg-cyan-500'} rounded-full"
+                    style="width: {percent}%"
+                  ></div>
+                </div>
+                <span
+                  class="text-xs w-full sm:w-10 text-right tabular-nums text-gray-600 dark:text-gray-400"
+                >
+                  {percent.toLocaleString(getLocale(), {
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1,
+                  })}%
+                </span>
+              </div>
+            </div>
+          {/each}
+        </div>
+
+        {#if hasMoreValueTypes}
+          <button
+            class="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors cursor-pointer"
+            onclick={() => (valueTypesExpanded = !valueTypesExpanded)}
+            type="button"
+          >
+            {valueTypesExpanded ? m.facets_show_less() : m.facets_show_more()}
           </button>
         {/if}
       </div>

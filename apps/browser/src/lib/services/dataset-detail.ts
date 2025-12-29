@@ -2,7 +2,7 @@ import { dcat } from '@lde/dataset-registry-client';
 import { dcterms, foaf, ldkit, schema, xsd } from 'ldkit/namespaces';
 import { createLens, type Options, type SchemaInterface } from 'ldkit';
 import { error } from '@sveltejs/kit';
-import { ndeNs, owlNs, voidNs } from '../rdf.js';
+import { ndeNs, owlNs, voidExtNs, voidNs } from '../rdf.js';
 import { BaseDatasetSchema, BaseDistributionSchema } from './datasets.js';
 import { shortenUri } from '$lib/utils/prefix';
 import { REGISTRATION_STATUS_BASE_URI } from '@dataset-register/core/constants';
@@ -263,6 +263,34 @@ const DatasetSummarySchema = {
             '@id': voidNs.distinctObjects,
             '@type': xsd.integer,
             '@optional': true,
+          },
+          datatypePartition: {
+            '@id': voidExtNs.datatypePartition,
+            '@optional': true,
+            '@array': true,
+            '@schema': {
+              datatype: {
+                '@id': voidExtNs.datatype,
+              },
+              triples: {
+                '@id': voidNs.triples,
+                '@type': xsd.integer,
+              },
+            },
+          },
+          objectClassPartition: {
+            '@id': voidExtNs.objectClassPartition,
+            '@optional': true,
+            '@array': true,
+            '@schema': {
+              class: {
+                '@id': voidNs.class,
+              },
+              triples: {
+                '@id': voidNs.triples,
+                '@type': xsd.integer,
+              },
+            },
           },
         },
       },

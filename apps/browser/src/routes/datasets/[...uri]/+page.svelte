@@ -125,6 +125,16 @@
           shortProperty: shortenUri(pp.property || 'Unknown'),
           entities: pp.entities || 0,
           distinctObjects: pp.distinctObjects || 0,
+          datatypePartition: pp.datatypePartition?.map((dt) => ({
+            datatype: dt.datatype || 'Unknown',
+            shortDatatype: shortenUri(dt.datatype || 'Unknown'),
+            triples: dt.triples || 0,
+          })),
+          objectClassPartition: pp.objectClassPartition?.map((oc) => ({
+            class: oc.class || 'Unknown',
+            shortClass: shortenUri(oc.class || 'Unknown'),
+            triples: oc.triples || 0,
+          })),
         }));
 
         return { className, shortName, entities, percent, propertyPartition };
