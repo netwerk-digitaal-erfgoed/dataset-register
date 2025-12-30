@@ -2,7 +2,11 @@
   import { SvelteMap } from 'svelte/reactivity';
   import * as m from '$lib/paraglide/messages';
   import { getLocale } from '$lib/paraglide/runtime';
-  import { shortenUri, truncateMiddle } from '$lib/utils/prefix.js';
+  import {
+    shortenUri,
+    stripUrlPrefix,
+    truncateMiddle,
+  } from '$lib/utils/prefix.js';
   import { Tooltip } from 'flowbite-svelte';
   import QuestionCircleSolid from 'flowbite-svelte-icons/QuestionCircleSolid.svelte';
   import CloseOutline from 'flowbite-svelte-icons/CloseOutline.svelte';
@@ -497,19 +501,23 @@
         aria-label={m.detail_classes()}
       >
         <div
-          class="flex items-center gap-2 sm:gap-4 px-4 py-3 bg-gray-100 dark:bg-gray-700 {classesExpanded ||
+          class="flex items-center gap-1 sm:gap-2 px-1 sm:px-4 py-3 bg-gray-100 dark:bg-gray-700 {classesExpanded ||
           selectionMode === 'property-selected'
             ? 'sticky top-0'
             : ''} rounded-t-lg text-xs font-medium uppercase text-gray-700 dark:text-gray-300"
         >
-          <div class="flex-1">{m.detail_class()}</div>
-          <div class="w-16 sm:w-24 text-right">{m.detail_entities()}</div>
-          <div class="w-12 sm:w-20">%</div>
+          <div class="flex-1 min-w-0">{m.detail_class()}</div>
+          <div class="w-[6.25rem] sm:w-40 text-right flex-shrink-0">
+            {m.detail_entities()}
+          </div>
+          {#if hasAnyPropertyPartitions}
+            <div class="w-3 flex-shrink-0"></div>
+          {/if}
         </div>
         {#each displayedClasses as row (row.className)}
           <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
           <div
-            class="group flex items-center gap-2 sm:gap-4 px-4 py-3 text-sm transition-all {hasAnyPropertyPartitions
+            class="group flex items-center gap-1 sm:gap-2 px-1 sm:px-4 py-3 text-sm transition-all {hasAnyPropertyPartitions
               ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20'
               : ''} {selectedClass?.className === row.className
               ? 'bg-blue-100 dark:bg-blue-900/30'
@@ -528,25 +536,20 @@
           >
             <div class="flex-1 min-w-0">
               <span
-                class="text-blue-600 dark:text-blue-400 {hasAnyPropertyPartitions
+                class="block text-blue-600 dark:text-blue-400 {hasAnyPropertyPartitions
                   ? 'group-hover:underline'
                   : ''}"
                 title={row.className}
               >
-                <span class="hidden sm:inline"
-                  >{truncateMiddle(shortenUri(row.className), 35)}</span
-                >
-                <span class="sm:hidden"
-                  >{truncateMiddle(shortenUri(row.className), 18)}</span
-                >
+                {truncateMiddle(stripUrlPrefix(shortenUri(row.className)), 25)}
               </span>
             </div>
             <div
-              class="w-16 sm:w-24 text-right tabular-nums text-gray-700 dark:text-gray-300"
+              class="w-16 sm:w-20 text-right tabular-nums text-gray-700 dark:text-gray-300 text-xs"
             >
               {row.entities.toLocaleString(getLocale())}
             </div>
-            <div class="w-12 sm:w-20 flex items-center gap-2">
+            <div class="w-8 sm:w-20 flex items-center gap-2">
               <div
                 class="hidden sm:block flex-1 h-2 bg-gray-200 rounded-full dark:bg-gray-600"
               >
@@ -557,21 +560,24 @@
               </div>
               <span
                 class="text-xs w-full sm:w-10 text-right tabular-nums text-gray-600 dark:text-gray-400"
-                >{row.percent.toLocaleString(getLocale(), {
-                  minimumFractionDigits: 1,
-                  maximumFractionDigits: 1,
-                })}%</span
+                ><span class="sm:hidden">{Math.round(row.percent)}%</span><span
+                  class="hidden sm:inline"
+                  >{row.percent.toLocaleString(getLocale(), {
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1,
+                  })}%</span
+                ></span
               >
             </div>
             {#if hasAnyPropertyPartitions && selectionMode !== 'property-selected'}
               <ChevronRightOutline
-                class="h-5 w-5 flex-shrink-0 transition-colors {selectedClass?.className ===
+                class="h-5 w-5 -mr-2 flex-shrink-0 transition-colors {selectedClass?.className ===
                 row.className
                   ? 'text-blue-500'
                   : 'text-gray-300 group-hover:text-blue-400 dark:text-gray-600'}"
               />
             {:else if hasAnyPropertyPartitions}
-              <div class="w-5"></div>
+              <div class="w-3"></div>
             {/if}
           </div>
         {/each}
@@ -630,23 +636,24 @@
           aria-label={m.detail_properties_section()}
         >
           <div
-            class="flex items-center gap-2 sm:gap-4 px-4 py-3 bg-gray-100 dark:bg-gray-700 {propertiesExpanded ||
+            class="flex items-center gap-1 sm:gap-2 px-1 sm:px-4 py-3 bg-gray-100 dark:bg-gray-700 {propertiesExpanded ||
             selectionMode === 'class-selected'
               ? 'sticky top-0'
               : ''} rounded-t-lg text-xs font-medium uppercase text-gray-700 dark:text-gray-300"
           >
-            <div class="w-5"></div>
-            <div class="flex-1">{m.detail_property()}</div>
-            <div class="w-16 sm:w-24 text-right">{m.detail_entities()}</div>
-            <div class="w-12 sm:w-20">%</div>
+            <div class="w-3 flex-shrink-0"></div>
+            <div class="flex-1 min-w-0">{m.detail_property()}</div>
+            <div class="w-[6.25rem] sm:w-40 text-right flex-shrink-0">
+              {m.detail_entities()}
+            </div>
             {#if hasAnyValueTypePartitions}
-              <div class="w-5"></div>
+              <div class="w-3 flex-shrink-0"></div>
             {/if}
           </div>
           {#each displayedProperties as prop (prop.property)}
             {@const percent = getPropertyPercent(prop.totalEntities)}
             <div
-              class="group flex items-center gap-2 sm:gap-4 px-4 py-3 text-sm cursor-pointer transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20 {selectedProperty?.property ===
+              class="group flex items-center gap-1 sm:gap-2 px-1 sm:px-4 py-3 text-sm cursor-pointer transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20 {selectedProperty?.property ===
               prop.property
                 ? 'bg-blue-100 dark:bg-blue-900/30'
                 : ''}"
@@ -657,30 +664,25 @@
               onkeydown={(e) => handlePropertyKeydown(e, prop)}
             >
               <ChevronLeftOutline
-                class="h-5 w-5 flex-shrink-0 transition-colors {selectedProperty?.property ===
+                class="h-5 w-5 -ml-2 flex-shrink-0 transition-colors {selectedProperty?.property ===
                 prop.property
                   ? 'text-blue-500'
                   : 'text-gray-300 group-hover:text-blue-400 dark:text-gray-600'}"
               />
               <div class="flex-1 min-w-0">
                 <span
-                  class="text-blue-600 dark:text-blue-400 group-hover:underline"
+                  class="block text-blue-600 dark:text-blue-400 group-hover:underline"
                   title={prop.property}
                 >
-                  <span class="hidden sm:inline"
-                    >{truncateMiddle(prop.shortProperty, 35)}</span
-                  >
-                  <span class="sm:hidden"
-                    >{truncateMiddle(prop.shortProperty, 18)}</span
-                  >
+                  {truncateMiddle(stripUrlPrefix(prop.shortProperty), 25)}
                 </span>
               </div>
               <div
-                class="w-16 sm:w-24 text-right tabular-nums text-gray-700 dark:text-gray-300"
+                class="w-16 sm:w-20 text-right tabular-nums text-gray-700 dark:text-gray-300 text-xs"
               >
                 {prop.totalEntities.toLocaleString(getLocale())}
               </div>
-              <div class="w-12 sm:w-20 flex items-center gap-2">
+              <div class="w-8 sm:w-20 flex items-center gap-2">
                 <div
                   class="hidden sm:block flex-1 h-2 bg-gray-200 rounded-full dark:bg-gray-600"
                 >
@@ -691,15 +693,18 @@
                 </div>
                 <span
                   class="text-xs w-full sm:w-10 text-right tabular-nums text-gray-600 dark:text-gray-400"
-                  >{percent.toLocaleString(getLocale(), {
-                    minimumFractionDigits: 1,
-                    maximumFractionDigits: 1,
-                  })}%</span
+                  ><span class="sm:hidden">{Math.round(percent)}%</span><span
+                    class="hidden sm:inline"
+                    >{percent.toLocaleString(getLocale(), {
+                      minimumFractionDigits: 1,
+                      maximumFractionDigits: 1,
+                    })}%</span
+                  ></span
                 >
               </div>
               {#if hasAnyValueTypePartitions}
                 <ChevronRightOutline
-                  class="h-5 w-5 flex-shrink-0 transition-colors {selectedProperty?.property ===
+                  class="h-5 w-5 -mr-2 flex-shrink-0 transition-colors {selectedProperty?.property ===
                   prop.property
                     ? 'text-blue-500'
                     : 'text-gray-300 group-hover:text-blue-400 dark:text-gray-600'}"
@@ -761,21 +766,22 @@
           aria-label={m.detail_value_types()}
         >
           <div
-            class="flex items-center gap-2 sm:gap-4 px-4 py-3 bg-gray-100 dark:bg-gray-700 {valueTypesExpanded ||
+            class="flex items-center gap-1 sm:gap-2 px-1 sm:px-4 py-3 bg-gray-100 dark:bg-gray-700 {valueTypesExpanded ||
             selectionMode === 'class-selected' ||
             selectionMode === 'property-selected'
               ? 'sticky top-0'
               : ''} rounded-t-lg text-xs font-medium uppercase text-gray-700 dark:text-gray-300"
           >
-            <div class="w-5"></div>
-            <div class="flex-1">{m.detail_value_type()}</div>
-            <div class="w-16 sm:w-24 text-right">{m.detail_triples()}</div>
-            <div class="w-12 sm:w-20">%</div>
+            <div class="w-5 flex-shrink-0"></div>
+            <div class="flex-1 min-w-0">{m.detail_value_type()}</div>
+            <div class="w-[6.25rem] sm:w-40 text-right flex-shrink-0">
+              {m.detail_triples()}
+            </div>
           </div>
           {#each displayedValueTypes as vt (`${vt.type}:${vt.uri}`)}
             {@const percent = getValueTypePercent(vt.totalTriples)}
             <div
-              class="group flex items-center gap-2 sm:gap-4 px-4 py-3 text-sm transition-all"
+              class="group flex items-center gap-1 sm:gap-2 px-1 sm:px-4 py-3 text-sm transition-all"
               role="listitem"
             >
               <!-- Type indicator icon -->
@@ -797,21 +803,19 @@
                 {/if}
               </div>
               <div class="flex-1 min-w-0">
-                <span class="text-blue-600 dark:text-blue-400" title={vt.uri}>
-                  <span class="hidden sm:inline"
-                    >{truncateMiddle(vt.shortUri, 35)}</span
-                  >
-                  <span class="sm:hidden"
-                    >{truncateMiddle(vt.shortUri, 18)}</span
-                  >
+                <span
+                  class="block text-blue-600 dark:text-blue-400"
+                  title={vt.uri}
+                >
+                  {truncateMiddle(stripUrlPrefix(vt.shortUri), 25)}
                 </span>
               </div>
               <div
-                class="w-16 sm:w-24 text-right tabular-nums text-gray-700 dark:text-gray-300"
+                class="w-16 sm:w-20 text-right tabular-nums text-gray-700 dark:text-gray-300 text-xs"
               >
                 {vt.totalTriples.toLocaleString(getLocale())}
               </div>
-              <div class="w-12 sm:w-20 flex items-center gap-2">
+              <div class="w-8 sm:w-20 flex items-center gap-2">
                 <div
                   class="hidden sm:block flex-1 h-2 bg-gray-200 rounded-full dark:bg-gray-600"
                 >
@@ -825,10 +829,13 @@
                 <span
                   class="text-xs w-full sm:w-10 text-right tabular-nums text-gray-600 dark:text-gray-400"
                 >
-                  {percent.toLocaleString(getLocale(), {
-                    minimumFractionDigits: 1,
-                    maximumFractionDigits: 1,
-                  })}%
+                  <span class="sm:hidden">{Math.round(percent)}%</span><span
+                    class="hidden sm:inline"
+                    >{percent.toLocaleString(getLocale(), {
+                      minimumFractionDigits: 1,
+                      maximumFractionDigits: 1,
+                    })}%</span
+                  >
                 </span>
               </div>
             </div>
