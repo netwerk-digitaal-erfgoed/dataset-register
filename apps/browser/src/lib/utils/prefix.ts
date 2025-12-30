@@ -8,6 +8,7 @@ export function shortenUri(uri: string): string {
   const shortened = shrink(uri, {
     edm: 'http://www.europeana.eu/schemas/edm/',
     omekas: 'http://omeka.org/s/vocabs/o#',
+    ore: 'https://openarchives.org/ore/terms/',
     pico: 'https://personsincontext.org/model#',
     pnv: 'https://w3id.org/pnv#',
     sdo: 'https://schema.org/',
