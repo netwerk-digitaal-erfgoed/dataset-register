@@ -16,6 +16,14 @@ export function shortenUri(uri: string): string {
 }
 
 /**
+ * Strips common URL prefixes (https://www., http://www., https://, http://).
+ * @example stripUrlPrefix('https://www.example.com/path') => 'example.com/path'
+ */
+export function stripUrlPrefix(url: string): string {
+  return url.replace(/^https?:\/\/(www\.)?/, '');
+}
+
+/**
  * Truncates a string in the middle if it exceeds maxLength.
  * Shows beginning and end with ellipsis in the middle.
  * @example truncateMiddle('sdo:hasExactMatch', 12) => 'sdo:h…Match'
