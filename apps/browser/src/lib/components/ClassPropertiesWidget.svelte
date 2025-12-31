@@ -197,6 +197,12 @@
   );
 
   function getPropertyPercent(entities: number): number {
+    // When a class is selected, calculate percentage relative to class entity count
+    if (selectionMode === 'class-selected' && selectedClass) {
+      if (selectedClass.entities === 0) return 0;
+      return (entities / selectedClass.entities) * 100;
+    }
+    // Otherwise, use the sum of displayed properties (relative comparison)
     if (totalPropertyEntities === 0) return 0;
     return (entities / totalPropertyEntities) * 100;
   }
