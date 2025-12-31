@@ -80,10 +80,15 @@
   const RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
 
   // Selection state
-  type SelectionMode = 'none' | 'class-selected' | 'property-selected';
+  type SelectionMode =
+    | 'none'
+    | 'class-selected'
+    | 'property-selected'
+    | 'value-type-selected';
   let selectionMode = $state<SelectionMode>('none');
   let selectedClass = $state<ClassRow | null>(null);
   let selectedProperty = $state<AggregatedProperty | null>(null);
+  let selectedValueType = $state<AggregatedValueType | null>(null);
 
   // Expansion states for each panel
   let classesExpanded = $state(false);
@@ -131,7 +136,7 @@
     );
   });
 
-  // Classes to display (full list or filtered by selected property)
+  // Classes to display (full list or filtered by selected property or value type)
   const displayedClasses = $derived.by(() => {
     if (selectionMode === 'property-selected' && selectedProperty) {
       // Show only classes that use the selected property
@@ -148,6 +153,19 @@
         };
       });
     }
+    if (selectionMode === 'value-type-selected' && selectedValueType) {
+      // Show only classes that have properties using the selected value type
+      const vt = selectedValueType;
+      return classPartitionTable.rows.filter((cls) =>
+        cls.propertyPartition?.some((prop) => {
+          if (vt.type === 'datatype') {
+            return prop.datatypePartition?.some((dt) => dt.datatype === vt.uri);
+          } else {
+            return prop.objectClassPartition?.some((oc) => oc.class === vt.uri);
+          }
+        }),
+      );
+    }
     // Full list
     const list = classPartitionTable.rows;
     return classesExpanded ? list : list.slice(0, FOLD_LIMIT);
@@ -155,10 +173,11 @@
 
   const hasMoreClasses = $derived(
     selectionMode !== 'property-selected' &&
+      selectionMode !== 'value-type-selected' &&
       classPartitionTable.rows.length > FOLD_LIMIT,
   );
 
-  // Properties to display (full list or filtered by selected class)
+  // Properties to display (full list or filtered by selected class or value type)
   const displayedProperties = $derived.by(() => {
     const cls = selectedClass;
     if (selectionMode === 'class-selected' && cls?.propertyPartition) {
@@ -181,6 +200,28 @@
           ],
         }));
     }
+    if (selectionMode === 'value-type-selected' && selectedValueType) {
+      // Show only aggregated properties that have the selected value type
+      const vt = selectedValueType;
+      return aggregatedProperties.filter((prop) => {
+        // Check if any class has this property with the selected value type
+        return classPartitionTable.rows.some((cls) => {
+          const classProp = cls.propertyPartition?.find(
+            (p) => p.property === prop.property,
+          );
+          if (!classProp) return false;
+          if (vt.type === 'datatype') {
+            return classProp.datatypePartition?.some(
+              (dt) => dt.datatype === vt.uri,
+            );
+          } else {
+            return classProp.objectClassPartition?.some(
+              (oc) => oc.class === vt.uri,
+            );
+          }
+        });
+      });
+    }
     // Full aggregated list
     const list = aggregatedProperties;
     return propertiesExpanded ? list : list.slice(0, FOLD_LIMIT);
@@ -188,6 +229,7 @@
 
   const hasMoreProperties = $derived(
     selectionMode !== 'class-selected' &&
+      selectionMode !== 'value-type-selected' &&
       aggregatedProperties.length > FOLD_LIMIT,
   );
 
@@ -438,7 +480,26 @@
   function clearSelection() {
     selectedClass = null;
     selectedProperty = null;
+    selectedValueType = null;
     selectionMode = 'none';
+  }
+
+  function selectValueType(vt: AggregatedValueType) {
+    if (
+      selectionMode === 'value-type-selected' &&
+      selectedValueType?.uri === vt.uri &&
+      selectedValueType?.type === vt.type
+    ) {
+      // Deselect
+      clearSelection();
+    } else {
+      selectedValueType = vt;
+      selectedClass = null;
+      selectedProperty = null;
+      selectionMode = 'value-type-selected';
+      classesExpanded = false;
+      propertiesExpanded = false;
+    }
   }
 
   function handleClassKeydown(event: KeyboardEvent, row: ClassRow) {
@@ -457,6 +518,18 @@
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       selectProperty(prop);
+    } else if (event.key === 'Escape') {
+      clearSelection();
+    }
+  }
+
+  function handleValueTypeKeydown(
+    event: KeyboardEvent,
+    vt: AggregatedValueType,
+  ) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      selectValueType(vt);
     } else if (event.key === 'Escape') {
       clearSelection();
     }
@@ -483,6 +556,18 @@
           {m.detail_classes_for_property({
             propertyName: selectedProperty.shortProperty,
           })}
+        {:else if selectionMode === 'value-type-selected' && selectedValueType}
+          <button
+            class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            onclick={clearSelection}
+            aria-label={m.detail_close_properties()}
+            type="button"
+          >
+            <CloseOutline class="h-4 w-4" />
+          </button>
+          {m.detail_classes_for_value_type({
+            valueTypeName: selectedValueType.shortUri,
+          })}
         {:else}
           {m.detail_classes()}
           <span id="tooltip-classes-widget">
@@ -498,9 +583,11 @@
 
       <div
         class="divide-y divide-gray-200 rounded-lg border bg-white dark:divide-gray-700 dark:bg-gray-800 {classesExpanded ||
-        selectionMode === 'property-selected'
+        selectionMode === 'property-selected' ||
+        selectionMode === 'value-type-selected'
           ? 'max-h-[400px] overflow-y-auto'
-          : ''} {selectionMode === 'property-selected'
+          : ''} {selectionMode === 'property-selected' ||
+        selectionMode === 'value-type-selected'
           ? 'border-2 border-blue-200 dark:border-blue-800'
           : 'border-gray-200 dark:border-gray-700'}"
         role={hasAnyPropertyPartitions ? 'listbox' : 'list'}
@@ -508,7 +595,8 @@
       >
         <div
           class="flex items-center gap-1 sm:gap-2 px-1 sm:px-4 py-3 bg-gray-100 dark:bg-gray-700 {classesExpanded ||
-          selectionMode === 'property-selected'
+          selectionMode === 'property-selected' ||
+          selectionMode === 'value-type-selected'
             ? 'sticky top-0'
             : ''} rounded-t-lg text-xs font-medium uppercase text-gray-700 dark:text-gray-300"
         >
@@ -575,7 +663,7 @@
                 ></span
               >
             </div>
-            {#if hasAnyPropertyPartitions && selectionMode !== 'property-selected'}
+            {#if hasAnyPropertyPartitions && selectionMode !== 'property-selected' && selectionMode !== 'value-type-selected'}
               <ChevronRightOutline
                 class="h-5 w-5 -mr-2 flex-shrink-0 transition-colors {selectedClass?.className ===
                 row.className
@@ -618,6 +706,18 @@
             >
               <CloseOutline class="h-4 w-4" />
             </button>
+          {:else if selectionMode === 'value-type-selected' && selectedValueType}
+            <button
+              class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              onclick={clearSelection}
+              aria-label={m.detail_close_properties()}
+              type="button"
+            >
+              <CloseOutline class="h-4 w-4" />
+            </button>
+            {m.detail_properties_for_value_type({
+              valueTypeName: selectedValueType.shortUri,
+            })}
           {:else}
             {m.detail_properties_section()}
             <span id="tooltip-properties-widget">
@@ -633,9 +733,11 @@
 
         <div
           class="divide-y divide-gray-200 rounded-lg border bg-white dark:divide-gray-700 dark:bg-gray-800 {propertiesExpanded ||
-          selectionMode === 'class-selected'
+          selectionMode === 'class-selected' ||
+          selectionMode === 'value-type-selected'
             ? 'max-h-[400px] overflow-y-auto'
-            : ''} {selectionMode === 'class-selected'
+            : ''} {selectionMode === 'class-selected' ||
+          selectionMode === 'value-type-selected'
             ? 'border-2 border-blue-200 dark:border-blue-800'
             : 'border-gray-200 dark:border-gray-700'}"
           role="listbox"
@@ -643,7 +745,8 @@
         >
           <div
             class="flex items-center gap-1 sm:gap-2 px-1 sm:px-4 py-3 bg-gray-100 dark:bg-gray-700 {propertiesExpanded ||
-            selectionMode === 'class-selected'
+            selectionMode === 'class-selected' ||
+            selectionMode === 'value-type-selected'
               ? 'sticky top-0'
               : ''} rounded-t-lg text-xs font-medium uppercase text-gray-700 dark:text-gray-300"
           >
@@ -708,13 +811,15 @@
                   ></span
                 >
               </div>
-              {#if hasAnyValueTypePartitions}
+              {#if hasAnyValueTypePartitions && selectionMode !== 'value-type-selected'}
                 <ChevronRightOutline
                   class="h-5 w-5 -mr-2 flex-shrink-0 transition-colors {selectedProperty?.property ===
                   prop.property
                     ? 'text-blue-500'
                     : 'text-gray-300 group-hover:text-blue-400 dark:text-gray-600'}"
                 />
+              {:else if hasAnyValueTypePartitions}
+                <div class="w-3"></div>
               {/if}
             </div>
           {/each}
@@ -768,7 +873,7 @@
           selectionMode === 'property-selected'
             ? 'border-2 border-blue-200 dark:border-blue-800'
             : 'border-gray-200 dark:border-gray-700'}"
-          role="list"
+          role="listbox"
           aria-label={m.detail_value_types()}
         >
           <div
@@ -778,6 +883,7 @@
               ? 'sticky top-0'
               : ''} rounded-t-lg text-xs font-medium uppercase text-gray-700 dark:text-gray-300"
           >
+            <div class="w-3 flex-shrink-0"></div>
             <div class="w-5 flex-shrink-0"></div>
             <div class="flex-1 min-w-0">{m.detail_value_type()}</div>
             <div class="w-[6.25rem] sm:w-40 text-right flex-shrink-0">
@@ -786,10 +892,25 @@
           </div>
           {#each displayedValueTypes as vt (`${vt.type}:${vt.uri}`)}
             {@const percent = getValueTypePercent(vt.totalTriples)}
+            {@const isSelected =
+              selectionMode === 'value-type-selected' &&
+              selectedValueType?.uri === vt.uri &&
+              selectedValueType?.type === vt.type}
             <div
-              class="group flex items-center gap-1 sm:gap-2 px-1 sm:px-4 py-3 text-sm transition-all"
-              role="listitem"
+              class="group flex items-center gap-1 sm:gap-2 px-1 sm:px-4 py-3 text-sm transition-all cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 {isSelected
+                ? 'bg-blue-100 dark:bg-blue-900/30'
+                : ''}"
+              role="option"
+              aria-selected={isSelected}
+              tabindex="0"
+              onclick={() => selectValueType(vt)}
+              onkeydown={(e) => handleValueTypeKeydown(e, vt)}
             >
+              <ChevronLeftOutline
+                class="h-5 w-5 -ml-2 flex-shrink-0 transition-colors {isSelected
+                  ? 'text-blue-500'
+                  : 'text-gray-300 group-hover:text-blue-400 dark:text-gray-600'}"
+              />
               <!-- Type indicator icon -->
               <div class="w-5 flex-shrink-0">
                 {#if vt.type === 'datatype'}
@@ -810,7 +931,7 @@
               </div>
               <div class="flex-1 min-w-0">
                 <span
-                  class="block text-blue-600 dark:text-blue-400"
+                  class="block text-blue-600 dark:text-blue-400 group-hover:underline"
                   title={vt.uri}
                 >
                   {truncateMiddle(stripUrlPrefix(vt.shortUri), 25)}

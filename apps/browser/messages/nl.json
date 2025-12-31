@@ -200,5 +200,7 @@
   "detail_value_types_for_class": "Waardetypes voor {className}",
   "detail_value_types_for_property": "Waardetypes voor {propertyName}",
   "detail_datatype": "Datatype (literal)",
-  "detail_object_class": "Objectklasse (URI)"
+  "detail_object_class": "Objectklasse (URI)",
+  "detail_classes_for_value_type": "Typen voor {valueTypeName}",
+  "detail_properties_for_value_type": "Eigenschappen voor {valueTypeName}"
 }
