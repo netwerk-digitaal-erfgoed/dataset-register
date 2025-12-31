@@ -200,5 +200,7 @@
   "detail_value_types_for_class": "Value types for {className}",
   "detail_value_types_for_property": "Value types for {propertyName}",
   "detail_datatype": "Datatype (literal)",
-  "detail_object_class": "Object class (URI)"
+  "detail_object_class": "Object class (URI)",
+  "detail_classes_for_value_type": "Classes for {valueTypeName}",
+  "detail_properties_for_value_type": "Properties for {valueTypeName}"
 }
