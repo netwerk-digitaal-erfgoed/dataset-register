@@ -14,6 +14,7 @@
   import ChevronLeftOutline from 'flowbite-svelte-icons/ChevronLeftOutline.svelte';
   import QuoteSolid from 'flowbite-svelte-icons/QuoteSolid.svelte';
   import ShareNodesSolid from 'flowbite-svelte-icons/ShareNodesSolid.svelte';
+  import type { DatasetSummary } from '$lib/services/dataset-detail.js';
 
   interface DatatypeRow {
     datatype: string;
@@ -72,9 +73,10 @@
 
   interface Props {
     classPartitionTable: ClassPartitionTable;
+    globalPropertyPartitions?: DatasetSummary['propertyPartition'];
   }
 
-  const { classPartitionTable }: Props = $props();
+  const { classPartitionTable, globalPropertyPartitions }: Props = $props();
 
   const FOLD_LIMIT = 6;
   const RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
@@ -134,6 +136,27 @@
     return [...propMap.values()].sort(
       (a, b) => b.totalEntities - a.totalEntities,
     );
+  });
+
+  // Global (non-class-scoped) properties from the dataset level
+  const globalProperties = $derived.by(() => {
+    if (!globalPropertyPartitions?.length) return [];
+
+    return globalPropertyPartitions
+      .filter((p) => p.property && p.property !== RDF_TYPE)
+      .map((p) => ({
+        property: p.property,
+        shortProperty: shortenUri(p.property),
+        totalEntities: p.entities || 0,
+        totalDistinctObjects: 0,
+        classCount: 0,
+        classes: [] as Array<{
+          className: string;
+          shortName: string;
+          entities: number;
+        }>,
+      }))
+      .sort((a, b) => b.totalEntities - a.totalEntities);
   });
 
   // Classes to display (full list or filtered by selected property or value type)
@@ -222,15 +245,21 @@
         });
       });
     }
-    // Full aggregated list
-    const list = aggregatedProperties;
+    // Full list - use global properties when available, otherwise fall back to aggregated
+    const list =
+      globalProperties.length > 0 ? globalProperties : aggregatedProperties;
     return propertiesExpanded ? list : list.slice(0, FOLD_LIMIT);
   });
+
+  // Source list for hasMoreProperties check
+  const propertiesSourceList = $derived(
+    globalProperties.length > 0 ? globalProperties : aggregatedProperties,
+  );
 
   const hasMoreProperties = $derived(
     selectionMode !== 'class-selected' &&
       selectionMode !== 'value-type-selected' &&
-      aggregatedProperties.length > FOLD_LIMIT,
+      propertiesSourceList.length > FOLD_LIMIT,
   );
 
   // Total entities for percentage calculation in properties
@@ -469,7 +498,14 @@
       // Deselect
       clearSelection();
     } else {
-      selectedProperty = prop;
+      // If the property came from global list (empty classes), look up the aggregated version
+      // to get class breakdowns
+      const propWithClasses =
+        prop.classes.length === 0
+          ? aggregatedProperties.find((p) => p.property === prop.property) ||
+            prop
+          : prop;
+      selectedProperty = propWithClasses;
       selectedClass = null;
       selectionMode = 'property-selected';
       classesExpanded = false;
