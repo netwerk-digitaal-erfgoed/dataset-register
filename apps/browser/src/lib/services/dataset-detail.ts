@@ -1,6 +1,6 @@
 import { dcat } from '@lde/dataset-registry-client';
 import { dcterms, foaf, ldkit, schema, xsd } from 'ldkit/namespaces';
-import { createLens, type Options, type SchemaInterface } from 'ldkit';
+import { createLens, type SchemaInterface } from 'ldkit';
 import { error } from '@sveltejs/kit';
 import { ndeNs, owlNs, voidExtNs, voidNs } from '../rdf.js';
 import { BaseDatasetSchema, BaseDistributionSchema } from './datasets.js';
@@ -178,7 +178,6 @@ export type DatasetDetail = SchemaInterface<typeof DatasetDetailSchema>;
 export type DistributionDetail = SchemaInterface<
   typeof DetailDistributionSchema
 >;
-export type DatasetSummary = SchemaInterface<typeof DatasetSummarySchema>;
 export type Linkset = SchemaInterface<typeof LinksetSchema>;
 
 // Linkset schema for terminology sources
@@ -231,6 +230,54 @@ const DatasetSummarySchema = {
     '@type': xsd.integer,
     '@optional': true,
   },
+  propertyPartition: {
+    '@id': voidNs.propertyPartition,
+    '@optional': true,
+    '@array': true,
+    '@schema': {
+      property: {
+        '@id': voidNs.property,
+      },
+      entities: {
+        '@id': voidNs.entities,
+        '@type': xsd.integer,
+      },
+    },
+  },
+  // Note: classPartition is fetched separately to avoid Cartesian product
+  // explosion with nested OPTIONALs (props × classes × nested props × datatypes × objectClasses = millions of rows)
+  vocabulary: {
+    '@id': voidNs.vocabulary,
+    '@optional': true,
+    '@array': true,
+  },
+  dataDump: {
+    '@id': voidNs.dataDump,
+    '@optional': true,
+    '@array': true,
+    '@schema': {
+      contentSize: {
+        '@id': 'https://schema.org/contentSize',
+        '@type': xsd.integer,
+        '@optional': true,
+      },
+      dateModified: {
+        '@id': 'https://schema.org/dateModified',
+        '@type': xsd.dateTime,
+        '@optional': true,
+      },
+    },
+  },
+  sparqlEndpoint: {
+    '@id': voidNs.sparqlEndpoint,
+    '@optional': true,
+  },
+} as const;
+
+// Separate schema for classPartition to avoid Cartesian product explosion
+// (nested OPTIONALs: classes × props × datatypes × objectClasses = millions of rows)
+const ClassPartitionSchema = {
+  '@type': voidNs.Dataset,
   classPartition: {
     '@id': voidNs.classPartition,
     '@optional': true,
@@ -238,12 +285,10 @@ const DatasetSummarySchema = {
     '@schema': {
       class: {
         '@id': voidNs.class,
-        '@optional': true,
       },
       entities: {
         '@id': voidNs.entities,
         '@type': xsd.integer,
-        '@optional': true,
       },
       propertyPartition: {
         '@id': voidNs.propertyPartition,
@@ -252,17 +297,14 @@ const DatasetSummarySchema = {
         '@schema': {
           property: {
             '@id': voidNs.property,
-            '@optional': true,
           },
           entities: {
             '@id': voidNs.entities,
             '@type': xsd.integer,
-            '@optional': true,
           },
           distinctObjects: {
             '@id': voidNs.distinctObjects,
             '@type': xsd.integer,
-            '@optional': true,
           },
           datatypePartition: {
             '@id': voidExtNs.datatypePartition,
@@ -296,33 +338,14 @@ const DatasetSummarySchema = {
       },
     },
   },
-  vocabulary: {
-    '@id': voidNs.vocabulary,
-    '@optional': true,
-    '@array': true,
-  },
-  dataDump: {
-    '@id': voidNs.dataDump,
-    '@optional': true,
-    '@array': true,
-    '@schema': {
-      contentSize: {
-        '@id': 'https://schema.org/contentSize',
-        '@type': xsd.integer,
-        '@optional': true,
-      },
-      dateModified: {
-        '@id': 'https://schema.org/dateModified',
-        '@type': xsd.dateTime,
-        '@optional': true,
-      },
-    },
-  },
-  sparqlEndpoint: {
-    '@id': voidNs.sparqlEndpoint,
-    '@optional': true,
-  },
 } as const;
+
+type ClassPartitionResult = SchemaInterface<typeof ClassPartitionSchema>;
+
+// Combined summary type that includes the separately-fetched classPartition
+export type DatasetSummary = SchemaInterface<typeof DatasetSummarySchema> & {
+  classPartition: ClassPartitionResult['classPartition'] | null;
+};
 
 export interface DatasetDetailResult {
   dataset: DatasetDetail;
@@ -340,42 +363,44 @@ export async function fetchDatasetDetail(
   // (~22s vs ~2.3s) on large SPARQL responses. Node's native fetch streams properly.
   // SSR still works: content is rendered server-side with native fetch.
 
-  // Uncomment to enable query logging:
-  // const options: Options = { logQuery: console.log };
-  const options: Options = {};
-
   const detailLens = createLens(DatasetDetailSchema, {
     sources: [PUBLIC_SPARQL_ENDPOINT],
-    ...options,
   });
 
   const summaryLens = createLens(DatasetSummarySchema, {
     sources: [PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT],
-    ...options,
   });
 
   const linksLens = createLens(LinksetSchema, {
     sources: [PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT],
-    ...options,
   });
 
-  const [dataset, summary, linksets] = await Promise.all([
+  const classPartitionLens = createLens(ClassPartitionSchema, {
+    sources: [PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT],
+  });
+
+  const [dataset, summary, linksets, classPartitionResult] = await Promise.all([
     detailLens.findByIri(datasetUri),
     summaryLens.findByIri(datasetUri),
-    linksLens.find({
-      where: {
-        subjectsTarget: datasetUri,
-      },
-    }),
+    linksLens.find({ where: { subjectsTarget: datasetUri } }),
+    classPartitionLens.findByIri(datasetUri),
   ]);
 
   if (!dataset) {
     error(404, 'Dataset not found');
   }
 
+  // Merge classPartition into summary
+  const summaryWithClassPartition = summary
+    ? {
+        ...summary,
+        classPartition: classPartitionResult?.classPartition ?? null,
+      }
+    : null;
+
   return {
     dataset,
-    summary,
+    summary: summaryWithClassPartition,
     linksets,
   };
 }

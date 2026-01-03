@@ -1100,7 +1100,10 @@
 
         <!-- Classes Section with Property Partitions -->
         {#if classPartitionTable}
-          <ClassPropertiesWidget {classPartitionTable} />
+          <ClassPropertiesWidget
+            {classPartitionTable}
+            globalPropertyPartitions={summary.propertyPartition}
+          />
         {/if}
 
         <!-- Vocabularies Section -->
