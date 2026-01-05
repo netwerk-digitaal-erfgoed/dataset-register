@@ -74,7 +74,7 @@ export async function GET({ url }: RequestEvent) {
       : undefined;
 
     // Link to the dataset detail page
-    const datasetLink = `${url.origin}${localizeHref('/datasets/' + dataset.$id)}`;
+    const datasetLink = `${url.origin}${localizeHref('/datasets/' + dataset.$id.replace(/#/g, '%23'))}`;
 
     feed.addItem({
       title,

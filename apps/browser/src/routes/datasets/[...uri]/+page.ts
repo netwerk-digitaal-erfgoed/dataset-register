@@ -4,7 +4,8 @@ import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ params }) => {
   // params.uri from [...uri] rest parameter contains the full path after /datasets/
-  const datasetUri = params.uri;
+  // Decode URI components (e.g., %23 -> #) since SvelteKit doesn't auto-decode rest params
+  const datasetUri = decodeURIComponent(params.uri);
 
   if (!datasetUri) {
     error(404, 'Dataset URI is required');
