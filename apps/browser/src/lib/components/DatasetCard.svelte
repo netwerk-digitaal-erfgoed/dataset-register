@@ -17,7 +17,9 @@
     }),
   );
 
-  const detailUrl = $derived(localizeHref(`/datasets/${dataset.$id}`));
+  const detailUrl = $derived(
+    localizeHref(`/datasets/${dataset.$id.replace(/#/g, '%23')}`),
+  );
 
   const hasSparqlDistribution = $derived(
     dataset.distribution.some((distribution) =>
