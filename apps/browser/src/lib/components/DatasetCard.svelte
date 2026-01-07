@@ -4,6 +4,7 @@
   import { type DatasetCard } from '$lib/services/datasets';
   import { getLocalizedValue, localizeHref } from '$lib/utils/i18n';
   import { RDF_MEDIA_TYPES } from '$lib/constants.js';
+  import { encodeDatasetUri } from '$lib/url';
   import { formatNumber } from '$lib/services/facets';
 
   let { dataset }: { dataset: DatasetCard } = $props();
@@ -18,7 +19,7 @@
   );
 
   const detailUrl = $derived(
-    localizeHref(`/datasets/${dataset.$id.replace(/#/g, '%23')}`),
+    localizeHref(`/datasets/${encodeDatasetUri(dataset.$id)}`),
   );
 
   const hasSparqlDistribution = $derived(

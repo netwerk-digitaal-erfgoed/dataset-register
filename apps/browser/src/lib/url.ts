@@ -18,3 +18,15 @@ export function decodeDiscreteParam(
 ) {
   return urlSearchParams.get(name)?.split(',').filter(Boolean) || [];
 }
+
+/**
+ * Encode a dataset URI for use in URLs.
+ * Only encodes characters that would cause issues:
+ * - % (preserves existing percent-encoded sequences)
+ * - # (prevents browser fragment interpretation)
+ *
+ * Uses minimal encoding instead of encodeURIComponent to keep URLs human-readable.
+ */
+export function encodeDatasetUri(uri: string): string {
+  return uri.replace(/%/g, '%25').replace(/#/g, '%23');
+}

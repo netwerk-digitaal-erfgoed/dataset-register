@@ -3,7 +3,11 @@ import type { RequestEvent } from '@sveltejs/kit';
 import { fetchDatasets, type SearchRequest } from '$lib/services/datasets';
 import { extractLocaleFromUrl, setLocale } from '$lib/paraglide/runtime';
 import * as m from '$lib/paraglide/messages';
-import { decodeDiscreteParam, decodeRangeParam } from '$lib/url';
+import {
+  decodeDiscreteParam,
+  decodeRangeParam,
+  encodeDatasetUri,
+} from '$lib/url';
 import { getLocalizedValue, localizeHref } from '$lib/utils/i18n';
 
 const cacheTtl = 3600;
@@ -74,7 +78,7 @@ export async function GET({ url }: RequestEvent) {
       : undefined;
 
     // Link to the dataset detail page
-    const datasetLink = `${url.origin}${localizeHref('/datasets/' + dataset.$id.replace(/#/g, '%23'))}`;
+    const datasetLink = `${url.origin}${localizeHref('/datasets/' + encodeDatasetUri(dataset.$id))}`;
 
     feed.addItem({
       title,
