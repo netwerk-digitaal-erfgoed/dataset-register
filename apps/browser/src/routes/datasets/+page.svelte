@@ -14,6 +14,7 @@
     total: number;
     facets: Facets;
     searchKey: string;
+    time: number;
   }
 
   // Module-level cache that persists across component instances
@@ -77,7 +78,7 @@
           datasets: cache.datasets.slice(0, 24),
           total: cache.total,
           facets: cache.facets,
-          time: 0,
+          time: cache.time,
         },
         accumulatedDatasets: cache.datasets,
         currentOffset: cache.offset,
@@ -224,6 +225,7 @@
         total: searchResults.total,
         facets: searchResults.facets,
         searchKey: getSearchKey(searchRequest),
+        time: searchResults.time,
       };
     }
   });
