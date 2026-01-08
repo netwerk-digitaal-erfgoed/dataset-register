@@ -15,7 +15,6 @@ const DetailDistributionSchema = {
   ...BaseDistributionSchema,
   accessURL: {
     '@id': dcat.accessURL,
-    '@optional': true,
   },
   title: {
     '@id': dcterms.title,
