@@ -79,8 +79,7 @@
             if (isRdfDistribution(d)) return 1;
             return 0;
           };
-          const isVerified = (d: typeof a) =>
-            d.accessURL && verifiedUrls.has(d.accessURL);
+          const isVerified = (d: typeof a) => verifiedUrls.has(d.accessURL);
 
           return (
             priority(b) - priority(a) ||
@@ -770,9 +769,7 @@
           class="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800"
         >
           {#each sortedDistributions as distribution, distIndex (distribution.$id)}
-            {@const isVerified =
-              distribution.accessURL &&
-              verifiedUrls.has(distribution.accessURL)}
+            {@const isVerified = verifiedUrls.has(distribution.accessURL)}
             {@const isSparql = isSparqlDistribution(distribution)}
             <div class="flex flex-wrap items-center gap-3 px-4 py-3">
               <!-- Type badge -->
@@ -802,21 +799,19 @@
                     {getLocalizedValue(distribution.title)}
                   </div>
                 {/if}
-                {#if distribution.accessURL}
-                  <a
-                    href={isSparql
-                      ? `https://yasgui.org/#query=SELECT+*+WHERE+%7B%0A++%3Fsub+%3Fpred+%3Fobj+.%0A%7D+%0ALIMIT+10&endpoint=${encodeURIComponent(distribution.accessURL)}`
-                      : distribution.accessURL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="block truncate text-sm text-blue-600 hover:underline dark:text-blue-400"
-                    title={isSparql
-                      ? `Query in YASGUI: ${distribution.accessURL}`
-                      : distribution.accessURL}
-                  >
-                    {distribution.accessURL}
-                  </a>
-                {/if}
+                <a
+                  href={isSparql
+                    ? `https://yasgui.org/#query=SELECT+*+WHERE+%7B%0A++%3Fsub+%3Fpred+%3Fobj+.%0A%7D+%0ALIMIT+10&endpoint=${encodeURIComponent(distribution.accessURL)}`
+                    : distribution.accessURL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="block truncate text-sm text-blue-600 hover:underline dark:text-blue-400"
+                  title={isSparql
+                    ? `Query in YASGUI: ${distribution.accessURL}`
+                    : distribution.accessURL}
+                >
+                  {distribution.accessURL}
+                </a>
                 {#if distribution.description}
                   <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                     {getLocalizedValue(distribution.description)}
@@ -885,22 +880,18 @@
                   </div>
                 {/if}
 
-                {#if distribution.accessURL}
-                  <Clipboard value={distribution.accessURL} class="p-0">
-                    {#snippet children(success)}
-                      <Tooltip
-                        >{success
-                          ? m.detail_copied()
-                          : m.detail_copy()}</Tooltip
-                      >
-                      {#if success}<CheckOutline
-                          class="h-4 w-4 text-gray-500 dark:text-gray-400"
-                        />{:else}<ClipboardCleanSolid
-                          class="h-4 w-4 text-gray-500 dark:text-gray-400"
-                        />{/if}
-                    {/snippet}
-                  </Clipboard>
-                {/if}
+                <Clipboard value={distribution.accessURL} class="p-0">
+                  {#snippet children(success)}
+                    <Tooltip
+                      >{success ? m.detail_copied() : m.detail_copy()}</Tooltip
+                    >
+                    {#if success}<CheckOutline
+                        class="h-4 w-4 text-gray-500 dark:text-gray-400"
+                      />{:else}<ClipboardCleanSolid
+                        class="h-4 w-4 text-gray-500 dark:text-gray-400"
+                      />{/if}
+                  {/snippet}
+                </Clipboard>
               </div>
             </div>
           {/each}
