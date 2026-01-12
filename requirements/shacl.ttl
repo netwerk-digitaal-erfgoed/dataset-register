@@ -504,8 +504,8 @@ reg:SchemaDatasetLicenseProperty a sh:PropertyShape ;
         Publishers *MUST* make known under which [[DWBP#licenses|license]] the dataset may be used.
 
         The value *MUST* be the canonical URI of a license.
-        For example, use https://creativecommons.org/licenses/by/4.0/ instead
-        of http://creativecommons.org/licenses/by/4.0/deed.nl.
+        For example, use https://creativecommons.org/publicdomain/zero/1.0/ instead
+        of https://creativecommons.org/publicdomain/zero/1.0/deed.nl.
 
         The value *SHOULD* be an open license that allows the data to used by [=consumers=],
         for example one of the [Creative Commons](https://creativecommons.org/choose/) licenses.
