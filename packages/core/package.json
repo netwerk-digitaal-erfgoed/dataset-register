@@ -32,7 +32,7 @@
     "@opentelemetry/semantic-conventions": "^1.38.0",
     "@rdfjs/types": "2.0.1",
     "jsonld-streaming-parser": "^5.0.0",
-    "n3": "^1.10.0",
+    "n3": "^2.0.1",
     "node-fetch": "^3.3.1",
     "rdf-dereference": "^3.0.0",
     "rdf-ext": "^2.6.0",
