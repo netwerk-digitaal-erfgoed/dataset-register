@@ -48,6 +48,8 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           external_repository: netwerk-digitaal-erfgoed/netwerk-digitaal-erfgoed.github.io
+          user_email: nde-bot@users.noreply.github.com
+          user_name: nde-bot
           personal_token: ${{ secrets.DATASET_REGISTER_PUBLISH_REQUIREMENTS }}
           publish_dir: requirements/
           publish_branch: main
