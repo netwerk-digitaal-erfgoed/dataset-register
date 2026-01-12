@@ -20,7 +20,7 @@
     "@lde/dataset-registry-client": "^0.4.3",
     "@zazuko/prefixes": "^2.4.0",
     "feed": "^5.2.0",
-    "fetch-sparql-endpoint": "^6.2.0",
+    "fetch-sparql-endpoint": "^7.1.0",
     "flowbite": "^4.0.0",
     "flowbite-svelte": "^1.31.0",
     "flowbite-svelte-icons": "^3.1.0",
