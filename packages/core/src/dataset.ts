@@ -13,6 +13,11 @@ export interface DatasetStore {
    */
   store(dataset: DatasetCore): Promise<void>;
 
+  /**
+   * Delete a dataset's named graph.
+   */
+  delete(datasetUri: URL): Promise<void>;
+
   countDatasets(): Promise<number>;
 
   countOrganisations(): Promise<number>;

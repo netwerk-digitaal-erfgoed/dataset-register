@@ -57,6 +57,31 @@ paths:
           description: The URL cannot be resolved.
         406:
           description: The URL can be resolved but it contains no datasets.
+    delete:
+      summary: Delete a dataset registration
+      description: |-
+        Delete a registration from the Dataset Register, including all dataset descriptions
+        that were fetched from the registered URL. This operation requires authentication
+        via a Bearer token.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: url
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Registration URL to delete
+          example: 'https://example.com/catalog'
+      responses:
+        204:
+          description: Registration and all linked datasets have been deleted successfully.
+        400:
+          description: Missing or invalid URL parameter.
+        401:
+          description: Missing or invalid Authorization header.
+        404:
+          description: No registration found for the given URL.
   /datasets/validate:
     post:
       summary: Validate dataset description(s) in the request body
@@ -172,6 +197,11 @@ paths:
                     <http://www.w3.org/ns/shacl#property> <http://terms.netwerkdigitaalerfgoed.nl/ns/register#SchemaNameProperty>, <http://terms.netwerkdigitaalerfgoed.nl/ns/register#SchemaLicenseProperty>, <http://terms.netwerkdigitaalerfgoed.nl/ns/register#SchemaDescriptionProperty>, <http://terms.netwerkdigitaalerfgoed.nl/ns/register#SchemaPublisherPrope
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: API access token for administrative operations
   responses:
     Valid:
       description: |-

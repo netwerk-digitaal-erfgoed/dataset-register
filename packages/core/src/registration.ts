@@ -82,6 +82,10 @@ export interface RegistrationStore {
   store(registration: Registration): Promise<void>;
   findRegistrationsReadBefore(date: Date): Promise<Registration[]>;
   findByUrl(url: URL): Promise<Registration | undefined>;
+  /**
+   * Delete a Registration and all its linked datasets from the registrations graph.
+   */
+  delete(url: URL): Promise<void>;
 }
 
 export interface AllowedRegistrationDomainStore {

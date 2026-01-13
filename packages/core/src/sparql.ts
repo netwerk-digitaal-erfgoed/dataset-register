@@ -71,7 +71,7 @@ export class SparqlDatasetStore implements DatasetStore {
 
     const sparqlUpdate = `
       CLEAR GRAPH <${graph}>;
-      
+
       INSERT DATA {
         GRAPH <${graph}> {
           ${triples}
@@ -79,6 +79,10 @@ export class SparqlDatasetStore implements DatasetStore {
       }`;
 
     await this.client.update(sparqlUpdate);
+  }
+
+  async delete(datasetUri: URL): Promise<void> {
+    await this.client.update(`CLEAR GRAPH <${datasetUri}>`);
   }
 }
 
@@ -207,6 +211,28 @@ export class SparqlRegistrationStore implements RegistrationStore {
 
     await this.client.update(sparqlUpdate);
   }
+
+  async delete(url: URL): Promise<void> {
+    await this.client.update(`
+      PREFIX schema: <http://schema.org/>
+
+      WITH <${this.graphIri}>
+      DELETE {
+        <${url}> ?p ?o .
+        ?dataset ?dp ?do .
+      }
+      WHERE {
+        {
+          <${url}> ?p ?o .
+        } UNION {
+          ?dataset schema:subjectOf <${url}> .
+          ?dataset ?dp ?do .
+        } UNION {
+          <${url}> schema:about ?dataset .
+          ?dataset ?dp ?do .
+        }
+      }`);
+  }
 }
 
 export class SparqlRatingStore implements RatingStore {
@@ -241,6 +267,22 @@ export class SparqlRatingStore implements RatingStore {
         }
       }
       `);
+  }
+
+  async delete(datasetUri: URL): Promise<void> {
+    await this.client.update(`
+      PREFIX schema: <http://schema.org/>
+
+      WITH <${this.graphIri}>
+      DELETE {
+        ?dataset schema:contentRating ?rating .
+        ?rating ?p ?o .
+      }
+      WHERE {
+        BIND(<${datasetUri}> as ?dataset)
+        ?dataset schema:contentRating ?rating .
+        ?rating ?p ?o .
+      }`);
   }
 }
 

@@ -90,4 +90,8 @@ export class Rating {
 
 export interface RatingStore {
   store(datasetUri: URL, rating: Rating): Promise<void>;
+  /**
+   * Delete a rating for a dataset.
+   */
+  delete(datasetUri: URL): Promise<void>;
 }
