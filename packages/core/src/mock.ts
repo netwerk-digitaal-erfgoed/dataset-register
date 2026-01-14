@@ -41,6 +41,15 @@ export class MockRegistrationStore implements RegistrationStore {
     );
     return Promise.resolve(found);
   }
+
+  async delete(url: URL): Promise<void> {
+    const key = [...this.registrations.keys()].find(
+      (k) => k.toString() === url.toString(),
+    );
+    if (key) {
+      this.registrations.delete(key);
+    }
+  }
 }
 
 export class MockAllowedRegistrationDomainStore implements AllowedRegistrationDomainStore {
@@ -58,6 +67,10 @@ export class MockDatasetStore implements DatasetStore {
     this.datasets.push(datasets);
   }
 
+  async delete(_datasetUri: URL): Promise<void> {
+    // In mock, we don't track datasets by URI, so this is a no-op
+  }
+
   countDatasets(): Promise<number> {
     return Promise.resolve(this.datasets.length);
   }
@@ -69,8 +82,13 @@ export class MockDatasetStore implements DatasetStore {
 
 export class MockRatingStore implements RatingStore {
   public readonly ratings: Rating[] = [];
-  async store(datasetUri: URL, rating: Rating): Promise<void> {
+
+  async store(_datasetUri: URL, rating: Rating): Promise<void> {
     this.ratings.push(rating);
+  }
+
+  async delete(_datasetUri: URL): Promise<void> {
+    // In mock, we don't track ratings by URI, so this is a no-op
   }
 }
 

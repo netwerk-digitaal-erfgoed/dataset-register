@@ -7,8 +7,10 @@ import {
   file,
   MockAllowedRegistrationDomainStore,
   MockDatasetStore,
+  MockRatingStore,
   MockRegistrationStore,
 } from '@dataset-register/core/test-utils';
+import { Registration } from '@dataset-register/core';
 import { fileURLToPath, URL } from 'url';
 import { dirname } from 'path';
 
@@ -313,5 +315,108 @@ describe('Server', () => {
     expect(response.statusCode).toEqual(200);
     expect(response.payload).not.toEqual('');
     expect(response.json().length).toBeGreaterThan(100);
+  });
+});
+
+describe('DELETE /datasets', () => {
+  let httpServerWithAuth: FastifyInstance<Server>;
+  let deleteRegistrationStore: MockRegistrationStore;
+  const testToken = 'test-api-token';
+
+  beforeAll(async () => {
+    const shacl = await readUrl('../../requirements/shacl.ttl');
+    deleteRegistrationStore = new MockRegistrationStore();
+    httpServerWithAuth = await server(
+      new MockDatasetStore(),
+      deleteRegistrationStore,
+      new MockAllowedRegistrationDomainStore(),
+      new ShaclEngineValidator(shacl),
+      shacl,
+      '/',
+      { logger: false },
+      new MockRatingStore(),
+      testToken,
+    );
+  });
+
+  beforeEach(async () => {
+    // Clear any existing registrations and add a test registration before each test
+    const testUrl = new URL(
+      'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html',
+    );
+    // First delete if exists
+    await deleteRegistrationStore.delete(testUrl);
+    // Then add fresh registration with linked datasets to cover the delete loop
+    const registration = new Registration(testUrl, new Date()).read(
+      [new URL('https://example.com/dataset1')],
+      200,
+      true,
+    );
+    await deleteRegistrationStore.store(registration);
+  });
+
+  it('returns 401 without Authorization header', async () => {
+    const response = await httpServerWithAuth.inject({
+      method: 'DELETE',
+      url: '/datasets?url=https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html',
+      headers: { Accept: '*/*' },
+    });
+    expect(response.statusCode).toEqual(401);
+  });
+
+  it('returns 401 with invalid token', async () => {
+    const response = await httpServerWithAuth.inject({
+      method: 'DELETE',
+      url: '/datasets?url=https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html',
+      headers: { Authorization: 'Bearer invalid-token', Accept: '*/*' },
+    });
+    expect(response.statusCode).toEqual(401);
+  });
+
+  it('returns 400 without url parameter', async () => {
+    const response = await httpServerWithAuth.inject({
+      method: 'DELETE',
+      url: '/datasets',
+      headers: { Authorization: `Bearer ${testToken}`, Accept: '*/*' },
+    });
+    expect(response.statusCode).toEqual(400);
+  });
+
+  it('returns 400 with invalid url parameter', async () => {
+    const response = await httpServerWithAuth.inject({
+      method: 'DELETE',
+      url: '/datasets?url=not-a-valid-url',
+      headers: { Authorization: `Bearer ${testToken}`, Accept: '*/*' },
+    });
+    expect(response.statusCode).toEqual(400);
+  });
+
+  it('returns 404 for non-existent registration', async () => {
+    const response = await httpServerWithAuth.inject({
+      method: 'DELETE',
+      url: '/datasets?url=https://example.com/nonexistent',
+      headers: { Authorization: `Bearer ${testToken}`, Accept: '*/*' },
+    });
+    expect(response.statusCode).toEqual(404);
+  });
+
+  it('returns 204 and deletes existing registration', async () => {
+    const testUrl = new URL(
+      'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html',
+    );
+
+    // Verify registration exists before deletion
+    expect(deleteRegistrationStore.isRegistered(testUrl)).toBe(true);
+
+    const response = await httpServerWithAuth.inject({
+      method: 'DELETE',
+      url: `/datasets?url=${testUrl.toString()}`,
+      headers: { Authorization: `Bearer ${testToken}`, Accept: '*/*' },
+    });
+
+    expect(response.statusCode).toEqual(204);
+
+    // Verify registration was deleted
+    expect(deleteRegistrationStore.isRegistered(testUrl)).toBe(false);
   });
 });

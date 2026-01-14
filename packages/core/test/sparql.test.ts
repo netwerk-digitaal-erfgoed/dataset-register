@@ -153,6 +153,14 @@ describe('SPARQL', () => {
 
       expect(await datasetStore.countOrganisations()).toBe(2);
     });
+
+    it('should delete a dataset', async () => {
+      await datasetStore.store(createTestDataset(TEST_DATASET_IRIS.DATASET_1));
+      expect(await datasetStore.countDatasets()).toBe(1);
+
+      await datasetStore.delete(new URL(TEST_DATASET_IRIS.DATASET_1));
+      expect(await datasetStore.countDatasets()).toBe(0);
+    });
   });
 
   describe('SparqlRegistrationStore', () => {
@@ -290,6 +298,38 @@ describe('SPARQL', () => {
 
       expect(found).toBeUndefined();
     });
+
+    it('should delete a registration and its linked datasets', async () => {
+      const datasets = [
+        new URL('https://example.org/dataset/1'),
+        new URL('https://example.org/dataset/2'),
+      ];
+      const registration = createTestRegistration(
+        'https://example.org/to-delete.json',
+        new Date('2025-01-01T10:00:00Z'),
+        undefined,
+        new Date('2025-01-15T08:30:00Z'),
+        datasets,
+      );
+      await registrationStore.store(registration);
+
+      // Verify it exists
+      const found = await registrationStore.findByUrl(
+        new URL('https://example.org/to-delete.json'),
+      );
+      expect(found).toBeDefined();
+
+      // Delete
+      await registrationStore.delete(
+        new URL('https://example.org/to-delete.json'),
+      );
+
+      // Verify it's gone
+      const deleted = await registrationStore.findByUrl(
+        new URL('https://example.org/to-delete.json'),
+      );
+      expect(deleted).toBeUndefined();
+    });
   });
 
   describe('SparqlAllowedDomainStore', () => {
@@ -316,10 +356,10 @@ describe('SPARQL', () => {
     it('stores ratings', async () => {
       const ratings = await sparqlClient.query(`
         PREFIX schema: <http://schema.org/>
-        
+
         SELECT * WHERE {
           GRAPH <${ratingsGraphIri}> {
-            ?s ?p ?o 
+            ?s ?p ?o
           }
         }
       `);
@@ -327,6 +367,37 @@ describe('SPARQL', () => {
 
       const rating = new Rating([new Penalty('test/path', 5)], 1);
       await ratingStore.store(new URL(TEST_DATASET_IRIS.DATASET_1), rating);
+    });
+
+    it('deletes ratings', async () => {
+      const datasetUri = new URL(TEST_DATASET_IRIS.DATASET_1);
+      const rating = new Rating([new Penalty('test/path', 5)], 1);
+      await ratingStore.store(datasetUri, rating);
+
+      // Verify rating exists
+      const before = await sparqlClient.query(`
+        PREFIX schema: <http://schema.org/>
+        SELECT * WHERE {
+          GRAPH <${ratingsGraphIri}> {
+            <${datasetUri}> schema:contentRating ?rating .
+          }
+        }
+      `);
+      expect(await before.toArray()).toHaveLength(1);
+
+      // Delete
+      await ratingStore.delete(datasetUri);
+
+      // Verify rating is gone
+      const after = await sparqlClient.query(`
+        PREFIX schema: <http://schema.org/>
+        SELECT * WHERE {
+          GRAPH <${ratingsGraphIri}> {
+            <${datasetUri}> schema:contentRating ?rating .
+          }
+        }
+      `);
+      expect(await after.toArray()).toHaveLength(0);
     });
   });
 });

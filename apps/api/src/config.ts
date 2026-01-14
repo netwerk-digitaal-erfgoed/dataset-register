@@ -3,6 +3,7 @@ import { envSchema, JSONSchemaType } from 'env-schema';
 interface Env {
   SPARQL_URL: string;
   SPARQL_ACCESS_TOKEN: string;
+  API_ACCESS_TOKEN?: string;
   DOCS_URL: string;
   LOG: boolean;
   TRUST_PROXY: boolean;
@@ -17,6 +18,10 @@ const schema: JSONSchemaType<Env> = {
     },
     SPARQL_ACCESS_TOKEN: {
       type: 'string',
+    },
+    API_ACCESS_TOKEN: {
+      type: 'string',
+      nullable: true,
     },
     DOCS_URL: {
       type: 'string',

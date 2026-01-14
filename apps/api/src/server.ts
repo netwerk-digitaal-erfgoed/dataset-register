@@ -5,6 +5,7 @@ import fastify, {
   FastifyRequest,
   FastifyServerOptions,
 } from 'fastify';
+import bearerAuth from '@fastify/bearer-auth';
 import {
   AllowedRegistrationDomainStore,
   DatasetStore,
@@ -15,6 +16,7 @@ import {
   HttpError,
   load,
   NoDatasetFoundAtUrl,
+  RatingStore,
   Registration,
   registrationsCounter,
   RegistrationStore,
@@ -55,6 +57,8 @@ export async function server(
   shacl: DatasetCore,
   docsUrl = '/',
   options?: FastifyServerOptions,
+  ratingStore?: RatingStore,
+  apiAccessToken?: string,
 ): Promise<FastifyInstance<Server>> {
   const server = fastify(options);
 
@@ -75,7 +79,7 @@ export async function server(
       default: 'application/ld+json', // default doesn't work, so Accept header is required.
     })
     .register(fastifyCors, {
-      methods: ['GET', 'HEAD', 'POST', 'PUT'],
+      methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE'],
     })
     .addHook('onRequest', async (request) => {
       if (request.headers.accept === undefined) {
@@ -313,6 +317,47 @@ export async function server(
       });
     },
   );
+
+  // Protected routes requiring API access token
+  if (apiAccessToken) {
+    await server.register(async function protectedRoutes(protectedServer) {
+      await protectedServer.register(bearerAuth, { keys: [apiAccessToken] });
+
+      protectedServer.delete('/datasets', async (request, reply) => {
+        const { url: urlParam } = request.query as { url?: string };
+        if (!urlParam) {
+          return reply.code(400).send();
+        }
+
+        let url: URL;
+        try {
+          url = new URL(urlParam);
+        } catch {
+          return reply.code(400).send();
+        }
+
+        const registration = await registrationStore.findByUrl(url);
+        if (!registration) {
+          return reply.code(404).send();
+        }
+
+        // Delete ratings and dataset graphs for each dataset
+        for (const datasetIri of registration.datasets) {
+          await ratingStore?.delete(datasetIri);
+          await datasetStore.delete(datasetIri);
+        }
+
+        // Delete the registration (including linked dataset entries in registrations graph)
+        await registrationStore.delete(url);
+
+        request.log.info(
+          `Deleted registration ${url.toString()} with ${registration.datasets.length} datasets`,
+        );
+
+        return reply.code(204).send();
+      });
+    });
+  }
 
   return server;
 }
