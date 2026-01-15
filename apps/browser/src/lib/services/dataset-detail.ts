@@ -333,6 +333,20 @@ const ClassPartitionSchema = {
               },
             },
           },
+          languagePartition: {
+            '@id': voidExtNs.languagePartition,
+            '@optional': true,
+            '@array': true,
+            '@schema': {
+              language: {
+                '@id': voidExtNs.language,
+              },
+              triples: {
+                '@id': voidNs.triples,
+                '@type': xsd.integer,
+              },
+            },
+          },
         },
       },
     },

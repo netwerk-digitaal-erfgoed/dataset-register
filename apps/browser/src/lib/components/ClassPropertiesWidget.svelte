@@ -14,6 +14,8 @@
   import ChevronLeftOutline from 'flowbite-svelte-icons/ChevronLeftOutline.svelte';
   import QuoteSolid from 'flowbite-svelte-icons/QuoteSolid.svelte';
   import ShareNodesSolid from 'flowbite-svelte-icons/ShareNodesSolid.svelte';
+  import LanguageOutline from 'flowbite-svelte-icons/LanguageOutline.svelte';
+  import ChevronDownOutline from 'flowbite-svelte-icons/ChevronDownOutline.svelte';
   import type { DatasetSummary } from '$lib/services/dataset-detail.js';
 
   interface DatatypeRow {
@@ -28,6 +30,12 @@
     triples: number;
   }
 
+  interface LanguageRow {
+    language: string;
+    displayLabel: string;
+    triples: number;
+  }
+
   interface PropertyRow {
     property: string;
     shortProperty: string;
@@ -35,6 +43,7 @@
     distinctObjects: number;
     datatypePartition?: DatatypeRow[];
     objectClassPartition?: ObjectClassRow[];
+    languagePartition?: LanguageRow[];
   }
 
   interface ClassRow {
@@ -62,13 +71,14 @@
     uri: string;
     shortUri: string;
     totalTriples: number;
-    type: 'datatype' | 'objectClass';
+    type: 'datatype' | 'objectClass' | 'language';
     propertyCount: number;
     properties: Array<{
       property: string;
       shortProperty: string;
       triples: number;
     }>;
+    languageBreakdown?: LanguageRow[];
   }
 
   interface Props {
@@ -80,13 +90,38 @@
 
   const FOLD_LIMIT = 6;
   const RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
+  const RDF_LANG_STRING =
+    'http://www.w3.org/1999/02/22-rdf-syntax-ns#langString';
+
+  // Action to scroll element into view when selected
+  function scrollIntoViewWhenSelected(
+    node: HTMLElement,
+    isSelected: boolean,
+  ): { update: (isSelected: boolean) => void } {
+    function scrollIfNeeded(selected: boolean) {
+      if (selected) {
+        // Use requestAnimationFrame to ensure DOM has updated
+        requestAnimationFrame(() => {
+          node.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        });
+      }
+    }
+    scrollIfNeeded(isSelected);
+    return {
+      update(newIsSelected: boolean) {
+        scrollIfNeeded(newIsSelected);
+      },
+    };
+  }
 
   // Selection state
   type SelectionMode =
     | 'none'
     | 'class-selected'
     | 'property-selected'
-    | 'value-type-selected';
+    | 'value-type-selected'
+    | 'class-and-property-selected'
+    | 'class-property-and-value-type-selected';
   let selectionMode = $state<SelectionMode>('none');
   let selectedClass = $state<ClassRow | null>(null);
   let selectedProperty = $state<AggregatedProperty | null>(null);
@@ -96,6 +131,17 @@
   let classesExpanded = $state(false);
   let propertiesExpanded = $state(false);
   let valueTypesExpanded = $state(false);
+
+  // langString is expanded when it's selected OR when a language is selected
+  const expandedLangString = $derived(
+    (selectionMode === 'value-type-selected' ||
+      selectionMode === 'class-property-and-value-type-selected') &&
+      ((selectedValueType?.uri === RDF_LANG_STRING &&
+        selectedValueType?.type === 'datatype') ||
+        selectedValueType?.type === 'language')
+      ? RDF_LANG_STRING
+      : null,
+  );
 
   // Check if any class has property partitions available
   const hasAnyPropertyPartitions = $derived(
@@ -183,8 +229,11 @@
         cls.propertyPartition?.some((prop) => {
           if (vt.type === 'datatype') {
             return prop.datatypePartition?.some((dt) => dt.datatype === vt.uri);
-          } else {
+          } else if (vt.type === 'objectClass') {
             return prop.objectClassPartition?.some((oc) => oc.class === vt.uri);
+          } else {
+            // Language type - filter by language partition
+            return prop.languagePartition?.some((lp) => lp.language === vt.uri);
           }
         }),
       );
@@ -203,7 +252,12 @@
   // Properties to display (full list or filtered by selected class or value type)
   const displayedProperties = $derived.by(() => {
     const cls = selectedClass;
-    if (selectionMode === 'class-selected' && cls?.propertyPartition) {
+    if (
+      (selectionMode === 'class-selected' ||
+        selectionMode === 'class-and-property-selected' ||
+        selectionMode === 'class-property-and-value-type-selected') &&
+      cls?.propertyPartition
+    ) {
       // Show properties for the selected class (excluding rdf:type)
       return [...cls.propertyPartition]
         .filter((p) => p.property !== RDF_TYPE)
@@ -237,9 +291,14 @@
             return classProp.datatypePartition?.some(
               (dt) => dt.datatype === vt.uri,
             );
-          } else {
+          } else if (vt.type === 'objectClass') {
             return classProp.objectClassPartition?.some(
               (oc) => oc.class === vt.uri,
+            );
+          } else {
+            // Language type - filter by language partition
+            return classProp.languagePartition?.some(
+              (lp) => lp.language === vt.uri,
             );
           }
         });
@@ -269,7 +328,12 @@
 
   function getPropertyPercent(entities: number): number {
     // When a class is selected, calculate percentage relative to class entity count
-    if (selectionMode === 'class-selected' && selectedClass) {
+    if (
+      (selectionMode === 'class-selected' ||
+        selectionMode === 'class-and-property-selected' ||
+        selectionMode === 'class-property-and-value-type-selected') &&
+      selectedClass
+    ) {
       if (selectedClass.entities === 0) return 0;
       return (entities / selectedClass.entities) * 100;
     }
@@ -284,7 +348,8 @@
       cls.propertyPartition?.some(
         (prop) =>
           (prop.datatypePartition && prop.datatypePartition.length > 0) ||
-          (prop.objectClassPartition && prop.objectClassPartition.length > 0),
+          (prop.objectClassPartition && prop.objectClassPartition.length > 0) ||
+          (prop.languagePartition && prop.languagePartition.length > 0),
       ),
     ),
   );
@@ -292,6 +357,7 @@
   // Aggregate value types across all properties
   const aggregatedValueTypes = $derived.by(() => {
     const typeMap = new SvelteMap<string, AggregatedValueType>();
+    const langMap = new SvelteMap<string, LanguageRow>(); // Aggregate languages for langString
 
     classPartitionTable.rows.forEach((cls) => {
       cls.propertyPartition?.forEach((prop) => {
@@ -336,8 +402,27 @@
           });
           typeMap.set(key, existing);
         });
+
+        // Aggregate language partitions for rdf:langString breakdown
+        prop.languagePartition?.forEach((lp) => {
+          const existing = langMap.get(lp.language) || {
+            language: lp.language,
+            displayLabel: lp.displayLabel,
+            triples: 0,
+          };
+          existing.triples += lp.triples;
+          langMap.set(lp.language, existing);
+        });
       });
     });
+
+    // Attach language breakdown to rdf:langString entry if it exists
+    const langStringEntry = typeMap.get(`datatype:${RDF_LANG_STRING}`);
+    if (langStringEntry && langMap.size > 0) {
+      langStringEntry.languageBreakdown = [...langMap.values()].sort(
+        (a, b) => b.triples - a.triples,
+      );
+    }
 
     return [...typeMap.values()].sort(
       (a, b) => b.totalTriples - a.totalTriples,
@@ -346,9 +431,73 @@
 
   // Displayed value types based on selection
   const displayedValueTypes = $derived.by(() => {
+    // When both class AND property are selected: show value types for that specific combination
+    if (
+      (selectionMode === 'class-and-property-selected' ||
+        selectionMode === 'class-property-and-value-type-selected') &&
+      selectedClass &&
+      selectedProperty
+    ) {
+      const prop = selectedClass.propertyPartition?.find(
+        (p) => p.property === selectedProperty.property,
+      );
+      if (!prop) return [];
+
+      const typeMap = new SvelteMap<string, AggregatedValueType>();
+
+      // Add datatypes
+      prop.datatypePartition?.forEach((dt) => {
+        typeMap.set(`datatype:${dt.datatype}`, {
+          uri: dt.datatype,
+          shortUri: dt.shortDatatype,
+          type: 'datatype',
+          totalTriples: dt.triples,
+          propertyCount: 1,
+          properties: [
+            {
+              property: prop.property,
+              shortProperty: prop.shortProperty,
+              triples: dt.triples,
+            },
+          ],
+          languageBreakdown:
+            dt.datatype === RDF_LANG_STRING
+              ? prop.languagePartition?.map((lp) => ({
+                  language: lp.language,
+                  displayLabel: lp.displayLabel,
+                  triples: lp.triples,
+                }))
+              : undefined,
+        });
+      });
+
+      // Add object classes
+      prop.objectClassPartition?.forEach((oc) => {
+        typeMap.set(`objectClass:${oc.class}`, {
+          uri: oc.class,
+          shortUri: oc.shortClass,
+          type: 'objectClass',
+          totalTriples: oc.triples,
+          propertyCount: 1,
+          properties: [
+            {
+              property: prop.property,
+              shortProperty: prop.shortProperty,
+              triples: oc.triples,
+            },
+          ],
+        });
+      });
+
+      return [...typeMap.values()].sort(
+        (a, b) => b.totalTriples - a.totalTriples,
+      );
+    }
+
     if (selectionMode === 'class-selected' && selectedClass) {
       // Show value types for properties of the selected class
       const typeMap = new SvelteMap<string, AggregatedValueType>();
+      const langMap = new SvelteMap<string, LanguageRow>();
 
       selectedClass.propertyPartition?.forEach((prop) => {
         prop.datatypePartition?.forEach((dt) => {
@@ -390,7 +539,26 @@
           });
           typeMap.set(key, existing);
         });
+
+        // Aggregate language partitions for rdf:langString breakdown
+        prop.languagePartition?.forEach((lp) => {
+          const existing = langMap.get(lp.language) || {
+            language: lp.language,
+            displayLabel: lp.displayLabel,
+            triples: 0,
+          };
+          existing.triples += lp.triples;
+          langMap.set(lp.language, existing);
+        });
       });
+
+      // Attach language breakdown to rdf:langString entry if it exists
+      const langStringEntry = typeMap.get(`datatype:${RDF_LANG_STRING}`);
+      if (langStringEntry && langMap.size > 0) {
+        langStringEntry.languageBreakdown = [...langMap.values()].sort(
+          (a, b) => b.triples - a.triples,
+        );
+      }
 
       return [...typeMap.values()].sort(
         (a, b) => b.totalTriples - a.totalTriples,
@@ -400,6 +568,7 @@
     if (selectionMode === 'property-selected' && selectedProperty) {
       // Show value types for the selected property across all classes
       const result: AggregatedValueType[] = [];
+      const langMap = new SvelteMap<string, LanguageRow>();
       const selectedProp = selectedProperty; // Capture for closure
 
       classPartitionTable.rows.forEach((cls) => {
@@ -454,7 +623,28 @@
             });
           }
         });
+
+        // Aggregate language partitions for rdf:langString breakdown
+        prop?.languagePartition?.forEach((lp) => {
+          const existing = langMap.get(lp.language) || {
+            language: lp.language,
+            displayLabel: lp.displayLabel,
+            triples: 0,
+          };
+          existing.triples += lp.triples;
+          langMap.set(lp.language, existing);
+        });
       });
+
+      // Attach language breakdown to rdf:langString entry if it exists
+      const langStringEntry = result.find(
+        (r) => r.uri === RDF_LANG_STRING && r.type === 'datatype',
+      );
+      if (langStringEntry && langMap.size > 0) {
+        langStringEntry.languageBreakdown = [...langMap.values()].sort(
+          (a, b) => b.triples - a.triples,
+        );
+      }
 
       return result.sort((a, b) => b.totalTriples - a.totalTriples);
     }
@@ -494,23 +684,61 @@
   }
 
   function selectProperty(prop: AggregatedProperty) {
+    // Handle click-through pattern when clicking same property
     if (selectedProperty?.property === prop.property) {
-      // Deselect
-      clearSelection();
-    } else {
-      // If the property came from global list (empty classes), look up the aggregated version
-      // to get class breakdowns
-      const propWithClasses =
-        prop.classes.length === 0
-          ? aggregatedProperties.find((p) => p.property === prop.property) ||
-            prop
-          : prop;
-      selectedProperty = propWithClasses;
-      selectedClass = null;
-      selectionMode = 'property-selected';
-      classesExpanded = false;
-      valueTypesExpanded = false;
+      if (selectionMode === 'class-and-property-selected') {
+        // Second click: expand scope to property-selected (show ALL classes)
+        const propWithClasses =
+          aggregatedProperties.find((p) => p.property === prop.property) ||
+          prop;
+        selectedProperty = propWithClasses;
+        selectedClass = null;
+        selectionMode = 'property-selected';
+        classesExpanded = false;
+        return;
+      } else {
+        // Third click (or second click in property-selected): deselect all
+        clearSelection();
+        return;
+      }
     }
+
+    // If class is currently selected, enter class-and-property mode (first click)
+    if (selectionMode === 'class-selected' && selectedClass) {
+      const classProp = selectedClass.propertyPartition?.find(
+        (p) => p.property === prop.property,
+      );
+      if (classProp) {
+        selectedProperty = {
+          property: prop.property,
+          shortProperty: prop.shortProperty,
+          totalEntities: classProp.entities,
+          totalDistinctObjects: classProp.distinctObjects,
+          classCount: 1,
+          classes: [
+            {
+              className: selectedClass.className,
+              shortName: selectedClass.shortName,
+              entities: classProp.entities,
+            },
+          ],
+        };
+        selectionMode = 'class-and-property-selected';
+        valueTypesExpanded = false;
+        return;
+      }
+    }
+
+    // Default: property-first flow (no class selected)
+    const propWithClasses =
+      prop.classes.length === 0
+        ? aggregatedProperties.find((p) => p.property === prop.property) || prop
+        : prop;
+    selectedProperty = propWithClasses;
+    selectedClass = null;
+    selectionMode = 'property-selected';
+    classesExpanded = false;
+    valueTypesExpanded = false;
   }
 
   function clearSelection() {
@@ -521,21 +749,58 @@
   }
 
   function selectValueType(vt: AggregatedValueType) {
+    // Handle click-through pattern when clicking same value type
     if (
-      selectionMode === 'value-type-selected' &&
       selectedValueType?.uri === vt.uri &&
       selectedValueType?.type === vt.type
     ) {
-      // Deselect
-      clearSelection();
-    } else {
-      selectedValueType = vt;
-      selectedClass = null;
-      selectedProperty = null;
-      selectionMode = 'value-type-selected';
-      classesExpanded = false;
-      propertiesExpanded = false;
+      if (selectionMode === 'class-property-and-value-type-selected') {
+        // Second click: expand scope to value-type-selected (show ALL classes/properties)
+        selectedClass = null;
+        selectedProperty = null;
+        selectionMode = 'value-type-selected';
+        classesExpanded = false;
+        propertiesExpanded = false;
+        return;
+      } else {
+        // Third click (or second click in value-type-selected): deselect all
+        clearSelection();
+        return;
+      }
     }
+
+    // If class+property is selected (with or without value type), stay in class-property-and-value-type mode
+    if (
+      (selectionMode === 'class-and-property-selected' ||
+        selectionMode === 'class-property-and-value-type-selected') &&
+      selectedClass &&
+      selectedProperty
+    ) {
+      selectedValueType = vt;
+      selectionMode = 'class-property-and-value-type-selected';
+      return;
+    }
+
+    // Default: value-type-first flow (existing behaviour)
+    selectedValueType = vt;
+    selectedClass = null;
+    selectedProperty = null;
+    selectionMode = 'value-type-selected';
+    classesExpanded = false;
+    propertiesExpanded = false;
+  }
+
+  function selectLanguage(lang: LanguageRow) {
+    // Create a pseudo AggregatedValueType for the language
+    const langValueType: AggregatedValueType = {
+      uri: lang.language,
+      shortUri: lang.displayLabel,
+      totalTriples: lang.triples,
+      type: 'language',
+      propertyCount: 0,
+      properties: [],
+    };
+    selectValueType(langValueType);
   }
 
   function handleClassKeydown(event: KeyboardEvent, row: ClassRow) {
@@ -663,6 +928,8 @@
             onkeydown={hasAnyPropertyPartitions
               ? (e) => handleClassKeydown(e, row)
               : undefined}
+            use:scrollIntoViewWhenSelected={selectedClass?.className ===
+              row.className}
           >
             <div class="flex-1 min-w-0">
               <span
@@ -730,7 +997,7 @@
         <h3
           class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
         >
-          {#if selectionMode === 'class-selected' && selectedClass}
+          {#if (selectionMode === 'class-selected' || selectionMode === 'class-and-property-selected' || selectionMode === 'class-property-and-value-type-selected') && selectedClass}
             {m.detail_properties_for_class({
               className: selectedClass.shortName,
             })}
@@ -770,9 +1037,13 @@
         <div
           class="divide-y divide-gray-200 rounded-lg border bg-white dark:divide-gray-700 dark:bg-gray-800 {propertiesExpanded ||
           selectionMode === 'class-selected' ||
+          selectionMode === 'class-and-property-selected' ||
+          selectionMode === 'class-property-and-value-type-selected' ||
           selectionMode === 'value-type-selected'
             ? 'max-h-[400px] overflow-y-auto'
             : ''} {selectionMode === 'class-selected' ||
+          selectionMode === 'class-and-property-selected' ||
+          selectionMode === 'class-property-and-value-type-selected' ||
           selectionMode === 'value-type-selected'
             ? 'border-2 border-blue-200 dark:border-blue-800'
             : 'border-gray-200 dark:border-gray-700'}"
@@ -782,6 +1053,8 @@
           <div
             class="flex items-center gap-1 sm:gap-2 px-1 sm:px-4 py-3 bg-gray-100 dark:bg-gray-700 {propertiesExpanded ||
             selectionMode === 'class-selected' ||
+            selectionMode === 'class-and-property-selected' ||
+            selectionMode === 'class-property-and-value-type-selected' ||
             selectionMode === 'value-type-selected'
               ? 'sticky top-0'
               : ''} rounded-t-lg text-xs font-medium uppercase text-gray-700 dark:text-gray-300"
@@ -807,6 +1080,8 @@
               tabindex="0"
               onclick={() => selectProperty(prop)}
               onkeydown={(e) => handlePropertyKeydown(e, prop)}
+              use:scrollIntoViewWhenSelected={selectedProperty?.property ===
+                prop.property}
             >
               <ChevronLeftOutline
                 class="h-5 w-5 -ml-2 flex-shrink-0 transition-colors {selectedProperty?.property ===
@@ -879,7 +1154,12 @@
         <h3
           class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
         >
-          {#if selectionMode === 'class-selected' && selectedClass}
+          {#if (selectionMode === 'class-and-property-selected' || selectionMode === 'class-property-and-value-type-selected') && selectedClass && selectedProperty}
+            {m.detail_value_types_for_class_property({
+              className: selectedClass.shortName,
+              propertyName: selectedProperty.shortProperty,
+            })}
+          {:else if selectionMode === 'class-selected' && selectedClass}
             {m.detail_value_types_for_class({
               className: selectedClass.shortName,
             })}
@@ -903,9 +1183,13 @@
         <div
           class="divide-y divide-gray-200 rounded-lg border bg-white dark:divide-gray-700 dark:bg-gray-800 {valueTypesExpanded ||
           selectionMode === 'class-selected' ||
+          selectionMode === 'class-and-property-selected' ||
+          selectionMode === 'class-property-and-value-type-selected' ||
           selectionMode === 'property-selected'
             ? 'max-h-[400px] overflow-y-auto'
             : ''} {selectionMode === 'class-selected' ||
+          selectionMode === 'class-and-property-selected' ||
+          selectionMode === 'class-property-and-value-type-selected' ||
           selectionMode === 'property-selected'
             ? 'border-2 border-blue-200 dark:border-blue-800'
             : 'border-gray-200 dark:border-gray-700'}"
@@ -915,6 +1199,8 @@
           <div
             class="flex items-center gap-1 sm:gap-2 px-1 sm:px-4 py-3 bg-gray-100 dark:bg-gray-700 {valueTypesExpanded ||
             selectionMode === 'class-selected' ||
+            selectionMode === 'class-and-property-selected' ||
+            selectionMode === 'class-property-and-value-type-selected' ||
             selectionMode === 'property-selected'
               ? 'sticky top-0'
               : ''} rounded-t-lg text-xs font-medium uppercase text-gray-700 dark:text-gray-300"
@@ -929,9 +1215,15 @@
           {#each displayedValueTypes as vt (`${vt.type}:${vt.uri}`)}
             {@const percent = getValueTypePercent(vt.totalTriples)}
             {@const isSelected =
-              selectionMode === 'value-type-selected' &&
+              (selectionMode === 'value-type-selected' ||
+                selectionMode === 'class-property-and-value-type-selected') &&
               selectedValueType?.uri === vt.uri &&
               selectedValueType?.type === vt.type}
+            {@const hasLanguages =
+              vt.uri === RDF_LANG_STRING &&
+              vt.languageBreakdown &&
+              vt.languageBreakdown.length > 0}
+            {@const isExpanded = hasLanguages && expandedLangString === vt.uri}
             <div
               class="group flex items-center gap-1 sm:gap-2 px-1 sm:px-4 py-3 text-sm transition-all cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 {isSelected
                 ? 'bg-blue-100 dark:bg-blue-900/30'
@@ -941,12 +1233,21 @@
               tabindex="0"
               onclick={() => selectValueType(vt)}
               onkeydown={(e) => handleValueTypeKeydown(e, vt)}
+              use:scrollIntoViewWhenSelected={isSelected}
             >
-              <ChevronLeftOutline
-                class="h-5 w-5 -ml-2 flex-shrink-0 transition-colors {isSelected
-                  ? 'text-blue-500'
-                  : 'text-gray-300 group-hover:text-blue-400 dark:text-gray-600'}"
-              />
+              {#if hasLanguages}
+                <ChevronDownOutline
+                  class="h-5 w-5 -ml-2 flex-shrink-0 transition-all {isExpanded
+                    ? 'rotate-0 text-blue-500'
+                    : '-rotate-90 text-gray-300 group-hover:text-blue-400 dark:text-gray-600'}"
+                />
+              {:else}
+                <ChevronLeftOutline
+                  class="h-5 w-5 -ml-2 flex-shrink-0 transition-colors {isSelected
+                    ? 'text-blue-500'
+                    : 'text-gray-300 group-hover:text-blue-400 dark:text-gray-600'}"
+                />
+              {/if}
               <!-- Type indicator icon -->
               <div class="w-5 flex-shrink-0">
                 {#if vt.type === 'datatype'}
@@ -956,12 +1257,19 @@
                   >
                     <QuoteSolid class="h-4 w-4" />
                   </span>
-                {:else}
+                {:else if vt.type === 'objectClass'}
                   <span
                     class="text-cyan-500 dark:text-cyan-400"
                     title={m.detail_object_class()}
                   >
                     <ShareNodesSolid class="h-4 w-4" />
+                  </span>
+                {:else}
+                  <span
+                    class="text-amber-500 dark:text-amber-400"
+                    title={m.detail_language()}
+                  >
+                    <LanguageOutline class="h-4 w-4" />
                   </span>
                 {/if}
               </div>
@@ -985,7 +1293,9 @@
                   <div
                     class="h-2 {vt.type === 'datatype'
                       ? 'bg-blue-500'
-                      : 'bg-cyan-500'} rounded-full"
+                      : vt.type === 'objectClass'
+                        ? 'bg-cyan-500'
+                        : 'bg-amber-500'} rounded-full"
                     style="width: {percent}%"
                   ></div>
                 </div>
@@ -1002,6 +1312,89 @@
                 </span>
               </div>
             </div>
+            <!-- Language breakdown (nested under rdf:langString) -->
+            {#if isExpanded && vt.languageBreakdown}
+              {#each vt.languageBreakdown as lang (lang.language)}
+                {@const langPercent =
+                  vt.totalTriples > 0
+                    ? (lang.triples / vt.totalTriples) * 100
+                    : 0}
+                {@const isLangSelected =
+                  (selectionMode === 'value-type-selected' ||
+                    selectionMode ===
+                      'class-property-and-value-type-selected') &&
+                  selectedValueType?.uri === lang.language &&
+                  selectedValueType?.type === 'language'}
+                <div
+                  class="group flex items-center gap-1 sm:gap-2 px-1 sm:px-4 py-2 pl-6 sm:pl-10 text-sm transition-all cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/20 bg-gray-50 dark:bg-gray-750 {isLangSelected
+                    ? 'bg-amber-100 dark:bg-amber-900/30'
+                    : ''}"
+                  role="option"
+                  aria-selected={isLangSelected}
+                  tabindex="0"
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    selectLanguage(lang);
+                  }}
+                  onkeydown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      selectLanguage(lang);
+                    }
+                  }}
+                  use:scrollIntoViewWhenSelected={isLangSelected}
+                >
+                  <ChevronLeftOutline
+                    class="h-4 w-4 -ml-2 flex-shrink-0 transition-colors {isLangSelected
+                      ? 'text-amber-500'
+                      : 'text-gray-300 group-hover:text-amber-400 dark:text-gray-600'}"
+                  />
+                  <div class="w-5 flex-shrink-0">
+                    <span
+                      class="text-amber-500 dark:text-amber-400"
+                      title={m.detail_language()}
+                    >
+                      <LanguageOutline class="h-4 w-4" />
+                    </span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <span
+                      class="block text-amber-600 dark:text-amber-400 group-hover:underline"
+                      title={lang.language}
+                    >
+                      {lang.displayLabel}
+                    </span>
+                  </div>
+                  <div
+                    class="w-16 sm:w-20 text-right tabular-nums text-gray-700 dark:text-gray-300 text-xs"
+                  >
+                    {lang.triples.toLocaleString(getLocale())}
+                  </div>
+                  <div class="w-8 sm:w-20 flex items-center gap-2">
+                    <div
+                      class="hidden sm:block flex-1 h-2 bg-gray-200 rounded-full dark:bg-gray-600"
+                    >
+                      <div
+                        class="h-2 bg-amber-500 rounded-full"
+                        style="width: {langPercent}%"
+                      ></div>
+                    </div>
+                    <span
+                      class="text-xs w-full sm:w-10 text-right tabular-nums text-gray-600 dark:text-gray-400"
+                    >
+                      <span class="sm:hidden">{Math.round(langPercent)}%</span
+                      ><span class="hidden sm:inline"
+                        >{langPercent.toLocaleString(getLocale(), {
+                          minimumFractionDigits: 1,
+                          maximumFractionDigits: 1,
+                        })}%</span
+                      >
+                    </span>
+                  </div>
+                </div>
+              {/each}
+            {/if}
           {/each}
         </div>
 
