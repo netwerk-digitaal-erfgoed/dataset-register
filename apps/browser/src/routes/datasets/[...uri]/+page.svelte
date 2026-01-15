@@ -98,6 +98,18 @@
     dataset.subjectOf?.additionalType,
   );
 
+  // Helper function to convert language codes to display labels
+  function getLanguageLabel(langCode: string): string {
+    const code = langCode.toLowerCase();
+    if (code === 'nl' || code === 'nl-nl') return m.lang_nl();
+    if (code === 'en' || code.startsWith('en-')) return m.lang_en();
+    if (code === 'de') return m.lang_de();
+    if (code === 'fr') return m.lang_fr();
+    if (code === 'es') return m.lang_es();
+    if (code === 'it') return m.lang_it();
+    return langCode.toUpperCase();
+  }
+
   // Table data for all class partitions with nested property partitions
   const classPartitionTable = $derived.by(() => {
     if (!summary?.classPartition?.length) return undefined;
@@ -133,6 +145,11 @@
             class: oc.class || 'Unknown',
             shortClass: shortenUri(oc.class || 'Unknown'),
             triples: oc.triples || 0,
+          })),
+          languagePartition: pp.languagePartition?.map((lp) => ({
+            language: lp.language || '',
+            displayLabel: getLanguageLabel(lp.language || ''),
+            triples: lp.triples || 0,
           })),
         }));
 

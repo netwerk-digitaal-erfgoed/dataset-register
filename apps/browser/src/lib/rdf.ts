@@ -44,5 +44,11 @@ export const owlNs = createNamespace({
 export const voidExtNs = createNamespace({
   iri: 'http://ldf.fi/void-ext#',
   prefix: 'void-ext:',
-  terms: ['datatypePartition', 'datatype', 'objectClassPartition'],
+  terms: [
+    'datatypePartition',
+    'datatype',
+    'objectClassPartition',
+    'languagePartition',
+    'language',
+  ],
 } as const);

@@ -198,9 +198,11 @@
   "detail_value_type": "Waardetype",
   "detail_value_types_description": "De verdeling van datatypes voor literale waarden en klassen voor URI-objecten in deze dataset.",
   "detail_value_types_for_class": "Waardetypes voor {className}",
+  "detail_value_types_for_class_property": "Waardetypes voor {className} → {propertyName}",
   "detail_value_types_for_property": "Waardetypes voor {propertyName}",
   "detail_datatype": "Datatype (literal)",
   "detail_object_class": "Objectklasse (URI)",
+  "detail_language": "Taal",
   "detail_classes_for_value_type": "Typen voor {valueTypeName}",
   "detail_properties_for_value_type": "Eigenschappen voor {valueTypeName}"
 }

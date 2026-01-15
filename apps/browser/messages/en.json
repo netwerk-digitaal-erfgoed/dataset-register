@@ -198,9 +198,11 @@
   "detail_value_type": "Value Type",
   "detail_value_types_description": "The distribution of data types for literal values and classes for URI objects in this dataset.",
   "detail_value_types_for_class": "Value types for {className}",
+  "detail_value_types_for_class_property": "Value types for {className} → {propertyName}",
   "detail_value_types_for_property": "Value types for {propertyName}",
   "detail_datatype": "Datatype (literal)",
   "detail_object_class": "Object class (URI)",
+  "detail_language": "Language",
   "detail_classes_for_value_type": "Classes for {valueTypeName}",
   "detail_properties_for_value_type": "Properties for {valueTypeName}"
 }
