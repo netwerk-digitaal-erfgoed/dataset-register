@@ -242,7 +242,8 @@ export function datasetCardsQuery(
     # Fetch dataset size from Dataset Knowledge Graph via SPARQL Federation
     OPTIONAL {
       SERVICE <https://triplestore.netwerkdigitaalerfgoed.nl/repositories/dataset-knowledge-graph> {
-        ?dataset void:triples ?size .
+        ?dataset a void:Dataset ;
+          void:triples ?size .
       }
     }
   }
@@ -356,7 +357,8 @@ function filterClauses(searchFilters: SearchRequest, skipDefaults = false) {
     // This ensures only datasets with known sizes are returned in filtered results.
     filterClausesArray.push(`
       SERVICE <https://triplestore.netwerkdigitaalerfgoed.nl/repositories/dataset-knowledge-graph> {
-        ?dataset void:triples ?datasetSize .
+        ?dataset a void:Dataset ;
+          void:triples ?datasetSize .
       }
     `);
 
