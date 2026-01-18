@@ -436,7 +436,8 @@ export async function fetchSizeRange(): Promise<FacetValueRange> {
 
     SELECT (MIN(?size) as ?minSize) (MAX(?size) as ?maxSize)
     WHERE {
-      ?dataset void:triples ?size .
+      ?dataset a void:Dataset ;
+        void:triples ?size .
       FILTER(?size > 0)
     }
   `;
@@ -492,7 +493,8 @@ export async function fetchSizeHistogram(
       ${filterDatasets(filtersWithoutSize)}
 
       SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
-        ?dataset void:triples ?size .
+        ?dataset a void:Dataset ;
+          void:triples ?size .
       }
 
       # Bin sizes into logarithmic buckets using nested IF conditions
