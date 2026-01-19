@@ -839,9 +839,9 @@
 
 <!-- Side-by-Side Classes & Properties Widget -->
 <div class="mt-6">
-  <div class="flex flex-col lg:flex-row gap-4">
+  <div class="flex flex-col xl:flex-row gap-4">
     <!-- Classes Panel (Left) -->
-    <div class="w-full lg:flex-1 min-w-0">
+    <div class="w-full xl:flex-1 min-w-0">
       <h3
         class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
       >
@@ -993,7 +993,7 @@
 
     <!-- Properties Panel (Right) -->
     {#if aggregatedProperties.length > 0}
-      <div class="w-full lg:flex-1 min-w-0">
+      <div class="w-full xl:flex-1 min-w-0">
         <h3
           class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
         >
@@ -1150,7 +1150,7 @@
 
     <!-- Value Types Panel (Right) -->
     {#if hasAnyValueTypePartitions && aggregatedValueTypes.length > 0}
-      <div class="w-full lg:flex-1 min-w-0">
+      <div class="w-full xl:flex-1 min-w-0">
         <h3
           class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
         >
