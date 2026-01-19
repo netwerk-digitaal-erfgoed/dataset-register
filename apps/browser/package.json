@@ -18,7 +18,7 @@
   "dependencies": {
     "@dataset-register/core": "*",
     "@lde/dataset-registry-client": "^0.4.3",
-    "@zazuko/prefixes": "^2.4.0",
+    "@zazuko/prefixes": "^2.6.1",
     "feed": "^5.2.0",
     "fetch-sparql-endpoint": "^7.1.0",
     "flowbite": "^4.0.0",
