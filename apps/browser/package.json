@@ -24,7 +24,7 @@
     "flowbite": "^4.0.0",
     "flowbite-svelte": "^1.31.0",
     "flowbite-svelte-icons": "^3.1.0",
-    "ldkit": "^2.5.1",
+    "ldkit": "^2.5.2",
     "sparqljs": "^3.7.3",
     "svelte-range-slider-pips": "^4.1.0"
   },
