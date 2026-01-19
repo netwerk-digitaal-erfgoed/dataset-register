@@ -1326,7 +1326,7 @@
                   selectedValueType?.uri === lang.language &&
                   selectedValueType?.type === 'language'}
                 <div
-                  class="group flex items-center gap-1 sm:gap-2 px-1 sm:px-4 py-2 pl-6 sm:pl-10 text-sm transition-all cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/20 bg-gray-50 dark:bg-gray-750 {isLangSelected
+                  class="group flex items-center gap-1 sm:gap-2 px-1 sm:px-4 py-2 pl-6 sm:pl-10 text-sm transition-all cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/20 bg-gray-50 dark:bg-gray-800 {isLangSelected
                     ? 'bg-amber-100 dark:bg-amber-900/30'
                     : ''}"
                   role="option"
