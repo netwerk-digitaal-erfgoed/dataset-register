@@ -1,5 +1,6 @@
 import { DatasetStore, extractIri } from './dataset.js';
 import { QueryEngine } from '@comunica/query-sparql';
+import type { BindingsStream } from '@comunica/types';
 import { Writer } from 'n3';
 import {
   AllowedRegistrationDomainStore,
@@ -301,7 +302,7 @@ export class SparqlClient {
     ];
   }
 
-  async query(query: string) {
+  async query(query: string): Promise<BindingsStream> {
     return await queryEngine.queryBindings(query, { sources: this.sources });
   }
 
