@@ -933,7 +933,7 @@
           >
             <div class="flex-1 min-w-0">
               <span
-                class="block text-blue-600 dark:text-blue-400 {hasAnyPropertyPartitions
+                class="block truncate text-blue-600 dark:text-blue-400 {hasAnyPropertyPartitions
                   ? 'group-hover:underline'
                   : ''}"
                 title={row.className}
@@ -1091,7 +1091,7 @@
               />
               <div class="flex-1 min-w-0">
                 <span
-                  class="block text-blue-600 dark:text-blue-400 group-hover:underline"
+                  class="block truncate text-blue-600 dark:text-blue-400 group-hover:underline"
                   title={prop.property}
                 >
                   {truncateMiddle(stripUrlPrefix(prop.shortProperty), 25)}
@@ -1275,7 +1275,7 @@
               </div>
               <div class="flex-1 min-w-0">
                 <span
-                  class="block text-blue-600 dark:text-blue-400 group-hover:underline"
+                  class="block truncate text-blue-600 dark:text-blue-400 group-hover:underline"
                   title={vt.uri}
                 >
                   {truncateMiddle(stripUrlPrefix(vt.shortUri), 25)}
@@ -1360,7 +1360,7 @@
                   </div>
                   <div class="flex-1 min-w-0">
                     <span
-                      class="block text-amber-600 dark:text-amber-400 group-hover:underline"
+                      class="block truncate text-amber-600 dark:text-amber-400 group-hover:underline"
                       title={lang.language}
                     >
                       {lang.displayLabel}
