@@ -839,9 +839,9 @@
 
 <!-- Side-by-Side Classes & Properties Widget -->
 <div class="mt-6">
-  <div class="flex flex-col lg:flex-row gap-4">
+  <div class="flex flex-col xl:flex-row gap-4">
     <!-- Classes Panel (Left) -->
-    <div class="w-full lg:flex-1 min-w-0">
+    <div class="w-full xl:flex-1 min-w-0">
       <h3
         class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
       >
@@ -933,7 +933,7 @@
           >
             <div class="flex-1 min-w-0">
               <span
-                class="block text-blue-600 dark:text-blue-400 {hasAnyPropertyPartitions
+                class="block truncate text-blue-600 dark:text-blue-400 {hasAnyPropertyPartitions
                   ? 'group-hover:underline'
                   : ''}"
                 title={row.className}
@@ -993,7 +993,7 @@
 
     <!-- Properties Panel (Right) -->
     {#if aggregatedProperties.length > 0}
-      <div class="w-full lg:flex-1 min-w-0">
+      <div class="w-full xl:flex-1 min-w-0">
         <h3
           class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
         >
@@ -1091,7 +1091,7 @@
               />
               <div class="flex-1 min-w-0">
                 <span
-                  class="block text-blue-600 dark:text-blue-400 group-hover:underline"
+                  class="block truncate text-blue-600 dark:text-blue-400 group-hover:underline"
                   title={prop.property}
                 >
                   {truncateMiddle(stripUrlPrefix(prop.shortProperty), 25)}
@@ -1150,7 +1150,7 @@
 
     <!-- Value Types Panel (Right) -->
     {#if hasAnyValueTypePartitions && aggregatedValueTypes.length > 0}
-      <div class="w-full lg:flex-1 min-w-0">
+      <div class="w-full xl:flex-1 min-w-0">
         <h3
           class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
         >
@@ -1275,7 +1275,7 @@
               </div>
               <div class="flex-1 min-w-0">
                 <span
-                  class="block text-blue-600 dark:text-blue-400 group-hover:underline"
+                  class="block truncate text-blue-600 dark:text-blue-400 group-hover:underline"
                   title={vt.uri}
                 >
                   {truncateMiddle(stripUrlPrefix(vt.shortUri), 25)}
@@ -1360,7 +1360,7 @@
                   </div>
                   <div class="flex-1 min-w-0">
                     <span
-                      class="block text-amber-600 dark:text-amber-400 group-hover:underline"
+                      class="block truncate text-amber-600 dark:text-amber-400 group-hover:underline"
                       title={lang.language}
                     >
                       {lang.displayLabel}
