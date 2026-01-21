@@ -412,7 +412,17 @@ export async function fetchFacetValues(
   );
   const query = facetQuery(facet, searchFiltersQuery);
 
-  return await facets.query(query);
+  try {
+    return await facets.query(query);
+  } catch (error) {
+    console.error(
+      `Facet query failed for "${facet}":`,
+      error,
+      '\nQuery:',
+      query,
+    );
+    return [];
+  }
 }
 
 export interface FacetValueRange {
@@ -514,21 +524,26 @@ export async function fetchSizeHistogram(
     ORDER BY ?bin
   `;
 
-  const bindings = await fetcher.fetchBindings(PUBLIC_SPARQL_ENDPOINT, query);
+  try {
+    const bindings = await fetcher.fetchBindings(PUBLIC_SPARQL_ENDPOINT, query);
 
-  const histogram: HistogramBin[] = [];
-  for await (const binding of bindings) {
-    const typedBinding = binding as unknown as {
-      bin: { value: string };
-      count: { value: string };
-    };
-    histogram.push({
-      bin: parseInt(typedBinding.bin.value),
-      count: parseInt(typedBinding.count.value),
-    });
+    const histogram: HistogramBin[] = [];
+    for await (const binding of bindings) {
+      const typedBinding = binding as unknown as {
+        bin: { value: string };
+        count: { value: string };
+      };
+      histogram.push({
+        bin: parseInt(typedBinding.bin.value),
+        count: parseInt(typedBinding.count.value),
+      });
+    }
+
+    return histogram;
+  } catch (error) {
+    console.error('Size histogram query failed:', error, '\nQuery:', query);
+    return [];
   }
-
-  return histogram;
 }
 
 const valueTranslations = {
