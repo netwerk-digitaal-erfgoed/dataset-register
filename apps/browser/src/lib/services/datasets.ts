@@ -254,6 +254,7 @@ export function datasetCardsQuery(
 export const filterDatasets = (filters: SearchRequest, skipDefaults = false) =>
   `?dataset a dcat:Dataset ;
     schema:subjectOf ?registrationUrl .
+  filter(isuri(?dataset))
 
   ${filterClauses(filters, skipDefaults)}
 `;
