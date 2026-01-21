@@ -392,16 +392,37 @@ export async function fetchDatasetDetail(
     sources: [PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT],
   });
 
-  const [dataset, summary, linksets, classPartitionResult] = await Promise.all([
-    detailLens.findByIri(datasetUri),
-    summaryLens.findByIri(datasetUri),
-    linksLens.find({ where: { subjectsTarget: datasetUri } }),
-    classPartitionLens.findByIri(datasetUri),
-  ]);
+  // Fetch dataset from main SPARQL endpoint (required)
+  let dataset: DatasetDetail | null;
+  try {
+    dataset = await detailLens.findByIri(datasetUri);
+  } catch (err) {
+    console.error(`Dataset query failed for "${datasetUri}":`, err);
+    error(500, 'Failed to fetch dataset');
+  }
 
   if (!dataset) {
     error(404, 'Dataset not found');
   }
+
+  // Fetch supplementary data from Knowledge Graph (optional, may fail)
+  const [summary, linksets, classPartitionResult] = await Promise.all([
+    summaryLens.findByIri(datasetUri).catch((err) => {
+      console.error(`Summary query failed for dataset "${datasetUri}":`, err);
+      return null;
+    }),
+    linksLens.find({ where: { subjectsTarget: datasetUri } }).catch((err) => {
+      console.error(`Linksets query failed for dataset "${datasetUri}":`, err);
+      return [];
+    }),
+    classPartitionLens.findByIri(datasetUri).catch((err) => {
+      console.error(
+        `Class partition query failed for dataset "${datasetUri}":`,
+        err,
+      );
+      return null;
+    }),
+  ]);
 
   // Merge classPartition into summary
   const summaryWithClassPartition = summary
