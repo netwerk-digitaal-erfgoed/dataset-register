@@ -130,14 +130,19 @@ async function countDatasets(filters: SearchRequest) {
   SELECT (COUNT(DISTINCT ?dataset) as ?count) WHERE {
     ${filterDatasets(filters)}
   }`;
-  const bindings = await fetcher.fetchBindings(SPARQL_ENDPOINT, query);
 
-  // COUNT query returns exactly one binding
-  for await (const binding of bindings) {
-    const typedBinding = binding as unknown as {
-      count: { value: string };
-    };
-    return parseInt(typedBinding.count.value);
+  try {
+    const bindings = await fetcher.fetchBindings(SPARQL_ENDPOINT, query);
+
+    // COUNT query returns exactly one binding
+    for await (const binding of bindings) {
+      const typedBinding = binding as unknown as {
+        count: { value: string };
+      };
+      return parseInt(typedBinding.count.value);
+    }
+  } catch (error) {
+    console.error('Count datasets query failed:', error, '\nQuery:', query);
   }
   return 0;
 }
@@ -266,6 +271,28 @@ export interface SearchResults {
   time: number;
 }
 
+async function fetchDatasetCards(
+  searchFilters: SearchRequest,
+  limit: number,
+  offset: number,
+  orderBy: OrderBy,
+  locale: string,
+): Promise<DatasetCard[]> {
+  const query = datasetCardsQuery(
+    searchFilters,
+    limit,
+    offset,
+    orderBy,
+    locale,
+  );
+  try {
+    return await datasetCards.query(query);
+  } catch (error) {
+    console.error('Dataset cards query failed:', error, '\nQuery:', query);
+    return [];
+  }
+}
+
 export async function fetchDatasets(
   searchFilters: SearchRequest,
   limit: number,
@@ -278,9 +305,7 @@ export async function fetchDatasets(
   // Start all queries in parallel using Promise.all
   const [total, datasets, facets] = await Promise.all([
     countDatasets(searchFilters),
-    datasetCards.query(
-      datasetCardsQuery(searchFilters, limit, offset, orderBy, locale),
-    ),
+    fetchDatasetCards(searchFilters, limit, offset, orderBy, locale),
     fetchFacets(searchFilters),
   ]);
 
