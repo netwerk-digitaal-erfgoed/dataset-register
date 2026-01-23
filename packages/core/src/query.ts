@@ -2,6 +2,7 @@ import factory from 'rdf-ext';
 import {
   convertToIri,
   convertToXsdDate,
+  convertUriToLiteral,
   normalizeByteSize,
   normalizeLicense,
   normalizeMediaType,
@@ -185,7 +186,7 @@ export const constructQuery = `
         OPTIONAL { ?${dataset} dct:modified ${convertToXsdDate(dateModified)} }
         OPTIONAL { ?${dataset} dct:language ?${language} }
         OPTIONAL { ?${dataset} dct:source ?${source} }
-        OPTIONAL { ?${dataset} dcat:keyword ?${keyword} }
+        OPTIONAL { ?${dataset} dcat:keyword ${convertUriToLiteral(keyword)} }
         OPTIONAL {
           ?${dataset} dct:spatial ?${spatialCoverage} .
           FILTER(!isBlank(?${spatialCoverage}))
@@ -302,7 +303,7 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL { ?${dataset} ${prefix}:inLanguage ?${language} }
     OPTIONAL { ?${dataset} ${prefix}:isBasedOn ?${source} }
     OPTIONAL { ?${dataset} ${prefix}:isBasedOnUrl ?${source} } 
-    OPTIONAL { ?${dataset} ${prefix}:keywords ?${keyword} }
+    OPTIONAL { ?${dataset} ${prefix}:keywords ${convertUriToLiteral(keyword)} }
     OPTIONAL {
       ?${dataset} ${prefix}:spatialCoverage ?${spatialCoverage} .
       FILTER(!isBlank(?${spatialCoverage}))
