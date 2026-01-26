@@ -16,7 +16,7 @@
     "jsonld": "^9.0.0",
     "psl": "1.10.0",
     "rdf-ext": "2.6.0",
-    "rdf-serialize": "5.0.0",
+    "rdf-serialize": "5.1.0",
     "stream-to-string": "^1.2.1"
   },
   "nx": {
