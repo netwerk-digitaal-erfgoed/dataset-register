@@ -24,7 +24,7 @@
   "main": "./src/index.ts",
   "types": "./src/index.d.ts",
   "dependencies": {
-    "@comunica/query-sparql": "^5.1.0",
+    "@comunica/query-sparql": "^5.1.2",
     "@comunica/types": "^5.1.0",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/exporter-metrics-otlp-proto": "^0.209.0",
