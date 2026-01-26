@@ -29,7 +29,7 @@
     "svelte-range-slider-pips": "^4.1.0"
   },
   "devDependencies": {
-    "@eslint/compat": "^2.0.0",
+    "@eslint/compat": "^2.0.1",
     "@eslint/js": "^9.38.0",
     "@flowbite-svelte-plugins/chart": "^0.2.4",
     "@inlang/paraglide-js": "^2.7.1",
