@@ -8,7 +8,11 @@
   import { RDF_MEDIA_TYPES } from '$lib/constants.js';
   import { onMount } from 'svelte';
   import { initFlowbite } from 'flowbite';
-  import { getLocalizedValue, getLocalizedArray } from '$lib/utils/i18n.js';
+  import {
+    getLocalizedValue,
+    getLocalizedArray,
+    localizeHref,
+  } from '$lib/utils/i18n.js';
   import { getLicenseName } from '$lib/utils/license.js';
   import { shortenUri } from '$lib/utils/prefix.js';
   import { getMediaTypeLabel } from '$lib/utils/media-type.js';
@@ -306,9 +310,9 @@
                 </dt>
                 <dd class="text-sm text-gray-700 dark:text-gray-300">
                   <a
-                    href="/datasets?publishers={encodeURIComponent(
-                      dataset.publisher.$id || '',
-                    )}"
+                    href={localizeHref(
+                      `/datasets?publishers=${encodeURIComponent(dataset.publisher.$id || '')}`,
+                    )}
                     class="text-blue-600 hover:underline dark:text-blue-400"
                   >
                     {getLocalizedValue(dataset.publisher.name)}
@@ -664,7 +668,9 @@
                 <dd class="flex flex-wrap gap-1.5">
                   {#each localizedKeywords as keyword (keyword)}
                     <a
-                      href="/datasets?keywords={encodeURIComponent(keyword)}"
+                      href={localizeHref(
+                        `/datasets?keywords=${encodeURIComponent(keyword)}`,
+                      )}
                       class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 transition-colors hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:hover:bg-blue-900/50 no-underline"
                     >
                       {keyword}
@@ -1181,9 +1187,9 @@
                 {#if linkset.objectsTarget}
                   <li class="flex items-center gap-2 text-sm">
                     <a
-                      href="/datasets?terminologySource={encodeURIComponent(
-                        linkset.objectsTarget.$id,
-                      )}"
+                      href={localizeHref(
+                        `/datasets?terminologySource=${encodeURIComponent(linkset.objectsTarget.$id)}`,
+                      )}
                       class="inline-flex items-center gap-1.5 text-blue-600 hover:underline dark:text-blue-400 break-all"
                     >
                       <SearchOutline class="w-4 h-4 flex-shrink-0" />
