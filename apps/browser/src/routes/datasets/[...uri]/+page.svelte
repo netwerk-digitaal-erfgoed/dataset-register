@@ -34,7 +34,9 @@
 
   // Data is loaded server-side via +page.ts for SEO
   const { data }: { data: DatasetDetailResult } = $props();
-  const { dataset, summary, linksets } = data;
+  const dataset = $derived(data.dataset);
+  const summary = $derived(data.summary);
+  const linksets = $derived(data.linksets);
 
   function isSparqlDistribution(distribution: DistributionDetail) {
     return distribution.conformsTo?.includes(
@@ -94,12 +96,12 @@
   );
 
   // Extract keywords and genres for current locale
-  const localizedKeywords = getLocalizedArray(dataset.keyword);
-  const localizedGenres = getLocalizedArray(dataset.type);
+  const localizedKeywords = $derived(getLocalizedArray(dataset.keyword));
+  const localizedGenres = $derived(getLocalizedArray(dataset.type));
 
   // Get registration status (gone, invalid, or null)
-  const registrationStatus = getRegistrationStatus(
-    dataset.subjectOf?.additionalType,
+  const registrationStatus = $derived(
+    getRegistrationStatus(dataset.subjectOf?.additionalType),
   );
 
   // Helper function to convert language codes to display labels
@@ -167,6 +169,13 @@
     initFlowbite();
   });
 </script>
+
+<svelte:head>
+  <title>{getLocalizedValue(dataset.title)} | Netwerk Digitaal Erfgoed</title>
+  {#if dataset.description}
+    <meta content={getLocalizedValue(dataset.description)} name="description" />
+  {/if}
+</svelte:head>
 
 <div class="mx-auto max-w-7xl px-1 py-8 sm:px-6 lg:px-8">
   {#if dataset}
