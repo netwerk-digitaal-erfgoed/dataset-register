@@ -402,7 +402,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <svelte:head>
-  <title>Datasets - Netwerk Digitaal Erfgoed</title>
+  <title>Datasets | Netwerk Digitaal Erfgoed</title>
   <meta content={m.header_tagline()} name="description" />
   <link
     rel="alternate"

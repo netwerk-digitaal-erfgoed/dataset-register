@@ -439,7 +439,7 @@
       selectedProperty
     ) {
       const prop = selectedClass.propertyPartition?.find(
-        (p) => p.property === selectedProperty.property,
+        (p) => p.property === selectedProperty!.property,
       );
       if (!prop) return [];
 
