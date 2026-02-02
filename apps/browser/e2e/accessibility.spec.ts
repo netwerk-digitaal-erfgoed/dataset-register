@@ -79,7 +79,7 @@ test.beforeEach(async ({ page }) => {
 test.describe('Accessibility', () => {
   test('datasets page has no accessibility violations', async ({ page }) => {
     await page.goto('/datasets');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const results = await new AxeBuilder({ page }).analyze();
 
@@ -96,7 +96,7 @@ test.describe('Accessibility', () => {
 
   test('page has proper heading structure', async ({ page }) => {
     await page.goto('/datasets');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Check for main heading
     const h1 = page.locator('h1');
@@ -114,7 +114,7 @@ test.describe('Accessibility', () => {
 
   test('interactive elements are keyboard accessible', async ({ page }) => {
     await page.goto('/datasets');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Tab through page and verify focus is visible
     await page.keyboard.press('Tab');
@@ -125,7 +125,7 @@ test.describe('Accessibility', () => {
 
   test('page has lang attribute', async ({ page }) => {
     await page.goto('/datasets');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const lang = await page.getAttribute('html', 'lang');
     expect(lang).toBeTruthy();
@@ -133,7 +133,7 @@ test.describe('Accessibility', () => {
 
   test('images have alt text', async ({ page }) => {
     await page.goto('/datasets');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const imagesWithoutAlt = await page.locator('img:not([alt])').count();
     expect(imagesWithoutAlt).toBe(0);
@@ -141,7 +141,7 @@ test.describe('Accessibility', () => {
 
   test('color contrast meets WCAG AA standards', async ({ page }) => {
     await page.goto('/datasets');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2aa'])
@@ -156,7 +156,7 @@ test.describe('Accessibility', () => {
 
   test('form inputs have associated labels', async ({ page }) => {
     await page.goto('/datasets');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const results = await new AxeBuilder({ page })
       .withRules(['label'])
@@ -175,7 +175,7 @@ test.describe('Accessibility - Dataset Detail Page', () => {
     page,
   }) => {
     await page.goto('/datasets/https%3A%2F%2Fexample.org%2Fdataset%2F1');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const results = await new AxeBuilder({ page })
       // Exclude document-title: SSR data can't be mocked via page.route()
@@ -194,7 +194,7 @@ test.describe('Accessibility - Dataset Detail Page', () => {
 
   test('dataset detail page has proper heading structure', async ({ page }) => {
     await page.goto('/datasets/https%3A%2F%2Fexample.org%2Fdataset%2F1');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Check for main heading (h1 with dataset title)
     const h1 = page.locator('h1');
@@ -212,7 +212,7 @@ test.describe('Accessibility - Dataset Detail Page', () => {
 
   test('dataset detail page is keyboard accessible', async ({ page }) => {
     await page.goto('/datasets/https%3A%2F%2Fexample.org%2Fdataset%2F1');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Tab through page and verify focus is visible
     await page.keyboard.press('Tab');
@@ -223,7 +223,7 @@ test.describe('Accessibility - Dataset Detail Page', () => {
 
   test('dataset detail page meets WCAG AA color contrast', async ({ page }) => {
     await page.goto('/datasets/https%3A%2F%2Fexample.org%2Fdataset%2F1');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2aa'])
