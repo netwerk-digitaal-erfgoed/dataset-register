@@ -13,6 +13,8 @@
     "prepare": "svelte-kit sync || echo ''",
     "preview": "vite preview",
     "test": "npm run test:unit -- --run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "test:unit": "vitest"
   },
   "dependencies": {
@@ -29,10 +31,12 @@
     "svelte-range-slider-pips": "^4.1.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.0",
     "@eslint/compat": "^2.0.1",
     "@eslint/js": "^9.38.0",
     "@flowbite-svelte-plugins/chart": "^0.2.4",
     "@inlang/paraglide-js": "^2.9.1",
+    "@playwright/test": "^1.58.1",
     "@sveltejs/adapter-node": "^5.5.2",
     "@sveltejs/kit": "^2.50.1",
     "@sveltejs/vite-plugin-svelte": "^6.2.4",
@@ -50,6 +54,16 @@
     "projectType": "application",
     "targets": {
       "test": {
+        "dependsOn": [
+          "build"
+        ]
+      },
+      "e2e": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "playwright test",
+          "cwd": "apps/browser"
+        },
         "dependsOn": [
           "build"
         ]
