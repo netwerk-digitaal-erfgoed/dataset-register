@@ -1,5 +1,6 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
+  "logo_link_label": "Datasetregister – Netwerk Digitaal Erfgoed (ga naar homepage)",
   "header_title": "Datasetregister",
   "header_tagline": "Ontdek datasets over cultureel erfgoed",
   "organization": "Netwerk Digitaal Erfgoed",

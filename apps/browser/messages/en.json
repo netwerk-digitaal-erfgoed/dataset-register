@@ -1,5 +1,6 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
+  "logo_link_label": "Dataset Register – Dutch Heritage Network (go to homepage)",
   "header_title": "Dataset Register",
   "header_tagline": "Discover cultural heritage datasets",
   "organization": "Dutch Heritage Network",

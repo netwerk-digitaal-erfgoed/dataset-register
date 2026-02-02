@@ -413,6 +413,7 @@
 </svelte:head>
 
 <div class="max-w-7xl mx-auto px-4 lg:px-8 py-8 font-sans">
+  <h1 class="sr-only">{m.header_title()}</h1>
   <input
     bind:this={inputElement}
     bind:value={localQuery}

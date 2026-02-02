@@ -97,6 +97,7 @@
           href="https://datasetregister.netwerkdigitaalerfgoed.nl"
           class="block flex-shrink-0 w-48 lg:w-80 xl:w-96"
         >
+          <span class="sr-only">{m.logo_link_label()}</span>
           <svg
             viewBox="0 0 266 38"
             xmlns="http://www.w3.org/2000/svg"
