@@ -5,6 +5,7 @@
   } from '$lib/services/dataset-detail';
   import * as m from '$lib/paraglide/messages';
   import { getLocale } from '$lib/paraglide/runtime';
+  import { page } from '$app/state';
   import { RDF_MEDIA_TYPES } from '$lib/constants.js';
   import { onMount } from 'svelte';
   import { initFlowbite } from 'flowbite';
@@ -37,6 +38,15 @@
   const dataset = $derived(data.dataset);
   const summary = $derived(data.summary);
   const linksets = $derived(data.linksets);
+
+  // SEO: canonical and hreflang URLs
+  const datasetPath = $derived(`/datasets/${dataset.$id}`);
+  const canonicalUrl = $derived(
+    `${page.url.origin}${localizeHref(datasetPath, { locale: 'nl' })}`,
+  );
+  const enUrl = $derived(
+    `${page.url.origin}${localizeHref(datasetPath, { locale: 'en' })}`,
+  );
 
   function isSparqlDistribution(distribution: DistributionDetail) {
     return distribution.conformsTo?.includes(
@@ -175,6 +185,10 @@
   {#if dataset.description}
     <meta content={getLocalizedValue(dataset.description)} name="description" />
   {/if}
+  <link rel="canonical" href={canonicalUrl} />
+  <link rel="alternate" hreflang="nl" href={canonicalUrl} />
+  <link rel="alternate" hreflang="en" href={enUrl} />
+  <link rel="alternate" hreflang="x-default" href={canonicalUrl} />
 </svelte:head>
 
 <div class="mx-auto max-w-7xl px-1 py-8 sm:px-6 lg:px-8">

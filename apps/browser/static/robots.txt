@@ -1,3 +1,5 @@
-# allow crawling everything by default
+# Allow crawling everything
 User-agent: *
 Disallow:
+
+Sitemap: https://datasetregister.netwerkdigitaalerfgoed.nl/sitemap.xml
