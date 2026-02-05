@@ -37,6 +37,7 @@
   import { fetchDatasets } from '$lib/services/datasets';
   import type { SelectedFacetValue } from '$lib/services/facets';
   import { decodeDiscreteParam, decodeRangeParam } from '$lib/url';
+  import { localizeHref } from '$lib/utils/i18n';
 
   // Derive searchRequest from URL, which is the single source of truth.
   let searchRequest: SearchRequest = $derived({
@@ -397,6 +398,14 @@
   function createSkeletons(count: number) {
     return Array.from({ length: count }, (_, i) => i);
   }
+
+  // SEO: canonical and hreflang URLs
+  const canonicalUrl = $derived(
+    `${page.url.origin}${localizeHref('/datasets', { locale: 'nl' })}${page.url.search}`,
+  );
+  const enUrl = $derived(
+    `${page.url.origin}${localizeHref('/datasets', { locale: 'en' })}${page.url.search}`,
+  );
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -404,6 +413,10 @@
 <svelte:head>
   <title>Datasets | Netwerk Digitaal Erfgoed</title>
   <meta content={m.header_tagline()} name="description" />
+  <link rel="canonical" href={canonicalUrl} />
+  <link rel="alternate" hreflang="nl" href={canonicalUrl} />
+  <link rel="alternate" hreflang="en" href={enUrl} />
+  <link rel="alternate" hreflang="x-default" href={canonicalUrl} />
   <link
     rel="alternate"
     type="application/rss+xml"
