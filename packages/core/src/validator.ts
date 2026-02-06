@@ -95,22 +95,27 @@ const resultIsViolation = (result: ShaclValidationResult): boolean => {
     return true;
   }
 
-  return (
-    result.results
-      // shacl-engine returns spurious NodeConstraintComponents, so only select the first one.
-      .filter((item, index, self) => {
-        if (item.constraintComponent.equals(shacl('NodeConstraintComponent'))) {
-          return (
-            index ===
-            self.findIndex((t) =>
-              t.constraintComponent.equals(shacl('NodeConstraintComponent')),
-            )
-          );
-        }
-        return true;
-      })
-      .some((nestedResult) => resultIsViolation(nestedResult))
-  );
+  const children = result.results
+    // shacl-engine returns spurious NodeConstraintComponents, so only select the first one.
+    .filter((item, index, self) => {
+      if (item.constraintComponent.equals(shacl('NodeConstraintComponent'))) {
+        return (
+          index ===
+          self.findIndex((t) =>
+            t.constraintComponent.equals(shacl('NodeConstraintComponent')),
+          )
+        );
+      }
+      return true;
+    });
+
+  // For sh:or, each child represents an alternative. The sh:or is only a real violation if ALL alternatives have real
+  // violations; if any alternative has no real violations, that alternative is satisfied and so is the sh:or.
+  if (result.constraintComponent.equals(shacl('OrConstraintComponent'))) {
+    return children.every((nestedResult) => resultIsViolation(nestedResult));
+  }
+
+  return children.some((nestedResult) => resultIsViolation(nestedResult));
 };
 
 /**

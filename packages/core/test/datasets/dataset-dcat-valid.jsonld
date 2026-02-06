@@ -43,19 +43,22 @@
     "@id": "https://example.com/publisher",
     "@type": "foaf:Organization",
     "dct:identifier": "test",
-    "foaf:name": "Koninklijke Bibliotheek",
+    "foaf:name": {
+      "@value": "Koninklijke Bibliotheek",
+      "@language": "nl"
+    },
     "foaf:mbox": "datasets@example.com"
   },
   "dct:creator": [
     {
       "@id": "https://example.com/creator1",
       "@type": "foaf:Person",
-      "foaf:name": "Creator 1"
+      "foaf:name": { "@value": "Creator 1", "@language": "en" }
     },
     {
       "@id": "https://example.com/creator2",
       "@type": "foaf:Person",
-      "foaf:name": "Creator 2"
+      "foaf:name": { "@value": "Creator 2", "@language": "en" }
     },
     {
       "@id": "https://example.com/publisher"

@@ -291,6 +291,12 @@ reg:PersonShape
         ) ;
         sh:uniqueLang true ;
         sh:message "Een persoon moet een naam hebben"@nl, "A person must have a name"@en ;
+    ] ,
+    [
+        sh:path schema:name ;
+        sh:datatype rdf:langString ;
+        sh:severity sh:Warning ;
+        sh:message "De naam zou een taaltag moeten bevatten"@nl, "The name should have a language tag"@en ;
     ] .
 
 reg:DateTimeShape a sh:NodeShape ;
@@ -331,7 +337,7 @@ reg:OrganizationNameProperty a sh:PropertyShape ;
         [ sh:datatype rdf:langString ]
     ) ;
     sh:uniqueLang true ;
-    sh:description "The organization’s full name."@en ;
+    sh:description "The organization's full name."@en ;
     sh:message "Een organisatie moet een naam hebben"@nl, "An organization must contain a name"@en ;
 .
 
@@ -730,6 +736,12 @@ dcat:OrganizationShape
         ) ;
         sh:uniqueLang true ;
         sh:message "Een organisatie moet een naam hebben"@nl, "An organization must have a name"@en ;
+    ] ,
+    [
+        sh:path foaf:name ;
+        sh:datatype rdf:langString ;
+        sh:severity sh:Warning ;
+        sh:message "De naam van de organisatie zou een taaltag moeten bevatten"@nl, "The organization name should have a language tag"@en ;
     ] .
 
 dcat:PersonShape
@@ -745,4 +757,10 @@ dcat:PersonShape
         ) ;
         sh:uniqueLang true ;
         sh:message "Een persoon moet een naam hebben"@nl, "A person must have a name"@en ;
+    ] ,
+    [
+        sh:path foaf:name ;
+        sh:datatype rdf:langString ;
+        sh:severity sh:Warning ;
+        sh:message "De naam zou een taaltag moeten bevatten"@nl, "The name should have a language tag"@en ;
     ] .

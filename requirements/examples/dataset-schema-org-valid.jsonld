@@ -38,12 +38,18 @@
         {
           "@type": "Person",
           "@id": "https://example.com/creator1",
-          "name": "Creator 1"
+          "name": {
+            "@value": "Creator 1",
+            "@language": "en"
+          }
         },
         {
           "@type": "Person",
           "@id": "https://example.com/creator2",
-          "name": "Creator 2"
+          "name": {
+            "@value": "Creator 2",
+            "@language": "en"
+          }
         },
         {
           "@id": "https://example.com"
@@ -84,7 +90,10 @@
       "@type": "Organization",
       "@id": "https://example.com",
       "identifier": "test",
-      "name": "Koninklijke Bibliotheek",
+      "name": {
+        "@value": "Koninklijke Bibliotheek",
+        "@language": "nl"
+      },
       "sameAs": "https://ror.org/02w4jbg70",
       "contactPoint": {
         "@type": "ContactPoint",

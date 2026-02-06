@@ -94,3 +94,10 @@ export const normalizeByteSize = (variable: string) =>
 export const convertUriToLiteral = (variable: string) =>
   `?${variable}Raw ;
         BIND(IF(isIRI(?${variable}Raw), STR(?${variable}Raw), ?${variable}Raw) AS ?${variable})`;
+
+/**
+ * Default to a language tag if the literal has none, preserving existing tags.
+ */
+export const defaultLanguageTag = (variable: string, lang = 'nl') =>
+  `?${variable}Raw ;
+        BIND(IF(LANG(?${variable}Raw) = "", STRLANG(STR(?${variable}Raw), "${lang}"), ?${variable}Raw) AS ?${variable})`;
