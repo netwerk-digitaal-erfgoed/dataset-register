@@ -119,8 +119,21 @@ describe('Validator', () => {
     ]);
   });
 
+  it('reports invalid ContactPoint (recommended but must meet criteria if provided)', async () => {
+    const report = await validate(
+      'dataset-schema-org-invalid-contactpoint.jsonld',
+    );
+    expect(report.state).toBe('invalid');
+    expectViolations(report as InvalidDataset, ['https://schema.org/email'], 2);
+  });
+
   it('accepts valid DCAT dataset', async () => {
     const report = await validate('dataset-dcat-valid.jsonld');
+    expect(report.state).toEqual('valid');
+  });
+
+  it('accepts valid DCAT dataset with untagged organization name', async () => {
+    const report = await validate('dataset-dcat-valid-no-lang-tag.jsonld');
     expect(report.state).toEqual('valid');
   });
 

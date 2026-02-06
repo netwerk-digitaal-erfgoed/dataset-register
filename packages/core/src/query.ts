@@ -3,6 +3,7 @@ import {
   convertToIri,
   convertToXsdDate,
   convertUriToLiteral,
+  defaultLanguageTag,
   normalizeByteSize,
   normalizeLicense,
   normalizeMediaType,
@@ -137,8 +138,8 @@ export const constructQuery = `
           
         ?${publisher} a ?foafOrganizationOrPerson ;
           a ?${publisherType} ;
-          foaf:name ?${publisherName} .
-          
+          foaf:name ${defaultLanguageTag(publisherName)} .
+
         OPTIONAL { ?${publisher} foaf:nick ?${publisherAlternateName} ; }
         OPTIONAL { ?${publisher} dct:identifier ?${publisherIdentifier} ; }
         OPTIONAL { ?${publisher} foaf:mbox ?${publisherEmail} ; }
@@ -147,7 +148,7 @@ export const constructQuery = `
         OPTIONAL {
           ?${creator} a ?foafOrganizationOrPerson ;
             a ?${creatorType} ;
-            foaf:name ?${creatorName} .
+            foaf:name ${defaultLanguageTag(creatorName)} .
         }
           
         VALUES ?foafOrganizationOrPerson { foaf:Organization foaf:Person }
@@ -215,7 +216,7 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL { 
       ?${dataset} ${prefix}:creator ?${creator} .        
       ?${creator} a ?creatorTypeRaw ;
-        ${prefix}:name ?${creatorName} .
+        ${prefix}:name ${defaultLanguageTag(creatorName)} .
       BIND(
         IF(
           ?creatorTypeRaw = ${prefix}:Organization,
@@ -233,7 +234,7 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL { 
       ?${dataset} ${prefix}:publisher ?${publisher} .
       ?${publisher} a ?publisherTypeRaw ;
-        ${prefix}:name ?${publisherName} .
+        ${prefix}:name ${defaultLanguageTag(publisherName)} .
       OPTIONAL { ?${publisher} ${prefix}:alternateName ?${publisherAlternateName} . }
       OPTIONAL { ?${publisher} ${prefix}:identifier ?${publisherIdentifier} . }
       OPTIONAL { 

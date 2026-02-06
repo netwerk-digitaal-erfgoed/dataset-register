@@ -11,7 +11,10 @@
       "publisher": {
         "@type": "Organization",
         "@id": "https://www.openarch.nl/",
-        "name": "Open Archives"
+        "name": {
+          "@value": "Open Archives",
+          "@language": "nl"
+        }
       }
     }
   ]
