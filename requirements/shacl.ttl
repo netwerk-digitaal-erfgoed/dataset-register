@@ -506,15 +506,22 @@ reg:SchemaDatasetLicenseProperty a sh:PropertyShape ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:name "Licentie"@nl, "License"@en ;
-    sh:description "Licentie die van toepassing is op de datasetbeschrijving"@nl, """
+    sh:description "Licentie die van toepassing is op de dataset"@nl, """
         Publishers *MUST* make known under which [[DWBP#licenses|license]] the dataset may be used.
+
+        This license specifies the conditions under which the metadata in the [=dataset=] may be accessed and reused.
+        It does not cover the heritage objects (either physical or digital) that the metadata describes.
+        Access conditions for these objects should be specified in their own descriptions within the dataset.
+
+        The [[DERA]] requires metadata to be published openly,
+        so this value *SHOULD* be an open license that allows [=consumers=] to reuse the data,
+        for example one of the [Creative Commons](https://creativecommons.org/choose/) licenses.
+        Adopting a non-open license will severely limit reuse and does not comply
+        with the DERA principles.
 
         The value *MUST* be the canonical URI of a license.
         For example, use https://creativecommons.org/publicdomain/zero/1.0/ instead
         of https://creativecommons.org/publicdomain/zero/1.0/deed.nl.
-
-        The value *SHOULD* be an open license that allows the data to used by [=consumers=],
-        for example one of the [Creative Commons](https://creativecommons.org/choose/) licenses.
         """@en ;
     sh:message "Een datasetbeschrijving moet één licentie bevatten (in de vorm van een URI)"@nl, "A dataset description must contain one license (in the form of a URI)"@en ;
 .
