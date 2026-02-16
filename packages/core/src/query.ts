@@ -56,12 +56,68 @@ const distributionLicense = 'distribution_license';
 const distributionName = 'distribution_name';
 const distributionSize = 'distribution_size';
 
+const policy = 'policy';
+const policyType = 'policy_type';
+const policyProfile = 'policy_profile';
+
+const permission = 'permission';
+const permType = 'perm_type';
+const permTarget = 'perm_target';
+const permAction = 'perm_action';
+const permAssignee = 'perm_assignee';
+const permAssigner = 'perm_assigner';
+const permConstraint = 'perm_constraint';
+
+const prohibition = 'prohibition';
+const prohibType = 'prohib_type';
+const prohibTarget = 'prohib_target';
+const prohibAction = 'prohib_action';
+const prohibAssignee = 'prohib_assignee';
+const prohibAssigner = 'prohib_assigner';
+const prohibConstraint = 'prohib_constraint';
+
+const obligation = 'obligation';
+const obligType = 'oblig_type';
+const obligTarget = 'oblig_target';
+const obligAction = 'oblig_action';
+const obligAssignee = 'oblig_assignee';
+const obligAssigner = 'oblig_assigner';
+const obligConstraint = 'oblig_constraint';
+
+const duty = 'duty';
+const dutyType = 'duty_type';
+const dutyAction = 'duty_action';
+const dutyTarget = 'duty_target';
+const dutyConstraint = 'duty_constraint';
+
+const permConstraintType = 'perm_constraint_type';
+const permConstraintLeftOperand = 'perm_constraint_leftOperand';
+const permConstraintOperator = 'perm_constraint_operator';
+const permConstraintRightOperand = 'perm_constraint_rightOperand';
+
+const prohibConstraintType = 'prohib_constraint_type';
+const prohibConstraintLeftOperand = 'prohib_constraint_leftOperand';
+const prohibConstraintOperator = 'prohib_constraint_operator';
+const prohibConstraintRightOperand = 'prohib_constraint_rightOperand';
+
+const obligConstraintType = 'oblig_constraint_type';
+const obligConstraintLeftOperand = 'oblig_constraint_leftOperand';
+const obligConstraintOperator = 'oblig_constraint_operator';
+const obligConstraintRightOperand = 'oblig_constraint_rightOperand';
+
+const dutyConstraintType = 'duty_constraint_type';
+const dutyConstraintLeftOperand = 'duty_constraint_leftOperand';
+const dutyConstraintOperator = 'duty_constraint_operator';
+const dutyConstraintRightOperand = 'duty_constraint_rightOperand';
+
 export const dcat = (property: string): NamedNode =>
   factory.namedNode(`http://www.w3.org/ns/dcat#${property}`);
 export const dct = (property: string): NamedNode =>
   factory.namedNode(`http://purl.org/dc/terms/${property}`);
 export const foaf = (property: string): NamedNode =>
   factory.namedNode(`http://xmlns.com/foaf/0.1/${property}`);
+export const odrl = (property: string): NamedNode =>
+  factory.namedNode(`http://www.w3.org/ns/odrl/2/${property}`);
 export const rdf = (property: string): NamedNode =>
   factory.namedNode(`http://www.w3.org/1999/02/22-rdf-syntax-ns#${property}`);
 
@@ -72,6 +128,7 @@ export const constructQuery = `
   PREFIX dcat: <http://www.w3.org/ns/dcat#>
   PREFIX dct: <http://purl.org/dc/terms/>
   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+  PREFIX odrl: <http://www.w3.org/ns/odrl/2/>
   PREFIX owl: <http://www.w3.org/2002/07/owl#>
   PREFIX schema: <https://schema.org/>
   PREFIX httpSchema: <http://schema.org/>
@@ -123,7 +180,61 @@ export const constructQuery = `
       dct:language ?${distributionLanguage} ;
       dct:license ?${distributionLicense} ;
       dct:title ?${distributionName} ;
-      dcat:byteSize ?${distributionSize} .
+      dcat:byteSize ?${distributionSize} ;
+      odrl:hasPolicy ?${policy} .
+
+    ?${policy} a ?${policyType} ;
+      odrl:profile ?${policyProfile} ;
+      odrl:permission ?${permission} ;
+      odrl:prohibition ?${prohibition} ;
+      odrl:obligation ?${obligation} .
+
+    ?${permission} a ?${permType} ;
+      odrl:target ?${permTarget} ;
+      odrl:action ?${permAction} ;
+      odrl:assignee ?${permAssignee} ;
+      odrl:assigner ?${permAssigner} ;
+      odrl:constraint ?${permConstraint} ;
+      odrl:duty ?${duty} .
+
+    ?${permConstraint} a ?${permConstraintType} ;
+      odrl:leftOperand ?${permConstraintLeftOperand} ;
+      odrl:operator ?${permConstraintOperator} ;
+      odrl:rightOperand ?${permConstraintRightOperand} .
+
+    ?${prohibition} a ?${prohibType} ;
+      odrl:target ?${prohibTarget} ;
+      odrl:action ?${prohibAction} ;
+      odrl:assignee ?${prohibAssignee} ;
+      odrl:assigner ?${prohibAssigner} ;
+      odrl:constraint ?${prohibConstraint} .
+
+    ?${prohibConstraint} a ?${prohibConstraintType} ;
+      odrl:leftOperand ?${prohibConstraintLeftOperand} ;
+      odrl:operator ?${prohibConstraintOperator} ;
+      odrl:rightOperand ?${prohibConstraintRightOperand} .
+
+    ?${obligation} a ?${obligType} ;
+      odrl:target ?${obligTarget} ;
+      odrl:action ?${obligAction} ;
+      odrl:assignee ?${obligAssignee} ;
+      odrl:assigner ?${obligAssigner} ;
+      odrl:constraint ?${obligConstraint} .
+
+    ?${obligConstraint} a ?${obligConstraintType} ;
+      odrl:leftOperand ?${obligConstraintLeftOperand} ;
+      odrl:operator ?${obligConstraintOperator} ;
+      odrl:rightOperand ?${obligConstraintRightOperand} .
+
+    ?${duty} a ?${dutyType} ;
+      odrl:action ?${dutyAction} ;
+      odrl:target ?${dutyTarget} ;
+      odrl:constraint ?${dutyConstraint} .
+
+    ?${dutyConstraint} a ?${dutyConstraintType} ;
+      odrl:leftOperand ?${dutyConstraintLeftOperand} ;
+      odrl:operator ?${dutyConstraintOperator} ;
+      odrl:rightOperand ?${dutyConstraintRightOperand} .
   } WHERE {
     SELECT * WHERE {
       {
@@ -177,8 +288,71 @@ export const constructQuery = `
           OPTIONAL { ?${distribution} dct:license ${normalizeLicense(distributionLicense)} }
           OPTIONAL { ?${distribution} dct:title ?${distributionName} }
           OPTIONAL { ?${distribution} dcat:byteSize ${normalizeByteSize(distributionSize)} }
+          OPTIONAL {
+            ?${distribution} odrl:hasPolicy ?${policy} .
+            OPTIONAL { ?${policy} a ?${policyType} }
+            OPTIONAL { ?${policy} odrl:profile ?${policyProfile} }
+            OPTIONAL {
+              ?${policy} odrl:permission ?${permission} .
+              OPTIONAL { ?${permission} a ?${permType} }
+              OPTIONAL { ?${permission} odrl:target ?${permTarget} }
+              OPTIONAL { ?${permission} odrl:action ?${permAction} }
+              OPTIONAL { ?${permission} odrl:assignee ?${permAssignee} }
+              OPTIONAL { ?${permission} odrl:assigner ?${permAssigner} }
+              OPTIONAL {
+                ?${permission} odrl:constraint ?${permConstraint} .
+                OPTIONAL { ?${permConstraint} a ?${permConstraintType} }
+                OPTIONAL { ?${permConstraint} odrl:leftOperand ?${permConstraintLeftOperand} }
+                OPTIONAL { ?${permConstraint} odrl:operator ?${permConstraintOperator} }
+                OPTIONAL { ?${permConstraint} odrl:rightOperand ?${permConstraintRightOperand} }
+              }
+              OPTIONAL {
+                ?${permission} odrl:duty ?${duty} .
+                OPTIONAL { ?${duty} a ?${dutyType} }
+                OPTIONAL { ?${duty} odrl:action ?${dutyAction} }
+                OPTIONAL { ?${duty} odrl:target ?${dutyTarget} }
+                OPTIONAL {
+                  ?${duty} odrl:constraint ?${dutyConstraint} .
+                  OPTIONAL { ?${dutyConstraint} a ?${dutyConstraintType} }
+                  OPTIONAL { ?${dutyConstraint} odrl:leftOperand ?${dutyConstraintLeftOperand} }
+                  OPTIONAL { ?${dutyConstraint} odrl:operator ?${dutyConstraintOperator} }
+                  OPTIONAL { ?${dutyConstraint} odrl:rightOperand ?${dutyConstraintRightOperand} }
+                }
+              }
+            }
+            OPTIONAL {
+              ?${policy} odrl:prohibition ?${prohibition} .
+              OPTIONAL { ?${prohibition} a ?${prohibType} }
+              OPTIONAL { ?${prohibition} odrl:target ?${prohibTarget} }
+              OPTIONAL { ?${prohibition} odrl:action ?${prohibAction} }
+              OPTIONAL { ?${prohibition} odrl:assignee ?${prohibAssignee} }
+              OPTIONAL { ?${prohibition} odrl:assigner ?${prohibAssigner} }
+              OPTIONAL {
+                ?${prohibition} odrl:constraint ?${prohibConstraint} .
+                OPTIONAL { ?${prohibConstraint} a ?${prohibConstraintType} }
+                OPTIONAL { ?${prohibConstraint} odrl:leftOperand ?${prohibConstraintLeftOperand} }
+                OPTIONAL { ?${prohibConstraint} odrl:operator ?${prohibConstraintOperator} }
+                OPTIONAL { ?${prohibConstraint} odrl:rightOperand ?${prohibConstraintRightOperand} }
+              }
+            }
+            OPTIONAL {
+              ?${policy} odrl:obligation ?${obligation} .
+              OPTIONAL { ?${obligation} a ?${obligType} }
+              OPTIONAL { ?${obligation} odrl:target ?${obligTarget} }
+              OPTIONAL { ?${obligation} odrl:action ?${obligAction} }
+              OPTIONAL { ?${obligation} odrl:assignee ?${obligAssignee} }
+              OPTIONAL { ?${obligation} odrl:assigner ?${obligAssigner} }
+              OPTIONAL {
+                ?${obligation} odrl:constraint ?${obligConstraint} .
+                OPTIONAL { ?${obligConstraint} a ?${obligConstraintType} }
+                OPTIONAL { ?${obligConstraint} odrl:leftOperand ?${obligConstraintLeftOperand} }
+                OPTIONAL { ?${obligConstraint} odrl:operator ?${obligConstraintOperator} }
+                OPTIONAL { ?${obligConstraint} odrl:rightOperand ?${obligConstraintRightOperand} }
+              }
+            }
+          }
         }
-          
+
         OPTIONAL { ?${dataset} dct:description ?${description} }
         OPTIONAL { ?${dataset} dct:identifier ?${identifier} }
         OPTIONAL { ?${dataset} dct:alternative ?${alternateName} }

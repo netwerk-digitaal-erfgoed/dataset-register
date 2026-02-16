@@ -1,7 +1,7 @@
 import { URL } from 'url';
 import { fetch, HttpError, NoDatasetFoundAtUrl } from '../src/fetch.js';
 import nock from 'nock';
-import { dcat, dct, foaf, rdf } from '../src/query.js';
+import { dcat, dct, foaf, odrl, rdf } from '../src/query.js';
 import factory from 'rdf-ext';
 import { dereference, file, validSchemaOrgDataset } from '../src/test-utils.js';
 import type { BlankNode } from '@rdfjs/types';
@@ -54,6 +54,176 @@ describe('Fetch', () => {
             '12582912',
             factory.namedNode('http://www.w3.org/2001/XMLSchema#integer'),
           ),
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it('preserves ODRL policy on DCAT distributions', async () => {
+    const response = await file('dataset-dcat-valid-with-policy.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/dcat-with-policy')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/dcat-with-policy'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+
+    // Find the distribution.
+    const distributions = [
+      ...dataset.match(
+        factory.namedNode('http://example.com/dataset/1'),
+        dcat('distribution'),
+        null,
+      ),
+    ];
+    expect(distributions).toHaveLength(1);
+    const dist = distributions[0].object as BlankNode;
+
+    // Distribution has an ODRL policy.
+    const policies = [...dataset.match(dist, odrl('hasPolicy'), null)];
+    expect(policies).toHaveLength(1);
+    const policy = policies[0].object as BlankNode;
+
+    // Policy type.
+    expect(dataset.has(factory.quad(policy, rdf('type'), odrl('Offer')))).toBe(
+      true,
+    );
+
+    // Policy profile.
+    expect(
+      dataset.has(
+        factory.quad(
+          policy,
+          odrl('profile'),
+          factory.namedNode('http://example.com/policy-profile'),
+        ),
+      ),
+    ).toBe(true);
+
+    // Permission with action, target, assignee.
+    const permissions = [...dataset.match(policy, odrl('permission'), null)];
+    expect(permissions).toHaveLength(1);
+    const perm = permissions[0].object as BlankNode;
+
+    expect(
+      dataset.has(factory.quad(perm, rdf('type'), odrl('Permission'))),
+    ).toBe(true);
+    expect(dataset.has(factory.quad(perm, odrl('action'), odrl('read')))).toBe(
+      true,
+    );
+    expect(
+      dataset.has(
+        factory.quad(
+          perm,
+          odrl('target'),
+          factory.namedNode('http://example.com/dataset/1'),
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      dataset.has(
+        factory.quad(
+          perm,
+          odrl('assignee'),
+          factory.namedNode('http://example.com/user'),
+        ),
+      ),
+    ).toBe(true);
+
+    // Permission constraint.
+    const permConstraints = [...dataset.match(perm, odrl('constraint'), null)];
+    expect(permConstraints).toHaveLength(1);
+    const permConstraint = permConstraints[0].object as BlankNode;
+
+    expect(
+      dataset.has(
+        factory.quad(permConstraint, rdf('type'), odrl('Constraint')),
+      ),
+    ).toBe(true);
+    expect(
+      dataset.has(
+        factory.quad(permConstraint, odrl('leftOperand'), odrl('dateTime')),
+      ),
+    ).toBe(true);
+    expect(
+      dataset.has(factory.quad(permConstraint, odrl('operator'), odrl('lt'))),
+    ).toBe(true);
+    expect(
+      dataset.has(
+        factory.quad(
+          permConstraint,
+          odrl('rightOperand'),
+          factory.literal(
+            '2025-12-31',
+            factory.namedNode('http://www.w3.org/2001/XMLSchema#date'),
+          ),
+        ),
+      ),
+    ).toBe(true);
+
+    // Permission duty.
+    const duties = [...dataset.match(perm, odrl('duty'), null)];
+    expect(duties).toHaveLength(1);
+    const dutyNode = duties[0].object as BlankNode;
+
+    expect(dataset.has(factory.quad(dutyNode, rdf('type'), odrl('Duty')))).toBe(
+      true,
+    );
+    expect(
+      dataset.has(factory.quad(dutyNode, odrl('action'), odrl('attribute'))),
+    ).toBe(true);
+    expect(
+      dataset.has(
+        factory.quad(
+          dutyNode,
+          odrl('target'),
+          factory.namedNode('http://example.com/dataset/1'),
+        ),
+      ),
+    ).toBe(true);
+
+    // Duty constraint.
+    const dutyConstraints = [
+      ...dataset.match(dutyNode, odrl('constraint'), null),
+    ];
+    expect(dutyConstraints).toHaveLength(1);
+    const dutyConstraint = dutyConstraints[0].object as BlankNode;
+
+    expect(
+      dataset.has(
+        factory.quad(dutyConstraint, odrl('leftOperand'), odrl('count')),
+      ),
+    ).toBe(true);
+    expect(
+      dataset.has(factory.quad(dutyConstraint, odrl('operator'), odrl('eq'))),
+    ).toBe(true);
+
+    // Prohibition with multiple actions.
+    const prohibitions = [...dataset.match(policy, odrl('prohibition'), null)];
+    expect(prohibitions).toHaveLength(1);
+    const prohib = prohibitions[0].object as BlankNode;
+
+    expect(
+      dataset.has(factory.quad(prohib, rdf('type'), odrl('Prohibition'))),
+    ).toBe(true);
+    const prohibActions = [...dataset.match(prohib, odrl('action'), null)];
+    expect(prohibActions).toHaveLength(2);
+    const actionValues = prohibActions.map((q) => q.object.value).sort();
+    expect(actionValues).toEqual([
+      'http://www.w3.org/ns/odrl/2/delete',
+      'http://www.w3.org/ns/odrl/2/modify',
+    ]);
+    expect(
+      dataset.has(
+        factory.quad(
+          prohib,
+          odrl('target'),
+          factory.namedNode('http://example.com/dataset/1'),
         ),
       ),
     ).toBe(true);
