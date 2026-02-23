@@ -254,18 +254,6 @@ const DatasetSummarySchema = {
     '@id': voidNs.dataDump,
     '@optional': true,
     '@array': true,
-    '@schema': {
-      contentSize: {
-        '@id': 'https://schema.org/contentSize',
-        '@type': xsd.integer,
-        '@optional': true,
-      },
-      dateModified: {
-        '@id': 'https://schema.org/dateModified',
-        '@type': xsd.dateTime,
-        '@optional': true,
-      },
-    },
   },
   sparqlEndpoint: {
     '@id': voidNs.sparqlEndpoint,
@@ -394,7 +382,10 @@ export async function fetchDatasetDetail(
 
   const [dataset, summary, linksets, classPartitionResult] = await Promise.all([
     detailLens.findByIri(datasetUri),
-    summaryLens.findByIri(datasetUri),
+    summaryLens.findByIri(datasetUri).catch((e: unknown) => {
+      console.error('Summary query failed:', e instanceof Error ? e.message : e);
+      return null;
+    }),
     linksLens.find({ where: { subjectsTarget: datasetUri } }),
     classPartitionLens.findByIri(datasetUri),
   ]);
