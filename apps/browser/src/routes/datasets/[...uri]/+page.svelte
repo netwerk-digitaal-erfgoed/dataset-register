@@ -76,7 +76,7 @@
     const urls = new SvelteSet<string>();
     if (summary?.dataDump) {
       for (const dump of summary.dataDump) {
-        if (dump.$id) urls.add(dump.$id);
+        urls.add(dump);
       }
     }
     if (summary?.sparqlEndpoint) {
