@@ -986,22 +986,8 @@
               class="rounded-lg border border-gray-200 bg-white p-4 shadow dark:border-gray-700 dark:bg-gray-800"
             >
               <div class="space-y-3">
-                {#if summary.triples !== undefined && summary.triples !== null}
-                  <div>
-                    <div
-                      class="text-3xl font-bold text-gray-900 dark:text-white"
-                    >
-                      {summary.triples.toLocaleString(getLocale())}
-                    </div>
-                    <div class="text-sm text-gray-600 dark:text-gray-400">
-                      {m.detail_triples()}
-                    </div>
-                  </div>
-                {/if}
                 {#if summary.distinctSubjects !== undefined && summary.distinctSubjects !== null}
-                  <div
-                    class="border-t border-gray-200 dark:border-gray-700 pt-3"
-                  >
+                  <div>
                     <div
                       class="text-3xl font-bold text-gray-900 dark:text-white"
                     >
@@ -1009,6 +995,20 @@
                     </div>
                     <div class="text-sm text-gray-600 dark:text-gray-400">
                       {m.detail_subjects()}
+                    </div>
+                  </div>
+                {/if}
+                {#if summary.triples !== undefined && summary.triples !== null}
+                  <div
+                    class="border-t border-gray-200 dark:border-gray-700 pt-3"
+                  >
+                    <div
+                      class="text-3xl font-bold text-gray-900 dark:text-white"
+                    >
+                      {summary.triples.toLocaleString(getLocale())}
+                    </div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                      {m.detail_triples()}
                     </div>
                   </div>
                 {/if}
