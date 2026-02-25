@@ -110,7 +110,7 @@
   "detail_file_size": "File Size",
   "detail_error": "Error",
   "detail_total_triples": "Total Triples",
-  "detail_subjects": "Subjects",
+  "detail_subjects": "Unique subjects",
   "detail_properties": "Unique predicates",
   "detail_objects": "Unique objects",
   "detail_entities": "Entities",

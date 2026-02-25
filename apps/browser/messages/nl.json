@@ -110,7 +110,7 @@
   "detail_file_size": "Bestandsgrootte",
   "detail_error": "Fout",
   "detail_total_triples": "Totaal aantal feiten",
-  "detail_subjects": "Onderwerpen",
+  "detail_subjects": "Unieke onderwerpen",
   "detail_properties": "Unieke eigenschappen",
   "detail_objects": "Unieke objecten",
   "detail_entities": "Entiteiten",
