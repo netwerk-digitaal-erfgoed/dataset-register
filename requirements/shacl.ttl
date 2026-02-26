@@ -197,7 +197,6 @@ reg:DistributionShape
         ] ,
         reg:SchemaDescriptionPropertyShouldExist
 .
-
 reg:OrganizationShape
     a sh:NodeShape ;
     sh:class schema:Organization ;
@@ -255,7 +254,23 @@ reg:OrganizationShape
         ] ,
         [
             sh:path schema:identifier ;
-            sh:datatype xsd:string ;
+			sh:or (
+		        [ sh:datatype xsd:string ]
+		        [
+		            sh:node [
+		                sh:class schema:PropertyValue ;
+		                sh:property [
+		                    sh:path schema:propertyID ;
+		                    sh:minCount 1 ;
+		                ] ;
+		                sh:property [
+		                    sh:path schema:value ;
+		                    sh:datatype xsd:string ;
+		                    sh:minCount 1 ;
+		                ] ;
+		            ]
+		        ]
+		    ) ;
             sh:minCount 1 ;
             sh:severity sh:Warning ;
             sh:name "Identifier"@en ;
@@ -263,7 +278,16 @@ reg:OrganizationShape
                 Identifier(s) of the organization, at least its <a href="https://www.nationaalarchief.nl/archiveren/kennisbank/isil-codes">ISIL code</a>.
             """@en ;
             sh:message "Een organisatie moet één of meer identifiers hebben"@nl, "An organization must have one or more identifiers"@en ;
-        ] ,
+        ]
+		;
+.
+reg:_OrganizationShape
+    a sh:NodeShape ;
+    sh:class schema:Organization ;
+    sh:message "Must be a valid organization" ;
+    sh:nodeKind sh:IRI ;
+    sh:pattern "^https?://" ;
+    sh:property
         [
             sh:path schema:sameAs ;
             sh:nodeKind sh:IRI ;
