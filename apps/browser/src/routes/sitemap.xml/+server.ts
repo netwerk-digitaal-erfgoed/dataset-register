@@ -6,6 +6,9 @@ import { encodeDatasetUri } from '$lib/url';
 const fetcher = new SparqlEndpointFetcher();
 const CACHE_TTL = 86400; // 24 hours in seconds
 
+let cachedDatasets: DatasetInfo[] | null = null;
+let cacheTimestamp = 0;
+
 interface DatasetInfo {
   uri: string;
   dateRead?: string;
@@ -89,8 +92,16 @@ function escapeXml(str: string): string {
  * Sitemap endpoint for search engine discovery.
  */
 export async function GET({ url }: RequestEvent) {
-  const datasets = await fetchDatasetUris();
-  const xml = generateSitemapXml(datasets, url.origin);
+  const now = Date.now();
+  if (!cachedDatasets || now - cacheTimestamp > CACHE_TTL * 1000) {
+    const datasets = await fetchDatasetUris();
+    if (datasets.length > 0) {
+      cachedDatasets = datasets;
+      cacheTimestamp = now;
+    }
+  }
+
+  const xml = generateSitemapXml(cachedDatasets ?? [], url.origin);
 
   return new Response(xml, {
     headers: {

@@ -1,5 +1,9 @@
-# Allow crawling everything
+# Allow crawling everything in the new app.
 User-agent: *
-Disallow:
+
+# Disallow select paths from the legacy app.
+Disallow: /search.php
+Disallow: /show.php
+Disallow: /viaurl.php
 
 Sitemap: https://datasetregister.netwerkdigitaalerfgoed.nl/sitemap.xml
