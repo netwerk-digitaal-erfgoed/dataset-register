@@ -56,12 +56,17 @@ const distributionLicense = 'distribution_license';
 const distributionName = 'distribution_name';
 const distributionSize = 'distribution_size';
 
+/** Generates a prefixed SPARQL variable name, e.g. odrlVar('perm', 'action') → 'perm_action'. */
+const odrlVar = (prefix: string, prop: string) => `${prefix}_${prop}`;
+
 export const dcat = (property: string): NamedNode =>
   factory.namedNode(`http://www.w3.org/ns/dcat#${property}`);
 export const dct = (property: string): NamedNode =>
   factory.namedNode(`http://purl.org/dc/terms/${property}`);
 export const foaf = (property: string): NamedNode =>
   factory.namedNode(`http://xmlns.com/foaf/0.1/${property}`);
+export const odrl = (property: string): NamedNode =>
+  factory.namedNode(`http://www.w3.org/ns/odrl/2/${property}`);
 export const rdf = (property: string): NamedNode =>
   factory.namedNode(`http://www.w3.org/1999/02/22-rdf-syntax-ns#${property}`);
 
@@ -72,6 +77,7 @@ export const constructQuery = `
   PREFIX dcat: <http://www.w3.org/ns/dcat#>
   PREFIX dct: <http://purl.org/dc/terms/>
   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+  PREFIX odrl: <http://www.w3.org/ns/odrl/2/>
   PREFIX owl: <http://www.w3.org/2002/07/owl#>
   PREFIX schema: <https://schema.org/>
   PREFIX httpSchema: <http://schema.org/>
@@ -123,7 +129,19 @@ export const constructQuery = `
       dct:language ?${distributionLanguage} ;
       dct:license ?${distributionLicense} ;
       dct:title ?${distributionName} ;
-      dcat:byteSize ?${distributionSize} .
+      dcat:byteSize ?${distributionSize} ;
+      odrl:hasPolicy ?policy .
+
+    ?policy a ?policy_type ;
+      odrl:profile ?policy_profile ;
+      odrl:permission ?permission ;
+      odrl:prohibition ?prohibition ;
+      odrl:obligation ?obligation .
+
+    ${odrlRuleConstruct('permission', 'perm', ['odrl:duty ?duty'])}
+    ${odrlRuleConstruct('duty', 'duty')}
+    ${odrlRuleConstruct('prohibition', 'prohib')}
+    ${odrlRuleConstruct('obligation', 'oblig')}
   } WHERE {
     SELECT * WHERE {
       {
@@ -177,8 +195,16 @@ export const constructQuery = `
           OPTIONAL { ?${distribution} dct:license ${normalizeLicense(distributionLicense)} }
           OPTIONAL { ?${distribution} dct:title ?${distributionName} }
           OPTIONAL { ?${distribution} dcat:byteSize ${normalizeByteSize(distributionSize)} }
+          OPTIONAL {
+            ?${distribution} odrl:hasPolicy ?policy .
+            OPTIONAL { ?policy a ?policy_type }
+            OPTIONAL { ?policy odrl:profile ?policy_profile }
+            ${odrlRuleWhere('policy', 'permission', 'permission', 'perm', odrlRuleWhere('permission', 'duty', 'duty', 'duty'))}
+            ${odrlRuleWhere('policy', 'prohibition', 'prohibition', 'prohib')}
+            ${odrlRuleWhere('policy', 'obligation', 'obligation', 'oblig')}
+          }
         }
-          
+
         OPTIONAL { ?${dataset} dct:description ?${description} }
         OPTIONAL { ?${dataset} dct:identifier ?${identifier} }
         OPTIONAL { ?${dataset} dct:alternative ?${alternateName} }
@@ -320,4 +346,54 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL { ?${dataset} ${prefix}:citation ?${isReferencedBy} }
     OPTIONAL { ?${dataset} ${prefix}:mainEntityOfPage ?${mainEntityOfPage} }
 `;
+}
+
+/** Generates CONSTRUCT triple patterns for an ODRL rule and its constraint. */
+function odrlRuleConstruct(
+  ruleVar: string,
+  prefix: string,
+  extraProperties: string[] = [],
+): string {
+  const c = odrlVar(prefix, 'constraint');
+  const extras = extraProperties.map((p) => `;\n      ${p}`).join('');
+  return `?${ruleVar} a ?${odrlVar(prefix, 'type')} ;
+      odrl:target ?${odrlVar(prefix, 'target')} ;
+      odrl:action ?${odrlVar(prefix, 'action')} ;
+      odrl:assignee ?${odrlVar(prefix, 'assignee')} ;
+      odrl:assigner ?${odrlVar(prefix, 'assigner')} ;
+      odrl:constraint ?${c}${extras} .
+
+    ?${c} a ?${odrlVar(prefix, 'constraint_type')} ;
+      odrl:leftOperand ?${odrlVar(prefix, 'constraint_leftOperand')} ;
+      odrl:operator ?${odrlVar(prefix, 'constraint_operator')} ;
+      odrl:rightOperand ?${odrlVar(prefix, 'constraint_rightOperand')} .`;
+}
+
+/** Generates nested OPTIONAL WHERE patterns for an ODRL rule and its constraint. */
+function odrlRuleWhere(
+  parentVar: string,
+  predicate: string,
+  ruleVar: string,
+  prefix: string,
+  extraPatterns = '',
+): string {
+  const c = odrlVar(prefix, 'constraint');
+  // action is required per ODRL spec; type, target, assignee, assigner are optional.
+  // leftOperand, operator, rightOperand are all required when a constraint exists.
+  return `OPTIONAL {
+              ?${parentVar} odrl:${predicate} ?${ruleVar} .
+              ?${ruleVar} odrl:action ?${odrlVar(prefix, 'action')} .
+              OPTIONAL { ?${ruleVar} a ?${odrlVar(prefix, 'type')} }
+              OPTIONAL { ?${ruleVar} odrl:target ?${odrlVar(prefix, 'target')} }
+              OPTIONAL { ?${ruleVar} odrl:assignee ?${odrlVar(prefix, 'assignee')} }
+              OPTIONAL { ?${ruleVar} odrl:assigner ?${odrlVar(prefix, 'assigner')} }
+              OPTIONAL {
+                ?${ruleVar} odrl:constraint ?${c} .
+                ?${c} odrl:leftOperand ?${odrlVar(prefix, 'constraint_leftOperand')} .
+                ?${c} odrl:operator ?${odrlVar(prefix, 'constraint_operator')} .
+                ?${c} odrl:rightOperand ?${odrlVar(prefix, 'constraint_rightOperand')} .
+                OPTIONAL { ?${c} a ?${odrlVar(prefix, 'constraint_type')} }
+              }
+              ${extraPatterns}
+            }`;
 }

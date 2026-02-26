@@ -1,0 +1,101 @@
+{
+  "@context": {
+    "dcat": "http://www.w3.org/ns/dcat#",
+    "dct": "http://purl.org/dc/terms/",
+    "foaf": "http://xmlns.com/foaf/0.1/",
+    "odrl": "http://www.w3.org/ns/odrl/2/"
+  },
+  "@type": "dcat:Dataset",
+  "@id": "http://example.com/dataset/1",
+  "dct:title": {
+    "@value": "Dataset with ODRL policy",
+    "@language": "en"
+  },
+  "dct:license": {
+    "@id": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "dct:publisher": {
+    "@id": "https://example.com/publisher",
+    "@type": "foaf:Organization",
+    "foaf:name": {
+      "@value": "Example Publisher",
+      "@language": "en"
+    }
+  },
+  "dcat:distribution": {
+    "@type": "dcat:Distribution",
+    "dcat:mediaType": {
+      "@id": "https://www.iana.org/assignments/media-types/application/sparql-query"
+    },
+    "dcat:accessURL": {
+      "@id": "http://example.com/sparql"
+    },
+    "odrl:hasPolicy": {
+      "@type": "odrl:Offer",
+      "odrl:profile": {
+        "@id": "http://example.com/policy-profile"
+      },
+      "odrl:permission": {
+        "@type": "odrl:Permission",
+        "odrl:action": {
+          "@id": "odrl:read"
+        },
+        "odrl:target": {
+          "@id": "http://example.com/dataset/1"
+        },
+        "odrl:assignee": {
+          "@id": "http://example.com/user"
+        },
+        "odrl:constraint": {
+          "@type": "odrl:Constraint",
+          "odrl:leftOperand": {
+            "@id": "odrl:dateTime"
+          },
+          "odrl:operator": {
+            "@id": "odrl:lt"
+          },
+          "odrl:rightOperand": {
+            "@type": "http://www.w3.org/2001/XMLSchema#date",
+            "@value": "2025-12-31"
+          }
+        },
+        "odrl:duty": {
+          "@type": "odrl:Duty",
+          "odrl:action": {
+            "@id": "odrl:attribute"
+          },
+          "odrl:target": {
+            "@id": "http://example.com/dataset/1"
+          },
+          "odrl:constraint": {
+            "@type": "odrl:Constraint",
+            "odrl:leftOperand": {
+              "@id": "odrl:count"
+            },
+            "odrl:operator": {
+              "@id": "odrl:eq"
+            },
+            "odrl:rightOperand": {
+              "@type": "http://www.w3.org/2001/XMLSchema#integer",
+              "@value": "1"
+            }
+          }
+        }
+      },
+      "odrl:prohibition": {
+        "@type": "odrl:Prohibition",
+        "odrl:action": [
+          {
+            "@id": "odrl:modify"
+          },
+          {
+            "@id": "odrl:delete"
+          }
+        ],
+        "odrl:target": {
+          "@id": "http://example.com/dataset/1"
+        }
+      }
+    }
+  }
+}
