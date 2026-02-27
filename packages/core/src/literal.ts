@@ -70,12 +70,12 @@ export const compressFormatFromMediaType = (
   compressFormatVariable: string,
 ) =>
   `BIND(
-            IF(
-              REGEX(STR(?${mediaTypeVariable}Raw), "\\\\+gzip"),
-              <https://www.iana.org/assignments/media-types/application/gzip>,
-              ?unbound
-            ) AS ?${compressFormatVariable}
-          )`;
+    IF(
+      REGEX(STR(?${mediaTypeVariable}Raw), "\\\\+gzip"),
+      <https://www.iana.org/assignments/media-types/application/gzip>,
+      ?unbound
+    ) AS ?${compressFormatVariable}
+  )`;
 
 /**
  * Normalize byte size to xsd:integer.
