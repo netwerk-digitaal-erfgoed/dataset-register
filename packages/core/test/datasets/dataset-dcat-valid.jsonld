@@ -109,6 +109,15 @@
         "@id": "https://www.w3.org/TR/sparql11-protocol/"
       },
       "dct:description": "SPARQL endpoint"
+    },
+    {
+      "@type": "dcat:Distribution",
+      "dcat:mediaType": {
+        "@id": "https://www.iana.org/assignments/media-types/application/n-triples+gzip"
+      },
+      "dcat:accessURL": {
+        "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.nt.gz"
+      }
     }
   ]
 }

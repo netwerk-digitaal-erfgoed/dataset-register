@@ -1,5 +1,6 @@
 import factory from 'rdf-ext';
 import {
+  compressFormatFromMediaType,
   convertToIri,
   convertToXsdDate,
   convertUriToLiteral,
@@ -55,6 +56,7 @@ const distributionLanguage = 'distribution_language';
 const distributionLicense = 'distribution_license';
 const distributionName = 'distribution_name';
 const distributionSize = 'distribution_size';
+const distributionCompressFormat = 'distribution_compressFormat';
 
 export const dcat = (property: string): NamedNode =>
   factory.namedNode(`http://www.w3.org/ns/dcat#${property}`);
@@ -115,6 +117,7 @@ export const constructQuery = `
     ?${distribution} a dcat:Distribution ;
       dcat:accessURL ?${distributionUrl} ;
       dcat:mediaType ?${distributionMediaType} ;
+      dcat:compressFormat ?${distributionCompressFormat} ;
       dct:conformsTo ?${distributionConformsTo} ;
       dct:conformsTo ?${distributionConformsToSparql} ;
       dct:issued ?${distributionDatePublished} ;
@@ -164,8 +167,9 @@ export const constructQuery = `
               CONTAINS(STR(?${distributionMediaType}), "sparql"),
               <https://www.w3.org/TR/sparql11-protocol/>,
               ?unbound
-            ) AS ?${distributionConformsToSparql} 
-          )            
+            ) AS ?${distributionConformsToSparql}
+          )
+          ${compressFormatFromMediaType(distributionMediaType, distributionCompressFormat)}
           OPTIONAL { ?${distribution} dct:issued ${convertToXsdDate(
             distributionDatePublished,
           )} }
@@ -269,9 +273,10 @@ function schemaOrgQuery(prefix: string): string {
           CONTAINS(STR(?${distributionMediaType}), "sparql"),
           <https://www.w3.org/TR/sparql11-protocol/>,
           ?unbound
-        ) AS ?${distributionConformsToSparql} 
+        ) AS ?${distributionConformsToSparql}
       )
-        
+      ${compressFormatFromMediaType(distributionMediaType, distributionCompressFormat)}
+
       OPTIONAL { ?${distribution} ${prefix}:datePublished ${convertToXsdDate(
         distributionDatePublished,
       )} }

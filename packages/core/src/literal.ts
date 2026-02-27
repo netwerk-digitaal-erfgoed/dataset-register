@@ -45,16 +45,35 @@ export const normalizeMediaType = (variable: string) =>
         BIND(
           IF(
             isIRI(?${variable}Raw),
-            IRI(REPLACE(STR(?${variable}Raw), "^http://", "https://")),
+            IRI(REPLACE(REPLACE(STR(?${variable}Raw), "\\\\+gzip$", ""), "^http://", "https://")),
             IRI(
               CONCAT(
                 "https://www.iana.org/assignments/media-types/",
-                REPLACE(STR(?${variable}Raw), ";.*$", "")
+                REPLACE(REPLACE(STR(?${variable}Raw), ";.*$", ""), "\\\\+gzip$", "")
               )
             )
           )
           AS ?${variable}
         )`;
+
+/**
+ * Detect +gzip in the raw media type and bind a compress format URI.
+ *
+ * Returns a SPARQL BIND that sets the compress format variable to
+ * <https://www.iana.org/assignments/media-types/application/gzip> when the raw
+ * media type contains +gzip, or leaves it unbound otherwise.
+ */
+export const compressFormatFromMediaType = (
+  mediaTypeVariable: string,
+  compressFormatVariable: string,
+) =>
+  `BIND(
+            IF(
+              REGEX(STR(?${mediaTypeVariable}Raw), "\\\\+gzip"),
+              <https://www.iana.org/assignments/media-types/application/gzip>,
+              ?unbound
+            ) AS ?${compressFormatVariable}
+          )`;
 
 /**
  * Normalize byte size to xsd:integer.
