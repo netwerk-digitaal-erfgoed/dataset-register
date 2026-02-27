@@ -71,7 +71,7 @@ export const compressFormatFromMediaType = (
 ) =>
   `BIND(
     IF(
-      REGEX(STR(?${mediaTypeVariable}Raw), "\\\\+gzip"),
+      REGEX(STR(?${mediaTypeVariable}Raw), "\\\\+gzip$"),
       <https://www.iana.org/assignments/media-types/application/gzip>,
       ?unbound
     ) AS ?${compressFormatVariable}
