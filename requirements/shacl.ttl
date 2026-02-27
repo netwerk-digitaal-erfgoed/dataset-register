@@ -197,9 +197,10 @@ reg:DistributionShape
         ] ,
         reg:SchemaDescriptionPropertyShouldExist
 .
+
 reg:OrganizationShape
     a sh:NodeShape ;
-    sh:targetClass schema:Organization ;
+    sh:class schema:Organization ;
     sh:message "Must be a valid organization" ;
     sh:nodeKind sh:IRI ;
     sh:pattern "^https?://" ;
@@ -228,6 +229,25 @@ reg:OrganizationShape
             sh:minCount 1 ;
             sh:maxCount 1 ;
             sh:severity sh:Warning ;
+            sh:node [
+                a sh:NodeShape ;
+                sh:targetClass schema:ContactPoint ;
+                sh:property [
+                    sh:path schema:name ;
+                    sh:minCount 1;
+                    sh:or (
+                      [ sh:datatype xsd:string ]
+                      [ sh:datatype rdf:langString ]
+                    ) ;
+                    sh:uniqueLang true ;
+                    sh:message "ContactPoint moet een naam hebben"@nl, "ContactPoint must have a name"@en ;
+                ] ,
+                [
+                    sh:path schema:email ;
+                    sh:minCount 1;
+                    sh:message "ContactPoint moet een e-mailadres hebben"@nl, "ContactPoint must have an e-mail address"@en ;
+                ]
+            ] ;
             sh:description """
                 Where [=consumers=] can reach the organization for questions and suggestions about the dataset.
             """@en ;
@@ -235,10 +255,13 @@ reg:OrganizationShape
         ] ,
         [
             sh:path schema:identifier ;
-			sh:or (
-		        [ sh:datatype xsd:string ]
-            [ sh:class schema:PropertyValue ]
-		    ) ;
+            sh:or (
+                [ sh:datatype xsd:string ]
+                [ 
+                  sh:node reg:IdentifierShape ;
+                  sh:class schema:PropertyValue ;
+               ]
+              ) ;
             sh:minCount 1 ;
             sh:severity sh:Warning ;
             sh:name "Identifier"@en ;
@@ -246,13 +269,23 @@ reg:OrganizationShape
                 Identifier(s) of the organization, at least its <a href="https://www.nationaalarchief.nl/archiveren/kennisbank/isil-codes">ISIL code</a>.
             """@en ;
             sh:message "Een organisatie moet één of meer identifiers hebben"@nl, "An organization must have one or more identifiers"@en ;
+        ] ,
+        [
+            sh:path schema:sameAs ;
+            sh:nodeKind sh:IRI ;
+            sh:minCount 0 ;
+            sh:severity sh:Info ;
+            sh:name "Same as"@en ;
+            sh:description """
+                Links to the organization in other databases.
+            """@en ;
+            sh:message "Een organisatie mag één of meer links hebben"@nl , "An organization may have one or more links"@en ;
         ]
-		;
 .
 
 reg:PersonShape
     a sh:NodeShape ;
-    sh:targetClass schema:Person ;
+    sh:class schema:Person ;
     sh:nodeKind sh:IRI ;
     sh:pattern "^https?://" ;
     sh:property [
@@ -272,11 +305,39 @@ reg:PersonShape
         sh:message "De naam zou een taaltag moeten bevatten"@nl, "The name should have a language tag"@en ;
     ] .
 
+reg:IdentifierShape
+    a sh:NodeShape ;
+    sh:nodeKind sh:BlankNodeOrIRI ;
+    sh:property [
+        sh:path schema:propertyID ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:message "Een identifier moet een propertyID hebben"@nl, "An identifier must have a propertyID"@en ;
+    ] ,
+    [
+        sh:path schema:value ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:message "Een identifier moet een waarde hebben"@nl, "An identifier must have a value"@en ;
+    ],
+    [
+        sh:path schema:name ;
+        sh:or (
+            [ sh:datatype xsd:string ]
+            [ sh:datatype rdf:langString ]
+        ) ;
+        sh:message "De naam van een identifier moet een string zijn."@nl, "The name of an identifier must be a string."@en ;
+    ] ;
+.
+
 reg:DateTimeShape a sh:NodeShape ;
     sh:or (
+        [ sh:datatype schema:Date ]
+        [ sh:datatype schema:DateTime ]
         [ sh:datatype xsd:dateTime ]
         [ sh:datatype xsd:date ]
     ) ;
+    sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
     sh:name "dateTime" ;
     sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
     sh:severity sh:Warning ;
@@ -285,53 +346,6 @@ reg:DateTimeShape a sh:NodeShape ;
 #
 # Property shapes
 #
-
-reg:ContactPointShape
-    a sh:NodeShape ;
-    sh:targetClass schema:ContactPoint ;
-
-    sh:property [
-        sh:path schema:name ;
-        sh:minCount 1 ;
-        sh:or (
-            [ sh:datatype xsd:string ]
-            [ sh:datatype rdf:langString ]
-        ) ;
-        sh:uniqueLang true ;
-        sh:message "ContactPoint moet een naam hebben"@nl,
-                   "ContactPoint must have a name"@en ;
-    ] ;
-
-    sh:property [
-        sh:path schema:email ;
-        sh:minCount 1 ;
-        sh:message "ContactPoint moet een e-mailadres hebben"@nl,
-                   "ContactPoint must have an e-mail address"@en ;
-    ] .
-
-reg:PropertyValueShape
-    a sh:NodeShape ;
-    sh:targetClass schema:PropertyValue ;
-    sh:nodeKind sh:BlankNodeOrIRI ;
-
-    sh:property [
-        sh:path schema:propertyID ;
-        sh:minCount 1 ;
-        sh:maxCount 1 ;
-        sh:nodeKind sh:IRI ;
-        sh:name "Property ID"@en ;
-        sh:message "PropertyValue moet een propertyID hebben"@nl ,
-                   "PropertyValue must have a propertyID"@en ;
-    ] ;
-
-    sh:property [
-        sh:path schema:value ;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:name "Value"@en ;
-        sh:message "PropertyValue moet een stringwaarde hebben"@nl ,
-                   "PropertyValue must have a string value"@en ;
-    ] .
 
 reg:SchemaCatalogNameProperty a sh:PropertyShape ;
     sh:path schema:name ;
@@ -379,8 +393,8 @@ reg:DistributionContentUrlIriProperty a sh:PropertyShape ;
 .
 
 reg:DistributionEncodingFormatProperty a sh:PropertyShape ;
-    sh:path schema:encodingFormat ;
     sh:minCount 1 ;
+    sh:path schema:encodingFormat ;
     sh:description """
         Het MIME-formaat van de distributie, bijvoorbeeld `application/sparql-query` voor een SPARQL-endpoint
         of `application/ld+json` voor een datadump die is geserialiseerd als JSON-LD."""@nl ,
@@ -485,10 +499,10 @@ reg:SchemaCreatorProperty a sh:PropertyShape ;
     sh:severity sh:Info ;
     sh:or (
         [
-            sh:class schema:Organization ;
+            sh:node reg:OrganizationShape ;
         ]
         [
-            sh:class schema:Person ;
+            sh:node reg:PersonShape ;
         ]
     ) ;
     sh:name "Persoon of organisatie die de dataset heeft gemaakt"@nl, "Person or organization which created the dataset"@en ;
@@ -509,10 +523,10 @@ reg:SchemaPublisherProperty a sh:PropertyShape ;
     sh:message "Een dataset description moet een geldige uitgever bevatten (zonder waarschuwingen)"@nl, "A dataset description must contain a valid publisher (without warnings)"@en ;
     sh:or (
         [
-            sh:class schema:Organization ;
+            sh:node reg:OrganizationShape ;
         ]
         [
-            sh:class schema:Person ;
+            sh:node reg:PersonShape ;
         ]
     ) ;
 .
@@ -558,7 +572,6 @@ reg:SchemaDistributionProperty a sh:PropertyShape ;
     sh:severity sh:Info ;
     sh:path schema:distribution ;
     sh:name "Dataset distributions"@en , "Distributies van een dataset"@nl ;
-    sh:message "Een datasetbeschrijving zou minstens één distributie moeten bevatten"@nl, "A dataset description should contain at least one distribution"@en ;
     # No ‘sh:node reg:DistributionShape’ here on purpose, because that causes violations on child nodes where we expect
     # infos, for example on a missing distribution description. The report will be valid while containing violations,
     # which is confusing to users.
