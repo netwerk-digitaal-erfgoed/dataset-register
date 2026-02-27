@@ -30,7 +30,7 @@ describe('Fetch', () => {
     const distributions = [
       ...dataset.match(datasetUri, dcat('distribution'), null),
     ];
-    expect(distributions).toHaveLength(3);
+    expect(distributions).toHaveLength(4);
 
     expect(
       dataset.has(
@@ -53,6 +53,38 @@ describe('Fetch', () => {
           factory.literal(
             '12582912',
             factory.namedNode('http://www.w3.org/2001/XMLSchema#integer'),
+          ),
+        ),
+      ),
+    ).toBe(true);
+
+    // Existing distributions must not have compressFormat.
+    for (const dist of distributions.slice(0, 3)) {
+      expect([
+        ...dataset.match(dist.object as BlankNode, dcat('compressFormat')),
+      ]).toHaveLength(0);
+    }
+
+    // The +gzip distribution must have its mediaType stripped and compressFormat set.
+    const gzipDist = distributions[3].object as BlankNode;
+    expect(
+      dataset.has(
+        factory.quad(
+          gzipDist,
+          dcat('mediaType'),
+          factory.namedNode(
+            'https://www.iana.org/assignments/media-types/application/n-triples',
+          ),
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      dataset.has(
+        factory.quad(
+          gzipDist,
+          dcat('compressFormat'),
+          factory.namedNode(
+            'https://www.iana.org/assignments/media-types/application/gzip',
           ),
         ),
       ),
@@ -92,8 +124,10 @@ describe('Fetch', () => {
     const dcatEquivalent = await dereference(
       'test/datasets/dataset-dcat-valid.jsonld',
     );
-    // The Schema.org dataset should have one more triple than the DCAT equivalent due to SPARQL conformsTo
-    expect(dataset.size).toEqual(dcatEquivalent.size + 1);
+    // The Schema.org dataset has one extra triple (SPARQL conformsTo) compared
+    // to the DCAT equivalent, but the DCAT file has a 4th gzip distribution
+    // (4 triples) not present in the Schema.org file.
+    expect(dataset.size).toEqual(dcatEquivalent.size + 1 - 4);
 
     // Check that SPARQL endpoint has conformsTo triple
     const sparqlConformsToTriples = [...dataset].filter(
