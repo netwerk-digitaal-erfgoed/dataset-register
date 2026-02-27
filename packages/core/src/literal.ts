@@ -39,6 +39,8 @@ export const normalizeLicense = (variable: string) =>
  * - Already-formed IANA URIs pass through unchanged
  * - Normalizes http:// to https:// for consistency
  * - Strips parameters (e.g., "text/html; charset=utf-8" becomes "text/html")
+ * - Strips +gzip suffix (e.g., "application/n-triples+gzip" becomes "application/n-triples");
+ *   the compression format is captured separately by compressFormatFromMediaType()
  */
 export const normalizeMediaType = (variable: string) =>
   `?${variable}Raw ;
