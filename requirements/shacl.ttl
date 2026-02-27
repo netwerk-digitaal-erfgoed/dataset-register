@@ -255,7 +255,13 @@ reg:OrganizationShape
         ] ,
         [
             sh:path schema:identifier ;
-            sh:datatype xsd:string ;
+            sh:or (
+                [ sh:datatype xsd:string ]
+                [ 
+                  sh:node reg:IdentifierShape ;
+                  sh:class schema:PropertyValue ;
+               ]
+              ) ;
             sh:minCount 1 ;
             sh:severity sh:Warning ;
             sh:name "Identifier"@en ;
@@ -298,6 +304,31 @@ reg:PersonShape
         sh:severity sh:Warning ;
         sh:message "De naam zou een taaltag moeten bevatten"@nl, "The name should have a language tag"@en ;
     ] .
+
+reg:IdentifierShape
+    a sh:NodeShape ;
+    sh:nodeKind sh:BlankNodeOrIRI ;
+    sh:property [
+        sh:path schema:propertyID ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:message "Een identifier moet een propertyID hebben"@nl, "An identifier must have a propertyID"@en ;
+    ] ,
+    [
+        sh:path schema:value ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:message "Een identifier moet een waarde hebben"@nl, "An identifier must have a value"@en ;
+    ],
+    [
+        sh:path schema:name ;
+        sh:or (
+            [ sh:datatype xsd:string ]
+            [ sh:datatype rdf:langString ]
+        ) ;
+        sh:message "De naam van een identifier moet een string zijn."@nl, "The name of an identifier must be a string."@en ;
+    ] ;
+.
 
 reg:DateTimeShape a sh:NodeShape ;
     sh:or (
