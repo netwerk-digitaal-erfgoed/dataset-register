@@ -2,7 +2,7 @@ import { dcat } from '@lde/dataset-registry-client';
 import { dcterms, foaf, ldkit, schema, xsd } from 'ldkit/namespaces';
 import { createLens, type SchemaInterface } from 'ldkit';
 import { error } from '@sveltejs/kit';
-import { ndeNs, owlNs, voidExtNs, voidNs } from '../rdf.js';
+import { owlNs, voidExtNs, voidNs } from '../rdf.js';
 import { BaseDatasetSchema, BaseDistributionSchema } from './datasets.js';
 import { shortenUri } from '$lib/utils/prefix';
 import { REGISTRATION_STATUS_BASE_URI } from '@dataset-register/core/constants';
@@ -220,12 +220,12 @@ const DatasetSummarySchema = {
     '@optional': true,
   },
   distinctObjectsLiteral: {
-    '@id': ndeNs.distinctObjectsLiteral,
+    '@id': voidExtNs.distinctLiterals,
     '@type': xsd.integer,
     '@optional': true,
   },
   distinctObjectsURI: {
-    '@id': ndeNs.distinctObjectsURI,
+    '@id': voidExtNs.distinctIRIReferenceObjects,
     '@type': xsd.integer,
     '@optional': true,
   },
@@ -383,7 +383,10 @@ export async function fetchDatasetDetail(
   const [dataset, summary, linksets, classPartitionResult] = await Promise.all([
     detailLens.findByIri(datasetUri),
     summaryLens.findByIri(datasetUri).catch((e: unknown) => {
-      console.error('Summary query failed:', e instanceof Error ? e.message : e);
+      console.error(
+        'Summary query failed:',
+        e instanceof Error ? e.message : e,
+      );
       return null;
     }),
     linksLens.find({ where: { subjectsTarget: datasetUri } }),

@@ -24,17 +24,6 @@ export const voidNs = createNamespace({
   ],
 } as const);
 
-export const ndeNs = createNamespace({
-  iri: 'https://www.netwerkdigitaalerfgoed.nl/def#',
-  prefix: 'nde:',
-  terms: [
-    'objectsLiteral',
-    'distinctObjectsLiteral',
-    'objectsURI',
-    'distinctObjectsURI',
-  ],
-} as const);
-
 export const owlNs = createNamespace({
   iri: 'http://www.w3.org/2002/07/owl#',
   prefix: 'owl:',
@@ -47,6 +36,8 @@ export const voidExtNs = createNamespace({
   terms: [
     'datatypePartition',
     'datatype',
+    'distinctIRIReferenceObjects',
+    'distinctLiterals',
     'objectClassPartition',
     'languagePartition',
     'language',
