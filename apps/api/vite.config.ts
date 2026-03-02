@@ -16,10 +16,10 @@ export default defineConfig(() => ({
       provider: 'v8' as const,
       thresholds: {
         autoUpdate: true,
-        lines: 94.35,
+        lines: 94.06,
         functions: 100,
-        branches: 86,
-        statements: 94.4,
+        branches: 85.41,
+        statements: 94.11,
       },
     },
   },

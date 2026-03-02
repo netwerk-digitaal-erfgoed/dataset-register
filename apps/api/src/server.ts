@@ -27,27 +27,14 @@ import DatasetExt from 'rdf-ext/lib/Dataset.js';
 import { fileURLToPath, URL } from 'url';
 import { IncomingMessage, Server } from 'http';
 import * as psl from 'psl';
-import { rdfSerializer } from 'rdf-serialize';
 import fastifySwagger from '@fastify/swagger';
 import fastifyCors from '@fastify/cors';
-import acceptsSerializer from '@fastify/accepts-serializer';
+import fastifyRdf from '@lde/fastify-rdf';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import type { DatasetCore } from '@rdfjs/types';
-import { Readable } from 'node:stream';
 import { dirname } from 'node:path';
 import { createHydraError } from './error.ts';
-import streamToString from 'stream-to-string';
 import jsonld from 'jsonld';
-
-const serializer =
-  (contentType: string) =>
-  // Set return type any to make returning Stream work with fastify-accepts.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (dataset: DatasetCore): any => {
-    return rdfSerializer.serialize(Readable.from(dataset), {
-      contentType,
-    });
-  };
 
 export async function server(
   datasetStore: DatasetStore,
@@ -75,41 +62,23 @@ export async function server(
     .register(fastifySwaggerUi, {
       routePrefix: docsUrl,
     })
-    .register(acceptsSerializer, {
-      default: 'application/ld+json', // default doesn't work, so Accept header is required.
+    .register(fastifyRdf, {
+      defaultContentType: 'application/ld+json',
     })
     .register(fastifyCors, {
       methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE'],
     })
-    .addHook('onRequest', async (request) => {
-      if (request.headers.accept === undefined) {
-        request.headers.accept = 'application/ld+json';
-      }
-    })
     .addHook('onSend', async (_request, reply, payload) => {
+      const contentType = reply.getHeader('content-type') as string;
       if (
-        reply.getHeader('content-type') !== 'application/ld+json' ||
+        !contentType?.startsWith('application/ld+json') ||
         !reply.isError
       ) {
         return payload;
       }
 
-      return await handleJsonLdHydraErrorResponse(
-        payload as NodeJS.ReadableStream,
-      );
+      return await handleJsonLdHydraErrorResponse(payload as string);
     });
-
-  const rdfSerializerConfig = {
-    default: 'application/ld+json',
-    serializers: [
-      ...(await rdfSerializer.getContentTypes()).map((contentType) => {
-        return {
-          regex: new RegExp(contentType.replace('+', '\\+')),
-          serializer: serializer(contentType),
-        };
-      }),
-    ],
-  };
 
   const datasetsRequest = {
     schema: {
@@ -154,7 +123,7 @@ export async function server(
 
     switch (validation.state) {
       case 'valid':
-        await reply.send(validation.errors);
+        await reply.sendRdf(validation.errors);
         return true;
       case 'no-dataset': {
         const error = url
@@ -167,7 +136,7 @@ export async function server(
         return false;
       }
       case 'invalid': {
-        await reply.code(400).send(validation.errors);
+        await reply.code(400).sendRdf(validation.errors);
         return false;
       }
     }
@@ -187,7 +156,7 @@ export async function server(
 
   server.post(
     '/datasets',
-    { ...datasetsRequest, config: rdfSerializerConfig },
+    datasetsRequest,
     async (request, reply) => {
       const url = new URL((request.body as { '@id': string })['@id']);
       if (!(await domainIsAllowed(url))) {
@@ -235,7 +204,7 @@ export async function server(
 
   server.put(
     '/datasets/validate',
-    { ...datasetsRequest, config: rdfSerializerConfig },
+    datasetsRequest,
     async (request, reply) => {
       const url = new URL((request.body as { '@id': string })['@id']);
       request.log.info(url.toString());
@@ -257,7 +226,7 @@ export async function server(
 
   server.post(
     '/datasets/validate',
-    { config: { ...rdfSerializerConfig, parseRdf: true } },
+    { config: { parseRdf: true } },
     async (request, reply) => {
       await validate(request.body as DatasetExt, reply);
       validationsCounter.add(1, {
@@ -267,13 +236,9 @@ export async function server(
     },
   );
 
-  server.get(
-    '/shacl',
-    { config: rdfSerializerConfig },
-    async (request, reply) => {
-      return reply.send(shacl);
-    },
-  );
+  server.get('/shacl', async (_request, reply) => {
+    return reply.sendRdf(shacl);
+  });
 
   /**
    * If a route has enabled `parseRdf`, parse RDF into a DatasetExt object. If not, parse as JSON.
@@ -381,15 +346,15 @@ declare module 'fastify' {
 async function sendError(reply: FastifyReply, error: Error) {
   const hydra = createHydraError(error);
   reply.isError = true;
-  return reply.send(hydra);
+  await reply.sendRdf(hydra);
+  return null;
 }
 
 /**
  * Compact JSON-LD Hydra error responses for better readability.
  */
-async function handleJsonLdHydraErrorResponse(payload: NodeJS.ReadableStream) {
-  const rdfString = await streamToString(payload);
-  const doc = JSON.parse(rdfString);
+async function handleJsonLdHydraErrorResponse(payload: string) {
+  const doc = JSON.parse(payload);
   const compacted = await jsonld.compact(doc, {
     '@vocab': 'http://www.w3.org/ns/hydra/core#',
   });

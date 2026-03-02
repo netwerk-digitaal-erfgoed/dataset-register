@@ -146,7 +146,9 @@ describe('Server', () => {
     });
     nockDone();
     expect(response.statusCode).toEqual(200);
-    expect(response.headers['content-type']).toEqual('application/ld+json');
+    expect(response.headers['content-type']).toEqual(
+      'application/ld+json; charset=utf-8',
+    );
     console.log(response.body);
     expect(response.payload).not.toEqual('');
   });
