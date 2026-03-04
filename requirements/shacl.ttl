@@ -23,7 +23,9 @@ reg:DatacatalogShape
     sh:description "Een datacatalogus bestaat uit een set van datasetbeschrijvingen"@nl, "A data catalog consists of a set of dataset descriptions"@en ;
     sh:property
         reg:SchemaCatalogNameProperty,
+        reg:SchemaCatalogNameUniqueLangProperty,
         reg:SchemaDescriptionProperty,
+        reg:SchemaDescriptionUniqueLangProperty,
         reg:SchemaDescriptionPropertyShouldExist,
         [
             sh:path schema:publisher ;
@@ -58,7 +60,9 @@ reg:DatasetShape
     sh:property
         # Required properties
         reg:SchemaDatasetNameProperty,
+        reg:SchemaDatasetNameUniqueLangProperty,
         reg:SchemaDescriptionProperty,
+        reg:SchemaDescriptionUniqueLangProperty,
         reg:SchemaDescriptionPropertyShouldExist,
         reg:SchemaPublisherProperty,
         reg:SchemaDatasetLicenseProperty,
@@ -144,16 +148,22 @@ reg:DistributionShape
         reg:DistributionEncodingFormatProperty,
         # Recommended properties
         reg:SchemaDistributionNameProperty,
+        reg:SchemaDistributionNameUniqueLangProperty,
         [
             sh:path schema:description ;
             sh:or (
                 [ sh:datatype xsd:string ]
                 [ sh:datatype rdf:langString ]
             );
-            sh:uniqueLang true ;
             sh:name "Distribution description"@en ;
             sh:description "A description of the distribution."@en ;
-            sh:message "Een distributie mag maximaal één beschrijving hebben per taal."@nl, "A distribution may have at most one description per language"@en ;
+            sh:message "De beschrijving van een distributie moet van type string of langString zijn"@nl, "A distribution description must be of type string or langString"@en ;
+        ] ,
+        [
+            sh:path schema:description ;
+            sh:uniqueLang true ;
+            sh:severity sh:Warning ;
+            sh:message "Een distributie mag maximaal één beschrijving per taal hebben"@nl, "A distribution may have at most one description per language"@en ;
         ] ,
         [
             a sh:PropertyShape ;
@@ -206,6 +216,7 @@ reg:OrganizationShape
     sh:pattern "^https?://" ;
     sh:property
         reg:OrganizationNameProperty,
+        reg:OrganizationNameUniqueLangProperty,
         [
             sh:path schema:alternateName ;
             sh:or (
@@ -279,7 +290,7 @@ reg:OrganizationShape
             sh:description """
                 Links to the organization in other databases.
             """@en ;
-            sh:message "Een organisatie mag één of meer links hebben"@nl , "An organization may have one or more links"@en ;
+            sh:message "De links van een organisatie moeten IRI's zijn, geen tekst"@nl , "An organization's links (sameAs) must be IRIs, not string literals"@en ;
         ]
 .
 
@@ -354,10 +365,16 @@ reg:SchemaCatalogNameProperty a sh:PropertyShape ;
         [ sh:datatype xsd:string ]
         [ sh:datatype rdf:langString ]
     ) ;
-    sh:uniqueLang true ;
     sh:name "Naam van de datacatalogus"@nl, "Name of the data catalog"@en ;
     sh:description "The name of the data catalog."@en ;
     sh:message "Een datacatalogus moet een naam hebben"@nl, "A data catalog must have a name"@en ;
+.
+
+reg:SchemaCatalogNameUniqueLangProperty a sh:PropertyShape ;
+    sh:path schema:name ;
+    sh:uniqueLang true ;
+    sh:severity sh:Warning ;
+    sh:message "Een datacatalogus mag maximaal één naam per taal hebben"@nl, "A data catalog must have at most one name per language"@en ;
 .
 
 reg:OrganizationNameProperty a sh:PropertyShape ;
@@ -367,9 +384,15 @@ reg:OrganizationNameProperty a sh:PropertyShape ;
         [ sh:datatype xsd:string ]
         [ sh:datatype rdf:langString ]
     ) ;
-    sh:uniqueLang true ;
     sh:description "The organization's full name."@en ;
     sh:message "Een organisatie moet een naam hebben"@nl, "An organization must contain a name"@en ;
+.
+
+reg:OrganizationNameUniqueLangProperty a sh:PropertyShape ;
+    sh:path schema:name ;
+    sh:uniqueLang true ;
+    sh:severity sh:Warning ;
+    sh:message "Een organisatie mag maximaal één naam per taal hebben"@nl, "An organization must have at most one name per language"@en ;
 .
 
 reg:DistributionContentUrlProperty a sh:PropertyShape ;
@@ -426,9 +449,15 @@ reg:SchemaDatasetNameProperty a sh:PropertyShape ;
         [ sh:datatype xsd:string ]
         [ sh:datatype rdf:langString ]
     ) ;
-    sh:uniqueLang true ;
     sh:name "Naam van de dataset"@nl, "Name of the dataset"@en ;
     sh:message "Een datasetbeschrijving moet een naam hebben"@nl, "A dataset description must have a name"@en ;
+.
+
+reg:SchemaDatasetNameUniqueLangProperty a sh:PropertyShape ;
+    sh:path schema:name ;
+    sh:uniqueLang true ;
+    sh:severity sh:Warning ;
+    sh:message "Een datasetbeschrijving mag maximaal één naam per taal hebben"@nl, "A dataset description must have at most one name per language"@en ;
 .
 
 reg:SchemaDistributionNameProperty a sh:PropertyShape ;
@@ -437,11 +466,17 @@ reg:SchemaDistributionNameProperty a sh:PropertyShape ;
         [ sh:datatype xsd:string ]
         [ sh:datatype rdf:langString ]
     ) ;
-    sh:uniqueLang true ;
     sh:minCount 0 ;
     sh:maxCount 1 ;
     sh:description "Name of the distribution, depicting the type of distribution."@en ;
-    sh:message "Een distributie mag maximaal één naam (per taal) bevatten"@nl, "A distribution may have at most one name (per language)"@en ;
+    sh:message "Een distributie mag maximaal één naam bevatten"@nl, "A distribution may have at most one name"@en ;
+.
+
+reg:SchemaDistributionNameUniqueLangProperty a sh:PropertyShape ;
+    sh:path schema:name ;
+    sh:uniqueLang true ;
+    sh:severity sh:Warning ;
+    sh:message "Een distributie mag maximaal één naam per taal bevatten"@nl, "A distribution may have at most one name per language"@en ;
 .
 
 reg:SchemaDescriptionProperty a sh:PropertyShape ;
@@ -450,10 +485,16 @@ reg:SchemaDescriptionProperty a sh:PropertyShape ;
         [ sh:datatype xsd:string ]
         [ sh:datatype rdf:langString ]
     );
-    sh:uniqueLang true ;
     sh:name "Description"@en ;
     sh:description "Description."@en ;
-    sh:message "Moet precies één beschrijving hebben van type string of langString"@nl, "Must have a single description of type string or langString"@en ;
+    sh:message "Een beschrijving moet van type string of langString zijn"@nl, "A description must be of type string or langString"@en ;
+.
+
+reg:SchemaDescriptionUniqueLangProperty a sh:PropertyShape ;
+    sh:path schema:description ;
+    sh:uniqueLang true ;
+    sh:severity sh:Warning ;
+    sh:message "Moet maximaal één beschrijving per taal hebben"@nl, "Must have at most one description per language"@en ;
 .
 
 reg:SchemaDescriptionPropertyShouldExist a sh:PropertyShape ;
