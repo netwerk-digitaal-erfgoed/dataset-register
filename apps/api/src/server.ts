@@ -2,7 +2,6 @@ import fastify, {
   FastifyError,
   FastifyInstance,
   FastifyReply,
-  FastifyRequest,
   FastifyServerOptions,
 } from 'fastify';
 import bearerAuth from '@fastify/bearer-auth';
@@ -14,7 +13,6 @@ import {
   fetch,
   FetchError,
   HttpError,
-  load,
   NoDatasetFoundAtUrl,
   RatingStore,
   Registration,
@@ -25,7 +23,7 @@ import {
 } from '@dataset-register/core';
 import DatasetExt from 'rdf-ext/lib/Dataset.js';
 import { fileURLToPath, URL } from 'url';
-import { IncomingMessage, Server } from 'http';
+import { Server } from 'http';
 import * as psl from 'psl';
 import fastifySwagger from '@fastify/swagger';
 import fastifyCors from '@fastify/cors';
@@ -33,8 +31,6 @@ import fastifyRdf from '@lde/fastify-rdf';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import type { DatasetCore } from '@rdfjs/types';
 import { dirname } from 'node:path';
-import { createHydraError } from './error.ts';
-import jsonld from 'jsonld';
 
 export async function server(
   datasetStore: DatasetStore,
@@ -68,16 +64,13 @@ export async function server(
     .register(fastifyCors, {
       methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE'],
     })
-    .addHook('onSend', async (_request, reply, payload) => {
-      const contentType = reply.getHeader('content-type') as string;
-      if (
-        !contentType?.startsWith('application/ld+json') ||
-        !reply.isError
-      ) {
-        return payload;
+    // Workaround: content type parser JSON.parse errors lack statusCode.
+    // See https://github.com/ldengine/lde/issues/187
+    .setErrorHandler(async (error: FastifyError, _request, reply) => {
+      if (!error.statusCode && error instanceof SyntaxError) {
+        error.statusCode = 400;
       }
-
-      return await handleJsonLdHydraErrorResponse(payload as string);
+      return reply.code(error.statusCode ?? 500).send(error);
     });
 
   const datasetsRequest = {
@@ -103,22 +96,29 @@ export async function server(
         reply.log.info(
           `Error at URL ${url.toString()}: ${e.statusCode} ${e.message}`,
         );
-        const statusCode = e.statusCode === 404 ? 404 : 406;
-        return sendError(reply.code(statusCode), e);
+        await reply.sendHydraError(
+          Object.assign(e, {
+            statusCode: e.statusCode === 404 ? 404 : 406,
+          }),
+        );
+        return null;
       }
 
       if (e instanceof FetchError) {
         reply.log.info(
           `No dataset found at URL ${url.toString()}: ${e.message}`,
         );
-        return sendError(reply.code(406), e);
+        await reply.sendHydraError(
+          Object.assign(e, { statusCode: 406 }),
+        );
+        return null;
       }
 
       return null;
     }
   }
 
-  async function validate(dataset: DatasetExt, reply: FastifyReply, url?: URL) {
+  async function validate(dataset: DatasetCore, reply: FastifyReply, url?: URL) {
     const validation = await validator.validate(dataset);
 
     switch (validation.state) {
@@ -132,7 +132,9 @@ export async function server(
               cause:
                 'The provided data does not contain any dcat:Dataset or schema:Dataset resources. Please ensure your data includes at least one dataset description.',
             });
-        await sendError(reply.code(406), error);
+        await reply.sendHydraError(
+          Object.assign(error, { statusCode: 406 }),
+        );
         return false;
       }
       case 'invalid': {
@@ -154,81 +156,73 @@ export async function server(
     );
   }
 
-  server.post(
-    '/datasets',
-    datasetsRequest,
-    async (request, reply) => {
-      const url = new URL((request.body as { '@id': string })['@id']);
-      if (!(await domainIsAllowed(url))) {
-        return reply.code(403).send();
+  server.post('/datasets', datasetsRequest, async (request, reply) => {
+    const url = new URL((request.body as { '@id': string })['@id']);
+    if (!(await domainIsAllowed(url))) {
+      return reply.code(403).send();
+    }
+
+    const dataset = await resolveDataset(url, reply);
+    const valid = dataset
+      ? await validate(dataset, reply.code(202), url)
+      : false;
+    if (dataset && valid) {
+      // The URL has validated, so any problems with processing the dataset are now ours. Therefore, make sure to
+      // store the registration so we can come back to that when crawling, even if fetching the datasets fails.
+      // Store first rather than wrapping in a try/catch to cope with OOMs.
+      // Keep original datePosted if re-registering an existing URL.
+      const existingRegistration = await registrationStore.findByUrl(url);
+      const datePosted = existingRegistration?.datePosted ?? new Date();
+      const registration = new Registration(url, datePosted);
+      await registrationStore.store(registration);
+
+      // Fetch dataset descriptions and store them.
+      const datasetIris: URL[] = [];
+      for await (const dataset of fetch(url)) {
+        datasetIris.push(extractIri(dataset));
+        await datasetStore.store(dataset);
       }
 
-      const dataset = await resolveDataset(url, reply);
-      const valid = dataset
-        ? await validate(dataset, reply.code(202), url)
-        : false;
-      if (dataset && valid) {
-        // The URL has validated, so any problems with processing the dataset are now ours. Therefore, make sure to
-        // store the registration so we can come back to that when crawling, even if fetching the datasets fails.
-        // Store first rather than wrapping in a try/catch to cope with OOMs.
-        // Keep original datePosted if re-registering an existing URL.
-        const existingRegistration = await registrationStore.findByUrl(url);
-        const datePosted = existingRegistration?.datePosted ?? new Date();
-        const registration = new Registration(url, datePosted);
-        await registrationStore.store(registration);
-
-        // Fetch dataset descriptions and store them.
-        const datasetIris: URL[] = [];
-        for await (const dataset of fetch(url)) {
-          datasetIris.push(extractIri(dataset));
-          await datasetStore.store(dataset);
-        }
-
-        request.log.info(
-          `Found ${datasetIris.length} datasets at ${url.toString()}`,
-        );
-
-        // Update registration with dataset descriptions that we found.
-        const updatedRegistration = registration.read(datasetIris, 200, true);
-        await registrationStore.store(updatedRegistration);
-      }
-
-      registrationsCounter.add(1, {
-        valid,
-      });
-
-      // If the dataset did not validate, the validate() function has set a 4xx status code.
-      return reply;
-    },
-  );
-
-  server.put(
-    '/datasets/validate',
-    datasetsRequest,
-    async (request, reply) => {
-      const url = new URL((request.body as { '@id': string })['@id']);
-      request.log.info(url.toString());
-      const dataset = await resolveDataset(url, reply);
-      if (dataset) {
-        await validate(dataset, reply, url);
-      }
-      validationsCounter.add(1, {
-        status: reply.statusCode,
-      });
       request.log.info(
-        `Validated at ${Math.round(
-          process.memoryUsage().rss / 1024 / 1024,
-        )} MB memory`,
+        `Found ${datasetIris.length} datasets at ${url.toString()}`,
       );
-      return reply;
-    },
-  );
+
+      // Update registration with dataset descriptions that we found.
+      const updatedRegistration = registration.read(datasetIris, 200, true);
+      await registrationStore.store(updatedRegistration);
+    }
+
+    registrationsCounter.add(1, {
+      valid,
+    });
+
+    // If the dataset did not validate, the validate() function has set a 4xx status code.
+    return reply;
+  });
+
+  server.put('/datasets/validate', datasetsRequest, async (request, reply) => {
+    const url = new URL((request.body as { '@id': string })['@id']);
+    request.log.info(url.toString());
+    const dataset = await resolveDataset(url, reply);
+    if (dataset) {
+      await validate(dataset, reply, url);
+    }
+    validationsCounter.add(1, {
+      status: reply.statusCode,
+    });
+    request.log.info(
+      `Validated at ${Math.round(
+        process.memoryUsage().rss / 1024 / 1024,
+      )} MB memory`,
+    );
+    return reply;
+  });
 
   server.post(
     '/datasets/validate',
     { config: { parseRdf: true } },
     async (request, reply) => {
-      await validate(request.body as DatasetExt, reply);
+      await validate(request.body as DatasetCore, reply);
       validationsCounter.add(1, {
         status: reply.statusCode,
       });
@@ -239,49 +233,6 @@ export async function server(
   server.get('/shacl', async (_request, reply) => {
     return reply.sendRdf(shacl);
   });
-
-  /**
-   * If a route has enabled `parseRdf`, parse RDF into a DatasetExt object. If not, parse as JSON.
-   */
-  server.addContentTypeParser(
-    [
-      'application/ld+json',
-      'text/turtle',
-      'text/n3',
-      'application/trig',
-      'application/n-triples',
-      'application/n-quads',
-    ],
-    async (request: FastifyRequest, payload: IncomingMessage) => {
-      if (request.routeOptions.config.parseRdf ?? false) {
-        try {
-          return await load(
-            request.raw,
-            request.headers['content-type'] ?? 'application/ld+json',
-          );
-        } catch (e) {
-          (e as FastifyError).statusCode = 400;
-          return new Promise((resolve, error) => error(e));
-        }
-      }
-
-      // Parse simple JSON-LD as JSON.
-      return new Promise((resolve, reject) => {
-        let data = '';
-        payload.on('data', (chunk) => {
-          data += chunk;
-        });
-        payload.on('end', () => {
-          try {
-            resolve(JSON.parse(data));
-          } catch (e) {
-            (e as FastifyError).statusCode = 400;
-            reject(e);
-          }
-        });
-      });
-    },
-  );
 
   // Protected routes requiring API access token
   if (apiAccessToken) {
@@ -325,42 +276,4 @@ export async function server(
   }
 
   return server;
-}
-
-declare module 'fastify' {
-  export interface FastifyContextConfig {
-    /**
-     * If enabled, the RDF request body will be parsed into a DatasetExt object by the content parser.
-     */
-    parseRdf?: boolean;
-  }
-
-  export interface FastifyReply {
-    isError: boolean;
-  }
-}
-
-/**
- * Mark reply as Hydra error response and convert Error object to a Hydra Core Vocabulary dataset.
- */
-async function sendError(reply: FastifyReply, error: Error) {
-  const hydra = createHydraError(error);
-  reply.isError = true;
-  await reply.sendRdf(hydra);
-  return null;
-}
-
-/**
- * Compact JSON-LD Hydra error responses for better readability.
- */
-async function handleJsonLdHydraErrorResponse(payload: string) {
-  const doc = JSON.parse(payload);
-  const compacted = await jsonld.compact(doc, {
-    '@vocab': 'http://www.w3.org/ns/hydra/core#',
-  });
-
-  // Remove @id blank node that may be confusing.
-  delete compacted['@id'];
-
-  return JSON.stringify(compacted);
 }
