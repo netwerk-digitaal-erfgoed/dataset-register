@@ -226,6 +226,17 @@ describe('Validator', () => {
     ).toEqual(0);
   });
 
+  it('reports sameAs as string literal instead of IRI', async () => {
+    const report = (await validate(
+      'dataset-schema-org-invalid-sameas.ttl',
+      new StreamParser(),
+    )) as Valid;
+
+    expect(report.state).toEqual('valid');
+    // Once for creator and once for publisher (both reference the same organization).
+    expectViolations(report, ['https://schema.org/sameAs'], 2);
+  });
+
   it('reports missing class', async () => {
     const report = await validate(
       'dataset-schema-missing-publisher-class.ttl',
