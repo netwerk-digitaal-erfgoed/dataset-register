@@ -95,6 +95,7 @@
       "dcat:accessURL": {
         "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld"
       },
+      "dcat:byteSize": "14M",
       "dct:description": "JSON-LD dump"
     },
     {

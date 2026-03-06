@@ -78,7 +78,16 @@ async function* query(url: URL) {
   });
   let datasetQuads = [];
   let currentDataset: string | undefined;
-  for await (const quad of quadStream) {
+  for await (let quad of quadStream) {
+    if (quad.predicate.equals(dcat('byteSize'))) {
+      const bytes = normalizeByteSize(quad.object.value);
+      if (bytes !== null) {
+        quad = factory.quad(quad.subject, quad.predicate, factory.literal(
+          String(bytes), factory.namedNode('http://www.w3.org/2001/XMLSchema#integer'),
+        ));
+      }
+    }
+
     if (
       quad.predicate.equals(rdf('type')) &&
       quad.object.equals(dcat('Dataset'))
@@ -126,4 +135,27 @@ function handleComunicaError(e: unknown, url: URL): never {
   }
 
   throw e;
+}
+
+function normalizeByteSize(raw: string): number | null {
+  const asInt = Number(raw);
+  if (Number.isInteger(asInt) && asInt >= 0) return asInt;
+
+  const match = raw.match(/^([0-9.]+)\s*(B|KB?|MB?|GB?|TB?)$/i);
+  if (!match) return null;
+
+  const value = parseFloat(match[1]);
+  const unit = match[2].toUpperCase();
+  const multipliers: Record<string, number> = {
+    B: 1,
+    K: 1024,
+    KB: 1024,
+    M: 1048576,
+    MB: 1048576,
+    G: 1073741824,
+    GB: 1073741824,
+    T: 1099511627776,
+    TB: 1099511627776,
+  };
+  return Math.floor(value * (multipliers[unit] ?? 1));
 }

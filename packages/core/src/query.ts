@@ -5,7 +5,6 @@ import {
   convertToXsdDate,
   convertUriToLiteral,
   defaultLanguageTag,
-  normalizeByteSize,
   normalizeLicense,
   normalizeMediaType,
 } from './literal.ts';
@@ -180,7 +179,7 @@ export const constructQuery = `
           OPTIONAL { ?${distribution} dct:language ?${distributionLanguage} }
           OPTIONAL { ?${distribution} dct:license ${normalizeLicense(distributionLicense)} }
           OPTIONAL { ?${distribution} dct:title ?${distributionName} }
-          OPTIONAL { ?${distribution} dcat:byteSize ${normalizeByteSize(distributionSize)} }
+          OPTIONAL { ?${distribution} dcat:byteSize ?${distributionSize} }
         }
           
         OPTIONAL { ?${dataset} dct:description ?${description} }
@@ -287,7 +286,7 @@ function schemaOrgQuery(prefix: string): string {
       OPTIONAL { ?${distribution} ${prefix}:inLanguage ?${distributionLanguage} }
       OPTIONAL { ?${distribution} ${prefix}:license ${normalizeLicense(distributionLicense)} }
       OPTIONAL { ?${distribution} ${prefix}:name ?${distributionName} }
-      OPTIONAL { ?${distribution} ${prefix}:contentSize ${normalizeByteSize(distributionSize)} }
+      OPTIONAL { ?${distribution} ${prefix}:contentSize ?${distributionSize} }
       OPTIONAL { 
         ?${distribution} ${prefix}:usageInfo ?${distributionConformsTo} .
         FILTER(isIRI(?${distributionConformsTo}))  
