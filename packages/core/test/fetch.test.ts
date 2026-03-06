@@ -44,7 +44,7 @@ describe('Fetch', () => {
       ),
     ).toBe(true);
 
-    // byteSize must be normalized in literal.ts.
+    // byteSize must be normalized to integer bytes.
     expect(
       dataset.has(
         factory.quad(
@@ -52,6 +52,20 @@ describe('Fetch', () => {
           dcat('byteSize'),
           factory.literal(
             '12582912',
+            factory.namedNode('http://www.w3.org/2001/XMLSchema#integer'),
+          ),
+        ),
+      ),
+    ).toBe(true);
+
+    // Shorthand unit "14M" must be normalized to 14 * 1048576 = 14680064.
+    expect(
+      dataset.has(
+        factory.quad(
+          distributions[1].object as BlankNode,
+          dcat('byteSize'),
+          factory.literal(
+            '14680064',
             factory.namedNode('http://www.w3.org/2001/XMLSchema#integer'),
           ),
         ),
@@ -126,8 +140,8 @@ describe('Fetch', () => {
     );
     // The Schema.org dataset has one extra triple (SPARQL conformsTo) compared
     // to the DCAT equivalent, but the DCAT file has a 4th gzip distribution
-    // (4 triples) not present in the Schema.org file.
-    expect(dataset.size).toEqual(dcatEquivalent.size + 1 - 4);
+    // (4 triples) and an extra byteSize triple not present in the Schema.org file.
+    expect(dataset.size).toEqual(dcatEquivalent.size + 1 - 5);
 
     // Check that SPARQL endpoint has conformsTo triple
     const sparqlConformsToTriples = [...dataset].filter(
