@@ -80,18 +80,11 @@ async function* query(url: URL) {
   let currentDataset: string | undefined;
   for await (let quad of quadStream) {
     if (quad.predicate.equals(dcat('byteSize'))) {
-      const normalized = normalizeByteSize(quad.object.value);
-      if (normalized !== null) {
-        quad = factory.quad(
-          quad.subject,
-          quad.predicate,
-          factory.literal(
-            String(normalized),
-            factory.namedNode('http://www.w3.org/2001/XMLSchema#integer'),
-          ),
-        );
-      } else {
-        continue;
+      const bytes = normalizeByteSize(quad.object.value);
+      if (bytes !== null) {
+        quad = factory.quad(quad.subject, quad.predicate, factory.literal(
+          String(bytes), factory.namedNode('http://www.w3.org/2001/XMLSchema#integer'),
+        ));
       }
     }
 
