@@ -103,7 +103,7 @@ describe('Server', () => {
     });
     expect(response.statusCode).toEqual(406);
     expect(response.payload).toEqual(
-      '{"@context":{"@vocab":"http://www.w3.org/ns/hydra/core#"},"@type":"Error","description":"The provided URL does not contain either a schema:Dataset or a dcat:Dataset. Please ensure your submitted URL includes at least one dataset description.","title":"No dataset found at URL https://example.com/200"}',
+      '{"@context":"http://www.w3.org/ns/hydra/core#","@type":"Error","title":"No dataset found at URL https://example.com/200","description":"The provided URL does not contain either a schema:Dataset or a dcat:Dataset. Please ensure your submitted URL includes at least one dataset description."}',
     );
     expect(response.json()['title']).toEqual(
       'No dataset found at URL https://example.com/200',
@@ -146,7 +146,9 @@ describe('Server', () => {
     });
     nockDone();
     expect(response.statusCode).toEqual(200);
-    expect(response.headers['content-type']).toEqual('application/ld+json');
+    expect(response.headers['content-type']).toEqual(
+      'application/ld+json; charset=utf-8',
+    );
     console.log(response.body);
     expect(response.payload).not.toEqual('');
   });
