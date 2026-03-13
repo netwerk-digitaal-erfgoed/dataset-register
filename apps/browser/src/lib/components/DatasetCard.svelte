@@ -42,7 +42,7 @@
 </script>
 
 <a
-  class="relative block border border-gray-300 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-800 transition-all hover:shadow-lg hover:border-gray-400 dark:hover:border-gray-600 cursor-pointer no-underline overflow-visible"
+  class="group/card relative block border border-gray-300 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-800 transition-all hover:shadow-lg hover:border-gray-400 dark:hover:border-gray-600 cursor-pointer no-underline overflow-visible"
   href={detailUrl}
 >
   {#if dataset.status}
@@ -60,19 +60,14 @@
   {/if}
 
   <h2
-    class="m-0 mb-4 text-[1.375rem] font-semibold text-gray-900 dark:text-gray-100 leading-[1.4] tracking-[-0.015em]"
+    class="m-0 mb-4 text-[1.375rem] font-semibold text-gray-900 dark:text-gray-100 leading-[1.4] tracking-[-0.015em] line-clamp-2 group-hover/card:underline"
+    title={getLocalizedValue(dataset.title)}
   >
     {getLocalizedValue(dataset.title)}
   </h2>
 
-  {#if dataset.description}
-    <p class="mb-4 line-clamp-5 text-gray-700 dark:text-gray-300">
-      {getLocalizedValue(dataset.description)}
-    </p>
-  {/if}
-
   {#if dataset.publisher}
-    <div class="mb-2.5 text-[0.9375rem] leading-[1.5] flex items-center gap-2">
+    <div class="mb-4 text-[0.9375rem] leading-[1.5] flex items-center gap-2">
       <svg
         class="w-4 h-4 text-gray-600 dark:text-gray-400 flex-shrink-0"
         fill="none"
@@ -91,6 +86,12 @@
         >{getLocalizedValue(dataset.publisher.name)}</span
       >
     </div>
+  {/if}
+
+  {#if dataset.description}
+    <p class="mb-4 line-clamp-5 text-gray-700 dark:text-gray-300">
+      {getLocalizedValue(dataset.description)}
+    </p>
   {/if}
 
   {#if languages.length > 0}
