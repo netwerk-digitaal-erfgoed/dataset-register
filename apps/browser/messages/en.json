@@ -205,5 +205,6 @@
   "detail_object_class": "Object class (URI)",
   "detail_language": "Language",
   "detail_classes_for_value_type": "Classes for {valueTypeName}",
-  "detail_properties_for_value_type": "Properties for {valueTypeName}"
+  "detail_properties_for_value_type": "Properties for {valueTypeName}",
+  "opens_in_new_tab": "opens in new tab"
 }
