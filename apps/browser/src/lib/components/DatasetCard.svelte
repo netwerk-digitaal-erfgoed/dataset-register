@@ -42,7 +42,7 @@
 </script>
 
 <a
-  class="group/card relative block border border-gray-300 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-800 transition-all hover:shadow-lg hover:border-gray-400 dark:hover:border-gray-600 cursor-pointer no-underline overflow-visible"
+  class="group/card relative block border border-gray-300 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-800 transition-all hover:shadow-xl hover:border-gray-500 dark:hover:border-gray-500 cursor-pointer no-underline overflow-visible"
   href={detailUrl}
 >
   {#if dataset.status}
