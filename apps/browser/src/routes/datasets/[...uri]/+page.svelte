@@ -21,7 +21,7 @@
   import CheckOutline from 'flowbite-svelte-icons/CheckOutline.svelte';
   import ClipboardCleanSolid from 'flowbite-svelte-icons/ClipboardCleanSolid.svelte';
   import ArrowUpRightFromSquareOutline from 'flowbite-svelte-icons/ArrowUpRightFromSquareOutline.svelte';
-  import QuestionCircleSolid from 'flowbite-svelte-icons/QuestionCircleSolid.svelte';
+  import InfoCircleSolid from 'flowbite-svelte-icons/InfoCircleSolid.svelte';
   import SearchOutline from 'flowbite-svelte-icons/SearchOutline.svelte';
   import ExclamationCircleOutline from 'flowbite-svelte-icons/ExclamationCircleOutline.svelte';
   import {
@@ -106,6 +106,13 @@
   // Extract keywords and genres for current locale
   const localizedKeywords = $derived(getLocalizedArray(dataset.keyword));
   const localizedGenres = $derived(getLocalizedArray(dataset.type));
+
+  // When the publisher and sole creator are the same entity, collapse into one row.
+  const publisherIsCreator = $derived(
+    dataset.publisher?.$id &&
+      dataset.creator?.length === 1 &&
+      dataset.creator[0].$id === dataset.publisher.$id,
+  );
 
   const hasVoidStats = $derived(
     summary &&
@@ -217,6 +224,33 @@
       <LanguageBadge values={dataset.title} />
     </h1>
 
+    {#if dataset.publisher?.name}
+      <div class="mb-4 flex items-center gap-2 text-[0.9375rem] leading-[1.5]">
+        <svg
+          class="h-4 w-4 flex-shrink-0 text-gray-600 dark:text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-label={m.dataset_publisher()}
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+          />
+        </svg>
+        <a
+          href={localizeHref(
+            `/datasets?publishers=${encodeURIComponent(dataset.publisher.$id || '')}`,
+          )}
+          class="text-gray-700 hover:underline dark:text-gray-300"
+        >
+          {getLocalizedValue(dataset.publisher.name)}
+        </a>
+      </div>
+    {/if}
+
     {#if dataset.description}
       <p
         class="mb-6 text-lg leading-relaxed text-gray-700 dark:text-gray-300 lg:text-xl"
@@ -288,6 +322,14 @@
                 />
               </svg>
               {m.detail_uri()}
+              <span id="tooltip-uri" class="cursor-pointer">
+                <InfoCircleSolid
+                  class="h-4.5 w-4.5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+                />
+              </span>
+              <Tooltip triggeredBy="#tooltip-uri"
+                >{m.detail_uri_description()}</Tooltip
+              >
             </dt>
             <dd class="text-sm flex items-center gap-2">
               <a
@@ -335,7 +377,15 @@
                     d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                   />
                 </svg>
-                {m.detail_publisher()}
+                {publisherIsCreator ? m.detail_publisher_and_creator() : m.detail_publisher()}
+                <span id="tooltip-publisher" class="cursor-pointer">
+                  <InfoCircleSolid
+                    class="h-4.5 w-4.5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+                  />
+                </span>
+                <Tooltip triggeredBy="#tooltip-publisher"
+                  >{m.detail_publisher_description()}</Tooltip
+                >
               </dt>
               <dd class="text-sm text-gray-700 dark:text-gray-300">
                 <a
@@ -413,8 +463,8 @@
             </div>
           {/if}
 
-          <!-- Creator -->
-          {#if dataset.creator && dataset.creator.length > 0}
+          <!-- Creator (hidden when same as publisher) -->
+          {#if dataset.creator && dataset.creator.length > 0 && !publisherIsCreator}
             <div
               class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
             >
@@ -477,6 +527,14 @@
                   />
                 </svg>
                 {m.detail_is_part_of()}
+                <span id="tooltip-is-part-of" class="cursor-pointer">
+                  <InfoCircleSolid
+                    class="h-4.5 w-4.5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+                  />
+                </span>
+                <Tooltip triggeredBy="#tooltip-is-part-of"
+                  >{m.detail_is_part_of_description()}</Tooltip
+                >
               </dt>
               <dd class="text-sm text-gray-700 dark:text-gray-300">
                 <a
@@ -581,6 +639,14 @@
                   />
                 </svg>
                 {m.detail_spatial_coverage()}
+                <span id="tooltip-spatial" class="cursor-pointer">
+                  <InfoCircleSolid
+                    class="h-4.5 w-4.5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+                  />
+                </span>
+                <Tooltip triggeredBy="#tooltip-spatial"
+                  >{m.detail_spatial_coverage_description()}</Tooltip
+                >
               </dt>
               <dd class="text-sm text-gray-700 dark:text-gray-300 break-all">
                 {dataset.spatial.join(', ')}
@@ -610,6 +676,14 @@
                   />
                 </svg>
                 {m.detail_temporal_coverage()}
+                <span id="tooltip-temporal" class="cursor-pointer">
+                  <InfoCircleSolid
+                    class="h-4.5 w-4.5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+                  />
+                </span>
+                <Tooltip triggeredBy="#tooltip-temporal"
+                  >{m.detail_temporal_coverage_description()}</Tooltip
+                >
               </dt>
               <dd class="text-sm text-gray-700 dark:text-gray-300">
                 {dataset.temporal}
@@ -639,6 +713,14 @@
                   />
                 </svg>
                 {m.dataset_languages()}
+                <span id="tooltip-language" class="cursor-pointer">
+                  <InfoCircleSolid
+                    class="h-4.5 w-4.5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+                  />
+                </span>
+                <Tooltip triggeredBy="#tooltip-language"
+                  >{m.detail_language_description()}</Tooltip
+                >
               </dt>
               <dd class="text-sm text-gray-700 dark:text-gray-300">
                 {dataset.language.join(', ')}
@@ -803,8 +885,8 @@
           />
         </svg>
         {m.detail_distributions()}
-        <span id="tooltip-distributions">
-          <QuestionCircleSolid
+        <span id="tooltip-distributions" class="cursor-pointer">
+          <InfoCircleSolid
             class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
           />
         </span>
@@ -945,8 +1027,8 @@
         class="mb-4 flex items-center gap-2 text-xl font-semibold text-gray-900 dark:text-white"
       >
         {m.detail_linked_data_summary()}
-        <span id="tooltip-linked-data-summary">
-          <QuestionCircleSolid
+        <span id="tooltip-linked-data-summary" class="cursor-pointer">
+          <InfoCircleSolid
             class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
           />
         </span>
@@ -1115,8 +1197,8 @@
             class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
           >
             {m.detail_vocabularies()}
-            <span id="tooltip-vocabularies">
-              <QuestionCircleSolid
+            <span id="tooltip-vocabularies" class="cursor-pointer">
+              <InfoCircleSolid
                 class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
               />
             </span>
@@ -1162,8 +1244,8 @@
             class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
           >
             {m.detail_terminology_sources()}
-            <span id="tooltip-terminology-sources">
-              <QuestionCircleSolid
+            <span id="tooltip-terminology-sources" class="cursor-pointer">
+              <InfoCircleSolid
                 class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
               />
             </span>
@@ -1218,8 +1300,8 @@
               class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1"
             >
               {m.detail_registered_url()}
-              <span id="tooltip-registered-url">
-                <QuestionCircleSolid
+              <span id="tooltip-registered-url" class="cursor-pointer">
+                <InfoCircleSolid
                   class="h-4.5 w-4.5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
                 />
               </span>
@@ -1283,8 +1365,8 @@
               class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1"
             >
               {m.detail_registered()}
-              <span id="tooltip-registered">
-                <QuestionCircleSolid
+              <span id="tooltip-registered" class="cursor-pointer">
+                <InfoCircleSolid
                   class="h-4.5 w-4.5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
                 />
               </span>
@@ -1315,8 +1397,8 @@
               class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1"
             >
               {m.detail_last_crawled()}
-              <span id="tooltip-last-crawled">
-                <QuestionCircleSolid
+              <span id="tooltip-last-crawled" class="cursor-pointer">
+                <InfoCircleSolid
                   class="h-4.5 w-4.5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
                 />
               </span>
@@ -1352,8 +1434,8 @@
               class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1"
             >
               {m.detail_quality_rating()}
-              <span id="tooltip-quality-rating">
-                <QuestionCircleSolid
+              <span id="tooltip-quality-rating" class="cursor-pointer">
+                <InfoCircleSolid
                   class="h-4.5 w-4.5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
                 />
               </span>

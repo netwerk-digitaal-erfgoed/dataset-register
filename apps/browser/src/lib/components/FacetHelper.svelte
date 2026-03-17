@@ -1,5 +1,5 @@
 <script lang="ts">
-  import InfoCircleOutline from 'flowbite-svelte-icons/InfoCircleOutline.svelte';
+  import InfoCircleSolid from 'flowbite-svelte-icons/InfoCircleSolid.svelte';
 
   let { explanation }: { explanation: string } = $props();
 
@@ -70,7 +70,7 @@
     aria-label="Show explanation"
     type="button"
   >
-    <InfoCircleOutline class="w-5 h-5" />
+    <InfoCircleSolid class="w-5 h-5" />
   </button>
 
   {#if showPopover}
