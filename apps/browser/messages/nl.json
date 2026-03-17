@@ -205,5 +205,6 @@
   "detail_object_class": "Objectklasse (URI)",
   "detail_language": "Taal",
   "detail_classes_for_value_type": "Typen voor {valueTypeName}",
-  "detail_properties_for_value_type": "Eigenschappen voor {valueTypeName}"
+  "detail_properties_for_value_type": "Eigenschappen voor {valueTypeName}",
+  "opens_in_new_tab": "opent in nieuw tabblad"
 }
