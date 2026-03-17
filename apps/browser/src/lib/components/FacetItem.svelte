@@ -6,7 +6,7 @@
   } from '$lib/services/facets';
   import { getLocale } from '$lib/paraglide/runtime';
   import { Tooltip } from 'flowbite-svelte';
-  import InfoCircleOutline from 'flowbite-svelte-icons/InfoCircleOutline.svelte';
+  import InfoCircleSolid from 'flowbite-svelte-icons/InfoCircleSolid.svelte';
 
   let {
     value,
@@ -57,7 +57,7 @@
         class="inline-flex items-center"
         onclick={(e) => e.stopPropagation()}
       >
-        <InfoCircleOutline
+        <InfoCircleSolid
           class="h-4 w-4 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
         />
       </button>

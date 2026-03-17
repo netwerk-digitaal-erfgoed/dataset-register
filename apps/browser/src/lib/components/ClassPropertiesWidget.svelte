@@ -8,7 +8,7 @@
     truncateMiddle,
   } from '$lib/utils/prefix.js';
   import { Tooltip } from 'flowbite-svelte';
-  import QuestionCircleSolid from 'flowbite-svelte-icons/QuestionCircleSolid.svelte';
+  import InfoCircleSolid from 'flowbite-svelte-icons/InfoCircleSolid.svelte';
   import CloseOutline from 'flowbite-svelte-icons/CloseOutline.svelte';
   import ChevronRightOutline from 'flowbite-svelte-icons/ChevronRightOutline.svelte';
   import ChevronLeftOutline from 'flowbite-svelte-icons/ChevronLeftOutline.svelte';
@@ -872,7 +872,7 @@
         {:else}
           {m.detail_classes()}
           <span id="tooltip-classes-widget">
-            <QuestionCircleSolid
+            <InfoCircleSolid
               class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
             />
           </span>
@@ -1024,7 +1024,7 @@
           {:else}
             {m.detail_properties_section()}
             <span id="tooltip-properties-widget">
-              <QuestionCircleSolid
+              <InfoCircleSolid
                 class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
               />
             </span>
@@ -1170,7 +1170,7 @@
           {:else}
             {m.detail_value_types()}
             <span id="tooltip-value-types-widget">
-              <QuestionCircleSolid
+              <InfoCircleSolid
                 class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
               />
             </span>
