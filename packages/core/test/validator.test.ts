@@ -237,6 +237,16 @@ describe('Validator', () => {
     expectViolations(report, ['https://schema.org/sameAs'], 2);
   });
 
+  it('reports invalid encoding format', async () => {
+    const report = await validate(
+      'dataset-schema-org-invalid-encoding-format.jsonld',
+    );
+    expect(report.state).toBe('invalid');
+    expectViolations(report as InvalidDataset, [
+      'https://schema.org/encodingFormat',
+    ]);
+  });
+
   it('reports missing class', async () => {
     const report = await validate(
       'dataset-schema-missing-publisher-class.ttl',

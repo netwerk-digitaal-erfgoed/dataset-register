@@ -146,6 +146,7 @@ reg:DistributionShape
         reg:DistributionContentUrlProperty,
         reg:DistributionContentUrlIriProperty,
         reg:DistributionEncodingFormatProperty,
+        reg:DistributionEncodingFormatPatternProperty,
         # Recommended properties
         reg:SchemaDistributionNameProperty,
         reg:SchemaNameUniqueLangProperty,
@@ -411,6 +412,12 @@ reg:DistributionEncodingFormatProperty a sh:PropertyShape ;
     """@en ;
     sh:message "Een distributie moet minimaal één encoderingsformaat hebben"@nl, "A distribution must have at least one encoding format"@en ;
 .
+
+reg:DistributionEncodingFormatPatternProperty a sh:PropertyShape ;
+    sh:path schema:encodingFormat ;
+    sh:pattern "^[a-zA-Z]+/[a-zA-Z0-9][a-zA-Z0-9!#$&\\-^_.+]*$" ;
+    sh:message "Het encoderingsformaat moet een geldig MIME-type zijn (bijv. application/ld+json)"@nl,
+        "The encoding format must be a valid MIME type (e.g. application/ld+json)"@en .
 
 reg:SchemaDatasetProperty a sh:PropertyShape ;
     sh:path schema:dataset ;
