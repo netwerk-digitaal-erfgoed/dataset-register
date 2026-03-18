@@ -92,6 +92,11 @@
     return ranges[bin] || '';
   }
 
+  // Whether the user has actively filtered the size range
+  const isActive = $derived(
+    selectedValues.min !== undefined || selectedValues.max !== undefined,
+  );
+
   // Calculate max count for normalization
   const maxCount = $derived(
     histogram.bins.length > 0
@@ -140,14 +145,16 @@
     {/if}
   </h3>
 
-  <div class="space-y-4">
+  <div class="space-y-4" class:active={isActive}>
     <!-- Histogram -->
     {#if histogram.bins.length > 0}
       <div class="relative h-24 histogram-container">
         {#each histogram.bins as bin (bin.bin)}
           {@const position = getBinPosition(bin.bin)}
           <div
-            class="absolute bottom-0 bg-blue-500 dark:bg-blue-400 rounded-t hover:bg-blue-600 dark:hover:bg-blue-500 transition-colors cursor-help group"
+            class="absolute bottom-0 rounded-t transition-colors cursor-help group {isActive
+              ? 'bg-blue-500 dark:bg-blue-400 hover:bg-blue-600 dark:hover:bg-blue-500'
+              : 'bg-gray-400 dark:bg-gray-500 hover:bg-gray-500 dark:hover:bg-gray-400'}"
             style="left: {position.left}; width: {position.width}; height: {getBarHeight(
               bin.count,
             )}%"
@@ -202,7 +209,33 @@
 </div>
 
 <style>
+  /* Inactive state: neutral gray */
   :global(.rangeSlider) {
+    --range-slider: #6b7280;
+    --range-handle-inactive: #6b7280;
+    --range-handle: #6b7280;
+    --range-handle-focus: #4b5563;
+    --range-float: #6b7280;
+  }
+
+  :global(.rangeSlider .rangeNub) {
+    background-color: #6b7280 !important;
+  }
+
+  :global(.dark .rangeSlider) {
+    --range-slider: #9ca3af;
+    --range-handle-inactive: #9ca3af;
+    --range-handle: #9ca3af;
+    --range-handle-focus: #d1d5db;
+    --range-float: #9ca3af;
+  }
+
+  :global(.dark .rangeSlider .rangeNub) {
+    background-color: #9ca3af !important;
+  }
+
+  /* Active state: solid blue handles */
+  :global(.active .rangeSlider) {
     --range-slider: #2563eb;
     --range-handle-inactive: #3b82f6;
     --range-handle: #2563eb;
@@ -210,7 +243,11 @@
     --range-float: #2563eb;
   }
 
-  :global(.dark .rangeSlider) {
+  :global(.active .rangeSlider .rangeNub) {
+    background-color: var(--handle-inactive) !important;
+  }
+
+  :global(.dark .active .rangeSlider) {
     --range-slider: #3b82f6;
     --range-handle-inactive: #60a5fa;
     --range-handle: #3b82f6;
