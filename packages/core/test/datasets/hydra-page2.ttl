@@ -25,7 +25,7 @@
   schema:dateModified "2021-09-05"^^xsd:date ;
   schema:datePublished "2022-09-05"^^xsd:date ;
   schema:description "Combinatie van kadastrale perceelnummers uit 1832 met Verpondingsnummers uit het verpondingsregister 1875 en de plaatselijke aanduiding uit het verpondingsregister." ;
-  schema:license <http://creativecommons.org/publicdomain/zero/1.0/deed.nl> ;
+  schema:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
   schema:publisher <https://www.goudatijdmachine.nl/data/api/items/232> ;
     schema:distribution <https://www.goudatijdmachine.nl/data/api/items/144> .
 

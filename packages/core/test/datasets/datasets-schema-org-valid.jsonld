@@ -7,7 +7,7 @@
       "name": "First valid dataset",
       "description": "Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.",
       "identifier": "http://data.bibliotheken.nl/id/dataset/rise-alba",
-      "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
       "publisher": {
         "@type": "Organization",
         "@id": "https://www.kb.nl/",
@@ -28,7 +28,7 @@
       "name": "Second valid dataset",
       "description": "Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.",
       "identifier": "http://data.bibliotheken.nl/id/dataset/rise-alba",
-      "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
       "publisher": {
         "@type": "Organization",
         "@id": "https://www.kb.nl/",

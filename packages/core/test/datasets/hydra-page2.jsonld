@@ -32,7 +32,7 @@
           "@type": "Dataset",
           "@id": "https://example.com/dataset/3",
           "name": "Dataset 3",
-          "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+          "license": "https://creativecommons.org/publicdomain/zero/1.0/",
           "publisher": {
             "@id": "/publisher"
           }

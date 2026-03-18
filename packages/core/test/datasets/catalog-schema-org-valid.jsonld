@@ -27,7 +27,7 @@
           "@value": "Alba in English."
         }
       ],
-      "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
       "publisher": {
         "@type": "Organization",
         "@id": "https://www.openarch.nl/",
@@ -46,7 +46,7 @@
       "@id": "https://example.com/dataset2",
       "name": "Dataset 2",
       "description": "Description is a plain string",
-      "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+      "license": "https://creativecommons.org/publicdomain/zero/1.0/",
       "publisher": {
         "@type": "Organization",
         "@id": "https://www.openarch.nl/",
