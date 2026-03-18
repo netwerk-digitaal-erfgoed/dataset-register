@@ -14,7 +14,7 @@
       "dct:keyword": [
         "alba amicorum"
       ],
-      "dct:license": "http://creativecommons.org/publicdomain/zero/1.0/",
+      "dct:license": "https://creativecommons.org/publicdomain/zero/1.0/",
       "dct:publisher": {
         "@type": "foaf:Organization",
         "@id": "https://kb.nl/",

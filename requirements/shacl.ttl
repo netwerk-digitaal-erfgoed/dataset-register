@@ -264,7 +264,7 @@ reg:OrganizationShape
             sh:path schema:identifier ;
             sh:or (
                 [ sh:datatype xsd:string ]
-                [ 
+                [
                   sh:node reg:IdentifierShape ;
                   sh:class schema:PropertyValue ;
                ]
@@ -556,6 +556,10 @@ reg:SchemaDatasetLicenseProperty a sh:PropertyShape ;
     sh:nodeKind sh:IRIOrLiteral ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
+    sh:node _:LicenseCreativeCommonsHttpShape,
+        _:LicenseCreativeCommonsTrailingSlashShape,
+        _:LicenseNotOpenDefinitionShape,
+        _:LicenseOpenDataCommonsShape ;
     sh:name "Licentie"@nl, "License"@en ;
     sh:description "Licentie die van toepassing is op de dataset"@nl, """
         Publishers *MUST* make known under which [[DWBP#licenses|license]] the dataset may be used.
@@ -575,6 +579,40 @@ reg:SchemaDatasetLicenseProperty a sh:PropertyShape ;
         of https://creativecommons.org/publicdomain/zero/1.0/deed.nl.
         """@en ;
     sh:message "Een datasetbeschrijving moet één licentie bevatten (in de vorm van een URI)"@nl, "A dataset description must contain one license (in the form of a URI)"@en ;
+.
+
+_:LicenseCreativeCommonsHttpShape a sh:NodeShape ;
+    sh:not [ sh:pattern "^http://creativecommons\\.org/" ] ;
+    sh:severity sh:Warning ;
+    sh:message "Gebruik de canonieke Creative Commons licentie-URI met https:// (bijv. https://creativecommons.org/publicdomain/zero/1.0/)"@nl,
+        "Use the canonical Creative Commons license URI with https:// (e.g. https://creativecommons.org/publicdomain/zero/1.0/)"@en ;
+.
+
+_:LicenseCreativeCommonsTrailingSlashShape a sh:NodeShape ;
+    sh:or (
+        [ sh:not [ sh:pattern "^https://creativecommons\\.org/" ] ]
+        [ sh:pattern "^https://creativecommons\\.org/.+/$" ]
+    ) ;
+    sh:severity sh:Warning ;
+    sh:message "Gebruik de canonieke Creative Commons licentie-URI met een afsluitende slash (bijv. https://creativecommons.org/licenses/by/4.0/)"@nl,
+        "Use the canonical Creative Commons license URI with a trailing slash (e.g. https://creativecommons.org/licenses/by/4.0/)"@en ;
+.
+
+_:LicenseNotOpenDefinitionShape a sh:NodeShape ;
+    sh:not [ sh:pattern "^https?://www\\.opendefinition\\.org/licenses/" ] ;
+    sh:severity sh:Warning ;
+    sh:message "Gebruik de canonieke licentie-URI van de licentiegever zelf (bijv. https://creativecommons.org/licenses/by/4.0/), niet een opendefinition.org-alias"@nl,
+        "Use the canonical license URI from the license issuer itself (e.g. https://creativecommons.org/licenses/by/4.0/), not an opendefinition.org alias"@en ;
+.
+
+_:LicenseOpenDataCommonsShape a sh:NodeShape ;
+    sh:or (
+        [ sh:not [ sh:pattern "opendatacommons\\.org" ] ]
+        [ sh:pattern "^http://opendatacommons\\.org/licenses/[^/]+/[0-9]+\\.[0-9]+/$" ]
+    ) ;
+    sh:severity sh:Warning ;
+    sh:message "Gebruik de canonieke OpenDataCommons licentie-URI met versienummer (bijv. http://opendatacommons.org/licenses/odbl/1.0/)"@nl,
+        "Use the canonical OpenDataCommons license URI with version number (e.g. http://opendatacommons.org/licenses/odbl/1.0/)"@en ;
 .
 
 reg:SchemaDistributionLicenseProperty a sh:PropertyShape ;
@@ -664,7 +702,11 @@ dcat:DatasetShape
     [
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:path dc:license
+        sh:path dc:license ;
+        sh:node _:LicenseCreativeCommonsHttpShape,
+            _:LicenseCreativeCommonsTrailingSlashShape,
+            _:LicenseNotOpenDefinitionShape,
+            _:LicenseOpenDataCommonsShape ;
     ],
     [
         sh:path dc:created ;
