@@ -478,6 +478,34 @@ describe('Fetch', () => {
     expect(datasets).toHaveLength(1);
   });
 
+  it('accepts valid Schema.org dataset in HTML+Microdata', async () => {
+    const response = await file('dataset-schema-org-valid-microdata.html');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'text/html' })
+      .get('/valid-schema-org-dataset-microdata')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/valid-schema-org-dataset-microdata'),
+    );
+
+    expect(datasets).toHaveLength(1);
+  });
+
+  it('accepts valid Schema.org dataset in HTML+RDFa', async () => {
+    const response = await file('dataset-schema-org-valid-rdfa.html');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'text/html' })
+      .get('/valid-schema-org-dataset-rdfa')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/valid-schema-org-dataset-rdfa'),
+    );
+
+    expect(datasets).toHaveLength(1);
+  });
+
   it('accepts valid HTTP Schema.org dataset in Turtle', async () => {
     const response = await file('dataset-http-schema-org-valid.ttl');
     nock('https://example.com')
