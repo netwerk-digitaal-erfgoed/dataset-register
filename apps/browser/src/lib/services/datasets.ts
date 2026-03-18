@@ -3,10 +3,8 @@ import { dcterms, foaf, ldkit, schema, xsd } from 'ldkit/namespaces';
 import { createLens, type SchemaInterface } from 'ldkit';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { facetConfigs, type Facets, fetchFacets } from '$lib/services/facets';
-import {
-  PUBLIC_SPARQL_ENDPOINT,
-  PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
-} from '$env/static/public';
+// TODO: re-import PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT when fetchDatasetSizes is re-enabled
+import { PUBLIC_SPARQL_ENDPOINT } from '$env/static/public';
 import { voidNs } from '../rdf.js';
 import { getLocale } from '$lib/paraglide/runtime';
 import { normalizeMediaType } from '$lib/utils/sparql';

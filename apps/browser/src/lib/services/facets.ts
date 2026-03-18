@@ -374,11 +374,11 @@ export const facetQuery = (facet: string, searchFiltersQuery: string) => `
 export async function fetchFacets(
   searchFilters: SearchRequest,
 ): Promise<Facets> {
-  // TODO: re-enable class, terminologySource, and sizeHistogram once SERVICE
-  // federation OOM is resolved — all three use SERVICE through QLever.
-  const facetKeys = (
-    Object.keys(facetConfigs) as Array<FacetKey>
-  ).filter((key) => key !== 'class' && key !== 'terminologySource');
+  // class, terminologySource, and sizeHistogram disabled: their SERVICE
+  // federation queries OOM QLever.
+  const facetKeys = (Object.keys(facetConfigs) as Array<FacetKey>).filter(
+    (key) => key !== 'class' && key !== 'terminologySource',
+  );
 
   // Fetch all facets in parallel and build the result object in one pass
   const [facetEntries, sizeRange] = await Promise.all([
