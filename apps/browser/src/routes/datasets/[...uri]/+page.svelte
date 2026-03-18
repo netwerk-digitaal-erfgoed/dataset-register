@@ -17,9 +17,18 @@
   import { getMediaTypeLabel } from '$lib/utils/media-type.js';
   import LanguageBadge from '$lib/components/LanguageBadge.svelte';
   import { SvelteSet } from 'svelte/reactivity';
-  import { Alert, Clipboard, Tooltip } from 'flowbite-svelte';
+  import {
+    Alert,
+    Clipboard,
+    Dropdown,
+    DropdownDivider,
+    DropdownItem,
+    Tooltip,
+  } from 'flowbite-svelte';
   import CheckOutline from 'flowbite-svelte-icons/CheckOutline.svelte';
+  import ChevronDownOutline from 'flowbite-svelte-icons/ChevronDownOutline.svelte';
   import ClipboardCleanSolid from 'flowbite-svelte-icons/ClipboardCleanSolid.svelte';
+  import DownloadOutline from 'flowbite-svelte-icons/DownloadOutline.svelte';
   import ArrowUpRightFromSquareOutline from 'flowbite-svelte-icons/ArrowUpRightFromSquareOutline.svelte';
   import InfoCircleSolid from 'flowbite-svelte-icons/InfoCircleSolid.svelte';
   import SearchOutline from 'flowbite-svelte-icons/SearchOutline.svelte';
@@ -58,6 +67,13 @@
       RDF_MEDIA_TYPES.includes(
         distribution.mediaType as (typeof RDF_MEDIA_TYPES)[number],
       )
+    );
+  }
+
+  function isGzipDistribution(distribution: DistributionDetail) {
+    return (
+      distribution.mediaType?.includes('+gzip') ||
+      distribution.accessURL.endsWith('.gz')
     );
   }
 
@@ -102,6 +118,53 @@
         })
       : [],
   );
+
+  const sparqlDistributions = $derived(
+    sortedDistributions.filter(isSparqlDistribution),
+  );
+  const downloadDistributions = $derived(
+    sortedDistributions.filter((d) => !isSparqlDistribution(d)),
+  );
+  const rdfDownloads = $derived(
+    downloadDistributions.filter(isRdfDistribution),
+  );
+  const otherDownloads = $derived(
+    downloadDistributions.filter((d) => !isRdfDistribution(d)),
+  );
+
+  function yasguiUrl(endpoint: string): string {
+    return `https://yasgui.org/#query=SELECT+*+WHERE+%7B%0A++%3Fsub+%3Fpred+%3Fobj+.%0A%7D+%0ALIMIT+10&endpoint=${encodeURIComponent(endpoint)}`;
+  }
+
+  // Select preferred download distribution by priority
+  const preferredDownload = $derived.by(() => {
+    if (downloadDistributions.length === 0) return undefined;
+
+    // Verified first, then unverified, same priority order
+    for (const checkVerified of [true, false]) {
+      const candidates = downloadDistributions.filter(
+        (d) => verifiedUrls.has(d.accessURL) === checkVerified,
+      );
+      const ntGzip = candidates.find(
+        (d) => d.mediaType === 'application/n-triples' && isGzipDistribution(d),
+      );
+      if (ntGzip) return ntGzip;
+      const anyRdfGzip = candidates.find(
+        (d) => isRdfDistribution(d) && isGzipDistribution(d),
+      );
+      if (anyRdfGzip) return anyRdfGzip;
+      const turtle = candidates.find((d) => d.mediaType === 'text/turtle');
+      if (turtle) return turtle;
+      const jsonLd = candidates.find(
+        (d) => d.mediaType === 'application/ld+json',
+      );
+      if (jsonLd) return jsonLd;
+      const anyRdf = candidates.find(isRdfDistribution);
+      if (anyRdf) return anyRdf;
+    }
+
+    return downloadDistributions[0];
+  });
 
   // Extract keywords and genres for current locale
   const localizedKeywords = $derived(getLocalizedArray(dataset.keyword));
@@ -190,6 +253,11 @@
       total,
     };
   });
+
+  const splitBtnMainClass =
+    'inline-flex items-center rounded-s-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:z-10 focus:ring-2 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800';
+  const splitBtnChevronClass =
+    'inline-flex cursor-pointer items-center rounded-e-lg border-s border-blue-800 bg-blue-700 px-2 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:z-10 focus:ring-2 focus:ring-blue-300 dark:border-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800';
 </script>
 
 <svelte:head>
@@ -202,6 +270,101 @@
   <link rel="alternate" hreflang="en" href={enUrl} />
   <link rel="alternate" hreflang="x-default" href={canonicalUrl} />
 </svelte:head>
+
+{#snippet verifiedBadge(tooltipId: string)}
+  <span
+    id={tooltipId}
+    class="inline-flex cursor-help items-center gap-1 rounded-full bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400"
+  >
+    <CheckOutline class="h-3 w-3" />
+    {m.detail_verified()}
+  </span>
+  <Tooltip triggeredBy="#{tooltipId}">{m.detail_verified_tooltip()}</Tooltip>
+{/snippet}
+
+{#snippet copyButton(url: string)}
+  <Clipboard value={url} class="ms-auto p-0">
+    {#snippet children(success)}
+      <Tooltip>{success ? m.detail_copied() : m.detail_copy()}</Tooltip>
+      {#if success}<CheckOutline
+          class="h-4 w-4 text-gray-500 dark:text-gray-400"
+        />{:else}<ClipboardCleanSolid
+          class="h-4 w-4 text-gray-500 dark:text-gray-400"
+        />{/if}
+    {/snippet}
+  </Clipboard>
+{/snippet}
+
+{#snippet downloadDropdownItem(
+  distribution: DistributionDetail,
+  tooltipPrefix: string,
+  distIndex: number,
+)}
+  {@const isVerified = verifiedUrls.has(distribution.accessURL)}
+  <DropdownItem class="flex flex-col items-start gap-1 !whitespace-normal">
+    <div class="flex w-full items-center gap-2">
+      {#if distribution.mediaType}
+        <span
+          class="inline-flex items-center truncate rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+          title={distribution.mediaType}
+        >
+          {getMediaTypeLabel(distribution.mediaType)}
+        </span>
+      {/if}
+      {#if distribution.byteSize}
+        <span class="text-xs text-gray-500 dark:text-gray-400">
+          {formatByteSize(distribution.byteSize)}
+        </span>
+      {/if}
+      {#if isVerified}
+        {@render verifiedBadge(
+          `tooltip-${tooltipPrefix}-verified-${distIndex}`,
+        )}
+      {/if}
+      {@render copyButton(distribution.accessURL)}
+    </div>
+    {#if distribution.title}
+      <span class="text-sm font-medium text-gray-900 dark:text-white">
+        {getLocalizedValue(distribution.title)}
+      </span>
+    {/if}
+    <a
+      href={distribution.accessURL}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="block max-w-full truncate text-xs text-blue-600 hover:underline dark:text-blue-400"
+      title={distribution.accessURL}
+    >
+      {distribution.accessURL}
+      <span class="sr-only"> ({m.opens_in_new_tab()})</span>
+    </a>
+    {#if distribution.description}
+      <span class="text-xs text-gray-500 dark:text-gray-400">
+        {getLocalizedValue(distribution.description)}
+      </span>
+    {/if}
+    {#if distribution.issued || distribution.modified}
+      <div
+        class="flex flex-wrap gap-x-3 text-xs text-gray-500 dark:text-gray-400"
+      >
+        {#if distribution.issued}
+          <span
+            >{m.detail_issued()}: {new Date(
+              distribution.issued,
+            ).toLocaleDateString(getLocale())}</span
+          >
+        {/if}
+        {#if distribution.modified}
+          <span
+            >{m.detail_modified()}: {new Date(
+              distribution.modified,
+            ).toLocaleDateString(getLocale())}</span
+          >
+        {/if}
+      </div>
+    {/if}
+  </DropdownItem>
+{/snippet}
 
 <main class="mx-auto max-w-7xl px-1 py-8 sm:px-6 lg:px-8">
   <!-- Gone/Invalid Dataset Warning -->
@@ -258,39 +421,6 @@
         {getLocalizedValue(dataset.description)}
         <LanguageBadge values={dataset.description} />
       </p>
-    {/if}
-
-    <!-- SPARQL Query Button -->
-    {#if dataset.distribution}
-      {@const sparqlDist = dataset.distribution.find((d) =>
-        d.conformsTo?.includes('https://www.w3.org/TR/sparql11-protocol/'),
-      )}
-      {#if sparqlDist?.accessURL}
-        <a
-          href="https://yasgui.org/#query=SELECT+*+WHERE+%7B%0A++%3Fsub+%3Fpred+%3Fobj+.%0A%7D+%0ALIMIT+10&endpoint={encodeURIComponent(
-            sparqlDist.accessURL,
-          )}"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="mb-6 inline-flex items-center gap-2 rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
-        >
-          <svg
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-          {m.detail_query_dataset()}
-          <span class="sr-only"> ({m.opens_in_new_tab()})</span>
-        </a>
-      {/if}
     {/if}
   </div>
 
@@ -377,7 +507,9 @@
                     d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                   />
                 </svg>
-                {publisherIsCreator ? m.detail_publisher_and_creator() : m.detail_publisher()}
+                {publisherIsCreator
+                  ? m.detail_publisher_and_creator()
+                  : m.detail_publisher()}
                 <span id="tooltip-publisher" class="cursor-pointer">
                   <InfoCircleSolid
                     class="h-4.5 w-4.5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
@@ -894,128 +1026,115 @@
           >{m.detail_distributions_tooltip()}</Tooltip
         >
       </h2>
-      <div
-        class="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800"
-      >
-        {#each sortedDistributions as distribution, distIndex (distribution.$id)}
-          {@const isVerified = verifiedUrls.has(distribution.accessURL)}
-          {@const isSparql = isSparqlDistribution(distribution)}
-          <div class="flex flex-wrap items-center gap-3 px-4 py-3">
-            <!-- Type badge -->
-            <div class="w-20 flex-shrink-0">
-              {#if isSparql}
-                <span
-                  class="inline-flex w-full items-center justify-center rounded bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
+      <div class="flex flex-wrap gap-3">
+        <!-- Query dataset split button -->
+        {#if sparqlDistributions.length > 0}
+          <div class="inline-flex rounded-lg shadow-sm" role="group">
+            <a
+              href={yasguiUrl(sparqlDistributions[0].accessURL)}
+              target="_blank"
+              rel="noopener noreferrer"
+              class={splitBtnMainClass}
+            >
+              <SearchOutline class="me-2 h-4 w-4" />
+              {m.detail_query_dataset()}
+              <span class="sr-only"> ({m.opens_in_new_tab()})</span>
+            </a>
+            <button
+              type="button"
+              id="btn-query-dropdown"
+              aria-label={m.detail_show_query_endpoints()}
+              class={splitBtnChevronClass}
+            >
+              <ChevronDownOutline class="h-4 w-4" />
+            </button>
+            <Dropdown
+              triggeredBy="#btn-query-dropdown"
+              class="w-96 max-h-96 overflow-y-auto border border-gray-200 shadow-lg dark:border-gray-600"
+            >
+              {#each sparqlDistributions as distribution, distIndex (distribution.$id)}
+                {@const isVerified = verifiedUrls.has(distribution.accessURL)}
+                <DropdownItem
+                  class="flex flex-col items-start gap-1 !whitespace-normal"
                 >
-                  SPARQL
-                </span>
-              {:else if distribution.mediaType}
-                <span
-                  class="inline-flex w-full items-center justify-center truncate rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-300"
-                  title={distribution.mediaType}
-                >
-                  {getMediaTypeLabel(distribution.mediaType)}
-                </span>
-              {/if}
-            </div>
-
-            <!-- Title, URL, and Description -->
-            <div class="min-w-0 flex-1">
-              {#if distribution.title}
-                <div class="text-sm font-medium text-gray-900 dark:text-white">
-                  {getLocalizedValue(distribution.title)}
-                </div>
-              {/if}
-              <a
-                href={isSparql
-                  ? `https://yasgui.org/#query=SELECT+*+WHERE+%7B%0A++%3Fsub+%3Fpred+%3Fobj+.%0A%7D+%0ALIMIT+10&endpoint=${encodeURIComponent(distribution.accessURL)}`
-                  : distribution.accessURL}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="block truncate text-sm text-blue-600 hover:underline dark:text-blue-400"
-                title={isSparql
-                  ? `Query in YASGUI: ${distribution.accessURL}`
-                  : distribution.accessURL}
-              >
-                {distribution.accessURL}
-                <span class="sr-only"> ({m.opens_in_new_tab()})</span>
-              </a>
-              {#if distribution.description}
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {getLocalizedValue(distribution.description)}
-                </p>
-              {/if}
-              {#if distribution.issued || distribution.modified || distribution.byteSize}
-                <div
-                  class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500 dark:text-gray-400"
-                >
-                  {#if distribution.issued}
+                  <div class="flex w-full items-center gap-2">
                     <span
-                      >{m.detail_issued()}: {new Date(
-                        distribution.issued,
-                      ).toLocaleDateString(getLocale())}</span
+                      class="inline-flex items-center rounded bg-purple-100 px-1.5 py-0.5 text-xs font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
                     >
-                  {/if}
-                  {#if distribution.modified}
+                      SPARQL
+                    </span>
+                    {#if isVerified}
+                      {@render verifiedBadge(
+                        `tooltip-sparql-verified-${distIndex}`,
+                      )}
+                    {/if}
+                    {@render copyButton(distribution.accessURL)}
+                  </div>
+                  {#if distribution.title}
                     <span
-                      >{m.detail_modified()}: {new Date(
-                        distribution.modified,
-                      ).toLocaleDateString(getLocale())}</span
+                      class="text-sm font-medium text-gray-900 dark:text-white"
                     >
+                      {getLocalizedValue(distribution.title)}
+                    </span>
                   {/if}
-                  {#if distribution.byteSize}
-                    <span
-                      >{m.detail_file_size()}: {formatByteSize(
-                        distribution.byteSize,
-                      )}</span
-                    >
-                  {/if}
-                </div>
-              {/if}
-            </div>
-
-            <!-- Action buttons -->
-            <div class="flex flex-shrink-0 items-center gap-1">
-              {#if isVerified}
-                <span
-                  id="tooltip-verified-{distIndex}"
-                  class="inline-flex cursor-help items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                >
-                  <svg
-                    class="h-3 w-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  <a
+                    href={yasguiUrl(distribution.accessURL)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="block max-w-full truncate text-xs text-blue-600 hover:underline dark:text-blue-400"
+                    title={distribution.accessURL}
                   >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  {m.detail_verified()}
-                </span>
-                <Tooltip triggeredBy="#tooltip-verified-{distIndex}"
-                  >{m.detail_verified_tooltip()}</Tooltip
-                >
-              {/if}
-
-              <Clipboard value={distribution.accessURL} class="p-0">
-                {#snippet children(success)}
-                  <Tooltip
-                    >{success ? m.detail_copied() : m.detail_copy()}</Tooltip
-                  >
-                  {#if success}<CheckOutline
-                      class="h-4 w-4 text-gray-500 dark:text-gray-400"
-                    />{:else}<ClipboardCleanSolid
-                      class="h-4 w-4 text-gray-500 dark:text-gray-400"
-                    />{/if}
-                {/snippet}
-              </Clipboard>
-            </div>
+                    {distribution.accessURL}
+                    <span class="sr-only"> ({m.opens_in_new_tab()})</span>
+                  </a>
+                  {#if distribution.description}
+                    <span class="text-xs text-gray-500 dark:text-gray-400">
+                      {getLocalizedValue(distribution.description)}
+                    </span>
+                  {/if}
+                </DropdownItem>
+              {/each}
+            </Dropdown>
           </div>
-        {/each}
+        {/if}
+
+        <!-- Download dataset split button -->
+        {#if downloadDistributions.length > 0 && preferredDownload}
+          <div class="inline-flex rounded-lg shadow-sm" role="group">
+            <a
+              href={preferredDownload.accessURL}
+              target="_blank"
+              rel="noopener noreferrer"
+              class={splitBtnMainClass}
+            >
+              <DownloadOutline class="me-2 h-4 w-4" />
+              {m.detail_download_dataset()}
+              <span class="sr-only"> ({m.opens_in_new_tab()})</span>
+            </a>
+            <button
+              type="button"
+              id="btn-download-dropdown"
+              aria-label={m.detail_show_download_options()}
+              class={splitBtnChevronClass}
+            >
+              <ChevronDownOutline class="h-4 w-4" />
+            </button>
+            <Dropdown
+              triggeredBy="#btn-download-dropdown"
+              class="w-96 max-h-96 overflow-y-auto border border-gray-200 shadow-lg dark:border-gray-600"
+            >
+              {#each rdfDownloads as distribution, distIndex (distribution.$id)}
+                {@render downloadDropdownItem(distribution, 'rdf', distIndex)}
+              {/each}
+              {#if rdfDownloads.length > 0 && otherDownloads.length > 0}
+                <DropdownDivider />
+              {/if}
+              {#each otherDownloads as distribution, distIndex (distribution.$id)}
+                {@render downloadDropdownItem(distribution, 'other', distIndex)}
+              {/each}
+            </Dropdown>
+          </div>
+        {/if}
       </div>
     </div>
   {/if}
