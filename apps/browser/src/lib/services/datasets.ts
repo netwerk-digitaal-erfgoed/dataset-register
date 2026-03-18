@@ -266,39 +266,43 @@ export interface SearchResults {
   time: number;
 }
 
-async function fetchDatasetSizes(
-  datasetIris: string[],
-): Promise<Map<string, number>> {
-  if (datasetIris.length === 0) return new Map();
-
-  const values = datasetIris.map((iri) => `<${iri}>`).join(' ');
-  const query = `
-    PREFIX void: <http://rdfs.org/ns/void#>
-    SELECT ?dataset ?size WHERE {
-      VALUES ?dataset { ${values} }
-      ?dataset a void:Dataset ;
-        void:triples ?size .
-    }
-  `;
-
-  const sizeMap = new Map<string, number>();
-  try {
-    const bindings = await fetcher.fetchBindings(
-      PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
-      query,
-    );
-    for await (const binding of bindings) {
-      const typedBinding = binding as unknown as {
-        dataset: { value: string };
-        size: { value: string };
-      };
-      sizeMap.set(typedBinding.dataset.value, parseInt(typedBinding.size.value));
-    }
-  } catch (error) {
-    console.error('Dataset sizes query failed:', error);
-  }
-  return sizeMap;
-}
+// TODO: re-enable once SERVICE federation OOM is resolved
+// async function fetchDatasetSizes(
+//   datasetIris: string[],
+// ): Promise<Map<string, number>> {
+//   if (datasetIris.length === 0) return new Map();
+//
+//   const values = datasetIris.map((iri) => `<${iri}>`).join(' ');
+//   const query = `
+//     PREFIX void: <http://rdfs.org/ns/void#>
+//     SELECT ?dataset ?size WHERE {
+//       VALUES ?dataset { ${values} }
+//       ?dataset a void:Dataset ;
+//         void:triples ?size .
+//     }
+//   `;
+//
+//   const sizeMap = new Map<string, number>();
+//   try {
+//     const bindings = await fetcher.fetchBindings(
+//       PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+//       query,
+//     );
+//     for await (const binding of bindings) {
+//       const typedBinding = binding as unknown as {
+//         dataset: { value: string };
+//         size: { value: string };
+//       };
+//       sizeMap.set(
+//         typedBinding.dataset.value,
+//         parseInt(typedBinding.size.value),
+//       );
+//     }
+//   } catch (error) {
+//     console.error('Dataset sizes query failed:', error);
+//   }
+//   return sizeMap;
+// }
 
 async function fetchDatasetCards(
   searchFilters: SearchRequest,
@@ -338,15 +342,15 @@ export async function fetchDatasets(
     fetchFacets(searchFilters),
   ]);
 
-  // Fetch dataset sizes from knowledge graph (sequential: needs dataset IRIs)
-  const sizes = await fetchDatasetSizes(datasets.map((d) => d.$id));
-  const datasetsWithSizes = datasets.map((dataset) => {
-    const size = sizes.get(dataset.$id);
-    return size !== undefined ? { ...dataset, size } : dataset;
-  });
+  // TODO: re-enable once SERVICE federation OOM is resolved
+  // const sizes = await fetchDatasetSizes(datasets.map((d) => d.$id));
+  // const datasetsWithSizes = datasets.map((dataset) => {
+  //   const size = sizes.get(dataset.$id);
+  //   return size !== undefined ? { ...dataset, size } : dataset;
+  // });
 
   return {
-    datasets: datasetsWithSizes,
+    datasets,
     facets,
     total,
     time: performance.now() - startTime,

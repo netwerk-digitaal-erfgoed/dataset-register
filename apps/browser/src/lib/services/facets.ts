@@ -374,10 +374,14 @@ export const facetQuery = (facet: string, searchFiltersQuery: string) => `
 export async function fetchFacets(
   searchFilters: SearchRequest,
 ): Promise<Facets> {
-  const facetKeys = Object.keys(facetConfigs) as Array<FacetKey>;
+  // TODO: re-enable class, terminologySource, and sizeHistogram once SERVICE
+  // federation OOM is resolved — all three use SERVICE through QLever.
+  const facetKeys = (
+    Object.keys(facetConfigs) as Array<FacetKey>
+  ).filter((key) => key !== 'class' && key !== 'terminologySource');
 
   // Fetch all facets in parallel and build the result object in one pass
-  const [facetEntries, sizeRange, sizeHistogram] = await Promise.all([
+  const [facetEntries, sizeRange] = await Promise.all([
     Promise.all(
       facetKeys.map(
         async (key) =>
@@ -385,8 +389,8 @@ export async function fetchFacets(
       ),
     ),
     fetchSizeRange(),
-    fetchSizeHistogram(searchFilters),
   ]);
+  const sizeHistogram: HistogramBin[] = [];
 
   return {
     ...Object.fromEntries(facetEntries),
