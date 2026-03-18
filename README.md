@@ -173,36 +173,47 @@ If the dataset’s description is provided in Schema.org rather than DCAT, the d
 ‘Based on’ column shows the corresponding Schema.org property.
 See the [Requirements for Datasets](https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/) for more details.
 
-| Property                                                                                 | Description                                      | Based on                                                         |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------- |
-| [`dct:title`](http://purl.org/dc/terms/title)                                            | Dataset title.                                   | [`schema:name`](https://schema.org/name)                         |
-| [`dct:alternative`](http://purl.org/dc/terms/alternative)                                | Dataset alternate title.                         | [`schema:alternateName`](https://schema.org/alternateName)       |
-| [`dct:identifier`](http://purl.org/dc/terms/identifier)                                  | Dataset identifier.                              | [`schema:identifier`](https://schema.org/identifier)             |
-| [`dct:description`](http://purl.org/dc/terms/description)                                | Dataset description.                             | [`schema:description`](https://schema.org/description)           |
-| [`dct:license`](http://purl.org/dc/terms/license)                                        | Dataset license.                                 | [`schema:license`](https://schema.org/license)                   |
-| [`dct:language`](http://purl.org/dc/terms/language)                                      | Language(s) in which the dataset is available.   | [`schema:inLanguage`](https://schema.org/inLanguage)             |
-| [`dcat:keyword`](https://www.w3.org/TR/vocab-dcat-3/#Property:resource_keyword)          | Keywords or tags that describe the dataset.      | [`schema:keywords`](https://schema.org/keywords)                 |
-| [`dcat:landingPage`](https://www.w3.org/TR/vocab-dcat-3/#Property:resource_landing_page) | URL of a webpage where the dataset is described. | [`schema:mainEntityOfPage`](https://schema.org/mainEntityOfPage) |
-| [`dct:source`](http://purl.org/dc/terms/source)                                          | URL(s) of datasets the dataset is based on.      | [`schema:isBasedOn`](https://schema.org/isBasedOn)               |
-| [`dct:created`](http://purl.org/dc/terms/created)                                        | Dataset creation date.                           | [`schema:dateCreated`](https://schema.org/dateCreated)           |
-| [`dct:issued`](http://purl.org/dc/terms/issued)                                          | Dataset publication date.                        | [`schema:datePublished`](https://schema.org/datePublished)       |
-| [`dct:modified`](http://purl.org/dc/terms/modified)                                      | Dataset last modification date.                  | [`schema:dateModified`](https://schema.org/dateModifed)          |
-| [`owl:versionInfo`](https://www.w3.org/2002/07/owl#versionInfo)                          | Dataset version                                  | [`schema:version`](https://schema.org/version)                   |
-| [`dct:creator`](http://purl.org/dc/terms/creator)                                        | Dataset [creator](#foaforganization).            | [`schema:creator`](https://schema.org/creator)                   |
-| [`dct:publisher`](http://purl.org/dc/terms/publisher)                                    | Dataset [publisher](#foaforganization).          | [`schema:publisher`](https://schema.org/publisher)               |
-| [`dcat:distribution`](https://www.w3.org/TR/vocab-dcat-3/#Property:dataset_distribution) | Dataset [distributions](#dcatdistribution).      | [`schema:distribution`](https://schema.org/distribution)         |
+| Property                                                                                 | Description                                      | Based on                                                                   |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------- |
+| [`dct:title`](http://purl.org/dc/terms/title)                                            | Dataset title.                                   | [`schema:name`](https://schema.org/name)                                   |
+| [`dct:alternative`](http://purl.org/dc/terms/alternative)                                | Dataset alternate title.                         | [`schema:alternateName`](https://schema.org/alternateName)                 |
+| [`dct:identifier`](http://purl.org/dc/terms/identifier)                                  | Dataset identifier.                              | [`schema:identifier`](https://schema.org/identifier)                       |
+| [`dct:description`](http://purl.org/dc/terms/description)                                | Dataset description.                             | [`schema:description`](https://schema.org/description)                     |
+| [`dct:license`](http://purl.org/dc/terms/license)                                        | Dataset license.                                 | [`schema:license`](https://schema.org/license)                             |
+| [`dct:language`](http://purl.org/dc/terms/language)                                      | Language(s) in which the dataset is available.   | [`schema:inLanguage`](https://schema.org/inLanguage)                       |
+| [`dcat:keyword`](https://www.w3.org/TR/vocab-dcat-3/#Property:resource_keyword)          | Keywords or tags that describe the dataset.      | [`schema:keywords`](https://schema.org/keywords)                           |
+| [`dcat:landingPage`](https://www.w3.org/TR/vocab-dcat-3/#Property:resource_landing_page) | URL of a webpage where the dataset is described. | [`schema:mainEntityOfPage`](https://schema.org/mainEntityOfPage)           |
+| [`dct:source`](http://purl.org/dc/terms/source)                                          | URL(s) of datasets the dataset is based on.      | [`schema:isBasedOn`](https://schema.org/isBasedOn)                         |
+| [`dct:created`](http://purl.org/dc/terms/created)                                        | Dataset creation date.                           | [`schema:dateCreated`](https://schema.org/dateCreated)                     |
+| [`dct:issued`](http://purl.org/dc/terms/issued)                                          | Dataset publication date.                        | [`schema:datePublished`](https://schema.org/datePublished)                 |
+| [`dct:modified`](http://purl.org/dc/terms/modified)                                      | Dataset last modification date.                  | [`schema:dateModified`](https://schema.org/dateModifed)                    |
+| [`owl:versionInfo`](https://www.w3.org/2002/07/owl#versionInfo)                          | Dataset version                                  | [`schema:version`](https://schema.org/version)                             |
+| [`dct:creator`](http://purl.org/dc/terms/creator)                                        | Dataset [creator](#foaforganization).            | [`schema:creator`](https://schema.org/creator)                             |
+| [`dct:publisher`](http://purl.org/dc/terms/publisher)                                    | Dataset [publisher](#foaforganization).          | [`schema:publisher`](https://schema.org/publisher)                         |
+| [`dct:spatial`](http://purl.org/dc/terms/spatial)                                        | Spatial coverage of the dataset.                 | [`schema:spatialCoverage`](https://schema.org/spatialCoverage)             |
+| [`dct:temporal`](http://purl.org/dc/terms/temporal)                                      | Temporal coverage of the dataset.                | [`schema:temporalCoverage`](https://schema.org/temporalCoverage)           |
+| [`dct:type`](http://purl.org/dc/terms/type)                                              | Dataset type or genre.                           | [`schema:genre`](https://schema.org/genre)                                 |
+| [`dct:isPartOf`](http://purl.org/dc/terms/isPartOf)                                      | Data catalog the dataset is part of.             | [`schema:includedInDataCatalog`](https://schema.org/includedInDataCatalog) |
+| [`dct:hasPart`](http://purl.org/dc/terms/hasPart)                                        | Sub-datasets contained in this dataset.          | [`schema:hasPart`](https://schema.org/hasPart)                             |
+| [`dct:isReferencedBy`](http://purl.org/dc/terms/isReferencedBy)                          | Resources that reference this dataset.           | [`schema:citation`](https://schema.org/citation)                           |
+| [`dcat:distribution`](https://www.w3.org/TR/vocab-dcat-3/#Property:dataset_distribution) | Dataset [distributions](#dcatdistribution).      | [`schema:distribution`](https://schema.org/distribution)                   |
 
 ### `foaf:Organization`
 
-The objects of both the `dct:creator` and `dct:publisher` dataset have type `foaf:Organization`.
+The objects of both the `dct:creator` and `dct:publisher` dataset properties have type `foaf:Organization` or
+`foaf:Person`. The publisher has additional properties beyond those available on the creator.
 
 If the dataset’s organizations are provided in Schema.org rather than DCAT, the organizations are first converted to
 DCAT. The ‘Based on’ column shows the corresponding Schema.org property.
 See the [Requirements for Datasets](https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/) for more details.
 
-| Property                                      | Description        | Based on                                 |
-| --------------------------------------------- | ------------------ | ---------------------------------------- |
-| [`foaf:name`](http://xmlns.com/foaf/0.1/name) | Organization name. | [`schema:name`](https://schema.org/name) |
+| Property                                                | Description                    | Based on                                                       |
+| ------------------------------------------------------- | ------------------------------ | -------------------------------------------------------------- |
+| [`foaf:name`](http://xmlns.com/foaf/0.1/name)           | Organization name.             | [`schema:name`](https://schema.org/name)                       |
+| [`foaf:nick`](http://xmlns.com/foaf/0.1/nick)           | Alternate name (publisher).    | [`schema:alternateName`](https://schema.org/alternateName)     |
+| [`dct:identifier`](http://purl.org/dc/terms/identifier) | Identifier (publisher).        | [`schema:identifier`](https://schema.org/identifier)           |
+| [`foaf:mbox`](http://xmlns.com/foaf/0.1/mbox)           | Email address (publisher).     | [`schema:contactPoint/schema:email`](https://schema.org/email) |
+| [`owl:sameAs`](https://www.w3.org/2002/07/owl#sameAs)   | Equivalent entity (publisher). | [`schema:sameAs`](https://schema.org/sameAs)                   |
 
 ### `dcat:Distribution`
 
@@ -225,6 +236,7 @@ See the [Requirements for Datasets](https://netwerk-digitaal-erfgoed.github.io/r
 | [`dct:license`](http://purl.org/dc/terms/license)            | Distribution license.                                              | `<https://creativecommons.org/publicdomain/zero/1.0/>`                 | [`schema:license`](https://schema.org/license)               |
 | [`dct:title`](http://purl.org/dc/terms/title)                | Distribution title.                                                | `"Data dump"@en`                                                       | [`schema:name`](https://schema.org/name)                     |
 | [`dcat:byteSize`](https://www.w3.org/TR/vocab-dcat-3/)       | Distribution’s download size in bytes.                             | `"12582912"^^xsd:integer`                                              | [`schema:contentSize`](https://schema.org/contentSize)       |
+| [`odrl:hasPolicy`](http://www.w3.org/ns/odrl/2/hasPolicy)    | ODRL policy associated with the distribution.                      |                                                                        |                                                              |
 
 ### Allow list
 
