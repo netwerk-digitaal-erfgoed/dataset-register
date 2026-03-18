@@ -3,7 +3,10 @@ import { dcterms, foaf, ldkit, schema, xsd } from 'ldkit/namespaces';
 import { createLens, type SchemaInterface } from 'ldkit';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { facetConfigs, type Facets, fetchFacets } from '$lib/services/facets';
-import { PUBLIC_SPARQL_ENDPOINT } from '$env/static/public';
+import {
+  PUBLIC_SPARQL_ENDPOINT,
+  PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+} from '$env/static/public';
 import { voidNs } from '../rdf.js';
 import { getLocale } from '$lib/paraglide/runtime';
 import { normalizeMediaType } from '$lib/utils/sparql';
@@ -170,7 +173,6 @@ export function datasetCardsQuery(
       dct:publisher ?publisher ;
       dct:license ?license ;
       dcat:distribution ?distribution ;
-      void:triples ?size ;
       schema:status ?status ;
       schema:datePosted ?datePosted .
     ?publisher a foaf:Agent ;
@@ -244,13 +246,6 @@ export function datasetCardsQuery(
       }
     }
 
-    # Fetch dataset size from Dataset Knowledge Graph via SPARQL Federation
-    OPTIONAL {
-      SERVICE <https://triplestore.netwerkdigitaalerfgoed.nl/repositories/dataset-knowledge-graph> {
-        ?dataset a void:Dataset ;
-          void:triples ?size .
-      }
-    }
   }
   ORDER BY ${orderByClause}
 `;
@@ -269,6 +264,40 @@ export interface SearchResults {
   facets: Facets;
   total: number;
   time: number;
+}
+
+async function fetchDatasetSizes(
+  datasetIris: string[],
+): Promise<Map<string, number>> {
+  if (datasetIris.length === 0) return new Map();
+
+  const values = datasetIris.map((iri) => `<${iri}>`).join(' ');
+  const query = `
+    PREFIX void: <http://rdfs.org/ns/void#>
+    SELECT ?dataset ?size WHERE {
+      VALUES ?dataset { ${values} }
+      ?dataset a void:Dataset ;
+        void:triples ?size .
+    }
+  `;
+
+  const sizeMap = new Map<string, number>();
+  try {
+    const bindings = await fetcher.fetchBindings(
+      PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+      query,
+    );
+    for await (const binding of bindings) {
+      const typedBinding = binding as unknown as {
+        dataset: { value: string };
+        size: { value: string };
+      };
+      sizeMap.set(typedBinding.dataset.value, parseInt(typedBinding.size.value));
+    }
+  } catch (error) {
+    console.error('Dataset sizes query failed:', error);
+  }
+  return sizeMap;
 }
 
 async function fetchDatasetCards(
@@ -309,8 +338,15 @@ export async function fetchDatasets(
     fetchFacets(searchFilters),
   ]);
 
+  // Fetch dataset sizes from knowledge graph (sequential: needs dataset IRIs)
+  const sizes = await fetchDatasetSizes(datasets.map((d) => d.$id));
+  const datasetsWithSizes = datasets.map((dataset) => {
+    const size = sizes.get(dataset.$id);
+    return size !== undefined ? { ...dataset, size } : dataset;
+  });
+
   return {
-    datasets,
+    datasets: datasetsWithSizes,
     facets,
     total,
     time: performance.now() - startTime,
