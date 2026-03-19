@@ -7,7 +7,6 @@ import {
 } from '../src/validator.js';
 import { StreamParser } from 'n3';
 import { Transform } from 'stream';
-import { StandardizeSchemaOrgPrefixToHttps } from '../src/transform.js';
 import { MicrodataRdfParser } from 'microdata-rdf-streaming-parser/lib/MicrodataRdfParser.js';
 import { RdfaParser } from 'rdfa-streaming-parser/lib/RdfaParser.js';
 import rdf from 'rdf-ext';
@@ -266,9 +265,7 @@ const dataset = async (filename: string, parser?: Transform) => {
   return (await rdf
     .dataset()
     .import(
-      stream
-        .pipe(parser ?? (new JsonLdParser() as unknown as Transform))
-        .pipe(new StandardizeSchemaOrgPrefixToHttps()),
+      stream.pipe(parser ?? (new JsonLdParser() as unknown as Transform)),
     )) as unknown as Dataset;
 };
 

@@ -1,8 +1,8 @@
 import { Transform } from 'node:stream';
 import type { TransformCallback } from 'node:stream';
 import factory from 'rdf-ext';
-import { NamedNode } from 'n3';
-import type { Quad, Quad_Object } from '@rdfjs/types';
+import type { DatasetCore, Quad } from '@rdfjs/types';
+import type DatasetExt from 'rdf-ext/lib/Dataset.js';
 
 /**
  * Convert http://schema.org prefix to https://schema.org for consistency.
@@ -19,35 +19,41 @@ export class StandardizeSchemaOrgPrefixToHttps extends Transform {
     encoding: BufferEncoding,
     callback: TransformCallback,
   ) {
-    const quad = factory.quad(
-      chunk.subject,
-      chunk.predicate.termType === 'NamedNode'
-        ? this.replace(chunk.predicate as NamedNode)
-        : chunk.predicate,
-      this.object(chunk.object),
-      chunk.graph,
-    );
-    callback(null, quad);
+    callback(null, standardizeQuad(chunk));
   }
+}
 
-  replace(node: NamedNode) {
-    return factory.namedNode(
-      node.value.replace('http://schema.org', 'https://schema.org'),
-    );
-  }
+/**
+ * Convert http://schema.org prefix to https://schema.org in an in-memory dataset.
+ */
+export function standardizeSchemaOrgPrefix(dataset: DatasetCore): DatasetExt {
+  return factory.dataset([...dataset].map(standardizeQuad));
+}
 
-  object(object: Quad_Object) {
-    if (object.termType === 'Literal') {
-      return factory.literal(
-        object.value,
-        object.language || this.replace(object.datatype as NamedNode),
-      );
-    }
+function standardizeQuad(quad: Quad): Quad {
+  const replace = (value: string) =>
+    value.startsWith('http://schema.org/')
+      ? value.replace('http://schema.org/', 'https://schema.org/')
+      : value;
 
-    if (object.termType === 'NamedNode') {
-      return this.replace(object as NamedNode);
-    }
+  const object = quad.object;
+  const standardizedObject =
+    object.termType === 'NamedNode'
+      ? factory.namedNode(replace(object.value))
+      : object.termType === 'Literal'
+        ? factory.literal(
+            object.value,
+            object.language ||
+              factory.namedNode(replace(object.datatype.value)),
+          )
+        : object;
 
-    return object;
-  }
+  return factory.quad(
+    quad.subject,
+    quad.predicate.termType === 'NamedNode'
+      ? factory.namedNode(replace(quad.predicate.value))
+      : quad.predicate,
+    standardizedObject,
+    quad.graph,
+  );
 }
