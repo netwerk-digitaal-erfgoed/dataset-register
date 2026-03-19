@@ -16,6 +16,44 @@ import { getLocale } from '$lib/paraglide/runtime';
 
 const fetcher = new SparqlEndpointFetcher();
 
+/**
+ * Query the knowledge graph directly for dataset IRIs matching a pattern,
+ * and return a VALUES clause for use in QLever queries.
+ * Replaces SERVICE federation which causes QLever OOM.
+ */
+export async function fetchDatasetIrisFromKnowledgeGraph(
+  whereClause: string,
+): Promise<string> {
+  const query = `
+    PREFIX void: <http://rdfs.org/ns/void#>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    SELECT DISTINCT ?dataset WHERE {
+      ${whereClause}
+    }
+  `;
+
+  try {
+    const bindings = await fetcher.fetchBindings(
+      PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+      query,
+    );
+
+    const iris: string[] = [];
+    for await (const binding of bindings) {
+      const typedBinding = binding as unknown as {
+        dataset: { value: string };
+      };
+      iris.push(typedBinding.dataset.value);
+    }
+
+    if (iris.length === 0) return 'FILTER(false)';
+    return `VALUES ?dataset { ${inIris(iris)} }`;
+  } catch (error) {
+    console.error('Knowledge graph filter query failed:', error);
+    return 'FILTER(false)';
+  }
+}
+
 const FacetSchema = {
   '@type': voidNs.Dataset,
   value: rdf.value,
@@ -159,7 +197,7 @@ interface FacetConfig {
   /**
    * Function that takes selected values and returns a SPARQL FILTER clause.
    */
-  filterClause: (values: string[]) => string;
+  filterClause: (values: string[]) => string | Promise<string>;
 
   /**
    * Default SPARQL clause applied when filter is empty (for dataset queries only).
@@ -303,11 +341,11 @@ export const facetConfigs: Record<string, FacetConfig> = {
 
       const classValues = selectedClasses.map((c) => `<${c}>`).join(', ');
 
-      return `SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
+      return fetchDatasetIrisFromKnowledgeGraph(`
         ?dataset void:classPartition ?partition .
         ?partition void:class ?class .
         FILTER(?class IN (${classValues}))
-      }`;
+      `);
     },
   },
   terminologySource: {
@@ -326,12 +364,12 @@ export const facetConfigs: Record<string, FacetConfig> = {
 
       const sourceValues = values.map((s) => `<${s}>`).join(', ');
 
-      return `SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
+      return fetchDatasetIrisFromKnowledgeGraph(`
         [] a void:Linkset ;
           void:subjectsTarget ?dataset ;
           void:objectsTarget ?terminologySource .
         FILTER(?terminologySource IN (${sourceValues}))
-      }`;
+      `);
     },
   },
 };
@@ -419,7 +457,7 @@ export async function fetchFacetValues(
   // Skip defaultClause for facets that have one (so they can show all values)
   const facetConfig = facetConfigs[facet as keyof typeof facetConfigs];
   const skipDefaults = facetConfig?.defaultClause !== undefined;
-  const searchFiltersQuery = filterDatasets(
+  const searchFiltersQuery = await filterDatasets(
     searchFiltersExcludingFacet,
     skipDefaults,
   );
@@ -449,7 +487,7 @@ async function fetchFilteredDatasetIris(
   const searchFiltersExcludingFacet = { ...searchFilters, [facet]: [] };
   const facetConfig = facetConfigs[facet as keyof typeof facetConfigs];
   const skipDefaults = facetConfig?.defaultClause !== undefined;
-  const searchFiltersQuery = filterDatasets(
+  const searchFiltersQuery = await filterDatasets(
     searchFiltersExcludingFacet,
     skipDefaults,
   );
@@ -672,11 +710,13 @@ export async function fetchSizeHistogram(
     ...searchFilters,
     size: { min: undefined, max: undefined },
   };
-  const datasetIris = await fetchFilteredDatasetIris(filtersWithoutSize, 'size');
+  const datasetIris = await fetchFilteredDatasetIris(
+    filtersWithoutSize,
+    'size',
+  );
   if (datasetIris.length === 0) return [];
 
   try {
-
     // Step 2: Query knowledge graph directly for sizes
     const values = inIris(datasetIris);
     const sizeQuery = `

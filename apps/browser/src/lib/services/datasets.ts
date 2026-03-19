@@ -2,7 +2,12 @@ import { dcat } from '@lde/dataset-registry-client';
 import { dcterms, foaf, ldkit, schema, xsd } from 'ldkit/namespaces';
 import { createLens, type SchemaInterface } from 'ldkit';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
-import { facetConfigs, type Facets, fetchFacets } from '$lib/services/facets';
+import {
+  facetConfigs,
+  fetchDatasetIrisFromKnowledgeGraph,
+  type Facets,
+  fetchFacets,
+} from '$lib/services/facets';
 import {
   PUBLIC_SPARQL_ENDPOINT,
   PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
@@ -127,11 +132,12 @@ export interface SearchRequest {
 }
 
 async function countDatasets(filters: SearchRequest) {
+  const filterQuery = await filterDatasets(filters);
   const query = `
   ${prefixes}
 
   SELECT (COUNT(DISTINCT ?dataset) as ?count) WHERE {
-    ${filterDatasets(filters)}
+    ${filterQuery}
   }`;
 
   try {
@@ -152,7 +158,7 @@ async function countDatasets(filters: SearchRequest) {
 
 export type OrderBy = 'title' | 'datePosted';
 
-export function datasetCardsQuery(
+export async function datasetCardsQuery(
   filters: SearchRequest,
   limit: number,
   offset = 0,
@@ -161,6 +167,7 @@ export function datasetCardsQuery(
 ) {
   const orderByClause =
     orderBy === 'datePosted' ? 'DESC(?datePosted)' : `?status ?titleForSort`;
+  const filterQuery = await filterDatasets(filters);
 
   return `
   ${prefixes}
@@ -185,7 +192,7 @@ export function datasetCardsQuery(
     # Inside the default graph, which contains the registry's metadata.
     {
       SELECT ?dataset ${orderBy === 'title' ? '(SAMPLE(?title_) AS ?titleForSort)' : '(SAMPLE(?datePosted_) AS ?datePosted)'} WHERE {
-        ${filterDatasets(filters)}
+        ${filterQuery}
 
         OPTIONAL {
           ?registrationUrl schema:validUntil ?validUntil .
@@ -251,12 +258,15 @@ export function datasetCardsQuery(
 `;
 }
 
-export const filterDatasets = (filters: SearchRequest, skipDefaults = false) =>
+export const filterDatasets = async (
+  filters: SearchRequest,
+  skipDefaults = false,
+) =>
   `?dataset a dcat:Dataset ;
     schema:subjectOf ?registrationUrl .
   filter(isuri(?dataset))
 
-  ${filterClauses(filters, skipDefaults)}
+  ${await filterClauses(filters, skipDefaults)}
 `;
 
 export interface SearchResults {
@@ -310,7 +320,7 @@ async function fetchDatasetCards(
   orderBy: OrderBy,
   locale: string,
 ): Promise<DatasetCard[]> {
-  const query = datasetCardsQuery(
+  const query = await datasetCardsQuery(
     searchFilters,
     limit,
     offset,
@@ -356,12 +366,12 @@ export async function fetchDatasets(
   };
 }
 
-function filterClauses(searchFilters: SearchRequest, skipDefaults = false) {
+async function filterClauses(searchFilters: SearchRequest, skipDefaults = false) {
   if (!searchFilters) {
     return '';
   }
 
-  const filterClausesArray: string[] = [];
+  const filterClausesArray: (string | Promise<string>)[] = [];
 
   const {
     query,
@@ -416,28 +426,25 @@ function filterClauses(searchFilters: SearchRequest, skipDefaults = false) {
   }
 
   if (size.min !== undefined || size.max !== undefined) {
+    // Query the knowledge graph directly instead of via QLever SERVICE federation.
     const sizeFilters: string[] = [];
-
-    // When filtering by size, require datasets to have size data (not OPTIONAL).
-    // This ensures only datasets with known sizes are returned in filtered results.
-    filterClausesArray.push(`
-      SERVICE <https://triplestore.netwerkdigitaalerfgoed.nl/repositories/dataset-knowledge-graph> {
-        ?dataset a void:Dataset ;
-          void:triples ?datasetSize .
-      }
-    `);
-
     if (size.min !== undefined) {
       sizeFilters.push(`?datasetSize >= ${size.min}`);
     }
     if (size.max !== undefined) {
       sizeFilters.push(`?datasetSize <= ${size.max}`);
     }
+    const sizeFilter =
+      sizeFilters.length > 0 ? `FILTER(${sizeFilters.join(' && ')})` : '';
 
-    if (sizeFilters.length > 0) {
-      filterClausesArray.push(`FILTER(${sizeFilters.join(' && ')})`);
-    }
+    filterClausesArray.push(
+      fetchDatasetIrisFromKnowledgeGraph(`
+        ?dataset a void:Dataset ;
+          void:triples ?datasetSize .
+        ${sizeFilter}
+      `),
+    );
   }
 
-  return filterClausesArray.join('\n  ');
+  return (await Promise.all(filterClausesArray)).join('\n  ');
 }
