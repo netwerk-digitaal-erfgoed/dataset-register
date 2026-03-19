@@ -9,7 +9,7 @@ import {
 } from '$env/static/public';
 import { voidNs } from '../rdf.js';
 import { getLocale } from '$lib/paraglide/runtime';
-import { normalizeMediaType } from '$lib/utils/sparql';
+import { inIris, normalizeMediaType } from '$lib/utils/sparql';
 
 export const SPARQL_ENDPOINT = PUBLIC_SPARQL_ENDPOINT;
 const fetcher = new SparqlEndpointFetcher();
@@ -271,7 +271,7 @@ async function fetchDatasetSizes(
 ): Promise<Map<string, number>> {
   if (datasetIris.length === 0) return new Map();
 
-  const values = datasetIris.map((iri) => `<${iri}>`).join(' ');
+  const values = inIris(datasetIris);
   const query = `
     PREFIX void: <http://rdfs.org/ns/void#>
     SELECT ?dataset ?size WHERE {
@@ -292,7 +292,10 @@ async function fetchDatasetSizes(
         dataset: { value: string };
         size: { value: string };
       };
-      sizeMap.set(typedBinding.dataset.value, parseInt(typedBinding.size.value));
+      sizeMap.set(
+        typedBinding.dataset.value,
+        parseInt(typedBinding.size.value),
+      );
     }
   } catch (error) {
     console.error('Dataset sizes query failed:', error);

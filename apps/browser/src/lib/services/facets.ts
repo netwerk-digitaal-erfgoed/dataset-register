@@ -11,11 +11,10 @@ import { getLocalizedValue } from '$lib/utils/i18n';
 import * as m from '$lib/paraglide/messages';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { voidNs } from '../rdf.js';
-import { inLiterals, normalizeMediaType } from '$lib/utils/sparql';
+import { inIris, inLiterals, normalizeMediaType } from '$lib/utils/sparql';
 import { getLocale } from '$lib/paraglide/runtime';
 
 const fetcher = new SparqlEndpointFetcher();
-
 
 const FacetSchema = {
   '@type': voidNs.Dataset,
@@ -381,19 +380,24 @@ export async function fetchFacets(
     (key) => key !== 'class' && key !== 'terminologySource',
   );
 
-  const [facetEntries, classFacet, terminologySourceFacet, sizeRange, sizeHistogram] =
-    await Promise.all([
-      Promise.all(
-        facetKeys.map(
-          async (key) =>
-            [key, await fetchFacetValues(key, searchFilters)] as const,
-        ),
+  const [
+    facetEntries,
+    classFacet,
+    terminologySourceFacet,
+    sizeRange,
+    sizeHistogram,
+  ] = await Promise.all([
+    Promise.all(
+      facetKeys.map(
+        async (key) =>
+          [key, await fetchFacetValues(key, searchFilters)] as const,
       ),
-      fetchClassFacetValues(searchFilters),
-      fetchTerminologySourceFacetValues(searchFilters),
-      fetchSizeRange(),
-      fetchSizeHistogram(searchFilters),
-    ]);
+    ),
+    fetchClassFacetValues(searchFilters),
+    fetchTerminologySourceFacetValues(searchFilters),
+    fetchSizeRange(),
+    fetchSizeHistogram(searchFilters),
+  ]);
 
   return {
     ...Object.fromEntries(facetEntries),
@@ -467,7 +471,10 @@ async function fetchFilteredDatasetIris(
       iris.push(typedBinding.dataset.value);
     }
   } catch (error) {
-    console.error(`Failed to fetch filtered dataset IRIs for "${facet}":`, error);
+    console.error(
+      `Failed to fetch filtered dataset IRIs for "${facet}":`,
+      error,
+    );
   }
   return iris;
 }
@@ -482,12 +489,10 @@ async function fetchClassFacetValues(
   const datasetIris = await fetchFilteredDatasetIris(searchFilters, 'class');
   if (datasetIris.length === 0) return [];
 
-  const values = datasetIris.map((iri) => `<${iri}>`).join(' ');
-  const classGroupQueries = Object.keys(classGroups)
+  const values = inIris(datasetIris);
+  const classGroupBinds = Object.keys(classGroups)
     .map(
       (group) => `UNION {
-        VALUES ?dataset { ${values} }
-        ?dataset void:classPartition ?partition .
         ?partition void:class ?class .
         FILTER(?class IN (${classGroups[group as keyof typeof classGroups].map((c) => `<${c}>`).join(', ')}))
         BIND("${group}" AS ?value)
@@ -498,12 +503,12 @@ async function fetchClassFacetValues(
   const query = `
     PREFIX void: <http://rdfs.org/ns/void#>
     SELECT ?value (COUNT(DISTINCT ?dataset) AS ?count) WHERE {
+      VALUES ?dataset { ${values} }
+      ?dataset void:classPartition ?partition .
       {
-        VALUES ?dataset { ${values} }
-        ?dataset void:classPartition ?partition .
         ?partition void:class ?value .
       }
-      ${classGroupQueries}
+      ${classGroupBinds}
     }
     GROUP BY ?value
     ORDER BY DESC(?count) ?value
@@ -547,18 +552,18 @@ async function fetchTerminologySourceFacetValues(
   );
   if (datasetIris.length === 0) return [];
 
-  const values = datasetIris.map((iri) => `<${iri}>`).join(' ');
+  const values = inIris(datasetIris);
   const query = `
     PREFIX void: <http://rdfs.org/ns/void#>
     PREFIX dct: <http://purl.org/dc/terms/>
-    SELECT ?value ?label (COUNT(DISTINCT ?dataset) AS ?count) WHERE {
+    SELECT ?value (SAMPLE(?label_) AS ?label) (COUNT(DISTINCT ?dataset) AS ?count) WHERE {
       VALUES ?dataset { ${values} }
       [] a void:Linkset ;
         void:subjectsTarget ?dataset ;
         void:objectsTarget ?value .
-      OPTIONAL { ?value dct:title ?label }
+      OPTIONAL { ?value dct:title ?label_ }
     }
-    GROUP BY ?value ?label
+    GROUP BY ?value
     ORDER BY DESC(?count) ?value
   `;
 
@@ -661,38 +666,19 @@ export async function fetchSizeRange(): Promise<FacetValueRange> {
 export async function fetchSizeHistogram(
   searchFilters: SearchRequest,
 ): Promise<HistogramBin[]> {
-  // Remove size filters for histogram - we want to show full distribution
+  // Remove size filters for histogram - we want to show full distribution.
+  // Use a dummy facet key so fetchFilteredDatasetIris clears it.
   const filtersWithoutSize = {
     ...searchFilters,
     size: { min: undefined, max: undefined },
   };
-
-  // Step 1: Get filtered dataset IRIs from QLever
-  const datasetQuery = `
-    ${prefixes}
-    SELECT DISTINCT ?dataset WHERE {
-      ${filterDatasets(filtersWithoutSize)}
-    }
-  `;
+  const datasetIris = await fetchFilteredDatasetIris(filtersWithoutSize, 'size');
+  if (datasetIris.length === 0) return [];
 
   try {
-    const datasetBindings = await fetcher.fetchBindings(
-      PUBLIC_SPARQL_ENDPOINT,
-      datasetQuery,
-    );
-
-    const datasetIris: string[] = [];
-    for await (const binding of datasetBindings) {
-      const typedBinding = binding as unknown as {
-        dataset: { value: string };
-      };
-      datasetIris.push(typedBinding.dataset.value);
-    }
-
-    if (datasetIris.length === 0) return [];
 
     // Step 2: Query knowledge graph directly for sizes
-    const values = datasetIris.map((iri) => `<${iri}>`).join(' ');
+    const values = inIris(datasetIris);
     const sizeQuery = `
       PREFIX void: <http://rdfs.org/ns/void#>
       SELECT ?dataset ?size WHERE {
@@ -714,26 +700,7 @@ export async function fetchSizeHistogram(
         size: { value: string };
       };
       const size = parseInt(typedBinding.size.value);
-      const bin =
-        size < 10
-          ? 0
-          : size < 100
-            ? 1
-            : size < 1000
-              ? 2
-              : size < 10000
-                ? 3
-                : size < 100000
-                  ? 4
-                  : size < 1000000
-                    ? 5
-                    : size < 10000000
-                      ? 6
-                      : size < 100000000
-                        ? 7
-                        : size < 1000000000
-                          ? 8
-                          : 9;
+      const bin = Math.min(Math.floor(Math.log10(Math.max(size, 1))), 9);
       binCounts.set(bin, (binCounts.get(bin) ?? 0) + 1);
     }
 
