@@ -43,6 +43,8 @@
   // Data is loaded server-side via +page.ts for SEO
   const { data }: { data: DatasetDetailResult } = $props();
   const dataset = $derived(data.dataset);
+  const distributions = $derived(data.distributions);
+  const totalDistributions = $derived(data.totalDistributions);
   const summary = $derived(data.summary);
   const linksets = $derived(data.linksets);
 
@@ -101,22 +103,20 @@
 
   // Sort distributions: SPARQL first, then RDF (verified first), then others
   const sortedDistributions = $derived(
-    dataset.distribution
-      ? [...dataset.distribution].sort((a, b) => {
-          // Priority: SPARQL (2) > RDF (1) > other (0), then verified first
-          const priority = (d: typeof a) => {
-            if (isSparqlDistribution(d)) return 2;
-            if (isRdfDistribution(d)) return 1;
-            return 0;
-          };
-          const isVerified = (d: typeof a) => verifiedUrls.has(d.accessURL);
+    [...distributions].sort((a, b) => {
+      // Priority: SPARQL (2) > RDF (1) > other (0), then verified first
+      const priority = (d: typeof a) => {
+        if (isSparqlDistribution(d)) return 2;
+        if (isRdfDistribution(d)) return 1;
+        return 0;
+      };
+      const isVerified = (d: typeof a) => verifiedUrls.has(d.accessURL);
 
-          return (
-            priority(b) - priority(a) ||
-            Number(isVerified(b)) - Number(isVerified(a))
-          );
-        })
-      : [],
+      return (
+        priority(b) - priority(a) ||
+        Number(isVerified(b)) - Number(isVerified(a))
+      );
+    }),
   );
 
   const sparqlDistributions = $derived(
@@ -1136,6 +1136,14 @@
           </div>
         {/if}
       </div>
+      {#if totalDistributions > sortedDistributions.length}
+        <p class="mt-3 text-sm text-gray-500 dark:text-gray-400">
+          {m.detail_distributions_showing({
+            shown: sortedDistributions.length.toString(),
+            total: totalDistributions.toString(),
+          })}
+        </p>
+      {/if}
     </div>
   {/if}
 

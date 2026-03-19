@@ -180,6 +180,7 @@
   "detail_gone": "Verdwenen",
   "detail_verified_tooltip": "Deze distributie is gevalideerd door de Dataset Knowledge Graph.",
   "detail_distributions_tooltip": "Distributies geven toegang tot de data.",
+  "detail_distributions_showing": "{shown} van {total} distributies getoond.",
   "lang_badge_also_in": "Ook in het {lang}:",
   "lang_badge_unspecified": "Niet gespecificeerd",
   "detail_is_part_of": "Onderdeel van",

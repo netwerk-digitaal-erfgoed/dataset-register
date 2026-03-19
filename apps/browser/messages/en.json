@@ -180,6 +180,7 @@
   "detail_gone": "Gone",
   "detail_verified_tooltip": "This distribution has been validated by the Dataset Knowledge Graph.",
   "detail_distributions_tooltip": "Distributions provide access to the data.",
+  "detail_distributions_showing": "Showing {shown} of {total} distributions.",
   "lang_badge_also_in": "Also in {lang}:",
   "lang_badge_unspecified": "Unspecified",
   "detail_is_part_of": "Part of",

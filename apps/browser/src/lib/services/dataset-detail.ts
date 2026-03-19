@@ -1,6 +1,7 @@
 import { dcat } from '@lde/dataset-registry-client';
 import { dcterms, foaf, ldkit, schema, xsd } from 'ldkit/namespaces';
 import { createLens, type SchemaInterface } from 'ldkit';
+import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { error } from '@sveltejs/kit';
 import { owlNs, voidExtNs, voidNs } from '../rdf.js';
 import { BaseDatasetSchema, BaseDistributionSchema } from './datasets.js';
@@ -111,12 +112,6 @@ export const DatasetDetailSchema = {
   landingPage: {
     '@id': 'http://www.w3.org/ns/dcat#landingPage',
     '@optional': true,
-  },
-  distribution: {
-    '@id': dcat.distribution,
-    '@optional': true,
-    '@array': true,
-    '@schema': DetailDistributionSchema,
   },
   publisher: {
     '@id': dcterms.publisher,
@@ -348,10 +343,30 @@ export type DatasetSummary = SchemaInterface<typeof DatasetSummarySchema> & {
   classPartition: ClassPartitionResult['classPartition'] | null;
 };
 
+const DISTRIBUTION_LIMIT = 20;
+
 export interface DatasetDetailResult {
   dataset: DatasetDetail;
+  distributions: DistributionDetail[];
+  totalDistributions: number;
   summary: DatasetSummary | null;
   linksets: Linkset[];
+}
+
+const fetcher = new SparqlEndpointFetcher();
+
+async function fetchDistributionCount(query: string): Promise<number> {
+  const bindingsStream = await fetcher.fetchBindings(
+    PUBLIC_SPARQL_ENDPOINT,
+    query,
+  );
+  for await (const bindings of bindingsStream) {
+    const count = bindings['count'];
+    if (count && 'value' in count) {
+      return parseInt(count.value as string, 10);
+    }
+  }
+  return 0;
 }
 
 // Main function to fetch all dataset detail data
@@ -380,8 +395,66 @@ export async function fetchDatasetDetail(
     sources: [PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT],
   });
 
-  const [dataset, summary, linksets, classPartitionResult] = await Promise.all([
+  const distributionLens = createLens(DetailDistributionSchema, {
+    sources: [PUBLIC_SPARQL_ENDPOINT],
+  });
+
+  const distributionQuery = `
+    PREFIX dcat: <http://www.w3.org/ns/dcat#>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    PREFIX ldkit: <https://ldkit.io/ontology/>
+
+    CONSTRUCT {
+      ?distribution a dcat:Distribution, ldkit:Resource ;
+        dcat:accessURL ?accessURL ;
+        dct:title ?title ;
+        dct:description ?description ;
+        dcat:mediaType ?rawMediaType ;
+        dct:format ?format ;
+        dct:issued ?issued ;
+        dct:modified ?modified ;
+        dcat:byteSize ?byteSize ;
+        dct:conformsTo ?conformsTo ;
+        dct:license ?license .
+    }
+    WHERE {
+      GRAPH ?g {
+        <${datasetUri}> dcat:distribution ?distribution .
+        ?distribution dcat:accessURL ?accessURL .
+        OPTIONAL { ?distribution dct:title ?title }
+        OPTIONAL { ?distribution dct:description ?description }
+        OPTIONAL { ?distribution dcat:mediaType ?rawMediaType }
+        OPTIONAL { ?distribution dct:format ?format }
+        OPTIONAL { ?distribution dct:issued ?issued }
+        OPTIONAL { ?distribution dct:modified ?modified }
+        OPTIONAL { ?distribution dcat:byteSize ?byteSize }
+        OPTIONAL { ?distribution dct:conformsTo ?conformsTo }
+        OPTIONAL { ?distribution dct:license ?license }
+      }
+    }
+    LIMIT ${DISTRIBUTION_LIMIT}
+  `;
+
+  const distributionCountQuery = `
+    SELECT (COUNT(DISTINCT ?distribution) AS ?count)
+    WHERE {
+      GRAPH ?g {
+        <${datasetUri}> <http://www.w3.org/ns/dcat#distribution> ?distribution .
+      }
+    }
+  `;
+
+  const [
+    dataset,
+    distributions,
+    totalDistributions,
+    summary,
+    linksets,
+    classPartitionResult,
+  ] = await Promise.all([
     detailLens.findByIri(datasetUri),
+    distributionLens.query(distributionQuery),
+    fetchDistributionCount(distributionCountQuery),
     summaryLens.findByIri(datasetUri).catch((e: unknown) => {
       console.error(
         'Summary query failed:',
@@ -407,6 +480,8 @@ export async function fetchDatasetDetail(
 
   return {
     dataset,
+    distributions,
+    totalDistributions,
     summary: summaryWithClassPartition,
     linksets,
   };
