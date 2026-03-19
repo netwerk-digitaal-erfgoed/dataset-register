@@ -31,7 +31,7 @@ export class ShaclEngineValidator implements Validator {
     return new this(await readUrl(url));
   }
 
-  public async validate(input: Dataset): Promise<ValidationResult> {
+  public async validate(input: DatasetCore): Promise<ValidationResult> {
     const dataset = standardizeSchemaOrgPrefix(input) as unknown as Dataset;
     const datasetIris = dataset.filter(
       (quad) =>
