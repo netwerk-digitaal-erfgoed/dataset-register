@@ -32,7 +32,7 @@ export class ShaclEngineValidator implements Validator {
   }
 
   public async validate(input: DatasetCore): Promise<ValidationResult> {
-    const dataset = standardizeSchemaOrgPrefix(input) as unknown as Dataset;
+    const dataset = standardizeSchemaOrgPrefix(input);
     const datasetIris = dataset.filter(
       (quad) =>
         quad.subject.termType === 'NamedNode' && // Prevent blank nodes

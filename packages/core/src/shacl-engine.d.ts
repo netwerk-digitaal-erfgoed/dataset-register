@@ -21,6 +21,6 @@ declare module 'shacl-engine' {
 
   export class Validator {
     constructor(shapes: DatasetCore, options?: ValidatorOptions);
-    validate(options: { dataset: Dataset }): Promise<ValidationReport>;
+    validate(options: { dataset: DatasetCore }): Promise<ValidationReport>;
   }
 }
