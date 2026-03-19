@@ -3,8 +3,10 @@ import { dcterms, foaf, ldkit, schema, xsd } from 'ldkit/namespaces';
 import { createLens, type SchemaInterface } from 'ldkit';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { facetConfigs, type Facets, fetchFacets } from '$lib/services/facets';
-// TODO: re-import PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT when fetchDatasetSizes is re-enabled
-import { PUBLIC_SPARQL_ENDPOINT } from '$env/static/public';
+import {
+  PUBLIC_SPARQL_ENDPOINT,
+  PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+} from '$env/static/public';
 import { voidNs } from '../rdf.js';
 import { getLocale } from '$lib/paraglide/runtime';
 import { normalizeMediaType } from '$lib/utils/sparql';
@@ -220,22 +222,22 @@ export function datasetCardsQuery(
 
     ${orderBy === 'datePosted' ? 'OPTIONAL { ?registrationUrl schema:datePosted ?datePosted }' : ''}
 
-    OPTIONAL { 
-      ?registrationUrl schema:validUntil ?validUntil . 
-      BIND("archived" as ?status)  
+    OPTIONAL {
+      ?registrationUrl schema:validUntil ?validUntil .
+      BIND("archived" as ?status)
     }
-  
+
     # Inside the dataset named graph.
     GRAPH ?g {
       ?dataset dct:title ?title ;
         dct:publisher ?publisher .
-        
+
       ?publisher foaf:name ?publisherName .
-      
+
       OPTIONAL { ?dataset dct:description ?description }
       OPTIONAL { ?dataset dct:language ?language }
       OPTIONAL { ?dataset dct:license ?license }
-                 
+
       OPTIONAL {
         ?dataset dcat:distribution ?distribution .
         ?distribution dcat:mediaType ?rawMediaType .
@@ -264,43 +266,39 @@ export interface SearchResults {
   time: number;
 }
 
-// TODO: re-enable once SERVICE federation OOM is resolved
-// async function fetchDatasetSizes(
-//   datasetIris: string[],
-// ): Promise<Map<string, number>> {
-//   if (datasetIris.length === 0) return new Map();
-//
-//   const values = datasetIris.map((iri) => `<${iri}>`).join(' ');
-//   const query = `
-//     PREFIX void: <http://rdfs.org/ns/void#>
-//     SELECT ?dataset ?size WHERE {
-//       VALUES ?dataset { ${values} }
-//       ?dataset a void:Dataset ;
-//         void:triples ?size .
-//     }
-//   `;
-//
-//   const sizeMap = new Map<string, number>();
-//   try {
-//     const bindings = await fetcher.fetchBindings(
-//       PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
-//       query,
-//     );
-//     for await (const binding of bindings) {
-//       const typedBinding = binding as unknown as {
-//         dataset: { value: string };
-//         size: { value: string };
-//       };
-//       sizeMap.set(
-//         typedBinding.dataset.value,
-//         parseInt(typedBinding.size.value),
-//       );
-//     }
-//   } catch (error) {
-//     console.error('Dataset sizes query failed:', error);
-//   }
-//   return sizeMap;
-// }
+async function fetchDatasetSizes(
+  datasetIris: string[],
+): Promise<Map<string, number>> {
+  if (datasetIris.length === 0) return new Map();
+
+  const values = datasetIris.map((iri) => `<${iri}>`).join(' ');
+  const query = `
+    PREFIX void: <http://rdfs.org/ns/void#>
+    SELECT ?dataset ?size WHERE {
+      VALUES ?dataset { ${values} }
+      ?dataset a void:Dataset ;
+        void:triples ?size .
+    }
+  `;
+
+  const sizeMap = new Map<string, number>();
+  try {
+    const bindings = await fetcher.fetchBindings(
+      PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+      query,
+    );
+    for await (const binding of bindings) {
+      const typedBinding = binding as unknown as {
+        dataset: { value: string };
+        size: { value: string };
+      };
+      sizeMap.set(typedBinding.dataset.value, parseInt(typedBinding.size.value));
+    }
+  } catch (error) {
+    console.error('Dataset sizes query failed:', error);
+  }
+  return sizeMap;
+}
 
 async function fetchDatasetCards(
   searchFilters: SearchRequest,
@@ -340,15 +338,15 @@ export async function fetchDatasets(
     fetchFacets(searchFilters),
   ]);
 
-  // TODO: re-enable once SERVICE federation OOM is resolved
-  // const sizes = await fetchDatasetSizes(datasets.map((d) => d.$id));
-  // const datasetsWithSizes = datasets.map((dataset) => {
-  //   const size = sizes.get(dataset.$id);
-  //   return size !== undefined ? { ...dataset, size } : dataset;
-  // });
+  // Fetch dataset sizes directly from knowledge graph (not via QLever SERVICE)
+  const sizes = await fetchDatasetSizes(datasets.map((d) => d.$id));
+  const datasetsWithSizes = datasets.map((dataset) => {
+    const size = sizes.get(dataset.$id);
+    return size !== undefined ? { ...dataset, size } : dataset;
+  });
 
   return {
-    datasets,
+    datasets: datasetsWithSizes,
     facets,
     total,
     time: performance.now() - startTime,
