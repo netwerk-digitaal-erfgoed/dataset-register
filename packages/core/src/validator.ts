@@ -9,6 +9,7 @@ import type {
   ValidationResult as ShaclValidationResult,
 } from 'shacl-engine';
 import { Validator as ShaclValidator } from 'shacl-engine';
+import { standardizeSchemaOrgPrefix } from './transform.ts';
 
 export interface Validator {
   validate(datasets: DatasetCore): Promise<ValidationResult>;
@@ -30,7 +31,8 @@ export class ShaclEngineValidator implements Validator {
     return new this(await readUrl(url));
   }
 
-  public async validate(dataset: Dataset): Promise<ValidationResult> {
+  public async validate(input: Dataset): Promise<ValidationResult> {
+    const dataset = standardizeSchemaOrgPrefix(input) as unknown as Dataset;
     const datasetIris = dataset.filter(
       (quad) =>
         quad.subject.termType === 'NamedNode' && // Prevent blank nodes

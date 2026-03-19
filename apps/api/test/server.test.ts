@@ -163,6 +163,16 @@ describe('Server', () => {
     expect(response.statusCode).toEqual(400);
   });
 
+  it('validates http://schema.org dataset description in request body', async () => {
+    const response = await httpServer.inject({
+      method: 'POST',
+      url: '/datasets/validate',
+      headers: { 'Content-Type': 'text/turtle' },
+      payload: await file('dataset-http-schema-org-valid.ttl'),
+    });
+    expect(response.statusCode).toEqual(200);
+  });
+
   it('validates Turtle dataset description in request body', async () => {
     const response = await httpServer.inject({
       method: 'POST',
