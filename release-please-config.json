@@ -5,6 +5,7 @@
   "packages": {
     "requirements": {
       "release-type": "simple",
+      "component": "requirements",
       "initial-version": "1.0.0",
       "changelog-sections": [
         { "type": "feat", "section": "Features" },
