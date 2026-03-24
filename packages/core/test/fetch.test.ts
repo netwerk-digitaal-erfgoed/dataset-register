@@ -288,7 +288,7 @@ describe('Fetch', () => {
 
     expect(datasets).toHaveLength(1);
     const dataset = datasets[0];
-    expect(dataset.size).toBe(6);
+    expect(dataset.size).toBe(7);
   });
 
   it('accepts valid Schema.org dataset description', async () => {
@@ -308,10 +308,11 @@ describe('Fetch', () => {
     const dcatEquivalent = await dereference(
       'test/datasets/dataset-dcat-valid.jsonld',
     );
-    // The Schema.org dataset has one extra triple (SPARQL conformsTo) compared
-    // to the DCAT equivalent, but the DCAT file has a 4th gzip distribution
-    // (4 triples) and an extra byteSize triple not present in the Schema.org file.
-    expect(dataset.size).toEqual(dcatEquivalent.size + 1 - 5);
+    // The Schema.org dataset has two extra triples (SPARQL conformsTo and
+    // auto-assigned accessRights) compared to the DCAT equivalent, but the DCAT
+    // file has a 4th gzip distribution (4 triples) and an extra byteSize triple
+    // not present in the Schema.org file.
+    expect(dataset.size).toEqual(dcatEquivalent.size + 2 - 5);
 
     // Check that SPARQL endpoint has conformsTo triple
     const sparqlConformsToTriples = [...dataset].filter(

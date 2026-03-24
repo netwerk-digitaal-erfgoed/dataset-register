@@ -135,7 +135,8 @@ reg:DatasetShape
             sh:description """
                 The HTTP [[IRI]] of the data catalog(s) that the dataset belongs to.
             """@en ;
-        ]
+        ] ,
+        reg:AccessRightsProperty
 .
 
 reg:DistributionShape
@@ -675,6 +676,23 @@ reg:SchemaGenreProperty a sh:PropertyShape ;
     sh:message "Een datasetbeschrijving zou genres moeten bevatten"@nl, "A dataset description should contain genres"@en ;
 .
 
+reg:AccessRightsProperty a sh:PropertyShape ;
+    sh:path dc:accessRights ;
+    sh:minCount 0 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:in (
+        <http://publications.europa.eu/resource/authority/access-right/PUBLIC>
+        <http://publications.europa.eu/resource/authority/access-right/RESTRICTED>
+        <http://publications.europa.eu/resource/authority/access-right/NON_PUBLIC>
+    ) ;
+    sh:name "Toegangsrechten"@nl, "Access rights"@en ;
+    sh:description """
+        Information about who can access the dataset. Use a value from the EU Access Rights vocabulary.
+    """@en ;
+    sh:message "Toegangsrechten moet een waarde zijn uit de EU Access Rights vocabulaire"@nl, "Access rights must be a value from the EU Access Rights vocabulary"@en ;
+.
+
 ##
 ## DCAT
 ##
@@ -791,7 +809,8 @@ dcat:DatasetShape
         sh:minCount 1 ;
         sh:severity sh:Info ;
         sh:message "Datasetbeschrijving zou minstens één distributie moeten bevatten"@nl, "Dataset description should contain at least one distribution"@en ;
-    ] ;
+    ] ,
+    reg:AccessRightsProperty ;
     sh:targetClass dcat:Dataset ;
 .
 

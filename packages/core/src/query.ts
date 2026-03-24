@@ -33,6 +33,7 @@ const version = 'version';
 const includedInDataCatalog = 'includedInDataCatalog';
 const hasPart = 'hasPart';
 const isReferencedBy = 'isReferencedBy';
+const accessRights = 'accessRights';
 
 const creatorName = 'creator_name';
 const creatorType = 'creator_type';
@@ -105,6 +106,7 @@ export const constructQuery = `
       dct:isPartOf ?${includedInDataCatalog} ;
       dct:hasPart ?${hasPart} ;
       dct:isReferencedBy ?${isReferencedBy} ;
+      dct:accessRights ?${accessRights} ;
       dct:publisher ?${publisher} ;
       dct:creator ?${creator} ;
       dcat:distribution ?${distribution} .
@@ -231,6 +233,8 @@ export const constructQuery = `
         OPTIONAL { ?${dataset} dct:hasPart ?${hasPart} }
         OPTIONAL { ?${dataset} dct:isReferencedBy ?${isReferencedBy} }
         OPTIONAL { ?${dataset} dcat:landingPage ?${mainEntityOfPage} }
+        OPTIONAL { ?${dataset} dct:accessRights ?${accessRights}Provided }
+        BIND(COALESCE(?${accessRights}Provided, <http://publications.europa.eu/resource/authority/access-right/PUBLIC>) AS ?${accessRights})
       }
     }
     LIMIT ${sparqlLimit}
@@ -349,6 +353,8 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL { ?${dataset} ${prefix}:hasPart ?${hasPart} }
     OPTIONAL { ?${dataset} ${prefix}:citation ?${isReferencedBy} }
     OPTIONAL { ?${dataset} ${prefix}:mainEntityOfPage ?${mainEntityOfPage} }
+    OPTIONAL { ?${dataset} dct:accessRights ?${accessRights}Provided }
+    BIND(COALESCE(?${accessRights}Provided, <http://publications.europa.eu/resource/authority/access-right/PUBLIC>) AS ?${accessRights})
 `;
 }
 
