@@ -13,7 +13,7 @@
     localizeHref,
   } from '$lib/utils/i18n.js';
   import { getLicenseName } from '$lib/utils/license.js';
-  import { shortenUri } from '$lib/utils/prefix.js';
+  import { shortenUri, languageLabel } from '$lib/utils/prefix.js';
   import { getMediaTypeLabel } from '$lib/utils/media-type.js';
   import LanguageBadge from '$lib/components/LanguageBadge.svelte';
   import { SvelteSet } from 'svelte/reactivity';
@@ -855,7 +855,7 @@
                 >
               </dt>
               <dd class="text-sm text-gray-700 dark:text-gray-300">
-                {dataset.language.join(', ')}
+                {dataset.language.map((lang: string) => languageLabel(lang, getLocale())).join(', ')}
               </dd>
             </div>
           {/if}

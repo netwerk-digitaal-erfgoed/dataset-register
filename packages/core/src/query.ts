@@ -75,6 +75,34 @@ export const rdf = (property: string): NamedNode =>
 export const datasetType = dcat('Dataset');
 export const sparqlLimit = 1_000_000;
 
+const languageAuthorityBase =
+  'http://publications.europa.eu/resource/authority/language/';
+
+/**
+ * Generates SPARQL to normalize a language value (BCP 47 literal or EU authority URI)
+ * to an EU Language Authority URI.
+ */
+function normalizeLanguage(rawVar: string, outputVar: string): string {
+  return `
+      BIND(IF(isIRI(${rawVar}), ${rawVar},
+        IRI(CONCAT("${languageAuthorityBase}",
+          COALESCE(
+            IF(SUBSTR(LCASE(STR(${rawVar})), 1, 2) = "nl", "NLD",
+            IF(SUBSTR(LCASE(STR(${rawVar})), 1, 2) = "en", "ENG",
+            IF(SUBSTR(LCASE(STR(${rawVar})), 1, 2) = "de", "DEU",
+            IF(SUBSTR(LCASE(STR(${rawVar})), 1, 2) = "fr", "FRA",
+            IF(SUBSTR(LCASE(STR(${rawVar})), 1, 2) = "fy", "FRY",
+            IF(SUBSTR(LCASE(STR(${rawVar})), 1, 2) = "la", "LAT",
+            IF(SUBSTR(LCASE(STR(${rawVar})), 1, 2) = "es", "SPA",
+            IF(SUBSTR(LCASE(STR(${rawVar})), 1, 2) = "it", "ITA",
+            IF(SUBSTR(LCASE(STR(${rawVar})), 1, 2) = "pt", "POR",
+            1/0))))))))),
+            UCASE(SUBSTR(STR(${rawVar}), 1, 3))
+          )
+        ))
+      ) AS ?${outputVar})`;
+}
+
 export const constructQuery = `
   PREFIX dcat: <http://www.w3.org/ns/dcat#>
   PREFIX dct: <http://purl.org/dc/terms/>
@@ -196,7 +224,10 @@ export const constructQuery = `
             distributionDateModified,
           )} }
           OPTIONAL { ?${distribution} dct:description ?${distributionDescription} }
-          OPTIONAL { ?${distribution} dct:language ?${distributionLanguage} }
+          OPTIONAL {
+            ?${distribution} dct:language ?${distributionLanguage}Raw .
+            ${normalizeLanguage(`?${distributionLanguage}Raw`, distributionLanguage)}
+          }
           OPTIONAL { ?${distribution} dct:license ${normalizeLicense(distributionLicense)} }
           OPTIONAL { ?${distribution} dct:title ?${distributionName} }
           OPTIONAL { ?${distribution} dcat:byteSize ?${distributionSize} }
@@ -216,7 +247,10 @@ export const constructQuery = `
         OPTIONAL { ?${dataset} dct:created ${convertToXsdDate(dateCreated)} }
         OPTIONAL { ?${dataset} dct:issued ${convertToXsdDate(datePublished)} }
         OPTIONAL { ?${dataset} dct:modified ${convertToXsdDate(dateModified)} }
-        OPTIONAL { ?${dataset} dct:language ?${language} }
+        OPTIONAL {
+          ?${dataset} dct:language ?${language}Raw .
+          ${normalizeLanguage(`?${language}Raw`, language)}
+        }
         OPTIONAL { ?${dataset} dct:source ?${source} }
         OPTIONAL { ?${dataset} dcat:keyword ${convertUriToLiteral(keyword)} }
         OPTIONAL {
@@ -313,7 +347,10 @@ function schemaOrgQuery(prefix: string): string {
         distributionDateModified,
       )} }
       OPTIONAL { ?${distribution} ${prefix}:description ?${distributionDescription} }
-      OPTIONAL { ?${distribution} ${prefix}:inLanguage ?${distributionLanguage} }
+      OPTIONAL {
+        ?${distribution} ${prefix}:inLanguage ?${distributionLanguage}Raw .
+        ${normalizeLanguage(`?${distributionLanguage}Raw`, distributionLanguage)}
+      }
       OPTIONAL { ?${distribution} ${prefix}:license ${normalizeLicense(distributionLicense)} }
       OPTIONAL { ?${distribution} ${prefix}:name ?${distributionName} }
       OPTIONAL { ?${distribution} ${prefix}:contentSize ?${distributionSize} }
@@ -335,7 +372,10 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL { ?${dataset} ${prefix}:dateModified ${convertToXsdDate(
       dateModified,
     )} }
-    OPTIONAL { ?${dataset} ${prefix}:inLanguage ?${language} }
+    OPTIONAL {
+      ?${dataset} ${prefix}:inLanguage ?${language}Raw .
+      ${normalizeLanguage(`?${language}Raw`, language)}
+    }
     OPTIONAL { ?${dataset} ${prefix}:isBasedOn ?${source} }
     OPTIONAL { ?${dataset} ${prefix}:isBasedOnUrl ?${source} } 
     OPTIONAL { ?${dataset} ${prefix}:keywords ${convertUriToLiteral(keyword)} }
