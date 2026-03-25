@@ -6,6 +6,7 @@
 @prefix dc: <http://purl.org/dc/terms/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix reg: <http://terms.netwerkdigitaalerfgoed.nl/ns/register#> .
+@prefix nde: <https://def.nde.nl#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 
 ##
@@ -236,6 +237,10 @@ reg:OrganizationShape
             sh:minCount 1 ;
             sh:maxCount 1 ;
             sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
             sh:node [
                 a sh:NodeShape ;
                 sh:targetClass schema:ContactPoint ;
@@ -271,6 +276,10 @@ reg:OrganizationShape
               ) ;
             sh:minCount 1 ;
             sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
             sh:name "Identifier"@en ;
             sh:description """
                 Identifier(s) of the organization, at least its <a href="https://www.nationaalarchief.nl/archiveren/kennisbank/isil-codes">ISIL code</a>.
@@ -392,7 +401,12 @@ reg:DistributionContentUrlIriProperty a sh:PropertyShape ;
         [ sh:nodeKind sh:IRI ]          # IRI left for backward compatibility
     ) ;
     sh:pattern "^https?://" ;
-    sh:severity sh:Warning ;  # will become a sh:Violation in near future, to be communicated
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:datatype xsd:anyURI ;
+        sh:severity sh:Violation ;
+    ] ;
     sh:description "De URL waar de distributie rechtstreeks toegankelijk is."@nl, "The URL where the distribution may be directly accessed."@en ;
     sh:message "De URL van de distributie kan een IRI zijn of een letterlijke waarde van type xsd:anyURI."@nl, "The distribution’s content URL can be an IRI or a literal of type xsd:anyURI."@en ;
 .
@@ -517,6 +531,10 @@ reg:SchemaCreatorProperty a sh:PropertyShape ;
     sh:path schema:creator ;
     sh:minCount 1 ;
     sh:severity sh:Info ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
     sh:or (
         [
             sh:node reg:OrganizationShape ;
@@ -620,6 +638,11 @@ reg:SchemaDistributionLicenseProperty a sh:PropertyShape ;
     sh:nodeKind sh:IRIOrLiteral ;
     sh:minCount 0 ;
     sh:maxCount 1 ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+    ] ;
     sh:description "Licentie die van toepassing is op de datasetdistributie."@nl, "License applicable to the dataset distribution."@en ;
     sh:message "Een distributie mag maximaal één licentie bevatten (in de vorm van een IRI)"@nl, "A distribution may contain at most one license (as a IRI)"@en ;
 .
@@ -772,6 +795,10 @@ dcat:DatasetShape
         sh:path dc:creator ;
         sh:minCount 1 ;
         sh:severity sh:Info ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
         sh:or (
             [
                  sh:class foaf:Organization ;
