@@ -8,6 +8,7 @@ import {
 import { RDF_MEDIA_TYPES } from '$lib/constants.js';
 import { REGISTRATION_STATUS_BASE_URI } from '@dataset-register/core/constants';
 import { getLocalizedValue } from '$lib/utils/i18n';
+import { shortenUri } from '$lib/utils/prefix';
 import * as m from '$lib/paraglide/messages';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { voidNs } from '../rdf.js';
@@ -574,11 +575,16 @@ export function facetValueTooltip(
 }
 
 export function facetDisplayValue(facetValue: SelectedFacetValue) {
-  return (
-    valueTranslations[facetValue.value as keyof typeof valueTranslations]?.() ??
-    getLocalizedValue(facetValue.label) ??
-    facetValue.value
-  );
+  const translated =
+    valueTranslations[facetValue.value as keyof typeof valueTranslations]?.();
+  if (translated) return translated;
+
+  const label = getLocalizedValue(facetValue.label);
+  if (label && !label.startsWith('http://') && !label.startsWith('https://')) {
+    return label;
+  }
+
+  return shortenUri(facetValue.value);
 }
 
 export function formatNumber(num: number, locale = 'en'): string {
