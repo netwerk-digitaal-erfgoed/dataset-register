@@ -986,7 +986,9 @@
           onclick={() => (classesExpanded = !classesExpanded)}
           type="button"
         >
-          {classesExpanded ? m.facets_show_less() : m.facets_show_more()}
+          {classesExpanded
+            ? `− ${m.facets_show_less()}`
+            : `+ ${m.facets_show_more()}`}
         </button>
       {/if}
     </div>
@@ -1142,7 +1144,9 @@
             onclick={() => (propertiesExpanded = !propertiesExpanded)}
             type="button"
           >
-            {propertiesExpanded ? m.facets_show_less() : m.facets_show_more()}
+            {propertiesExpanded
+              ? `− ${m.facets_show_less()}`
+              : `+ ${m.facets_show_more()}`}
           </button>
         {/if}
       </div>
@@ -1404,7 +1408,9 @@
             onclick={() => (valueTypesExpanded = !valueTypesExpanded)}
             type="button"
           >
-            {valueTypesExpanded ? m.facets_show_less() : m.facets_show_more()}
+            {valueTypesExpanded
+              ? `− ${m.facets_show_less()}`
+              : `+ ${m.facets_show_more()}`}
           </button>
         {/if}
       </div>

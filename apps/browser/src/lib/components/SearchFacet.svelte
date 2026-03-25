@@ -177,7 +177,7 @@
       onclick={toggleExpanded}
       type="button"
     >
-      {isExpanded ? m.facets_show_less() : m.facets_show_more()}
+      {isExpanded ? `− ${m.facets_show_less()}` : `+ ${m.facets_show_more()}`}
     </button>
   {/if}
 </div>
