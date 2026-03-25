@@ -6,6 +6,7 @@
     "schema": "http://schema.org/",
     "xsd": "http://www.w3.org/2001/XMLSchema#",
     "nde": "https://def.nde.nl#",
+    "nde-dataset": "https://def.nde.nl/dataset#",
     "targetClass": { "@type": "@id" },
     "datatype": { "@type": "@id" },
     "path": { "@type": "@id" },
