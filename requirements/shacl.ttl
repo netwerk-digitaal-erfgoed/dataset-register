@@ -689,6 +689,7 @@ reg:AccessRightsProperty a sh:PropertyShape ;
     sh:name "Toegangsrechten"@nl, "Access rights"@en ;
     sh:description """
         Information about who can access the dataset. Use a value from the EU Access Rights vocabulary.
+        Defaults to `PUBLIC` if not provided.
     """@en ;
     sh:message "Toegangsrechten moet een waarde zijn uit de EU Access Rights vocabulaire"@nl, "Access rights must be a value from the EU Access Rights vocabulary"@en ;
 .
