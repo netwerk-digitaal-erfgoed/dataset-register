@@ -89,7 +89,10 @@
   {/if}
 
   {#if dataset.description}
-    <p class="mb-4 line-clamp-5 text-gray-700 dark:text-gray-300">
+    <p
+      class="mb-4 line-clamp-2 text-gray-700 dark:text-gray-300"
+      title={getLocalizedValue(dataset.description)}
+    >
       {getLocalizedValue(dataset.description)}
     </p>
   {/if}
