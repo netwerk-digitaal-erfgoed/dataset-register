@@ -61,10 +61,6 @@ const DetailPublisherSchema = {
     '@optional': true,
     '@multilang': true,
   },
-  identifier: {
-    '@id': dcterms.identifier,
-    '@optional': true,
-  },
   email: {
     '@id': foaf.mbox,
     '@optional': true,
