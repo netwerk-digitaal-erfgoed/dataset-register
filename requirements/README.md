@@ -7,7 +7,7 @@ This is the source code for the public document available at https://docs.nde.nl
 Build the spec:
 
 ```shell
-npx --yes @lde/docgen@latest from-shacl shacl.ttl index.bs.liquid > index.bs
+npx --yes @lde/docgen@latest from-shacl -f shacl.frame.jsonld shacl.ttl index.bs.liquid > index.bs
 make spec
 ```
 

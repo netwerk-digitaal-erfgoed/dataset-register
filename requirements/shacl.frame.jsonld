@@ -1,0 +1,21 @@
+{
+  "@context": {
+    "@vocab": "http://www.w3.org/ns/shacl#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "schema": "http://schema.org/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "nde": "https://def.nde.nl#",
+    "targetClass": { "@type": "@id" },
+    "datatype": { "@type": "@id" },
+    "path": { "@type": "@id" },
+    "class": { "@type": "@id" },
+    "or": { "@container": "@list" },
+    "node": { "@type": "@id" },
+    "nodeKind": { "@type": "@vocab" },
+    "severity": { "@type": "@vocab" },
+    "nde:futureChange": {},
+    "nde:version": {}
+  },
+  "@type": "NodeShape"
+}

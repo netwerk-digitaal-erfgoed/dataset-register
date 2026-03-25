@@ -69,6 +69,16 @@
                 {% else -%}
                     Recommended
                 {% endif -%}
+                {% if property['nde:futureChange'] -%}
+                    {% assign change = property['nde:futureChange'] -%}
+                    <br><small>v{{ change['nde:version'] }}:
+                    {% if change.datatype -%}
+                        must be {{ change.datatype | replace: 'http://www.w3.org/2001/XMLSchema#', 'xsd:' }}
+                    {% elsif change.severity == "Violation" -%}
+                        becomes required
+                    {% endif -%}
+                    </small>
+                {% endif -%}
             </td>
         </tr>
         {% endfor %}
