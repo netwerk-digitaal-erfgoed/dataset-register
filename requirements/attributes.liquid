@@ -25,7 +25,7 @@
         <tr>
             <th scope="row">[{{ property.path | replace: 'https://schema.org/', 'schema:' }}]({{ property.path }})</th>
             <td>
-                {%- if property.node == "http://terms.netwerkdigitaalerfgoed.nl/ns/register#DateTimeShape" or property.node['@id'] == "http://terms.netwerkdigitaalerfgoed.nl/ns/register#DateTimeShape" -%}
+                {%- if property.node['@id'] == "https://def.nde.nl/dataset#DateTimeShape" -%}
                     See [[#dataset-date]].
                 {%- elsif property.path == "https://schema.org/publisher" or property.path == "https://schema.org/creator" -%}
                     {{ property.name | lang: "en" }}. See [[#creator-publisher-information]].
@@ -40,7 +40,7 @@
                         See [[#dataset-distributions]].
                     {%- elsif property.path == "https://schema.org/version" -%}
                         See [[#dataset-versions]].
-                    {%- elsif property.node == "http://terms.netwerkdigitaalerfgoed.nl/ns/register#DateTimeShape" or property.node['@id'] == "http://terms.netwerkdigitaalerfgoed.nl/ns/register#DateTimeShape" -%}
+                    {%- elsif property.node['@id'] == "https://def.nde.nl/dataset#DateTimeShape" -%}
                         See [[#dataset-date]].
                     {%- else -%}
                         {{ property.description | lang: "en" }}
