@@ -6,6 +6,7 @@ import { shrink } from '@zazuko/prefixes';
  */
 export function shortenUri(uri: string): string {
   const shortened = shrink(uri, {
+    aat: 'http://vocab.getty.edu/aat/',
     edm: 'http://www.europeana.eu/schemas/edm/',
     omekas: 'http://omeka.org/s/vocabs/o#',
     ore: 'https://openarchives.org/ore/terms/',
