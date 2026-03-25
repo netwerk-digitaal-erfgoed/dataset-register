@@ -5,6 +5,13 @@
     "foaf": "http://xmlns.com/foaf/0.1/"
   },
   "@type": "dcat:Catalog",
+  "dct:title": "Voorbeeld catalogus",
+  "dct:description": "Een voorbeeldcatalogus met datasets.",
+  "dct:publisher": {
+    "@type": "foaf:Organization",
+    "@id": "https://example.com/publisher",
+    "foaf:name": "Example Organization"
+  },
   "dcat:dataset": [
     {
       "@type": "dcat:Dataset",
@@ -29,7 +36,8 @@
           },
           "dcat:accessURL": {
             "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
-          }
+          },
+          "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
         }
       ]
     }

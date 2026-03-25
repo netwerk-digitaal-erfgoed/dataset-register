@@ -1,10 +1,10 @@
 declare module 'shacl-engine' {
-  import type { Dataset, DatasetCore, NamedNode } from '@rdfjs/types';
-  import DatasetExt from 'rdf-ext/lib/Dataset.js';
+  import type { Dataset, DatasetCore, NamedNode, Term } from '@rdfjs/types';
 
   export interface ValidatorOptions {
     factory?: unknown;
     details?: boolean;
+    validations?: Map<Term, unknown>;
   }
 
   export interface ValidationResult {
@@ -23,4 +23,9 @@ declare module 'shacl-engine' {
     constructor(shapes: DatasetCore, options?: ValidatorOptions);
     validate(options: { dataset: DatasetCore }): Promise<ValidationReport>;
   }
+}
+
+declare module 'shacl-engine/sparql.js' {
+  import type { Term } from '@rdfjs/types';
+  export const validations: Map<Term, unknown>;
 }

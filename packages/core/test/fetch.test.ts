@@ -288,7 +288,8 @@ describe('Fetch', () => {
 
     expect(datasets).toHaveLength(1);
     const dataset = datasets[0];
-    expect(dataset.size).toBe(7);
+    // 7 base triples + 1 auto-assigned dcat:theme + 1 auto-derived dct:identifier
+    expect(dataset.size).toBe(9);
   });
 
   it('accepts valid Schema.org dataset description', async () => {
@@ -308,11 +309,12 @@ describe('Fetch', () => {
     const dcatEquivalent = await dereference(
       'test/datasets/dataset-dcat-valid.jsonld',
     );
-    // The Schema.org dataset has two extra triples (SPARQL conformsTo and
-    // auto-assigned accessRights) compared to the DCAT equivalent, but the DCAT
-    // file has a 4th gzip distribution (4 triples) and an extra byteSize triple
-    // not present in the Schema.org file.
-    expect(dataset.size).toEqual(dcatEquivalent.size + 2 - 5);
+    // The Schema.org dataset has extra triples compared to the DCAT equivalent:
+    // SPARQL conformsTo, auto-assigned accessRights, contactPoint (4 triples:
+    // dcat:contactPoint, a vcard:Kind, vcard:fn, vcard:hasEmail), and dcat:theme.
+    // The DCAT file has a 4th gzip distribution (4 triples), an extra byteSize
+    // triple, and one more propagated license (4 vs 3 distributions).
+    expect(dataset.size).toEqual(dcatEquivalent.size + 7 - 6);
 
     // Check that SPARQL endpoint has conformsTo triple
     const sparqlConformsToTriples = [...dataset].filter(
@@ -588,6 +590,35 @@ describe('Fetch', () => {
     );
 
     expect(datasets).toHaveLength(2);
+  });
+
+  it('propagates dataset license to distributions without their own', async () => {
+    const response = await validSchemaOrgDataset();
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/license-propagation')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/license-propagation'),
+    );
+
+    const dataset = datasets[0];
+    const distributionLicenses = [...dataset].filter(
+      (quad) =>
+        quad.predicate.equals(dct('license')) &&
+        !quad.subject.equals(
+          factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
+        ),
+    );
+
+    // All 3 distributions should have a license (propagated from dataset).
+    expect(distributionLicenses).toHaveLength(3);
+    distributionLicenses.forEach((quad) =>
+      expect(quad.object.value).toBe(
+        'https://creativecommons.org/publicdomain/zero/1.0/',
+      ),
+    );
   });
 });
 
