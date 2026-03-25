@@ -1,0 +1,14 @@
+{
+  "@context": "https://schema.org/",
+  "@type": "Dataset",
+  "@id": "https://opendata.archieven.nl/dataset/28849D7AEE486FA1E0638F04000A987C",
+  "name": "Archieftitel",
+  "description": "Toegangstitel",
+  "license": "https://creativecommons.org/publicdomain/zero/1.0/deed.nl",
+  "dateCreated": "2024-12-12",
+  "publisher": {
+    "@type": "Organization",
+    "@id": "https://opendata.archieven.nl/organisatie/39",
+    "name": "Het Utrechts Archief"
+  }
+}
