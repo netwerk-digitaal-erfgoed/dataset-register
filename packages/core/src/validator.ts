@@ -9,6 +9,7 @@ import type {
   ValidationResult as ShaclValidationResult,
 } from 'shacl-engine';
 import { Validator as ShaclValidator } from 'shacl-engine';
+import { validations as sparqlValidations } from 'shacl-engine/sparql.js';
 import { standardizeSchemaOrgPrefix } from './transform.ts';
 
 export interface Validator {
@@ -24,7 +25,11 @@ export class ShaclEngineValidator implements Validator {
   private inner: ShaclValidator;
 
   public constructor(dataset: DatasetCore) {
-    this.inner = new ShaclValidator(dataset, { factory, details: true });
+    this.inner = new ShaclValidator(dataset, {
+      factory,
+      details: true,
+      validations: sparqlValidations,
+    });
   }
 
   public static async fromUrl(url: string): Promise<ShaclEngineValidator> {

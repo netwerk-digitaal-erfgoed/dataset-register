@@ -41,6 +41,9 @@ const creatorType = 'creator_type';
 const publisherType = 'publisher_type';
 const publisherName = 'publisher_name';
 const publisherEmail = 'publisher_email';
+const contactPoint = 'contactPoint';
+const contactPointName = 'contactPoint_name';
+const contactPointEmail = 'contactPoint_email';
 const publisherIdentifier = 'publisher_identifier';
 const publisherAlternateName = 'publisher_alternate_name';
 const publisherSameAs = 'publisher_sameAs';
@@ -82,6 +85,7 @@ export const constructQuery = `
   PREFIX odrl: <http://www.w3.org/ns/odrl/2/>
   PREFIX owl: <http://www.w3.org/2002/07/owl#>
   PREFIX schema: <https://schema.org/>
+  PREFIX vcard: <http://www.w3.org/2006/vcard/ns#>
   PREFIX httpSchema: <http://schema.org/>
   PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
@@ -102,14 +106,20 @@ export const constructQuery = `
       dct:spatial ?${spatialCoverage} ;
       dct:temporal ?${temporalCoverage} ;
       dct:type ?${genre} ;
-      owl:versionInfo ?${version} ;
+      dcat:version ?${version} ;
       dct:isPartOf ?${includedInDataCatalog} ;
       dct:hasPart ?${hasPart} ;
       dct:isReferencedBy ?${isReferencedBy} ;
       dct:accessRights ?${accessRights} ;
+      dcat:theme ?theme ;
       dct:publisher ?${publisher} ;
       dct:creator ?${creator} ;
+      dcat:contactPoint ?${contactPoint} ;
       dcat:distribution ?${distribution} .
+
+    ?${contactPoint} a vcard:Kind ;
+      vcard:fn ?${contactPointName} ;
+      vcard:hasEmail ?${contactPointEmail} .
       
     ?${publisher} a ?${publisherType} ;
       foaf:name ?${publisherName} ;
@@ -166,7 +176,12 @@ export const constructQuery = `
         OPTIONAL { ?${publisher} dct:identifier ?${publisherIdentifier} ; }
         OPTIONAL { ?${publisher} foaf:mbox ?${publisherEmail} ; }
         OPTIONAL { ?${publisher} owl:sameAs ?${publisherSameAs} ; }
-        
+        OPTIONAL {
+          ?${dataset} dcat:contactPoint ?${contactPoint} .
+          OPTIONAL { ?${contactPoint} vcard:fn ?${contactPointName} . }
+          OPTIONAL { ?${contactPoint} vcard:hasEmail ?${contactPointEmail} . }
+        }
+
         OPTIONAL {
           ?${creator} a ?foafOrganizationOrPerson ;
             a ?${creatorType} ;
@@ -211,7 +226,7 @@ export const constructQuery = `
         }
 
         OPTIONAL { ?${dataset} dct:description ?${description} }
-        OPTIONAL { ?${dataset} dct:identifier ?${identifier} }
+        BIND(STR(?${dataset}) AS ?${identifier})
         OPTIONAL { ?${dataset} dct:alternative ?${alternateName} }
         OPTIONAL { ?${dataset} dct:created ${convertToXsdDate(dateCreated)} }
         OPTIONAL { ?${dataset} dct:issued ${convertToXsdDate(datePublished)} }
@@ -228,13 +243,14 @@ export const constructQuery = `
           ?${dataset} dct:genre ?${genre}
           FILTER(isLiteral(?${genre}))
         }
-        OPTIONAL { ?${dataset} owl:versionInfo ?${version} }
+        OPTIONAL { ?${dataset} dcat:version ?${version} }
         OPTIONAL { ?${dataset} dct:isPartOf ?${includedInDataCatalog} }
         OPTIONAL { ?${dataset} dct:hasPart ?${hasPart} }
         OPTIONAL { ?${dataset} dct:isReferencedBy ?${isReferencedBy} }
         OPTIONAL { ?${dataset} dcat:landingPage ?${mainEntityOfPage} }
         OPTIONAL { ?${dataset} dct:accessRights ?${accessRights}Provided }
         BIND(COALESCE(?${accessRights}Provided, <http://publications.europa.eu/resource/authority/access-right/PUBLIC>) AS ?${accessRights})
+        BIND(<http://publications.europa.eu/resource/authority/data-theme/EDUC> AS ?theme)
       }
     }
     LIMIT ${sparqlLimit}
@@ -287,7 +303,13 @@ function schemaOrgQuery(prefix: string): string {
       AS ?${publisherType})
       FILTER(?${publisherType} != "")
       OPTIONAL {
-        ?${publisher} ${prefix}:contactPoint/${prefix}:email ?${publisherEmail} .  
+        ?${publisher} ${prefix}:contactPoint ?${contactPoint} .
+        ?${contactPoint} ${prefix}:email ?contactPointEmailRaw .
+        BIND(IRI(CONCAT("mailto:", STR(?contactPointEmailRaw))) AS ?${contactPointEmail})
+        OPTIONAL { ?${contactPoint} ${prefix}:name ?${contactPointName} . }
+      }
+      OPTIONAL {
+        ?${publisher} ${prefix}:contactPoint/${prefix}:email ?${publisherEmail} .
       }
     }
         
@@ -314,7 +336,8 @@ function schemaOrgQuery(prefix: string): string {
       )} }
       OPTIONAL { ?${distribution} ${prefix}:description ?${distributionDescription} }
       OPTIONAL { ?${distribution} ${prefix}:inLanguage ?${distributionLanguage} }
-      OPTIONAL { ?${distribution} ${prefix}:license ${normalizeLicense(distributionLicense)} }
+      OPTIONAL { ?${distribution} ${prefix}:license ${normalizeLicense(distributionLicense + 'Provided')} }
+      BIND(COALESCE(?${distributionLicense}Provided, ?${license}) AS ?${distributionLicense})
       OPTIONAL { ?${distribution} ${prefix}:name ?${distributionName} }
       OPTIONAL { ?${distribution} ${prefix}:contentSize ?${distributionSize} }
       OPTIONAL { 
@@ -324,7 +347,7 @@ function schemaOrgQuery(prefix: string): string {
     } 
      
     OPTIONAL { ?${dataset} ${prefix}:description ?${description} } 
-    OPTIONAL { ?${dataset} ${prefix}:identifier ?${identifier} }
+    BIND(STR(?${dataset}) AS ?${identifier})
     OPTIONAL { ?${dataset} ${prefix}:alternateName ?${alternateName} }
     OPTIONAL { ?${dataset} ${prefix}:dateCreated ${convertToXsdDate(
       dateCreated,
@@ -355,6 +378,7 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL { ?${dataset} ${prefix}:mainEntityOfPage ?${mainEntityOfPage} }
     OPTIONAL { ?${dataset} dct:accessRights ?${accessRights}Provided }
     BIND(COALESCE(?${accessRights}Provided, <http://publications.europa.eu/resource/authority/access-right/PUBLIC>) AS ?${accessRights})
+    BIND(<http://publications.europa.eu/resource/authority/data-theme/EDUC> AS ?theme)
 `;
 }
 

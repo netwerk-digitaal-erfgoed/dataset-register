@@ -85,7 +85,8 @@
         "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
       },
       "dcat:byteSize": "12 MB",
-      "dct:description": "Turtle dump"
+      "dct:description": "Turtle dump",
+      "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
     },
     {
       "@type": "dcat:Distribution",
@@ -96,7 +97,8 @@
         "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld"
       },
       "dcat:byteSize": "14M",
-      "dct:description": "JSON-LD dump"
+      "dct:description": "JSON-LD dump",
+      "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
     },
     {
       "@type": "dcat:Distribution",
@@ -109,7 +111,8 @@
       "dct:conformsTo": {
         "@id": "https://www.w3.org/TR/sparql11-protocol/"
       },
-      "dct:description": "SPARQL endpoint"
+      "dct:description": "SPARQL endpoint",
+      "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
     },
     {
       "@type": "dcat:Distribution",
@@ -118,7 +121,8 @@
       },
       "dcat:accessURL": {
         "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.nt.gz"
-      }
+      },
+      "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
     }
   ]
 }

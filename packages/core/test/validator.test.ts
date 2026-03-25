@@ -261,6 +261,18 @@ describe('Validator', () => {
     );
     expect(report.state).toEqual('invalid');
   });
+
+  it('reports dataset with no license on either dataset or distribution', async () => {
+    const report = await validate('dataset-schema-org-no-license.jsonld');
+    expect(report.state).toBe('invalid');
+  });
+
+  it('accepts dataset with license on dataset but not on distribution', async () => {
+    const report = await validate(
+      'dataset-schema-org-valid-minimal.jsonld',
+    );
+    expect(report.state).toEqual('valid');
+  });
 });
 
 export const validate = async (filename: string, parser?: Transform) =>
