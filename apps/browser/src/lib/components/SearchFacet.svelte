@@ -173,11 +173,11 @@
 
   {#if hasMore()}
     <button
-      class="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors cursor-pointer"
+      class="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-medium transition-colors cursor-pointer"
       onclick={toggleExpanded}
       type="button"
     >
-      {isExpanded ? m.facets_show_less() : m.facets_show_more()}
+      {isExpanded ? `− ${m.facets_show_less()}` : `+ ${m.facets_show_more()}`}
     </button>
   {/if}
 </div>

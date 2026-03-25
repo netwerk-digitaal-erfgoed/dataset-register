@@ -982,11 +982,11 @@
 
       {#if hasMoreClasses}
         <button
-          class="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors cursor-pointer"
+          class="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-medium transition-colors cursor-pointer"
           onclick={() => (classesExpanded = !classesExpanded)}
           type="button"
         >
-          {classesExpanded ? m.facets_show_less() : m.facets_show_more()}
+          {classesExpanded ? `− ${m.facets_show_less()}` : `+ ${m.facets_show_more()}`}
         </button>
       {/if}
     </div>
@@ -1138,11 +1138,11 @@
 
         {#if hasMoreProperties}
           <button
-            class="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors cursor-pointer"
+            class="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-medium transition-colors cursor-pointer"
             onclick={() => (propertiesExpanded = !propertiesExpanded)}
             type="button"
           >
-            {propertiesExpanded ? m.facets_show_less() : m.facets_show_more()}
+            {propertiesExpanded ? `− ${m.facets_show_less()}` : `+ ${m.facets_show_more()}`}
           </button>
         {/if}
       </div>
@@ -1400,11 +1400,11 @@
 
         {#if hasMoreValueTypes}
           <button
-            class="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors cursor-pointer"
+            class="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-medium transition-colors cursor-pointer"
             onclick={() => (valueTypesExpanded = !valueTypesExpanded)}
             type="button"
           >
-            {valueTypesExpanded ? m.facets_show_less() : m.facets_show_more()}
+            {valueTypesExpanded ? `− ${m.facets_show_less()}` : `+ ${m.facets_show_more()}`}
           </button>
         {/if}
       </div>
