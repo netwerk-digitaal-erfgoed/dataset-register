@@ -91,33 +91,29 @@ const hasViolation = (report: ValidationReport) =>
 
 const resultIsViolation = (result: ShaclValidationResult): boolean => {
   const isViolation = result.severity.equals(shacl('Violation'));
-  const hasChildren = result.results.length > 0;
 
-  if (isViolation && !hasChildren) {
-    return true;
+  // A non-Violation result (Warning/Info) is not a violation itself. However, NodeConstraintComponent
+  // is a wrapper that links to a referenced node shape whose independent constraints may still be
+  // violations (e.g. ContactPoint is optional/Warning, but IF present MUST have certain properties).
+  if (
+    !isViolation &&
+    !result.constraintComponent.equals(shacl('NodeConstraintComponent'))
+  ) {
+    return false;
   }
 
-  const children = result.results
-    // shacl-engine returns spurious NodeConstraintComponents, so only select the first one.
-    .filter((item, index, self) => {
-      if (item.constraintComponent.equals(shacl('NodeConstraintComponent'))) {
-        return (
-          index ===
-          self.findIndex((t) =>
-            t.constraintComponent.equals(shacl('NodeConstraintComponent')),
-          )
-        );
-      }
-      return true;
-    });
+  const children = result.results;
+  if (children.length === 0) {
+    return isViolation;
+  }
 
   // For sh:or, each child represents an alternative. The sh:or is only a real violation if ALL alternatives have real
   // violations; if any alternative has no real violations, that alternative is satisfied and so is the sh:or.
   if (result.constraintComponent.equals(shacl('OrConstraintComponent'))) {
-    return children.every((nestedResult) => resultIsViolation(nestedResult));
+    return children.every((child) => resultIsViolation(child));
   }
 
-  return children.some((nestedResult) => resultIsViolation(nestedResult));
+  return children.some((child) => resultIsViolation(child));
 };
 
 /**

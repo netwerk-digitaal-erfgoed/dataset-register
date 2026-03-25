@@ -236,6 +236,14 @@ describe('Validator', () => {
     expectViolations(report, ['https://schema.org/sameAs'], 2);
   });
 
+  it('reports non-canonical Creative Commons license URI as warning, not violation', async () => {
+    const report = (await validate(
+      'dataset-schema-org-license-deed.jsonld',
+    )) as Valid;
+    expect(report.state).toEqual('valid');
+    expectViolations(report, ['https://schema.org/license']);
+  });
+
   it('reports invalid encoding format', async () => {
     const report = await validate(
       'dataset-schema-org-invalid-encoding-format.jsonld',
