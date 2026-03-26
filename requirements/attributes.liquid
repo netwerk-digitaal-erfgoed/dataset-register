@@ -74,6 +74,10 @@
                     <br><small>v{{ change['nde:version'] }}:
                     {% if change.datatype -%}
                         must be {{ change.datatype | replace: 'http://www.w3.org/2001/XMLSchema#', 'xsd:' }}
+                    {% elsif change.pattern -%}
+                        must match pattern
+                    {% elsif change.nodeKind == "IRI" and change.severity != "Violation" -%}
+                        must be IRI
                     {% elsif change.severity == "Violation" -%}
                         becomes required
                     {% endif -%}

@@ -217,10 +217,14 @@ nde-dataset:DatasetShape
         [
             a sh:PropertyShape ;
             sh:path schema:inLanguage ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:pattern "^[a-zA-Z]{2,3}(-[a-zA-Z0-9]+)*$" ;
+            ] ;
             sh:minCount 0 ;
             sh:name "Language"@en ;
             sh:description """
-                Language or languages in which the dataset is available. Use one of the language codes from the [[BCP47]], such as "nl-NL".
+                Language or languages in which the dataset is available. Use one of the language codes from the [[BCP47]], such as 'nl-NL'.
             """@en ;
         ] ,
         [
@@ -397,10 +401,14 @@ nde-dataset:DistributionShape
         [
             a sh:PropertyShape ;
             sh:path schema:inLanguage ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:pattern "^[a-zA-Z]{2,3}(-[a-zA-Z0-9]+)*$" ;
+            ] ;
             sh:minCount 0 ;
             sh:name "Language"@en ;
             sh:description """
-                Language or languages in which the distribution is available. Use one of the language codes from the [[BCP47]], such as "nl-NL".
+                Language or languages in which the distribution is available. Use one of the language codes from the [[BCP47]], such as 'nl-NL'.
             """@en ;
         ] ,
         [
@@ -810,6 +818,11 @@ dcat:DatasetShape
         sh:path dc:language ;
         sh:minCount 1 ;
         sh:severity sh:Info ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:nodeKind sh:IRI ;
+            sh:pattern "^http://publications\\.europa\\.eu/resource/authority/language/" ;
+        ] ;
         sh:description "De natuurlijke taal van de tekstuele waarden in de dataset."@nl, "The natural language of the textual values in the dataset."@en ;
         sh:message "Dataset zou één of meer talen moeten bevatten"@nl, "Dataset description should contain one or more languages"@en ;
     ],
