@@ -268,9 +268,7 @@ describe('Validator', () => {
   });
 
   it('accepts dataset with license on dataset but not on distribution', async () => {
-    const report = await validate(
-      'dataset-schema-org-valid-minimal.jsonld',
-    );
+    const report = await validate('dataset-schema-org-valid-minimal.jsonld');
     expect(report.state).toEqual('valid');
   });
 });
