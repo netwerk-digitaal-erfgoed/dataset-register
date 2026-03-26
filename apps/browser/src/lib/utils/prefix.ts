@@ -38,6 +38,19 @@ export function truncateMiddle(str: string, maxLength: number): string {
   return str.slice(0, frontChars) + '…' + str.slice(-backChars);
 }
 
+const EU_LANGUAGE_PREFIX =
+  'http://publications.europa.eu/resource/authority/language/';
+
+/**
+ * Extracts the language code from a value that may be a BCP 47 tag or an EU Language Authority URI.
+ * Returns e.g. 'nl', 'NLD', 'en-GB' — suitable for looking up a Paraglide `lang_*` key.
+ */
+export function languageCode(value: string): string {
+  if (value.startsWith(EU_LANGUAGE_PREFIX))
+    return value.slice(EU_LANGUAGE_PREFIX.length);
+  return value;
+}
+
 const IANA_MEDIA_TYPES_PREFIX = 'https://www.iana.org/assignments/media-types/';
 
 /**

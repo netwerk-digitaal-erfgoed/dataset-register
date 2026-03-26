@@ -13,7 +13,7 @@
     localizeHref,
   } from '$lib/utils/i18n.js';
   import { getLicenseName } from '$lib/utils/license.js';
-  import { shortenUri } from '$lib/utils/prefix.js';
+  import { shortenUri, languageCode } from '$lib/utils/prefix.js';
   import { getMediaTypeLabel } from '$lib/utils/media-type.js';
   import LanguageBadge from '$lib/components/LanguageBadge.svelte';
   import { SvelteSet } from 'svelte/reactivity';
@@ -193,16 +193,12 @@
     getRegistrationStatus(dataset.subjectOf?.additionalType),
   );
 
-  // Helper function to convert language codes to display labels
-  function getLanguageLabel(langCode: string): string {
-    const code = langCode.toLowerCase();
-    if (code === 'nl' || code === 'nl-nl') return m.lang_nl();
-    if (code === 'en' || code.startsWith('en-')) return m.lang_en();
-    if (code === 'de') return m.lang_de();
-    if (code === 'fr') return m.lang_fr();
-    if (code === 'es') return m.lang_es();
-    if (code === 'it') return m.lang_it();
-    return langCode.toUpperCase();
+  // Helper function to convert language codes/URIs to display labels via Paraglide.
+  function getLanguageLabel(value: string): string {
+    const code = languageCode(value);
+    const key: keyof typeof m = `lang_${code}` as keyof typeof m;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (m as any)[key]?.() ?? code;
   }
 
   // Table data for all class partitions with nested property partitions
@@ -855,7 +851,9 @@
                 >
               </dt>
               <dd class="text-sm text-gray-700 dark:text-gray-300">
-                {dataset.language.join(', ')}
+                {dataset.language
+                  .map((lang: string) => getLanguageLabel(lang))
+                  .join(', ')}
               </dd>
             </div>
           {/if}
