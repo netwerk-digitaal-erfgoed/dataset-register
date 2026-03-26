@@ -6,15 +6,17 @@
   import { RDF_MEDIA_TYPES } from '$lib/constants.js';
   import { encodeDatasetUri } from '$lib/url';
   import { formatNumber } from '$lib/services/facets';
+  import { languageCode } from '$lib/utils/prefix.js';
 
   let { dataset }: { dataset: DatasetCard } = $props();
 
   const languages = $derived(
     dataset.language.map((lang) => {
-      const key: keyof typeof m = `lang_${lang}` as keyof typeof m;
-      // Try to get translation, fall back to original language code.
+      const code = languageCode(lang);
+      const key: keyof typeof m = `lang_${code}` as keyof typeof m;
+      // Try to get translation, fall back to the language code.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (m as any)[key]?.() ?? lang;
+      return (m as any)[key]?.() ?? code;
     }),
   );
 

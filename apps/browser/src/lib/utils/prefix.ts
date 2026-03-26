@@ -41,27 +41,14 @@ export function truncateMiddle(str: string, maxLength: number): string {
 const EU_LANGUAGE_PREFIX =
   'http://publications.europa.eu/resource/authority/language/';
 
-const languageLabels: Record<string, Record<string, string>> = {
-  NLD: { nl: 'Nederlands', en: 'Dutch' },
-  ENG: { nl: 'Engels', en: 'English' },
-  DEU: { nl: 'Duits', en: 'German' },
-  FRA: { nl: 'Frans', en: 'French' },
-  FRY: { nl: 'Fries', en: 'Frisian' },
-  LAT: { nl: 'Latijn', en: 'Latin' },
-  SPA: { nl: 'Spaans', en: 'Spanish' },
-  ITA: { nl: 'Italiaans', en: 'Italian' },
-  POR: { nl: 'Portugees', en: 'Portuguese' },
-};
-
 /**
- * Converts an EU Language Authority URI to a human-readable label.
- * Falls back to the language code if no label is found, or returns
- * the original value if it's not an EU URI.
+ * Extracts the language code from a value that may be a BCP 47 tag or an EU Language Authority URI.
+ * Returns e.g. 'nl', 'NLD', 'en-GB' — suitable for looking up a Paraglide `lang_*` key.
  */
-export function languageLabel(value: string, locale = 'nl'): string {
-  if (!value.startsWith(EU_LANGUAGE_PREFIX)) return value;
-  const code = value.slice(EU_LANGUAGE_PREFIX.length);
-  return languageLabels[code]?.[locale] ?? code;
+export function languageCode(value: string): string {
+  if (value.startsWith(EU_LANGUAGE_PREFIX))
+    return value.slice(EU_LANGUAGE_PREFIX.length);
+  return value;
 }
 
 const IANA_MEDIA_TYPES_PREFIX = 'https://www.iana.org/assignments/media-types/';
