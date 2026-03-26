@@ -1,0 +1,16 @@
+{
+  "@context": "https://schema.org/",
+  "@type": "Dataset",
+  "@id": "http://example.com/dataset-no-license",
+  "name": "Dataset without license",
+  "publisher": {
+    "@type": "Organization",
+    "@id": "https://example.com/publisher",
+    "name": "Example Organization"
+  },
+  "distribution": {
+    "@type": "DataDownload",
+    "contentUrl": "http://example.com/data.csv",
+    "encodingFormat": "text/csv"
+  }
+}

@@ -7,6 +7,7 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix nde-dataset: <https://def.nde.nl/dataset#> .
 @prefix nde: <https://def.nde.nl#> .
+@prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 
 ##
@@ -114,15 +115,20 @@ nde-dataset:DatasetShape
         [
             sh:path schema:license ;
             sh:nodeKind sh:IRIOrLiteral ;
-            sh:minCount 1 ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:nodeKind sh:IRI ;
+            ] ;
             sh:maxCount 1 ;
             sh:node _:LicenseCreativeCommonsHttpShape,
                 _:LicenseCreativeCommonsTrailingSlashShape,
                 _:LicenseNotOpenDefinitionShape,
                 _:LicenseOpenDataCommonsShape ;
             sh:name "Licentie"@nl, "License"@en ;
-            sh:description "Licentie die van toepassing is op de dataset"@nl, """
-                Publishers *MUST* make known under which [[DWBP#licenses|license]] the dataset may be used.
+            sh:description """Licentie die van toepassing is op de dataset.
+                Als de dataset een licentie heeft, wordt deze overgenomen door alle distributies die geen eigen licentie hebben."""@nl, """
+                License applicable to the dataset. As a convenience, this license is inherited by all distributions
+                that do not specify their own license. Publishers *MUST* make known under which [[DWBP#licenses|license]] the dataset may be used.
 
                 This license specifies the conditions under which the metadata in the [=dataset=] may be accessed and reused.
                 It does not cover the heritage objects (either physical or digital) that the metadata describes.
@@ -154,7 +160,7 @@ nde-dataset:DatasetShape
         [
             sh:path schema:creator ;
             sh:minCount 1 ;
-            sh:severity sh:Info ;
+            sh:severity sh:Warning ;
             nde:futureChange [
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
@@ -405,10 +411,16 @@ nde-dataset:DistributionShape
             nde:futureChange [
                 nde:version "2.0" ;
                 sh:minCount 1 ;
+                sh:nodeKind sh:IRI ;
                 sh:severity sh:Violation ;
             ] ;
-            sh:description "Licentie die van toepassing is op de datasetdistributie."@nl, "License applicable to the dataset distribution."@en ;
-            sh:message "Een distributie mag maximaal één licentie bevatten (in de vorm van een IRI)"@nl, "A distribution may contain at most one license (as a IRI)"@en ;
+            sh:description """Licentie die van toepassing is op de distributie.
+        Als de distributie geen eigen licentie heeft, wordt de licentie van de bovenliggende dataset overgenomen.
+        Er moet altijd een licentie beschikbaar zijn, hetzij op de distributie, hetzij op het dataset."""@nl,
+                """License applicable to the distribution.
+        If the distribution has no license of its own, the license of the parent dataset is inherited.
+        A license must always be available, either on the distribution or on the dataset."""@en ;
+            sh:message "Een distributie mag maximaal één licentie bevatten (in de vorm van een IRI)"@nl, "A distribution may contain at most one license (as an IRI)"@en ;
         ] ,
         [
             a sh:PropertyShape ;
@@ -424,7 +436,21 @@ nde-dataset:DistributionShape
             sh:maxCount 1 ;
             sh:description "A link to the [=web API=] documentation; see [[#developer-docs]]."@en ;
         ] ,
-        nde-dataset:SchemaDescriptionPropertyShouldExist
+        nde-dataset:SchemaDescriptionPropertyShouldExist ;
+    sh:sparql [
+        sh:select """
+            PREFIX schema: <https://schema.org/>
+            SELECT $this
+            WHERE {
+                $this a schema:DataDownload .
+                ?dataset schema:distribution $this .
+                FILTER NOT EXISTS { $this schema:license ?distLicense }
+                FILTER NOT EXISTS { ?dataset schema:license ?datasetLicense }
+            }
+        """ ;
+        sh:message "Een distributie of de bovenliggende dataset moet een licentie hebben"@nl,
+            "A distribution or its parent dataset must have a license"@en ;
+    ]
 .
 
 nde-dataset:OrganizationShape
@@ -620,8 +646,22 @@ nde-dataset:SchemaDescriptionUniqueLangProperty a sh:PropertyShape ;
 nde-dataset:SchemaDescriptionPropertyShouldExist a sh:PropertyShape ;
     sh:path schema:description ;
     sh:minCount 1 ;
-    sh:severity sh:Info ;
-    sh:message "Zou een beschrijving moeten hebben"@nl, "Should have a description"@en ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:description """Een beschrijving van de inhoud van de dataset.
+        Deze is bij voorkeur minimaal drie zinnen en maximaal één alinea lang (2000 karakters).
+        De vindbaarheid van de dataset wordt onder andere bepaald door de kwaliteit van de beschrijving.
+        Denk hierbij aan verschillende gebruikers, vakgenoten maar ook anderen,
+        waarvoor de tekst begrijpelijk moet zijn."""@nl,
+        """A free-text account of the dataset.
+        Preferably at least three sentences and at most one paragraph (2,000 characters).
+        The discoverability of the dataset depends in part on the quality of the description.
+        Consider different audiences — both domain experts and others —
+        for whom the text should be understandable."""@en ;
+    sh:message "Moet een beschrijving hebben"@nl, "Must have a description"@en ;
 .
 
 _:LicenseCreativeCommonsHttpShape a sh:NodeShape ;
@@ -631,6 +671,10 @@ _:LicenseCreativeCommonsHttpShape a sh:NodeShape ;
         "Use the canonical Creative Commons license URI with https:// (e.g. https://creativecommons.org/publicdomain/zero/1.0/)"@en ;
 .
 
+# Validates that CC URIs end with a trailing slash, which also rejects localized deed
+# URLs like /deed.nl. Note that even the DCAT-AP-NL 3.0 examples incorrectly use
+# http://creativecommons.org/publicdomain/zero/1.0/deed.nl as a license URI
+# (see https://docs.geostandaarden.nl/dcat/dcat-ap-nl30/#distribution-licence).
 _:LicenseCreativeCommonsTrailingSlashShape a sh:NodeShape ;
     sh:or (
         [ sh:not [ sh:pattern "^https://creativecommons\\.org/" ] ]
@@ -689,31 +733,40 @@ dcat:DatasetShape
     sh:name "Dataset" ;
     sh:property [
         sh:minCount 1 ;
-        sh:path dc:title
+        sh:path dc:title ;
+        sh:description "De naam van de beschreven dataset."@nl, "The name of the dataset."@en ;
     ],
     [
-        sh:path dc:alternative
+        sh:path dc:alternative ;
+        sh:description "Een alternatieve naam van de dataset."@nl, "An alternative name of the dataset."@en ;
     ],
     [
         sh:path dc:description ;
         sh:minCount 1 ;
-        sh:severity sh:Info ;
-        sh:message "Dataset zou een beschrijving moeten hebben"@nl, "Dataset should have a description"@en ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:description """Een beschrijving van de inhoud van de dataset.
+        Deze is bij voorkeur minimaal drie zinnen en maximaal één alinea lang (2000 karakters).
+        De vindbaarheid van de dataset wordt onder andere bepaald door de kwaliteit van de beschrijving.
+        Denk hierbij aan verschillende gebruikers, vakgenoten maar ook anderen,
+        waarvoor de tekst begrijpelijk moet zijn."""@nl,
+            """A free-text account of the dataset.
+        Preferably at least three sentences and at most one paragraph (2,000 characters).
+        The discoverability of the dataset depends in part on the quality of the description.
+        Consider different audiences — both domain experts and others —
+        for whom the text should be understandable."""@en ;
+        sh:message "Dataset moet een beschrijving hebben"@nl, "Dataset must have a description"@en ;
     ],
-    [
-        sh:minCount 1 ;
-        sh:maxCount 1 ;
-        sh:path dc:license ;
-        sh:node _:LicenseCreativeCommonsHttpShape,
-            _:LicenseCreativeCommonsTrailingSlashShape,
-            _:LicenseNotOpenDefinitionShape,
-            _:LicenseOpenDataCommonsShape ;
-    ],
+    # No dc:license on Dataset — DCAT-AP-NL 3.0 only requires license on Distribution.
     [
         sh:path dc:created ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
         sh:severity sh:Info ;
+        sh:description "De datum waarop de dataset is aangemaakt."@nl, "The date on which the dataset was created."@en ;
         sh:message "Dataset zou een aanmaakdatum moeten hebben"@nl, "Dataset description  should have a creation date"@en ;
     ],
     [
@@ -721,6 +774,7 @@ dcat:DatasetShape
         sh:minCount 1 ;
         sh:maxCount 1 ;
         sh:severity sh:Info ;
+        sh:description "De datum van formele uitgifte (bijvoorbeeld publicatie) van de dataset."@nl, "The date of formal issuance (e.g. publication) of the dataset."@en ;
         sh:message "Dataset zou een uitgavedatum moeten bevatten"@nl, "Dataset description  should contain an issued date"@en ;
     ],
     [
@@ -728,36 +782,48 @@ dcat:DatasetShape
         sh:minCount 1 ;
         sh:maxCount 1 ;
         sh:severity sh:Info ;
+        sh:description "De meest recente datum waarop de dataset is gewijzigd of aangepast."@nl, "The most recent date on which the dataset was changed or modified."@en ;
         sh:message "Datasetbeschrijving zou een laatste wijzigingsdatum moeten bevatten"@nl, "Dataset description  should contain a modification date"@en ;
     ],
     [
         sh:path dcat:keyword ;
         sh:minCount 1 ;
         sh:severity sh:Info ;
+        sh:description "Woorden of geformaliseerde zinnen om een dataset te beschrijven."@nl, "Words or formalized phrases to describe the dataset."@en ;
         sh:message "Datasetbeschrijving zou trefwoorden moeten bevatten"@nl, "Dataset description should contain keywords"@en ;
     ],
     [
         sh:path dc:spatial ;
         sh:minCount 1 ;
         sh:severity sh:Info ;
+        sh:description "Het geografische gebied waarop de gegevens in de dataset betrekking hebben."@nl, "The geographical area to which the data in the dataset pertains."@en ;
         sh:message "Datasetbeschrijving zou een gebiedsaanduiding moeten bevatten"@nl, "Dataset description should contain spatial coverage"@en ;
     ],
     [
         sh:path dc:temporal ;
         sh:minCount 1 ;
         sh:severity sh:Info ;
+        sh:description "De tijdsperiode waar de dataset betrekking op heeft."@nl, "The time period to which the dataset pertains."@en ;
         sh:message "Datasetbeschrijving zou een een tijdsaanduiding moeten bevatten"@nl, "Dataset description should contain temporal coverage"@en ;
     ],
     [
         sh:path dc:language ;
         sh:minCount 1 ;
         sh:severity sh:Info ;
+        sh:description "De natuurlijke taal van de tekstuele waarden in de dataset."@nl, "The natural language of the textual values in the dataset."@en ;
         sh:message "Dataset zou één of meer talen moeten bevatten"@nl, "Dataset description should contain one or more languages"@en ;
     ],
     [
         sh:path dc:publisher ;
         sh:minCount 1 ;
         sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:description "De organisatie of persoon die verantwoordelijk is voor de publicatie van de dataset."@nl,
+            "The organization or person responsible for publishing the dataset."@en ;
+        sh:message "Dataset moet een uitgever hebben"@nl, "Dataset must have a publisher"@en ;
         sh:or (
             [
                  sh:class foaf:Organization ;
@@ -772,11 +838,12 @@ dcat:DatasetShape
     [
         sh:path dc:creator ;
         sh:minCount 1 ;
-        sh:severity sh:Info ;
+        sh:severity sh:Warning ;
         nde:futureChange [
             nde:version "2.0" ;
             sh:severity sh:Violation ;
         ] ;
+        sh:description "De organisatie verantwoordelijk voor het creëren van de dataset."@nl, "The organization responsible for creating the dataset."@en ;
         sh:or (
             [
                  sh:class foaf:Organization ;
@@ -790,11 +857,55 @@ dcat:DatasetShape
         sh:message "Datasetbeschrijving zou een maker moeten bevatten"@nl, "Dataset description should contain a creator"@en ;
     ],
     [
+        sh:path dcat:contactPoint ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:node [
+            a sh:NodeShape ;
+            sh:property [
+                sh:path vcard:fn ;
+                sh:minCount 1 ;
+                sh:severity sh:Warning ;
+                sh:message "Contactpunt moet een naam hebben"@nl, "Contact point must have a name"@en ;
+            ] ,
+            [
+                sh:path vcard:hasEmail ;
+                sh:minCount 1 ;
+                sh:nodeKind sh:IRI ;
+                sh:pattern "^mailto:" ;
+                sh:severity sh:Warning ;
+                sh:message "Contactpunt moet een e-mailadres hebben als mailto:-IRI"@nl,
+                    "Contact point must have an e-mail address as a mailto: IRI"@en ;
+            ] ;
+        ] ;
+        sh:description """Contactinformatie waar eindgebruikers contact kunnen opnemen met vragen over de dataset.
+        Dit bevat het e-mailadres of een link (URL) naar het contactformulier van de verantwoordelijke organisatie.
+        Het e-mailadres is een functioneel e-mailadres van de organisatie of organisatieonderdeel."""@nl,
+            """Contact information where end users can get in touch with questions about the dataset.
+        This contains the e-mail address or a link (URL) to the contact form of the responsible organization.
+        The e-mail address should be a functional e-mail address of the organization or department."""@en ;
+        sh:message "Dataset moet een contactpunt hebben"@nl, "Dataset must have a contact point"@en ;
+    ],
+    [
+        sh:path dcat:theme ;
+        sh:nodeKind sh:IRI ;
+        sh:description """De categorie van de dataset. Gebruik minimaal een waarde uit het Europese Dataset Theme Vocabulary.
+        Aanbevolen wordt om daarnaast waarden op te nemen uit domeinspecifieke vocabulaires."""@nl,
+            """The category of the dataset. Use at least one value from the European Dataset Theme Vocabulary.
+        It is recommended to also include values from domain-specific vocabularies."""@en ;
+    ],
+    [
         sh:path dcat:distribution ;
         sh:class dcat:Distribution ;
         sh:node dcat:DistributionShape ;
         sh:minCount 1 ;
         sh:severity sh:Info ;
+        sh:description "Een beschikbare representatie van de dataset."@nl, "An available representation of the dataset."@en ;
         sh:message "Datasetbeschrijving zou minstens één distributie moeten bevatten"@nl, "Dataset description should contain at least one distribution"@en ;
     ] ,
     nde-dataset:AccessRightsProperty ;
@@ -808,26 +919,104 @@ dcat:DistributionShape
         [ sh:property [
             sh:minCount 1 ;
             sh:maxCount 1 ;
-            sh:path dcat:accessURL
+            sh:path dcat:accessURL ;
+            sh:description "De URL die toegang verschaft tot een distributie van de dataset."@nl, "The URL that provides access to a distribution of the dataset."@en ;
             ]
         ]
         [ sh:property [
             sh:minCount 1 ;
             sh:maxCount 1 ;
-            sh:path dcat:downloadURL
+            sh:path dcat:downloadURL ;
+            sh:description "De URL van het downloadbare bestand in een bepaald formaat."@nl, "The URL of the downloadable file in a specific format."@en ;
             ]
         ]
     ) ;
     sh:or (
         [ sh:property [
             sh:minCount 1 ;
-            sh:path dcat:mediaType
+            sh:path dcat:mediaType ;
+            sh:description "Het mediatype van de distributie conform de IANA-indeling."@nl, "The media type of the distribution according to the IANA classification."@en ;
         ] ]
         [ sh:property [
             sh:minCount 1 ;
-            sh:path dc:format
+            sh:path dc:format ;
+            sh:description "Het formaat van de distributie."@nl, "The format of the distribution."@en ;
         ] ]
-    ) .
+    ) ;
+    sh:property [
+        sh:path dc:license ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:node _:LicenseCreativeCommonsHttpShape,
+            _:LicenseCreativeCommonsTrailingSlashShape,
+            _:LicenseNotOpenDefinitionShape,
+            _:LicenseOpenDataCommonsShape ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:description "De licentie waaronder de distributie beschikbaar is gesteld."@nl,
+            "The license under which the distribution is made available."@en ;
+        sh:message "Distributie moet een licentie hebben"@nl, "Distribution must have a license"@en ;
+    ] .
+
+dcat:CatalogShape
+    a sh:NodeShape ;
+    sh:targetClass dcat:Catalog ;
+    sh:property [
+        sh:path dc:title ;
+        sh:minCount 1 ;
+        sh:description "De naam van de catalogus."@nl, "The name of the catalog."@en ;
+        sh:message "Catalogus moet een titel hebben"@nl, "Catalog must have a title"@en ;
+    ],
+    [
+        sh:path dc:description ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:description "Een beschrijving van de catalogus."@nl, "A description of the catalog."@en ;
+        sh:message "Catalogus moet een beschrijving hebben"@nl, "Catalog must have a description"@en ;
+    ],
+    [
+        sh:path dc:publisher ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:description "De organisatie die verantwoordelijk is voor de publicatie van de catalogus."@nl,
+            "The organization responsible for publishing the catalog."@en ;
+        sh:message "Catalogus moet een uitgever hebben"@nl, "Catalog must have a publisher"@en ;
+    ],
+    [
+        sh:path dcat:contactPoint ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:description """Contactinformatie waar eindgebruikers contact kunnen opnemen met vragen over de catalogus.
+        Dit bevat het e-mailadres of een link (URL) naar het contactformulier van de verantwoordelijke organisatie.
+        Het e-mailadres is een functioneel e-mailadres van de organisatie of organisatieonderdeel."""@nl,
+            """Contact information where end users can get in touch with questions about the catalog.
+        This contains the e-mail address or a link (URL) to the contact form of the responsible organization.
+        The e-mail address should be a functional e-mail address of the organization or department."""@en ;
+        sh:message "Catalogus moet een contactpunt hebben"@nl, "Catalog must have a contact point"@en ;
+    ],
+    [
+        sh:path dcat:dataset ;
+        sh:minCount 1 ;
+        sh:description "De datasets in de catalogus."@nl, "The datasets in the catalog."@en ;
+        sh:message "Catalogus moet minimaal één dataset bevatten"@nl, "Catalog must contain at least one dataset"@en ;
+    ] .
 
 dcat:OrganizationShape
     a sh:NodeShape ;
@@ -841,6 +1030,7 @@ dcat:OrganizationShape
             [ sh:datatype rdf:langString ]
         ) ;
         sh:uniqueLang true ;
+        sh:description "De naam van de organisatie."@nl, "The name of the organization."@en ;
         sh:message "Een organisatie moet een naam hebben"@nl, "An organization must have a name"@en ;
     ] ,
     [
@@ -862,6 +1052,7 @@ dcat:PersonShape
             [ sh:datatype rdf:langString ]
         ) ;
         sh:uniqueLang true ;
+        sh:description "De naam van de persoon."@nl, "The name of the person."@en ;
         sh:message "Een persoon moet een naam hebben"@nl, "A person must have a name"@en ;
     ] ,
     [
