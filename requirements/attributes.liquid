@@ -75,7 +75,7 @@
                     {% if change.datatype -%}
                         must be {{ change.datatype | replace: 'http://www.w3.org/2001/XMLSchema#', 'xsd:' }}
                     {% elsif change.pattern -%}
-                        must match pattern
+                        must match <code>{{ change.pattern }}</code>
                     {% elsif change.nodeKind == "IRI" and change.severity != "Violation" -%}
                         must be IRI
                     {% elsif change.severity == "Violation" -%}
