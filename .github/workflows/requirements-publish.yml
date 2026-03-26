@@ -48,8 +48,8 @@ jobs:
         id: generate-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ vars.NDE_APP_ID }}
-          private-key: ${{ secrets.NDE_APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
           owner: netwerk-digitaal-erfgoed
           repositories: netwerk-digitaal-erfgoed.github.io
 
