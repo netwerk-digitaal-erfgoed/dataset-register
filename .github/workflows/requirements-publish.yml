@@ -26,7 +26,7 @@ jobs:
         with:
           node-version: lts/*
           cache: 'npm'
-      - run: npx --yes @lde/docgen@latest from-shacl shacl.ttl index.bs.liquid > index.bs
+      - run: npx --yes @lde/docgen@latest from-shacl -f shacl.frame.jsonld shacl.ttl index.bs.liquid > index.bs
 
       - name: Build and validate
         uses: w3c/spec-prod@v2
