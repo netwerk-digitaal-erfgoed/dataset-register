@@ -44,13 +44,20 @@ jobs:
           name: spec-prod-result-requirements
           path: requirements/
 
+      - name: Generate token
+        id: generate-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.NDE_APP_ID }}
+          private-key: ${{ secrets.NDE_APP_PRIVATE_KEY }}
+          owner: netwerk-digitaal-erfgoed
+          repositories: netwerk-digitaal-erfgoed.github.io
+
       - name: Deploy to docs.nde.nl
         uses: peaceiris/actions-gh-pages@v4
         with:
           external_repository: netwerk-digitaal-erfgoed/netwerk-digitaal-erfgoed.github.io
-          user_email: nde-bot@users.noreply.github.com
-          user_name: nde-bot
-          personal_token: ${{ secrets.DATASET_REGISTER_PUBLISH_REQUIREMENTS }}
+          personal_token: ${{ steps.generate-token.outputs.token }}
           publish_dir: requirements/
           publish_branch: main
           destination_dir: static/requirements-datasets/
