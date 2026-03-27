@@ -11,9 +11,9 @@ import { normalizeMediaType } from '$lib/utils/sparql';
 export const SPARQL_ENDPOINT = PUBLIC_SPARQL_ENDPOINT;
 const fetcher = new SparqlEndpointFetcher();
 
-// Base distribution schema with common fields.
-// No @type specified to match both dcat:Distribution and dcat:DataService.
+// Base distribution schema with common fields
 export const BaseDistributionSchema = {
+  '@type': dcat.Distribution,
   mediaType: {
     '@id': dcat.mediaType,
     '@optional': true,
@@ -175,7 +175,8 @@ export function datasetCardsQuery(
       schema:datePosted ?datePosted .
     ?publisher a foaf:Agent ;
       foaf:name ?publisherName .
-    ?distribution dcat:mediaType ?mediaType ;
+    ?distribution a dcat:Distribution ;
+      dcat:mediaType ?mediaType ;
       dct:conformsTo ?conformsTo .
   }
   WHERE {
