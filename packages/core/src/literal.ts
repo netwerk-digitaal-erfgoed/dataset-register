@@ -59,6 +59,33 @@ export const normalizeMediaType = (variable: string) =>
         )`;
 
 /**
+ * For download distributions (no conformsTo protocol), emit downloadURL and mediaType.
+ * For API distributions (conformsTo bound), suppress both — they are meaningless for APIs.
+ */
+export const downloadOnlyProperties = (
+  conformsToVariable: string,
+  conformsToSparqlVariable: string,
+  urlVariable: string,
+  mediaTypeVariable: string,
+  downloadUrlOutput: string,
+  mediaTypeOutput: string,
+) =>
+  `BIND(
+    IF(
+      BOUND(?${conformsToVariable}) || BOUND(?${conformsToSparqlVariable}),
+      ?unbound,
+      ?${urlVariable}
+    ) AS ?${downloadUrlOutput}
+  )
+  BIND(
+    IF(
+      BOUND(?${conformsToVariable}) || BOUND(?${conformsToSparqlVariable}),
+      ?unbound,
+      ?${mediaTypeVariable}
+    ) AS ?${mediaTypeOutput}
+  )`;
+
+/**
  * Detect +gzip in the raw media type and bind a compress format URI.
  *
  * Returns a SPARQL BIND that sets the compress format variable to

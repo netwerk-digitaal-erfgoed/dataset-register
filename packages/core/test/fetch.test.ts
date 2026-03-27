@@ -312,9 +312,10 @@ describe('Fetch', () => {
     // The Schema.org dataset has extra triples compared to the DCAT equivalent:
     // SPARQL conformsTo, auto-assigned accessRights, contactPoint (4 triples:
     // dcat:contactPoint, a vcard:Kind, vcard:fn, vcard:hasEmail), and dcat:theme.
-    // The DCAT file has a 4th gzip distribution (4 triples), an extra byteSize
-    // triple, and one more propagated license (4 vs 3 distributions).
-    expect(dataset.size).toEqual(dcatEquivalent.size + 7 - 6);
+    // The DCAT file has a 4th gzip distribution (5 triples incl. downloadURL),
+    // an extra byteSize triple, one more propagated license (4 vs 3 distributions),
+    // and a mediaType on the SPARQL distribution (suppressed for API distributions).
+    expect(dataset.size).toEqual(dcatEquivalent.size + 7 - 8);
 
     // Check that SPARQL endpoint has conformsTo triple
     const sparqlConformsToTriples = [...dataset].filter(

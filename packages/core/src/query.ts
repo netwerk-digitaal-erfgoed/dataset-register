@@ -5,6 +5,7 @@ import {
   convertToXsdDate,
   convertUriToLiteral,
   defaultLanguageTag,
+  downloadOnlyProperties,
   normalizeLicense,
   normalizeMediaType,
 } from './literal.ts';
@@ -60,6 +61,8 @@ const distributionLicense = 'distribution_license';
 const distributionName = 'distribution_name';
 const distributionSize = 'distribution_size';
 const distributionCompressFormat = 'distribution_compressFormat';
+const distributionDownloadUrl = 'distribution_downloadUrl';
+const distributionMediaTypeForDownload = 'distribution_mediaType_download';
 
 /** Generates a prefixed SPARQL variable name, e.g. odrlVar('perm', 'action') → 'perm_action'. */
 const odrlVar = (prefix: string, prop: string) => `${prefix}_${prop}`;
@@ -161,7 +164,8 @@ export const constructQuery = `
       
     ?${distribution} a dcat:Distribution ;
       dcat:accessURL ?${distributionUrl} ;
-      dcat:mediaType ?${distributionMediaType} ;
+      dcat:downloadURL ?${distributionDownloadUrl} ;
+      dcat:mediaType ?${distributionMediaTypeForDownload} ;
       dcat:compressFormat ?${distributionCompressFormat} ;
       dct:conformsTo ?${distributionConformsTo} ;
       dct:conformsTo ?${distributionConformsToSparql} ;
@@ -255,6 +259,7 @@ export const constructQuery = `
             ${odrlRuleWhere('policy', 'obligation', 'obligation', 'oblig')}
           }
         }
+        ${downloadOnlyProperties(distributionConformsTo, distributionConformsToSparql, distributionUrl, distributionMediaType, distributionDownloadUrl, distributionMediaTypeForDownload)}
 
         OPTIONAL { ?${dataset} dct:description ?${description} }
         BIND(STR(?${dataset}) AS ?${identifier})
@@ -377,13 +382,14 @@ function schemaOrgQuery(prefix: string): string {
       BIND(COALESCE(?${distributionLicense}Provided, ?${license}) AS ?${distributionLicense})
       OPTIONAL { ?${distribution} ${prefix}:name ?${distributionName} }
       OPTIONAL { ?${distribution} ${prefix}:contentSize ?${distributionSize} }
-      OPTIONAL { 
+      OPTIONAL {
         ?${distribution} ${prefix}:usageInfo ?${distributionConformsTo} .
-        FILTER(isIRI(?${distributionConformsTo}))  
+        FILTER(isIRI(?${distributionConformsTo}))
       }
-    } 
-     
-    OPTIONAL { ?${dataset} ${prefix}:description ?${description} } 
+    }
+    ${downloadOnlyProperties(distributionConformsTo, distributionConformsToSparql, distributionUrl, distributionMediaType, distributionDownloadUrl, distributionMediaTypeForDownload)}
+
+    OPTIONAL { ?${dataset} ${prefix}:description ?${description} }
     BIND(STR(?${dataset}) AS ?${identifier})
     OPTIONAL { ?${dataset} ${prefix}:alternateName ?${alternateName} }
     OPTIONAL { ?${dataset} ${prefix}:dateCreated ${convertToXsdDate(
