@@ -1,5 +1,10 @@
 import { URL } from 'url';
-import { fetch, HttpError, NoDatasetFoundAtUrl } from '../src/fetch.js';
+import {
+  dereference as fetchDereference,
+  fetch,
+  HttpError,
+  NoDatasetFoundAtUrl,
+} from '../src/fetch.js';
 import nock from 'nock';
 import { dcat, dct, foaf, odrl, rdf } from '../src/query.js';
 import factory from 'rdf-ext';
@@ -510,6 +515,20 @@ describe('Fetch', () => {
     expect(datasets).toHaveLength(1);
   });
 
+  it('accepts valid Schema.org dataset in HTML+JSON-LD', async () => {
+    const response = await file('dataset-schema-org-valid-jsonld.html');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'text/html' })
+      .get('/valid-schema-org-dataset-jsonld')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/valid-schema-org-dataset-jsonld'),
+    );
+
+    expect(datasets).toHaveLength(1);
+  });
+
   it('accepts valid HTTP Schema.org dataset in Turtle', async () => {
     const response = await file('dataset-http-schema-org-valid.ttl');
     nock('https://example.com')
@@ -554,8 +573,10 @@ describe('Fetch', () => {
   });
 
   it('handles paginated JSON-LD responses', async () => {
+    // First request is consumed by dereference(); second by Comunica (Hydra fallback).
     nock('https://example.com')
       .get('/datasets/hydra-page1.jsonld')
+      .times(2)
       .replyWithFile(200, 'test/datasets/hydra-page1.jsonld', {
         'Content-Type': 'application/ld+json',
       });
@@ -574,8 +595,10 @@ describe('Fetch', () => {
   });
 
   it('handles paginated Turtle responses', async () => {
+    // First request is consumed by dereference(); second by Comunica (Hydra fallback).
     nock('https://example.com')
       .get('/datasets/hydra-page1.ttl')
+      .times(2)
       .replyWithFile(200, 'test/datasets/hydra-page1.ttl', {
         'Content-Type': 'text/turtle',
       });
@@ -624,8 +647,9 @@ describe('Fetch', () => {
 });
 
 const fetchDatasetsAsArray = async (url: URL) => {
+  const data = await fetchDereference(url);
   const datasets = [];
-  for await (const dataset of fetch(url)) {
+  for await (const dataset of fetch(url, data)) {
     datasets.push(dataset);
   }
   return datasets;
