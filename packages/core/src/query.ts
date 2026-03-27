@@ -63,6 +63,7 @@ const distributionSize = 'distribution_size';
 const distributionCompressFormat = 'distribution_compressFormat';
 const distributionDownloadUrl = 'distribution_downloadUrl';
 const distributionMediaTypeForDownload = 'distribution_mediaType_download';
+const distributionCompressFormatForDownload = 'distribution_compressFormat_download';
 
 /** Generates a prefixed SPARQL variable name, e.g. odrlVar('perm', 'action') → 'perm_action'. */
 const odrlVar = (prefix: string, prop: string) => `${prefix}_${prop}`;
@@ -166,7 +167,7 @@ export const constructQuery = `
       dcat:accessURL ?${distributionUrl} ;
       dcat:downloadURL ?${distributionDownloadUrl} ;
       dcat:mediaType ?${distributionMediaTypeForDownload} ;
-      dcat:compressFormat ?${distributionCompressFormat} ;
+      dcat:compressFormat ?${distributionCompressFormatForDownload} ;
       dct:conformsTo ?${distributionConformsTo} ;
       dct:conformsTo ?${distributionConformsToSparql} ;
       dct:issued ?${distributionDatePublished} ;
@@ -259,7 +260,7 @@ export const constructQuery = `
             ${odrlRuleWhere('policy', 'obligation', 'obligation', 'oblig')}
           }
         }
-        ${downloadOnlyProperties(distributionConformsTo, distributionConformsToSparql, distributionUrl, distributionMediaType, distributionDownloadUrl, distributionMediaTypeForDownload)}
+        ${downloadOnlyProperties(distributionConformsTo, distributionConformsToSparql, distributionUrl, distributionMediaType, distributionCompressFormat, distributionDownloadUrl, distributionMediaTypeForDownload, distributionCompressFormatForDownload)}
 
         OPTIONAL { ?${dataset} dct:description ?${description} }
         BIND(STR(?${dataset}) AS ?${identifier})
@@ -387,7 +388,7 @@ function schemaOrgQuery(prefix: string): string {
         FILTER(isIRI(?${distributionConformsTo}))
       }
     }
-    ${downloadOnlyProperties(distributionConformsTo, distributionConformsToSparql, distributionUrl, distributionMediaType, distributionDownloadUrl, distributionMediaTypeForDownload)}
+    ${downloadOnlyProperties(distributionConformsTo, distributionConformsToSparql, distributionUrl, distributionMediaType, distributionCompressFormat, distributionDownloadUrl, distributionMediaTypeForDownload, distributionCompressFormatForDownload)}
 
     OPTIONAL { ?${dataset} ${prefix}:description ?${description} }
     BIND(STR(?${dataset}) AS ?${identifier})

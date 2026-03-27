@@ -59,16 +59,19 @@ export const normalizeMediaType = (variable: string) =>
         )`;
 
 /**
- * For download distributions (no conformsTo protocol), emit downloadURL and mediaType.
- * For API distributions (conformsTo bound), suppress both — they are meaningless for APIs.
+ * For download distributions (no conformsTo protocol), emit downloadURL, mediaType,
+ * and compressFormat. For API distributions (conformsTo bound), suppress all three —
+ * they are meaningless for APIs.
  */
 export const downloadOnlyProperties = (
   conformsToVariable: string,
   conformsToSparqlVariable: string,
   urlVariable: string,
   mediaTypeVariable: string,
+  compressFormatVariable: string,
   downloadUrlOutput: string,
   mediaTypeOutput: string,
+  compressFormatOutput: string,
 ) =>
   `BIND(
     IF(
@@ -83,6 +86,13 @@ export const downloadOnlyProperties = (
       ?unbound,
       ?${mediaTypeVariable}
     ) AS ?${mediaTypeOutput}
+  )
+  BIND(
+    IF(
+      BOUND(?${conformsToVariable}) || BOUND(?${conformsToSparqlVariable}),
+      ?unbound,
+      ?${compressFormatVariable}
+    ) AS ?${compressFormatOutput}
   )`;
 
 /**
