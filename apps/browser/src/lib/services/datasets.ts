@@ -2,11 +2,19 @@ import { dcat } from '@lde/dataset-registry-client';
 import { dcterms, foaf, ldkit, schema, xsd } from 'ldkit/namespaces';
 import { createLens, type SchemaInterface } from 'ldkit';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
-import { facetConfigs, type Facets, fetchFacets } from '$lib/services/facets';
-import { PUBLIC_SPARQL_ENDPOINT } from '$env/static/public';
+import {
+  facetConfigs,
+  fetchDatasetIrisFromKnowledgeGraph,
+  type Facets,
+  fetchFacets,
+} from '$lib/services/facets';
+import {
+  PUBLIC_SPARQL_ENDPOINT,
+  PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+} from '$env/static/public';
 import { voidNs } from '../rdf.js';
 import { getLocale } from '$lib/paraglide/runtime';
-import { normalizeMediaType } from '$lib/utils/sparql';
+import { inIris, normalizeMediaType } from '$lib/utils/sparql';
 
 export const SPARQL_ENDPOINT = PUBLIC_SPARQL_ENDPOINT;
 const fetcher = new SparqlEndpointFetcher();
@@ -124,11 +132,12 @@ export interface SearchRequest {
 }
 
 async function countDatasets(filters: SearchRequest) {
+  const filterQuery = await filterDatasets(filters);
   const query = `
   ${prefixes}
 
   SELECT (COUNT(DISTINCT ?dataset) as ?count) WHERE {
-    ${filterDatasets(filters)}
+    ${filterQuery}
   }`;
 
   try {
@@ -149,7 +158,7 @@ async function countDatasets(filters: SearchRequest) {
 
 export type OrderBy = 'title' | 'datePosted';
 
-export function datasetCardsQuery(
+export async function datasetCardsQuery(
   filters: SearchRequest,
   limit: number,
   offset = 0,
@@ -158,6 +167,7 @@ export function datasetCardsQuery(
 ) {
   const orderByClause =
     orderBy === 'datePosted' ? 'DESC(?datePosted)' : `?status ?titleForSort`;
+  const filterQuery = await filterDatasets(filters);
 
   return `
   ${prefixes}
@@ -170,7 +180,6 @@ export function datasetCardsQuery(
       dct:publisher ?publisher ;
       dct:license ?license ;
       dcat:distribution ?distribution ;
-      void:triples ?size ;
       schema:status ?status ;
       schema:datePosted ?datePosted .
     ?publisher a foaf:Agent ;
@@ -183,7 +192,7 @@ export function datasetCardsQuery(
     # Inside the default graph, which contains the registry's metadata.
     {
       SELECT ?dataset ${orderBy === 'title' ? '(SAMPLE(?title_) AS ?titleForSort)' : '(SAMPLE(?datePosted_) AS ?datePosted)'} WHERE {
-        ${filterDatasets(filters)}
+        ${filterQuery}
 
         OPTIONAL {
           ?registrationUrl schema:validUntil ?validUntil .
@@ -220,22 +229,22 @@ export function datasetCardsQuery(
 
     ${orderBy === 'datePosted' ? 'OPTIONAL { ?registrationUrl schema:datePosted ?datePosted }' : ''}
 
-    OPTIONAL { 
-      ?registrationUrl schema:validUntil ?validUntil . 
-      BIND("archived" as ?status)  
+    OPTIONAL {
+      ?registrationUrl schema:validUntil ?validUntil .
+      BIND("archived" as ?status)
     }
-  
+
     # Inside the dataset named graph.
     GRAPH ?g {
       ?dataset dct:title ?title ;
         dct:publisher ?publisher .
-        
+
       ?publisher foaf:name ?publisherName .
-      
+
       OPTIONAL { ?dataset dct:description ?description }
       OPTIONAL { ?dataset dct:language ?language }
       OPTIONAL { ?dataset dct:license ?license }
-                 
+
       OPTIONAL {
         ?dataset dcat:distribution ?distribution .
         ?distribution dcat:mediaType ?rawMediaType .
@@ -244,24 +253,20 @@ export function datasetCardsQuery(
       }
     }
 
-    # Fetch dataset size from Dataset Knowledge Graph via SPARQL Federation
-    OPTIONAL {
-      SERVICE <https://triplestore.netwerkdigitaalerfgoed.nl/repositories/dataset-knowledge-graph> {
-        ?dataset a void:Dataset ;
-          void:triples ?size .
-      }
-    }
   }
   ORDER BY ${orderByClause}
 `;
 }
 
-export const filterDatasets = (filters: SearchRequest, skipDefaults = false) =>
+export const filterDatasets = async (
+  filters: SearchRequest,
+  skipDefaults = false,
+) =>
   `?dataset a dcat:Dataset ;
     schema:subjectOf ?registrationUrl .
   filter(isuri(?dataset))
 
-  ${filterClauses(filters, skipDefaults)}
+  ${await filterClauses(filters, skipDefaults)}
 `;
 
 export interface SearchResults {
@@ -271,6 +276,43 @@ export interface SearchResults {
   time: number;
 }
 
+async function fetchDatasetSizes(
+  datasetIris: string[],
+): Promise<Map<string, number>> {
+  if (datasetIris.length === 0) return new Map();
+
+  const values = inIris(datasetIris);
+  const query = `
+    PREFIX void: <http://rdfs.org/ns/void#>
+    SELECT ?dataset ?size WHERE {
+      VALUES ?dataset { ${values} }
+      ?dataset a void:Dataset ;
+        void:triples ?size .
+    }
+  `;
+
+  const sizeMap = new Map<string, number>();
+  try {
+    const bindings = await fetcher.fetchBindings(
+      PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+      query,
+    );
+    for await (const binding of bindings) {
+      const typedBinding = binding as unknown as {
+        dataset: { value: string };
+        size: { value: string };
+      };
+      sizeMap.set(
+        typedBinding.dataset.value,
+        parseInt(typedBinding.size.value),
+      );
+    }
+  } catch (error) {
+    console.error('Dataset sizes query failed:', error);
+  }
+  return sizeMap;
+}
+
 async function fetchDatasetCards(
   searchFilters: SearchRequest,
   limit: number,
@@ -278,7 +320,7 @@ async function fetchDatasetCards(
   orderBy: OrderBy,
   locale: string,
 ): Promise<DatasetCard[]> {
-  const query = datasetCardsQuery(
+  const query = await datasetCardsQuery(
     searchFilters,
     limit,
     offset,
@@ -309,20 +351,27 @@ export async function fetchDatasets(
     fetchFacets(searchFilters),
   ]);
 
+  // Fetch dataset sizes directly from knowledge graph (not via QLever SERVICE)
+  const sizes = await fetchDatasetSizes(datasets.map((d) => d.$id));
+  const datasetsWithSizes = datasets.map((dataset) => {
+    const size = sizes.get(dataset.$id);
+    return size !== undefined ? { ...dataset, size } : dataset;
+  });
+
   return {
-    datasets,
+    datasets: datasetsWithSizes,
     facets,
     total,
     time: performance.now() - startTime,
   };
 }
 
-function filterClauses(searchFilters: SearchRequest, skipDefaults = false) {
+async function filterClauses(searchFilters: SearchRequest, skipDefaults = false) {
   if (!searchFilters) {
     return '';
   }
 
-  const filterClausesArray: string[] = [];
+  const filterClausesArray: (string | Promise<string>)[] = [];
 
   const {
     query,
@@ -377,28 +426,25 @@ function filterClauses(searchFilters: SearchRequest, skipDefaults = false) {
   }
 
   if (size.min !== undefined || size.max !== undefined) {
+    // Query the knowledge graph directly instead of via QLever SERVICE federation.
     const sizeFilters: string[] = [];
-
-    // When filtering by size, require datasets to have size data (not OPTIONAL).
-    // This ensures only datasets with known sizes are returned in filtered results.
-    filterClausesArray.push(`
-      SERVICE <https://triplestore.netwerkdigitaalerfgoed.nl/repositories/dataset-knowledge-graph> {
-        ?dataset a void:Dataset ;
-          void:triples ?datasetSize .
-      }
-    `);
-
     if (size.min !== undefined) {
       sizeFilters.push(`?datasetSize >= ${size.min}`);
     }
     if (size.max !== undefined) {
       sizeFilters.push(`?datasetSize <= ${size.max}`);
     }
+    const sizeFilter =
+      sizeFilters.length > 0 ? `FILTER(${sizeFilters.join(' && ')})` : '';
 
-    if (sizeFilters.length > 0) {
-      filterClausesArray.push(`FILTER(${sizeFilters.join(' && ')})`);
-    }
+    filterClausesArray.push(
+      fetchDatasetIrisFromKnowledgeGraph(`
+        ?dataset a void:Dataset ;
+          void:triples ?datasetSize .
+        ${sizeFilter}
+      `),
+    );
   }
 
-  return filterClausesArray.join('\n  ');
+  return (await Promise.all(filterClausesArray)).join('\n  ');
 }

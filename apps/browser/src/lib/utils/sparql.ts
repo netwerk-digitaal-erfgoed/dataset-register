@@ -45,6 +45,9 @@ function isIriTerm(term: unknown): term is IriTerm {
 export const inLiterals = (values: string[]) =>
   values.map((v) => `"${v}"`).join(', ');
 
+export const inIris = (iris: string[]) =>
+  iris.map((iri) => `<${iri}>`).join(' ');
+
 const IANA_MEDIA_TYPES_PREFIX = 'https://www.iana.org/assignments/media-types/';
 
 /**
