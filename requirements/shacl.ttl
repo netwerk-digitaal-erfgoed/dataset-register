@@ -448,9 +448,16 @@ nde-dataset:DistributionShape
         [
             a sh:PropertyShape ;
             sh:path schema:usageInfo ;
+            sh:nodeKind sh:IRI ;
+            sh:pattern "^https?://" ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
             sh:minCount 0 ;
-            sh:maxCount 1 ;
             sh:description "A link to the [=web API=] documentation; see [[#developer-docs]]."@en ;
+            sh:message "usageInfo zou een IRI moeten zijn"@nl, "usageInfo should be an IRI"@en ;
         ] ,
         nde-dataset:SchemaDescriptionPropertyShouldExist ;
     sh:sparql [
