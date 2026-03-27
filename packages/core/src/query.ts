@@ -60,6 +60,10 @@ const distributionLicense = 'distribution_license';
 const distributionName = 'distribution_name';
 const distributionSize = 'distribution_size';
 const distributionCompressFormat = 'distribution_compressFormat';
+const distributionDownloadUrl = 'distribution_downloadUrl';
+const distributionMediaTypeForDownload = 'distribution_mediaType_download';
+const distributionCompressFormatForDownload =
+  'distribution_compressFormat_download';
 
 /** Generates a prefixed SPARQL variable name, e.g. odrlVar('perm', 'action') → 'perm_action'. */
 const odrlVar = (prefix: string, prop: string) => `${prefix}_${prop}`;
@@ -161,8 +165,9 @@ export const constructQuery = `
       
     ?${distribution} a dcat:Distribution ;
       dcat:accessURL ?${distributionUrl} ;
-      dcat:mediaType ?${distributionMediaType} ;
-      dcat:compressFormat ?${distributionCompressFormat} ;
+      dcat:downloadURL ?${distributionDownloadUrl} ;
+      dcat:mediaType ?${distributionMediaTypeForDownload} ;
+      dcat:compressFormat ?${distributionCompressFormatForDownload} ;
       dct:conformsTo ?${distributionConformsTo} ;
       dct:conformsTo ?${distributionConformsToSparql} ;
       dct:issued ?${distributionDatePublished} ;
@@ -255,6 +260,7 @@ export const constructQuery = `
             ${odrlRuleWhere('policy', 'obligation', 'obligation', 'oblig')}
           }
         }
+        ${downloadOnlyProperties(distributionConformsTo, distributionConformsToSparql, distributionUrl, distributionMediaType, distributionCompressFormat, distributionDownloadUrl, distributionMediaTypeForDownload, distributionCompressFormatForDownload)}
 
         OPTIONAL { ?${dataset} dct:description ?${description} }
         BIND(STR(?${dataset}) AS ?${identifier})
@@ -377,13 +383,14 @@ function schemaOrgQuery(prefix: string): string {
       BIND(COALESCE(?${distributionLicense}Provided, ?${license}) AS ?${distributionLicense})
       OPTIONAL { ?${distribution} ${prefix}:name ?${distributionName} }
       OPTIONAL { ?${distribution} ${prefix}:contentSize ?${distributionSize} }
-      OPTIONAL { 
+      OPTIONAL {
         ?${distribution} ${prefix}:usageInfo ?${distributionConformsTo} .
-        FILTER(isIRI(?${distributionConformsTo}))  
+        FILTER(isIRI(?${distributionConformsTo}))
       }
-    } 
-     
-    OPTIONAL { ?${dataset} ${prefix}:description ?${description} } 
+    }
+    ${downloadOnlyProperties(distributionConformsTo, distributionConformsToSparql, distributionUrl, distributionMediaType, distributionCompressFormat, distributionDownloadUrl, distributionMediaTypeForDownload, distributionCompressFormatForDownload)}
+
+    OPTIONAL { ?${dataset} ${prefix}:description ?${description} }
     BIND(STR(?${dataset}) AS ?${identifier})
     OPTIONAL { ?${dataset} ${prefix}:alternateName ?${alternateName} }
     OPTIONAL { ?${dataset} ${prefix}:dateCreated ${convertToXsdDate(
@@ -420,6 +427,27 @@ function schemaOrgQuery(prefix: string): string {
     BIND(COALESCE(?${accessRights}Provided, <http://publications.europa.eu/resource/authority/access-right/PUBLIC>) AS ?${accessRights})
     BIND(<http://publications.europa.eu/resource/authority/data-theme/EDUC> AS ?theme)
 `;
+}
+
+/**
+ * For download distributions (no conformsTo protocol), emit downloadURL, mediaType,
+ * and compressFormat. For API distributions (conformsTo bound), suppress all three —
+ * they are meaningless for APIs.
+ */
+function downloadOnlyProperties(
+  conformsToVariable: string,
+  conformsToSparqlVariable: string,
+  urlVariable: string,
+  mediaTypeVariable: string,
+  compressFormatVariable: string,
+  downloadUrlOutput: string,
+  mediaTypeOutput: string,
+  compressFormatOutput: string,
+): string {
+  const isApi = `BOUND(?${conformsToVariable}) || BOUND(?${conformsToSparqlVariable})`;
+  return `BIND(IF(${isApi}, ?unbound, ?${urlVariable}) AS ?${downloadUrlOutput})
+  BIND(IF(${isApi}, ?unbound, ?${mediaTypeVariable}) AS ?${mediaTypeOutput})
+  BIND(IF(${isApi}, ?unbound, ?${compressFormatVariable}) AS ?${compressFormatOutput})`;
 }
 
 /** Generates CONSTRUCT triple patterns for an ODRL rule and its constraint. */
