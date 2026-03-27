@@ -58,7 +58,6 @@ export const normalizeMediaType = (variable: string) =>
           AS ?${variable}
         )`;
 
-
 /**
  * Detect +gzip in the raw media type and bind a compress format URI.
  *
