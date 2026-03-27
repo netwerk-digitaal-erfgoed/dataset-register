@@ -5,7 +5,6 @@ import {
   convertToXsdDate,
   convertUriToLiteral,
   defaultLanguageTag,
-  downloadOnlyProperties,
   normalizeLicense,
   normalizeMediaType,
 } from './literal.ts';
@@ -63,7 +62,8 @@ const distributionSize = 'distribution_size';
 const distributionCompressFormat = 'distribution_compressFormat';
 const distributionDownloadUrl = 'distribution_downloadUrl';
 const distributionMediaTypeForDownload = 'distribution_mediaType_download';
-const distributionCompressFormatForDownload = 'distribution_compressFormat_download';
+const distributionCompressFormatForDownload =
+  'distribution_compressFormat_download';
 
 /** Generates a prefixed SPARQL variable name, e.g. odrlVar('perm', 'action') → 'perm_action'. */
 const odrlVar = (prefix: string, prop: string) => `${prefix}_${prop}`;
@@ -427,6 +427,27 @@ function schemaOrgQuery(prefix: string): string {
     BIND(COALESCE(?${accessRights}Provided, <http://publications.europa.eu/resource/authority/access-right/PUBLIC>) AS ?${accessRights})
     BIND(<http://publications.europa.eu/resource/authority/data-theme/EDUC> AS ?theme)
 `;
+}
+
+/**
+ * For download distributions (no conformsTo protocol), emit downloadURL, mediaType,
+ * and compressFormat. For API distributions (conformsTo bound), suppress all three —
+ * they are meaningless for APIs.
+ */
+function downloadOnlyProperties(
+  conformsToVariable: string,
+  conformsToSparqlVariable: string,
+  urlVariable: string,
+  mediaTypeVariable: string,
+  compressFormatVariable: string,
+  downloadUrlOutput: string,
+  mediaTypeOutput: string,
+  compressFormatOutput: string,
+): string {
+  const isApi = `BOUND(?${conformsToVariable}) || BOUND(?${conformsToSparqlVariable})`;
+  return `BIND(IF(${isApi}, ?unbound, ?${urlVariable}) AS ?${downloadUrlOutput})
+  BIND(IF(${isApi}, ?unbound, ?${mediaTypeVariable}) AS ?${mediaTypeOutput})
+  BIND(IF(${isApi}, ?unbound, ?${compressFormatVariable}) AS ?${compressFormatOutput})`;
 }
 
 /** Generates CONSTRUCT triple patterns for an ODRL rule and its constraint. */
