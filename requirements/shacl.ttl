@@ -351,8 +351,8 @@ nde-dataset:DistributionShape
             sh:description """
                 Het MIME-formaat van de distributie of een link naar de API-documentatie.
                 Voor downloads: gebruik een waarde uit de [[IANA-MEDIA-TYPES]] lijst.
-                Voor API\u2019s (zoals SPARQL of OAI-PMH): gebruik schema:usageInfo met een link naar de protocolspecificatie."""@nl ,
-            """The distribution\u2019s MIME format or a link to the API documentation.
+                Voor API's (zoals SPARQL of OAI-PMH): gebruik schema:usageInfo met een link naar de protocolspecificatie."""@nl ,
+            """The distribution's MIME format or a link to the API documentation.
             For downloads: use a value from the [[IANA-MEDIA-TYPES]] list.
             The value should indicate the media type of the response of the schema:contentUrl when no Accept header is included in the request.
             For APIs (such as SPARQL or OAI-PMH): use schema:usageInfo with a link to the protocol specification.

@@ -109,7 +109,7 @@ Definitions {#definitions}
 Conceptual model {#conceptual-model}
 ===============
 
-The model consists of four resource types: [=publisher|organizations=] publish [=datasets=], which are available in [=distributions=].
+The model consists of four resource types: [=publisher|organizations or persons=] publish [=datasets=], which are available in [=distributions=].
 Optionally, the datasets are grouped in data catalogs.
 
 <pre class=include-raw>
@@ -470,7 +470,6 @@ All distributions of a dataset *MUST* contain broadly the same data.
         {
           "@context": "https://schema.org/",
           "@type": "DataDownload",
-          "encodingFormat": "application/sparql-results+xml",
           "contentUrl": "http://vocab.getty.edu/sparql",
           "usageInfo": "https://www.w3.org/TR/sparql11-protocol/"
         }
@@ -490,7 +489,6 @@ The distributions are then included under the `distribution` attribute with the 
             {
               "@id": "http://vocab.getty.edu/aat/sparql",
               "@type": "DataDownload",
-              "encodingFormat": "application/sparql-results+json",
               "contentUrl": "http://vocab.getty.edu/sparql",
               "usageInfo": "https://www.w3.org/TR/sparql11-protocol/"
             },
