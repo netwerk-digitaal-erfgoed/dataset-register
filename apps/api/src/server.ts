@@ -108,9 +108,7 @@ export async function server(
         reply.log.info(
           `No dataset found at URL ${url.toString()}: ${e.message}`,
         );
-        await reply.sendHydraError(
-          Object.assign(e, { statusCode: 406 }),
-        );
+        await reply.sendHydraError(Object.assign(e, { statusCode: 406 }));
         return null;
       }
 
@@ -118,7 +116,11 @@ export async function server(
     }
   }
 
-  async function validate(dataset: DatasetCore, reply: FastifyReply, url?: URL) {
+  async function validate(
+    dataset: DatasetCore,
+    reply: FastifyReply,
+    url?: URL,
+  ) {
     const validation = await validator.validate(dataset);
 
     switch (validation.state) {
@@ -132,9 +134,7 @@ export async function server(
               cause:
                 'The provided data does not contain any dcat:Dataset or schema:Dataset resources. Please ensure your data includes at least one dataset description.',
             });
-        await reply.sendHydraError(
-          Object.assign(error, { statusCode: 406 }),
-        );
+        await reply.sendHydraError(Object.assign(error, { statusCode: 406 }));
         return false;
       }
       case 'invalid': {
@@ -162,11 +162,11 @@ export async function server(
       return reply.code(403).send();
     }
 
-    const dataset = await resolveDataset(url, reply);
-    const valid = dataset
-      ? await validate(dataset, reply.code(202), url)
+    const data = await resolveDataset(url, reply);
+    const valid = data
+      ? await validate(data, reply.code(202), url)
       : false;
-    if (dataset && valid) {
+    if (data && valid) {
       // The URL has validated, so any problems with processing the dataset are now ours. Therefore, make sure to
       // store the registration so we can come back to that when crawling, even if fetching the datasets fails.
       // Store first rather than wrapping in a try/catch to cope with OOMs.
@@ -178,7 +178,7 @@ export async function server(
 
       // Fetch dataset descriptions and store them.
       const datasetIris: URL[] = [];
-      for await (const dataset of fetch(url)) {
+      for await (const dataset of fetch(url, data)) {
         datasetIris.push(extractIri(dataset));
         await datasetStore.store(dataset);
       }

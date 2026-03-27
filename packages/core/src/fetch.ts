@@ -1,5 +1,6 @@
 import { QueryEngine } from '@comunica/query-sparql';
 import factory from 'rdf-ext';
+import { Store } from 'n3';
 import { constructQuery, dcat, rdf } from './query.ts';
 import { pipeline } from 'node:stream';
 import { StandardizeSchemaOrgPrefixToHttps } from './transform.ts';
@@ -35,9 +36,12 @@ export class InvalidContentType extends FetchError {
   }
 }
 
-export async function* fetch(url: URL): AsyncGenerator<DatasetExt> {
+export async function* fetch(
+  url: URL,
+  data: DatasetExt,
+): AsyncGenerator<DatasetExt> {
   try {
-    yield* query(url);
+    yield* query(url, data);
   } catch (e) {
     handleComunicaError(e, url);
   }
@@ -72,9 +76,13 @@ export async function dereference(url: URL): Promise<DatasetExt> {
 // });
 const engine = new QueryEngine();
 
-async function* query(url: URL) {
+async function* query(url: URL, data: DatasetExt) {
+  // Work around Comunica bug where JSON-LD with @graph in HTML <script> tags
+  // produces 0 results (comunica/comunica#1684). Use in-memory data as source
+  // unless Hydra pagination is detected, which requires Comunica to follow links.
+  const source = hasHydraPagination(data) ? url.toString() : toN3Store(data);
   const quadStream = await engine.queryQuads(constructQuery, {
-    sources: [url.toString()],
+    sources: [source],
   });
   let datasetQuads = [];
   let currentDataset: string | undefined;
@@ -135,6 +143,25 @@ function handleComunicaError(e: unknown, url: URL): never {
   }
 
   throw e;
+}
+
+const HYDRA = 'http://www.w3.org/ns/hydra/core#';
+
+function hasHydraPagination(data: DatasetExt): boolean {
+  return data.some(quad => quad.predicate.value.startsWith(HYDRA));
+}
+
+/**
+ * Convert a DatasetExt to an N3 Store that Comunica can query as an in-memory source.
+ * Quads are placed in the default graph so that SPARQL queries without GRAPH clauses can match them,
+ * because rdf-dereference may place quads in named graphs (e.g. for embedded JSON-LD in HTML).
+ */
+function toN3Store(data: DatasetExt): Store {
+  const store = new Store();
+  for (const quad of data) {
+    store.addQuad(factory.quad(quad.subject, quad.predicate, quad.object));
+  }
+  return store;
 }
 
 function normalizeByteSize(raw: string): number | null {

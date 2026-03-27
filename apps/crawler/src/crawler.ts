@@ -49,7 +49,7 @@ export class Crawler {
         if (isValid) {
           this.logger.info(`${registration.url} passes validation`);
           datasetIris = []; // Start with a fresh list.
-          for await (const dataset of fetch(registration.url)) {
+          for await (const dataset of fetch(registration.url, data)) {
             datasetIris.push(extractIri(dataset));
             await this.datasetStore.store(dataset);
             const dcatValidationResult = await this.validator.validate(dataset);
