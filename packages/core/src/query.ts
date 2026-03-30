@@ -51,6 +51,7 @@ const publisherSameAs = 'publisher_sameAs';
 const distributionUrl = 'distribution_url';
 const distributionMediaType = 'distribution_mediaType';
 const distributionConformsTo = 'distribution_conformsTo';
+const distributionConformsToProtocol = 'distribution_conformsTo_protocol';
 const distributionConformsToSparql = 'distribution_conformsTo_sparql';
 const distributionDatePublished = 'distribution_datePublished';
 const distributionDateModified = 'distribution_dateModified';
@@ -64,6 +65,26 @@ const distributionDownloadUrl = 'distribution_downloadUrl';
 const distributionMediaTypeForDownload = 'distribution_mediaType_download';
 const distributionCompressFormatForDownload =
   'distribution_compressFormat_download';
+
+/**
+ * Known web API protocol specification URLs, used to distinguish API distributions
+ * from download distributions. Only distributions whose conformsTo/usageInfo matches
+ * one of these are classified as APIs; other conformsTo values (application profiles,
+ * vocabularies, ontologies) are preserved on download distributions.
+ *
+ * @see https://docs.nde.nl/requirements-datasets/#developer-docs
+ */
+const apiProtocolUrls = [
+  'http://www.openarchives.org/pmh/',
+  'https://www.w3.org/TR/sparql11-protocol/',
+  'https://linkeddatafragments.org/specification/triple-pattern-fragments/',
+  'https://developers.arcgis.com/rest/',
+  'https://www.ogc.org/standards/wms/',
+  'https://spec.openapis.org/oas/v3.2.0.html',
+  'https://spec.graphql.org/',
+];
+
+const apiProtocolValues = apiProtocolUrls.map((url) => `<${url}>`).join(' ');
 
 /** Generates a prefixed SPARQL variable name, e.g. odrlVar('perm', 'action') → 'perm_action'. */
 const odrlVar = (prefix: string, prop: string) => `${prefix}_${prop}`;
@@ -229,6 +250,10 @@ export const constructQuery = `
           ?${distribution} dcat:mediaType ${normalizeMediaType(distributionMediaType)} .
           ?${distribution} dcat:accessURL ${convertToIri(distributionUrl)} .
           OPTIONAL { ?${distribution} dct:conformsTo ?${distributionConformsTo} . }
+          OPTIONAL {
+            ?${distribution} dct:conformsTo ?${distributionConformsToProtocol} .
+            VALUES ?${distributionConformsToProtocol} { ${apiProtocolValues} }
+          }
           BIND(
             IF(
               CONTAINS(STR(?${distributionMediaType}), "sparql"),
@@ -260,7 +285,7 @@ export const constructQuery = `
             ${odrlRuleWhere('policy', 'obligation', 'obligation', 'oblig')}
           }
         }
-        ${downloadOnlyProperties(distributionConformsTo, distributionConformsToSparql, distributionUrl, distributionMediaType, distributionCompressFormat, distributionDownloadUrl, distributionMediaTypeForDownload, distributionCompressFormatForDownload)}
+        ${downloadOnlyProperties(distributionConformsToProtocol, distributionConformsToSparql, distributionUrl, distributionMediaType, distributionCompressFormat, distributionDownloadUrl, distributionMediaTypeForDownload, distributionCompressFormatForDownload)}
 
         OPTIONAL { ?${dataset} dct:description ?${description} }
         BIND(STR(?${dataset}) AS ?${identifier})
@@ -387,8 +412,12 @@ function schemaOrgQuery(prefix: string): string {
         ?${distribution} ${prefix}:usageInfo ?${distributionConformsTo} .
         FILTER(isIRI(?${distributionConformsTo}))
       }
+      OPTIONAL {
+        ?${distribution} ${prefix}:usageInfo ?${distributionConformsToProtocol} .
+        VALUES ?${distributionConformsToProtocol} { ${apiProtocolValues} }
+      }
     }
-    ${downloadOnlyProperties(distributionConformsTo, distributionConformsToSparql, distributionUrl, distributionMediaType, distributionCompressFormat, distributionDownloadUrl, distributionMediaTypeForDownload, distributionCompressFormatForDownload)}
+    ${downloadOnlyProperties(distributionConformsToProtocol, distributionConformsToSparql, distributionUrl, distributionMediaType, distributionCompressFormat, distributionDownloadUrl, distributionMediaTypeForDownload, distributionCompressFormatForDownload)}
 
     OPTIONAL { ?${dataset} ${prefix}:description ?${description} }
     BIND(STR(?${dataset}) AS ?${identifier})
@@ -430,12 +459,12 @@ function schemaOrgQuery(prefix: string): string {
 }
 
 /**
- * For download distributions (no conformsTo protocol), emit downloadURL, mediaType,
- * and compressFormat. For API distributions (conformsTo bound), suppress all three —
- * they are meaningless for APIs.
+ * For download distributions (no known protocol in conformsTo), emit downloadURL,
+ * mediaType, and compressFormat. For API distributions (conformsTo matches a known
+ * protocol URL), suppress all three — they are meaningless for APIs.
  */
 function downloadOnlyProperties(
-  conformsToVariable: string,
+  conformsToProtocolVariable: string,
   conformsToSparqlVariable: string,
   urlVariable: string,
   mediaTypeVariable: string,
@@ -444,7 +473,7 @@ function downloadOnlyProperties(
   mediaTypeOutput: string,
   compressFormatOutput: string,
 ): string {
-  const isApi = `BOUND(?${conformsToVariable}) || BOUND(?${conformsToSparqlVariable})`;
+  const isApi = `BOUND(?${conformsToProtocolVariable}) || BOUND(?${conformsToSparqlVariable})`;
   return `BIND(IF(${isApi}, ?unbound, ?${urlVariable}) AS ?${downloadUrlOutput})
   BIND(IF(${isApi}, ?unbound, ?${mediaTypeVariable}) AS ?${mediaTypeOutput})
   BIND(IF(${isApi}, ?unbound, ?${compressFormatVariable}) AS ?${compressFormatOutput})`;

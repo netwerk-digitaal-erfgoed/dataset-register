@@ -77,6 +77,30 @@ describe('Fetch', () => {
       ),
     ).toBe(true);
 
+    // Non-protocol conformsTo (application profile) must be preserved on download distributions.
+    expect(
+      dataset.has(
+        factory.quad(
+          distributions[1].object as BlankNode,
+          dct('conformsTo'),
+          factory.namedNode('https://docs.nde.nl/schema-profile/'),
+        ),
+      ),
+    ).toBe(true);
+
+    // Download distribution with non-protocol conformsTo must still have a downloadURL.
+    expect(
+      dataset.has(
+        factory.quad(
+          distributions[1].object as BlankNode,
+          dcat('downloadURL'),
+          factory.namedNode(
+            'http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld',
+          ),
+        ),
+      ),
+    ).toBe(true);
+
     // Existing distributions must not have compressFormat.
     for (const dist of distributions.slice(0, 3)) {
       expect([
@@ -333,6 +357,30 @@ describe('Fetch', () => {
         ),
     );
     expect(sparqlConformsToTriples).toHaveLength(1);
+
+    // Check that non-protocol conformsTo (application profile) is preserved on download distributions
+    const schemaProfileTriples = [...dataset].filter(
+      (quad) =>
+        quad.predicate.equals(dct('conformsTo')) &&
+        quad.object.equals(
+          factory.namedNode('https://docs.nde.nl/schema-profile/'),
+        ),
+    );
+    expect(schemaProfileTriples).toHaveLength(1);
+
+    // Verify the download distribution with the application profile still has a downloadURL
+    const jsonLdDownloadUrl = [...dataset].filter(
+      (quad) =>
+        quad.predicate.equals(
+          factory.namedNode('http://www.w3.org/ns/dcat#downloadURL'),
+        ) &&
+        quad.object.equals(
+          factory.namedNode(
+            'http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld',
+          ),
+        ),
+    );
+    expect(jsonLdDownloadUrl).toHaveLength(1);
 
     expect(
       dataset.has(
