@@ -22,6 +22,7 @@
         {% endif %}
         {% assign merged_properties = nodeShape.property | mergePropertiesByPath -%}
         {% for property in merged_properties %}
+        {% unless property.path %}{% continue %}{% endunless %}
         <tr>
             <th scope="row">[{{ property.path | replace: 'https://schema.org/', 'schema:' }}]({{ property.path }})</th>
             <td>

@@ -363,6 +363,14 @@ nde-dataset:DistributionShape
         [
             sh:path schema:encodingFormat ;
             sh:pattern "^[a-zA-Z]+/[a-zA-Z0-9][a-zA-Z0-9!#$&\\-^_.+]*$" ;
+            sh:description """Het MIME-formaat van de distributie.
+                Gebruik een waarde uit de [[IANA-MEDIA-TYPES]] lijst.
+                De waarde moet het mediatype aangeven van het antwoord van de schema:contentUrl wanneer er geen Accept-header in het verzoek is opgenomen.
+                Bij gecomprimeerde distributies moet het compressieformaat (bijv. zip, gzip) worden toegevoegd aan het schema:encodingFormat (bijv. text/turtle+gzip)."""@nl ,
+            """The distribution\u2019s MIME format.
+            Use a value from the [[IANA-MEDIA-TYPES]] list.
+            The value should indicate the media type of the response of the schema:contentUrl when no Accept header is included in the request.
+            When the distribution is compressed, the compression format (e.g. zip, gzip) should be added to the `schema:encodingFormat` (e.g. `text/turtle+gzip`)."""@en ;
             sh:message "Het encoderingsformaat moet een geldig MIME-type zijn (bijv. application/ld+json)"@nl,
                 "The encoding format must be a valid MIME type (e.g. application/ld+json)"@en ;
         ] ,
