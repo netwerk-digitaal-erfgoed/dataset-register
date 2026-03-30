@@ -26,6 +26,16 @@ updates:
         patterns:
           - '@fastify/*'
           - 'fastify'
+      flowbite:
+        patterns:
+          - 'flowbite'
+          - 'flowbite-svelte'
+          - 'flowbite-svelte-icons'
+          - '@flowbite-svelte-plugins/*'
+      tailwindcss:
+        patterns:
+          - '@tailwindcss/*'
+          - 'tailwindcss'
       svelte:
         patterns:
           - '@sveltejs/*'
