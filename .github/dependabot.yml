@@ -21,6 +21,7 @@ updates:
           - '@typescript-eslint/*'
           - 'eslint'
           - 'eslint-plugin-svelte'
+          - 'typescript'
       fastify:
         patterns:
           - '@fastify/*'
