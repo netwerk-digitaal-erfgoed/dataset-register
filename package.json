@@ -23,7 +23,7 @@
     "@nx/node": "22.6.1",
     "@nx/vite": "22.6.1",
     "@nx/web": "22.6.1",
-    "@types/node": "^25.2.0",
+    "@types/node": "^25.5.0",
     "@typescript-eslint/eslint-plugin": "8.54.0",
     "@typescript-eslint/parser": "8.54.0",
     "@vitest/coverage-v8": "^4.1.2",
