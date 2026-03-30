@@ -26,6 +26,12 @@ updates:
         patterns:
           - '@fastify/*'
           - 'fastify'
+      svelte:
+        patterns:
+          - '@sveltejs/*'
+          - 'svelte'
+          - 'svelte-check'
+          - 'vite'
       vitest:
         patterns:
           - '@vitest/*'
