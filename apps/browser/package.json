@@ -48,7 +48,8 @@
     "prettier-plugin-svelte": "^3.5.1",
     "svelte": "^5.48.2",
     "svelte-check": "^4.4.5",
-    "tailwindcss": "^4.1.17"
+    "tailwindcss": "^4.1.17",
+    "vite": "^8.0.3"
   },
   "nx": {
     "projectType": "application",

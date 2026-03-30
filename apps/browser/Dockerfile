@@ -4,7 +4,7 @@ LABEL org.opencontainers.image.source="https://github.com/netwerk-digitaal-erfgo
 WORKDIR /app
 
 COPY build/package*.json ./
-RUN npm ci --omit=dev
+RUN npm install --package-lock-only && npm ci --omit=dev
 
 COPY build build/
 
