@@ -28,7 +28,7 @@
     "flowbite-svelte-icons": "^3.1.0",
     "ldkit": "^2.6.0",
     "sparqljs": "^3.7.3",
-    "svelte-range-slider-pips": "^4.1.0"
+    "svelte-range-slider-pips": "^4.1.1"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.0",
