@@ -279,7 +279,7 @@
 {/snippet}
 
 {#snippet copyButton(url: string)}
-  <Clipboard value={url} class="ms-auto p-0">
+  <Clipboard value={url} embedded class="ms-auto p-0">
     {#snippet children(success)}
       <Tooltip>{success ? m.detail_copied() : m.detail_copy()}</Tooltip>
       {#if success}<CheckOutline
@@ -297,7 +297,7 @@
   distIndex: number,
 )}
   {@const isVerified = verifiedUrls.has(distribution.accessURL)}
-  <DropdownItem class="flex flex-col items-start gap-1 !whitespace-normal">
+  <DropdownItem classes={{ item: "flex flex-col items-start gap-1 !whitespace-normal" }}>
     <div class="flex w-full items-center gap-2">
       {#if distribution.mediaType}
         <span
@@ -1046,54 +1046,55 @@
             >
               <ChevronDownOutline class="h-4 w-4" />
             </button>
-            <Dropdown
-              triggeredBy="#btn-query-dropdown"
-              class="w-96 max-h-96 overflow-y-auto border border-gray-200 shadow-lg dark:border-gray-600"
-            >
-              {#each sparqlDistributions as distribution, distIndex (distribution.$id)}
-                {@const isVerified = verifiedUrls.has(distribution.accessURL)}
-                <DropdownItem
-                  class="flex flex-col items-start gap-1 !whitespace-normal"
-                >
-                  <div class="flex w-full items-center gap-2">
-                    <span
-                      class="inline-flex items-center rounded bg-purple-100 px-1.5 py-0.5 text-xs font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
-                    >
-                      SPARQL
-                    </span>
-                    {#if isVerified}
-                      {@render verifiedBadge(
-                        `tooltip-sparql-verified-${distIndex}`,
-                      )}
-                    {/if}
-                    {@render copyButton(distribution.accessURL)}
-                  </div>
-                  {#if distribution.title}
-                    <span
-                      class="text-sm font-medium text-gray-900 dark:text-white"
-                    >
-                      {getLocalizedValue(distribution.title)}
-                    </span>
-                  {/if}
-                  <a
-                    href={yasguiUrl(distribution.accessURL)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="block max-w-full truncate text-xs text-blue-600 hover:underline dark:text-blue-400"
-                    title={distribution.accessURL}
-                  >
-                    {distribution.accessURL}
-                    <span class="sr-only"> ({m.opens_in_new_tab()})</span>
-                  </a>
-                  {#if distribution.description}
-                    <span class="text-xs text-gray-500 dark:text-gray-400">
-                      {getLocalizedValue(distribution.description)}
-                    </span>
-                  {/if}
-                </DropdownItem>
-              {/each}
-            </Dropdown>
           </div>
+          <Dropdown
+            simple
+            triggeredBy="#btn-query-dropdown"
+            class="w-96 max-h-96 overflow-y-auto border border-gray-200 shadow-lg dark:border-gray-600"
+          >
+            {#each sparqlDistributions as distribution, distIndex (distribution.$id)}
+              {@const isVerified = verifiedUrls.has(distribution.accessURL)}
+              <DropdownItem
+                classes={{ item: "flex flex-col items-start gap-1 !whitespace-normal" }}
+              >
+                <div class="flex w-full items-center gap-2">
+                  <span
+                    class="inline-flex items-center rounded bg-purple-100 px-1.5 py-0.5 text-xs font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
+                  >
+                    SPARQL
+                  </span>
+                  {#if isVerified}
+                    {@render verifiedBadge(
+                      `tooltip-sparql-verified-${distIndex}`,
+                    )}
+                  {/if}
+                  {@render copyButton(distribution.accessURL)}
+                </div>
+                {#if distribution.title}
+                  <span
+                    class="text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    {getLocalizedValue(distribution.title)}
+                  </span>
+                {/if}
+                <a
+                  href={yasguiUrl(distribution.accessURL)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="block max-w-full truncate text-xs text-blue-600 hover:underline dark:text-blue-400"
+                  title={distribution.accessURL}
+                >
+                  {distribution.accessURL}
+                  <span class="sr-only"> ({m.opens_in_new_tab()})</span>
+                </a>
+                {#if distribution.description}
+                  <span class="text-xs text-gray-500 dark:text-gray-400">
+                    {getLocalizedValue(distribution.description)}
+                  </span>
+                {/if}
+              </DropdownItem>
+            {/each}
+          </Dropdown>
         {/if}
 
         <!-- Download dataset split button -->
@@ -1117,21 +1118,22 @@
             >
               <ChevronDownOutline class="h-4 w-4" />
             </button>
-            <Dropdown
-              triggeredBy="#btn-download-dropdown"
-              class="w-96 max-h-96 overflow-y-auto border border-gray-200 shadow-lg dark:border-gray-600"
-            >
-              {#each rdfDownloads as distribution, distIndex (distribution.$id)}
-                {@render downloadDropdownItem(distribution, 'rdf', distIndex)}
-              {/each}
-              {#if rdfDownloads.length > 0 && otherDownloads.length > 0}
-                <DropdownDivider />
-              {/if}
-              {#each otherDownloads as distribution, distIndex (distribution.$id)}
-                {@render downloadDropdownItem(distribution, 'other', distIndex)}
-              {/each}
-            </Dropdown>
           </div>
+          <Dropdown
+            simple
+            triggeredBy="#btn-download-dropdown"
+            class="w-96 max-h-96 overflow-y-auto border border-gray-200 shadow-lg dark:border-gray-600"
+          >
+            {#each rdfDownloads as distribution, distIndex (distribution.$id)}
+              {@render downloadDropdownItem(distribution, 'rdf', distIndex)}
+            {/each}
+            {#if rdfDownloads.length > 0 && otherDownloads.length > 0}
+              <DropdownDivider />
+            {/if}
+            {#each otherDownloads as distribution, distIndex (distribution.$id)}
+              {@render downloadDropdownItem(distribution, 'other', distIndex)}
+            {/each}
+          </Dropdown>
         {/if}
       </div>
       {#if totalDistributions > sortedDistributions.length}
