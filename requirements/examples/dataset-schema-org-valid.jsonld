@@ -76,6 +76,7 @@
           "@type": "DataDownload",
           "encodingFormat": "application/ld+json",
           "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld",
+          "usageInfo": "https://docs.nde.nl/schema-profile/",
           "description": "JSON-LD dump"
         },
         {

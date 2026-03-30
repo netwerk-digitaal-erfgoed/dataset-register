@@ -537,12 +537,16 @@ but simple dates (`2019-04-14`) are also allowed.
 
 ### Developer documentation ### {#developer-docs}
 
-Publishers *SHOULD* link to documentation URLs via the [https://schema.org/usageInfo](https://schema.org/usageInfo) attribute. For datadumps this should be documentation about the
-data model. For [=web APIs=] this should be documentation about the specific capabilities of the API (like content-type support) *AND* the generic specification of the
-protocol which also types the distribution such as OAI-PMH, SPARQL and REST.
+Publishers *SHOULD* link to documentation URLs via the [https://schema.org/usageInfo](https://schema.org/usageInfo) attribute.
+
+For downloads, this *SHOULD* be documentation about the data model,
+such as the application profile, vocabulary or ontology that the data conforms to.
+
+For [=web APIs=], this *SHOULD* be documentation about the specific capabilities of the API (like content-type support) *AND* the generic specification of the
+protocol which also types the distribution as an API (such as OAI-PMH, SPARQL and REST).
 
 <table>
-    <caption>Recommended URIs for typing</caption>
+    <caption>Recommended URIs for typing API distributions</caption>
     <thead>
         <tr>
             <th>Protocol</th>
@@ -568,7 +572,11 @@ protocol which also types the distribution such as OAI-PMH, SPARQL and REST.
         </tr>
         <tr>
             <th scope="row">WMS</th>
-            <td>http://www.opengeospatial.org/standards/wms</td>
+            <td>https://www.ogc.org/standards/wms/</td>
+        </tr>
+        <tr>
+            <th scope="row">OpenAPI</th>
+            <td>https://spec.openapis.org/oas/v3.2.0.html</td>
         </tr>
         <tr>
             <th scope="row">GraphQL</th>
@@ -578,15 +586,28 @@ protocol which also types the distribution such as OAI-PMH, SPARQL and REST.
 </table>
 
 <div class="example">
-    A distribution with a link to the generic documentation and the protocol specification (typing the distribution as SPARQL-endpoint).
+    A download distribution that conforms to the NDE Schema.org Application Profile:
 
     <pre highlight=json-ld>
         {
           "@context": "https://schema.org/",
           "@type": "DataDownload",
-          "encodingFormat": "application/sparql-results+json",
-          "contentUrl": "http://vocab.getty.edu/sparql",
-          "usageInfo": [ "https://www.w3.org/TR/sparql11-protocol/", "https://vocab.getty.edu/" ]
+          "encodingFormat": "application/ld+json",
+          "contentUrl": "https://example.com/data.jsonld",
+          "usageInfo": "https://docs.nde.nl/schema-profile/"
+        }
+    </pre>
+</div>
+
+<div class="example">
+    A SPARQL distribution that returns RDF in the NDE Schema.org Application Profile:
+
+    <pre highlight=json-ld>
+        {
+          "@context": "https://schema.org/",
+          "@type": "DataDownload",
+          "contentUrl": "https://example.com/sparql",
+          "usageInfo": [ "https://www.w3.org/TR/sparql11-protocol/", "https://docs.nde.nl/schema-profile/" ]
         }
     </pre>
 </div>
