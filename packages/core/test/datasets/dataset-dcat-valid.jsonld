@@ -103,6 +103,9 @@
         "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld"
       },
       "dcat:byteSize": "14M",
+      "dct:conformsTo": {
+        "@id": "https://docs.nde.nl/schema-profile/"
+      },
       "dct:description": "JSON-LD dump",
       "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
     },
