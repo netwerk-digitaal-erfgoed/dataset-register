@@ -9,6 +9,9 @@ updates:
     directory: '/'
     schedule:
       interval: 'weekly'
+    ignore:
+      - dependency-name: 'nx' # Handled by the Nx migrate workflow, which also runs code migrations.
+      - dependency-name: '@nx/*' # Handled by the Nx migrate workflow, which also runs code migrations.
     groups:
       comunica:
         patterns:
@@ -22,10 +25,6 @@ updates:
         patterns:
           - '@fastify/*'
           - 'fastify'
-      nx:
-        patterns:
-          - '@nx/*'
-          - 'nx'
       vitest:
         patterns:
           - '@vitest/*'
