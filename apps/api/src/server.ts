@@ -250,6 +250,26 @@ export async function server(
     return reply.sendRdf(shacl);
   });
 
+  server.get('/allowed-domains', async (request, reply) => {
+    const { url: urlParam } = request.query as { url?: string };
+    if (!urlParam) {
+      return reply.code(400).send();
+    }
+
+    let url: URL;
+    try {
+      url = new URL(urlParam);
+    } catch {
+      return reply.code(400).send();
+    }
+
+    if (await domainIsAllowed(url)) {
+      return reply.code(200).send();
+    }
+
+    return reply.code(404).send();
+  });
+
   // Protected routes requiring API access token
   if (apiAccessToken) {
     await server.register(async function protectedRoutes(protectedServer) {
