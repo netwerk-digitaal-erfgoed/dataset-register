@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.3.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.2.0...requirements-1.3.0) (2026-04-01)
+
+
+### Features
+
+* **core:** differentiate API and download distributions per DCAT-AP-NL ([#1728](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1728)) ([ba22143](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/ba22143eb73aa8fb711b5b8892e15a080e7df398))
+* **core:** normalize BCP 47 language codes to EU Language Authority URIs ([#1722](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1722)) ([cbf1932](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/cbf1932741db10d3aab784114a87383cd003d1b9))
+
+
+### Bug Fixes
+
+* **requirements:** add Person to conceptual model diagram ([#1727](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1727)) ([cd0b429](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/cd0b42909f6811bd1c6f3d450f46a06b4c024078))
+* **requirements:** remove SVG fallback text that breaks Bikeshed build ([#1729](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1729)) ([3c9c12e](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/3c9c12e673151b8790c915001f54200f1754c1ca))
+* skip pathless SHACL properties in spec attributes table ([#1759](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1759)) ([f2fca84](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/f2fca84c09b7f25b96ef065d291203215b0c0e21))
+
 ## [1.2.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.1.0...requirements-1.2.0) (2026-03-25)
 
 
