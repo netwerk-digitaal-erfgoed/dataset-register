@@ -20,7 +20,8 @@
 
 nde-dataset:DatacatalogShape
     a sh:NodeShape ;
-    sh:targetClass schema:DataCatalog ;
+    sh:targetSubjectsOf schema:dataset ;
+    sh:class schema:DataCatalog ;
     rdfs:label "Datacatalogus"@nl, "Data catalog"@en ;
     sh:description "Een datacatalogus bestaat uit een set van datasetbeschrijvingen"@nl, "A data catalog consists of a set of dataset descriptions"@en ;
     sh:property
@@ -1032,7 +1033,8 @@ dcat:DistributionShape
 
 dcat:CatalogShape
     a sh:NodeShape ;
-    sh:targetClass dcat:Catalog ;
+    sh:targetSubjectsOf dcat:dataset ;
+    sh:class dcat:Catalog ;
     sh:property [
         sh:path dc:title ;
         sh:minCount 1 ;
