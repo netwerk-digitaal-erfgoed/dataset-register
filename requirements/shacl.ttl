@@ -958,10 +958,14 @@ dcat:DatasetShape
     [
         sh:path dcat:theme ;
         sh:nodeKind sh:IRI ;
+        sh:pattern "^https?://" ;
         sh:description """De categorie van de dataset. Gebruik minimaal een waarde uit het Europese Dataset Theme Vocabulary.
-        Aanbevolen wordt om daarnaast waarden op te nemen uit domeinspecifieke vocabulaires."""@nl,
+        Aanbevolen wordt om daarnaast waarden op te nemen uit domeinspecifieke vocabulaires.
+        Standaard wordt 'Education, culture and sport' (data-theme/EDUC) toegevoegd."""@nl,
             """The category of the dataset. Use at least one value from the European Dataset Theme Vocabulary.
-        It is recommended to also include values from domain-specific vocabularies."""@en ;
+        It is recommended to also include values from domain-specific vocabularies.
+        The default theme 'Education, culture and sport' (data-theme/EDUC) is auto-assigned."""@en ;
+        sh:message "Thema moet een HTTP(S)-IRI zijn"@nl, "Theme must be an HTTP(S) IRI"@en ;
     ],
     [
         sh:path dcat:distribution ;
