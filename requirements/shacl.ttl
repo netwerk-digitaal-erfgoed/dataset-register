@@ -278,8 +278,23 @@ nde-dataset:DatasetShape
             sh:severity sh:Info ;
             sh:description """
                 Indicates the place(s) which are the focus of the dataset.
+                Use an IRI from a controlled vocabulary such as [GeoNames](https://www.geonames.org/).
+                Find place IRIs via the [Network of Terms](https://termennetwerk.netwerkdigitaalerfgoed.nl/).
             """@en ;
             sh:message "Een datasetbeschrijving zou een gebiedsaanduiding moeten bevatten"@nl, "A dataset description should contain spatial coverage"@en ;
+        ] ,
+        [
+            sh:path schema:spatialCoverage ;
+            sh:nodeKind sh:IRI ;
+            sh:pattern "^https?://" ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:description "Spatial coverage must be an HTTP(S) IRI, for example from [GeoNames](https://www.geonames.org/)."@en ;
+            sh:message "Gebiedsaanduiding moet een HTTP(S)-IRI zijn (bijv. https://sws.geonames.org/2750405/)"@nl,
+                "Spatial coverage must be an HTTP(S) IRI (e.g. https://sws.geonames.org/2750405/)"@en ;
         ] ,
         [
             sh:path schema:temporalCoverage ;
@@ -822,8 +837,26 @@ dcat:DatasetShape
         sh:path dc:spatial ;
         sh:minCount 1 ;
         sh:severity sh:Info ;
-        sh:description "Het geografische gebied waarop de gegevens in de dataset betrekking hebben."@nl, "The geographical area to which the data in the dataset pertains."@en ;
+        sh:description """Het geografische gebied waarop de gegevens in de dataset betrekking hebben.
+            Gebruik een IRI uit een gecontroleerd vocabulaire zoals [GeoNames](https://www.geonames.org/).
+            Zoek plaats-IRI's via het [Termennetwerk](https://termennetwerk.netwerkdigitaalerfgoed.nl/)."""@nl,
+            """The geographical area to which the data in the dataset pertains.
+            Use an IRI from a controlled vocabulary such as [GeoNames](https://www.geonames.org/).
+            Find place IRIs via the [Network of Terms](https://termennetwerk.netwerkdigitaalerfgoed.nl/)."""@en ;
         sh:message "Datasetbeschrijving zou een gebiedsaanduiding moeten bevatten"@nl, "Dataset description should contain spatial coverage"@en ;
+    ],
+    [
+        sh:path dc:spatial ;
+        sh:nodeKind sh:IRI ;
+        sh:pattern "^https?://" ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:description "Geographical coverage must be an HTTP(S) IRI, for example from [GeoNames](https://www.geonames.org/)."@en ;
+        sh:message "Gebiedsaanduiding moet een HTTP(S)-IRI zijn (bijv. https://sws.geonames.org/2750405/)"@nl,
+            "Geographical coverage must be an HTTP(S) IRI (e.g. https://sws.geonames.org/2750405/)"@en ;
     ],
     [
         sh:path dc:temporal ;
