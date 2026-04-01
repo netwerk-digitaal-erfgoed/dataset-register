@@ -79,6 +79,8 @@
                         must match <code>{{ change.pattern }}</code>
                     {% elsif change.nodeKind == "IRI" and change.severity != "Violation" -%}
                         must be IRI
+                    {% elsif change.maxCount -%}
+                        max {{ change.maxCount }}
                     {% elsif change.severity == "Violation" -%}
                         becomes required
                     {% endif -%}

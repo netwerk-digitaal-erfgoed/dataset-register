@@ -388,6 +388,10 @@ nde-dataset:DistributionShape
         [
             sh:path schema:encodingFormat ;
             sh:pattern "^[a-zA-Z]+/[a-zA-Z0-9][a-zA-Z0-9!#$&\\-^_.+]*$" ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:maxCount 1 ;
+            ] ;
             sh:description """Het mediatype van het downloadbare bestand.
                 Gebruik een waarde uit de [[IANA-MEDIA-TYPES]] lijst.
                 Bij gecomprimeerde distributies moet het compressieformaat (bijv. zip, gzip) worden toegevoegd (bijv. text/turtle+gzip)."""@nl ,
@@ -1004,6 +1008,10 @@ dcat:DistributionShape
         [ sh:property [
             sh:minCount 1 ;
             sh:path dcat:mediaType ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:maxCount 1 ;
+            ] ;
             sh:description "Het mediatype van de distributie conform de IANA-indeling."@nl, "The media type of the distribution according to the IANA classification."@en ;
         ] ]
         [ sh:property [
