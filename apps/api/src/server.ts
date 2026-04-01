@@ -9,6 +9,7 @@ import {
   AllowedRegistrationDomainStore,
   DatasetStore,
   dereference,
+  discoverDatacatalog,
   extractIri,
   fetch,
   FetchError,
@@ -88,9 +89,21 @@ export async function server(
   async function resolveDataset(
     url: URL,
     reply: FastifyReply,
-  ): Promise<DatasetExt | null> {
+  ): Promise<{ url: URL; data: DatasetExt } | null> {
     try {
-      return await dereference(url);
+      const data = await dereference(url);
+
+      if (data.size === 0) {
+        reply.log.info(
+          `No data at ${url.toString()}, trying /.well-known/datacatalog`,
+        );
+        const discovered = await discoverDatacatalog(url);
+        if (discovered) {
+          return discovered;
+        }
+      }
+
+      return { url, data };
     } catch (e) {
       if (e instanceof HttpError) {
         reply.log.info(
@@ -157,16 +170,18 @@ export async function server(
   }
 
   server.post('/datasets', datasetsRequest, async (request, reply) => {
-    const url = new URL((request.body as { '@id': string })['@id']);
-    if (!(await domainIsAllowed(url))) {
+    const submittedUrl = new URL((request.body as { '@id': string })['@id']);
+    if (!(await domainIsAllowed(submittedUrl))) {
       return reply.code(403).send();
     }
 
-    const data = await resolveDataset(url, reply);
-    const valid = data
-      ? await validate(data, reply.code(202), url)
+    const resolved = await resolveDataset(submittedUrl, reply);
+
+    const valid = resolved
+      ? await validate(resolved.data, reply.code(202), resolved.url)
       : false;
-    if (data && valid) {
+    if (resolved && valid) {
+      const { url, data } = resolved;
       // The URL has validated, so any problems with processing the dataset are now ours. Therefore, make sure to
       // store the registration so we can come back to that when crawling, even if fetching the datasets fails.
       // Store first rather than wrapping in a try/catch to cope with OOMs.
@@ -203,9 +218,10 @@ export async function server(
   server.put('/datasets/validate', datasetsRequest, async (request, reply) => {
     const url = new URL((request.body as { '@id': string })['@id']);
     request.log.info(url.toString());
-    const dataset = await resolveDataset(url, reply);
-    if (dataset) {
-      await validate(dataset, reply, url);
+    const resolved = await resolveDataset(url, reply);
+
+    if (resolved) {
+      await validate(resolved.data, reply, resolved.url);
     }
     validationsCounter.add(1, {
       status: reply.statusCode,

@@ -1,6 +1,7 @@
 import { URL } from 'url';
 import {
   dereference as fetchDereference,
+  discoverDatacatalog,
   fetch,
   HttpError,
   NoDatasetFoundAtUrl,
@@ -324,7 +325,7 @@ describe('Fetch', () => {
       '"dcat:theme": {"@id": "http://publications.europa.eu/resource/authority/data-theme/TECH"}, "dct:title"',
     );
     nock('https://example.com')
-      .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
       .get('/dcat-with-theme')
       .reply(200, datasetWithTheme);
 
@@ -737,6 +738,68 @@ describe('Fetch', () => {
         'https://creativecommons.org/publicdomain/zero/1.0/',
       ),
     );
+  });
+});
+
+describe('discoverDatacatalog', () => {
+  it('returns data when well-known datacatalog URL has valid RDF', async () => {
+    const catalogContent = await file('dataset-dcat-valid-minimal.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/.well-known/datacatalog')
+      .reply(200, catalogContent);
+
+    const result = await discoverDatacatalog(
+      new URL('https://example.com/some-page'),
+    );
+
+    expect(result).not.toBeNull();
+    expect(result!.url.toString()).toBe(
+      'https://example.com/.well-known/datacatalog',
+    );
+    expect(result!.data.size).toBeGreaterThan(0);
+  });
+
+  it('returns null when well-known datacatalog URL returns 404', async () => {
+    nock('https://example.com').get('/.well-known/datacatalog').reply(404);
+
+    const result = await discoverDatacatalog(
+      new URL('https://example.com/some-page'),
+    );
+
+    expect(result).toBeNull();
+  });
+
+  it('follows redirects to a valid catalog', async () => {
+    const catalogContent = await file('dataset-dcat-valid-minimal.jsonld');
+    nock('https://example.com')
+      .get('/.well-known/datacatalog')
+      .reply(302, '', { Location: 'https://example.com/catalog.jsonld' });
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/catalog.jsonld')
+      .reply(200, catalogContent);
+
+    const result = await discoverDatacatalog(
+      new URL('https://example.com/some-page'),
+    );
+
+    expect(result).not.toBeNull();
+    expect(result!.data.size).toBeGreaterThan(0);
+  });
+
+  it('returns null when well-known datacatalog URL has invalid content', async () => {
+    nock('https://example.com')
+      .get('/.well-known/datacatalog')
+      .reply(200, 'This is not valid RDF', {
+        'Content-Type': 'text/plain',
+      });
+
+    const result = await discoverDatacatalog(
+      new URL('https://example.com/some-page'),
+    );
+
+    expect(result).toBeNull();
   });
 });
 
