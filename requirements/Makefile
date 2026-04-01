@@ -4,7 +4,9 @@ help:
 	@echo "  make watch   Generate HTML each time the source changes"
 
 spec:
-	docker run -v "`pwd`:/spec" -w /spec netwerkdigitaalerfgoed/bikeshed:5.3.2
+	npx --yes @lde/docgen@latest from-shacl -f shacl.frame.jsonld shacl.ttl index.bs.liquid > index.bs
+	docker run -v "`pwd`:/spec" -w /spec netwerkdigitaalerfgoed/bikeshed:latest
 
 watch:
-	docker run -v "`pwd`:/spec" -w /spec netwerkdigitaalerfgoed/bikeshed:5.3.2 sh -c "bikeshed watch"
+	npx --yes @lde/docgen@latest from-shacl -f shacl.frame.jsonld shacl.ttl index.bs.liquid > index.bs
+	docker run -v "`pwd`:/spec" -w /spec netwerkdigitaalerfgoed/bikeshed:latest sh -c "bikeshed watch"
