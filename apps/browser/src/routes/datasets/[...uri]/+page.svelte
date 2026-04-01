@@ -662,15 +662,19 @@
                 >
               </dt>
               <dd class="text-sm text-gray-700 dark:text-gray-300">
-                <a
-                  href={`https://datasetregister.netwerkdigitaalerfgoed.nl/catalog.php?lang=${getLocale()}&uri=${encodeURIComponent(dataset.isPartOf)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="text-blue-600 hover:underline dark:text-blue-400"
-                >
+                {#if dataset.isPartOf.startsWith('http://') || dataset.isPartOf.startsWith('https://')}
+                  <a
+                    href={`https://datasetregister.netwerkdigitaalerfgoed.nl/catalog.php?lang=${getLocale()}&uri=${encodeURIComponent(dataset.isPartOf)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-blue-600 hover:underline dark:text-blue-400"
+                  >
+                    {dataset.isPartOf}
+                    <span class="sr-only"> ({m.opens_in_new_tab()})</span>
+                  </a>
+                {:else}
                   {dataset.isPartOf}
-                  <span class="sr-only"> ({m.opens_in_new_tab()})</span>
-                </a>
+                {/if}
               </dd>
             </div>
           {/if}

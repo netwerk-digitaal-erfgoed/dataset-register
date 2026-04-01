@@ -301,10 +301,18 @@ nde-dataset:DatasetShape
         [
             a sh:PropertyShape ;
             sh:path schema:includedInDataCatalog ;
+            sh:nodeKind sh:IRI ;
+            sh:pattern "^https?://" ;
             sh:minCount 0 ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
             sh:description """
                 The HTTP [[IRI]] of the data catalog(s) that the dataset belongs to.
             """@en ;
+            sh:message "De datacatalogus moet een IRI zijn, geen tekst"@nl, "The data catalog must be an IRI, not a string literal"@en ;
         ] ,
         nde-dataset:AccessRightsProperty
 .
