@@ -100,7 +100,7 @@ Definitions {#definitions}
 : <dfn>Publisher</dfn>
 :: An individual or organization that provides one or more [=datasets=].
 
-    Issue: is this a good translation for 'bronhouder'? And add examples.
+    Issue: is this a good translation for ‘bronhouder’? And add examples.
     This would probably be 'heritage institution' in <a href="https://www.netwerkdigitaalerfgoed.nl/wp-content/uploads/2019/05/190513-DERA2.0-ENG.pdf">DERA</a>.
 
 : <dfn>Consumer</dfn>
@@ -479,7 +479,7 @@ All distributions of a dataset *MUST* contain broadly the same data.
 The distributions are then included under the `distribution` attribute with the dataset.
 
 <div class="example">
-    A dataset with two distributions.
+    A dataset with one SPARQL and two download distributions.
 
     <pre highlight=json-ld>
         {
@@ -586,7 +586,7 @@ protocol which also types the distribution as an API (such as OAI-PMH, SPARQL an
 </table>
 
 <div class="example">
-    A download distribution that conforms to the NDE Schema.org Application Profile:
+    A download distribution that conforms to [[SCHEMA-AP-NDE]]:
 
     <pre highlight=json-ld>
         {
@@ -600,7 +600,7 @@ protocol which also types the distribution as an API (such as OAI-PMH, SPARQL an
 </div>
 
 <div class="example">
-    A SPARQL distribution that returns RDF in the NDE Schema.org Application Profile:
+    A SPARQL distribution that returns RDF conforming to [[SCHEMA-AP-NDE]]:
 
     <pre highlight=json-ld>
         {

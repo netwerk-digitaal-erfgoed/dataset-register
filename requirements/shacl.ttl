@@ -224,7 +224,7 @@ nde-dataset:DatasetShape
             sh:minCount 0 ;
             sh:name "Language"@en ;
             sh:description """
-                Language or languages in which the dataset is available. Use one of the language codes from the [[BCP47]], such as 'nl-NL'.
+                Language or languages in which the dataset is available. Use one of the language codes from the [[BCP47]], such as `nl-NL`.
             """@en ;
         ] ,
         [
@@ -423,7 +423,7 @@ nde-dataset:DistributionShape
             sh:minCount 0 ;
             sh:name "Language"@en ;
             sh:description """
-                Language or languages in which the distribution is available. Use one of the language codes from the [[BCP47]], such as 'nl-NL'.
+                Language or languages in which the distribution is available. Use one of the language codes from the [[BCP47]], such as `nl-NL`.
             """@en ;
         ] ,
         [
