@@ -89,10 +89,11 @@ describe('Server', () => {
     expect(response.statusCode).toEqual(404);
   });
 
-  it('rejects validation requests that point to URL with empty response', async () => {
+  it('rejects validation requests that point to URL with empty response and no well-known datacatalog', async () => {
     nock('https://example.com/')
       .get('/200')
       .reply(200, '', { 'Content-Type': 'text/turtle' });
+    nock('https://example.com').get('/.well-known/datacatalog').reply(404);
     const response = await httpServer.inject({
       method: 'PUT',
       url: '/datasets/validate',
@@ -111,6 +112,26 @@ describe('Server', () => {
     expect(response.json()['description']).toContain(
       'The provided URL does not contain either a schema:Dataset or a dcat:Dataset.',
     );
+  });
+
+  it('discovers datasets via well-known datacatalog when URL has no dataset', async () => {
+    nock('https://example.com/')
+      .get('/no-dataset')
+      .reply(200, '', { 'Content-Type': 'text/turtle' });
+    const catalogContent = await file('dataset-dcat-valid-minimal.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/.well-known/datacatalog')
+      .reply(200, catalogContent);
+    const response = await httpServer.inject({
+      method: 'PUT',
+      url: '/datasets/validate',
+      headers: { 'Content-Type': 'application/ld+json' },
+      payload: JSON.stringify({
+        '@id': 'https://example.com/no-dataset',
+      }),
+    });
+    expect(response.statusCode).toEqual(200);
   });
 
   it('rejects validation requests that point to URL with invalid Content-Type', async () => {
@@ -279,6 +300,28 @@ describe('Server', () => {
     nockDone();
     expect(response.statusCode).toEqual(202);
     expect(response.payload).not.toEqual('');
+  });
+
+  it('discovers and registers datasets via well-known datacatalog', async () => {
+    // The original URL has no dataset.
+    nock('https://demo.netwerkdigitaalerfgoed.nl')
+      .get('/no-dataset')
+      .reply(200, '', { 'Content-Type': 'text/turtle' });
+    // The well-known datacatalog URL has a valid dataset.
+    const catalogContent = await file('dataset-dcat-valid-minimal.jsonld');
+    nock('https://demo.netwerkdigitaalerfgoed.nl')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/.well-known/datacatalog')
+      .reply(200, catalogContent);
+    const response = await httpServer.inject({
+      method: 'POST',
+      url: '/datasets',
+      headers: { 'Content-Type': 'application/ld+json' },
+      payload: JSON.stringify({
+        '@id': 'https://demo.netwerkdigitaalerfgoed.nl/no-dataset',
+      }),
+    });
+    expect(response.statusCode).toEqual(202);
   });
 
   it('responds with validation errors when adding an invalid dataset', async () => {

@@ -90,9 +90,14 @@ async function* query(url: URL, data: DatasetExt) {
     if (quad.predicate.equals(dcat('byteSize'))) {
       const bytes = normalizeByteSize(quad.object.value);
       if (bytes !== null) {
-        quad = factory.quad(quad.subject, quad.predicate, factory.literal(
-          String(bytes), factory.namedNode('http://www.w3.org/2001/XMLSchema#integer'),
-        ));
+        quad = factory.quad(
+          quad.subject,
+          quad.predicate,
+          factory.literal(
+            String(bytes),
+            factory.namedNode('http://www.w3.org/2001/XMLSchema#integer'),
+          ),
+        );
       }
     }
 
@@ -148,7 +153,7 @@ function handleComunicaError(e: unknown, url: URL): never {
 const HYDRA = 'http://www.w3.org/ns/hydra/core#';
 
 function hasHydraPagination(data: DatasetExt): boolean {
-  return data.some(quad => quad.predicate.value.startsWith(HYDRA));
+  return data.some((quad) => quad.predicate.value.startsWith(HYDRA));
 }
 
 /**
@@ -162,6 +167,26 @@ function toN3Store(data: DatasetExt): Store {
     store.addQuad(factory.quad(quad.subject, quad.predicate, quad.object));
   }
   return store;
+}
+
+/**
+ * Try to discover a data catalog at the well-known URL for the given origin.
+ * Returns the dereferenced RDF data if the well-known URL contains valid RDF,
+ * or null if it doesn't exist or contains no usable content.
+ */
+export async function discoverDatacatalog(
+  url: URL,
+): Promise<{ url: URL; data: DatasetExt } | null> {
+  const wellKnownUrl = new URL('/.well-known/datacatalog', url.origin);
+  try {
+    const data = await dereference(wellKnownUrl);
+    if (data.size === 0) {
+      return null;
+    }
+    return { url: wellKnownUrl, data };
+  } catch {
+    return null;
+  }
 }
 
 function normalizeByteSize(raw: string): number | null {
