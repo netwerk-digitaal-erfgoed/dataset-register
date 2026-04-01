@@ -154,7 +154,7 @@ describe('Validator', () => {
   it('reports invalid Schema.org catalog', async () => {
     const report = await validate('catalog-schema-org-invalid.jsonld');
     expect(report.state).toEqual('invalid');
-    expectViolations(report as InvalidDataset, ['https://schema.org/name']);
+    expectViolations(report as InvalidDataset, ['https://schema.org/name'], 3);
   });
 
   it('accepts valid DCAT catalog', async () => {

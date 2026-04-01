@@ -37,8 +37,10 @@ nde-dataset:DatacatalogShape
             sh:message "Een datacatalogus moet een naam hebben"@nl, "A data catalog must have a name"@en ;
         ] ,
         nde-dataset:SchemaNameUniqueLangProperty,
+        nde-dataset:SchemaNameLangStringProperty,
         nde-dataset:SchemaDescriptionProperty,
         nde-dataset:SchemaDescriptionUniqueLangProperty,
+        nde-dataset:SchemaDescriptionLangStringProperty,
         nde-dataset:SchemaDescriptionPropertyShouldExist,
         [
             sh:path schema:publisher ;
@@ -92,8 +94,10 @@ nde-dataset:DatasetShape
             sh:message "Een datasetbeschrijving moet een naam hebben"@nl, "A dataset description must have a name"@en ;
         ] ,
         nde-dataset:SchemaNameUniqueLangProperty,
+        nde-dataset:SchemaNameLangStringProperty,
         nde-dataset:SchemaDescriptionProperty,
         nde-dataset:SchemaDescriptionUniqueLangProperty,
+        nde-dataset:SchemaDescriptionLangStringProperty,
         nde-dataset:SchemaDescriptionPropertyShouldExist,
         [
             sh:path schema:publisher ;
@@ -517,6 +521,7 @@ nde-dataset:OrganizationShape
             sh:message "Een organisatie moet een naam hebben"@nl, "An organization must contain a name"@en ;
         ] ,
         nde-dataset:SchemaNameUniqueLangProperty,
+        nde-dataset:SchemaNameLangStringProperty,
         [
             sh:path schema:alternateName ;
             sh:or (
@@ -617,12 +622,7 @@ nde-dataset:PersonShape
         sh:uniqueLang true ;
         sh:message "Een persoon moet een naam hebben"@nl, "A person must have a name"@en ;
     ] ,
-    [
-        sh:path schema:name ;
-        sh:datatype rdf:langString ;
-        sh:severity sh:Warning ;
-        sh:message "De naam zou een taaltag moeten bevatten"@nl, "The name should have a language tag"@en ;
-    ] .
+    nde-dataset:SchemaNameLangStringProperty .
 
 nde-dataset:IdentifierShape
     a sh:NodeShape ;
@@ -687,6 +687,61 @@ nde-dataset:SchemaDescriptionUniqueLangProperty a sh:PropertyShape ;
     sh:path schema:description ;
     sh:uniqueLang true ;
     sh:message "Mag maximaal één beschrijving per taal hebben"@nl, "Must have at most one description per language"@en ;
+.
+
+nde-dataset:SchemaNameLangStringProperty a sh:PropertyShape ;
+    sh:path schema:name ;
+    sh:datatype rdf:langString ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "De naam moet een taaltag bevatten"@nl, "The name must have a language tag"@en ;
+.
+
+nde-dataset:SchemaDescriptionLangStringProperty a sh:PropertyShape ;
+    sh:path schema:description ;
+    sh:datatype rdf:langString ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "De beschrijving moet een taaltag bevatten"@nl, "The description must have a language tag"@en ;
+.
+
+nde-dataset:DcTitleLangStringProperty a sh:PropertyShape ;
+    sh:path dc:title ;
+    sh:datatype rdf:langString ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "De titel moet een taaltag bevatten"@nl, "The title must have a language tag"@en ;
+.
+
+nde-dataset:DcDescriptionLangStringProperty a sh:PropertyShape ;
+    sh:path dc:description ;
+    sh:datatype rdf:langString ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "De beschrijving moet een taaltag bevatten"@nl, "The description must have a language tag"@en ;
+.
+
+nde-dataset:FoafNameLangStringProperty a sh:PropertyShape ;
+    sh:path foaf:name ;
+    sh:datatype rdf:langString ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "De naam moet een taaltag bevatten"@nl, "The name must have a language tag"@en ;
 .
 
 nde-dataset:SchemaDescriptionPropertyShouldExist a sh:PropertyShape ;
@@ -780,8 +835,18 @@ dcat:DatasetShape
     sh:property [
         sh:minCount 1 ;
         sh:path dc:title ;
+        sh:or (
+            [ sh:datatype xsd:string ]
+            [ sh:datatype rdf:langString ]
+        ) ;
         sh:description "De naam van de beschreven dataset."@nl, "The name of the dataset."@en ;
     ],
+    [
+        sh:path dc:title ;
+        sh:uniqueLang true ;
+        sh:message "Mag maximaal één titel per taal hebben"@nl, "Must have at most one title per language"@en ;
+    ],
+    nde-dataset:DcTitleLangStringProperty,
     [
         sh:path dc:alternative ;
         sh:description "Een alternatieve naam van de dataset."@nl, "An alternative name of the dataset."@en ;
@@ -806,6 +871,20 @@ dcat:DatasetShape
         for whom the text should be understandable."""@en ;
         sh:message "Dataset moet een beschrijving hebben"@nl, "Dataset must have a description"@en ;
     ],
+    [
+        sh:path dc:description ;
+        sh:or (
+            [ sh:datatype xsd:string ]
+            [ sh:datatype rdf:langString ]
+        ) ;
+        sh:message "Een beschrijving moet van type string of langString zijn"@nl, "A description must be of type string or langString"@en ;
+    ],
+    [
+        sh:path dc:description ;
+        sh:uniqueLang true ;
+        sh:message "Mag maximaal één beschrijving per taal hebben"@nl, "Must have at most one description per language"@en ;
+    ],
+    nde-dataset:DcDescriptionLangStringProperty,
     # No dc:license on Dataset — DCAT-AP-NL 3.0 only requires license on Distribution.
     [
         sh:path dc:created ;
@@ -1046,9 +1125,19 @@ dcat:CatalogShape
     sh:property [
         sh:path dc:title ;
         sh:minCount 1 ;
+        sh:or (
+            [ sh:datatype xsd:string ]
+            [ sh:datatype rdf:langString ]
+        ) ;
         sh:description "De naam van de catalogus."@nl, "The name of the catalog."@en ;
         sh:message "Catalogus moet een titel hebben"@nl, "Catalog must have a title"@en ;
     ],
+    [
+        sh:path dc:title ;
+        sh:uniqueLang true ;
+        sh:message "Mag maximaal één titel per taal hebben"@nl, "Must have at most one title per language"@en ;
+    ],
+    nde-dataset:DcTitleLangStringProperty,
     [
         sh:path dc:description ;
         sh:minCount 1 ;
@@ -1060,6 +1149,20 @@ dcat:CatalogShape
         sh:description "Een beschrijving van de catalogus."@nl, "A description of the catalog."@en ;
         sh:message "Catalogus moet een beschrijving hebben"@nl, "Catalog must have a description"@en ;
     ],
+    [
+        sh:path dc:description ;
+        sh:or (
+            [ sh:datatype xsd:string ]
+            [ sh:datatype rdf:langString ]
+        ) ;
+        sh:message "Een beschrijving moet van type string of langString zijn"@nl, "A description must be of type string or langString"@en ;
+    ],
+    [
+        sh:path dc:description ;
+        sh:uniqueLang true ;
+        sh:message "Mag maximaal één beschrijving per taal hebben"@nl, "Must have at most one description per language"@en ;
+    ],
+    nde-dataset:DcDescriptionLangStringProperty,
     [
         sh:path dc:publisher ;
         sh:minCount 1 ;
@@ -1111,12 +1214,7 @@ dcat:OrganizationShape
         sh:description "De naam van de organisatie."@nl, "The name of the organization."@en ;
         sh:message "Een organisatie moet een naam hebben"@nl, "An organization must have a name"@en ;
     ] ,
-    [
-        sh:path foaf:name ;
-        sh:datatype rdf:langString ;
-        sh:severity sh:Warning ;
-        sh:message "De naam van de organisatie zou een taaltag moeten bevatten"@nl, "The organization name should have a language tag"@en ;
-    ] .
+    nde-dataset:FoafNameLangStringProperty .
 
 dcat:PersonShape
     a sh:NodeShape ;
@@ -1133,9 +1231,4 @@ dcat:PersonShape
         sh:description "De naam van de persoon."@nl, "The name of the person."@en ;
         sh:message "Een persoon moet een naam hebben"@nl, "A person must have a name"@en ;
     ] ,
-    [
-        sh:path foaf:name ;
-        sh:datatype rdf:langString ;
-        sh:severity sh:Warning ;
-        sh:message "De naam zou een taaltag moeten bevatten"@nl, "The name should have a language tag"@en ;
-    ] .
+    nde-dataset:FoafNameLangStringProperty .
