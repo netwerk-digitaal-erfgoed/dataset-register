@@ -17,11 +17,6 @@ const DetailDistributionSchema = {
   accessURL: {
     '@id': dcat.accessURL,
   },
-  title: {
-    '@id': dcterms.title,
-    '@optional': true,
-    '@multilang': true,
-  },
   description: {
     '@id': dcterms.description,
     '@optional': true,
@@ -403,7 +398,6 @@ export async function fetchDatasetDetail(
     CONSTRUCT {
       ?distribution a dcat:Distribution, ldkit:Resource ;
         dcat:accessURL ?accessURL ;
-        dct:title ?title ;
         dct:description ?description ;
         dcat:mediaType ?rawMediaType ;
         dct:format ?format ;
@@ -417,7 +411,6 @@ export async function fetchDatasetDetail(
       GRAPH ?g {
         <${datasetUri}> dcat:distribution ?distribution .
         ?distribution dcat:accessURL ?accessURL .
-        OPTIONAL { ?distribution dct:title ?title }
         OPTIONAL { ?distribution dct:description ?description }
         OPTIONAL { ?distribution dcat:mediaType ?rawMediaType }
         OPTIONAL { ?distribution dct:format ?format }

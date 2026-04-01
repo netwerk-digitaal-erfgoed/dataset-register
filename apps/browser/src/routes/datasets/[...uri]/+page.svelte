@@ -297,7 +297,9 @@
   distIndex: number,
 )}
   {@const isVerified = verifiedUrls.has(distribution.accessURL)}
-  <DropdownItem classes={{ item: "flex flex-col items-start gap-1 !whitespace-normal" }}>
+  <DropdownItem
+    classes={{ item: 'flex flex-col items-start gap-1 !whitespace-normal' }}
+  >
     <div class="flex w-full items-center gap-2">
       {#if distribution.mediaType}
         <span
@@ -319,11 +321,6 @@
       {/if}
       {@render copyButton(distribution.accessURL)}
     </div>
-    {#if distribution.title}
-      <span class="text-sm font-medium text-gray-900 dark:text-white">
-        {getLocalizedValue(distribution.title)}
-      </span>
-    {/if}
     <a
       href={distribution.accessURL}
       target="_blank"
@@ -1055,7 +1052,9 @@
             {#each sparqlDistributions as distribution, distIndex (distribution.$id)}
               {@const isVerified = verifiedUrls.has(distribution.accessURL)}
               <DropdownItem
-                classes={{ item: "flex flex-col items-start gap-1 !whitespace-normal" }}
+                classes={{
+                  item: 'flex flex-col items-start gap-1 !whitespace-normal',
+                }}
               >
                 <div class="flex w-full items-center gap-2">
                   <span
@@ -1070,13 +1069,6 @@
                   {/if}
                   {@render copyButton(distribution.accessURL)}
                 </div>
-                {#if distribution.title}
-                  <span
-                    class="text-sm font-medium text-gray-900 dark:text-white"
-                  >
-                    {getLocalizedValue(distribution.title)}
-                  </span>
-                {/if}
                 <a
                   href={yasguiUrl(distribution.accessURL)}
                   target="_blank"
