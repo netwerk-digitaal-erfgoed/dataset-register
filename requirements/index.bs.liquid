@@ -167,6 +167,18 @@ Schema.org is [[#examples|recommended]].
 
 See also [[DWBP-UCR#R-FormatMachineRead]].
 
+### Content-Type ### {#content-type}
+
+Clients that retrieve [=dataset descriptions=] rely on the HTTP `Content-Type` header
+to determine how the response should be parsed.
+
+> Therefore, the URL at which a [=dataset description=] is published
+> *MUST* be served with a `Content-Type` header whose media type matches the RDF serialization of the response body.
+
+Recognized RDF media types include `application/ld+json` for [[JSON-LD]], `text/turtle` for [[Turtle]],
+`application/n-triples` for [[N-TRIPLES]] and `application/rdf+xml` for RDF/XML.
+When the [=dataset description=] is embedded in an HTML page (see [[#rdf]]), `text/html` is acceptable.
+
 ### Durable identifiers ### {#identifiers}
 
 [=Consumers=] want to refer to datasets. They prefer to do so by linking to them.
