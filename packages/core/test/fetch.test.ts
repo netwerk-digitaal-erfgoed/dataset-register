@@ -350,6 +350,70 @@ describe('Fetch', () => {
     );
   });
 
+  it('preserves dct:accrualPeriodicity from DCAT input', async () => {
+    const response = await file(
+      'dataset-dcat-valid-accrual-periodicity.jsonld',
+    );
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/dcat-with-frequency')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/dcat-with-frequency'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const datasetUri = factory.namedNode(
+      'http://data.bibliotheken.nl/id/dataset/rise-alba',
+    );
+
+    expect(
+      dataset.has(
+        factory.quad(
+          datasetUri,
+          dct('accrualPeriodicity'),
+          factory.namedNode(
+            'http://publications.europa.eu/resource/authority/frequency/WEEKLY',
+          ),
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it('preserves dct:accrualPeriodicity from Schema.org input', async () => {
+    const response = await file(
+      'dataset-schema-org-valid-accrual-periodicity.jsonld',
+    );
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/schema-org-with-frequency')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/schema-org-with-frequency'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const datasetUri = factory.namedNode(
+      'http://data.bibliotheken.nl/id/dataset/rise-alba',
+    );
+
+    expect(
+      dataset.has(
+        factory.quad(
+          datasetUri,
+          dct('accrualPeriodicity'),
+          factory.namedNode(
+            'http://publications.europa.eu/resource/authority/frequency/DAILY',
+          ),
+        ),
+      ),
+    ).toBe(true);
+  });
+
   it('accepts minimal valid Schema.org dataset', async () => {
     const response = await file('dataset-schema-org-valid-minimal.jsonld');
     nock('https://example.com')
