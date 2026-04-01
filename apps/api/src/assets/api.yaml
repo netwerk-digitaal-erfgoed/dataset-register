@@ -158,6 +158,27 @@ paths:
           description: The URL cannot be resolved.
         406:
           description: The URL can be resolved but it contains no datasets.
+  /allowed-domains:
+    get:
+      summary: Check whether a URL's domain is on the allow list
+      description: |-
+        Check whether the domain of the given URL is on the allow list.
+        Only URLs on allowed domains can be registered via POST /datasets.
+      parameters:
+        - name: url
+          in: query
+          required: true
+          schema:
+            type: string
+          description: URL whose domain to check
+          example: 'https://example.com/dataset.ttl'
+      responses:
+        200:
+          description: The URL's domain is on the allow list.
+        400:
+          description: Missing or invalid URL parameter.
+        404:
+          description: The URL's domain is not on the allow list.
   /shacl:
     get:
       summary: Get the SHACL shape that is used to validate dataset descriptions.

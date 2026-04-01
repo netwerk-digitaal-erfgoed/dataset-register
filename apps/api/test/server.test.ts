@@ -324,6 +324,46 @@ describe('Server', () => {
     expect(response.statusCode).toEqual(202);
   });
 
+  it('returns 200 for a URL on an allowed domain', async () => {
+    const response = await httpServer.inject({
+      method: 'GET',
+      url: '/allowed-domains?url=https://netwerkdigitaalerfgoed.nl/dataset',
+    });
+    expect(response.statusCode).toEqual(200);
+  });
+
+  it('returns 200 for a URL on a subdomain of an allowed domain', async () => {
+    const response = await httpServer.inject({
+      method: 'GET',
+      url: '/allowed-domains?url=https://sub.netwerkdigitaalerfgoed.nl/dataset',
+    });
+    expect(response.statusCode).toEqual(200);
+  });
+
+  it('returns 404 for a URL on a disallowed domain', async () => {
+    const response = await httpServer.inject({
+      method: 'GET',
+      url: '/allowed-domains?url=https://not-allowed.com/dataset',
+    });
+    expect(response.statusCode).toEqual(404);
+  });
+
+  it('returns 400 when url parameter is missing', async () => {
+    const response = await httpServer.inject({
+      method: 'GET',
+      url: '/allowed-domains',
+    });
+    expect(response.statusCode).toEqual(400);
+  });
+
+  it('returns 400 for an invalid url parameter', async () => {
+    const response = await httpServer.inject({
+      method: 'GET',
+      url: '/allowed-domains?url=not-a-url',
+    });
+    expect(response.statusCode).toEqual(400);
+  });
+
   it('responds with validation errors when adding an invalid dataset', async () => {
     const { nockDone } = await nock.back('invalid-dataset.json');
     const response = await httpServer.inject({
