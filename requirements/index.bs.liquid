@@ -13,6 +13,12 @@ Abstract: This document describes requirements for publishing dataset descriptio
     By following these requirements, publishers enable users to find and use their datasets.
 </pre>
 
+<style>
+td, th {
+    vertical-align: top;
+}
+</style>
+
 Introduction {#introduction}
 ============
 
@@ -535,52 +541,68 @@ but simple dates (`2019-04-14`) are also allowed.
     </pre>
 </div>
 
-### Developer documentation ### {#developer-docs}
+### Usage information ### {#usage-information}
 
-Publishers *SHOULD* link to documentation URLs via the [https://schema.org/usageInfo](https://schema.org/usageInfo) attribute.
+Each distribution *SHOULD* include one or more [schema:usageInfo](https://schema.org/usageInfo) URIs
+that describe what the distribution provides.
 
-For downloads, this *SHOULD* be documentation about the data model,
-such as the application profile, vocabulary or ontology that the data conforms to.
+For [=web APIs=], this *MUST* be the URI of the protocol specification (such as SPARQL or OAI-PMH).
+The Dataset Register uses this URI to identify the distribution as an API.
 
-For [=web APIs=], this *SHOULD* be documentation about the specific capabilities of the API (like content-type support) *AND* the generic specification of the
-protocol which also types the distribution as an API (such as OAI-PMH, SPARQL and REST).
+For downloads as well as APIs, this *MUST* be the URI of the application profile(s) that the data conforms to.
 
 <table>
-    <caption>Recommended URIs for typing API distributions</caption>
+    <caption>Recommended URIs for typing distributions</caption>
     <thead>
         <tr>
-            <th>Protocol</th>
-            <th>URL specification</th>
+            <th>Item</th>
+            <th>Type</th>
+            <th>Applies to</th>
+            <th>URI</th>
         </tr>
     </thead>
     <tbody>
         <tr>
+            <th scope="row">GraphQL</th>
+            <td>Protocol</td>
+            <td>API</td>
+            <td>https://spec.graphql.org/</td>
+        </tr>
+        <tr>
             <th scope="row">OAI-PMH</th>
+            <td>Protocol</td>
+            <td>API</td>
             <td>http://www.openarchives.org/pmh/</td>
         </tr>
         <tr>
+            <th scope="row">OpenAPI REST</th>
+            <td>Protocol</td>
+            <td>API</td>
+            <td>https://spec.openapis.org/oas/v3.2.0.html</td>
+        </tr>
+        <tr>
+            <th scope="row">[[SCHEMA-AP-NDE]]</th>
+            <td>Application profile</td>
+            <td>API, download</td>
+            <td>https://docs.nde.nl/schema-profile/</td>
+        </tr>
+        <tr>
             <th scope="row">SPARQL</th>
+            <td>Protocol</td>
+            <td>API</td>
             <td>https://www.w3.org/TR/sparql11-protocol/</td>
         </tr>
         <tr>
             <th scope="row">TPF</th>
+            <td>Protocol</td>
+            <td>API</td>
             <td>https://linkeddatafragments.org/specification/triple-pattern-fragments/</td>
         </tr>
         <tr>
-            <th scope="row">REST</th>
-            <td>https://developers.arcgis.com/rest/</td>
-        </tr>
-        <tr>
             <th scope="row">WMS</th>
+            <td>Protocol</td>
+            <td>API</td>
             <td>https://www.ogc.org/standards/wms/</td>
-        </tr>
-        <tr>
-            <th scope="row">OpenAPI</th>
-            <td>https://spec.openapis.org/oas/v3.2.0.html</td>
-        </tr>
-        <tr>
-            <th scope="row">GraphQL</th>
-            <td>https://spec.graphql.org/</td>
         </tr>
     </tbody>
 </table>

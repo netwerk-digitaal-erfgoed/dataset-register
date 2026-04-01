@@ -451,7 +451,7 @@ nde-dataset:DistributionShape
                 sh:severity sh:Violation ;
             ] ;
             sh:minCount 0 ;
-            sh:description "A link to the documentation: for downloads, the application profile, vocabulary or ontology; for [=web APIs=], the protocol specification. See [[#developer-docs]]."@en ;
+            sh:description "A link to the documentation: for downloads, the application profile, vocabulary or ontology; for [=web APIs=], the protocol specification. See [[#usage-information]]."@en ;
             sh:message "usageInfo zou een IRI moeten zijn"@nl, "usageInfo should be an IRI"@en ;
         ] ,
         nde-dataset:SchemaDescriptionPropertyShouldExist ;
