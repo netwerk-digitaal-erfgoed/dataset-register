@@ -334,6 +334,22 @@ nde-dataset:DatasetShape
             """@en ;
             sh:message "De datacatalogus moet een IRI zijn, geen tekst"@nl, "The data catalog must be an IRI, not a string literal"@en ;
         ] ,
+        [
+            a sh:PropertyShape ;
+            sh:path dc:accrualPeriodicity ;
+            sh:maxCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:pattern "^http://publications\\.europa\\.eu/resource/authority/frequency/" ;
+            sh:severity sh:Warning ;
+            sh:name "Updatefrequentie"@nl, "Accrual periodicity"@en ;
+            sh:description """Hoe vaak de dataset wordt bijgewerkt.
+                Gebruik een waarde uit de EU-frequentielijst,
+                bijvoorbeeld http://publications.europa.eu/resource/authority/frequency/WEEKLY ."""@nl,
+                """How often the dataset is updated.
+                Use a value from the EU frequency list,
+                for example http://publications.europa.eu/resource/authority/frequency/WEEKLY ."""@en ;
+            sh:message "Updatefrequentie moet een IRI zijn uit de EU-frequentielijst"@nl, "Accrual periodicity must be an IRI from the EU frequency list"@en ;
+        ] ,
         nde-dataset:AccessRightsProperty
 .
 
@@ -1059,6 +1075,22 @@ dcat:DatasetShape
         sh:severity sh:Info ;
         sh:description "Een beschikbare representatie van de dataset."@nl, "An available representation of the dataset."@en ;
         sh:message "Datasetbeschrijving zou minstens één distributie moeten bevatten"@nl, "Dataset description should contain at least one distribution"@en ;
+    ] ,
+    [
+        a sh:PropertyShape ;
+        sh:path dc:accrualPeriodicity ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:pattern "^http://publications\\.europa\\.eu/resource/authority/frequency/" ;
+        sh:severity sh:Warning ;
+        sh:name "Updatefrequentie"@nl, "Accrual periodicity"@en ;
+        sh:description """Hoe vaak de dataset wordt bijgewerkt.
+            Gebruik een waarde uit de EU-frequentielijst,
+            bijvoorbeeld http://publications.europa.eu/resource/authority/frequency/WEEKLY ."""@nl,
+            """How often the dataset is updated.
+            Use a value from the EU frequency list,
+            for example http://publications.europa.eu/resource/authority/frequency/WEEKLY ."""@en ;
+        sh:message "Updatefrequentie moet een IRI zijn uit de EU-frequentielijst"@nl, "Accrual periodicity must be an IRI from the EU frequency list"@en ;
     ] ,
     nde-dataset:AccessRightsProperty ;
     sh:targetClass dcat:Dataset ;

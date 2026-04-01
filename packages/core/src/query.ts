@@ -34,6 +34,7 @@ const includedInDataCatalog = 'includedInDataCatalog';
 const hasPart = 'hasPart';
 const isReferencedBy = 'isReferencedBy';
 const accessRights = 'accessRights';
+const accrualPeriodicity = 'accrualPeriodicity';
 
 const creatorName = 'creator_name';
 const creatorType = 'creator_type';
@@ -165,6 +166,7 @@ export const constructQuery = `
       dct:accessRights ?${accessRights} ;
       dcat:theme ?theme ;
       dcat:theme ?themeDefault ;
+      dct:accrualPeriodicity ?${accrualPeriodicity} ;
       dct:publisher ?${publisher} ;
       dct:creator ?${creator} ;
       dcat:contactPoint ?${contactPoint} ;
@@ -313,6 +315,7 @@ export const constructQuery = `
         OPTIONAL { ?${dataset} dcat:landingPage ?${mainEntityOfPage} }
         OPTIONAL { ?${dataset} dct:accessRights ?${accessRights}Provided }
         BIND(COALESCE(?${accessRights}Provided, <http://publications.europa.eu/resource/authority/access-right/PUBLIC>) AS ?${accessRights})
+        OPTIONAL { ?${dataset} dct:accrualPeriodicity ?${accrualPeriodicity} }
         OPTIONAL { ?${dataset} dcat:theme ?theme }
         BIND(<http://publications.europa.eu/resource/authority/data-theme/EDUC> AS ?themeDefault)
       }
@@ -452,6 +455,7 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL { ?${dataset} ${prefix}:mainEntityOfPage ?${mainEntityOfPage} }
     OPTIONAL { ?${dataset} dct:accessRights ?${accessRights}Provided }
     BIND(COALESCE(?${accessRights}Provided, <http://publications.europa.eu/resource/authority/access-right/PUBLIC>) AS ?${accessRights})
+    OPTIONAL { ?${dataset} dct:accrualPeriodicity ?${accrualPeriodicity} }
     BIND(<http://publications.europa.eu/resource/authority/data-theme/EDUC> AS ?themeDefault)
 `;
 }

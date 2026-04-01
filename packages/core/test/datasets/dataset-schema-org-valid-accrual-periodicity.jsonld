@@ -1,0 +1,16 @@
+{
+  "@context": {
+    "@vocab": "https://schema.org/",
+    "dct": "http://purl.org/dc/terms/"
+  },
+  "@type": "Dataset",
+  "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
+  "dct:accrualPeriodicity": {"@id": "http://publications.europa.eu/resource/authority/frequency/DAILY"},
+  "name": "Alba amicorum van de Koninklijke Bibliotheek",
+  "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "publisher": {
+    "@type": "Organization",
+    "@id": "https://example.com/publisher",
+    "name": "Koninklijke Bibliotheek"
+  }
+}
