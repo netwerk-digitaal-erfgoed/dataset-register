@@ -22,8 +22,7 @@
 
 ### Documentation
 
-* directly reference spec ([#1782](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1782)) ([68d5de2](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/68d5de2029c10b9d84c7fb803e6d0bae24fb7dfb))
-* rewrite 'Developer documentation' section as 'Usage information' ([#1785](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1785)) ([ad5c22c](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/ad5c22c42b5b6e50dfae662137e2af635622287e))
+* rewrite ‘Developer documentation’ section as ‘Usage information’ ([#1785](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1785)) ([ad5c22c](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/ad5c22c42b5b6e50dfae662137e2af635622287e))
 
 ## [1.3.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.2.0...requirements-1.3.0) (2026-04-01)
 
