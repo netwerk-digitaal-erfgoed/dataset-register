@@ -758,7 +758,7 @@ This is an overview of required and recommended attributes.
 {% assign distributionShape = nodeShapes| where: 'targetClass', 'https://schema.org/DataDownload' | first -%}
 {% render 'attributes', name: 'Distribution', nodeShape: distributionShape %}
 
-{% assign catalogShape = nodeShapes | where: 'targetClass', 'https://schema.org/DataCatalog' | first -%}
+{% assign catalogShape = nodeShapes | where: 'class', 'https://schema.org/DataCatalog' | first -%}
 {% render 'attributes', name: 'DataCatalog', nodeShape: catalogShape %}
 
 ### Full example ### {#dataset-example}

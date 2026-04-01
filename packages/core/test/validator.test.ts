@@ -225,6 +225,14 @@ describe('Validator', () => {
     ).toEqual(0);
   });
 
+  it('does not validate inline DataCatalog from includedInDataCatalog', async () => {
+    const report = await validate(
+      'dataset-schema-org-valid-included-in-data-catalog.jsonld',
+    );
+
+    expect(report.state).toEqual('valid');
+  });
+
   it('reports includedInDataCatalog as string literal instead of IRI', async () => {
     const report = (await validate(
       'dataset-schema-org-invalid-included-in-data-catalog.jsonld',
