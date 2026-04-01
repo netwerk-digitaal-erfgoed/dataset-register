@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.4.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.3.0...requirements-1.4.0) (2026-04-01)
+
+
+### Features
+
+* add Content-Type requirement for registration URLs ([#1794](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1794)) ([524dc42](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/524dc42e3ba7f75e0ac1d0b2f994c0c703190ec0))
+* add dct:accrualPeriodicity support for datasets ([#1793](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1793)) ([8eebd71](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/8eebd71cb674a344016808a723ad89de33e4ccbb))
+* add maxCount 1 as future change for encodingFormat and mediaType ([#1790](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1790)) ([9364133](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/9364133edc05b6f4c2a437bf40bb0321e50238d2))
+* preserve user-provided dcat:theme from DCAT input ([#1788](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1788)) ([343b176](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/343b176b3ebad609e88ef3f33501196e95bf3c98))
+* remove dct:title from Distribution ([#1784](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1784)) ([d957e44](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/d957e4410f2243d85714c832d89eaf2bf281339a))
+* validate includedInDataCatalog as HTTP IRI ([#1786](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1786)) ([08484c6](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/08484c6c0e98dcb5afd17186187ef9dddd5b5527))
+* validate language tags on title, description, and name properties ([#1791](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1791)) ([d99f2fb](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/d99f2fbc1662b7ccb09def714257ae6ec3c11e7c))
+* validate spatialCoverage and dct:spatial as HTTP IRI ([#1787](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1787)) ([bbc02b5](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/bbc02b57d3a47276a4c4e564988b60777c71b8e1))
+
+
+### Bug Fixes
+
+* skip SHACL validation of inline DataCatalog references ([#1789](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1789)) ([37c9437](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/37c9437f5abfe2c6d859ca84939634fa104be7c4))
+
+
+### Documentation
+
+* directly reference spec ([#1782](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1782)) ([68d5de2](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/68d5de2029c10b9d84c7fb803e6d0bae24fb7dfb))
+* rewrite 'Developer documentation' section as 'Usage information' ([#1785](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1785)) ([ad5c22c](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/ad5c22c42b5b6e50dfae662137e2af635622287e))
+
 ## [1.3.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.2.0...requirements-1.3.0) (2026-04-01)
 
 ### Features
