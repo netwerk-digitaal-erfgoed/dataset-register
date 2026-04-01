@@ -164,6 +164,7 @@ export const constructQuery = `
       dct:isReferencedBy ?${isReferencedBy} ;
       dct:accessRights ?${accessRights} ;
       dcat:theme ?theme ;
+      dcat:theme ?themeDefault ;
       dct:publisher ?${publisher} ;
       dct:creator ?${creator} ;
       dcat:contactPoint ?${contactPoint} ;
@@ -312,7 +313,8 @@ export const constructQuery = `
         OPTIONAL { ?${dataset} dcat:landingPage ?${mainEntityOfPage} }
         OPTIONAL { ?${dataset} dct:accessRights ?${accessRights}Provided }
         BIND(COALESCE(?${accessRights}Provided, <http://publications.europa.eu/resource/authority/access-right/PUBLIC>) AS ?${accessRights})
-        BIND(<http://publications.europa.eu/resource/authority/data-theme/EDUC> AS ?theme)
+        OPTIONAL { ?${dataset} dcat:theme ?theme }
+        BIND(<http://publications.europa.eu/resource/authority/data-theme/EDUC> AS ?themeDefault)
       }
     }
     LIMIT ${sparqlLimit}
@@ -450,7 +452,7 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL { ?${dataset} ${prefix}:mainEntityOfPage ?${mainEntityOfPage} }
     OPTIONAL { ?${dataset} dct:accessRights ?${accessRights}Provided }
     BIND(COALESCE(?${accessRights}Provided, <http://publications.europa.eu/resource/authority/access-right/PUBLIC>) AS ?${accessRights})
-    BIND(<http://publications.europa.eu/resource/authority/data-theme/EDUC> AS ?theme)
+    BIND(<http://publications.europa.eu/resource/authority/data-theme/EDUC> AS ?themeDefault)
 `;
 }
 

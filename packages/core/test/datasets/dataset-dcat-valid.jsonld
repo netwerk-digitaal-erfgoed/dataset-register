@@ -64,6 +64,9 @@
       "@id": "https://example.com/publisher"
     }
   ],
+  "dcat:theme": {
+    "@id": "http://publications.europa.eu/resource/authority/data-theme/EDUC"
+  },
   "dct:language": ["nl-NL", "en-GB"],
   "dct:spatial": {
     "@id": "https://sws.geonames.org/2750405/"

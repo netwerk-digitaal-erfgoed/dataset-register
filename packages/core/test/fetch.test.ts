@@ -132,6 +132,19 @@ describe('Fetch', () => {
         ),
       ),
     ).toBe(true);
+
+    // User-provided dcat:theme must be preserved.
+    expect(
+      dataset.has(
+        factory.quad(
+          datasetUri,
+          dcat('theme'),
+          factory.namedNode(
+            'http://publications.europa.eu/resource/authority/data-theme/EDUC',
+          ),
+        ),
+      ),
+    ).toBe(true);
   });
 
   it('preserves ODRL policy on DCAT distributions', async () => {
@@ -304,6 +317,38 @@ describe('Fetch', () => {
     ).toBe(true);
   });
 
+  it('preserves user-provided themes alongside default EDUC theme', async () => {
+    const response = await file('dataset-dcat-valid-minimal.jsonld');
+    const datasetWithTheme = response.replace(
+      '"dct:title"',
+      '"dcat:theme": {"@id": "http://publications.europa.eu/resource/authority/data-theme/TECH"}, "dct:title"',
+    );
+    nock('https://example.com')
+      .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
+      .get('/dcat-with-theme')
+      .reply(200, datasetWithTheme);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/dcat-with-theme'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const datasetUri = factory.namedNode(
+      'http://data.bibliotheken.nl/id/dataset/rise-alba',
+    );
+
+    const themes = [...dataset.match(datasetUri, dcat('theme'), null)].map(
+      (quad) => quad.object.value,
+    );
+    expect(themes).toContain(
+      'http://publications.europa.eu/resource/authority/data-theme/TECH',
+    );
+    expect(themes).toContain(
+      'http://publications.europa.eu/resource/authority/data-theme/EDUC',
+    );
+  });
+
   it('accepts minimal valid Schema.org dataset', async () => {
     const response = await file('dataset-schema-org-valid-minimal.jsonld');
     nock('https://example.com')
@@ -343,8 +388,9 @@ describe('Fetch', () => {
     // dcat:contactPoint, a vcard:Kind, vcard:fn, vcard:hasEmail), and dcat:theme.
     // The DCAT file has a 4th gzip distribution (5 triples incl. downloadURL),
     // an extra byteSize triple, one more propagated license (4 vs 3 distributions),
-    // and a mediaType on the SPARQL distribution (suppressed for API distributions).
-    expect(dataset.size).toEqual(dcatEquivalent.size + 7 - 8);
+    // a mediaType on the SPARQL distribution (suppressed for API distributions),
+    // and a dcat:theme triple (auto-assigned for Schema.org, explicit in DCAT).
+    expect(dataset.size).toEqual(dcatEquivalent.size + 7 - 9);
 
     // Check that SPARQL endpoint has conformsTo triple
     const sparqlConformsToTriples = [...dataset].filter(
