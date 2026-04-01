@@ -375,18 +375,6 @@ nde-dataset:DistributionShape
         ] ,
         # Recommended properties
         [
-            sh:path schema:name ;
-            sh:or (
-                [ sh:datatype xsd:string ]
-                [ sh:datatype rdf:langString ]
-            ) ;
-            sh:minCount 0 ;
-            sh:maxCount 1 ;
-            sh:description "Name of the distribution, depicting the type of distribution."@en ;
-            sh:message "Een distributie mag maximaal één naam bevatten"@nl, "A distribution may have at most one name"@en ;
-        ] ,
-        nde-dataset:SchemaNameUniqueLangProperty,
-        [
             sh:path schema:description ;
             sh:or (
                 [ sh:datatype xsd:string ]
