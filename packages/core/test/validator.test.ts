@@ -234,6 +234,15 @@ describe('Validator', () => {
     expectViolations(report, ['https://schema.org/includedInDataCatalog'], 2);
   });
 
+  it('reports spatialCoverage as string literal instead of IRI', async () => {
+    const report = (await validate(
+      'dataset-schema-org-invalid-spatial-coverage.jsonld',
+    )) as Valid;
+
+    expect(report.state).toEqual('valid');
+    expectViolations(report, ['https://schema.org/spatialCoverage'], 2);
+  });
+
   it('reports sameAs as string literal instead of IRI', async () => {
     const report = (await validate(
       'dataset-schema-org-invalid-sameas.ttl',
