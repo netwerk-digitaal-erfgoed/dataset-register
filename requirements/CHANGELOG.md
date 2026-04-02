@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.4.0...requirements-1.5.0) (2026-04-02)
+
+
+### Features
+
+* **requirements:** recommended a set of canonical license URIs ([#1797](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1797)) ([ec38c3a](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/ec38c3ac4c5ebdcdded7d816e4490156a399ee35))
+
 ## [1.4.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.3.0...requirements-1.4.0) (2026-04-01)
 
 
