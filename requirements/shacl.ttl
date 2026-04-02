@@ -151,6 +151,25 @@ nde-dataset:DatasetShape
                 """@en ;
             sh:message "Een datasetbeschrijving moet één licentie bevatten (in de vorm van een URI)"@nl, "A dataset description must contain one license (in the form of a URI)"@en ;
         ] ,
+        [
+            sh:path schema:license ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:in (
+                <https://creativecommons.org/publicdomain/zero/1.0/>
+                <https://creativecommons.org/publicdomain/mark/1.0/>
+                <https://creativecommons.org/licenses/by/4.0/>
+                <https://creativecommons.org/licenses/by-sa/4.0/>
+                <https://creativecommons.org/licenses/by-nc/4.0/>
+                <https://creativecommons.org/licenses/by-nc-sa/4.0/>
+                <https://creativecommons.org/licenses/by-nd/4.0/>
+                <https://creativecommons.org/licenses/by-nc-nd/4.0/>
+            ) ;
+            sh:message "Gebruik een van de aanbevolen canonieke licentie-URI's"@nl, "Use one of the recommended canonical license URIs"@en ;
+        ] ,
         # Recommended properties
         [
             sh:class schema:DataDownload ;

@@ -267,7 +267,7 @@ describe('Validator', () => {
       'dataset-schema-org-license-deed.jsonld',
     )) as Valid;
     expect(report.state).toEqual('valid');
-    expectViolations(report, ['https://schema.org/license']);
+    expectViolations(report, ['https://schema.org/license'], 2);
   });
 
   it('reports invalid encoding format', async () => {
