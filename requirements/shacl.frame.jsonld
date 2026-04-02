@@ -13,6 +13,7 @@
     "class": { "@type": "@id" },
     "or": { "@container": "@list" },
     "node": { "@type": "@id" },
+    "in": { "@container": "@list", "@type": "@id" },
     "nodeKind": { "@type": "@vocab" },
     "severity": { "@type": "@vocab" },
     "nde:futureChange": {},
