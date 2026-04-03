@@ -84,8 +84,14 @@ async function* query(url: URL, data: DatasetExt) {
   const quadStream = await engine.queryQuads(constructQuery, {
     sources: [source],
   });
-  let datasetQuads = [];
+
+  // Collect quads grouped by dataset subject. UNION branches in the CONSTRUCT
+  // query may interleave quads for different datasets, so we cannot rely on
+  // stream order to split datasets.
+  const groupedQuads = new Map<string, Parameters<typeof factory.dataset>[0]>();
+  const datasetOrder: string[] = [];
   let currentDataset: string | undefined;
+
   for await (let quad of quadStream) {
     if (quad.predicate.equals(dcat('byteSize'))) {
       const bytes = normalizeByteSize(quad.object.value);
@@ -105,20 +111,27 @@ async function* query(url: URL, data: DatasetExt) {
       quad.predicate.equals(rdf('type')) &&
       quad.object.equals(dcat('Dataset'))
     ) {
-      currentDataset ??= quad.subject.value; // Set currentDataset to first dataset.
-
-      if (quad.subject.value !== currentDataset) {
-        // Start of a new dataset.
-        currentDataset = quad.subject.value;
-        yield factory.dataset(datasetQuads);
-        datasetQuads = [];
+      if (!groupedQuads.has(quad.subject.value)) {
+        groupedQuads.set(quad.subject.value, []);
+        datasetOrder.push(quad.subject.value);
       }
+      currentDataset = quad.subject.value;
     }
-    datasetQuads.push(quad);
+
+    // Route quad to the correct dataset: if the quad's subject is a known
+    // dataset IRI, add it there; otherwise add it to the current dataset
+    // (handles related entities like publishers and distributions).
+    const targetDataset = groupedQuads.has(quad.subject.value)
+      ? quad.subject.value
+      : currentDataset;
+
+    if (targetDataset !== undefined) {
+      groupedQuads.get(targetDataset)!.push(quad);
+    }
   }
 
-  if (datasetQuads.length > 0) {
-    yield factory.dataset(datasetQuads);
+  for (const datasetIri of datasetOrder) {
+    yield factory.dataset(groupedQuads.get(datasetIri)!);
   }
 }
 
