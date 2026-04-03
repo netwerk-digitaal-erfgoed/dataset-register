@@ -3,7 +3,6 @@ import {
   compressFormatFromMediaType,
   convertToIri,
   convertToXsdDate,
-  convertUriToLiteral,
   defaultLanguageTag,
   normalizeLicense,
   normalizeMediaType,
