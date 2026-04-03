@@ -131,6 +131,93 @@ function normalizeLanguage(rawVar: string, outputVar: string): string {
       ) AS ?${outputVar})`;
 }
 
+/**
+ * Generate a UNION branch for a single multi-valued property.
+ * Each branch binds only its own variable, preventing cross-products
+ * when multiple multi-valued properties are present on the same dataset.
+ *
+ * @see https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1798
+ */
+function multiValuedUnion(
+  typePattern: string,
+  predicate: string,
+  variable: string,
+  extra = '',
+): string {
+  return `UNION {
+        ?${dataset} ${typePattern} .
+        ?${dataset} ${predicate} ?${variable} .
+        ${extra}
+      }`;
+}
+
+function schemaOrgMultiValuedUnions(prefix: string): string {
+  const type = `a ${prefix}:Dataset`;
+  return [
+    multiValuedUnion(type, `${prefix}:description`, description),
+    multiValuedUnion(type, `${prefix}:alternateName`, alternateName),
+    multiValuedUnion(type, `${prefix}:isBasedOn`, source),
+    multiValuedUnion(type, `${prefix}:isBasedOnUrl`, source),
+    multiValuedUnion(
+      type,
+      `${prefix}:keywords`,
+      `${keyword}Raw`,
+      `BIND(IF(isIRI(?${keyword}Raw), STR(?${keyword}Raw), ?${keyword}Raw) AS ?${keyword})`,
+    ),
+    multiValuedUnion(
+      type,
+      `${prefix}:spatialCoverage`,
+      spatialCoverage,
+      `FILTER(!isBlank(?${spatialCoverage}))`,
+    ),
+    multiValuedUnion(type, `${prefix}:temporalCoverage`, temporalCoverage),
+    multiValuedUnion(
+      type,
+      `${prefix}:genre`,
+      genre,
+      `FILTER(isLiteral(?${genre}))`,
+    ),
+    multiValuedUnion(type, `${prefix}:version`, version),
+    multiValuedUnion(
+      type,
+      `${prefix}:includedInDataCatalog`,
+      includedInDataCatalog,
+    ),
+    multiValuedUnion(type, `${prefix}:hasPart`, hasPart),
+    multiValuedUnion(type, `${prefix}:citation`, isReferencedBy),
+    multiValuedUnion(type, `${prefix}:mainEntityOfPage`, mainEntityOfPage),
+  ].join('\n      ');
+}
+
+function dcatMultiValuedUnions(): string {
+  const type = `a dcat:Dataset`;
+  return [
+    multiValuedUnion(type, `dct:description`, description),
+    multiValuedUnion(type, `dct:alternative`, alternateName),
+    multiValuedUnion(type, `dct:source`, source),
+    multiValuedUnion(
+      type,
+      `dcat:keyword`,
+      `${keyword}Raw`,
+      `BIND(IF(isIRI(?${keyword}Raw), STR(?${keyword}Raw), ?${keyword}Raw) AS ?${keyword})`,
+    ),
+    multiValuedUnion(
+      type,
+      `dct:spatial`,
+      spatialCoverage,
+      `FILTER(!isBlank(?${spatialCoverage}))`,
+    ),
+    multiValuedUnion(type, `dct:temporal`, temporalCoverage),
+    multiValuedUnion(type, `dct:genre`, genre, `FILTER(isLiteral(?${genre}))`),
+    multiValuedUnion(type, `dcat:version`, version),
+    multiValuedUnion(type, `dct:isPartOf`, includedInDataCatalog),
+    multiValuedUnion(type, `dct:hasPart`, hasPart),
+    multiValuedUnion(type, `dct:isReferencedBy`, isReferencedBy),
+    multiValuedUnion(type, `dcat:landingPage`, mainEntityOfPage),
+    multiValuedUnion(type, `dcat:theme`, 'theme'),
+  ].join('\n      ');
+}
+
 export const constructQuery = `
   PREFIX dcat: <http://www.w3.org/ns/dcat#>
   PREFIX dct: <http://purl.org/dc/terms/>
@@ -287,9 +374,7 @@ export const constructQuery = `
         }
         ${downloadOnlyProperties(distributionConformsToProtocol, distributionConformsToSparql, distributionUrl, distributionMediaType, distributionCompressFormat, distributionDownloadUrl, distributionMediaTypeForDownload, distributionCompressFormatForDownload)}
 
-        OPTIONAL { ?${dataset} dct:description ?${description} }
         BIND(STR(?${dataset}) AS ?${identifier})
-        OPTIONAL { ?${dataset} dct:alternative ?${alternateName} }
         OPTIONAL { ?${dataset} dct:created ${convertToXsdDate(dateCreated)} }
         OPTIONAL { ?${dataset} dct:issued ${convertToXsdDate(datePublished)} }
         OPTIONAL { ?${dataset} dct:modified ${convertToXsdDate(dateModified)} }
@@ -297,28 +382,14 @@ export const constructQuery = `
           ?${dataset} dct:language ?${language}Raw .
           ${normalizeLanguage(`?${language}Raw`, language)}
         }
-        OPTIONAL { ?${dataset} dct:source ?${source} }
-        OPTIONAL { ?${dataset} dcat:keyword ${convertUriToLiteral(keyword)} }
-        OPTIONAL {
-          ?${dataset} dct:spatial ?${spatialCoverage} .
-          FILTER(!isBlank(?${spatialCoverage}))
-        }
-        OPTIONAL { ?${dataset} dct:temporal ?${temporalCoverage} }
-        OPTIONAL { 
-          ?${dataset} dct:genre ?${genre}
-          FILTER(isLiteral(?${genre}))
-        }
-        OPTIONAL { ?${dataset} dcat:version ?${version} }
-        OPTIONAL { ?${dataset} dct:isPartOf ?${includedInDataCatalog} }
-        OPTIONAL { ?${dataset} dct:hasPart ?${hasPart} }
-        OPTIONAL { ?${dataset} dct:isReferencedBy ?${isReferencedBy} }
-        OPTIONAL { ?${dataset} dcat:landingPage ?${mainEntityOfPage} }
         OPTIONAL { ?${dataset} dct:accessRights ?${accessRights}Provided }
         BIND(COALESCE(?${accessRights}Provided, <http://publications.europa.eu/resource/authority/access-right/PUBLIC>) AS ?${accessRights})
         OPTIONAL { ?${dataset} dct:accrualPeriodicity ?${accrualPeriodicity} }
-        OPTIONAL { ?${dataset} dcat:theme ?theme }
         BIND(<http://publications.europa.eu/resource/authority/data-theme/EDUC> AS ?themeDefault)
       }
+      ${schemaOrgMultiValuedUnions('schema')}
+      ${schemaOrgMultiValuedUnions('httpSchema')}
+      ${dcatMultiValuedUnions()}
     }
     LIMIT ${sparqlLimit}
   }`;
@@ -420,9 +491,7 @@ function schemaOrgQuery(prefix: string): string {
     }
     ${downloadOnlyProperties(distributionConformsToProtocol, distributionConformsToSparql, distributionUrl, distributionMediaType, distributionCompressFormat, distributionDownloadUrl, distributionMediaTypeForDownload, distributionCompressFormatForDownload)}
 
-    OPTIONAL { ?${dataset} ${prefix}:description ?${description} }
     BIND(STR(?${dataset}) AS ?${identifier})
-    OPTIONAL { ?${dataset} ${prefix}:alternateName ?${alternateName} }
     OPTIONAL { ?${dataset} ${prefix}:dateCreated ${convertToXsdDate(
       dateCreated,
     )} }
@@ -436,23 +505,6 @@ function schemaOrgQuery(prefix: string): string {
       ?${dataset} ${prefix}:inLanguage ?${language}Raw .
       ${normalizeLanguage(`?${language}Raw`, language)}
     }
-    OPTIONAL { ?${dataset} ${prefix}:isBasedOn ?${source} }
-    OPTIONAL { ?${dataset} ${prefix}:isBasedOnUrl ?${source} } 
-    OPTIONAL { ?${dataset} ${prefix}:keywords ${convertUriToLiteral(keyword)} }
-    OPTIONAL {
-      ?${dataset} ${prefix}:spatialCoverage ?${spatialCoverage} .
-      FILTER(!isBlank(?${spatialCoverage}))
-    }
-    OPTIONAL { ?${dataset} ${prefix}:temporalCoverage ?${temporalCoverage} }
-    OPTIONAL { 
-      ?${dataset} ${prefix}:genre ?${genre}
-      FILTER(isLiteral(?${genre}))
-    }
-    OPTIONAL { ?${dataset} ${prefix}:version ?${version} }
-    OPTIONAL { ?${dataset} ${prefix}:includedInDataCatalog ?${includedInDataCatalog} }
-    OPTIONAL { ?${dataset} ${prefix}:hasPart ?${hasPart} }
-    OPTIONAL { ?${dataset} ${prefix}:citation ?${isReferencedBy} }
-    OPTIONAL { ?${dataset} ${prefix}:mainEntityOfPage ?${mainEntityOfPage} }
     OPTIONAL { ?${dataset} dct:accessRights ?${accessRights}Provided }
     BIND(COALESCE(?${accessRights}Provided, <http://publications.europa.eu/resource/authority/access-right/PUBLIC>) AS ?${accessRights})
     OPTIONAL { ?${dataset} dct:accrualPeriodicity ?${accrualPeriodicity} }
