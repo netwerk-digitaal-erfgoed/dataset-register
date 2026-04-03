@@ -85,5 +85,6 @@
     "docker:build": {
       "dependsOn": ["copy-workspace-modules", "prune-lockfile"]
     }
-  }
+  },
+  "analytics": false
 }
