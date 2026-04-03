@@ -533,8 +533,10 @@ nde-dataset:DistributionShape
                 FILTER NOT EXISTS { ?dataset schema:license ?datasetLicense }
             }
         """ ;
-        sh:message "Een distributie of de bovenliggende dataset moet een licentie hebben"@nl,
-            "A distribution or its parent dataset must have a license"@en ;
+        # Dutch omitted: Jena's SPARQL constraint parser rejects multiple sh:message values
+        # (https://github.com/apache/jena/issues/3817).
+        # 'Een distributie of de bovenliggende dataset moet een licentie hebben'
+        sh:message "A distribution or its parent dataset must have a license" ;
     ]
 .
 
