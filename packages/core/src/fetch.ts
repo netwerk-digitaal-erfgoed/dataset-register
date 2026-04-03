@@ -88,8 +88,7 @@ async function* query(url: URL, data: DatasetExt) {
   // Collect quads grouped by dataset subject. UNION branches in the CONSTRUCT
   // query may interleave quads for different datasets, so we cannot rely on
   // stream order to split datasets.
-  type Quad = ReturnType<typeof factory.quad>;
-  const groupedQuads = new Map<string, Quad[]>();
+  const groupedQuads = new Map<string, Parameters<typeof factory.dataset>[0]>();
   const datasetOrder: string[] = [];
   let currentDataset: string | undefined;
 
