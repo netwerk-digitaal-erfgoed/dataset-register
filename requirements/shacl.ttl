@@ -398,7 +398,7 @@ nde-dataset:DistributionShape
                 sh:severity sh:Violation ;
             ] ;
             sh:description "De URL waar de distributie rechtstreeks toegankelijk is."@nl, "The URL where the distribution may be directly accessed."@en ;
-            sh:message "De URL van de distributie kan een IRI zijn of een letterlijke waarde van type xsd:anyURI."@nl, "The distribution\u2019s content URL can be an IRI or a literal of type xsd:anyURI."@en ;
+            sh:message "De URL van de distributie kan een IRI zijn of een letterlijke waarde van type xsd:anyURI."@nl, "The distribution’s content URL can be an IRI or a literal of type xsd:anyURI."@en ;
         ] ,
         [
             sh:or (
@@ -414,8 +414,8 @@ nde-dataset:DistributionShape
             sh:description """
                 Het MIME-formaat van de distributie of een link naar de documentatie.
                 Voor downloads: gebruik een waarde uit de [[IANA-MEDIA-TYPES]] lijst. Gebruik optioneel schema:usageInfo om te verwijzen naar het applicatieprofiel, vocabulaire of ontologie.
-                Voor API\u2019s (zoals SPARQL of OAI-PMH): gebruik schema:usageInfo met een link naar de protocolspecificatie."""@nl ,
-            """The distribution\u2019s MIME format or a link to the documentation.
+                Voor API’s (zoals SPARQL of OAI-PMH): gebruik schema:usageInfo met een link naar de protocolspecificatie."""@nl ,
+            """The distribution’s MIME format or a link to the documentation.
             For downloads: use a value from the [[IANA-MEDIA-TYPES]] list.
             The value should indicate the media type of the response of the schema:contentUrl when no Accept header is included in the request.
             Optionally use schema:usageInfo to reference the application profile, vocabulary or ontology the data conforms to.
@@ -533,8 +533,10 @@ nde-dataset:DistributionShape
                 FILTER NOT EXISTS { ?dataset schema:license ?datasetLicense }
             }
         """ ;
-        sh:message "Een distributie of de bovenliggende dataset moet een licentie hebben"@nl,
-            "A distribution or its parent dataset must have a license"@en ;
+        # Dutch omitted: Jena’s SPARQL constraint parser rejects multiple sh:message values
+        # (https://github.com/apache/jena/issues/3817).
+        # ‘Een distributie of de bovenliggende dataset moet een licentie hebben’
+        sh:message "A distribution or its parent dataset must have a license" ;
     ]
 .
 
@@ -552,7 +554,7 @@ nde-dataset:OrganizationShape
                 [ sh:datatype xsd:string ]
                 [ sh:datatype rdf:langString ]
             ) ;
-            sh:description "The organization\u2019s full name."@en ;
+            sh:description "The organization’s full name."@en ;
             sh:message "Een organisatie moet een naam hebben"@nl, "An organization must contain a name"@en ;
         ] ,
         nde-dataset:SchemaNameUniqueLangProperty,
@@ -638,7 +640,7 @@ nde-dataset:OrganizationShape
             sh:description """
                 Links to the organization in other databases.
             """@en ;
-            sh:message "De links van een organisatie moeten IRI\u2019s zijn, geen tekst"@nl , "An organization\u2019s links (sameAs) must be IRIs, not string literals"@en ;
+            sh:message "De links van een organisatie moeten IRI’s zijn, geen tekst"@nl , "An organization’s links (sameAs) must be IRIs, not string literals"@en ;
         ]
 .
 
