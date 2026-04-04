@@ -13,21 +13,21 @@
 
   const ITEMS_PER_PAGE = 24;
 
-  // Generate SPARQL query from search request
-  const query = $derived(
-    datasetCardsQuery(searchRequest, ITEMS_PER_PAGE, 0, 'title', getLocale()),
-  );
+  let sparqlUrl = $state('');
 
-  // Clean and URL encode the query (preserving formatting)
-  const sparqlUrl = $derived(() => {
-    const cleanedQuery = cleanSparqlQuery(query);
-    const encodedQuery = encodeURIComponent(cleanedQuery);
-    return `https://qlever.netwerkdigitaalerfgoed.nl/?query=${encodedQuery}&exec=true`;
+  $effect(() => {
+    datasetCardsQuery(searchRequest, ITEMS_PER_PAGE, 0, 'title', getLocale())
+      .then((query) => {
+        const cleanedQuery = cleanSparqlQuery(query);
+        const encodedQuery = encodeURIComponent(cleanedQuery);
+        sparqlUrl = `https://qlever.netwerkdigitaalerfgoed.nl/?query=${encodedQuery}&exec=true`;
+      });
   });
 </script>
 
+{#if sparqlUrl}
 <a
-  href={sparqlUrl()}
+  href={sparqlUrl}
   target="_blank"
   rel="noopener noreferrer"
   class="group relative inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
@@ -56,3 +56,4 @@
     />
   </svg>
 </a>
+{/if}

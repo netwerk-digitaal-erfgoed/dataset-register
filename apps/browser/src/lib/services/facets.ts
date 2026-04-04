@@ -12,10 +12,48 @@ import { shortenUri } from '$lib/utils/prefix';
 import * as m from '$lib/paraglide/messages';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { voidNs } from '../rdf.js';
-import { inLiterals, normalizeMediaType } from '$lib/utils/sparql';
+import { inIris, inLiterals, normalizeMediaType } from '$lib/utils/sparql';
 import { getLocale } from '$lib/paraglide/runtime';
 
 const fetcher = new SparqlEndpointFetcher();
+
+/**
+ * Query the knowledge graph directly for dataset IRIs matching a pattern,
+ * and return a VALUES clause for use in QLever queries.
+ * Replaces SERVICE federation which causes QLever OOM.
+ */
+export async function fetchDatasetIrisFromKnowledgeGraph(
+  whereClause: string,
+): Promise<string> {
+  const query = `
+    PREFIX void: <http://rdfs.org/ns/void#>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    SELECT DISTINCT ?dataset WHERE {
+      ${whereClause}
+    }
+  `;
+
+  try {
+    const bindings = await fetcher.fetchBindings(
+      PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+      query,
+    );
+
+    const iris: string[] = [];
+    for await (const binding of bindings) {
+      const typedBinding = binding as unknown as {
+        dataset: { value: string };
+      };
+      iris.push(typedBinding.dataset.value);
+    }
+
+    if (iris.length === 0) return 'FILTER(false)';
+    return `VALUES ?dataset { ${inIris(iris)} }`;
+  } catch (error) {
+    console.error('Knowledge graph filter query failed:', error);
+    return 'FILTER(false)';
+  }
+}
 
 const FacetSchema = {
   '@type': voidNs.Dataset,
@@ -160,7 +198,7 @@ interface FacetConfig {
   /**
    * Function that takes selected values and returns a SPARQL FILTER clause.
    */
-  filterClause: (values: string[]) => string;
+  filterClause: (values: string[]) => string | Promise<string>;
 
   /**
    * Default SPARQL clause applied when filter is empty (for dataset queries only).
@@ -304,11 +342,11 @@ export const facetConfigs: Record<string, FacetConfig> = {
 
       const classValues = selectedClasses.map((c) => `<${c}>`).join(', ');
 
-      return `SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
+      return fetchDatasetIrisFromKnowledgeGraph(`
         ?dataset void:classPartition ?partition .
         ?partition void:class ?class .
         FILTER(?class IN (${classValues}))
-      }`;
+      `);
     },
   },
   terminologySource: {
@@ -327,12 +365,12 @@ export const facetConfigs: Record<string, FacetConfig> = {
 
       const sourceValues = values.map((s) => `<${s}>`).join(', ');
 
-      return `SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
+      return fetchDatasetIrisFromKnowledgeGraph(`
         [] a void:Linkset ;
           void:subjectsTarget ?dataset ;
           void:objectsTarget ?terminologySource .
         FILTER(?terminologySource IN (${sourceValues}))
-      }`;
+      `);
     },
   },
 };
@@ -375,22 +413,35 @@ export const facetQuery = (facet: string, searchFiltersQuery: string) => `
 export async function fetchFacets(
   searchFilters: SearchRequest,
 ): Promise<Facets> {
-  const facetKeys = Object.keys(facetConfigs) as Array<FacetKey>;
+  // class and terminologySource use dedicated two-step functions that query
+  // the knowledge graph directly (not via QLever SERVICE federation).
+  const facetKeys = (Object.keys(facetConfigs) as Array<FacetKey>).filter(
+    (key) => key !== 'class' && key !== 'terminologySource',
+  );
 
-  // Fetch all facets in parallel and build the result object in one pass
-  const [facetEntries, sizeRange, sizeHistogram] = await Promise.all([
+  const [
+    facetEntries,
+    classFacet,
+    terminologySourceFacet,
+    sizeRange,
+    sizeHistogram,
+  ] = await Promise.all([
     Promise.all(
       facetKeys.map(
         async (key) =>
           [key, await fetchFacetValues(key, searchFilters)] as const,
       ),
     ),
+    fetchClassFacetValues(searchFilters),
+    fetchTerminologySourceFacetValues(searchFilters),
     fetchSizeRange(),
     fetchSizeHistogram(searchFilters),
   ]);
 
   return {
     ...Object.fromEntries(facetEntries),
+    class: classFacet,
+    terminologySource: terminologySourceFacet,
     size: {
       range: sizeRange,
       bins: sizeHistogram,
@@ -407,7 +458,7 @@ export async function fetchFacetValues(
   // Skip defaultClause for facets that have one (so they can show all values)
   const facetConfig = facetConfigs[facet as keyof typeof facetConfigs];
   const skipDefaults = facetConfig?.defaultClause !== undefined;
-  const searchFiltersQuery = filterDatasets(
+  const searchFiltersQuery = await filterDatasets(
     searchFiltersExcludingFacet,
     skipDefaults,
   );
@@ -422,6 +473,165 @@ export async function fetchFacetValues(
       '\nQuery:',
       query,
     );
+    return [];
+  }
+}
+
+/**
+ * Get filtered dataset IRIs from QLever (no SERVICE).
+ * Used as input for two-step facet queries that need knowledge graph data.
+ */
+async function fetchFilteredDatasetIris(
+  searchFilters: SearchRequest,
+  facet: string,
+): Promise<string[]> {
+  const searchFiltersExcludingFacet = { ...searchFilters, [facet]: [] };
+  const facetConfig = facetConfigs[facet as keyof typeof facetConfigs];
+  const skipDefaults = facetConfig?.defaultClause !== undefined;
+  const searchFiltersQuery = await filterDatasets(
+    searchFiltersExcludingFacet,
+    skipDefaults,
+  );
+
+  const query = `
+    ${prefixes}
+    SELECT DISTINCT ?dataset WHERE {
+      ${searchFiltersQuery}
+    }
+  `;
+
+  const iris: string[] = [];
+  try {
+    const bindings = await fetcher.fetchBindings(PUBLIC_SPARQL_ENDPOINT, query);
+    for await (const binding of bindings) {
+      const typedBinding = binding as unknown as {
+        dataset: { value: string };
+      };
+      iris.push(typedBinding.dataset.value);
+    }
+  } catch (error) {
+    console.error(
+      `Failed to fetch filtered dataset IRIs for "${facet}":`,
+      error,
+    );
+  }
+  return iris;
+}
+
+/**
+ * Fetch class facet values by querying the knowledge graph directly.
+ * Two-step: get filtered dataset IRIs from QLever, then count classes from KG.
+ */
+async function fetchClassFacetValues(
+  searchFilters: SearchRequest,
+): Promise<CountedFacetValue[]> {
+  const datasetIris = await fetchFilteredDatasetIris(searchFilters, 'class');
+  if (datasetIris.length === 0) return [];
+
+  const values = inIris(datasetIris);
+  const classGroupBinds = Object.keys(classGroups)
+    .map(
+      (group) => `UNION {
+        ?partition void:class ?class .
+        FILTER(?class IN (${classGroups[group as keyof typeof classGroups].map((c) => `<${c}>`).join(', ')}))
+        BIND("${group}" AS ?value)
+      }`,
+    )
+    .join('\n');
+
+  const query = `
+    PREFIX void: <http://rdfs.org/ns/void#>
+    SELECT ?value (COUNT(DISTINCT ?dataset) AS ?count) WHERE {
+      VALUES ?dataset { ${values} }
+      ?dataset void:classPartition ?partition .
+      {
+        ?partition void:class ?value .
+      }
+      ${classGroupBinds}
+    }
+    GROUP BY ?value
+    ORDER BY DESC(?count) ?value
+  `;
+
+  try {
+    const bindings = await fetcher.fetchBindings(
+      PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+      query,
+    );
+
+    const results: CountedFacetValue[] = [];
+    for await (const binding of bindings) {
+      const typedBinding = binding as unknown as {
+        value: { value: string };
+        count: { value: string };
+      };
+      results.push({
+        $id: `urn:facet:${encodeURIComponent(typedBinding.value.value)}`,
+        value: typedBinding.value.value,
+        count: parseInt(typedBinding.count.value),
+      } as CountedFacetValue);
+    }
+    return results;
+  } catch (error) {
+    console.error('Class facet query failed:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetch terminology source facet values by querying the knowledge graph directly.
+ * Two-step: get filtered dataset IRIs from QLever, then count terminology sources from KG.
+ */
+async function fetchTerminologySourceFacetValues(
+  searchFilters: SearchRequest,
+): Promise<CountedFacetValue[]> {
+  const datasetIris = await fetchFilteredDatasetIris(
+    searchFilters,
+    'terminologySource',
+  );
+  if (datasetIris.length === 0) return [];
+
+  const values = inIris(datasetIris);
+  const query = `
+    PREFIX void: <http://rdfs.org/ns/void#>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    SELECT ?value (SAMPLE(?label_) AS ?label) (COUNT(DISTINCT ?dataset) AS ?count) WHERE {
+      VALUES ?dataset { ${values} }
+      [] a void:Linkset ;
+        void:subjectsTarget ?dataset ;
+        void:objectsTarget ?value .
+      OPTIONAL { ?value dct:title ?label_ }
+    }
+    GROUP BY ?value
+    ORDER BY DESC(?count) ?value
+  `;
+
+  try {
+    const bindings = await fetcher.fetchBindings(
+      PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+      query,
+    );
+
+    const results: CountedFacetValue[] = [];
+    for await (const binding of bindings) {
+      const typedBinding = binding as unknown as {
+        value: { value: string };
+        label?: { value: string; 'xml:lang'?: string };
+        count: { value: string };
+      };
+      const label = typedBinding.label
+        ? { [typedBinding.label['xml:lang'] ?? '']: typedBinding.label.value }
+        : undefined;
+      results.push({
+        $id: `urn:facet:${encodeURIComponent(typedBinding.value.value)}`,
+        value: typedBinding.value.value,
+        label,
+        count: parseInt(typedBinding.count.value),
+      } as CountedFacetValue);
+    }
+    return results;
+  } catch (error) {
+    console.error('Terminology source facet query failed:', error);
     return [];
   }
 }
@@ -487,62 +697,59 @@ export async function fetchSizeRange(): Promise<FacetValueRange> {
  * Fetches histogram data showing the distribution of dataset sizes across logarithmic bins.
  * Applies current search filters (publisher, format, search query) but excludes size filters
  * to show the full distribution of matching datasets.
+ *
+ * Two-step approach to avoid QLever SERVICE federation OOM:
+ * 1. Get filtered dataset IRIs from QLever
+ * 2. Query knowledge graph directly for sizes, then bin client-side
  */
 export async function fetchSizeHistogram(
   searchFilters: SearchRequest,
 ): Promise<HistogramBin[]> {
-  // Remove size filters for histogram - we want to show full distribution
+  // Remove size filters for histogram - we want to show full distribution.
+  // Use a dummy facet key so fetchFilteredDatasetIris clears it.
   const filtersWithoutSize = {
     ...searchFilters,
     size: { min: undefined, max: undefined },
   };
+  const datasetIris = await fetchFilteredDatasetIris(
+    filtersWithoutSize,
+    'size',
+  );
+  if (datasetIris.length === 0) return [];
 
-  const query = `
-    ${prefixes}
-
-    SELECT ?bin (COUNT(DISTINCT ?dataset) as ?count) WHERE {
-      ${filterDatasets(filtersWithoutSize)}
-
-      SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
+  try {
+    // Step 2: Query knowledge graph directly for sizes
+    const values = inIris(datasetIris);
+    const sizeQuery = `
+      PREFIX void: <http://rdfs.org/ns/void#>
+      SELECT ?dataset ?size WHERE {
+        VALUES ?dataset { ${values} }
         ?dataset a void:Dataset ;
           void:triples ?size .
       }
+    `;
 
-      # Bin sizes into logarithmic buckets using nested IF conditions
-      BIND(
-        IF(?size < 10, 0,
-        IF(?size < 100, 1,
-        IF(?size < 1000, 2,
-        IF(?size < 10000, 3,
-        IF(?size < 100000, 4,
-        IF(?size < 1000000, 5,
-        IF(?size < 10000000, 6,
-        IF(?size < 100000000, 7,
-        IF(?size < 1000000000, 8, 9)))))))))
-      as ?bin)
-    }
-    GROUP BY ?bin
-    ORDER BY ?bin
-  `;
+    const sizeBindings = await fetcher.fetchBindings(
+      PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+      sizeQuery,
+    );
 
-  try {
-    const bindings = await fetcher.fetchBindings(PUBLIC_SPARQL_ENDPOINT, query);
-
-    const histogram: HistogramBin[] = [];
-    for await (const binding of bindings) {
+    // Step 3: Bin sizes client-side
+    const binCounts = new Map<number, number>();
+    for await (const binding of sizeBindings) {
       const typedBinding = binding as unknown as {
-        bin: { value: string };
-        count: { value: string };
+        size: { value: string };
       };
-      histogram.push({
-        bin: parseInt(typedBinding.bin.value),
-        count: parseInt(typedBinding.count.value),
-      });
+      const size = parseInt(typedBinding.size.value);
+      const bin = Math.min(Math.floor(Math.log10(Math.max(size, 1))), 9);
+      binCounts.set(bin, (binCounts.get(bin) ?? 0) + 1);
     }
 
-    return histogram;
+    return Array.from(binCounts.entries())
+      .map(([bin, count]) => ({ bin, count }))
+      .sort((a, b) => a.bin - b.bin);
   } catch (error) {
-    console.error('Size histogram query failed:', error, '\nQuery:', query);
+    console.error('Size histogram query failed:', error);
     return [];
   }
 }
