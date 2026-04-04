@@ -1,9 +1,9 @@
 import { dcat } from '@lde/dataset-registry-client';
-import { dcterms, foaf, ldkit, schema, xsd } from 'ldkit/namespaces';
+import { dcterms, foaf, ldkit, xsd } from 'ldkit/namespaces';
 import { createLens, type SchemaInterface } from 'ldkit';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { error } from '@sveltejs/kit';
-import { owlNs, voidExtNs, voidNs } from '../rdf.js';
+import { owlNs, schemaNs as schema, voidExtNs, voidNs } from '../rdf.js';
 import { BaseDatasetSchema, BaseDistributionSchema } from './datasets.js';
 import { shortenUri } from '$lib/utils/prefix';
 import { REGISTRATION_STATUS_BASE_URI } from '@dataset-register/core/constants';
