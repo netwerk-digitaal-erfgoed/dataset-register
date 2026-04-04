@@ -30,6 +30,28 @@ export const owlNs = createNamespace({
   terms: ['sameAs'],
 } as const);
 
+/**
+ * Schema.org namespace using https://, overriding LDkit's built-in http:// variant.
+ */
+export const schemaNs = createNamespace({
+  iri: 'https://schema.org/',
+  prefix: 'schema:',
+  terms: [
+    'additionalType',
+    'bestRating',
+    'contentRating',
+    'datePosted',
+    'dateRead',
+    'EntryPoint',
+    'ratingExplanation',
+    'ratingValue',
+    'status',
+    'subjectOf',
+    'validUntil',
+    'worstRating',
+  ],
+} as const);
+
 export const voidExtNs = createNamespace({
   iri: 'http://ldf.fi/void-ext#',
   prefix: 'void-ext:',

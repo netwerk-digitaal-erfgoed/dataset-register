@@ -1,10 +1,10 @@
 import { dcat } from '@lde/dataset-registry-client';
-import { dcterms, foaf, ldkit, schema, xsd } from 'ldkit/namespaces';
+import { dcterms, foaf, ldkit, xsd } from 'ldkit/namespaces';
 import { createLens, type SchemaInterface } from 'ldkit';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { facetConfigs, type Facets, fetchFacets } from '$lib/services/facets';
 import { PUBLIC_SPARQL_ENDPOINT } from '$env/static/public';
-import { voidNs } from '../rdf.js';
+import { schemaNs as schema, voidNs } from '../rdf.js';
 import { getLocale } from '$lib/paraglide/runtime';
 import { normalizeMediaType } from '$lib/utils/sparql';
 
