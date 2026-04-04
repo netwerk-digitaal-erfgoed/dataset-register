@@ -178,7 +178,7 @@ describe('SPARQL', () => {
       await registrationStore.store(registration);
 
       const result = await sparqlClient.query(`
-        PREFIX schema: <http://schema.org/>
+        PREFIX schema: <https://schema.org/>
         
         SELECT * WHERE {
           GRAPH <${registrationsGraphIri}> {
@@ -355,7 +355,7 @@ describe('SPARQL', () => {
   describe('SparqlRatingStores', () => {
     it('stores ratings', async () => {
       const ratings = await sparqlClient.query(`
-        PREFIX schema: <http://schema.org/>
+        PREFIX schema: <https://schema.org/>
 
         SELECT * WHERE {
           GRAPH <${ratingsGraphIri}> {
@@ -376,7 +376,7 @@ describe('SPARQL', () => {
 
       // Verify rating exists
       const before = await sparqlClient.query(`
-        PREFIX schema: <http://schema.org/>
+        PREFIX schema: <https://schema.org/>
         SELECT * WHERE {
           GRAPH <${ratingsGraphIri}> {
             <${datasetUri}> schema:contentRating ?rating .
@@ -390,7 +390,7 @@ describe('SPARQL', () => {
 
       // Verify rating is gone
       const after = await sparqlClient.query(`
-        PREFIX schema: <http://schema.org/>
+        PREFIX schema: <https://schema.org/>
         SELECT * WHERE {
           GRAPH <${ratingsGraphIri}> {
             <${datasetUri}> schema:contentRating ?rating .

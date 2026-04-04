@@ -82,7 +82,9 @@ const GROUP_DATE = 'group:date';
 const GROUP_PROVENANCE = 'group:provenance';
 const GROUP_EVENT = 'group:event';
 
-// Mapping of class URIs to groups (supporting both http and https for schema.org)
+// Mapping of class URIs to groups (supporting both http and https for schema.org,
+// because the Dataset Knowledge Graph contains class types from external datasets
+// that may use either variant)
 const classGroups = {
   [GROUP_PERSON]: [
     'http://schema.org/Person',

@@ -101,7 +101,7 @@ export function toRdf(registration: Registration) {
   const quads = [
     factory.quad(
       iri,
-      factory.namedNode('http://schema.org/datePosted'),
+      factory.namedNode('https://schema.org/datePosted'),
       factory.literal(
         registration.datePosted.toISOString(),
         factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime'),
@@ -110,28 +110,28 @@ export function toRdf(registration: Registration) {
     factory.quad(
       iri,
       factory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-      factory.namedNode('http://schema.org/EntryPoint'),
+      factory.namedNode('https://schema.org/EntryPoint'),
     ),
     factory.quad(
       iri,
-      factory.namedNode('http://schema.org/encoding'),
-      factory.namedNode('http://schema.org'), // Currently the only vocabulary that we support.
+      factory.namedNode('https://schema.org/encoding'),
+      factory.namedNode('https://schema.org'), // Currently the only vocabulary that we support.
     ),
     ...registration.datasets.flatMap((datasetIri) => {
       const datasetQuads = [
         factory.quad(
           iri,
-          factory.namedNode('http://schema.org/about'),
+          factory.namedNode('https://schema.org/about'),
           factory.namedNode(datasetIri.toString()),
         ),
         factory.quad(
           factory.namedNode(datasetIri.toString()),
           factory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
-          factory.namedNode('http://schema.org/Dataset'),
+          factory.namedNode('https://schema.org/Dataset'),
         ),
         factory.quad(
           factory.namedNode(datasetIri.toString()),
-          factory.namedNode('http://schema.org/subjectOf'),
+          factory.namedNode('https://schema.org/subjectOf'),
           factory.namedNode(registration.url.toString()),
         ),
       ];
@@ -139,7 +139,7 @@ export function toRdf(registration: Registration) {
         datasetQuads.push(
           factory.quad(
             factory.namedNode(datasetIri.toString()),
-            factory.namedNode('http://schema.org/dateRead'),
+            factory.namedNode('https://schema.org/dateRead'),
             factory.literal(
               registration.dateRead.toISOString(),
               factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime'),
@@ -154,7 +154,7 @@ export function toRdf(registration: Registration) {
     quads.push(
       factory.quad(
         iri,
-        factory.namedNode('http://schema.org/dateRead'),
+        factory.namedNode('https://schema.org/dateRead'),
         factory.literal(
           registration.dateRead.toISOString(),
           factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime'),
@@ -167,7 +167,7 @@ export function toRdf(registration: Registration) {
     quads.push(
       factory.quad(
         iri,
-        factory.namedNode('http://schema.org/status'),
+        factory.namedNode('https://schema.org/status'),
         factory.literal(
           registration.statusCode.toString(),
           factory.namedNode('http://www.w3.org/2001/XMLSchema#integer'),
@@ -180,7 +180,7 @@ export function toRdf(registration: Registration) {
     quads.push(
       factory.quad(
         iri,
-        factory.namedNode('http://schema.org/validUntil'),
+        factory.namedNode('https://schema.org/validUntil'),
         factory.literal(
           registration.validUntil.toISOString(),
           factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime'),
@@ -193,7 +193,7 @@ export function toRdf(registration: Registration) {
   quads.push(
     factory.quad(
       iri,
-      factory.namedNode('http://schema.org/additionalType'),
+      factory.namedNode('https://schema.org/additionalType'),
       factory.namedNode(
         `${REGISTRATION_STATUS_BASE_URI}${registration.registrationStatus}`,
       ),
