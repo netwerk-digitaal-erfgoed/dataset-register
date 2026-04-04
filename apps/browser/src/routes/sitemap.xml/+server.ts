@@ -20,7 +20,7 @@ interface DatasetInfo {
 async function fetchDatasetUris(): Promise<DatasetInfo[]> {
   const query = `
     PREFIX dcat: <http://www.w3.org/ns/dcat#>
-    PREFIX schema: <http://schema.org/>
+    PREFIX schema: <https://schema.org/>
 
     SELECT DISTINCT ?dataset ?dateRead WHERE {
       ?dataset a dcat:Dataset ;

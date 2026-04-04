@@ -95,7 +95,7 @@ export class SparqlRegistrationStore implements RegistrationStore {
 
   async findRegistrationsReadBefore(date: Date): Promise<Registration[]> {
     const result = await this.client.query(`
-      PREFIX schema: <http://schema.org/>
+      PREFIX schema: <https://schema.org/>
       PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
       SELECT ?s ?datePosted ?validUntil ?dataset WHERE {
@@ -146,7 +146,7 @@ export class SparqlRegistrationStore implements RegistrationStore {
 
   async findByUrl(url: URL): Promise<Registration | undefined> {
     const result = await this.client.query(`
-      PREFIX schema: <http://schema.org/>
+      PREFIX schema: <https://schema.org/>
 
       SELECT ?datePosted ?validUntil ?dataset WHERE {
         GRAPH <${this.graphIri}> {
@@ -185,7 +185,7 @@ export class SparqlRegistrationStore implements RegistrationStore {
     // Delete all triples related to this registration (registration itself and referenced datasets)
     // Need to delete both the registration and any dataset relationships it created
     const sparqlUpdate = `
-      PREFIX schema: <http://schema.org/>
+      PREFIX schema: <https://schema.org/>
       
       WITH <${this.graphIri}>
       DELETE {
@@ -215,7 +215,7 @@ export class SparqlRegistrationStore implements RegistrationStore {
 
   async delete(url: URL): Promise<void> {
     await this.client.update(`
-      PREFIX schema: <http://schema.org/>
+      PREFIX schema: <https://schema.org/>
 
       WITH <${this.graphIri}>
       DELETE {
@@ -244,7 +244,7 @@ export class SparqlRatingStore implements RatingStore {
 
   async store(datasetUri: URL, rating: Rating): Promise<void> {
     await this.client.update(`
-      PREFIX schema: <http://schema.org/>
+      PREFIX schema: <https://schema.org/>
       
       WITH <${this.graphIri}>
       DELETE {
@@ -272,7 +272,7 @@ export class SparqlRatingStore implements RatingStore {
 
   async delete(datasetUri: URL): Promise<void> {
     await this.client.update(`
-      PREFIX schema: <http://schema.org/>
+      PREFIX schema: <https://schema.org/>
 
       WITH <${this.graphIri}>
       DELETE {
