@@ -6,6 +6,8 @@ import { error } from '@sveltejs/kit';
 import { owlNs, schemaNs as schema, voidExtNs, voidNs } from '../rdf.js';
 import { BaseDatasetSchema, BaseDistributionSchema } from './datasets.js';
 import { shortenUri } from '$lib/utils/prefix';
+import { isUri, lookupTermLabels } from './network-of-terms.js';
+import { getLocale } from '$lib/paraglide/runtime';
 import { REGISTRATION_STATUS_BASE_URI } from '@dataset-register/core/constants';
 import {
   PUBLIC_SPARQL_ENDPOINT,
@@ -342,6 +344,7 @@ export interface DatasetDetailResult {
   totalDistributions: number;
   summary: DatasetSummary | null;
   linksets: Linkset[];
+  resolvedTerms: Record<string, string>;
 }
 
 const fetcher = new SparqlEndpointFetcher();
@@ -467,12 +470,22 @@ export async function fetchDatasetDetail(
       }
     : null;
 
+  // Resolve term URIs (e.g. spatial/temporal) to human-readable labels
+  // via the Network of Terms API.
+  const termUris = [
+    ...(dataset.spatial?.filter(isUri) ?? []),
+    ...(dataset.temporal && isUri(dataset.temporal) ? [dataset.temporal] : []),
+  ];
+  const resolvedTerms =
+    termUris.length > 0 ? await lookupTermLabels(termUris, getLocale()) : {};
+
   return {
     dataset,
     distributions,
     totalDistributions,
     summary: summaryWithClassPartition,
     linksets,
+    resolvedTerms,
   };
 }
 
