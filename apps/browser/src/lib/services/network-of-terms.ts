@@ -1,8 +1,11 @@
 const ENDPOINT = 'https://termennetwerk-api.netwerkdigitaalerfgoed.nl/graphql';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
+const LANGUAGES = ['nl', 'en'] as const;
+
+type Language = (typeof LANGUAGES)[number];
 
 interface CacheEntry {
-  label: string | null;
+  labels: Partial<Record<Language, string>>;
   timestamp: number;
 }
 
@@ -13,13 +16,18 @@ export function isUri(value: string): boolean {
 }
 
 /**
- * Look up term URIs via the Network of Terms API and return resolved labels.
- * Results are cached in memory for 24 hours. URIs that the API does not
- * recognise are cached as null to avoid repeated lookups.
+ * Look up term URIs via the Network of Terms API and return labels in the
+ * requested locale, falling back to other available languages. Results are
+ * cached in memory for 24 hours. URIs with no labels are cached as an empty
+ * object to avoid repeated lookups.
  */
 export async function lookupTermLabels(
   uris: string[],
+  locale: string,
 ): Promise<Record<string, string>> {
+  const preferredLanguage = (LANGUAGES as readonly string[]).includes(locale)
+    ? (locale as Language)
+    : 'nl';
   const now = Date.now();
   const uniqueUris = [...new Set(uris)];
   const uncachedUris = uniqueUris.filter((uri) => {
@@ -41,11 +49,24 @@ export async function lookupTermLabels(
   const resolved: Record<string, string> = {};
   for (const uri of uniqueUris) {
     const entry = termLabelCache.get(uri);
-    if (entry?.label) {
-      resolved[uri] = entry.label;
+    if (!entry) continue;
+    const label = pickLabel(entry.labels, preferredLanguage);
+    if (label) {
+      resolved[uri] = label;
     }
   }
   return resolved;
+}
+
+function pickLabel(
+  labels: Partial<Record<Language, string>>,
+  locale: Language,
+): string | undefined {
+  if (labels[locale]) return labels[locale];
+  for (const language of LANGUAGES) {
+    if (labels[language]) return labels[language];
+  }
+  return undefined;
 }
 
 interface LookupResponse {
@@ -53,19 +74,24 @@ interface LookupResponse {
     lookup: Array<{
       uri: string;
       result:
-        | { __typename: 'Term'; prefLabel: string[] }
-        | { __typename: string; message?: string };
+        | {
+            __typename: 'TranslatedTerm';
+            prefLabel: Array<{ value: string; language: Language }>;
+          }
+        | { __typename: string };
     }>;
   };
 }
 
 async function fetchAndCacheLabels(uris: string[]): Promise<void> {
+  const languagesArg = LANGUAGES.join(', ');
+  const urisArg = uris.map((uri) => `"${uri}"`).join(', ');
   const query = `{
-    lookup(uris: [${uris.map((uri) => `"${uri}"`).join(', ')}]) {
+    lookup(uris: [${urisArg}], languages: [${languagesArg}]) {
       uri
       result {
         __typename
-        ... on Term { prefLabel }
+        ... on TranslatedTerm { prefLabel { value language } }
       }
     }
   }`;
@@ -84,19 +110,25 @@ async function fetchAndCacheLabels(uris: string[]): Promise<void> {
   const now = Date.now();
 
   for (const entry of body.data?.lookup ?? []) {
-    const label =
-      entry.result.__typename === 'Term' &&
-      'prefLabel' in entry.result &&
-      entry.result.prefLabel.length > 0
-        ? entry.result.prefLabel[0]
-        : null;
-    termLabelCache.set(entry.uri, { label, timestamp: now });
+    const labels: Partial<Record<Language, string>> = {};
+    if (
+      entry.result.__typename === 'TranslatedTerm' &&
+      'prefLabel' in entry.result
+    ) {
+      for (const { value, language } of entry.result.prefLabel) {
+        // Keep first occurrence per language.
+        if (!labels[language]) {
+          labels[language] = value;
+        }
+      }
+    }
+    termLabelCache.set(entry.uri, { labels, timestamp: now });
   }
 
-  // Also cache URIs that weren't in the response at all (shouldn't happen, but be safe).
+  // Cache URIs that weren't in the response to avoid re-fetching.
   for (const uri of uris) {
     if (!termLabelCache.has(uri)) {
-      termLabelCache.set(uri, { label: null, timestamp: now });
+      termLabelCache.set(uri, { labels: {}, timestamp: now });
     }
   }
 }

@@ -7,6 +7,7 @@ import { owlNs, voidExtNs, voidNs } from '../rdf.js';
 import { BaseDatasetSchema, BaseDistributionSchema } from './datasets.js';
 import { shortenUri } from '$lib/utils/prefix';
 import { isUri, lookupTermLabels } from './network-of-terms.js';
+import { getLocale } from '$lib/paraglide/runtime';
 import { REGISTRATION_STATUS_BASE_URI } from '@dataset-register/core/constants';
 import {
   PUBLIC_SPARQL_ENDPOINT,
@@ -476,7 +477,7 @@ export async function fetchDatasetDetail(
     ...(dataset.temporal && isUri(dataset.temporal) ? [dataset.temporal] : []),
   ];
   const resolvedTerms =
-    termUris.length > 0 ? await lookupTermLabels(termUris) : {};
+    termUris.length > 0 ? await lookupTermLabels(termUris, getLocale()) : {};
 
   return {
     dataset,
