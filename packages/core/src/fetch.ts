@@ -1,13 +1,7 @@
 import { QueryEngine } from '@comunica/query-sparql';
 import factory from 'rdf-ext';
 import { Store } from 'n3';
-import {
-  buildConstructQuery,
-  constructQuery,
-  dcat,
-  datasetType,
-  rdf,
-} from './query.ts';
+import { buildConstructQuery, dcat, datasetType, rdf } from './query.ts';
 import { pipeline } from 'node:stream';
 import { StandardizeSchemaOrgPrefixToHttps } from './transform.ts';
 import { rdfDereferencer } from 'rdf-dereference';
