@@ -332,11 +332,6 @@ export const constructQuery = `
         OPTIONAL { ?${publisher} dct:identifier ?${publisherIdentifier} ; }
         OPTIONAL { ?${publisher} foaf:mbox ?${publisherEmail} ; }
         OPTIONAL { ?${publisher} owl:sameAs ?${publisherSameAs} ; }
-        OPTIONAL {
-          ?${dataset} dcat:contactPoint ?${contactPoint} .
-          OPTIONAL { ?${contactPoint} vcard:fn ?${contactPointName} . }
-          OPTIONAL { ?${contactPoint} vcard:hasEmail ?${contactPointEmail} . }
-        }
 
         OPTIONAL {
           ?${creator} a ?foafOrganizationOrPerson ;
@@ -403,6 +398,12 @@ export const constructQuery = `
       }
       ${schemaOrgContactPointUnion('schema')}
       ${schemaOrgContactPointUnion('httpSchema')}
+      UNION {
+        ?${dataset} a dcat:Dataset .
+        ?${dataset} dcat:contactPoint ?${contactPoint} .
+        OPTIONAL { ?${contactPoint} vcard:fn ?${contactPointName} . }
+        OPTIONAL { ?${contactPoint} vcard:hasEmail ?${contactPointEmail} . }
+      }
       ${schemaOrgMultiValuedUnions('schema')}
       ${schemaOrgMultiValuedUnions('httpSchema')}
       ${dcatMultiValuedUnions()}
