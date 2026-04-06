@@ -150,6 +150,21 @@ function multiValuedUnion(
       }`;
 }
 
+function schemaOrgContactPointUnion(prefix: string): string {
+  return `UNION {
+        ?${dataset} a ${prefix}:Dataset .
+        ?${dataset} ${prefix}:publisher/${prefix}:contactPoint ?${contactPoint} .
+        ?${contactPoint} ${prefix}:email ?contactPointEmailRaw .
+        BIND(IRI(CONCAT("mailto:", STR(?contactPointEmailRaw))) AS ?${contactPointEmail})
+        OPTIONAL { ?${contactPoint} ${prefix}:name ?${contactPointName} . }
+      }
+      UNION {
+        ?${dataset} a ${prefix}:Dataset .
+        ?${dataset} ${prefix}:publisher ?${publisher} .
+        ?${publisher} ${prefix}:contactPoint/${prefix}:email ?${publisherEmail} .
+      }`;
+}
+
 function schemaOrgMultiValuedUnions(prefix: string): string {
   const type = `a ${prefix}:Dataset`;
   return [
@@ -386,6 +401,8 @@ export const constructQuery = `
         OPTIONAL { ?${dataset} dct:accrualPeriodicity ?${accrualPeriodicity} }
         BIND(<http://publications.europa.eu/resource/authority/data-theme/EDUC> AS ?themeDefault)
       }
+      ${schemaOrgContactPointUnion('schema')}
+      ${schemaOrgContactPointUnion('httpSchema')}
       ${schemaOrgMultiValuedUnions('schema')}
       ${schemaOrgMultiValuedUnions('httpSchema')}
       ${dcatMultiValuedUnions()}
@@ -417,13 +434,13 @@ function schemaOrgQuery(prefix: string): string {
       FILTER(?${creatorType} != "")
     }
       
-    OPTIONAL { 
+    OPTIONAL {
       ?${dataset} ${prefix}:publisher ?${publisher} .
       ?${publisher} a ?publisherTypeRaw ;
         ${prefix}:name ${defaultLanguageTag(publisherName)} .
       OPTIONAL { ?${publisher} ${prefix}:alternateName ?${publisherAlternateName} . }
       OPTIONAL { ?${publisher} ${prefix}:identifier ?${publisherIdentifier} . }
-      OPTIONAL { 
+      OPTIONAL {
         ?${publisher} ${prefix}:sameAs ?${publisherSameAs} .
         FILTER(isIRI(?${publisherSameAs}))
       }
@@ -439,15 +456,6 @@ function schemaOrgQuery(prefix: string): string {
         )
       AS ?${publisherType})
       FILTER(?${publisherType} != "")
-      OPTIONAL {
-        ?${publisher} ${prefix}:contactPoint ?${contactPoint} .
-        ?${contactPoint} ${prefix}:email ?contactPointEmailRaw .
-        BIND(IRI(CONCAT("mailto:", STR(?contactPointEmailRaw))) AS ?${contactPointEmail})
-        OPTIONAL { ?${contactPoint} ${prefix}:name ?${contactPointName} . }
-      }
-      OPTIONAL {
-        ?${publisher} ${prefix}:contactPoint/${prefix}:email ?${publisherEmail} .
-      }
     }
         
     OPTIONAL {

@@ -867,6 +867,33 @@ describe('discoverDatacatalog', () => {
   });
 });
 
+describe('CONSTRUCT query cross-product', () => {
+  it('does not produce excessive duplicate quads for catalogs with a shared publisher', async () => {
+    const response = await file('catalog-schema-org-valid.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
+      .get('/catalog')
+      .reply(200, response);
+
+    const data = await fetchDereference(
+      new URL('https://example.com/catalog'),
+    );
+    const datasets = [];
+    for await (const dataset of fetch(
+      new URL('https://example.com/catalog'),
+      data,
+    )) {
+      datasets.push(dataset);
+    }
+
+    expect(datasets).toHaveLength(2);
+    const totalQuads = datasets.reduce((sum, d) => sum + d.size, 0);
+    // With 2 datasets, expect roughly 20–40 unique quads.
+    // A cross-product bug would produce hundreds or thousands.
+    expect(totalQuads).toBeLessThan(100);
+  });
+});
+
 const fetchDatasetsAsArray = async (url: URL) => {
   const data = await fetchDereference(url);
   const datasets = [];
