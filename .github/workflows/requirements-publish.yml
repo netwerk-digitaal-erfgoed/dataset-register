@@ -39,11 +39,6 @@ jobs:
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/download-artifact@v8
-        with:
-          name: spec-prod-result-requirements
-          path: requirements/
-
       - name: Generate token
         id: generate-token
         uses: actions/create-github-app-token@v3
@@ -53,12 +48,29 @@ jobs:
           owner: netwerk-digitaal-erfgoed
           repositories: netwerk-digitaal-erfgoed.github.io
 
-      - name: Deploy to docs.nde.nl
-        uses: peaceiris/actions-gh-pages@v4
+      - uses: actions/checkout@v6
         with:
-          external_repository: netwerk-digitaal-erfgoed/netwerk-digitaal-erfgoed.github.io
-          personal_token: ${{ steps.generate-token.outputs.token }}
-          publish_dir: requirements/
-          publish_branch: main
-          destination_dir: static/requirements-datasets/
-          exclude_assets: '.github,.gitignore,index.bs,Makefile'
+          repository: netwerk-digitaal-erfgoed/netwerk-digitaal-erfgoed.github.io
+          token: ${{ steps.generate-token.outputs.token }}
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: spec-prod-result-requirements
+          path: artifacts/
+
+      - name: Copy build artifacts
+        run: |
+          rm -rf static/requirements-datasets/
+          mkdir -p static/requirements-datasets/
+          cp -r artifacts/* static/requirements-datasets/
+          rm -f static/requirements-datasets/.gitignore static/requirements-datasets/index.bs static/requirements-datasets/Makefile
+          rm -rf static/requirements-datasets/.github
+        working-directory: .
+
+      - name: Deploy to docs.nde.nl
+        uses: grafana/github-api-commit-action@v1
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          commit-message: "deploy: ${{ github.repository }}@${{ github.sha }}"
+          stage-all-files: true
+          success-if-no-changes: true
