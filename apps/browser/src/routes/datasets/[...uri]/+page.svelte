@@ -47,7 +47,7 @@
   const totalDistributions = $derived(data.totalDistributions);
   const summary = $derived(data.summary);
   const linksets = $derived(data.linksets);
-  const resolvedTerms = $derived(data.resolvedTerms);
+
 
   // SEO: canonical and hreflang URLs
   const datasetPath = $derived(`/datasets/${dataset.$id}`);
@@ -779,25 +779,28 @@
                 >
               </dt>
               <dd class="text-sm text-gray-700 dark:text-gray-300 break-all">
-                {#each dataset.spatial as spatialValue, index (spatialValue)}
-                  {#if index > 0},
-                  {/if}
-                  {#if resolvedTerms[spatialValue]}
-                    <a
-                      href={spatialValue}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="text-blue-600 hover:underline dark:text-blue-400"
-                    >
-                      {resolvedTerms[spatialValue]}
-                      <span class="sr-only">
-                        ({m.opens_in_new_tab()})
-                      </span>
-                    </a>
-                  {:else}
-                    {spatialValue}
-                  {/if}
-                {/each}
+                {#await data.resolvedTerms}
+                  {dataset.spatial.join(', ')}
+                {:then resolvedTerms}
+                  {#each dataset.spatial as spatialValue, index (spatialValue)}
+                    {#if index > 0}, {/if}
+                    {#if resolvedTerms[spatialValue]}
+                      <a
+                        href={spatialValue}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-blue-600 hover:underline dark:text-blue-400"
+                      >
+                        {resolvedTerms[spatialValue]}
+                        <span class="sr-only">
+                          ({m.opens_in_new_tab()})
+                        </span>
+                      </a>
+                    {:else}
+                      {spatialValue}
+                    {/if}
+                  {/each}
+                {/await}
               </dd>
             </div>
           {/if}
@@ -834,21 +837,25 @@
                 >
               </dt>
               <dd class="text-sm text-gray-700 dark:text-gray-300 break-all">
-                {#if dataset.temporal && resolvedTerms[dataset.temporal]}
-                  <a
-                    href={dataset.temporal}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="text-blue-600 hover:underline dark:text-blue-400"
-                  >
-                    {resolvedTerms[dataset.temporal]}
-                    <span class="sr-only">
-                      ({m.opens_in_new_tab()})
-                    </span>
-                  </a>
-                {:else}
+                {#await data.resolvedTerms}
                   {dataset.temporal}
-                {/if}
+                {:then resolvedTerms}
+                  {#if resolvedTerms[dataset.temporal!]}
+                    <a
+                      href={dataset.temporal}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="text-blue-600 hover:underline dark:text-blue-400"
+                    >
+                      {resolvedTerms[dataset.temporal!]}
+                      <span class="sr-only">
+                        ({m.opens_in_new_tab()})
+                      </span>
+                    </a>
+                  {:else}
+                    {dataset.temporal}
+                  {/if}
+                {/await}
               </dd>
             </div>
           {/if}

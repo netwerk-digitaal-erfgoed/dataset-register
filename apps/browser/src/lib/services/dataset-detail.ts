@@ -344,7 +344,7 @@ export interface DatasetDetailResult {
   totalDistributions: number;
   summary: DatasetSummary | null;
   linksets: Linkset[];
-  resolvedTerms: Record<string, string>;
+  resolvedTerms: Promise<Record<string, string>>;
 }
 
 const fetcher = new SparqlEndpointFetcher();
@@ -471,13 +471,16 @@ export async function fetchDatasetDetail(
     : null;
 
   // Resolve term URIs (e.g. spatial/temporal) to human-readable labels
-  // via the Network of Terms API.
+  // via the Network of Terms API. Returned as an unawaited promise so
+  // SvelteKit can stream the result without blocking the page response.
   const termUris = [
     ...(dataset.spatial?.filter(isUri) ?? []),
     ...(dataset.temporal && isUri(dataset.temporal) ? [dataset.temporal] : []),
   ];
   const resolvedTerms =
-    termUris.length > 0 ? await lookupTermLabels(termUris, getLocale()) : {};
+    termUris.length > 0
+      ? lookupTermLabels(termUris, getLocale())
+      : Promise.resolve({});
 
   return {
     dataset,
