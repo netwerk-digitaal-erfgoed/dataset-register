@@ -1,7 +1,13 @@
 import { QueryEngine } from '@comunica/query-sparql';
 import factory from 'rdf-ext';
 import { Store } from 'n3';
-import { constructQuery, dcat, rdf } from './query.ts';
+import {
+  buildConstructQuery,
+  constructQuery,
+  dcat,
+  datasetType,
+  rdf,
+} from './query.ts';
 import { pipeline } from 'node:stream';
 import { StandardizeSchemaOrgPrefixToHttps } from './transform.ts';
 import { rdfDereferencer } from 'rdf-dereference';
@@ -80,8 +86,29 @@ async function* query(url: URL, data: DatasetExt) {
   // Work around Comunica bug where JSON-LD with @graph in HTML <script> tags
   // produces 0 results (comunica/comunica#1684). Use in-memory data as source
   // unless Hydra pagination is detected, which requires Comunica to follow links.
-  const source = hasHydraPagination(data) ? url.toString() : toN3Store(data);
-  const quadStream = await engine.queryQuads(constructQuery, {
+  const hydra = hasHydraPagination(data);
+  const source = hydra ? url.toString() : toN3Store(data);
+
+  // Detect vocabulary to build a targeted query with only matching branches.
+  // This avoids Comunica evaluating empty branches that waste query planning time.
+  const hasSchemaOrg = data.some(
+    (quad) =>
+      quad.predicate.equals(rdf('type')) &&
+      quad.object.value === 'https://schema.org/Dataset',
+  );
+  const hasDcat = data.some(
+    (quad) =>
+      quad.predicate.equals(rdf('type')) && quad.object.equals(datasetType),
+  );
+  const query = buildConstructQuery({
+    schemaOrg: hasSchemaOrg,
+    // Include httpSchema when Comunica fetches the URL directly (Hydra pagination),
+    // because the raw data may use http://schema.org/ instead of https://.
+    httpSchemaOrg: hydra && hasSchemaOrg,
+    dcat: hasDcat,
+  });
+
+  const quadStream = await engine.queryQuads(query, {
     sources: [source],
   });
 

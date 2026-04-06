@@ -232,7 +232,40 @@ function dcatMultiValuedUnions(): string {
   ].join('\n      ');
 }
 
-export const constructQuery = `
+export interface QueryVocabularies {
+  schemaOrg: boolean;
+  httpSchemaOrg: boolean;
+  dcat: boolean;
+}
+
+export function buildConstructQuery(vocabularies: QueryVocabularies): string {
+  const { schemaOrg, httpSchemaOrg, dcat } = vocabularies;
+
+  const mainBranches = [
+    ...(schemaOrg ? [`{ ${schemaOrgQuery('schema')} }`] : []),
+    ...(httpSchemaOrg ? [`{ ${schemaOrgQuery('httpSchema')} }`] : []),
+    ...(dcat ? [`{ ${dcatMainBranch()} }`] : []),
+  ].join('\n      UNION ');
+
+  const unionBranches = [
+    ...(schemaOrg ? [schemaOrgContactPointUnion('schema')] : []),
+    ...(httpSchemaOrg ? [schemaOrgContactPointUnion('httpSchema')] : []),
+    ...(dcat
+      ? [
+          `UNION {
+        ?${dataset} a dcat:Dataset .
+        ?${dataset} dcat:contactPoint ?${contactPoint} .
+        OPTIONAL { ?${contactPoint} vcard:fn ?${contactPointName} . }
+        OPTIONAL { ?${contactPoint} vcard:hasEmail ?${contactPointEmail} . }
+      }`,
+        ]
+      : []),
+    ...(schemaOrg ? [schemaOrgMultiValuedUnions('schema')] : []),
+    ...(httpSchemaOrg ? [schemaOrgMultiValuedUnions('httpSchema')] : []),
+    ...(dcat ? [dcatMultiValuedUnions()] : []),
+  ].join('\n      ');
+
+  return `
   PREFIX dcat: <http://www.w3.org/ns/dcat#>
   PREFIX dct: <http://purl.org/dc/terms/>
   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
@@ -314,16 +347,30 @@ export const constructQuery = `
     ${odrlRuleConstruct('obligation', 'oblig')}
   } WHERE {
     SELECT * WHERE {
-      {
-        ${schemaOrgQuery('schema')}
-      } UNION {
-        ${schemaOrgQuery('httpSchema')}
-      } UNION { 
+      ${mainBranches}
+      ${unionBranches}
+    }
+    LIMIT ${sparqlLimit}
+  }`;
+}
+
+/**
+ * Static query with all vocabulary branches, used as a fallback
+ * (e.g. when vocabulary detection is not possible).
+ */
+export const constructQuery = buildConstructQuery({
+  schemaOrg: true,
+  httpSchemaOrg: true,
+  dcat: true,
+});
+
+function dcatMainBranch(): string {
+  return `
         ?${dataset} a dcat:Dataset ;
           dct:title ?${name} ;
           dct:publisher ?${publisher} ;
           dct:license ${normalizeLicense(license)} .
-          
+
         ?${publisher} a ?foafOrganizationOrPerson ;
           a ?${publisherType} ;
           foaf:name ${defaultLanguageTag(publisherName)} .
@@ -338,9 +385,9 @@ export const constructQuery = `
             a ?${creatorType} ;
             foaf:name ${defaultLanguageTag(creatorName)} .
         }
-          
+
         VALUES ?foafOrganizationOrPerson { foaf:Organization foaf:Person }
-  
+
         OPTIONAL {
           ?${dataset} dcat:distribution ?${distribution} .
           ?${distribution} a dcat:Distribution .
@@ -395,21 +442,8 @@ export const constructQuery = `
         BIND(COALESCE(?${accessRights}Provided, <http://publications.europa.eu/resource/authority/access-right/PUBLIC>) AS ?${accessRights})
         OPTIONAL { ?${dataset} dct:accrualPeriodicity ?${accrualPeriodicity} }
         BIND(<http://publications.europa.eu/resource/authority/data-theme/EDUC> AS ?themeDefault)
-      }
-      ${schemaOrgContactPointUnion('schema')}
-      ${schemaOrgContactPointUnion('httpSchema')}
-      UNION {
-        ?${dataset} a dcat:Dataset .
-        ?${dataset} dcat:contactPoint ?${contactPoint} .
-        OPTIONAL { ?${contactPoint} vcard:fn ?${contactPointName} . }
-        OPTIONAL { ?${contactPoint} vcard:hasEmail ?${contactPointEmail} . }
-      }
-      ${schemaOrgMultiValuedUnions('schema')}
-      ${schemaOrgMultiValuedUnions('httpSchema')}
-      ${dcatMultiValuedUnions()}
-    }
-    LIMIT ${sparqlLimit}
-  }`;
+  `;
+}
 
 function schemaOrgQuery(prefix: string): string {
   return `
