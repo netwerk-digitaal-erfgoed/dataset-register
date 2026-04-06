@@ -65,6 +65,7 @@ jobs:
           cp -r artifacts/* static/requirements-datasets/
           rm -f static/requirements-datasets/.gitignore static/requirements-datasets/index.bs static/requirements-datasets/Makefile
           rm -rf static/requirements-datasets/.github
+          rm -rf artifacts/
         working-directory: .
 
       - name: Deploy to docs.nde.nl
