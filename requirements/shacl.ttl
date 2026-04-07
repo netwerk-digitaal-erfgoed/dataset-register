@@ -255,9 +255,12 @@ nde-dataset:DatasetShape
             a sh:PropertyShape ;
             sh:path schema:mainEntityOfPage ;
             sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:pattern "^https?://" ;
             sh:name "Main entity of page"@en ;
             sh:description """
                 URL of a landing page where the dataset is described for human users.
+                Not needed when the dataset URI itself resolves to an HTML page (see [[#resolvable-uris]]).
                 The human-readable description *MUST* be consistent with and include at least all details (such as distributions) from the RDF dataset description.
             """@en ;
         ] ,
@@ -1113,7 +1116,20 @@ dcat:DatasetShape
             for example http://publications.europa.eu/resource/authority/frequency/WEEKLY ."""@en ;
         sh:message "Updatefrequentie moet een IRI zijn uit de EU-frequentielijst"@nl, "Accrual periodicity must be an IRI from the EU frequency list"@en ;
     ] ,
-    nde-dataset:AccessRightsProperty ;
+    nde-dataset:AccessRightsProperty ,
+    [
+        a sh:PropertyShape ;
+        sh:path dcat:landingPage ;
+        sh:minCount 0 ;
+        sh:nodeKind sh:IRI ;
+        sh:pattern "^https?://" ;
+        sh:name "Landing page"@en ;
+        sh:description """
+            A web page where the dataset is described for human users.
+            Not needed when the dataset URI itself resolves to an HTML page (see [[#resolvable-uris]]).
+            The human-readable description *MUST* be consistent with and include at least all details (such as distributions) from the RDF dataset description.
+        """@en ;
+    ] ;
     sh:targetClass dcat:Dataset ;
 .
 

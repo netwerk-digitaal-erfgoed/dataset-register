@@ -188,6 +188,18 @@ When the [=dataset description=] is embedded in an HTML page (see [[#rdf]]), `te
 
 See also [[DWBP-UCR#R-UniqueIdentifier]] and [[DWBP-UCR#R-PersistentIdentification]].
 
+### Resolvable dataset URIs ### {#resolvable-uris}
+
+[=Consumers=] want to look up a [=dataset=] by its URI.
+When the dataset URI resolves, consumers can retrieve both the machine-readable [=dataset description=] (via [[RFC9110#section-12|content negotiation]])
+and a human-readable HTML page without needing a separate landing page URL.
+
+> Therefore, publishers *SHOULD* ensure that the dataset URI resolves
+> and serves both an RDF representation (the [=dataset description=]) and an HTML representation.
+> The HTML representation *MUST* be consistent with and include at least all details (such as distributions) from the RDF representation.
+
+When the dataset URI resolves to an HTML page, a separate `mainEntityOfPage` is not needed (see [[#more-information]]).
+
 ### Information remains available ### {#available}
 
 Datasets will be used by all kinds of [=consumers=] and their systems.
