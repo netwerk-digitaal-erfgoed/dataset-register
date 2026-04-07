@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.5.1](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.5.0...requirements-1.5.1) (2026-04-07)
+
+
+### Bug Fixes
+
+* **requirements:** use single sh:message on SPARQL constraint for Jena compatibility ([#1802](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1802)) ([5e67a50](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/5e67a5004888e0d04690eb906f3bb543ca28425e))
+
+
+### Documentation
+
+* add resolvable dataset URI requirement and update mainEntityOfPage ([#1821](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1821)) ([59f995d](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/59f995ded5d4ae48f4b60160fc0e5a75e7901a61))
+
 ## [1.5.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.4.0...requirements-1.5.0) (2026-04-02)
 
 
