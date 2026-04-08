@@ -81,6 +81,8 @@
                         must be IRI
                     {% elsif change.maxCount -%}
                         max {{ change.maxCount }}
+                    {% elsif change.severity == "Violation" and property.nodeKind == "IRI" -%}
+                        must be IRI
                     {% elsif change.severity == "Violation" -%}
                         becomes required
                     {% endif -%}
