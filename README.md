@@ -173,6 +173,9 @@ If the dataset’s description is provided in Schema.org rather than DCAT, the d
 ‘Based on’ column shows the corresponding Schema.org property.
 See the [Requirements for Datasets](https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/) for more details.
 
+String literals without a language tag on `dct:title`, `dct:alternative`, `dct:description`, `dcat:keyword`, and
+`foaf:name` are automatically tagged with `@nl` at ingest time. Existing language tags are preserved.
+
 | Property                                                                                   | Description                                                                          | Based on                                                                   |
 | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
 | [`dct:title`](http://purl.org/dc/terms/title)                                              | Dataset title.                                                                       | [`schema:name`](https://schema.org/name)                                   |
