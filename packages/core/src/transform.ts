@@ -47,6 +47,7 @@ const languageTagPredicates = new Set([
   dct('description').value,
   dcat('keyword').value,
   foaf('name').value,
+  'http://www.w3.org/2006/vcard/ns#fn',
 ]);
 
 function addLanguageTag(quad: Quad, lang: string): Quad {

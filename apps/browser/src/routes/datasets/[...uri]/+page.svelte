@@ -48,7 +48,6 @@
   const summary = $derived(data.summary);
   const linksets = $derived(data.linksets);
 
-
   // SEO: canonical and hreflang URLs
   const datasetPath = $derived(`/datasets/${dataset.$id}`);
   const canonicalUrl = $derived(
@@ -783,7 +782,8 @@
                   {dataset.spatial.join(', ')}
                 {:then resolvedTerms}
                   {#each dataset.spatial as spatialValue, index (spatialValue)}
-                    {#if index > 0}, {/if}
+                    {#if index > 0},
+                    {/if}
                     {#if resolvedTerms[spatialValue]}
                       <a
                         href={spatialValue}
