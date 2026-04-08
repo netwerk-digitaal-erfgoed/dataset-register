@@ -3,6 +3,7 @@ import type { TransformCallback } from 'node:stream';
 import factory from 'rdf-ext';
 import type { DatasetCore, Quad } from '@rdfjs/types';
 import type DatasetExt from 'rdf-ext/lib/Dataset.js';
+import { dcat, dct, foaf } from './query.ts';
 
 /**
  * Convert http://schema.org prefix to https://schema.org for consistency.
@@ -28,6 +29,41 @@ export class StandardizeSchemaOrgPrefixToHttps extends Transform {
  */
 export function standardizeSchemaOrgPrefix(dataset: DatasetCore): DatasetExt {
   return factory.dataset([...dataset].map(standardizeQuad));
+}
+
+/**
+ * Add a default language tag to untagged string literals on properties where language tags are expected.
+ */
+export function addDefaultLanguageTags(
+  dataset: DatasetCore,
+  lang = 'nl',
+): DatasetExt {
+  return factory.dataset([...dataset].map((quad) => addLanguageTag(quad, lang)));
+}
+
+const languageTagPredicates = new Set([
+  dct('title').value,
+  dct('alternative').value,
+  dct('description').value,
+  dcat('keyword').value,
+  foaf('name').value,
+]);
+
+function addLanguageTag(quad: Quad, lang: string): Quad {
+  const object = quad.object;
+  if (
+    object.termType === 'Literal' &&
+    object.language === '' &&
+    languageTagPredicates.has(quad.predicate.value)
+  ) {
+    return factory.quad(
+      quad.subject,
+      quad.predicate,
+      factory.literal(object.value, lang),
+      quad.graph,
+    );
+  }
+  return quad;
 }
 
 function standardizeQuad(quad: Quad): Quad {

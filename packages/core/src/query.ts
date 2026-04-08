@@ -3,7 +3,6 @@ import {
   compressFormatFromMediaType,
   convertToIri,
   convertToXsdDate,
-  defaultLanguageTag,
   normalizeLicense,
   normalizeMediaType,
 } from './literal.ts';
@@ -326,7 +325,7 @@ export const constructQuery = `
           
         ?${publisher} a ?foafOrganizationOrPerson ;
           a ?${publisherType} ;
-          foaf:name ${defaultLanguageTag(publisherName)} .
+          foaf:name ?${publisherName} .
 
         OPTIONAL { ?${publisher} foaf:nick ?${publisherAlternateName} ; }
         OPTIONAL { ?${publisher} dct:identifier ?${publisherIdentifier} ; }
@@ -336,7 +335,7 @@ export const constructQuery = `
         OPTIONAL {
           ?${creator} a ?foafOrganizationOrPerson ;
             a ?${creatorType} ;
-            foaf:name ${defaultLanguageTag(creatorName)} .
+            foaf:name ?${creatorName} .
         }
           
         VALUES ?foafOrganizationOrPerson { foaf:Organization foaf:Person }
@@ -420,7 +419,7 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL { 
       ?${dataset} ${prefix}:creator ?${creator} .        
       ?${creator} a ?creatorTypeRaw ;
-        ${prefix}:name ${defaultLanguageTag(creatorName)} .
+        ${prefix}:name ?${creatorName} .
       BIND(
         IF(
           ?creatorTypeRaw = ${prefix}:Organization,
@@ -438,7 +437,7 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL {
       ?${dataset} ${prefix}:publisher ?${publisher} .
       ?${publisher} a ?publisherTypeRaw ;
-        ${prefix}:name ${defaultLanguageTag(publisherName)} .
+        ${prefix}:name ?${publisherName} .
       OPTIONAL { ?${publisher} ${prefix}:alternateName ?${publisherAlternateName} . }
       OPTIONAL { ?${publisher} ${prefix}:identifier ?${publisherIdentifier} . }
       OPTIONAL {

@@ -894,6 +894,56 @@ describe('CONSTRUCT query cross-product', () => {
   });
 });
 
+describe('Language tag defaults', () => {
+  it('adds default language tag to untagged literals', async () => {
+    const response = await file('dataset-dcat-valid-no-lang-tag.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/no-lang-tag')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/no-lang-tag'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+
+    const titles = [...dataset.match(null, dct('title'), null)];
+    expect(titles).toHaveLength(1);
+    expect(titles[0].object.value).toBe(
+      'Alba amicorum van de Koninklijke Bibliotheek',
+    );
+    expect((titles[0].object as { language: string }).language).toBe('nl');
+
+    const names = [...dataset.match(null, foaf('name'), null)];
+    expect(names).toHaveLength(1);
+    expect((names[0].object as { language: string }).language).toBe('nl');
+  });
+
+  it('preserves existing language tags', async () => {
+    const response = await file('dataset-dcat-valid.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/with-lang-tag')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/with-lang-tag'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+
+    const titles = [...dataset.match(null, dct('title'), null)];
+    expect(titles.length).toBeGreaterThan(0);
+    // Existing language tags should be preserved, not overwritten with 'nl'.
+    for (const title of titles) {
+      expect((title.object as { language: string }).language).not.toBe('');
+    }
+  });
+});
+
 const fetchDatasetsAsArray = async (url: URL) => {
   const data = await fetchDereference(url);
   const datasets = [];

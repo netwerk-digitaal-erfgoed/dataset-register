@@ -3,7 +3,10 @@ import factory from 'rdf-ext';
 import { Store } from 'n3';
 import { constructQuery, dcat, rdf } from './query.ts';
 import { pipeline } from 'node:stream';
-import { StandardizeSchemaOrgPrefixToHttps } from './transform.ts';
+import {
+  addDefaultLanguageTags,
+  StandardizeSchemaOrgPrefixToHttps,
+} from './transform.ts';
 import { rdfDereferencer } from 'rdf-dereference';
 import type DatasetExt from 'rdf-ext/lib/Dataset.js';
 
@@ -131,7 +134,7 @@ async function* query(url: URL, data: DatasetExt) {
   }
 
   for (const datasetIri of datasetOrder) {
-    yield factory.dataset(groupedQuads.get(datasetIri)!);
+    yield addDefaultLanguageTags(factory.dataset(groupedQuads.get(datasetIri)!));
   }
 }
 
