@@ -52,7 +52,9 @@ export async function* fetch(
  */
 export async function dereference(url: URL): Promise<DatasetExt> {
   try {
-    const { data } = await rdfDereferencer.dereference(url.toString());
+    const { data } = await rdfDereferencer.dereference(url.toString(), {
+      headers: { 'User-Agent': 'dataset-register (netwerk-digitaal-erfgoed)' },
+    });
     const stream = pipeline(
       data,
       new StandardizeSchemaOrgPrefixToHttps(),
