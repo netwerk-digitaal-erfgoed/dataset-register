@@ -202,6 +202,7 @@ String literals without a language tag on `dct:title`, `dct:alternative`, `dct:d
 | [`dct:isPartOf`](http://purl.org/dc/terms/isPartOf)                                        | Data catalog the dataset is part of.                                                 | [`schema:includedInDataCatalog`](https://schema.org/includedInDataCatalog) |
 | [`dct:hasPart`](http://purl.org/dc/terms/hasPart)                                          | Sub-datasets contained in this dataset.                                              | [`schema:hasPart`](https://schema.org/hasPart)                             |
 | [`dct:isReferencedBy`](http://purl.org/dc/terms/isReferencedBy)                            | Resources that reference this dataset.                                               | [`schema:citation`](https://schema.org/citation)                           |
+| [`dct:accrualPeriodicity`](http://purl.org/dc/terms/accrualPeriodicity)                     | Dataset update frequency.                                                            | [`dc:accrualPeriodicity`](http://purl.org/dc/terms/accrualPeriodicity) (passthrough) |
 | [`dcat:distribution`](https://www.w3.org/TR/vocab-dcat-3/#Property:dataset_distribution)   | Dataset [distributions](#dcatdistribution).                                          | [`schema:distribution`](https://schema.org/distribution)                   |
 
 ### `foaf:Organization`
