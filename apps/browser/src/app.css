@@ -35,6 +35,14 @@ body {
   animation: shimmer 1.5s infinite;
 }
 
+/* Fix Flowbite tooltip popover background: browsers apply a white background to [popover]
+   elements via the UA stylesheet, overriding Tailwind bg-* classes. This makes dark tooltips
+   invisible in light mode (white text on white) and causes a white arrow in dark mode.
+   See https://github.com/themesberg/flowbite-svelte/issues/1941 */
+[popover][data-scope='popper'] {
+  background: transparent;
+}
+
 /* Fix Flowbite tooltip hover gap - creates invisible bridge between trigger and tooltip */
 .tooltip::before {
   content: '';
