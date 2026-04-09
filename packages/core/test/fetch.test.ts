@@ -10,7 +10,7 @@ import nock from 'nock';
 import { dcat, dct, foaf, odrl, rdf } from '../src/query.js';
 import factory from 'rdf-ext';
 import { dereference, file, validSchemaOrgDataset } from '../src/test-utils.js';
-import type { BlankNode } from '@rdfjs/types';
+import type { BlankNode, Literal } from '@rdfjs/types';
 
 describe('Fetch', () => {
   it('accepts accept valid DCAT dataset descriptions', async () => {
@@ -871,13 +871,11 @@ describe('CONSTRUCT query cross-product', () => {
   it('does not produce excessive duplicate quads for catalogs with a shared publisher', async () => {
     const response = await file('catalog-schema-org-valid.jsonld');
     nock('https://example.com')
-      .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
       .get('/catalog')
       .reply(200, response);
 
-    const data = await fetchDereference(
-      new URL('https://example.com/catalog'),
-    );
+    const data = await fetchDereference(new URL('https://example.com/catalog'));
     const datasets = [];
     for await (const dataset of fetch(
       new URL('https://example.com/catalog'),
@@ -891,6 +889,56 @@ describe('CONSTRUCT query cross-product', () => {
     // With 2 datasets, expect roughly 20–40 unique quads.
     // A cross-product bug would produce hundreds or thousands.
     expect(totalQuads).toBeLessThan(100);
+  });
+});
+
+describe('Language tag defaults', () => {
+  it('adds default language tag to untagged literals', async () => {
+    const response = await file('dataset-dcat-valid-no-lang-tag.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/no-lang-tag')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/no-lang-tag'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+
+    const titles = [...dataset.match(null, dct('title'), null)];
+    expect(titles).toHaveLength(1);
+    expect(titles[0].object.value).toBe(
+      'Alba amicorum van de Koninklijke Bibliotheek',
+    );
+    expect((titles[0].object as Literal).language).toBe('nl');
+
+    const names = [...dataset.match(null, foaf('name'), null)];
+    expect(names).toHaveLength(1);
+    expect((names[0].object as Literal).language).toBe('nl');
+  });
+
+  it('preserves existing language tags', async () => {
+    const response = await file('dataset-dcat-valid.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/with-lang-tag')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/with-lang-tag'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+
+    const titles = [...dataset.match(null, dct('title'), null)];
+    expect(titles.length).toBeGreaterThan(0);
+    // Existing language tags should be preserved, not overwritten with 'nl'.
+    for (const title of titles) {
+      expect((title.object as Literal).language).not.toBe('');
+    }
   });
 });
 
