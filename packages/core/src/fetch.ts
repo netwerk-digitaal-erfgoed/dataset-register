@@ -134,7 +134,7 @@ async function* query(url: URL, data: DatasetExt) {
   }
 
   for (const datasetIri of datasetOrder) {
-    yield addDefaultLanguageTags(factory.dataset(groupedQuads.get(datasetIri)!));
+    yield addDefaultLanguageTags(groupedQuads.get(datasetIri)!);
   }
 }
 

@@ -97,6 +97,8 @@ export const odrl = (property: string): NamedNode =>
   factory.namedNode(`http://www.w3.org/ns/odrl/2/${property}`);
 export const rdf = (property: string): NamedNode =>
   factory.namedNode(`http://www.w3.org/1999/02/22-rdf-syntax-ns#${property}`);
+export const vcard = (property: string): NamedNode =>
+  factory.namedNode(`http://www.w3.org/2006/vcard/ns#${property}`);
 
 export const datasetType = dcat('Dataset');
 export const sparqlLimit = 1_000_000;

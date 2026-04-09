@@ -10,7 +10,7 @@ import nock from 'nock';
 import { dcat, dct, foaf, odrl, rdf } from '../src/query.js';
 import factory from 'rdf-ext';
 import { dereference, file, validSchemaOrgDataset } from '../src/test-utils.js';
-import type { BlankNode } from '@rdfjs/types';
+import type { BlankNode, Literal } from '@rdfjs/types';
 
 describe('Fetch', () => {
   it('accepts accept valid DCAT dataset descriptions', async () => {
@@ -871,13 +871,11 @@ describe('CONSTRUCT query cross-product', () => {
   it('does not produce excessive duplicate quads for catalogs with a shared publisher', async () => {
     const response = await file('catalog-schema-org-valid.jsonld');
     nock('https://example.com')
-      .defaultReplyHeaders({'Content-Type': 'application/ld+json'})
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
       .get('/catalog')
       .reply(200, response);
 
-    const data = await fetchDereference(
-      new URL('https://example.com/catalog'),
-    );
+    const data = await fetchDereference(new URL('https://example.com/catalog'));
     const datasets = [];
     for await (const dataset of fetch(
       new URL('https://example.com/catalog'),
@@ -914,11 +912,11 @@ describe('Language tag defaults', () => {
     expect(titles[0].object.value).toBe(
       'Alba amicorum van de Koninklijke Bibliotheek',
     );
-    expect((titles[0].object as { language: string }).language).toBe('nl');
+    expect((titles[0].object as Literal).language).toBe('nl');
 
     const names = [...dataset.match(null, foaf('name'), null)];
     expect(names).toHaveLength(1);
-    expect((names[0].object as { language: string }).language).toBe('nl');
+    expect((names[0].object as Literal).language).toBe('nl');
   });
 
   it('preserves existing language tags', async () => {
@@ -939,7 +937,7 @@ describe('Language tag defaults', () => {
     expect(titles.length).toBeGreaterThan(0);
     // Existing language tags should be preserved, not overwritten with 'nl'.
     for (const title of titles) {
-      expect((title.object as { language: string }).language).not.toBe('');
+      expect((title.object as Literal).language).not.toBe('');
     }
   });
 });
