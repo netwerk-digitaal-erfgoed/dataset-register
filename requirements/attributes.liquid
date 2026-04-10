@@ -1,7 +1,7 @@
 ### {{ name }} attributes ### {#{{ name | downcase }}-attributes}
 
 <table>
-    {% assign class = nodeShape.targetClass | default: nodeShape.class -%}
+    {% assign class = nodeShape.targetClass | default: nodeShape.class | default: targetClass -%}
     <caption>[{{ class | replace: 'https://schema.org/', 'https://schema.org/' }}]({{ class }}) properties</caption>
     <thead>
         <tr>

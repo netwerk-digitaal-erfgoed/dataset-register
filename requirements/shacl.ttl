@@ -53,19 +53,14 @@ nde-dataset:DatacatalogShape
             """@en ;
             sh:message "Een datacatalogus moet een geldige uitgever bevatten"@nl, "A data catalog must have a valid publisher"@en ;
             sh:or (
-                [
-                    sh:node nde-dataset:OrganizationShape ;
-                ]
-                [
-                    sh:node nde-dataset:PersonShape ;
-                ]
+                [ sh:class schema:Organization ]
+                [ sh:class schema:Person ]
             ) ;
         ] ,
         [
             sh:path schema:dataset ;
             sh:class schema:Dataset ;
             sh:minCount 1 ;
-            sh:node nde-dataset:DatasetShape ;
             sh:name "Dataset(s) in de datacatalogus"@nl, "Dataset(s) in the data catalog"@en ;
             sh:description "The datasets that are contained in the data catalog."@en ;
             sh:message "Een datacatalogus moet minimaal één dataset bevatten"@nl, "A data catalog must have at least one dataset"@en ;
@@ -109,12 +104,8 @@ nde-dataset:DatasetShape
             """@en ;
             sh:message "Een dataset description moet een geldige uitgever bevatten (zonder waarschuwingen)"@nl, "A dataset description must contain a valid publisher (without warnings)"@en ;
             sh:or (
-                [
-                    sh:node nde-dataset:OrganizationShape ;
-                ]
-                [
-                    sh:node nde-dataset:PersonShape ;
-                ]
+                [ sh:class schema:Organization ]
+                [ sh:class schema:Person ]
             ) ;
         ] ,
         [
@@ -125,10 +116,6 @@ nde-dataset:DatasetShape
                 sh:nodeKind sh:IRI ;
             ] ;
             sh:maxCount 1 ;
-            sh:node _:LicenseCreativeCommonsHttpShape,
-                _:LicenseCreativeCommonsTrailingSlashShape,
-                _:LicenseNotOpenDefinitionShape,
-                _:LicenseOpenDataCommonsShape ;
             sh:name "Licentie"@nl, "License"@en ;
             sh:description """Licentie die van toepassing is op de dataset.
                 Als de dataset een licentie heeft, wordt deze overgenomen door alle distributies die geen eigen licentie hebben."""@nl, """
@@ -170,6 +157,30 @@ nde-dataset:DatasetShape
             ) ;
             sh:message "Gebruik een van de aanbevolen canonieke licentie-URI's"@nl, "Use one of the recommended canonical license URIs"@en ;
         ] ,
+        [
+            sh:path schema:license ;
+            sh:node nde-dataset:LicenseCreativeCommonsHttpsShape ;
+            sh:severity sh:Warning ;
+            sh:message "Gebruik de canonieke Creative Commons licentie-URI met https:// (bijv. https://creativecommons.org/publicdomain/zero/1.0/)"@nl, "Use the canonical Creative Commons license URI with https:// (e.g. https://creativecommons.org/publicdomain/zero/1.0/)"@en ;
+        ] ,
+        [
+            sh:path schema:license ;
+            sh:node nde-dataset:LicenseCreativeCommonsTrailingSlashShape ;
+            sh:severity sh:Warning ;
+            sh:message "Gebruik de canonieke Creative Commons licentie-URI met een afsluitende slash (bijv. https://creativecommons.org/licenses/by/4.0/)"@nl, "Use the canonical Creative Commons license URI with a trailing slash (e.g. https://creativecommons.org/licenses/by/4.0/)"@en ;
+        ] ,
+        [
+            sh:path schema:license ;
+            sh:node nde-dataset:LicenseNotOpenDefinitionShape ;
+            sh:severity sh:Warning ;
+            sh:message "Gebruik de canonieke licentie-URI van de licentiegever zelf (bijv. https://creativecommons.org/licenses/by/4.0/), niet een opendefinition.org-alias"@nl, "Use the canonical license URI from the license issuer itself (e.g. https://creativecommons.org/licenses/by/4.0/), not an opendefinition.org alias"@en ;
+        ] ,
+        [
+            sh:path schema:license ;
+            sh:node nde-dataset:LicenseOpenDataCommonsShape ;
+            sh:severity sh:Warning ;
+            sh:message "Gebruik de canonieke OpenDataCommons licentie-URI met versienummer (bijv. http://opendatacommons.org/licenses/odbl/1.0/)"@nl, "Use the canonical OpenDataCommons license URI with version number (e.g. http://opendatacommons.org/licenses/odbl/1.0/)"@en ;
+        ] ,
         # Recommended properties
         [
             sh:class schema:DataDownload ;
@@ -177,9 +188,6 @@ nde-dataset:DatasetShape
             sh:severity sh:Info ;
             sh:path schema:distribution ;
             sh:name "Dataset distributions"@en , "Distributies van een dataset"@nl ;
-            # No 'sh:node nde-dataset:DistributionShape' here on purpose, because that causes violations on child nodes where we expect
-            # infos, for example on a missing distribution description. The report will be valid while containing violations,
-            # which is confusing to users.
         ] ,
         [
             sh:path schema:creator ;
@@ -190,12 +198,8 @@ nde-dataset:DatasetShape
                 sh:severity sh:Violation ;
             ] ;
             sh:or (
-                [
-                    sh:node nde-dataset:OrganizationShape ;
-                ]
-                [
-                    sh:node nde-dataset:PersonShape ;
-                ]
+                [ sh:class schema:Organization ]
+                [ sh:class schema:Person ]
             ) ;
             sh:name "Persoon of organisatie die de dataset heeft gemaakt"@nl, "Person or organization which created the dataset"@en ;
             sh:description """
@@ -208,27 +212,42 @@ nde-dataset:DatasetShape
             sh:minCount 1 ;
             sh:maxCount 1 ;
             sh:severity sh:Info ;
-            sh:node nde-dataset:DateTimeShape ;
             sh:name "Publicatiedatum van de datasetbeschrijving"@nl, "Publication date of the dataset description"@en ;
             sh:message "Een datasetbeschrijving zou één publicatiedatum moeten bevatten"@nl, "A dataset description should contain one publication date"@en ;
+        ] ,
+        [
+            sh:path schema:datePublished ;
+            sh:node nde-dataset:DateTimeShape ;
+            sh:severity sh:Warning ;
+            sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
         ] ,
         [
             sh:path schema:dateCreated ;
             sh:minCount 1 ;
             sh:maxCount 1 ;
             sh:severity sh:Info ;
-            sh:node nde-dataset:DateTimeShape ;
             sh:name "Aanmaakdatum van de datasetbeschrijving"@nl, "Creation date of the dataset description"@en ;
             sh:message "Een datasetbeschrijving zou één aanmaakdatum moeten bevatten"@nl, "A dataset description should contain one creation date"@en ;
+        ] ,
+        [
+            sh:path schema:dateCreated ;
+            sh:node nde-dataset:DateTimeShape ;
+            sh:severity sh:Warning ;
+            sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
         ] ,
         [
             sh:path schema:dateModified ;
             sh:minCount 1 ;
             sh:maxCount 1 ;
             sh:severity sh:Info ;
-            sh:node nde-dataset:DateTimeShape ;
             sh:name "Datum waarop de datasetbeschrijving voor het laatst is gewijzigd"@nl, "Date on which the dataset description was last modified"@en ;
             sh:message "Een datasetbeschrijving zou één wijzigingsdatum moeten bevatten"@nl, "A dataset description should contain one modification date"@en ;
+        ] ,
+        [
+            sh:path schema:dateModified ;
+            sh:node nde-dataset:DateTimeShape ;
+            sh:severity sh:Warning ;
+            sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
         ] ,
         [
             a sh:PropertyShape ;
@@ -377,7 +396,7 @@ nde-dataset:DatasetShape
 
 nde-dataset:DistributionShape
     a sh:NodeShape ;
-    sh:targetClass schema:DataDownload ;
+    sh:targetObjectsOf schema:distribution ;
     sh:property
         # Required properties
         [
@@ -460,16 +479,26 @@ nde-dataset:DistributionShape
             sh:path schema:datePublished ;
             sh:minCount 0 ;
             sh:maxCount 1 ;
-            sh:node nde-dataset:DateTimeShape ;
             sh:description "Date (or datetime) the distribution was published"@en ;
+        ] ,
+        [
+            sh:path schema:datePublished ;
+            sh:node nde-dataset:DateTimeShape ;
+            sh:severity sh:Warning ;
+            sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
         ] ,
         [
             a sh:PropertyShape ;
             sh:path schema:dateModified ;
             sh:minCount 0 ;
             sh:maxCount 1 ;
-            sh:node nde-dataset:DateTimeShape ;
             sh:description "Date (or datetime) the distribution was last modified"@en ;
+        ] ,
+        [
+            sh:path schema:dateModified ;
+            sh:node nde-dataset:DateTimeShape ;
+            sh:severity sh:Warning ;
+            sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
         ] ,
         [
             a sh:PropertyShape ;
@@ -524,7 +553,16 @@ nde-dataset:DistributionShape
             sh:description "A link to the documentation: for downloads, the application profile, vocabulary or ontology; for [=web APIs=], the protocol specification. See [[#usage-information]]."@en ;
             sh:message "usageInfo zou een IRI moeten zijn"@nl, "usageInfo should be an IRI"@en ;
         ] ,
-        nde-dataset:SchemaDescriptionPropertyShouldExist ;
+        nde-dataset:SchemaDescriptionPropertyShouldExist .
+
+# Dedicated SPARQL constraint shape, structured the same way as the two
+# Organization-required shapes below: sh:targetObjectsOf for the entry, sh:message
+# and sh:severity at the node-shape level (where shacl-engine reads them
+# reliably), and the sh:sparql blank node carrying only the sh:select.
+nde-dataset:DistributionLicenseRequiredShape
+    a sh:NodeShape ;
+    sh:targetObjectsOf schema:distribution ;
+    sh:message "Een distributie of de bovenliggende dataset moet een licentie hebben"@nl, "A distribution or its parent dataset must have a license"@en ;
     sh:sparql [
         sh:select """
             PREFIX schema: <https://schema.org/>
@@ -536,16 +574,11 @@ nde-dataset:DistributionShape
                 FILTER NOT EXISTS { ?dataset schema:license ?datasetLicense }
             }
         """ ;
-        # Dutch omitted: Jena's SPARQL constraint parser rejects multiple sh:message values
-        # (https://github.com/apache/jena/issues/3817).
-        # 'Een distributie of de bovenliggende dataset moet een licentie hebben'
-        sh:message "A distribution or its parent dataset must have a license" ;
-    ]
-.
+    ] .
 
 nde-dataset:OrganizationShape
     a sh:NodeShape ;
-    sh:class schema:Organization ;
+    sh:targetObjectsOf schema:publisher, schema:creator ;
     sh:message "Must be a valid organization" ;
     sh:nodeKind sh:IRI ;
     sh:pattern "^https?://" ;
@@ -580,59 +613,17 @@ nde-dataset:OrganizationShape
             sh:message "Een organisatie mag maximaal één alternatieve naam (per taal) hebben"@nl, "An organization may have at most one alternative name (per language)"@en ;
         ] ,
         [
-            sh:path schema:contactPoint ;
-            sh:class schema:ContactPoint ;
-            sh:minCount 1 ;
-            sh:maxCount 1 ;
-            sh:severity sh:Warning ;
-            nde:futureChange [
-                nde:version "2.0" ;
-                sh:severity sh:Violation ;
-            ] ;
-            sh:node [
-                a sh:NodeShape ;
-                sh:targetClass schema:ContactPoint ;
-                sh:property [
-                    sh:path schema:name ;
-                    sh:minCount 1;
-                    sh:or (
-                      [ sh:datatype xsd:string ]
-                      [ sh:datatype rdf:langString ]
-                    ) ;
-                    sh:uniqueLang true ;
-                    sh:message "ContactPoint moet een naam hebben"@nl, "ContactPoint must have a name"@en ;
-                ] ,
-                [
-                    sh:path schema:email ;
-                    sh:minCount 1;
-                    sh:message "ContactPoint moet een e-mailadres hebben"@nl, "ContactPoint must have an e-mail address"@en ;
-                ]
-            ] ;
-            sh:description """
-                Where [=consumers=] can reach the organization for questions and suggestions about the dataset.
-            """@en ;
-            sh:message "Een organisatie moet een ContactPoint hebben"@nl, "An organization must have a ContactPoint"@en ;
-        ] ,
-        [
             sh:path schema:identifier ;
             sh:or (
                 [ sh:datatype xsd:string ]
-                [
-                  sh:node nde-dataset:IdentifierShape ;
-                  sh:class schema:PropertyValue ;
-               ]
-              ) ;
-            sh:minCount 1 ;
+                [ sh:class schema:PropertyValue ]
+            ) ;
             sh:severity sh:Warning ;
-            nde:futureChange [
-                nde:version "2.0" ;
-                sh:severity sh:Violation ;
-            ] ;
             sh:name "Identifier"@en ;
             sh:description """
                 Identifier(s) of the organization, at least its <a href="https://www.nationaalarchief.nl/archiveren/kennisbank/isil-codes">ISIL code</a>.
             """@en ;
-            sh:message "Een organisatie moet één of meer identifiers hebben"@nl, "An organization must have one or more identifiers"@en ;
+            sh:message "Een identifier moet van type string of schema:PropertyValue zijn"@nl, "An identifier must be of type string or schema:PropertyValue"@en ;
         ] ,
         [
             sh:path schema:sameAs ;
@@ -647,9 +638,122 @@ nde-dataset:OrganizationShape
         ]
 .
 
+# Separate node shapes for Organization-specific constraints that must fire only on
+# schema:Organization instances (not on Person publishers/creators). Each carries its own
+# sh:severity and sh:message at node level, because shacl-engine's sparql validations
+# plugin ignores these fields when set on the sh:sparql blank node itself.
+nde-dataset:OrganizationContactPointRequiredShape
+    a sh:NodeShape ;
+    sh:targetObjectsOf schema:publisher, schema:creator ;
+    sh:severity sh:Warning ;
+    sh:message "Een organisatie moet een ContactPoint hebben"@nl, "An organization must have a ContactPoint"@en ;
+    sh:sparql [
+        sh:select """
+            PREFIX schema: <https://schema.org/>
+            SELECT $this ?path WHERE {
+                $this a schema:Organization .
+                FILTER NOT EXISTS { $this schema:contactPoint ?cp }
+                BIND(schema:contactPoint AS ?path)
+            }
+        """ ;
+    ] .
+
+nde-dataset:OrganizationIdentifierRequiredShape
+    a sh:NodeShape ;
+    sh:targetObjectsOf schema:publisher, schema:creator ;
+    sh:severity sh:Warning ;
+    sh:message "Een organisatie moet één of meer identifiers hebben"@nl, "An organization must have one or more identifiers"@en ;
+    sh:sparql [
+        sh:select """
+            PREFIX schema: <https://schema.org/>
+            SELECT $this ?path WHERE {
+                $this a schema:Organization .
+                FILTER NOT EXISTS { $this schema:identifier ?id }
+                BIND(schema:identifier AS ?path)
+            }
+        """ ;
+    ] .
+
+# PropertyValue identifiers (schema:identifier values that are typed as
+# schema:PropertyValue) carry their own internal structure that we want to
+# validate. The filter $this a schema:PropertyValue ensures string identifiers
+# are skipped — those are already covered by the property-level sh:or check.
+nde-dataset:IdentifierPropertyIDRequiredShape
+    a sh:NodeShape ;
+    sh:targetObjectsOf schema:identifier ;
+    sh:severity sh:Warning ;
+    sh:message "Een identifier moet een propertyID hebben (een IRI)"@nl, "An identifier must have a propertyID (an IRI)"@en ;
+    sh:sparql [
+        sh:select """
+            PREFIX schema: <https://schema.org/>
+            SELECT $this ?path WHERE {
+                $this a schema:PropertyValue .
+                OPTIONAL { $this schema:propertyID ?pid }
+                FILTER (!bound(?pid) || !isIRI(?pid))
+                BIND(schema:propertyID AS ?path)
+            }
+        """ ;
+    ] .
+
+nde-dataset:IdentifierValueRequiredShape
+    a sh:NodeShape ;
+    sh:targetObjectsOf schema:identifier ;
+    sh:severity sh:Warning ;
+    sh:message "Een identifier moet een waarde hebben (een string)"@nl, "An identifier must have a value (a string)"@en ;
+    sh:sparql [
+        sh:select """
+            PREFIX schema: <https://schema.org/>
+            PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+            SELECT $this ?path WHERE {
+                $this a schema:PropertyValue .
+                OPTIONAL { $this schema:value ?v }
+                FILTER (!bound(?v) || !isLiteral(?v) || datatype(?v) != xsd:string)
+                BIND(schema:value AS ?path)
+            }
+        """ ;
+    ] .
+
+nde-dataset:IdentifierNameStringShape
+    a sh:NodeShape ;
+    sh:targetObjectsOf schema:identifier ;
+    sh:severity sh:Warning ;
+    sh:message "De naam van een identifier moet een string zijn"@nl, "The name of an identifier must be a string"@en ;
+    sh:sparql [
+        sh:select """
+            PREFIX schema: <https://schema.org/>
+            PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+            SELECT $this ?path WHERE {
+                $this a schema:PropertyValue .
+                $this schema:name ?n .
+                FILTER (!isLiteral(?n) || (datatype(?n) != xsd:string && datatype(?n) != rdf:langString))
+                BIND(schema:name AS ?path)
+            }
+        """ ;
+    ] .
+
+nde-dataset:ContactPointShape
+    a sh:NodeShape ;
+    sh:targetObjectsOf schema:contactPoint ;
+    sh:property [
+        sh:path schema:name ;
+        sh:minCount 1 ;
+        sh:or (
+            [ sh:datatype xsd:string ]
+            [ sh:datatype rdf:langString ]
+        ) ;
+        sh:uniqueLang true ;
+        sh:message "ContactPoint moet een naam hebben"@nl, "ContactPoint must have a name"@en ;
+    ] ,
+    [
+        sh:path schema:email ;
+        sh:minCount 1 ;
+        sh:message "ContactPoint moet een e-mailadres hebben"@nl, "ContactPoint must have an e-mail address"@en ;
+    ] .
+
 nde-dataset:PersonShape
     a sh:NodeShape ;
-    sh:class schema:Person ;
+    sh:targetObjectsOf schema:publisher, schema:creator ;
     sh:nodeKind sh:IRI ;
     sh:pattern "^https?://" ;
     sh:property [
@@ -664,31 +768,8 @@ nde-dataset:PersonShape
     ] ,
     nde-dataset:SchemaNameLangStringProperty .
 
-nde-dataset:IdentifierShape
-    a sh:NodeShape ;
-    sh:nodeKind sh:BlankNodeOrIRI ;
-    sh:property [
-        sh:path schema:propertyID ;
-        sh:nodeKind sh:IRI ;
-        sh:minCount 1 ;
-        sh:message "Een identifier moet een propertyID hebben"@nl, "An identifier must have a propertyID"@en ;
-    ] ,
-    [
-        sh:path schema:value ;
-        sh:datatype xsd:string ;
-        sh:minCount 1 ;
-        sh:message "Een identifier moet een waarde hebben"@nl, "An identifier must have a value"@en ;
-    ],
-    [
-        sh:path schema:name ;
-        sh:or (
-            [ sh:datatype xsd:string ]
-            [ sh:datatype rdf:langString ]
-        ) ;
-        sh:message "De naam van een identifier moet een string zijn."@nl, "The name of an identifier must be a string."@en ;
-    ] ;
-.
-
+# Reusable constraint shape for ISO-8601 dates. Referenced via sh:node from every
+# date property shape so the datatype + pattern rule lives in one place.
 nde-dataset:DateTimeShape a sh:NodeShape ;
     sh:or (
         [ sh:datatype schema:Date ]
@@ -696,11 +777,7 @@ nde-dataset:DateTimeShape a sh:NodeShape ;
         [ sh:datatype xsd:dateTime ]
         [ sh:datatype xsd:date ]
     ) ;
-    sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
-    sh:name "dateTime" ;
-    sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
-    sh:severity sh:Warning ;
-.
+    sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" .
 
 #
 # Property shapes
@@ -805,43 +882,27 @@ nde-dataset:SchemaDescriptionPropertyShouldExist a sh:PropertyShape ;
     sh:message "Moet een beschrijving hebben"@nl, "Must have a description"@en ;
 .
 
-_:LicenseCreativeCommonsHttpShape a sh:NodeShape ;
-    sh:not [ sh:pattern "^http://creativecommons\\.org/" ] ;
-    sh:severity sh:Warning ;
-    sh:message "Gebruik de canonieke Creative Commons licentie-URI met https:// (bijv. https://creativecommons.org/publicdomain/zero/1.0/)"@nl,
-        "Use the canonical Creative Commons license URI with https:// (e.g. https://creativecommons.org/publicdomain/zero/1.0/)"@en ;
-.
-
-# Validates that CC URIs end with a trailing slash, which also rejects localized deed
-# URLs like /deed.nl. Note that even the DCAT-AP-NL 3.0 examples incorrectly use
-# http://creativecommons.org/publicdomain/zero/1.0/deed.nl as a license URI
+# Reusable constraint shapes for license canonicality, referenced via sh:node
+# from every license property path. Even the DCAT-AP-NL 3.0 examples incorrectly
+# use http://creativecommons.org/publicdomain/zero/1.0/deed.nl as a license URI
 # (see https://docs.geostandaarden.nl/dcat/dcat-ap-nl30/#distribution-licence).
-_:LicenseCreativeCommonsTrailingSlashShape a sh:NodeShape ;
+nde-dataset:LicenseCreativeCommonsHttpsShape a sh:NodeShape ;
+    sh:not [ sh:pattern "^http://creativecommons\\.org/" ] .
+
+nde-dataset:LicenseCreativeCommonsTrailingSlashShape a sh:NodeShape ;
     sh:or (
         [ sh:not [ sh:pattern "^https://creativecommons\\.org/" ] ]
         [ sh:pattern "^https://creativecommons\\.org/.+/$" ]
-    ) ;
-    sh:severity sh:Warning ;
-    sh:message "Gebruik de canonieke Creative Commons licentie-URI met een afsluitende slash (bijv. https://creativecommons.org/licenses/by/4.0/)"@nl,
-        "Use the canonical Creative Commons license URI with a trailing slash (e.g. https://creativecommons.org/licenses/by/4.0/)"@en ;
-.
+    ) .
 
-_:LicenseNotOpenDefinitionShape a sh:NodeShape ;
-    sh:not [ sh:pattern "^https?://www\\.opendefinition\\.org/licenses/" ] ;
-    sh:severity sh:Warning ;
-    sh:message "Gebruik de canonieke licentie-URI van de licentiegever zelf (bijv. https://creativecommons.org/licenses/by/4.0/), niet een opendefinition.org-alias"@nl,
-        "Use the canonical license URI from the license issuer itself (e.g. https://creativecommons.org/licenses/by/4.0/), not an opendefinition.org alias"@en ;
-.
+nde-dataset:LicenseNotOpenDefinitionShape a sh:NodeShape ;
+    sh:not [ sh:pattern "^https?://www\\.opendefinition\\.org/licenses/" ] .
 
-_:LicenseOpenDataCommonsShape a sh:NodeShape ;
+nde-dataset:LicenseOpenDataCommonsShape a sh:NodeShape ;
     sh:or (
         [ sh:not [ sh:pattern "opendatacommons\\.org" ] ]
         [ sh:pattern "^http://opendatacommons\\.org/licenses/[^/]+/[0-9]+\\.[0-9]+/$" ]
-    ) ;
-    sh:severity sh:Warning ;
-    sh:message "Gebruik de canonieke OpenDataCommons licentie-URI met versienummer (bijv. http://opendatacommons.org/licenses/odbl/1.0/)"@nl,
-        "Use the canonical OpenDataCommons license URI with version number (e.g. http://opendatacommons.org/licenses/odbl/1.0/)"@en ;
-.
+    ) .
 
 nde-dataset:AccessRightsProperty a sh:PropertyShape ;
     sh:path dc:accessRights ;
@@ -1013,14 +1074,8 @@ dcat:DatasetShape
             "The organization or person responsible for publishing the dataset."@en ;
         sh:message "Dataset moet een uitgever hebben"@nl, "Dataset must have a publisher"@en ;
         sh:or (
-            [
-                 sh:class foaf:Organization ;
-                 sh:node dcat:OrganizationShape ;
-            ]
-            [
-                 sh:class foaf:Person ;
-                 sh:node dcat:PersonShape ;
-            ]
+            [ sh:class foaf:Organization ]
+            [ sh:class foaf:Person ]
         ) ;
     ],
     [
@@ -1033,14 +1088,8 @@ dcat:DatasetShape
         ] ;
         sh:description "De organisatie verantwoordelijk voor het creëren van de dataset."@nl, "The organization responsible for creating the dataset."@en ;
         sh:or (
-            [
-                 sh:class foaf:Organization ;
-                 sh:node dcat:OrganizationShape ;
-            ]
-            [
-                 sh:class foaf:Person ;
-                 sh:node dcat:PersonShape ;
-            ]
+            [ sh:class foaf:Organization ]
+            [ sh:class foaf:Person ]
         ) ;
         sh:message "Datasetbeschrijving zou een maker moeten bevatten"@nl, "Dataset description should contain a creator"@en ;
     ],
@@ -1052,24 +1101,6 @@ dcat:DatasetShape
         nde:futureChange [
             nde:version "2.0" ;
             sh:severity sh:Violation ;
-        ] ;
-        sh:node [
-            a sh:NodeShape ;
-            sh:property [
-                sh:path vcard:fn ;
-                sh:minCount 1 ;
-                sh:severity sh:Warning ;
-                sh:message "Contactpunt moet een naam hebben"@nl, "Contact point must have a name"@en ;
-            ] ,
-            [
-                sh:path vcard:hasEmail ;
-                sh:minCount 1 ;
-                sh:nodeKind sh:IRI ;
-                sh:pattern "^mailto:" ;
-                sh:severity sh:Warning ;
-                sh:message "Contactpunt moet een e-mailadres hebben als mailto:-IRI"@nl,
-                    "Contact point must have an e-mail address as a mailto: IRI"@en ;
-            ] ;
         ] ;
         sh:description """Contactinformatie waar eindgebruikers contact kunnen opnemen met vragen over de dataset.
         Dit bevat het e-mailadres of een link (URL) naar het contactformulier van de verantwoordelijke organisatie.
@@ -1094,7 +1125,6 @@ dcat:DatasetShape
     [
         sh:path dcat:distribution ;
         sh:class dcat:Distribution ;
-        sh:node dcat:DistributionShape ;
         sh:minCount 1 ;
         sh:severity sh:Info ;
         sh:description "Een beschikbare representatie van de dataset."@nl, "An available representation of the dataset."@en ;
@@ -1135,7 +1165,7 @@ dcat:DatasetShape
 
 dcat:DistributionShape
     a sh:NodeShape ;
-    sh:targetClass dcat:Distribution ;
+    sh:targetObjectsOf dcat:distribution ;
     sh:or (
         [ sh:property [
             sh:minCount 1 ;
@@ -1173,10 +1203,6 @@ dcat:DistributionShape
         sh:minCount 1 ;
         sh:maxCount 1 ;
         sh:nodeKind sh:IRI ;
-        sh:node _:LicenseCreativeCommonsHttpShape,
-            _:LicenseCreativeCommonsTrailingSlashShape,
-            _:LicenseNotOpenDefinitionShape,
-            _:LicenseOpenDataCommonsShape ;
         sh:severity sh:Warning ;
         nde:futureChange [
             nde:version "2.0" ;
@@ -1185,6 +1211,30 @@ dcat:DistributionShape
         sh:description "De licentie waaronder de distributie beschikbaar is gesteld."@nl,
             "The license under which the distribution is made available."@en ;
         sh:message "Distributie moet een licentie hebben"@nl, "Distribution must have a license"@en ;
+    ] ,
+    [
+        sh:path dc:license ;
+        sh:node nde-dataset:LicenseCreativeCommonsHttpsShape ;
+        sh:severity sh:Warning ;
+        sh:message "Gebruik de canonieke Creative Commons licentie-URI met https:// (bijv. https://creativecommons.org/publicdomain/zero/1.0/)"@nl, "Use the canonical Creative Commons license URI with https:// (e.g. https://creativecommons.org/publicdomain/zero/1.0/)"@en ;
+    ] ,
+    [
+        sh:path dc:license ;
+        sh:node nde-dataset:LicenseCreativeCommonsTrailingSlashShape ;
+        sh:severity sh:Warning ;
+        sh:message "Gebruik de canonieke Creative Commons licentie-URI met een afsluitende slash (bijv. https://creativecommons.org/licenses/by/4.0/)"@nl, "Use the canonical Creative Commons license URI with a trailing slash (e.g. https://creativecommons.org/licenses/by/4.0/)"@en ;
+    ] ,
+    [
+        sh:path dc:license ;
+        sh:node nde-dataset:LicenseNotOpenDefinitionShape ;
+        sh:severity sh:Warning ;
+        sh:message "Gebruik de canonieke licentie-URI van de licentiegever zelf (bijv. https://creativecommons.org/licenses/by/4.0/), niet een opendefinition.org-alias"@nl, "Use the canonical license URI from the license issuer itself (e.g. https://creativecommons.org/licenses/by/4.0/), not an opendefinition.org alias"@en ;
+    ] ,
+    [
+        sh:path dc:license ;
+        sh:node nde-dataset:LicenseOpenDataCommonsShape ;
+        sh:severity sh:Warning ;
+        sh:message "Gebruik de canonieke OpenDataCommons licentie-URI met versienummer (bijv. http://opendatacommons.org/licenses/odbl/1.0/)"@nl, "Use the canonical OpenDataCommons license URI with version number (e.g. http://opendatacommons.org/licenses/odbl/1.0/)"@en ;
     ] .
 
 dcat:CatalogShape
@@ -1268,8 +1318,28 @@ dcat:CatalogShape
         sh:message "Catalogus moet minimaal één dataset bevatten"@nl, "Catalog must contain at least one dataset"@en ;
     ] .
 
+dcat:ContactPointShape
+    a sh:NodeShape ;
+    sh:targetObjectsOf dcat:contactPoint ;
+    sh:property [
+        sh:path vcard:fn ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "Contactpunt moet een naam hebben"@nl, "Contact point must have a name"@en ;
+    ] ,
+    [
+        sh:path vcard:hasEmail ;
+        sh:minCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:pattern "^mailto:" ;
+        sh:severity sh:Warning ;
+        sh:message "Contactpunt moet een e-mailadres hebben als mailto:-IRI"@nl,
+            "Contact point must have an e-mail address as a mailto: IRI"@en ;
+    ] .
+
 dcat:OrganizationShape
     a sh:NodeShape ;
+    sh:targetObjectsOf dc:publisher, dc:creator ;
     sh:nodeKind sh:IRI ;
     sh:pattern "^https?://" ;
     sh:property [
@@ -1287,6 +1357,7 @@ dcat:OrganizationShape
 
 dcat:PersonShape
     a sh:NodeShape ;
+    sh:targetObjectsOf dc:publisher, dc:creator ;
     sh:nodeKind sh:IRI ;
     sh:pattern "^https?://" ;
     sh:property [

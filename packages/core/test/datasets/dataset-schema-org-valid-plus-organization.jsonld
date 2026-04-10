@@ -43,6 +43,7 @@
    },
    {
       "@context": "https://schema.org",
+      "@id": "https://haagsgemeentearchief.nl/",
       "@type": "Organization",
       "url": "https://haagsgemeentearchief.nl/",
       "name": "Haags Gemeentearchief",

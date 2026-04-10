@@ -4,10 +4,7 @@
 import factory from 'rdf-ext';
 import { rdfDereferencer } from 'rdf-dereference';
 import type { Dataset, DatasetCore } from '@rdfjs/types';
-import type {
-  ValidationReport,
-  ValidationResult as ShaclValidationResult,
-} from 'shacl-engine';
+import type { ValidationReport } from 'shacl-engine';
 import { Validator as ShaclValidator } from 'shacl-engine';
 import { validations as sparqlValidations } from 'shacl-engine/sparql.js';
 import { standardizeSchemaOrgPrefix } from './transform.ts';
@@ -17,9 +14,7 @@ export interface Validator {
 }
 
 /**
- * Use shacl-engine instead of rdf-validate-shacl because it:
- * - supports detailed results for sh:node shapes nested in sh:or clauses;
- * - performs better.
+ * Use shacl-engine instead of rdf-validate-shacl for its performance and SPARQL constraint support.
  */
 export class ShaclEngineValidator implements Validator {
   private inner: ShaclValidator;
@@ -27,7 +22,6 @@ export class ShaclEngineValidator implements Validator {
   public constructor(dataset: DatasetCore) {
     this.inner = new ShaclValidator(dataset, {
       factory,
-      details: true,
       validations: sparqlValidations,
     });
   }
@@ -51,12 +45,10 @@ export class ShaclEngineValidator implements Validator {
     }
 
     const report = await this.inner.validate({ dataset });
-    const state = hasViolation(report) ? 'invalid' : 'valid';
-
-    return filterOutViolations({
-      state,
+    return {
+      state: hasViolation(report) ? 'invalid' : 'valid',
       errors: report.dataset,
-    });
+    };
   }
 }
 
@@ -92,58 +84,4 @@ export const shacl = (property: string) =>
  * violation, including Info and Warning.
  */
 const hasViolation = (report: ValidationReport) =>
-  report.results.some((result) => resultIsViolation(result));
-
-const resultIsViolation = (result: ShaclValidationResult): boolean => {
-  const isViolation = result.severity.equals(shacl('Violation'));
-
-  // A non-Violation result (Warning/Info) is not a violation itself. However, NodeConstraintComponent
-  // is a wrapper that links to a referenced node shape whose independent constraints may still be
-  // violations (e.g. ContactPoint is optional/Warning, but IF present MUST have certain properties).
-  if (
-    !isViolation &&
-    !result.constraintComponent.equals(shacl('NodeConstraintComponent'))
-  ) {
-    return false;
-  }
-
-  const children = result.results;
-  if (children.length === 0) {
-    return isViolation;
-  }
-
-  // For sh:or, each child represents an alternative. The sh:or is only a real violation if ALL alternatives have real
-  // violations; if any alternative has no real violations, that alternative is satisfied and so is the sh:or.
-  if (result.constraintComponent.equals(shacl('OrConstraintComponent'))) {
-    return children.every((child) => resultIsViolation(child));
-  }
-
-  return children.some((child) => resultIsViolation(child));
-};
-
-/**
- * If the result is valid, make sure to downgrade parent shapes (which have sh:details)
- * with severity violation to warning.
- */
-const filterOutViolations = (validationResult: ValidationResult) => {
-  if (
-    validationResult.state === 'no-dataset' ||
-    validationResult.state === 'invalid'
-  ) {
-    return validationResult;
-  }
-
-  return {
-    state: validationResult.state,
-    errors: validationResult.errors.map((quad, dataset) => {
-      if (
-        quad.predicate.equals(shacl('resultSeverity')) &&
-        quad.object.equals(shacl('Violation'))
-      ) {
-        quad.object = shacl('Warning');
-      }
-
-      return quad;
-    }),
-  };
-};
+  report.results.some((result) => result.severity.equals(shacl('Violation')));

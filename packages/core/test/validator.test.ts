@@ -123,7 +123,7 @@ describe('Validator', () => {
       'dataset-schema-org-invalid-contactpoint.jsonld',
     );
     expect(report.state).toBe('invalid');
-    expectViolations(report as InvalidDataset, ['https://schema.org/email'], 2);
+    expectViolations(report as InvalidDataset, ['https://schema.org/email']);
   });
 
   it('accepts valid DCAT dataset', async () => {
@@ -154,7 +154,7 @@ describe('Validator', () => {
   it('reports invalid Schema.org catalog', async () => {
     const report = await validate('catalog-schema-org-invalid.jsonld');
     expect(report.state).toEqual('invalid');
-    expectViolations(report as InvalidDataset, ['https://schema.org/name'], 3);
+    expectViolations(report as InvalidDataset, ['https://schema.org/name'], 2);
   });
 
   it('accepts valid DCAT catalog', async () => {
@@ -207,6 +207,94 @@ describe('Validator', () => {
     expect(report.state).toEqual('no-dataset');
   });
 
+  it('SPARQL-constrained Organization checks produce fully structured results', async () => {
+    const report = (await validate(
+      'dataset-schema-org-gouda-tijdmachine.ttl',
+      new StreamParser(),
+    )) as Valid;
+
+    const first = (predicate: ReturnType<typeof shacl>, object: unknown) =>
+      [...report.errors.match(null, predicate, object as never)][0]?.subject;
+    const literal = (subject: unknown, predicate: ReturnType<typeof shacl>) =>
+      [...report.errors.match(subject as never, predicate, null)][0]?.object
+        .value;
+
+    const contactPointResult = first(
+      shacl('resultPath'),
+      rdf.namedNode('https://schema.org/contactPoint'),
+    );
+    const identifierResult = first(
+      shacl('resultPath'),
+      rdf.namedNode('https://schema.org/identifier'),
+    );
+    expect(contactPointResult).toBeDefined();
+    expect(identifierResult).toBeDefined();
+
+    for (const [result, expectedMessage] of [
+      [contactPointResult, 'An organization must have a ContactPoint'],
+      [identifierResult, 'An organization must have one or more identifiers'],
+    ] as const) {
+      expect(literal(result, shacl('focusNode'))).toEqual(
+        'https://www.goudatijdmachine.nl/omeka/api/items/232',
+      );
+      expect(literal(result, shacl('resultSeverity'))).toEqual(
+        'http://www.w3.org/ns/shacl#Warning',
+      );
+      expect(literal(result, shacl('sourceConstraintComponent'))).toEqual(
+        'http://www.w3.org/ns/shacl#SPARQLConstraintComponent',
+      );
+      expect(
+        [...report.errors.match(result, shacl('resultMessage'), null)].some(
+          (quad) =>
+            quad.object.termType === 'Literal' &&
+            quad.object.language === 'en' &&
+            quad.object.value === expectedMessage,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it('SPARQL-constrained Organization checks skip Person publishers/creators', async () => {
+    // Persons must pass v2.0 validation: contactPoint and identifier are promoted
+    // from Warning to Violation, and Person instances legitimately lack both.
+    const report = (await validate(
+      'dataset-dcat-valid-minimal.jsonld',
+    )) as Valid;
+    expect(report.state).toEqual('valid');
+    expectViolations(report, ['https://schema.org/contactPoint'], 0);
+    expectViolations(report, ['https://schema.org/identifier'], 0);
+  });
+
+  it('captures full SHACL feedback for Gouda Tijdmachine fixture', async () => {
+    const report = (await validate(
+      'dataset-schema-org-gouda-tijdmachine.ttl',
+      new StreamParser(),
+    )) as Valid;
+
+    expect(report.state).toEqual('valid');
+    expect(formatReport(report)).toMatchInlineSnapshot(`
+      "[Warning] https://schema.org/contactPoint on <https://www.goudatijdmachine.nl/omeka/api/items/232>: An organization must have a ContactPoint
+      [Warning] https://schema.org/identifier on <https://www.goudatijdmachine.nl/omeka/api/items/232>: An organization must have one or more identifiers
+      [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use one of the recommended canonical license URIs
+      [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use the canonical Creative Commons license URI with https:// (e.g. https://creativecommons.org/publicdomain/zero/1.0/)"
+    `);
+  });
+
+  it('validates PropertyValue identifier sub-constraints (propertyID, value, name)', async () => {
+    // PropertyValue identifiers carry their own internal structure: propertyID
+    // (must be IRI), value (must be xsd:string), name (must be string/langString
+    // if present). The fixture has a PropertyValue identifier missing all three —
+    // each constraint should fire as its own top-level result. String identifiers
+    // would not match the SPARQL filter $this a schema:PropertyValue.
+    const report = (await validate(
+      'dataset-schema-org-invalid-property-value-identifier.jsonld',
+    )) as Valid;
+    expect(report.state).toEqual('valid');
+    expectViolations(report, ['https://schema.org/propertyID']);
+    expectViolations(report, ['https://schema.org/value']);
+    expectViolations(report, ['https://schema.org/name']);
+  });
+
   it('reports nested violations', async () => {
     const report = (await validate(
       'dataset-schema-org-multiple-alternate-names.ttl',
@@ -215,8 +303,8 @@ describe('Validator', () => {
 
     expect(report.state).toEqual('valid');
 
-    // Once for creator and once for publisher.
-    expectViolations(report, ['https://schema.org/alternateName'], 2);
+    // Once on the organization, regardless of how many predicates reference it.
+    expectViolations(report, ['https://schema.org/alternateName']);
 
     // If dataset is valid, any parent violations must be removed.
     expect(
@@ -258,8 +346,8 @@ describe('Validator', () => {
     )) as Valid;
 
     expect(report.state).toEqual('valid');
-    // Once for creator and once for publisher (both reference the same organization).
-    expectViolations(report, ['https://schema.org/sameAs'], 2);
+    // Once on the organization, independent of its creator/publisher usage.
+    expectViolations(report, ['https://schema.org/sameAs']);
   });
 
   it('reports non-canonical Creative Commons license URI as warning, not violation', async () => {
@@ -312,6 +400,35 @@ const dataset = async (filename: string, parser?: Transform) => {
       stream.pipe(parser ?? (new JsonLdParser() as unknown as Transform)),
     )) as unknown as Dataset;
 };
+
+const formatReport = (report: InvalidDataset | Valid): string => {
+  const literal = (subject: unknown, predicate: ReturnType<typeof shacl>) =>
+    [...report.errors.match(subject as never, predicate, null)][0]?.object
+      .value ?? '';
+
+  const resultNodes = [
+    ...report.errors.match(null, rdfType, shacl('ValidationResult')),
+  ].map((quad) => quad.subject);
+
+  const lines = resultNodes.map((node) => {
+    const severity =
+      literal(node, shacl('resultSeverity')).split('#').pop() ?? '';
+    const path = literal(node, shacl('resultPath'));
+    const focus = literal(node, shacl('focusNode'));
+    const message =
+      [...report.errors.match(node, shacl('resultMessage'), null)].find(
+        (quad) =>
+          quad.object.termType === 'Literal' && quad.object.language === 'en',
+      )?.object.value ?? '';
+    return `[${severity}] ${path} on <${focus}>: ${message}`;
+  });
+
+  return lines.sort().join('\n');
+};
+
+const rdfType = rdf.namedNode(
+  'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+);
 
 const expectViolations = (
   report: InvalidDataset | Valid,
