@@ -1,24 +1,14 @@
 @import 'tailwindcss';
+@import '../../../node_modules/flowbite-svelte/dist/theme-selector/themes/default.css';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
 @plugin 'flowbite/plugin';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @source "../../../node_modules/flowbite-svelte/dist";
 @source "../../../node_modules/flowbite-svelte-icons/dist";
 @source "../../../node_modules/@flowbite-svelte-plugins/chart/dist";
-
-/* Prevent horizontal scrolling on mobile - fixes tooltip overflow issues */
-html,
-body {
-  overflow-x: hidden;
-}
-
-/* Enable dark mode based on OS preference */
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-  }
-}
 
 /* Shimmer animation for skeleton loading */
 @keyframes shimmer {
@@ -35,20 +25,20 @@ body {
   animation: shimmer 1.5s infinite;
 }
 
-/* Fix Flowbite tooltip popover background: browsers apply a white background to [popover]
-   elements via the UA stylesheet, overriding Tailwind bg-* classes. This makes dark tooltips
-   invisible in light mode (white text on white) and causes a white arrow in dark mode.
-   See https://github.com/themesberg/flowbite-svelte/issues/1941 */
-[popover][data-scope='popper'] {
-  background: transparent;
+/* Flowbite Svelte tooltip overrides:
+   1. The dark variant has no border utility, so `border-color` defaults to currentColor
+      (white). The arrow uses `border-inherit`, so without this override the arrow picks
+      up a white border that shows through its clip-path in dark mode.
+   2. The default `bg-dark` (gray-800) matches our card backgrounds in dark mode, so
+      tooltips blend in. Use a lighter shade (gray-700) to make them stand out. */
+[popover][role='tooltip'] {
+  border: 1px solid var(--color-gray-700);
 }
-
-/* Fix Flowbite tooltip hover gap - creates invisible bridge between trigger and tooltip */
-.tooltip::before {
-  content: '';
-  position: absolute;
-  top: -10px;
-  left: 0;
-  right: 0;
-  height: 10px;
+.dark [popover][role='tooltip'] {
+  background-color: var(--color-gray-600);
+  border-color: var(--color-gray-400);
+}
+.dark [popover][role='tooltip'] .popover-arrow {
+  background-color: var(--color-gray-600);
+  border-color: var(--color-gray-400);
 }
