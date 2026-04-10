@@ -1,0 +1,45 @@
+@prefix schema: <https://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://www.goudatijdmachine.nl/omeka/api/items/12997>
+  a schema:DataCatalog ;
+  schema:dataset <https://www.goudatijdmachine.nl/omeka/api/items/3030723> ;
+  schema:description "beschrijving..."@nl ;
+  schema:name "Datasets Gouda Tijdmachine"@nl ;
+  schema:publisher <https://www.goudatijdmachine.nl/omeka/api/items/232> .
+
+<https://www.goudatijdmachine.nl/omeka/api/items/3030723>
+  a schema:Dataset ;
+  schema:datePublished "2026-11-16"^^xsd:date ;
+  schema:description "beschrijving..."@nl ;
+  schema:distribution <https://www.goudatijdmachine.nl/omeka/api/items/3030722> ;
+  schema:keywords "pico"^^xsd:string, "burgerLinker"^^xsd:string ;
+  schema:license <http://creativecommons.org/publicdomain/zero/1.0/deed.nl> ;
+  schema:name "Goudse geboorte- ,huwelijks- en overlijdensakten in PiCo"@nl ;
+  schema:publisher <https://www.goudatijdmachine.nl/omeka/api/items/232> ;
+  schema:creator <https://www.goudatijdmachine.nl/omeka/api/items/232> ;
+  schema:dateModified "2026-11-16"^^xsd:date ;
+  schema:dateCreated "2025-11-16"^^xsd:date ;
+  schema:temporalCoverage "1811-1930"^^xsd:string ;
+  schema:genre "Historische persoonsgegevens"@nl ;
+  schema:spatialCoverage <https://gemeentegeschiedenis.nl/gemeentenaam/Gouda> .
+
+<https://www.goudatijdmachine.nl/omeka/api/items/232>
+  a schema:Organization ;
+  schema:alternateName "GTM"@nl ;
+  schema:name "Gouda Tijdmachine"@nl ;
+#  schema:identifier "123456789"^^xsd:string ;
+#  schema:contactPoint [
+#      a schema:ContactPoint ;
+#      schema:name "Datasets Department" ;
+#      schema:email "datasets@kb.nl"
+#  ]
+.
+
+<https://www.goudatijdmachine.nl/omeka/api/items/3030722>
+  a schema:DataDownload ;
+  schema:contentUrl <https://qlever.coret.org/oabs> ;
+  schema:datePublished "2025-11-16"^^xsd:date ;
+  schema:description "met textindex"@nl ;
+  schema:encodingFormat "application/sparql-results+json"^^xsd:string ;
+  schema:name "SPARQL-endpoint (Qlever)"@nl .

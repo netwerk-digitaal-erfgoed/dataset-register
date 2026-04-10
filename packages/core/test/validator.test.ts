@@ -207,6 +207,54 @@ describe('Validator', () => {
     expect(report.state).toEqual('no-dataset');
   });
 
+  it('captures full SHACL feedback for Gouda Tijdmachine fixture', async () => {
+    const report = (await validate(
+      'dataset-schema-org-gouda-tijdmachine.ttl',
+      new StreamParser(),
+    )) as Valid;
+
+    expect(report.state).toEqual('valid');
+    expect(formatReport(report)).toMatchInlineSnapshot(`
+      "[Warning]  on <http://creativecommons.org/publicdomain/zero/1.0/deed.nl>: Use the canonical Creative Commons license URI with https:// (e.g. https://creativecommons.org/publicdomain/zero/1.0/)
+      [Warning]  on <http://creativecommons.org/publicdomain/zero/1.0/deed.nl>: Use the canonical Creative Commons license URI with https:// (e.g. https://creativecommons.org/publicdomain/zero/1.0/)
+      [Warning]  on <https://www.goudatijdmachine.nl/omeka/api/items/232>: 
+      [Warning]  on <https://www.goudatijdmachine.nl/omeka/api/items/232>: 
+      [Warning]  on <https://www.goudatijdmachine.nl/omeka/api/items/232>: 
+      [Warning]  on <https://www.goudatijdmachine.nl/omeka/api/items/232>: 
+      [Warning]  on <https://www.goudatijdmachine.nl/omeka/api/items/232>: 
+      [Warning]  on <https://www.goudatijdmachine.nl/omeka/api/items/232>: 
+      [Warning]  on <https://www.goudatijdmachine.nl/omeka/api/items/232>: 
+      [Warning]  on <https://www.goudatijdmachine.nl/omeka/api/items/232>: 
+      [Warning]  on <https://www.goudatijdmachine.nl/omeka/api/items/232>: 
+      [Warning]  on <https://www.goudatijdmachine.nl/omeka/api/items/232>: 
+      [Warning]  on <https://www.goudatijdmachine.nl/omeka/api/items/232>: 
+      [Warning]  on <https://www.goudatijdmachine.nl/omeka/api/items/232>: 
+      [Warning]  on <https://www.goudatijdmachine.nl/omeka/api/items/232>: 
+      [Warning]  on <https://www.goudatijdmachine.nl/omeka/api/items/232>: 
+      [Warning]  on <https://www.goudatijdmachine.nl/omeka/api/items/232>: 
+      [Warning] https://schema.org/contactPoint on <https://www.goudatijdmachine.nl/omeka/api/items/232>: An organization must have a ContactPoint
+      [Warning] https://schema.org/contactPoint on <https://www.goudatijdmachine.nl/omeka/api/items/232>: An organization must have a ContactPoint
+      [Warning] https://schema.org/contactPoint on <https://www.goudatijdmachine.nl/omeka/api/items/232>: An organization must have a ContactPoint
+      [Warning] https://schema.org/contactPoint on <https://www.goudatijdmachine.nl/omeka/api/items/232>: An organization must have a ContactPoint
+      [Warning] https://schema.org/contactPoint on <https://www.goudatijdmachine.nl/omeka/api/items/232>: An organization must have a ContactPoint
+      [Warning] https://schema.org/creator on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: A dataset description should contain a creator
+      [Warning] https://schema.org/creator on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: A dataset description should contain a creator
+      [Warning] https://schema.org/dataset on <https://www.goudatijdmachine.nl/omeka/api/items/12997>: A data catalog must have at least one dataset
+      [Warning] https://schema.org/identifier on <https://www.goudatijdmachine.nl/omeka/api/items/232>: An organization must have one or more identifiers
+      [Warning] https://schema.org/identifier on <https://www.goudatijdmachine.nl/omeka/api/items/232>: An organization must have one or more identifiers
+      [Warning] https://schema.org/identifier on <https://www.goudatijdmachine.nl/omeka/api/items/232>: An organization must have one or more identifiers
+      [Warning] https://schema.org/identifier on <https://www.goudatijdmachine.nl/omeka/api/items/232>: An organization must have one or more identifiers
+      [Warning] https://schema.org/identifier on <https://www.goudatijdmachine.nl/omeka/api/items/232>: An organization must have one or more identifiers
+      [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: A dataset description must contain one license (in the form of a URI)
+      [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: A dataset description must contain one license (in the form of a URI)
+      [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use one of the recommended canonical license URIs
+      [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use one of the recommended canonical license URIs
+      [Warning] https://schema.org/publisher on <https://www.goudatijdmachine.nl/omeka/api/items/12997>: A data catalog must have a valid publisher
+      [Warning] https://schema.org/publisher on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: A dataset description must contain a valid publisher (without warnings)
+      [Warning] https://schema.org/publisher on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: A dataset description must contain a valid publisher (without warnings)"
+    `);
+  });
+
   it('reports nested violations', async () => {
     const report = (await validate(
       'dataset-schema-org-multiple-alternate-names.ttl',
@@ -311,6 +359,36 @@ const dataset = async (filename: string, parser?: Transform) => {
     .import(
       stream.pipe(parser ?? (new JsonLdParser() as unknown as Transform)),
     )) as unknown as Dataset;
+};
+
+const formatReport = (report: InvalidDataset | Valid): string => {
+  const resultType = rdf.namedNode(
+    'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+  );
+  const resultNodes = [
+    ...report.errors.match(null, resultType, shacl('ValidationResult')),
+  ].map((quad) => quad.subject);
+
+  const lines = resultNodes.map((node) => {
+    const severity =
+      [...report.errors.match(node, shacl('resultSeverity'), null)][0]?.object
+        .value.split('#')
+        .pop() ?? '';
+    const path =
+      [...report.errors.match(node, shacl('resultPath'), null)][0]?.object
+        .value ?? '';
+    const focus =
+      [...report.errors.match(node, shacl('focusNode'), null)][0]?.object
+        .value ?? '';
+    const message =
+      [...report.errors.match(node, shacl('resultMessage'), null)].find(
+        (quad) =>
+          quad.object.termType === 'Literal' && quad.object.language === 'en',
+      )?.object.value ?? '';
+    return `[${severity}] ${path} on <${focus}>: ${message}`;
+  });
+
+  return lines.sort().join('\n');
 };
 
 const expectViolations = (
