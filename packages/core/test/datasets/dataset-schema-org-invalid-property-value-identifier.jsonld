@@ -1,0 +1,32 @@
+{
+  "@context": "https://schema.org/",
+  "@type": "Dataset",
+  "@id": "https://example.org/dataset/1",
+  "name": { "@value": "Test dataset", "@language": "nl" },
+  "description": { "@value": "Test description", "@language": "nl" },
+  "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "datePublished": "2025-01-01",
+  "dateCreated": "2025-01-01",
+  "dateModified": "2025-01-01",
+  "distribution": {
+    "@type": "DataDownload",
+    "contentUrl": "https://example.org/data.csv",
+    "encodingFormat": "text/csv",
+    "name": { "@value": "Data CSV", "@language": "en" },
+    "description": { "@value": "Data CSV", "@language": "en" }
+  },
+  "publisher": {
+    "@id": "https://example.org/org/1",
+    "@type": "Organization",
+    "name": { "@value": "Example Organization", "@language": "nl" },
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "name": "Datasets Manager",
+      "email": "datasets@example.org"
+    },
+    "identifier": {
+      "@type": "PropertyValue",
+      "name": { "@id": "https://example.org/name-iri" }
+    }
+  }
+}

@@ -797,11 +797,13 @@ This is an overview of required and recommended attributes.
 {% assign datasetShape = nodeShapes | where: 'targetClass', 'schema:Dataset' | first -%}
 {% render 'attributes', name: 'Dataset', nodeShape: datasetShape %}
 
-{% assign organizationShape = nodeShapes | where: 'class', 'schema:Organization' | first -%}
-{% render 'attributes', name: 'Organization', nodeShape: organizationShape %}
+{% for shape in nodeShapes -%}
+{%- if shape['@id'] == 'nde-dataset:OrganizationShape' %}{% assign organizationShape = shape %}{% endif -%}
+{%- if shape['@id'] == 'nde-dataset:DistributionShape' %}{% assign distributionShape = shape %}{% endif -%}
+{%- endfor %}
+{% render 'attributes', name: 'Organization', nodeShape: organizationShape, targetClass: 'schema:Organization' %}
 
-{% assign distributionShape = nodeShapes| where: 'targetClass', 'schema:DataDownload' | first -%}
-{% render 'attributes', name: 'Distribution', nodeShape: distributionShape %}
+{% render 'attributes', name: 'Distribution', nodeShape: distributionShape, targetClass: 'schema:DataDownload' %}
 
 {% assign catalogShape = nodeShapes | where: 'class', 'schema:DataCatalog' | first -%}
 {% render 'attributes', name: 'DataCatalog', nodeShape: catalogShape %}
