@@ -3,6 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <script>
+      // Apply dark mode based on OS preference before first paint to avoid FOUC.
+      // Flowbite Svelte v2 uses the .dark class to toggle dark mode.
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.classList.add('dark');
+      }
+      window
+        .matchMedia('(prefers-color-scheme: dark)')
+        .addEventListener('change', (event) => {
+          document.documentElement.classList.toggle('dark', event.matches);
+        });
+    </script>
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">
