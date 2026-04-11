@@ -2,7 +2,7 @@
 
 <table>
     {% assign class = nodeShape.targetClass | default: nodeShape.class | default: targetClass -%}
-    <caption>[{{ class | replace: 'https://schema.org/', 'https://schema.org/' }}]({{ class }}) properties</caption>
+    <caption>[{{ class }}]({{ class }}) properties</caption>
     <thead>
         <tr>
             <th>Property</th>
@@ -24,7 +24,7 @@
         {% for property in merged_properties %}
         {% unless property.path %}{% continue %}{% endunless %}
         <tr>
-            <th scope="row">[{{ property.path | replace: 'https://schema.org/', 'schema:' }}]({{ property.path }})</th>
+            <th scope="row">[{{ property.path }}]({{ property.path }})</th>
             <td>
                 {%- if property.node['@id'] == "https://def.nde.nl/dataset#DateTimeShape" -%}
                     See [[#dataset-date]].
