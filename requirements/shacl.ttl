@@ -47,6 +47,10 @@ nde-dataset:DatacatalogShape
             sh:minCount 1 ;
             sh:maxCount 1 ;
             sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
             sh:name "Persoon of organisatie die de datacatalogus heeft gepubliceerd"@nl, "Person or organization that published the data catalog"@en ;
             sh:description """
                 The publisher of the data catalog.
@@ -1117,6 +1121,7 @@ dcat:DatasetShape
     [
         sh:path dc:publisher ;
         sh:minCount 1 ;
+        sh:maxCount 1 ;
         sh:severity sh:Warning ;
         nde:futureChange [
             nde:version "2.0" ;
@@ -1322,6 +1327,7 @@ dcat:CatalogShape
     [
         sh:path dc:publisher ;
         sh:minCount 1 ;
+        sh:maxCount 1 ;
         sh:severity sh:Warning ;
         nde:futureChange [
             nde:version "2.0" ;
