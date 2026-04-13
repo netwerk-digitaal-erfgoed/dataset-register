@@ -1017,6 +1017,16 @@ dcat:DatasetShape
         sh:message "Dataset zou een aanmaakdatum moeten hebben"@nl, "Dataset description  should have a creation date"@en ;
     ],
     [
+        sh:path dc:created ;
+        sh:node nde-dataset:DateTimeShape ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
+    ],
+    [
         sh:path dc:issued ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
@@ -1025,12 +1035,32 @@ dcat:DatasetShape
         sh:message "Dataset zou een uitgavedatum moeten bevatten"@nl, "Dataset description  should contain an issued date"@en ;
     ],
     [
+        sh:path dc:issued ;
+        sh:node nde-dataset:DateTimeShape ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
+    ],
+    [
         sh:path dc:modified ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
         sh:severity sh:Info ;
         sh:description "De meest recente datum waarop de dataset is gewijzigd of aangepast."@nl, "The most recent date on which the dataset was changed or modified."@en ;
         sh:message "Datasetbeschrijving zou een laatste wijzigingsdatum moeten bevatten"@nl, "Dataset description  should contain a modification date"@en ;
+    ],
+    [
+        sh:path dc:modified ;
+        sh:node nde-dataset:DateTimeShape ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
     ],
     [
         sh:path dcat:keyword ;
