@@ -520,9 +520,7 @@ nde-dataset:DistributionShape
             sh:maxCount 1 ;
             nde:futureChange [
                 nde:version "2.0" ;
-                sh:minCount 1 ;
                 sh:nodeKind sh:IRI ;
-                sh:severity sh:Violation ;
             ] ;
             sh:description """Licentie die van toepassing is op de distributie.
         Als de distributie geen eigen licentie heeft, wordt de licentie van de bovenliggende dataset overgenomen.
