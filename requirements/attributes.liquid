@@ -19,6 +19,13 @@
             <td>1</td>
             <td>Required</td>
         </tr>
+        {% elsif nodeShape['nde:futureChange'].nodeKind == "IRI" %}
+        <tr>
+            <th scope="row">@id</th>
+            <td>The HTTP [[IRI]] of the {{ name }}.</td>
+            <td>1</td>
+            <td>Recommended<br><small>v{{ nodeShape['nde:futureChange']['nde:version'] }}: must be IRI</small></td>
+        </tr>
         {% endif %}
         {% assign merged_properties = nodeShape.property | mergePropertiesByPath -%}
         {% for property in merged_properties %}
@@ -26,22 +33,25 @@
         <tr>
             <th scope="row">[{{ property.path }}]({{ property.path }})</th>
             <td>
-                {%- if property.node['@id'] == "https://def.nde.nl/dataset#DateTimeShape" -%}
-                    See [[#dataset-date]].
-                {%- elsif property.path == "https://schema.org/publisher" or property.path == "https://schema.org/creator" -%}
+                {%- if property.node['@id'] == "nde-dataset:DateTimeShape" -%}
+                    {%- assign description = property.description | lang: "en" -%}
+                    {%- if description != "" -%}{{ description }} {% endif -%}See [[#dataset-date]].
+                {%- elsif property.path == "schema:publisher" or property.path == "schema:creator" -%}
                     {{ property.name | lang: "en" }}. See [[#creator-publisher-information]].
-                {%- elsif property.path == "https://schema.org/contactPoint" -%}
+                {%- elsif property.path == "schema:contactPoint" -%}
                     {{ property.description | lang: "en" }} See [[#contact]].
                 {%- elsif name == 'Dataset' -%}
-                    {%- if property.path == "https://schema.org/name" or property.path == "https://schema.org/description" -%}
+                    {%- if property.path == "schema:name" -%}
                         {{ property.name | lang: "en" }}. See [[#dataset-basic]].
-                    {%- elsif property.path == "https://schema.org/license" -%}
-                        See [[#dataset-license]].
-                    {%- elsif property.path == "https://schema.org/distribution" -%}
-                        See [[#dataset-distributions]].
-                    {%- elsif property.path == "https://schema.org/version" -%}
-                        See [[#dataset-versions]].
-                    {%- elsif property.node['@id'] == "https://def.nde.nl/dataset#DateTimeShape" -%}
+                    {%- elsif property.path == "schema:description" -%}
+                        {{ property.description | lang: "en" }} See [[#dataset-basic]].
+                    {%- elsif property.path == "schema:license" -%}
+                        {{ property.description | lang: "en" }} See [[#dataset-license]].
+                    {%- elsif property.path == "schema:distribution" -%}
+                        {{ property.description | lang: "en" }} See [[#dataset-distributions]].
+                    {%- elsif property.path == "schema:version" -%}
+                        {{ property.description | lang: "en" }} See [[#dataset-versions]].
+                    {%- elsif property.node['@id'] == "nde-dataset:DateTimeShape" -%}
                         See [[#dataset-date]].
                     {%- else -%}
                         {{ property.description | lang: "en" }}
@@ -87,6 +97,8 @@
                         {% assign future_text = "must be IRI" -%}
                     {% elsif change.severity == "Violation" and property.datatype -%}
                         {% assign future_text = property.datatype | replace: 'http://www.w3.org/2001/XMLSchema#', 'xsd:' | replace: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'rdf:' | prepend: 'must be ' -%}
+                    {% elsif change.severity == "Violation" and property.node['@id'] == "nde-dataset:DateTimeShape" -%}
+                        {% assign future_text = "must be valid ISO 8601" -%}
                     {% elsif change.severity == "Violation" and is_required == false -%}
                         {% assign future_text = "becomes required" -%}
                     {% endif -%}
