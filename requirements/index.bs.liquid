@@ -188,17 +188,17 @@ When the [=dataset description=] is embedded in an HTML page (see [[#rdf]]), `te
 
 See also [[DWBP-UCR#R-UniqueIdentifier]] and [[DWBP-UCR#R-PersistentIdentification]].
 
-### Resolvable dataset URIs ### {#resolvable-uris}
+### Resolvable dataset IRIs ### {#resolvable-iris}
 
-[=Consumers=] want to look up a [=dataset=] by its URI.
-When the dataset URI resolves, consumers can retrieve both the machine-readable [=dataset description=] (via [content negotiation](https://httpwg.org/specs/rfc9110.html#content.negotiation))
+[=Consumers=] want to look up a [=dataset=] by its IRI.
+When the dataset IRI resolves, consumers can retrieve both the machine-readable [=dataset description=] (via [content negotiation](https://httpwg.org/specs/rfc9110.html#content.negotiation))
 and a human-readable HTML page without needing a separate landing page URL.
 
-> Therefore, publishers *SHOULD* ensure that the dataset URI resolves
+> Therefore, publishers *SHOULD* ensure that the dataset IRI resolves
 > and serves both an RDF representation (the [=dataset description=]) and an HTML representation.
 > The HTML representation *MUST* be consistent with and include at least all details (such as distributions) from the RDF representation.
 
-When the dataset URI resolves to an HTML page, a separate `mainEntityOfPage` is not needed (see [[#more-information]]).
+When the dataset IRI resolves to an HTML page, a separate `mainEntityOfPage` is not needed (see [[#more-information]]).
 
 ### Information remains available ### {#available}
 
@@ -268,12 +268,12 @@ Publishers *MUST* include basic information about the dataset, at the very minim
 [DCAT-AP-NL 3.0](https://docs.geostandaarden.nl/dcat/dcat-ap-nl30/) requires the use of Creative Commons licences
 and defines a [value list](https://definities.geostandaarden.nl/dcat-ap-nl/id/waardelijst/licenties/) for licences.
 The default *SHOULD* be [CC0](https://creativecommons.org/publicdomain/zero/1.0/) (`https://creativecommons.org/publicdomain/zero/1.0/`).
-The following table lists the recommended canonical license URIs.
-Creative Commons URIs *MUST* use `https://` and end with a trailing slash.
+The following table lists the recommended canonical license IRIs.
+Creative Commons IRIs *MUST* use `https://` and end with a trailing slash.
 
 <table class="data">
     <thead>
-        <tr><th>Canonical URI</th></tr>
+        <tr><th>Canonical IRI</th></tr>
     </thead>
     <tbody>
         {% for uri in license.in -%}
@@ -283,7 +283,7 @@ Creative Commons URIs *MUST* use `https://` and end with a trailing slash.
 </table>
 
 <div class="advisement">
-    In v2.0 of this specification, the license *MUST* be one of the URIs listed above.
+    In v2.0 of this specification, the license *MUST* be one of the IRIs listed above.
 </div>
 
 See also [[DWBP-UCR#R-LicenseAvailable]].
@@ -588,22 +588,22 @@ but simple dates (`2019-04-14`) are also allowed.
 
 ### Usage information ### {#usage-information}
 
-Each distribution *SHOULD* include one or more [schema:usageInfo](https://schema.org/usageInfo) URIs
+Each distribution *SHOULD* include one or more [schema:usageInfo](https://schema.org/usageInfo) IRIs
 that describe what the distribution provides.
 
-For [=web APIs=], this *MUST* be the URI of the protocol specification (such as SPARQL or OAI-PMH).
-The Dataset Register uses this URI to identify the distribution as an API.
+For [=web APIs=], this *MUST* be the IRI of the protocol specification (such as SPARQL or OAI-PMH).
+The Dataset Register uses this IRI to identify the distribution as an API.
 
-For downloads as well as APIs, this *MUST* be the URI of the application profile(s) that the data conforms to.
+For downloads as well as APIs, this *MUST* be the IRI of the application profile(s) that the data conforms to.
 
 <table>
-    <caption>Recommended URIs for typing distributions</caption>
+    <caption>Recommended IRIs for typing distributions</caption>
     <thead>
         <tr>
             <th>Item</th>
             <th>Type</th>
             <th>Applies to</th>
-            <th>URI</th>
+            <th>IRI</th>
         </tr>
     </thead>
     <tbody>
@@ -841,7 +841,7 @@ Version 1.5.1 (2026-04-10) {#v1.5.1}
 
 - Correct v2.0 annotation for IRI-constrained properties in spec ([63e694a](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/63e694a7256b3666dbe3e2d64cc3207c65ddb81c)).
 - Use single sh:message on SPARQL constraint for Jena compatibility ([5e67a50](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/5e67a5004888e0d04690eb906f3bb543ca28425e)).
-- Add resolvable dataset URI requirement and update mainEntityOfPage ([59f995d](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/59f995ded5d4ae48f4b60160fc0e5a75e7901a61)).
+- Add resolvable dataset IRI requirement and update mainEntityOfPage ([59f995d](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/59f995ded5d4ae48f4b60160fc0e5a75e7901a61)).
 
 Version 1.5.0 (2026-04-02) {#v1.5.0}
 ----------

@@ -24,6 +24,10 @@ nde-dataset:DatacatalogShape
     sh:class schema:DataCatalog ;
     rdfs:label "Datacatalogus"@nl, "Data catalog"@en ;
     sh:description "Een datacatalogus bestaat uit een set van datasetbeschrijvingen"@nl, "A data catalog consists of a set of dataset descriptions"@en ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:nodeKind sh:IRI ;
+    ] ;
     sh:property
         [
             sh:path schema:name ;
@@ -38,10 +42,10 @@ nde-dataset:DatacatalogShape
         ] ,
         nde-dataset:SchemaNameUniqueLangProperty,
         nde-dataset:SchemaNameLangStringProperty,
+        nde-dataset:SchemaDescriptionPropertyShouldExist,
         nde-dataset:SchemaDescriptionProperty,
         nde-dataset:SchemaDescriptionUniqueLangProperty,
         nde-dataset:SchemaDescriptionLangStringProperty,
-        nde-dataset:SchemaDescriptionPropertyShouldExist,
         [
             sh:path schema:publisher ;
             sh:minCount 1 ;
@@ -89,7 +93,7 @@ nde-dataset:DatasetShape
                 [ sh:datatype xsd:string ]
                 [ sh:datatype rdf:langString ]
             ) ;
-            sh:name "Naam van de dataset"@nl, "Name of the dataset"@en ;
+            sh:name "Naam van de beschreven dataset"@nl, "Name of the described dataset"@en ;
             sh:message "Een datasetbeschrijving moet een naam hebben"@nl, "A dataset description must have a name"@en ;
         ] ,
         nde-dataset:SchemaNameUniqueLangProperty,
@@ -119,7 +123,9 @@ nde-dataset:DatasetShape
                 nde:version "2.0" ;
                 sh:nodeKind sh:IRI ;
             ] ;
+            sh:minCount 1 ;
             sh:maxCount 1 ;
+            sh:severity sh:Warning ;
             sh:name "Licentie"@nl, "License"@en ;
             sh:description """Licentie die van toepassing is op de dataset.
                 Als de dataset een licentie heeft, wordt deze overgenomen door alle distributies die geen eigen licentie hebben."""@nl, """
@@ -136,11 +142,11 @@ nde-dataset:DatasetShape
                 Adopting a non-open license will severely limit reuse and does not comply
                 with the DERA principles.
 
-                The value *MUST* be the canonical URI of a license.
+                The value *MUST* be the canonical IRI of a license.
                 For example, use https://creativecommons.org/publicdomain/zero/1.0/ instead
                 of https://creativecommons.org/publicdomain/zero/1.0/deed.nl.
                 """@en ;
-            sh:message "Een datasetbeschrijving moet één licentie bevatten (in de vorm van een URI)"@nl, "A dataset description must contain one license (in the form of a URI)"@en ;
+            sh:message "Een datasetbeschrijving moet één licentie bevatten (in de vorm van een URI)"@nl, "A dataset description must contain one license (in the form of an IRI)"@en ;
         ] ,
         [
             sh:path schema:license ;
@@ -159,39 +165,40 @@ nde-dataset:DatasetShape
                 <https://creativecommons.org/licenses/by-nd/4.0/>
                 <https://creativecommons.org/licenses/by-nc-nd/4.0/>
             ) ;
-            sh:message "Gebruik een van de aanbevolen canonieke licentie-URI's"@nl, "Use one of the recommended canonical license URIs"@en ;
+            sh:message "Gebruik een van de aanbevolen canonieke licentie-URI's"@nl, "Use one of the recommended canonical license IRIs"@en ;
         ] ,
         [
             sh:path schema:license ;
             sh:node nde-dataset:LicenseCreativeCommonsHttpsShape ;
             sh:severity sh:Warning ;
-            sh:message "Gebruik de canonieke Creative Commons licentie-URI met https:// (bijv. https://creativecommons.org/publicdomain/zero/1.0/)"@nl, "Use the canonical Creative Commons license URI with https:// (e.g. https://creativecommons.org/publicdomain/zero/1.0/)"@en ;
+            sh:message "Gebruik de canonieke Creative Commons licentie-URI met https:// (bijv. https://creativecommons.org/publicdomain/zero/1.0/)"@nl, "Use the canonical Creative Commons license IRI with https:// (e.g. https://creativecommons.org/publicdomain/zero/1.0/)"@en ;
         ] ,
         [
             sh:path schema:license ;
             sh:node nde-dataset:LicenseCreativeCommonsTrailingSlashShape ;
             sh:severity sh:Warning ;
-            sh:message "Gebruik de canonieke Creative Commons licentie-URI met een afsluitende slash (bijv. https://creativecommons.org/licenses/by/4.0/)"@nl, "Use the canonical Creative Commons license URI with a trailing slash (e.g. https://creativecommons.org/licenses/by/4.0/)"@en ;
+            sh:message "Gebruik de canonieke Creative Commons licentie-URI met een afsluitende slash (bijv. https://creativecommons.org/licenses/by/4.0/)"@nl, "Use the canonical Creative Commons license IRI with a trailing slash (e.g. https://creativecommons.org/licenses/by/4.0/)"@en ;
         ] ,
         [
             sh:path schema:license ;
             sh:node nde-dataset:LicenseNotOpenDefinitionShape ;
             sh:severity sh:Warning ;
-            sh:message "Gebruik de canonieke licentie-URI van de licentiegever zelf (bijv. https://creativecommons.org/licenses/by/4.0/), niet een opendefinition.org-alias"@nl, "Use the canonical license URI from the license issuer itself (e.g. https://creativecommons.org/licenses/by/4.0/), not an opendefinition.org alias"@en ;
+            sh:message "Gebruik de canonieke licentie-URI van de licentiegever zelf (bijv. https://creativecommons.org/licenses/by/4.0/), niet een opendefinition.org-alias"@nl, "Use the canonical license IRI from the license issuer itself (e.g. https://creativecommons.org/licenses/by/4.0/), not an opendefinition.org alias"@en ;
         ] ,
         [
             sh:path schema:license ;
             sh:node nde-dataset:LicenseOpenDataCommonsShape ;
             sh:severity sh:Warning ;
-            sh:message "Gebruik de canonieke OpenDataCommons licentie-URI met versienummer (bijv. http://opendatacommons.org/licenses/odbl/1.0/)"@nl, "Use the canonical OpenDataCommons license URI with version number (e.g. http://opendatacommons.org/licenses/odbl/1.0/)"@en ;
+            sh:message "Gebruik de canonieke OpenDataCommons licentie-URI met versienummer (bijv. http://opendatacommons.org/licenses/odbl/1.0/)"@nl, "Use the canonical OpenDataCommons license IRI with version number (e.g. http://opendatacommons.org/licenses/odbl/1.0/)"@en ;
         ] ,
         # Recommended properties
         [
+            sh:path schema:distribution ;
             sh:class schema:DataDownload ;
             sh:minCount 1 ;
             sh:severity sh:Info ;
-            sh:path schema:distribution ;
             sh:name "Dataset distributions"@en , "Distributies van een dataset"@nl ;
+            sh:description "Distributies waarmee de dataset kan worden opgehaald, bijvoorbeeld als download of via een API."@nl, "Distributions through which the dataset can be retrieved, for example as a download or via an API."@en ;
         ] ,
         [
             sh:path schema:creator ;
@@ -216,7 +223,8 @@ nde-dataset:DatasetShape
             sh:minCount 1 ;
             sh:maxCount 1 ;
             sh:severity sh:Info ;
-            sh:name "Publicatiedatum van de datasetbeschrijving"@nl, "Publication date of the dataset description"@en ;
+            sh:name "Publication date"@en, "Publicatiedatum"@nl ;
+            sh:description "Publicatiedatum van de datasetbeschrijving."@nl, "Publication date of the dataset description."@en ;
             sh:message "Een datasetbeschrijving zou één publicatiedatum moeten bevatten"@nl, "A dataset description should contain one publication date"@en ;
         ] ,
         [
@@ -234,7 +242,8 @@ nde-dataset:DatasetShape
             sh:minCount 1 ;
             sh:maxCount 1 ;
             sh:severity sh:Info ;
-            sh:name "Aanmaakdatum van de datasetbeschrijving"@nl, "Creation date of the dataset description"@en ;
+            sh:name "Creation date"@en, "Aanmaakdatum"@nl ;
+            sh:description "Aanmaakdatum van de datasetbeschrijving."@nl, "Creation date of the dataset description."@en ;
             sh:message "Een datasetbeschrijving zou één aanmaakdatum moeten bevatten"@nl, "A dataset description should contain one creation date"@en ;
         ] ,
         [
@@ -252,7 +261,8 @@ nde-dataset:DatasetShape
             sh:minCount 1 ;
             sh:maxCount 1 ;
             sh:severity sh:Info ;
-            sh:name "Datum waarop de datasetbeschrijving voor het laatst is gewijzigd"@nl, "Date on which the dataset description was last modified"@en ;
+            sh:name "Last modified date"@en, "Wijzigingsdatum"@nl ;
+            sh:description "Datum waarop de datasetbeschrijving voor het laatst is gewijzigd."@nl, "Date on which the dataset description was last modified."@en ;
             sh:message "Een datasetbeschrijving zou één wijzigingsdatum moeten bevatten"@nl, "A dataset description should contain one modification date"@en ;
         ] ,
         [
@@ -271,6 +281,7 @@ nde-dataset:DatasetShape
             sh:name "Version"@en ;
             sh:minCount 0 ;
             sh:maxCount 1 ;
+            sh:description "Versieaanduiding van de dataset, bijvoorbeeld een semantisch versienummer of een datum."@nl, "Version identifier of the dataset, for example a semantic version number or a date."@en ;
             sh:message "Een datasetbeschrijving mag een versie bevatten"@nl, "A dataset description may contain a version"@en ;
         ] ,
         [
@@ -282,9 +293,16 @@ nde-dataset:DatasetShape
             ] ;
             sh:minCount 0 ;
             sh:name "Language"@en ;
-            sh:description """
-                Language or languages in which the dataset is available. Use one of the language codes from the [[BCP47]], such as `nl-NL`.
-            """@en ;
+            sh:description """De natuurlijke taal van de tekstuele waardes in de dataset – dus van de beschrijvingen van de erfgoedobjecten zelf (titels, omschrijvingen, onderwerpen, enzovoort). Niet alle data heeft de eigenschap taal, bijvoorbeeld afbeeldingen.
+
+                Gebruik van de waardelijst EU Vocabularies Languages Named Authority List is vereist.
+
+                De waarde heeft alleen betrekking op de tekstuele waardes in de dataset zelf en niet op de taal van de metadata van de dataset. De taal van de datasetbeschrijving wordt opgenomen in de eigenschap language van de klasse CatalogRecord."""@nl,
+                """The natural language of the textual values within the dataset – that is, of the heritage object records themselves (titles, descriptions, subjects, and so on). Not all data has a language property, for example images.
+
+                Use of the EU Vocabularies Languages Named Authority List is required.
+
+                The value applies only to the textual values in the dataset itself and not to the language of the dataset description. The language of the dataset description is captured in the language property of the CatalogRecord class."""@en ;
         ] ,
         [
             a sh:PropertyShape ;
@@ -295,7 +313,7 @@ nde-dataset:DatasetShape
             sh:name "Main entity of page"@en ;
             sh:description """
                 URL of a landing page where the dataset is described for human users.
-                Not needed when the dataset URI itself resolves to an HTML page (see [[#resolvable-uris]]).
+                Not needed when the dataset IRI itself resolves to an HTML page (see [[#resolvable-iris]]).
                 The human-readable description *MUST* be consistent with and include at least all details (such as distributions) from the RDF dataset description.
             """@en ;
         ] ,
@@ -311,6 +329,7 @@ nde-dataset:DatasetShape
         [
             a sh:PropertyShape ;
             sh:path schema:citation ;
+            sh:minCount 0 ;
             sh:name "Citation"@en ;
             sh:description """
                 A citation or reference for the dataset.
@@ -480,7 +499,7 @@ nde-dataset:DistributionShape
             sh:path schema:datePublished ;
             sh:minCount 0 ;
             sh:maxCount 1 ;
-            sh:description "Date (or datetime) the distribution was published"@en ;
+            sh:description "Date (or datetime) the distribution was published."@en ;
         ] ,
         [
             sh:path schema:datePublished ;
@@ -497,7 +516,7 @@ nde-dataset:DistributionShape
             sh:path schema:dateModified ;
             sh:minCount 0 ;
             sh:maxCount 1 ;
-            sh:description "Date (or datetime) the distribution was last modified"@en ;
+            sh:description "Date (or datetime) the distribution was last modified."@en ;
         ] ,
         [
             sh:path schema:dateModified ;
@@ -621,6 +640,7 @@ nde-dataset:OrganizationShape
         ] ,
         [
             sh:path schema:identifier ;
+            sh:minCount 0 ;
             sh:or (
                 [ sh:datatype xsd:string ]
                 [ sh:class schema:PropertyValue ]
@@ -801,7 +821,16 @@ nde-dataset:SchemaDescriptionProperty a sh:PropertyShape ;
         [ sh:datatype rdf:langString ]
     );
     sh:name "Description"@en ;
-    sh:description "Description."@en ;
+    sh:description """Een beschrijving van de inhoud.
+        Deze is bij voorkeur minimaal drie zinnen en maximaal één alinea lang (2000 karakters).
+        De vindbaarheid wordt onder andere bepaald door de kwaliteit van de beschrijving.
+        Denk hierbij aan verschillende gebruikers, vakgenoten maar ook anderen,
+        waarvoor de tekst begrijpelijk moet zijn."""@nl,
+        """A description of the contents.
+        Preferably at least three sentences and at most one paragraph (2,000 characters).
+        Discoverability depends in part on the quality of the description.
+        Consider different audiences – both domain experts and others –
+        for whom the text should be understandable."""@en ;
     sh:message "Een beschrijving moet van type string of langString zijn"@nl, "A description must be of type string or langString"@en ;
 .
 
@@ -880,22 +909,12 @@ nde-dataset:SchemaDescriptionPropertyShouldExist a sh:PropertyShape ;
         nde:version "2.0" ;
         sh:severity sh:Violation ;
     ] ;
-    sh:description """Een beschrijving van de inhoud van de dataset.
-        Deze is bij voorkeur minimaal drie zinnen en maximaal één alinea lang (2000 karakters).
-        De vindbaarheid van de dataset wordt onder andere bepaald door de kwaliteit van de beschrijving.
-        Denk hierbij aan verschillende gebruikers, vakgenoten maar ook anderen,
-        waarvoor de tekst begrijpelijk moet zijn."""@nl,
-        """A free-text account of the dataset.
-        Preferably at least three sentences and at most one paragraph (2,000 characters).
-        The discoverability of the dataset depends in part on the quality of the description.
-        Consider different audiences — both domain experts and others —
-        for whom the text should be understandable."""@en ;
     sh:message "Moet een beschrijving hebben"@nl, "Must have a description"@en ;
 .
 
 # Reusable constraint shapes for license canonicality, referenced via sh:node
 # from every license property path. Even the DCAT-AP-NL 3.0 examples incorrectly
-# use http://creativecommons.org/publicdomain/zero/1.0/deed.nl as a license URI
+# use http://creativecommons.org/publicdomain/zero/1.0/deed.nl as a license IRI
 # (see https://docs.geostandaarden.nl/dcat/dcat-ap-nl30/#distribution-licence).
 nde-dataset:LicenseCreativeCommonsHttpsShape a sh:NodeShape ;
     sh:not [ sh:pattern "^http://creativecommons\\.org/" ] .
@@ -917,6 +936,7 @@ nde-dataset:LicenseOpenDataCommonsShape a sh:NodeShape ;
 
 nde-dataset:AccrualPeriodicityProperty a sh:PropertyShape ;
     sh:path dc:accrualPeriodicity ;
+    sh:minCount 0 ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
     sh:pattern "^http://publications\\.europa\\.eu/resource/authority/frequency/" ;
@@ -991,10 +1011,10 @@ dcat:DatasetShape
         De vindbaarheid van de dataset wordt onder andere bepaald door de kwaliteit van de beschrijving.
         Denk hierbij aan verschillende gebruikers, vakgenoten maar ook anderen,
         waarvoor de tekst begrijpelijk moet zijn."""@nl,
-            """A free-text account of the dataset.
+            """A description of the contents of the dataset.
         Preferably at least three sentences and at most one paragraph (2,000 characters).
         The discoverability of the dataset depends in part on the quality of the description.
-        Consider different audiences — both domain experts and others —
+        Consider different audiences – both domain experts and others –
         for whom the text should be understandable."""@en ;
         sh:message "Dataset moet een beschrijving hebben"@nl, "Dataset must have a description"@en ;
     ],
@@ -1198,7 +1218,7 @@ dcat:DatasetShape
         sh:name "Landing page"@en ;
         sh:description """
             A web page where the dataset is described for human users.
-            Not needed when the dataset URI itself resolves to an HTML page (see [[#resolvable-uris]]).
+            Not needed when the dataset IRI itself resolves to an HTML page (see [[#resolvable-iris]]).
             The human-readable description *MUST* be consistent with and include at least all details (such as distributions) from the RDF dataset description.
         """@en ;
     ] ;
@@ -1258,25 +1278,25 @@ dcat:DistributionShape
         sh:path dc:license ;
         sh:node nde-dataset:LicenseCreativeCommonsHttpsShape ;
         sh:severity sh:Warning ;
-        sh:message "Gebruik de canonieke Creative Commons licentie-URI met https:// (bijv. https://creativecommons.org/publicdomain/zero/1.0/)"@nl, "Use the canonical Creative Commons license URI with https:// (e.g. https://creativecommons.org/publicdomain/zero/1.0/)"@en ;
+        sh:message "Gebruik de canonieke Creative Commons licentie-URI met https:// (bijv. https://creativecommons.org/publicdomain/zero/1.0/)"@nl, "Use the canonical Creative Commons license IRI with https:// (e.g. https://creativecommons.org/publicdomain/zero/1.0/)"@en ;
     ] ,
     [
         sh:path dc:license ;
         sh:node nde-dataset:LicenseCreativeCommonsTrailingSlashShape ;
         sh:severity sh:Warning ;
-        sh:message "Gebruik de canonieke Creative Commons licentie-URI met een afsluitende slash (bijv. https://creativecommons.org/licenses/by/4.0/)"@nl, "Use the canonical Creative Commons license URI with a trailing slash (e.g. https://creativecommons.org/licenses/by/4.0/)"@en ;
+        sh:message "Gebruik de canonieke Creative Commons licentie-URI met een afsluitende slash (bijv. https://creativecommons.org/licenses/by/4.0/)"@nl, "Use the canonical Creative Commons license IRI with a trailing slash (e.g. https://creativecommons.org/licenses/by/4.0/)"@en ;
     ] ,
     [
         sh:path dc:license ;
         sh:node nde-dataset:LicenseNotOpenDefinitionShape ;
         sh:severity sh:Warning ;
-        sh:message "Gebruik de canonieke licentie-URI van de licentiegever zelf (bijv. https://creativecommons.org/licenses/by/4.0/), niet een opendefinition.org-alias"@nl, "Use the canonical license URI from the license issuer itself (e.g. https://creativecommons.org/licenses/by/4.0/), not an opendefinition.org alias"@en ;
+        sh:message "Gebruik de canonieke licentie-URI van de licentiegever zelf (bijv. https://creativecommons.org/licenses/by/4.0/), niet een opendefinition.org-alias"@nl, "Use the canonical license IRI from the license issuer itself (e.g. https://creativecommons.org/licenses/by/4.0/), not an opendefinition.org alias"@en ;
     ] ,
     [
         sh:path dc:license ;
         sh:node nde-dataset:LicenseOpenDataCommonsShape ;
         sh:severity sh:Warning ;
-        sh:message "Gebruik de canonieke OpenDataCommons licentie-URI met versienummer (bijv. http://opendatacommons.org/licenses/odbl/1.0/)"@nl, "Use the canonical OpenDataCommons license URI with version number (e.g. http://opendatacommons.org/licenses/odbl/1.0/)"@en ;
+        sh:message "Gebruik de canonieke OpenDataCommons licentie-URI met versienummer (bijv. http://opendatacommons.org/licenses/odbl/1.0/)"@nl, "Use the canonical OpenDataCommons license IRI with version number (e.g. http://opendatacommons.org/licenses/odbl/1.0/)"@en ;
     ] .
 
 dcat:CatalogShape
