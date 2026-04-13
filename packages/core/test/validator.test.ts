@@ -275,8 +275,8 @@ describe('Validator', () => {
     expect(formatReport(report)).toMatchInlineSnapshot(`
       "[Warning] https://schema.org/contactPoint on <https://www.goudatijdmachine.nl/omeka/api/items/232>: An organization must have a ContactPoint
       [Warning] https://schema.org/identifier on <https://www.goudatijdmachine.nl/omeka/api/items/232>: An organization must have one or more identifiers
-      [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use one of the recommended canonical license URIs
-      [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use the canonical Creative Commons license URI with https:// (e.g. https://creativecommons.org/publicdomain/zero/1.0/)"
+      [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use one of the recommended canonical license IRIs
+      [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use the canonical Creative Commons license IRI with https:// (e.g. https://creativecommons.org/publicdomain/zero/1.0/)"
     `);
   });
 
