@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.5.2](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.5.1...requirements-1.5.2) (2026-04-13)
+
+
+### Bug Fixes
+
+* **shacl:** align publisher cardinality with DCAT-AP-NL 3.0 ([#1842](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1842)) ([6af64c7](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/6af64c73d26b7fe28dcf33244c92454f7814037c))
+* **shacl:** mark ISO-8601 date pattern as v2.0 violation ([#1836](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1836)) ([62d22e1](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/62d22e1bd2a22b4d946ebe1ad82f43481877a19a))
+* **shacl:** mark schema:contactPoint as v2.0 violation ([#1835](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1835)) ([7aeab03](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/7aeab03631f524ec2686d92713bc04f8a3ae9001))
+* **shacl:** validate ISO-8601 dates on DCAT date properties ([#1839](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1839)) ([ee09aec](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/ee09aec487d8997ef50dc7ec807cda9f634b7c85))
+
+
 ## [1.5.1](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.5.0...requirements-1.5.1) (2026-04-10)
 
 
