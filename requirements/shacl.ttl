@@ -1288,10 +1288,6 @@ dcat:CatalogShape
         sh:path dc:publisher ;
         sh:minCount 1 ;
         sh:severity sh:Warning ;
-        nde:futureChange [
-            nde:version "2.0" ;
-            sh:severity sh:Violation ;
-        ] ;
         sh:description "De organisatie die verantwoordelijk is voor de publicatie van de catalogus."@nl,
             "The organization responsible for publishing the catalog."@en ;
         sh:message "Catalogus moet een uitgever hebben"@nl, "Catalog must have a publisher"@en ;
