@@ -381,7 +381,6 @@ nde-dataset:DatasetShape
             sh:maxCount 1 ;
             sh:nodeKind sh:IRI ;
             sh:pattern "^http://publications\\.europa\\.eu/resource/authority/frequency/" ;
-            sh:severity sh:Warning ;
             sh:name "Updatefrequentie"@nl, "Accrual periodicity"@en ;
             sh:description """Hoe vaak de dataset wordt bijgewerkt.
                 Gebruik een waarde uit de EU-frequentielijst,
@@ -1138,7 +1137,6 @@ dcat:DatasetShape
         sh:maxCount 1 ;
         sh:nodeKind sh:IRI ;
         sh:pattern "^http://publications\\.europa\\.eu/resource/authority/frequency/" ;
-        sh:severity sh:Warning ;
         sh:name "Updatefrequentie"@nl, "Accrual periodicity"@en ;
         sh:description """Hoe vaak de dataset wordt bijgewerkt.
             Gebruik een waarde uit de EU-frequentielijst,
