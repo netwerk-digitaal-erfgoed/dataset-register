@@ -60,10 +60,12 @@
                 {% endif -%}
             </td>
             <td>
+                {% assign is_required = false -%}
                 {% if property.minCount > 0 -%}
                     {% assign severity = property.severity | default: "Violation" -%}
                     {% if severity == "Violation" or property.severity == "Warning" -%}
                         Required
+                        {% assign is_required = true -%}
                     {% else -%}
                         Recommended
                     {% endif -%}
@@ -72,21 +74,25 @@
                 {% endif -%}
                 {% if property['nde:futureChange'] -%}
                     {% assign change = property['nde:futureChange'] -%}
-                    <br><small>v{{ change['nde:version'] }}:
+                    {% assign future_text = "" -%}
                     {% if change.datatype -%}
-                        must be {{ change.datatype | replace: 'http://www.w3.org/2001/XMLSchema#', 'xsd:' }}
+                        {% assign future_text = change.datatype | replace: 'http://www.w3.org/2001/XMLSchema#', 'xsd:' | prepend: 'must be ' -%}
                     {% elsif change.pattern -%}
-                        must match <code>{{ change.pattern }}</code>
+                        {% capture future_text %}must match <code>{{ change.pattern }}</code>{% endcapture -%}
                     {% elsif change.nodeKind == "IRI" and change.severity != "Violation" -%}
-                        must be IRI
+                        {% assign future_text = "must be IRI" -%}
                     {% elsif change.maxCount -%}
-                        max {{ change.maxCount }}
+                        {% assign future_text = change.maxCount | prepend: "max " -%}
                     {% elsif change.severity == "Violation" and property.nodeKind == "IRI" -%}
-                        must be IRI
-                    {% elsif change.severity == "Violation" -%}
-                        becomes required
+                        {% assign future_text = "must be IRI" -%}
+                    {% elsif change.severity == "Violation" and property.datatype -%}
+                        {% assign future_text = property.datatype | replace: 'http://www.w3.org/2001/XMLSchema#', 'xsd:' | replace: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'rdf:' | prepend: 'must be ' -%}
+                    {% elsif change.severity == "Violation" and is_required == false -%}
+                        {% assign future_text = "becomes required" -%}
                     {% endif -%}
-                    </small>
+                    {% if future_text != "" -%}
+                        <br><small>v{{ change['nde:version'] }}: {{ future_text }}</small>
+                    {% endif -%}
                 {% endif -%}
             </td>
         </tr>
