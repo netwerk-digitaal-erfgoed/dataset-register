@@ -644,6 +644,10 @@ nde-dataset:OrganizationContactPointRequiredShape
     a sh:NodeShape ;
     sh:targetObjectsOf schema:publisher, schema:creator ;
     sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
     sh:message "Een organisatie moet een ContactPoint hebben"@nl, "An organization must have a ContactPoint"@en ;
     sh:sparql [
         sh:select """
