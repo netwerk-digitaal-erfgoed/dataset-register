@@ -30,10 +30,13 @@
         {% assign merged_properties = nodeShape.property | mergePropertiesByPath -%}
         {% for property in merged_properties %}
         {% unless property.path %}{% continue %}{% endunless %}
+        {%- assign node_json = property.node | jsonify -%}
+        {%- assign is_date_shape = node_json contains "DateDatatypeShape" -%}
+        {%- assign is_iri_shape = node_json contains "IriNodeKindShape" -%}
         <tr>
             <th scope="row">[{{ property.path }}]({{ property.path }})</th>
             <td>
-                {%- if property.node['@id'] == "nde-dataset:DateTimeShape" -%}
+                {%- if is_date_shape -%}
                     {%- assign description = property.description | lang: "en" -%}
                     {%- if description != "" -%}{{ description }} {% endif -%}See [[#dataset-date]].
                 {%- elsif property.path == "schema:publisher" or property.path == "schema:creator" -%}
@@ -51,7 +54,7 @@
                         {{ property.description | lang: "en" }} See [[#dataset-distributions]].
                     {%- elsif property.path == "schema:version" -%}
                         {{ property.description | lang: "en" }} See [[#dataset-versions]].
-                    {%- elsif property.node['@id'] == "nde-dataset:DateTimeShape" -%}
+                    {%- elsif is_date_shape -%}
                         See [[#dataset-date]].
                     {%- else -%}
                         {{ property.description | lang: "en" }}
@@ -95,9 +98,11 @@
                         {% assign future_text = change.maxCount | prepend: "max " -%}
                     {% elsif change.severity == "Violation" and property.nodeKind == "IRI" -%}
                         {% assign future_text = "must be IRI" -%}
+                    {% elsif change.severity == "Violation" and is_iri_shape -%}
+                        {% assign future_text = "must be IRI" -%}
                     {% elsif change.severity == "Violation" and property.datatype -%}
                         {% assign future_text = property.datatype | replace: 'http://www.w3.org/2001/XMLSchema#', 'xsd:' | replace: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'rdf:' | prepend: 'must be ' -%}
-                    {% elsif change.severity == "Violation" and property.node['@id'] == "nde-dataset:DateTimeShape" -%}
+                    {% elsif change.severity == "Violation" and is_date_shape -%}
                         {% assign future_text = "must be valid ISO 8601" -%}
                     {% elsif change.severity == "Violation" and is_required == false -%}
                         {% assign future_text = "becomes required" -%}
