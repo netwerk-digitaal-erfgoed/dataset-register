@@ -496,14 +496,14 @@ nde-dataset:DistributionShape
         [
             sh:path schema:contentUrl ;
             sh:or (
-                [ sh:datatype xsd:anyURI ]      # literal preferred see https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1366
-                [ sh:nodeKind sh:IRI ]          # IRI left for backward compatibility
+                [ sh:nodeKind sh:IRI ]          # schema.org’s JSON-LD context coerces contentUrl to @id, so values land as IRIs
+                [ sh:datatype xsd:anyURI ]      # xsd:anyURI literal accepted for Turtle / custom-context submissions
             ) ;
             sh:pattern "^https?://" ;
             sh:severity sh:Warning ;
             nde:futureChange [
                 nde:version "2.0" ;
-                sh:datatype xsd:anyURI ;
+                sh:nodeKind sh:IRI ;
                 sh:severity sh:Violation ;
             ] ;
             sh:description "De URL waar de distributie rechtstreeks toegankelijk is."@nl, "The URL where the distribution may be directly accessed."@en ;
