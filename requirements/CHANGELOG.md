@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.3](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.5.2...requirements-1.5.3) (2026-04-15)
+
+
+### Documentation
+
+* **requirements:** add Linked Art profile to distribution IRI table ([#1851](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1851)) ([3c01ad5](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/3c01ad56526dc1582f0609a504188cde1541178b))
+
 ## [1.5.2](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.5.1...requirements-1.5.2) (2026-04-13)
 
 
