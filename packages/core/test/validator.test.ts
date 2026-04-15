@@ -358,6 +358,73 @@ describe('Validator', () => {
     expectViolations(report, ['https://schema.org/license'], 2);
   });
 
+  it('reports split date and IRI failures with specific messages, not generic sh:node fallback', async () => {
+    // Regression: a previous refactor moved the datatype/pattern checks into
+    // reusable NodeShapes referenced via sh:node, which caused shacl-engine to
+    // emit the generic "Value does not have shape …" message. The checks must
+    // be inlined as separate property shapes so each carries its own sh:message.
+    const report = (await validate(
+      'dataset-schema-org-invalid-date-and-iri.ttl',
+      new StreamParser(),
+    )) as Valid;
+
+    const messagesFor = (path: string) =>
+      [
+        ...report.errors.match(
+          null,
+          shacl('resultPath'),
+          rdf.namedNode(path),
+        ),
+      ]
+        .map((quad) => quad.subject)
+        .flatMap((resultNode) => [
+          ...report.errors.match(
+            resultNode as never,
+            shacl('resultMessage'),
+            null,
+          ),
+        ])
+        .filter(
+          (quad) =>
+            quad.object.termType === 'Literal' && quad.object.language === 'en',
+        )
+        .map((quad) => quad.object.value)
+        .sort();
+
+    // datePublished "not-a-date": wrong datatype AND wrong format
+    expect(messagesFor('https://schema.org/datePublished')).toEqual([
+      'Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime',
+      'Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)',
+    ]);
+
+    // dateModified "2024-01-15": plain string literal (wrong datatype) but
+    // lexical form matches the ISO pattern — exactly one message expected.
+    expect(messagesFor('https://schema.org/dateModified')).toEqual([
+      'Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime',
+    ]);
+
+    // spatialCoverage "Netherlands": not an IRI and does not start with http(s)
+    expect(messagesFor('https://schema.org/spatialCoverage')).toEqual([
+      'IRI must start with http:// or https://',
+      'Value must be an IRI (RDF resource), not a string literal that looks like a URL',
+    ]);
+
+    // includedInDataCatalog "ftp://…": literal with non-http(s) scheme
+    expect(messagesFor('https://schema.org/includedInDataCatalog')).toEqual([
+      'IRI must start with http:// or https://',
+      'Value must be an IRI (RDF resource), not a string literal that looks like a URL',
+    ]);
+
+    // No generic sh:node fallback leaked through.
+    const allMessages = [
+      ...report.errors.match(null, shacl('resultMessage'), null),
+    ].map((quad) => quad.object.value);
+    expect(allMessages).not.toContain('Value does not have shape');
+    expect(
+      allMessages.some((message) => message.startsWith('Value does not have shape')),
+    ).toBe(false);
+  });
+
   it('reports invalid encoding format', async () => {
     const report = await validate(
       'dataset-schema-org-invalid-encoding-format.jsonld',

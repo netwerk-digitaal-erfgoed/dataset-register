@@ -1,0 +1,16 @@
+@prefix schema: <https://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://data.example.com/dataset/invalid-date-iri> a schema:Dataset ;
+    schema:name "Dataset with invalid date and IRI values" ;
+    schema:description "Fixture for regression-testing specific SHACL messages on split date and IRI property shapes." ;
+    schema:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
+    schema:publisher <https://example.com/publisher> ;
+    schema:datePublished "not-a-date" ;
+    schema:dateCreated "2024/01/15" ;
+    schema:dateModified "2024-01-15" ;
+    schema:spatialCoverage "Netherlands" ;
+    schema:includedInDataCatalog "ftp://example.com/catalog" .
+
+<https://example.com/publisher> a schema:Organization ;
+    schema:name "Example Publisher" .
