@@ -229,12 +229,28 @@ nde-dataset:DatasetShape
         ] ,
         [
             sh:path schema:datePublished ;
-            sh:node nde-dataset:DateDatatypeShape, nde-dataset:DateFormatShape ;
+            sh:or (
+                [ sh:datatype schema:Date ]
+                [ sh:datatype schema:DateTime ]
+                [ sh:datatype xsd:dateTime ]
+                [ sh:datatype xsd:date ]
+            ) ;
             sh:severity sh:Warning ;
             nde:futureChange [
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
+            sh:message "Datum moet van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime zijn"@nl, "Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+        ] ,
+        [
+            sh:path schema:datePublished ;
+            sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
         ] ,
         [
             sh:path schema:dateCreated ;
@@ -247,12 +263,28 @@ nde-dataset:DatasetShape
         ] ,
         [
             sh:path schema:dateCreated ;
-            sh:node nde-dataset:DateDatatypeShape, nde-dataset:DateFormatShape ;
+            sh:or (
+                [ sh:datatype schema:Date ]
+                [ sh:datatype schema:DateTime ]
+                [ sh:datatype xsd:dateTime ]
+                [ sh:datatype xsd:date ]
+            ) ;
             sh:severity sh:Warning ;
             nde:futureChange [
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
+            sh:message "Datum moet van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime zijn"@nl, "Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+        ] ,
+        [
+            sh:path schema:dateCreated ;
+            sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
         ] ,
         [
             sh:path schema:dateModified ;
@@ -265,12 +297,28 @@ nde-dataset:DatasetShape
         ] ,
         [
             sh:path schema:dateModified ;
-            sh:node nde-dataset:DateDatatypeShape, nde-dataset:DateFormatShape ;
+            sh:or (
+                [ sh:datatype schema:Date ]
+                [ sh:datatype schema:DateTime ]
+                [ sh:datatype xsd:dateTime ]
+                [ sh:datatype xsd:date ]
+            ) ;
             sh:severity sh:Warning ;
             nde:futureChange [
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
+            sh:message "Datum moet van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime zijn"@nl, "Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+        ] ,
+        [
+            sh:path schema:dateModified ;
+            sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
         ] ,
         [
             a sh:PropertyShape ;
@@ -305,13 +353,19 @@ nde-dataset:DatasetShape
             a sh:PropertyShape ;
             sh:path schema:mainEntityOfPage ;
             sh:minCount 0 ;
-            sh:node nde-dataset:IriNodeKindShape, nde-dataset:HttpsIriFormatShape ;
+            sh:nodeKind sh:IRI ;
             sh:name "Main entity of page"@en ;
             sh:description """
                 URL of a landing page where the dataset is described for human users.
                 Not needed when the dataset IRI itself resolves to an HTML page (see [[#resolvable-iris]]).
                 The human-readable description *MUST* be consistent with and include at least all details (such as distributions) from the RDF dataset description.
             """@en ;
+            sh:message "Waarde moet een IRI zijn (RDF-resource), geen tekstuele waarde die op een URL lijkt"@nl, "Value must be an IRI (RDF resource), not a string literal that looks like a URL"@en ;
+        ] ,
+        [
+            sh:path schema:mainEntityOfPage ;
+            sh:pattern "^https?://" ;
+            sh:message "IRI moet beginnen met http:// of https://"@nl, "IRI must start with http:// or https://"@en ;
         ] ,
         [
             a sh:PropertyShape ;
@@ -362,13 +416,24 @@ nde-dataset:DatasetShape
         ] ,
         [
             sh:path schema:spatialCoverage ;
-            sh:node nde-dataset:IriNodeKindShape, nde-dataset:HttpsIriFormatShape ;
+            sh:nodeKind sh:IRI ;
             sh:severity sh:Warning ;
             nde:futureChange [
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
             sh:description "Spatial coverage must be an HTTP(S) IRI, for example from [GeoNames](https://www.geonames.org/)."@en ;
+            sh:message "Waarde moet een IRI zijn (RDF-resource), geen tekstuele waarde die op een URL lijkt"@nl, "Value must be an IRI (RDF resource), not a string literal that looks like a URL"@en ;
+        ] ,
+        [
+            sh:path schema:spatialCoverage ;
+            sh:pattern "^https?://" ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:message "IRI moet beginnen met http:// of https://"@nl, "IRI must start with http:// or https://"@en ;
         ] ,
         [
             sh:path schema:temporalCoverage ;
@@ -390,7 +455,7 @@ nde-dataset:DatasetShape
         [
             a sh:PropertyShape ;
             sh:path schema:includedInDataCatalog ;
-            sh:node nde-dataset:IriNodeKindShape, nde-dataset:HttpsIriFormatShape ;
+            sh:nodeKind sh:IRI ;
             sh:minCount 0 ;
             sh:severity sh:Warning ;
             nde:futureChange [
@@ -400,6 +465,17 @@ nde-dataset:DatasetShape
             sh:description """
                 The HTTP [[IRI]] of the data catalog(s) that the dataset belongs to.
             """@en ;
+            sh:message "Waarde moet een IRI zijn (RDF-resource), geen tekstuele waarde die op een URL lijkt"@nl, "Value must be an IRI (RDF resource), not a string literal that looks like a URL"@en ;
+        ] ,
+        [
+            sh:path schema:includedInDataCatalog ;
+            sh:pattern "^https?://" ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:message "IRI moet beginnen met http:// of https://"@nl, "IRI must start with http:// or https://"@en ;
         ] ,
         nde-dataset:AccrualPeriodicityProperty ,
         nde-dataset:AccessRightsProperty
@@ -494,12 +570,28 @@ nde-dataset:DistributionShape
         ] ,
         [
             sh:path schema:datePublished ;
-            sh:node nde-dataset:DateDatatypeShape, nde-dataset:DateFormatShape ;
+            sh:or (
+                [ sh:datatype schema:Date ]
+                [ sh:datatype schema:DateTime ]
+                [ sh:datatype xsd:dateTime ]
+                [ sh:datatype xsd:date ]
+            ) ;
             sh:severity sh:Warning ;
             nde:futureChange [
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
+            sh:message "Datum moet van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime zijn"@nl, "Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+        ] ,
+        [
+            sh:path schema:datePublished ;
+            sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
         ] ,
         [
             a sh:PropertyShape ;
@@ -510,12 +602,28 @@ nde-dataset:DistributionShape
         ] ,
         [
             sh:path schema:dateModified ;
-            sh:node nde-dataset:DateDatatypeShape, nde-dataset:DateFormatShape ;
+            sh:or (
+                [ sh:datatype schema:Date ]
+                [ sh:datatype schema:DateTime ]
+                [ sh:datatype xsd:dateTime ]
+                [ sh:datatype xsd:date ]
+            ) ;
             sh:severity sh:Warning ;
             nde:futureChange [
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
+            sh:message "Datum moet van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime zijn"@nl, "Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+        ] ,
+        [
+            sh:path schema:dateModified ;
+            sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
         ] ,
         [
             a sh:PropertyShape ;
@@ -557,7 +665,7 @@ nde-dataset:DistributionShape
         [
             a sh:PropertyShape ;
             sh:path schema:usageInfo ;
-            sh:node nde-dataset:IriNodeKindShape, nde-dataset:HttpsIriFormatShape ;
+            sh:nodeKind sh:IRI ;
             sh:severity sh:Warning ;
             nde:futureChange [
                 nde:version "2.0" ;
@@ -565,6 +673,17 @@ nde-dataset:DistributionShape
             ] ;
             sh:minCount 0 ;
             sh:description "A link to the documentation: for downloads, the application profile, vocabulary or ontology; for [=web APIs=], the protocol specification. See [[#usage-information]]."@en ;
+            sh:message "Waarde moet een IRI zijn (RDF-resource), geen tekstuele waarde die op een URL lijkt"@nl, "Value must be an IRI (RDF resource), not a string literal that looks like a URL"@en ;
+        ] ,
+        [
+            sh:path schema:usageInfo ;
+            sh:pattern "^https?://" ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:message "IRI moet beginnen met http:// of https://"@nl, "IRI must start with http:// or https://"@en ;
         ] ,
         nde-dataset:SchemaDescriptionPropertyShouldExist .
 
@@ -785,31 +904,6 @@ nde-dataset:PersonShape
         sh:message "Een persoon moet een naam hebben"@nl, "A person must have a name"@en ;
     ] ,
     nde-dataset:SchemaNameLangStringProperty .
-
-# Reusable constraint shapes for ISO-8601 dates. Split so each failure mode
-# (wrong datatype vs. malformed lexical form) carries its own sh:message.
-nde-dataset:DateDatatypeShape a sh:NodeShape ;
-    sh:or (
-        [ sh:datatype schema:Date ]
-        [ sh:datatype schema:DateTime ]
-        [ sh:datatype xsd:dateTime ]
-        [ sh:datatype xsd:date ]
-    ) ;
-    sh:message "Datum moet van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime zijn"@nl, "Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en .
-
-nde-dataset:DateFormatShape a sh:NodeShape ;
-    sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
-    sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en .
-
-# Reusable constraint shapes for HTTP(S) IRI values. Split so the node-kind and
-# URL-scheme failures carry their own sh:message.
-nde-dataset:IriNodeKindShape a sh:NodeShape ;
-    sh:nodeKind sh:IRI ;
-    sh:message "Waarde moet een IRI zijn (RDF-resource), geen tekstuele waarde die op een URL lijkt"@nl, "Value must be an IRI (RDF resource), not a string literal that looks like a URL"@en .
-
-nde-dataset:HttpsIriFormatShape a sh:NodeShape ;
-    sh:pattern "^https?://" ;
-    sh:message "IRI moet beginnen met http:// of https://"@nl, "IRI must start with http:// or https://"@en .
 
 #
 # Property shapes
@@ -1044,12 +1138,28 @@ dcat:DatasetShape
     ],
     [
         sh:path dc:created ;
-        sh:node nde-dataset:DateDatatypeShape, nde-dataset:DateFormatShape ;
+        sh:or (
+            [ sh:datatype schema:Date ]
+            [ sh:datatype schema:DateTime ]
+            [ sh:datatype xsd:dateTime ]
+            [ sh:datatype xsd:date ]
+        ) ;
         sh:severity sh:Warning ;
         nde:futureChange [
             nde:version "2.0" ;
             sh:severity sh:Violation ;
         ] ;
+        sh:message "Datum moet van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime zijn"@nl, "Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+    ] ,
+    [
+        sh:path dc:created ;
+        sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
     ],
     [
         sh:path dc:issued ;
@@ -1061,12 +1171,28 @@ dcat:DatasetShape
     ],
     [
         sh:path dc:issued ;
-        sh:node nde-dataset:DateDatatypeShape, nde-dataset:DateFormatShape ;
+        sh:or (
+            [ sh:datatype schema:Date ]
+            [ sh:datatype schema:DateTime ]
+            [ sh:datatype xsd:dateTime ]
+            [ sh:datatype xsd:date ]
+        ) ;
         sh:severity sh:Warning ;
         nde:futureChange [
             nde:version "2.0" ;
             sh:severity sh:Violation ;
         ] ;
+        sh:message "Datum moet van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime zijn"@nl, "Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+    ] ,
+    [
+        sh:path dc:issued ;
+        sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
     ],
     [
         sh:path dc:modified ;
@@ -1078,12 +1204,28 @@ dcat:DatasetShape
     ],
     [
         sh:path dc:modified ;
-        sh:node nde-dataset:DateDatatypeShape, nde-dataset:DateFormatShape ;
+        sh:or (
+            [ sh:datatype schema:Date ]
+            [ sh:datatype schema:DateTime ]
+            [ sh:datatype xsd:dateTime ]
+            [ sh:datatype xsd:date ]
+        ) ;
         sh:severity sh:Warning ;
         nde:futureChange [
             nde:version "2.0" ;
             sh:severity sh:Violation ;
         ] ;
+        sh:message "Datum moet van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime zijn"@nl, "Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+    ] ,
+    [
+        sh:path dc:modified ;
+        sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
     ],
     [
         sh:path dcat:keyword ;
