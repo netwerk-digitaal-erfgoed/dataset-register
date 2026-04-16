@@ -166,9 +166,16 @@
     return downloadDistributions[0];
   });
 
-  // Extract keywords and genres for current locale
+  // Extract keywords and genres for current locale. dcat:theme is the canonical
+  // target for subject/material classification; dct:type is kept for datasets
+  // registered before the schema:about → dcat:theme transition.
+  const EDUC_DEFAULT_THEME =
+    'http://publications.europa.eu/resource/authority/data-theme/EDUC';
   const localizedKeywords = $derived(getLocalizedArray(dataset.keyword));
-  const localizedGenres = $derived(getLocalizedArray(dataset.type));
+  const localizedGenres = $derived([
+    ...(dataset.theme?.filter((value) => value !== EDUC_DEFAULT_THEME) ?? []),
+    ...getLocalizedArray(dataset.type),
+  ]);
 
   // When the publisher and sole creator are the same entity, collapse into one row.
   const publisherIsCreator = $derived(

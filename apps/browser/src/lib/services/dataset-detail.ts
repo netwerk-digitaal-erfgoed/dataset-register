@@ -77,6 +77,11 @@ export const DatasetDetailSchema = {
     '@array': true,
     '@multilang': true,
   },
+  theme: {
+    '@id': dcat.theme,
+    '@optional': true,
+    '@array': true,
+  },
   type: {
     '@id': dcterms.type,
     '@optional': true,
