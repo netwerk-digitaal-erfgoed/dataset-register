@@ -1372,11 +1372,6 @@ dcat:DatasetShape
         sh:path dcat:theme ;
         sh:nodeKind sh:IRI ;
         sh:pattern "^https?://" ;
-        sh:severity sh:Warning ;
-        nde:futureChange [
-            nde:version "2.0" ;
-            sh:severity sh:Violation ;
-        ] ;
         sh:description """De categorie van de dataset. Gebruik minimaal een waarde uit het Europese Dataset Theme Vocabulary.
         Aanbevolen wordt om daarnaast waarden op te nemen uit domeinspecifieke vocabulaires.
         Standaard wordt ‘Education, culture and sport’ (data-theme/EDUC) toegevoegd."""@nl,
