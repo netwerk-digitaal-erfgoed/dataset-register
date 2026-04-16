@@ -38,7 +38,7 @@ nde-dataset:DatacatalogShape
             ) ;
             sh:name "Naam van de datacatalogus"@nl, "Name of the data catalog"@en ;
             sh:description "The name of the data catalog."@en ;
-            sh:message "Een datacatalogus moet een naam hebben"@nl, "A data catalog must have a name"@en ;
+            sh:message "Voeg een titel toe"@nl, "Add a title"@en ;
         ] ,
         nde-dataset:SchemaNameUniqueLangProperty,
         nde-dataset:SchemaNameLangStringProperty,
@@ -55,11 +55,11 @@ nde-dataset:DatacatalogShape
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
-            sh:name "Persoon of organisatie die de datacatalogus heeft gepubliceerd"@nl, "Person or organization that published the data catalog"@en ;
+            sh:name "Uitgever van de datacatalogus"@nl, "Publisher of the data catalog"@en ;
             sh:description """
                 The publisher of the data catalog.
             """@en ;
-            sh:message "Een datacatalogus moet een geldige uitgever bevatten"@nl, "A data catalog must have a valid publisher"@en ;
+            sh:message "Voeg een uitgever toe"@nl, "Add a publisher"@en ;
             sh:or (
                 [ sh:class schema:Organization ]
                 [ sh:class schema:Person ]
@@ -71,7 +71,7 @@ nde-dataset:DatacatalogShape
             sh:minCount 1 ;
             sh:name "Dataset(s) in de datacatalogus"@nl, "Dataset(s) in the data catalog"@en ;
             sh:description "The datasets that are contained in the data catalog."@en ;
-            sh:message "Een datacatalogus moet minimaal één dataset bevatten"@nl, "A data catalog must have at least one dataset"@en ;
+            sh:message "Voeg minimaal één datasetbeschrijving toe aan de datacatalogus"@nl, "Add at least one dataset description to the data catalog"@en ;
             sh:severity sh:Warning ;
         ]
 .
@@ -83,6 +83,7 @@ nde-dataset:DatasetShape
     sh:pattern "^https?://" ;
     sh:name "Datasetbeschrijving"@nl, "Dataset description"@en ;
     sh:description "Een datasetbeschrijving bestaat uit elementen die de dataset beschrijven"@nl, "A dataset description consists of elements that describe the dataset"@en ;
+    sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
 
     sh:property
         # Required properties
@@ -94,7 +95,8 @@ nde-dataset:DatasetShape
                 [ sh:datatype rdf:langString ]
             ) ;
             sh:name "Naam van de beschreven dataset"@nl, "Name of the described dataset"@en ;
-            sh:message "Een datasetbeschrijving moet een naam hebben"@nl, "A dataset description must have a name"@en ;
+            sh:description "De naam van de dataset."@nl, "A name given to the dataset."@en ;
+            sh:message "Voeg een titel toe"@nl, "Add a title"@en ;
         ] ,
         nde-dataset:SchemaNameUniqueLangProperty,
         nde-dataset:SchemaNameLangStringProperty,
@@ -106,11 +108,9 @@ nde-dataset:DatasetShape
             sh:path schema:publisher ;
             sh:minCount 1 ;
             sh:maxCount 1 ;
-            sh:name "Persoon of organisatie die de dataset heeft gepubliceerd"@nl, "Person or organization that published the dataset"@en ;
-            sh:description """
-                The publisher of the dataset.
-            """@en ;
-            sh:message "Een dataset description moet een geldige uitgever bevatten (zonder waarschuwingen)"@nl, "A dataset description must contain a valid publisher (without warnings)"@en ;
+            sh:name "Uitgever van de dataset"@nl, "Publisher of the dataset"@en ;
+            sh:description "De organisatie of persoon die verantwoordelijk is voor de publicatie van de dataset."@nl, "An entity (organisation or person) responsible for making the Dataset available."@en ;
+            sh:message "Voeg een uitgever toe"@nl, "Add a publisher"@en ;
             sh:or (
                 [ sh:class schema:Organization ]
                 [ sh:class schema:Person ]
@@ -118,11 +118,6 @@ nde-dataset:DatasetShape
         ] ,
         [
             sh:path schema:license ;
-            sh:nodeKind sh:IRIOrLiteral ;
-            nde:futureChange [
-                nde:version "2.0" ;
-                sh:nodeKind sh:IRI ;
-            ] ;
             sh:minCount 1 ;
             sh:maxCount 1 ;
             sh:severity sh:Warning ;
@@ -132,21 +127,31 @@ nde-dataset:DatasetShape
                 License applicable to the dataset. As a convenience, this license is inherited by all distributions
                 that do not specify their own license. Publishers *MUST* make known under which [[DWBP#licenses|license]] the dataset may be used.
 
-                This license specifies the conditions under which the metadata in the [=dataset=] may be accessed and reused.
+                This license specifies the conditions under which the metadata records in the [=dataset=] may be accessed and reused.
                 It does not cover the heritage objects (either physical or digital) that the metadata describes.
                 Access conditions for these objects should be specified in their own descriptions within the dataset.
 
-                The [[DERA]] requires metadata to be published openly,
+                The [[!DERA]] requires metadata to be published openly,
                 so this value *SHOULD* be an open license that allows [=consumers=] to reuse the data,
-                for example one of the [Creative Commons](https://creativecommons.org/choose/) licenses.
+                such as `https://creativecommons.org/publicdomain/zero/1.0/` (CC0), `https://creativecommons.org/licenses/by/4.0/` (CC BY 4.0), or `https://creativecommons.org/licenses/by-sa/4.0/` (CC BY-SA 4.0).
                 Adopting a non-open license will severely limit reuse and does not comply
                 with the DERA principles.
 
-                The value *MUST* be the canonical IRI of a license.
-                For example, use https://creativecommons.org/publicdomain/zero/1.0/ instead
-                of https://creativecommons.org/publicdomain/zero/1.0/deed.nl.
+                The value *MUST* be the canonical URI of a license.
+                For example, use `https://creativecommons.org/publicdomain/zero/1.0/` instead
+                of `https://creativecommons.org/publicdomain/zero/1.0/deed.nl`.
                 """@en ;
-            sh:message "Een datasetbeschrijving moet één licentie bevatten (in de vorm van een URI)"@nl, "A dataset description must contain one license (in the form of an IRI)"@en ;
+            sh:message "Voeg één licentie toe"@nl, "Add one license"@en ;
+        ] ,
+        [
+            sh:path schema:license ;
+            sh:nodeKind sh:IRIOrLiteral ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:nodeKind sh:IRI ;
+            ] ;
+            sh:severity sh:Warning ;
+            sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
         ] ,
         [
             sh:path schema:license ;
@@ -165,31 +170,31 @@ nde-dataset:DatasetShape
                 <https://creativecommons.org/licenses/by-nd/4.0/>
                 <https://creativecommons.org/licenses/by-nc-nd/4.0/>
             ) ;
-            sh:message "Gebruik een van de aanbevolen canonieke licentie-URI's"@nl, "Use one of the recommended canonical license IRIs"@en ;
+            sh:message "Gebruik een van de Creative Commons-licenties, zoals https://creativecommons.org/publicdomain/zero/1.0/ (CC0) of https://creativecommons.org/licenses/by/4.0/ (CC BY 4.0)"@nl, "Use one of the Creative Commons licenses, such as https://creativecommons.org/publicdomain/zero/1.0/ (CC0) or https://creativecommons.org/licenses/by/4.0/ (CC BY 4.0)"@en ;
         ] ,
         [
             sh:path schema:license ;
             sh:node nde-dataset:LicenseCreativeCommonsHttpsShape ;
             sh:severity sh:Warning ;
-            sh:message "Gebruik de canonieke Creative Commons licentie-URI met https:// (bijv. https://creativecommons.org/publicdomain/zero/1.0/)"@nl, "Use the canonical Creative Commons license IRI with https:// (e.g. https://creativecommons.org/publicdomain/zero/1.0/)"@en ;
+            sh:message "Gebruik https:// (niet http://) in de Creative Commons-licentie-URL"@nl, "Use https:// (not http://) in the Creative Commons license URL"@en ;
         ] ,
         [
             sh:path schema:license ;
             sh:node nde-dataset:LicenseCreativeCommonsTrailingSlashShape ;
             sh:severity sh:Warning ;
-            sh:message "Gebruik de canonieke Creative Commons licentie-URI met een afsluitende slash (bijv. https://creativecommons.org/licenses/by/4.0/)"@nl, "Use the canonical Creative Commons license IRI with a trailing slash (e.g. https://creativecommons.org/licenses/by/4.0/)"@en ;
+            sh:message "Eindig de Creative Commons-licentie-URI met een slash"@nl, "End the Creative Commons license URI with a slash"@en ;
         ] ,
         [
             sh:path schema:license ;
             sh:node nde-dataset:LicenseNotOpenDefinitionShape ;
             sh:severity sh:Warning ;
-            sh:message "Gebruik de canonieke licentie-URI van de licentiegever zelf (bijv. https://creativecommons.org/licenses/by/4.0/), niet een opendefinition.org-alias"@nl, "Use the canonical license IRI from the license issuer itself (e.g. https://creativecommons.org/licenses/by/4.0/), not an opendefinition.org alias"@en ;
+            sh:message "Gebruik de Creative Commons-URI zelf, geen opendefinition.org-alias"@nl, "Use the Creative Commons URI directly, not an opendefinition.org alias"@en ;
         ] ,
         [
             sh:path schema:license ;
             sh:node nde-dataset:LicenseOpenDataCommonsShape ;
             sh:severity sh:Warning ;
-            sh:message "Gebruik de canonieke OpenDataCommons licentie-URI met versienummer (bijv. http://opendatacommons.org/licenses/odbl/1.0/)"@nl, "Use the canonical OpenDataCommons license IRI with version number (e.g. http://opendatacommons.org/licenses/odbl/1.0/)"@en ;
+            sh:message "Gebruik de officiële Open Data Commons-licentie-URI met versienummer, bijv. http://opendatacommons.org/licenses/odbl/1.0/"@nl, "Use an official Open Data Commons licence URI with a version number, such as http://opendatacommons.org/licenses/odbl/1.0/"@en ;
         ] ,
         # Recommended properties
         [
@@ -198,7 +203,7 @@ nde-dataset:DatasetShape
             sh:minCount 1 ;
             sh:severity sh:Info ;
             sh:name "Dataset distributions"@en , "Distributies van een dataset"@nl ;
-            sh:description "Distributies waarmee de dataset kan worden opgehaald, bijvoorbeeld als download of via een API."@nl, "Distributions through which the dataset can be retrieved, for example as a download or via an API."@en ;
+            sh:description "Distributies waarmee de dataset kan worden opgehaald, bijvoorbeeld als download of via een API."@nl, "Distributions through which the dataset can be retrieved, such as as a download or via an API."@en ;
         ] ,
         [
             sh:path schema:creator ;
@@ -212,11 +217,9 @@ nde-dataset:DatasetShape
                 [ sh:class schema:Organization ]
                 [ sh:class schema:Person ]
             ) ;
-            sh:name "Persoon of organisatie die de dataset heeft gemaakt"@nl, "Person or organization which created the dataset"@en ;
-            sh:description """
-                The owner of the dataset.
-            """@en ;
-            sh:message "Een datasetbeschrijving zou een maker moeten hebben"@nl, "A dataset description should contain a creator"@en ;
+            sh:name "Maker van de dataset"@nl, "Creator of the dataset"@en ;
+            sh:description "De organisatie of persoon die verantwoordelijk is voor het creëren van de beschreven dataset."@nl, "An entity (organisation or person) responsible for producing the dataset."@en ;
+            sh:message "Voeg een maker toe"@nl, "Add a creator"@en ;
         ] ,
         [
             sh:path schema:datePublished ;
@@ -224,8 +227,8 @@ nde-dataset:DatasetShape
             sh:maxCount 1 ;
             sh:severity sh:Info ;
             sh:name "Publication date"@en, "Publicatiedatum"@nl ;
-            sh:description "Publicatiedatum van de datasetbeschrijving."@nl, "Publication date of the dataset description."@en ;
-            sh:message "Een datasetbeschrijving zou één publicatiedatum moeten bevatten"@nl, "A dataset description should contain one publication date"@en ;
+            sh:description "De datum van formele uitgifte (bijvoorbeeld publicatie) van de dataset."@nl, "The date of formal issuance (such as publication) of the dataset."@en ;
+            sh:message "Vul de publicatiedatum in"@nl, "Enter the publication date"@en ;
         ] ,
         [
             sh:path schema:datePublished ;
@@ -240,7 +243,7 @@ nde-dataset:DatasetShape
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
-            sh:message "Datum moet van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime zijn"@nl, "Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+            sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
         ] ,
         [
             sh:path schema:datePublished ;
@@ -250,7 +253,7 @@ nde-dataset:DatasetShape
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
-            sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
+            sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
         ] ,
         [
             sh:path schema:dateCreated ;
@@ -258,8 +261,8 @@ nde-dataset:DatasetShape
             sh:maxCount 1 ;
             sh:severity sh:Info ;
             sh:name "Creation date"@en, "Aanmaakdatum"@nl ;
-            sh:description "Aanmaakdatum van de datasetbeschrijving."@nl, "Creation date of the dataset description."@en ;
-            sh:message "Een datasetbeschrijving zou één aanmaakdatum moeten bevatten"@nl, "A dataset description should contain one creation date"@en ;
+            sh:description "De datum waarop de dataset is aangemaakt."@nl, "The date on which the dataset was created."@en ;
+            sh:message "Vul de aanmaakdatum in"@nl, "Enter the creation date"@en ;
         ] ,
         [
             sh:path schema:dateCreated ;
@@ -274,7 +277,7 @@ nde-dataset:DatasetShape
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
-            sh:message "Datum moet van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime zijn"@nl, "Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+            sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
         ] ,
         [
             sh:path schema:dateCreated ;
@@ -284,7 +287,7 @@ nde-dataset:DatasetShape
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
-            sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
+            sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
         ] ,
         [
             sh:path schema:dateModified ;
@@ -292,8 +295,8 @@ nde-dataset:DatasetShape
             sh:maxCount 1 ;
             sh:severity sh:Info ;
             sh:name "Last modified date"@en, "Wijzigingsdatum"@nl ;
-            sh:description "Datum waarop de datasetbeschrijving voor het laatst is gewijzigd."@nl, "Date on which the dataset description was last modified."@en ;
-            sh:message "Een datasetbeschrijving zou één wijzigingsdatum moeten bevatten"@nl, "A dataset description should contain one modification date"@en ;
+            sh:description "De meest recente datum waarop de dataset is gewijzigd of aangepast."@nl, "The most recent date on which the dataset was changed or modified."@en ;
+            sh:message "Vul de wijzigingsdatum datum in"@nl, "Enter the last modified date"@en ;
         ] ,
         [
             sh:path schema:dateModified ;
@@ -308,7 +311,7 @@ nde-dataset:DatasetShape
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
-            sh:message "Datum moet van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime zijn"@nl, "Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+            sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
         ] ,
         [
             sh:path schema:dateModified ;
@@ -318,7 +321,7 @@ nde-dataset:DatasetShape
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
-            sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
+            sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
         ] ,
         [
             a sh:PropertyShape ;
@@ -326,8 +329,8 @@ nde-dataset:DatasetShape
             sh:name "Version"@en ;
             sh:minCount 0 ;
             sh:maxCount 1 ;
-            sh:description "Versieaanduiding van de dataset, bijvoorbeeld een semantisch versienummer of een datum."@nl, "Version identifier of the dataset, for example a semantic version number or a date."@en ;
-            sh:message "Een datasetbeschrijving mag een versie bevatten"@nl, "A dataset description may contain a version"@en ;
+            sh:description "Versieaanduiding van de dataset, bijvoorbeeld een semantisch versienummer of een datum."@nl, "Version identifier of the dataset, such as a semantic version number or a date."@en ;
+            sh:message "Voeg een versie toe (bijv. 1.0 of 2.1) als je met meerdere versies van een datasetbeschrijving werkt"@nl, "Add a version (such as 1.0 or 2.1) if you work with multiple versions of the dataset description"@en ;
         ] ,
         [
             a sh:PropertyShape ;
@@ -338,34 +341,32 @@ nde-dataset:DatasetShape
             ] ;
             sh:minCount 0 ;
             sh:name "Language"@en ;
-            sh:description """De natuurlijke taal van de tekstuele waardes in de dataset – dus van de beschrijvingen van de erfgoedobjecten zelf (titels, omschrijvingen, onderwerpen, enzovoort). Niet alle data heeft de eigenschap taal, bijvoorbeeld afbeeldingen.
+            sh:description """De natuurlijke taal van de tekstuele waardes in de dataset – dus van de metadata-records zelf (titels, omschrijvingen enzovoort).
 
-                Gebruik van de waardelijst EU Vocabularies Languages Named Authority List is vereist.
+                Gebruik een [[!BCP47]]-taalcode, bijv. `nl` of `en`."""@nl,
+                """The natural language of the textual values within the dataset – that is, of the metadata records themselves (titles, descriptions, and so on).
 
-                De waarde heeft alleen betrekking op de tekstuele waardes in de dataset zelf en niet op de taal van de metadata van de dataset. De taal van de datasetbeschrijving wordt opgenomen in de eigenschap language van de klasse CatalogRecord."""@nl,
-                """The natural language of the textual values within the dataset – that is, of the heritage object records themselves (titles, descriptions, subjects, and so on). Not all data has a language property, for example images.
-
-                Use of the EU Vocabularies Languages Named Authority List is required.
-
-                The value applies only to the textual values in the dataset itself and not to the language of the dataset description. The language of the dataset description is captured in the language property of the CatalogRecord class."""@en ;
+                Use a [[!BCP47]] language code, such as `nl` or `en`."""@en ;
         ] ,
         [
             a sh:PropertyShape ;
             sh:path schema:mainEntityOfPage ;
             sh:minCount 0 ;
             sh:nodeKind sh:IRI ;
-            sh:name "Main entity of page"@en ;
-            sh:description """
-                URL of a landing page where the dataset is described for human users.
-                Not needed when the dataset IRI itself resolves to an HTML page (see [[#resolvable-iris]]).
+            sh:name "Landing page"@en ;
+            sh:description """Een webpagina die toegang biedt tot de dataset, zijn distributies of aanvullende informatie.
+                Niet nodig als de URI van de dataset zelf al naar een HTML-pagina resolvet (zie [[#resolvable-iris]]).
+                De menselijk leesbare beschrijving *MOET* consistent zijn met en minstens alle details (zoals distributies) uit de RDF-datasetbeschrijving bevatten."""@nl, """
+                A web page that provides access to the Dataset, its Distributions and/or additional information.
+                Not needed when the dataset URI itself resolves to an HTML page (see [[#resolvable-iris]]).
                 The human-readable description *MUST* be consistent with and include at least all details (such as distributions) from the RDF dataset description.
             """@en ;
-            sh:message "Waarde moet een IRI zijn (RDF-resource), geen tekstuele waarde die op een URL lijkt"@nl, "Value must be an IRI (RDF resource), not a string literal that looks like a URL"@en ;
+            sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
         ] ,
         [
             sh:path schema:mainEntityOfPage ;
-            sh:pattern "^https?://" ;
-            sh:message "IRI moet beginnen met http:// of https://"@nl, "IRI must start with http:// or https://"@en ;
+            sh:pattern "^https://" ;
+            sh:message "Gebruik een web-URL die begint met https://"@nl, "Use a web URL starting with https://"@en ;
         ] ,
         [
             a sh:PropertyShape ;
@@ -373,7 +374,7 @@ nde-dataset:DatasetShape
             sh:minCount 0 ;
             sh:name "Is based on"@en ;
             sh:description """
-                The URL of dataset this dataset is based on (previously schema:isBasedOnUrl).
+                The URI of a dataset this dataset is based on (previously schema:isBasedOnUrl).
             """@en ;
         ] ,
         [
@@ -392,27 +393,26 @@ nde-dataset:DatasetShape
             sh:description """
                 The genre or genres which describe the dataset.
             """@en ;
-            sh:message "Een datasetbeschrijving zou genres moeten bevatten"@nl, "A dataset description should contain genres"@en ;
+            sh:message "Voeg een of meer genres toe"@nl, "Add one or more genres"@en ;
         ] ,
         [
             sh:path schema:keywords ;
             sh:minCount 1 ;
             sh:severity sh:Info ;
-            sh:description """
-                The keyword or keywords which describe the dataset.
-            """@en ;
-            sh:message "Een datasetbeschrijving zou trefwoorden moeten bevatten"@nl, "A dataset description should contain keywords"@en ;
+            sh:description "Woorden of geformaliseerde zinnen om een dataset te beschrijven."@nl, "Words or formalized phrases to describe the dataset."@en ;
+            sh:message "Voeg trefwoorden toe"@nl, "Add keywords"@en ;
         ] ,
         [
             sh:path schema:spatialCoverage ;
             sh:minCount 1 ;
             sh:severity sh:Info ;
-            sh:description """
-                Indicates the place(s) which are the focus of the dataset.
-                Use an IRI from a controlled vocabulary such as [GeoNames](https://www.geonames.org/).
-                Find place IRIs via the [Network of Terms](https://termennetwerk.netwerkdigitaalerfgoed.nl/).
-            """@en ;
-            sh:message "Een datasetbeschrijving zou een gebiedsaanduiding moeten bevatten"@nl, "A dataset description should contain spatial coverage"@en ;
+            sh:description """Het geografische gebied waarop de gegevens in de dataset betrekking hebben.
+                Gebruik een URI uit een gecontroleerd vocabulaire zoals [GeoNames](https://www.geonames.org/).
+                Zoek plaats-URI’s via het [Termennetwerk](https://termennetwerk.netwerkdigitaalerfgoed.nl/)."""@nl,
+                """The geographical area to which the data in the dataset pertains.
+                Use a URI from a controlled vocabulary such as [GeoNames](https://www.geonames.org/).
+                Find place URIs via the [Network of Terms](https://termennetwerk.netwerkdigitaalerfgoed.nl/en)."""@en ;
+            sh:message "Voeg een gebiedsaanduiding toe (bijv. een URI uit GeoNames)"@nl, "Add spatial coverage (such as a GeoNames URI)"@en ;
         ] ,
         [
             sh:path schema:spatialCoverage ;
@@ -422,8 +422,8 @@ nde-dataset:DatasetShape
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
-            sh:description "Spatial coverage must be an HTTP(S) IRI, for example from [GeoNames](https://www.geonames.org/)."@en ;
-            sh:message "Waarde moet een IRI zijn (RDF-resource), geen tekstuele waarde die op een URL lijkt"@nl, "Value must be an IRI (RDF resource), not a string literal that looks like a URL"@en ;
+            sh:description "Spatial coverage must be an HTTP(S) URI, such as from [GeoNames](https://www.geonames.org/)."@en ;
+            sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
         ] ,
         [
             sh:path schema:spatialCoverage ;
@@ -433,16 +433,14 @@ nde-dataset:DatasetShape
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
-            sh:message "IRI moet beginnen met http:// of https://"@nl, "IRI must start with http:// or https://"@en ;
+            sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
         ] ,
         [
             sh:path schema:temporalCoverage ;
             sh:minCount 1 ;
             sh:severity sh:Info ;
-            sh:description """
-                Indicates the period that the dataset applies to.
-            """@en ;
-            sh:message "Een datasetbeschrijving zou een tijdsaanduiding moeten bevatten"@nl, "A dataset description should contain temporal coverage"@en ;
+            sh:description "De tijdsperiode waar de dataset betrekking op heeft."@nl, "The time period to which the dataset pertains."@en ;
+            sh:message "Voeg een tijdsaanduiding toe"@nl, "Add temporal coverage"@en ;
         ] ,
         [
             a sh:PropertyShape ;
@@ -463,9 +461,9 @@ nde-dataset:DatasetShape
                 sh:severity sh:Violation ;
             ] ;
             sh:description """
-                The HTTP [[IRI]] of the data catalog(s) that the dataset belongs to.
+                The HTTP [[!IRI]] of the data catalog(s) that the dataset belongs to.
             """@en ;
-            sh:message "Waarde moet een IRI zijn (RDF-resource), geen tekstuele waarde die op een URL lijkt"@nl, "Value must be an IRI (RDF resource), not a string literal that looks like a URL"@en ;
+            sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
         ] ,
         [
             sh:path schema:includedInDataCatalog ;
@@ -475,7 +473,7 @@ nde-dataset:DatasetShape
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
-            sh:message "IRI moet beginnen met http:// of https://"@nl, "IRI must start with http:// or https://"@en ;
+            sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
         ] ,
         nde-dataset:AccrualPeriodicityProperty ,
         nde-dataset:AccessRightsProperty
@@ -490,8 +488,8 @@ nde-dataset:DistributionShape
             sh:path schema:contentUrl ;
             sh:minCount 1 ;
             sh:maxCount 1 ;
-            sh:description "De URL waar de distributie rechtstreeks toegankelijk is."@nl, "The URL where the distribution may be directly accessed."@en ;
-            sh:message "Een distributie moet een URL hebben"@nl, "A distribution must have a content URL"@en ;
+            sh:description "De URL waar de distributie rechtstreeks toegankelijk is."@nl, "The URL where the distribution can be directly accessed."@en ;
+            sh:message "Voeg de URL toe waar de distributie rechtstreeks toegankelijk is"@nl, "Add the URL where the distribution can be directly accessed"@en ;
         ] ,
         [
             sh:path schema:contentUrl ;
@@ -499,15 +497,14 @@ nde-dataset:DistributionShape
                 [ sh:nodeKind sh:IRI ]          # schema.org’s JSON-LD context coerces contentUrl to @id, so values land as IRIs
                 [ sh:datatype xsd:anyURI ]      # xsd:anyURI literal accepted for Turtle / custom-context submissions
             ) ;
-            sh:pattern "^https?://" ;
+            sh:pattern "^https://" ;
             sh:severity sh:Warning ;
             nde:futureChange [
                 nde:version "2.0" ;
                 sh:nodeKind sh:IRI ;
                 sh:severity sh:Violation ;
             ] ;
-            sh:description "De URL waar de distributie rechtstreeks toegankelijk is."@nl, "The URL where the distribution may be directly accessed."@en ;
-            sh:message "De URL van de distributie kan een IRI zijn of een letterlijke waarde van type xsd:anyURI."@nl, "The distribution’s content URL can be an IRI or a literal of type xsd:anyURI."@en ;
+            sh:message "Gebruik een geldige HTTPS-URL voor de distributie"@nl, "Use a valid HTTPS URL for the distribution"@en ;
         ] ,
         [
             sh:or (
@@ -520,18 +517,7 @@ nde-dataset:DistributionShape
                     sh:path schema:usageInfo ;
                 ] ]
             ) ;
-            sh:description """
-                Het MIME-formaat van de distributie of een link naar de documentatie.
-                Voor downloads: gebruik een waarde uit de [[IANA-MEDIA-TYPES]] lijst. Gebruik optioneel schema:usageInfo om te verwijzen naar het applicatieprofiel, vocabulaire of ontologie.
-                Voor API’s (zoals SPARQL of OAI-PMH): gebruik schema:usageInfo met een link naar de protocolspecificatie."""@nl ,
-            """The distribution’s MIME format or a link to the documentation.
-            For downloads: use a value from the [[IANA-MEDIA-TYPES]] list.
-            The value should indicate the media type of the response of the schema:contentUrl when no Accept header is included in the request.
-            Optionally use schema:usageInfo to reference the application profile, vocabulary or ontology the data conforms to.
-            For APIs (such as SPARQL or OAI-PMH): use schema:usageInfo with a link to the protocol specification.
-            When the distribution is compressed, the compression format (e.g. zip, gzip) should be added to the `schema:encodingFormat` (e.g. `text/turtle+gzip`).
-            """@en ;
-            sh:message "Een distributie moet een encoderingsformaat of usageInfo hebben"@nl, "A distribution must have an encoding format or usageInfo"@en ;
+            sh:message "Geef het MIME-type van de dataset op (bijv. application/n-triples) of het API-protocol (bijv. https://www.w3.org/TR/sparql11-protocol/)"@nl, "Specify the dataset format (such as application/n-triples) or the API protocol (such as https://www.w3.org/TR/sparql11-protocol/)"@en ;
         ] ,
         [
             sh:path schema:encodingFormat ;
@@ -541,13 +527,12 @@ nde-dataset:DistributionShape
                 sh:maxCount 1 ;
             ] ;
             sh:description """Het mediatype van het downloadbare bestand.
-                Gebruik een waarde uit de [[IANA-MEDIA-TYPES]] lijst.
+                Gebruik een waarde uit de [[IANA-MEDIA-TYPES]] lijst. De waarde geeft het mediatype aan van de response van schema:contentUrl wanneer er geen Accept-header wordt meegestuurd.
                 Bij gecomprimeerde distributies moet het compressieformaat (bijv. zip, gzip) worden toegevoegd (bijv. text/turtle+gzip)."""@nl ,
             """The media type of the downloadable file.
-            Use a value from the [[IANA-MEDIA-TYPES]] list.
-            When the distribution is compressed, the compression format (e.g. zip, gzip) must be included (e.g. `text/turtle+gzip`)."""@en ;
-            sh:message "Het encoderingsformaat moet een geldig MIME-type zijn (bijv. application/ld+json)"@nl,
-                "The encoding format must be a valid MIME type (e.g. application/ld+json)"@en ;
+            Use a value from the [[IANA-MEDIA-TYPES]] list. The value should indicate the media type of the response of schema:contentUrl when no Accept header is included in the request.
+            When the distribution is compressed, the compression format (such as `zip`, `gzip`) must be included (such as `text/turtle+gzip`)."""@en ;
+            sh:message "Vul een geldig MIME-type in, bijv. application/n-triples"@nl, "Enter a valid MIME type, such as application/n-triples"@en ;
         ] ,
         # Recommended properties
         [
@@ -558,7 +543,7 @@ nde-dataset:DistributionShape
             );
             sh:name "Distribution description"@en ;
             sh:description "A description of the distribution."@en ;
-            sh:message "De beschrijving van een distributie moet van type string of langString zijn"@nl, "A distribution description must be of type string or langString"@en ;
+            sh:message "Gebruik een waarde van type xsd:string of rdf:langString"@nl, "Use a value of type xsd:string or rdf:langString"@en ;
         ] ,
         nde-dataset:SchemaDescriptionUniqueLangProperty,
         [
@@ -566,39 +551,28 @@ nde-dataset:DistributionShape
             sh:path schema:datePublished ;
             sh:minCount 0 ;
             sh:maxCount 1 ;
-            sh:description "Date (or datetime) the distribution was published."@en ;
+            sh:description "De datum van formele uitgifte (bijvoorbeeld publicatie) van de distributie."@nl, "The date of formal issuance (such as publication) of the distribution."@en ;
         ] ,
         [
-            sh:path schema:datePublished ;
-            sh:or (
-                [ sh:datatype schema:Date ]
-                [ sh:datatype schema:DateTime ]
-                [ sh:datatype xsd:dateTime ]
-                [ sh:datatype xsd:date ]
-            ) ;
-            sh:severity sh:Warning ;
-            nde:futureChange [
-                nde:version "2.0" ;
-                sh:severity sh:Violation ;
-            ] ;
-            sh:message "Datum moet van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime zijn"@nl, "Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
-        ] ,
-        [
-            sh:path schema:datePublished ;
-            sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
-            sh:severity sh:Warning ;
-            nde:futureChange [
-                nde:version "2.0" ;
-                sh:severity sh:Violation ;
-            ] ;
-            sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
-        ] ,
-        [
-            a sh:PropertyShape ;
             sh:path schema:dateModified ;
             sh:minCount 0 ;
             sh:maxCount 1 ;
-            sh:description "Date (or datetime) the distribution was last modified."@en ;
+            sh:description "De meest recente datum waarop de distributie is gewijzigd of aangepast."@nl, "The most recent date on which the distribution was changed or modified."@en ;
+        ] ,
+        [
+            sh:path schema:datePublished ;
+            sh:or (
+                [ sh:datatype schema:Date ]
+                [ sh:datatype schema:DateTime ]
+                [ sh:datatype xsd:dateTime ]
+                [ sh:datatype xsd:date ]
+            ) ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
         ] ,
         [
             sh:path schema:dateModified ;
@@ -613,7 +587,17 @@ nde-dataset:DistributionShape
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
-            sh:message "Datum moet van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime zijn"@nl, "Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+            sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+        ] ,
+        [
+            sh:path schema:datePublished ;
+            sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
         ] ,
         [
             sh:path schema:dateModified ;
@@ -623,10 +607,9 @@ nde-dataset:DistributionShape
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
-            sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
+            sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
         ] ,
         [
-            a sh:PropertyShape ;
             sh:path schema:inLanguage ;
             nde:futureChange [
                 nde:version "2.0" ;
@@ -635,14 +618,14 @@ nde-dataset:DistributionShape
             sh:minCount 0 ;
             sh:name "Language"@en ;
             sh:description """
-                Language or languages in which the distribution is available. Use one of the language codes from the [[BCP47]], such as `nl-NL`.
+                Language or languages in which the distribution is available. Use a [[!BCP47]] language code, such as `nl`.
             """@en ;
+            sh:message "Gebruik een BCP 47-taalcode, bijv. nl of en"@nl, "Use a BCP 47 language code, such as nl or en"@en ;
         ] ,
         [
             sh:path schema:license ;
             sh:nodeKind sh:IRIOrLiteral ;
             sh:minCount 0 ;
-            sh:maxCount 1 ;
             nde:futureChange [
                 nde:version "2.0" ;
                 sh:nodeKind sh:IRI ;
@@ -653,7 +636,13 @@ nde-dataset:DistributionShape
                 """License applicable to the distribution.
         If the distribution has no license of its own, the license of the parent dataset is inherited.
         A license must always be available, either on the distribution or on the dataset."""@en ;
-            sh:message "Een distributie mag maximaal één licentie bevatten (in de vorm van een IRI)"@nl, "A distribution may contain at most one license (as an IRI)"@en ;
+            sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
+        ] ,
+        [
+            sh:path schema:license ;
+            sh:maxCount 1 ;
+            sh:severity sh:Warning ;
+            sh:message "Gebruik maximaal één licentie"@nl, "Use at most one license"@en ;
         ] ,
         [
             a sh:PropertyShape ;
@@ -672,8 +661,8 @@ nde-dataset:DistributionShape
                 sh:severity sh:Violation ;
             ] ;
             sh:minCount 0 ;
-            sh:description "A link to the documentation: for downloads, the application profile, vocabulary or ontology; for [=web APIs=], the protocol specification. See [[#usage-information]]."@en ;
-            sh:message "Waarde moet een IRI zijn (RDF-resource), geen tekstuele waarde die op een URL lijkt"@nl, "Value must be an IRI (RDF resource), not a string literal that looks like a URL"@en ;
+            sh:description "Een link naar de documentatie: voor downloads het applicatieprofiel, vocabulaire of ontologie; voor web-API’s (zoals SPARQL of OAI-PMH) de protocolspecificatie. Zie [[#usage-information]]."@nl, "A link to the documentation: for downloads, the application profile, vocabulary or ontology; for [=web APIs=] (such as SPARQL or OAI-PMH), the protocol specification. See [[#usage-information]]."@en ;
+            sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
         ] ,
         [
             sh:path schema:usageInfo ;
@@ -683,7 +672,7 @@ nde-dataset:DistributionShape
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
-            sh:message "IRI moet beginnen met http:// of https://"@nl, "IRI must start with http:// or https://"@en ;
+            sh:message "Gebruik een web URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
         ] ,
         nde-dataset:SchemaDescriptionPropertyShouldExist .
 
@@ -694,7 +683,7 @@ nde-dataset:DistributionShape
 nde-dataset:DistributionLicenseRequiredShape
     a sh:NodeShape ;
     sh:targetObjectsOf schema:distribution ;
-    sh:message "Een distributie of de bovenliggende dataset moet een licentie hebben"@nl, "A distribution or its parent dataset must have a license"@en ;
+    sh:message "Voeg een licentie toe aan de distributie of de bovenliggende dataset"@nl, "Add a license to the distribution or its parent dataset"@en ;
     sh:sparql [
         sh:select """
             PREFIX schema: <https://schema.org/>
@@ -711,7 +700,7 @@ nde-dataset:DistributionLicenseRequiredShape
 nde-dataset:OrganizationShape
     a sh:NodeShape ;
     sh:targetObjectsOf schema:publisher, schema:creator ;
-    sh:message "Must be a valid organization" ;
+    sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
     sh:nodeKind sh:IRI ;
     sh:pattern "^https?://" ;
     sh:property
@@ -723,7 +712,7 @@ nde-dataset:OrganizationShape
                 [ sh:datatype rdf:langString ]
             ) ;
             sh:description "The organization’s full name."@en ;
-            sh:message "Een organisatie moet een naam hebben"@nl, "An organization must contain a name"@en ;
+            sh:message "Vul een naam in voor de organisatie"@nl, "Enter a name for the organisation"@en ;
         ] ,
         nde-dataset:SchemaNameUniqueLangProperty,
         nde-dataset:SchemaNameLangStringProperty,
@@ -736,13 +725,23 @@ nde-dataset:OrganizationShape
             sh:minCount 0 ;
             sh:name "Alternatieve naam van de organisatie"@nl, "Alternative name of the organization"@en ;
             sh:description "Alternative names such as an abbreviation that the organization is known under."@en ;
-            sh:message "Een organisatie mag één of meer alternatieve namen hebben; maximaal 1 per taal"@nl, "An organization may have one or more alternative names; at most one per language"@en ;
+            sh:message "Gebruik een waarde van type rdf:langString en geef de taal aan (bijv. nl of en)"@nl, "Use a value of type rdf:langString and specify the language (such as nl or en)"@en ;
         ] ,
         [
             sh:path schema:alternateName ;
             sh:uniqueLang true ;
             sh:severity sh:Warning ;
-            sh:message "Een organisatie mag maximaal één alternatieve naam (per taal) hebben"@nl, "An organization may have at most one alternative name (per language)"@en ;
+            sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
+        ] ,
+        [
+            sh:path schema:alternateName ;
+            sh:datatype rdf:langString ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:message "Gebruik een waarde van type rdf:langString en geef de taal aan (bijv. nl of en)"@nl, "Use a value of type rdf:langString and specify the language (such as nl or en)"@en ;
         ] ,
         [
             sh:path schema:identifier ;
@@ -756,7 +755,7 @@ nde-dataset:OrganizationShape
             sh:description """
                 Identifier(s) of the organization, at least its <a href="https://www.nationaalarchief.nl/archiveren/kennisbank/isil-codes">ISIL code</a>.
             """@en ;
-            sh:message "Een identifier moet van type string of schema:PropertyValue zijn"@nl, "An identifier must be of type string or schema:PropertyValue"@en ;
+            sh:message "Gebruik een waarde van type xsd:string of schema:PropertyValue"@nl, "Use a value of type xsd:string or schema:PropertyValue"@en ;
         ] ,
         [
             sh:path schema:sameAs ;
@@ -767,7 +766,13 @@ nde-dataset:OrganizationShape
             sh:description """
                 Links to the organization in other databases.
             """@en ;
-            sh:message "De links van een organisatie moeten IRI’s zijn, geen tekst"@nl , "An organization’s links (sameAs) must be IRIs, not string literals"@en ;
+            sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
+        ] ,
+        [
+            sh:path schema:sameAs ;
+            sh:pattern "^https?://" ;
+            sh:severity sh:Info ;
+            sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
         ]
 .
 
@@ -783,7 +788,8 @@ nde-dataset:OrganizationContactPointRequiredShape
         nde:version "2.0" ;
         sh:severity sh:Violation ;
     ] ;
-    sh:message "Een organisatie moet een ContactPoint hebben"@nl, "An organization must have a ContactPoint"@en ;
+    sh:message "Voeg een contactpunt toe met naam en e-mailadres. Gebruik bij voorkeur de gegevens van de afdeling die de dataset of catalogus beheert"@nl,
+        "Add a contact point with a name and email address, preferably of the department that manages the dataset or catalogue"@en ;
     sh:sparql [
         sh:select """
             PREFIX schema: <https://schema.org/>
@@ -799,7 +805,7 @@ nde-dataset:OrganizationIdentifierRequiredShape
     a sh:NodeShape ;
     sh:targetObjectsOf schema:publisher, schema:creator ;
     sh:severity sh:Warning ;
-    sh:message "Een organisatie moet één of meer identifiers hebben"@nl, "An organization must have one or more identifiers"@en ;
+    sh:message "Voeg een identificatie toe voor de organisatie, zoals een KvK-nummer of ISIL"@nl, "Add an identifier for the organisation, such as a Chamber of Commerce number or ISIL"@en ;
     sh:sparql [
         sh:select """
             PREFIX schema: <https://schema.org/>
@@ -819,14 +825,14 @@ nde-dataset:IdentifierPropertyIDRequiredShape
     a sh:NodeShape ;
     sh:targetObjectsOf schema:identifier ;
     sh:severity sh:Warning ;
-    sh:message "Een identifier moet een propertyID hebben (een IRI)"@nl, "An identifier must have a propertyID (an IRI)"@en ;
+    sh:message "Geef aan om welk type identifier het gaat (bijv. KvK of ISIL), naast de waarde"@nl, "Specify the type of identifier (such as ‘Chamber of Commerce’ or ‘ISIL’) in addition to the value"@en ;
     sh:sparql [
         sh:select """
             PREFIX schema: <https://schema.org/>
             SELECT $this ?path WHERE {
                 $this a schema:PropertyValue .
                 OPTIONAL { $this schema:propertyID ?pid }
-                FILTER (!bound(?pid) || !isIRI(?pid))
+                FILTER (!bound(?pid) || !isURI(?pid))
                 BIND(schema:propertyID AS ?path)
             }
         """ ;
@@ -836,7 +842,7 @@ nde-dataset:IdentifierValueRequiredShape
     a sh:NodeShape ;
     sh:targetObjectsOf schema:identifier ;
     sh:severity sh:Warning ;
-    sh:message "Een identifier moet een waarde hebben (een string)"@nl, "An identifier must have a value (a string)"@en ;
+    sh:message "Vul de waarde van de identifier in (bijv. een nummer of code)"@nl, "Enter the identifier value (such as a number or code)"@en ;
     sh:sparql [
         sh:select """
             PREFIX schema: <https://schema.org/>
@@ -854,7 +860,7 @@ nde-dataset:IdentifierNameStringShape
     a sh:NodeShape ;
     sh:targetObjectsOf schema:identifier ;
     sh:severity sh:Warning ;
-    sh:message "De naam van een identifier moet een string zijn"@nl, "The name of an identifier must be a string"@en ;
+    sh:message "Gebruik een waarde van type rdf:langString en geef de taal aan (bijv. nl of en)"@nl, "Use a value of type rdf:langString and specify the language (such as nl or en)"@en ;
     sh:sparql [
         sh:select """
             PREFIX schema: <https://schema.org/>
@@ -875,17 +881,34 @@ nde-dataset:ContactPointShape
     sh:property [
         sh:path schema:name ;
         sh:minCount 1 ;
+        sh:message "Vul een naam in voor het contactpunt"@nl, "Enter a name for the contact point"@en ;
+    ] ,
+    [
+        sh:path schema:name ;
         sh:or (
             [ sh:datatype xsd:string ]
             [ sh:datatype rdf:langString ]
         ) ;
+    ] ,
+    [
+        sh:path schema:name ;
         sh:uniqueLang true ;
-        sh:message "ContactPoint moet een naam hebben"@nl, "ContactPoint must have a name"@en ;
+        sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
+    ] ,
+    [
+        sh:path schema:name ;
+        sh:datatype rdf:langString ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Gebruik een waarde van type rdf:langString en geef de taal aan (bijv. nl of en)"@nl, "Use a value of type rdf:langString and specify the language (such as nl or en)"@en ;
     ] ,
     [
         sh:path schema:email ;
         sh:minCount 1 ;
-        sh:message "ContactPoint moet een e-mailadres hebben"@nl, "ContactPoint must have an e-mail address"@en ;
+        sh:message "Vul een e-mailadres in voor het contactpunt"@nl, "Enter an email address for the contact point"@en ;
     ] .
 
 nde-dataset:PersonShape
@@ -893,6 +916,7 @@ nde-dataset:PersonShape
     sh:targetObjectsOf schema:publisher, schema:creator ;
     sh:nodeKind sh:IRI ;
     sh:pattern "^https?://" ;
+    sh:message "Gebruik een web URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
     sh:property [
         sh:path schema:name ;
         sh:minCount 1 ;
@@ -901,7 +925,7 @@ nde-dataset:PersonShape
             [ sh:datatype rdf:langString ]
         ) ;
         sh:uniqueLang true ;
-        sh:message "Een persoon moet een naam hebben"@nl, "A person must have a name"@en ;
+        sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
     ] ,
     nde-dataset:SchemaNameLangStringProperty .
 
@@ -916,29 +940,28 @@ nde-dataset:SchemaDescriptionProperty a sh:PropertyShape ;
         [ sh:datatype rdf:langString ]
     );
     sh:name "Description"@en ;
-    sh:description """Een beschrijving van de inhoud.
+    sh:description """Een beschrijving van de inhoud van de dataset.
         Deze is bij voorkeur minimaal drie zinnen en maximaal één alinea lang (2000 karakters).
-        De vindbaarheid wordt onder andere bepaald door de kwaliteit van de beschrijving.
+        De vindbaarheid van de dataset wordt onder andere bepaald door de kwaliteit van de beschrijving.
         Denk hierbij aan verschillende gebruikers, vakgenoten maar ook anderen,
         waarvoor de tekst begrijpelijk moet zijn."""@nl,
-        """A description of the contents.
+        """A description of the contents of the dataset.
         Preferably at least three sentences and at most one paragraph (2,000 characters).
-        Discoverability depends in part on the quality of the description.
+        The discoverability of the dataset depends in part on the quality of the description.
         Consider different audiences – both domain experts and others –
         for whom the text should be understandable."""@en ;
-    sh:message "Een beschrijving moet van type string of langString zijn"@nl, "A description must be of type string or langString"@en ;
 .
 
 nde-dataset:SchemaNameUniqueLangProperty a sh:PropertyShape ;
     sh:path schema:name ;
     sh:uniqueLang true ;
-    sh:message "Mag maximaal één naam per taal hebben"@nl, "Must have at most one name per language"@en ;
+    sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
 .
 
 nde-dataset:SchemaDescriptionUniqueLangProperty a sh:PropertyShape ;
     sh:path schema:description ;
     sh:uniqueLang true ;
-    sh:message "Mag maximaal één beschrijving per taal hebben"@nl, "Must have at most one description per language"@en ;
+    sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
 .
 
 nde-dataset:SchemaNameLangStringProperty a sh:PropertyShape ;
@@ -949,7 +972,7 @@ nde-dataset:SchemaNameLangStringProperty a sh:PropertyShape ;
         nde:version "2.0" ;
         sh:severity sh:Violation ;
     ] ;
-    sh:message "De naam moet een taaltag bevatten"@nl, "The name must have a language tag"@en ;
+    sh:message "Gebruik een waarde van type rdf:langString en geef de taal aan (bijv. nl of en)"@nl, "Use a value of type rdf:langString and specify the language (such as nl or en)"@en ;
 .
 
 nde-dataset:SchemaDescriptionLangStringProperty a sh:PropertyShape ;
@@ -960,7 +983,7 @@ nde-dataset:SchemaDescriptionLangStringProperty a sh:PropertyShape ;
         nde:version "2.0" ;
         sh:severity sh:Violation ;
     ] ;
-    sh:message "De beschrijving moet een taaltag bevatten"@nl, "The description must have a language tag"@en ;
+    sh:message "Gebruik een waarde van type rdf:langString en geef de taal aan (bijv. nl of en)"@nl, "Use a value of type rdf:langString and specify the language (such as nl or en)"@en ;
 .
 
 nde-dataset:DcTitleLangStringProperty a sh:PropertyShape ;
@@ -971,7 +994,7 @@ nde-dataset:DcTitleLangStringProperty a sh:PropertyShape ;
         nde:version "2.0" ;
         sh:severity sh:Violation ;
     ] ;
-    sh:message "De titel moet een taaltag bevatten"@nl, "The title must have a language tag"@en ;
+    sh:message "Gebruik een waarde van type rdf:langString en geef de taal aan (bijv. nl of en)"@nl, "Use a value of type rdf:langString and specify the language (such as nl or en)"@en ;
 .
 
 nde-dataset:DcDescriptionLangStringProperty a sh:PropertyShape ;
@@ -982,7 +1005,7 @@ nde-dataset:DcDescriptionLangStringProperty a sh:PropertyShape ;
         nde:version "2.0" ;
         sh:severity sh:Violation ;
     ] ;
-    sh:message "De beschrijving moet een taaltag bevatten"@nl, "The description must have a language tag"@en ;
+    sh:message "Gebruik een waarde van type rdf:langString en geef de taal aan (bijv. nl of en)"@nl, "Use a value of type rdf:langString and specify the language (such as nl or en)"@en ;
 .
 
 nde-dataset:FoafNameLangStringProperty a sh:PropertyShape ;
@@ -993,7 +1016,7 @@ nde-dataset:FoafNameLangStringProperty a sh:PropertyShape ;
         nde:version "2.0" ;
         sh:severity sh:Violation ;
     ] ;
-    sh:message "De naam moet een taaltag bevatten"@nl, "The name must have a language tag"@en ;
+    sh:message "Gebruik een waarde van type rdf:langString en geef de taal aan (bijv. nl of en)"@nl, "Use a value of type rdf:langString and specify the language (such as nl or en)"@en ;
 .
 
 nde-dataset:SchemaDescriptionPropertyShouldExist a sh:PropertyShape ;
@@ -1004,12 +1027,12 @@ nde-dataset:SchemaDescriptionPropertyShouldExist a sh:PropertyShape ;
         nde:version "2.0" ;
         sh:severity sh:Violation ;
     ] ;
-    sh:message "Moet een beschrijving hebben"@nl, "Must have a description"@en ;
+    sh:message "Voeg een beschrijving toe"@nl, "Add a description"@en ;
 .
 
 # Reusable constraint shapes for license canonicality, referenced via sh:node
 # from every license property path. Even the DCAT-AP-NL 3.0 examples incorrectly
-# use http://creativecommons.org/publicdomain/zero/1.0/deed.nl as a license IRI
+# use http://creativecommons.org/publicdomain/zero/1.0/deed.nl as a license URI
 # (see https://docs.geostandaarden.nl/dcat/dcat-ap-nl30/#distribution-licence).
 nde-dataset:LicenseCreativeCommonsHttpsShape a sh:NodeShape ;
     sh:not [ sh:pattern "^http://creativecommons\\.org/" ] .
@@ -1042,7 +1065,7 @@ nde-dataset:AccrualPeriodicityProperty a sh:PropertyShape ;
         """How often the dataset is updated.
         Use a value from the EU frequency list,
         for example http://publications.europa.eu/resource/authority/frequency/WEEKLY ."""@en ;
-    sh:message "Updatefrequentie moet een IRI zijn uit de EU-frequentielijst"@nl, "Accrual periodicity must be an IRI from the EU frequency list"@en ;
+    sh:message "Gebruik een officiële frequentie-URL uit de EU-lijst (bijvoorbeeld http://publications.europa.eu/resource/authority/frequency/WEEKLY) in plaats van tekst zoals ‘wekelijks’"@nl, "Use a valid frequency URL from the EU list (such as http://publications.europa.eu/resource/authority/frequency/WEEKLY) instead of text"@en ;
 .
 
 nde-dataset:AccessRightsProperty a sh:PropertyShape ;
@@ -1060,7 +1083,7 @@ nde-dataset:AccessRightsProperty a sh:PropertyShape ;
         Information about who can access the dataset. Use a value from the EU Access Rights vocabulary.
         Defaults to `PUBLIC` if not provided.
     """@en ;
-    sh:message "Toegangsrechten moet een waarde zijn uit de EU Access Rights vocabulaire"@nl, "Access rights must be a value from the EU Access Rights vocabulary"@en ;
+    sh:message "Kies toegangsrechten uit de lijst (EU Access Rights)"@nl, "Select access rights from the EU Access Rights list"@en ;
 .
 
 ##
@@ -1081,12 +1104,12 @@ dcat:DatasetShape
             [ sh:datatype xsd:string ]
             [ sh:datatype rdf:langString ]
         ) ;
-        sh:description "De naam van de beschreven dataset."@nl, "The name of the dataset."@en ;
+        sh:description "De naam van de dataset."@nl, "A name given to the dataset."@en ;
     ],
     [
         sh:path dc:title ;
         sh:uniqueLang true ;
-        sh:message "Mag maximaal één titel per taal hebben"@nl, "Must have at most one title per language"@en ;
+        sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
     ],
     nde-dataset:DcTitleLangStringProperty,
     [
@@ -1111,7 +1134,7 @@ dcat:DatasetShape
         The discoverability of the dataset depends in part on the quality of the description.
         Consider different audiences – both domain experts and others –
         for whom the text should be understandable."""@en ;
-        sh:message "Dataset moet een beschrijving hebben"@nl, "Dataset must have a description"@en ;
+        sh:message "Voeg een beschrijving toe"@nl, "Add a description"@en ;
     ],
     [
         sh:path dc:description ;
@@ -1119,12 +1142,12 @@ dcat:DatasetShape
             [ sh:datatype xsd:string ]
             [ sh:datatype rdf:langString ]
         ) ;
-        sh:message "Een beschrijving moet van type string of langString zijn"@nl, "A description must be of type string or langString"@en ;
+        sh:message "Gebruik een waarde van type rdf:langString en geef de taal aan (bijv. nl of en)"@nl, "Use a value of type rdf:langString and specify the language (such as nl or en)"@en ;
     ],
     [
         sh:path dc:description ;
         sh:uniqueLang true ;
-        sh:message "Mag maximaal één beschrijving per taal hebben"@nl, "Must have at most one description per language"@en ;
+        sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
     ],
     nde-dataset:DcDescriptionLangStringProperty,
     # No dc:license on Dataset — DCAT-AP-NL 3.0 only requires license on Distribution.
@@ -1134,7 +1157,7 @@ dcat:DatasetShape
         sh:maxCount 1 ;
         sh:severity sh:Info ;
         sh:description "De datum waarop de dataset is aangemaakt."@nl, "The date on which the dataset was created."@en ;
-        sh:message "Dataset zou een aanmaakdatum moeten hebben"@nl, "Dataset description  should have a creation date"@en ;
+        sh:message "Vul de aanmaakdatum in"@nl, "Enter the creation date"@en ;
     ],
     [
         sh:path dc:created ;
@@ -1149,7 +1172,7 @@ dcat:DatasetShape
             nde:version "2.0" ;
             sh:severity sh:Violation ;
         ] ;
-        sh:message "Datum moet van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime zijn"@nl, "Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+        sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
     ] ,
     [
         sh:path dc:created ;
@@ -1159,15 +1182,15 @@ dcat:DatasetShape
             nde:version "2.0" ;
             sh:severity sh:Violation ;
         ] ;
-        sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
+        sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
     ],
     [
         sh:path dc:issued ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
         sh:severity sh:Info ;
-        sh:description "De datum van formele uitgifte (bijvoorbeeld publicatie) van de dataset."@nl, "The date of formal issuance (e.g. publication) of the dataset."@en ;
-        sh:message "Dataset zou een uitgavedatum moeten bevatten"@nl, "Dataset description  should contain an issued date"@en ;
+        sh:description "De datum van formele uitgifte (bijvoorbeeld publicatie) van de dataset."@nl, "The date of formal issuance (such as publication) of the dataset."@en ;
+        sh:message "Vul de uitgiftedatum in"@nl, "Enter the issue date"@en ;
     ],
     [
         sh:path dc:issued ;
@@ -1182,7 +1205,7 @@ dcat:DatasetShape
             nde:version "2.0" ;
             sh:severity sh:Violation ;
         ] ;
-        sh:message "Datum moet van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime zijn"@nl, "Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+        sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
     ] ,
     [
         sh:path dc:issued ;
@@ -1192,7 +1215,7 @@ dcat:DatasetShape
             nde:version "2.0" ;
             sh:severity sh:Violation ;
         ] ;
-        sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
+        sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
     ],
     [
         sh:path dc:modified ;
@@ -1200,7 +1223,7 @@ dcat:DatasetShape
         sh:maxCount 1 ;
         sh:severity sh:Info ;
         sh:description "De meest recente datum waarop de dataset is gewijzigd of aangepast."@nl, "The most recent date on which the dataset was changed or modified."@en ;
-        sh:message "Datasetbeschrijving zou een laatste wijzigingsdatum moeten bevatten"@nl, "Dataset description  should contain a modification date"@en ;
+        sh:message "Vul de wijzigingsdatum in"@nl, "Enter the modification date"@en ;
     ],
     [
         sh:path dc:modified ;
@@ -1215,7 +1238,7 @@ dcat:DatasetShape
             nde:version "2.0" ;
             sh:severity sh:Violation ;
         ] ;
-        sh:message "Datum moet van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime zijn"@nl, "Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+        sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
     ] ,
     [
         sh:path dc:modified ;
@@ -1225,26 +1248,26 @@ dcat:DatasetShape
             nde:version "2.0" ;
             sh:severity sh:Violation ;
         ] ;
-        sh:message "Datum moet geldig zijn overeenkomstig ISO-8601 (YYYY-MM-DD of YYYY-MM-DDTHH:MM:SS met optionele tijdzone)"@nl, "Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)"@en ;
+        sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
     ],
     [
         sh:path dcat:keyword ;
         sh:minCount 1 ;
         sh:severity sh:Info ;
         sh:description "Woorden of geformaliseerde zinnen om een dataset te beschrijven."@nl, "Words or formalized phrases to describe the dataset."@en ;
-        sh:message "Datasetbeschrijving zou trefwoorden moeten bevatten"@nl, "Dataset description should contain keywords"@en ;
+        sh:message "Voeg trefwoorden toe"@nl, "Add keywords"@en ;
     ],
     [
         sh:path dc:spatial ;
         sh:minCount 1 ;
         sh:severity sh:Info ;
         sh:description """Het geografische gebied waarop de gegevens in de dataset betrekking hebben.
-            Gebruik een IRI uit een gecontroleerd vocabulaire zoals [GeoNames](https://www.geonames.org/).
-            Zoek plaats-IRI's via het [Termennetwerk](https://termennetwerk.netwerkdigitaalerfgoed.nl/)."""@nl,
+            Gebruik een URI uit een gecontroleerd vocabulaire zoals [GeoNames](https://www.geonames.org/).
+            Zoek plaats-URI's via het [Termennetwerk](https://termennetwerk.netwerkdigitaalerfgoed.nl/)."""@nl,
             """The geographical area to which the data in the dataset pertains.
-            Use an IRI from a controlled vocabulary such as [GeoNames](https://www.geonames.org/).
-            Find place IRIs via the [Network of Terms](https://termennetwerk.netwerkdigitaalerfgoed.nl/)."""@en ;
-        sh:message "Datasetbeschrijving zou een gebiedsaanduiding moeten bevatten"@nl, "Dataset description should contain spatial coverage"@en ;
+            Use a URI from a controlled vocabulary such as [GeoNames](https://www.geonames.org/).
+            Find place URIs via the [Network of Terms](https://termennetwerk.netwerkdigitaalerfgoed.nl/en)."""@en ;
+        sh:message "Voeg een gebiedsaanduiding toe (bijv. een URL uit GeoNames)"@nl, "Add spatial coverage (such as a GeoNames URL)"@en ;
     ],
     [
         sh:path dc:spatial ;
@@ -1255,16 +1278,14 @@ dcat:DatasetShape
             nde:version "2.0" ;
             sh:severity sh:Violation ;
         ] ;
-        sh:description "Geographical coverage must be an HTTP(S) IRI, for example from [GeoNames](https://www.geonames.org/)."@en ;
-        sh:message "Gebiedsaanduiding moet een HTTP(S)-IRI zijn (bijv. https://sws.geonames.org/2750405/)"@nl,
-            "Geographical coverage must be an HTTP(S) IRI (e.g. https://sws.geonames.org/2750405/)"@en ;
+        sh:message "Gebruik een URI voor het gebied (bijv. https://sws.geonames.org/2750405/) in plaats van alleen een plaatsnaam"@nl, "Use a valid URI (such as via GeoNames: https://sws.geonames.org/2750405/) instead of just a place name"@en ;
     ],
     [
         sh:path dc:temporal ;
         sh:minCount 1 ;
         sh:severity sh:Info ;
         sh:description "De tijdsperiode waar de dataset betrekking op heeft."@nl, "The time period to which the dataset pertains."@en ;
-        sh:message "Datasetbeschrijving zou een een tijdsaanduiding moeten bevatten"@nl, "Dataset description should contain temporal coverage"@en ;
+        sh:message "Voeg een tijdsaanduiding toe"@nl, "Add temporal coverage"@en ;
     ],
     [
         sh:path dc:language ;
@@ -1275,8 +1296,8 @@ dcat:DatasetShape
             sh:nodeKind sh:IRI ;
             sh:pattern "^http://publications\\.europa\\.eu/resource/authority/language/" ;
         ] ;
-        sh:description "De natuurlijke taal van de tekstuele waarden in de dataset."@nl, "The natural language of the textual values in the dataset."@en ;
-        sh:message "Dataset zou één of meer talen moeten bevatten"@nl, "Dataset description should contain one or more languages"@en ;
+        sh:description "De natuurlijke taal van de tekstuele waarden in de dataset. Gebruik een waarde uit de [EU Vocabularies Languages Named Authority List](https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language)."@nl, "The natural language of the textual values in the dataset. Use a value from the [EU Vocabularies Languages Named Authority List](https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language)."@en ;
+        sh:message "Vul de taal of talen in"@nl, "Enter the language or languages of the dataset"@en ;
     ],
     [
         sh:path dc:publisher ;
@@ -1287,9 +1308,8 @@ dcat:DatasetShape
             nde:version "2.0" ;
             sh:severity sh:Violation ;
         ] ;
-        sh:description "De organisatie of persoon die verantwoordelijk is voor de publicatie van de dataset."@nl,
-            "The organization or person responsible for publishing the dataset."@en ;
-        sh:message "Dataset moet een uitgever hebben"@nl, "Dataset must have a publisher"@en ;
+        sh:description "De organisatie of persoon die verantwoordelijk is voor de publicatie van de dataset."@nl, "An entity (organisation or person) responsible for making the Dataset available."@en ;
+        sh:message "Voeg een uitgever toe"@nl, "Add a publisher"@en ;
         sh:or (
             [ sh:class foaf:Organization ]
             [ sh:class foaf:Person ]
@@ -1303,12 +1323,12 @@ dcat:DatasetShape
             nde:version "2.0" ;
             sh:severity sh:Violation ;
         ] ;
-        sh:description "De organisatie verantwoordelijk voor het creëren van de dataset."@nl, "The organization responsible for creating the dataset."@en ;
+        sh:description "De organisatie of persoon die verantwoordelijk is voor het creëren van de beschreven dataset."@nl, "An entity (organisation or person) responsible for producing the dataset."@en ;
         sh:or (
             [ sh:class foaf:Organization ]
             [ sh:class foaf:Person ]
         ) ;
-        sh:message "Datasetbeschrijving zou een maker moeten bevatten"@nl, "Dataset description should contain a creator"@en ;
+        sh:message "Voeg een maker toe"@nl, "Add a creator"@en ;
     ],
     [
         sh:path dcat:contactPoint ;
@@ -1325,7 +1345,7 @@ dcat:DatasetShape
             """Contact information where end users can get in touch with questions about the dataset.
         This contains the e-mail address or a link (URL) to the contact form of the responsible organization.
         The e-mail address should be a functional e-mail address of the organization or department."""@en ;
-        sh:message "Dataset moet een contactpunt hebben"@nl, "Dataset must have a contact point"@en ;
+        sh:message "Voeg een contactpunt toe met naam en e-mailadres. Gebruik bij voorkeur de gegevens van de afdeling die de dataset of catalogus beheert"@nl, "Add a contact point with a name and email address, preferably of the department that manages the dataset or catalogue"@en ;
     ],
     [
         sh:path dcat:theme ;
@@ -1337,7 +1357,7 @@ dcat:DatasetShape
             """The category of the dataset. Use at least one value from the European Dataset Theme Vocabulary.
         It is recommended to also include values from domain-specific vocabularies.
         The default theme 'Education, culture and sport' (data-theme/EDUC) is auto-assigned."""@en ;
-        sh:message "Thema moet een HTTP(S)-IRI zijn"@nl, "Theme must be an HTTP(S) IRI"@en ;
+        sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
     ],
     [
         sh:path dcat:distribution ;
@@ -1345,7 +1365,7 @@ dcat:DatasetShape
         sh:minCount 1 ;
         sh:severity sh:Info ;
         sh:description "Een beschikbare representatie van de dataset."@nl, "An available representation of the dataset."@en ;
-        sh:message "Datasetbeschrijving zou minstens één distributie moeten bevatten"@nl, "Dataset description should contain at least one distribution"@en ;
+        sh:message "Voeg minimaal één distributie toe aan de datasetbeschrijving"@nl, "Add at least one distribution to the dataset description"@en ;
     ] ,
     nde-dataset:AccrualPeriodicityProperty ,
     nde-dataset:AccessRightsProperty ,
@@ -1356,9 +1376,11 @@ dcat:DatasetShape
         sh:nodeKind sh:IRI ;
         sh:pattern "^https?://" ;
         sh:name "Landing page"@en ;
-        sh:description """
-            A web page where the dataset is described for human users.
-            Not needed when the dataset IRI itself resolves to an HTML page (see [[#resolvable-iris]]).
+        sh:description """Een webpagina die toegang biedt tot de dataset, zijn distributies of aanvullende informatie.
+            Niet nodig als de URI van de dataset zelf al naar een HTML-pagina resolvet (zie [[#resolvable-iris]]).
+            De menselijk leesbare beschrijving *MOET* consistent zijn met en minstens alle details (zoals distributies) uit de RDF-datasetbeschrijving bevatten."""@nl, """
+            A web page that provides access to the Dataset, its Distributions and/or additional information.
+            Not needed when the dataset URI itself resolves to an HTML page (see [[#resolvable-iris]]).
             The human-readable description *MUST* be consistent with and include at least all details (such as distributions) from the RDF dataset description.
         """@en ;
     ] ;
@@ -1404,7 +1426,6 @@ dcat:DistributionShape
         sh:path dc:license ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:nodeKind sh:IRI ;
         sh:severity sh:Warning ;
         nde:futureChange [
             nde:version "2.0" ;
@@ -1412,31 +1433,53 @@ dcat:DistributionShape
         ] ;
         sh:description "De licentie waaronder de distributie beschikbaar is gesteld."@nl,
             "The license under which the distribution is made available."@en ;
-        sh:message "Distributie moet een licentie hebben"@nl, "Distribution must have a license"@en ;
+        sh:message "Voeg één licentie toe"@nl, "Add exactly one license"@en ;
+    ] ,
+    [
+        sh:path dc:license ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
     ] ,
     [
         sh:path dc:license ;
         sh:node nde-dataset:LicenseCreativeCommonsHttpsShape ;
         sh:severity sh:Warning ;
-        sh:message "Gebruik de canonieke Creative Commons licentie-URI met https:// (bijv. https://creativecommons.org/publicdomain/zero/1.0/)"@nl, "Use the canonical Creative Commons license IRI with https:// (e.g. https://creativecommons.org/publicdomain/zero/1.0/)"@en ;
+        sh:message "Gebruik https:// (niet http://) in de Creative Commons-licentie-URL"@nl, "Use https:// (not http://) in the Creative Commons license URL"@en ;
     ] ,
     [
         sh:path dc:license ;
         sh:node nde-dataset:LicenseCreativeCommonsTrailingSlashShape ;
         sh:severity sh:Warning ;
-        sh:message "Gebruik de canonieke Creative Commons licentie-URI met een afsluitende slash (bijv. https://creativecommons.org/licenses/by/4.0/)"@nl, "Use the canonical Creative Commons license IRI with a trailing slash (e.g. https://creativecommons.org/licenses/by/4.0/)"@en ;
+        sh:message "Eindig de Creative Commons-licentie-URL met een slash"@nl, "End the Creative Commons license URL with a slash"@en ;
     ] ,
     [
         sh:path dc:license ;
         sh:node nde-dataset:LicenseNotOpenDefinitionShape ;
         sh:severity sh:Warning ;
-        sh:message "Gebruik de canonieke licentie-URI van de licentiegever zelf (bijv. https://creativecommons.org/licenses/by/4.0/), niet een opendefinition.org-alias"@nl, "Use the canonical license IRI from the license issuer itself (e.g. https://creativecommons.org/licenses/by/4.0/), not an opendefinition.org alias"@en ;
+        sh:message "Gebruik de Creative Commons-URL zelf, geen opendefinition.org-alias"@nl, "Use the Creative Commons URL directly, not an opendefinition.org alias"@en ;
     ] ,
     [
         sh:path dc:license ;
         sh:node nde-dataset:LicenseOpenDataCommonsShape ;
         sh:severity sh:Warning ;
-        sh:message "Gebruik de canonieke OpenDataCommons licentie-URI met versienummer (bijv. http://opendatacommons.org/licenses/odbl/1.0/)"@nl, "Use the canonical OpenDataCommons license IRI with version number (e.g. http://opendatacommons.org/licenses/odbl/1.0/)"@en ;
+        sh:message "Gebruik de officiële Open Data Commons-licentie-URL met versienummer, bijv. http://opendatacommons.org/licenses/odbl/1.0/"@nl, "Use an official Open Data Commons licence URL with a version number, such as http://opendatacommons.org/licenses/odbl/1.0/"@en ;
+    ] ,
+    [
+        sh:path dc:language ;
+        sh:minCount 0 ;
+        sh:severity sh:Info ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:nodeKind sh:IRI ;
+            sh:pattern "^http://publications\\.europa\\.eu/resource/authority/language/" ;
+        ] ;
+        sh:description "De natuurlijke taal van de tekstuele waarden in de distributie. Gebruik een waarde uit de [EU Vocabularies Languages Named Authority List](https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language)."@nl, "The natural language of the textual values in the distribution. Use a value from the [EU Vocabularies Languages Named Authority List](https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language)."@en ;
+        sh:message "Vul de taal of talen in waarin de distributie beschikbaar is"@nl, "Enter the language or languages of the distribution"@en ;
     ] .
 
 dcat:CatalogShape
@@ -1451,12 +1494,12 @@ dcat:CatalogShape
             [ sh:datatype rdf:langString ]
         ) ;
         sh:description "De naam van de catalogus."@nl, "The name of the catalog."@en ;
-        sh:message "Catalogus moet een titel hebben"@nl, "Catalog must have a title"@en ;
+        sh:message "Voeg een titel toe"@nl, "Add a title"@en ;
     ],
     [
         sh:path dc:title ;
         sh:uniqueLang true ;
-        sh:message "Mag maximaal één titel per taal hebben"@nl, "Must have at most one title per language"@en ;
+        sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
     ],
     nde-dataset:DcTitleLangStringProperty,
     [
@@ -1468,7 +1511,7 @@ dcat:CatalogShape
             sh:severity sh:Violation ;
         ] ;
         sh:description "Een beschrijving van de catalogus."@nl, "A description of the catalog."@en ;
-        sh:message "Catalogus moet een beschrijving hebben"@nl, "Catalog must have a description"@en ;
+        sh:message "Voeg een beschrijving toe"@nl, "Add a description"@en ;
     ],
     [
         sh:path dc:description ;
@@ -1476,12 +1519,12 @@ dcat:CatalogShape
             [ sh:datatype xsd:string ]
             [ sh:datatype rdf:langString ]
         ) ;
-        sh:message "Een beschrijving moet van type string of langString zijn"@nl, "A description must be of type string or langString"@en ;
+        sh:message "Gebruik een waarde van type rdf:langString en geef de taal aan (bijv. nl of en)"@nl, "Use a value of type rdf:langString and specify the language (such as nl or en)"@en ;
     ],
     [
         sh:path dc:description ;
         sh:uniqueLang true ;
-        sh:message "Mag maximaal één beschrijving per taal hebben"@nl, "Must have at most one description per language"@en ;
+        sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
     ],
     nde-dataset:DcDescriptionLangStringProperty,
     [
@@ -1495,7 +1538,7 @@ dcat:CatalogShape
         ] ;
         sh:description "De organisatie die verantwoordelijk is voor de publicatie van de catalogus."@nl,
             "The organization responsible for publishing the catalog."@en ;
-        sh:message "Catalogus moet een uitgever hebben"@nl, "Catalog must have a publisher"@en ;
+        sh:message "Voeg een uitgever toe"@nl, "Add a publisher"@en ;
     ],
     [
         sh:path dcat:contactPoint ;
@@ -1512,13 +1555,13 @@ dcat:CatalogShape
             """Contact information where end users can get in touch with questions about the catalog.
         This contains the e-mail address or a link (URL) to the contact form of the responsible organization.
         The e-mail address should be a functional e-mail address of the organization or department."""@en ;
-        sh:message "Catalogus moet een contactpunt hebben"@nl, "Catalog must have a contact point"@en ;
+        sh:message "Voeg een contactpunt toe met naam en e-mailadres. Gebruik bij voorkeur de gegevens van de afdeling die de dataset of catalogus beheert"@nl, "Add a contact point with a name and email address, preferably of the department that manages the dataset or catalogue"@en ;
     ],
     [
         sh:path dcat:dataset ;
         sh:minCount 1 ;
         sh:description "De datasets in de catalogus."@nl, "The datasets in the catalog."@en ;
-        sh:message "Catalogus moet minimaal één dataset bevatten"@nl, "Catalog must contain at least one dataset"@en ;
+        sh:message "Voeg minimaal één datasetbeschrijving toe aan de datacatalogus. Een datacatalogus bestaat namelijk uit datasetbeschrijvingen"@nl, "Add at least one dataset description to the data catalog. A data catalog consists of dataset descriptions"@en ;
     ] .
 
 dcat:ContactPointShape
@@ -1527,8 +1570,7 @@ dcat:ContactPointShape
     sh:property [
         sh:path vcard:fn ;
         sh:minCount 1 ;
-        sh:severity sh:Warning ;
-        sh:message "Contactpunt moet een naam hebben"@nl, "Contact point must have a name"@en ;
+        sh:message "Vul een naam in voor het contactpunt"@nl, "Enter a name for the contact point"@en ;
     ] ,
     [
         sh:path vcard:hasEmail ;
@@ -1536,8 +1578,11 @@ dcat:ContactPointShape
         sh:nodeKind sh:IRI ;
         sh:pattern "^mailto:" ;
         sh:severity sh:Warning ;
-        sh:message "Contactpunt moet een e-mailadres hebben als mailto:-IRI"@nl,
-            "Contact point must have an e-mail address as a mailto: IRI"@en ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Vul een e-mailadres in voor het contactpunt, als mailto:-URL"@nl, "Enter an email address for the contact point, as a mailto: URL"@en ;
     ] .
 
 dcat:OrganizationShape
@@ -1554,7 +1599,7 @@ dcat:OrganizationShape
         ) ;
         sh:uniqueLang true ;
         sh:description "De naam van de organisatie."@nl, "The name of the organization."@en ;
-        sh:message "Een organisatie moet een naam hebben"@nl, "An organization must have a name"@en ;
+        sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
     ] ,
     nde-dataset:FoafNameLangStringProperty .
 
@@ -1572,6 +1617,6 @@ dcat:PersonShape
         ) ;
         sh:uniqueLang true ;
         sh:description "De naam van de persoon."@nl, "The name of the person."@en ;
-        sh:message "Een persoon moet een naam hebben"@nl, "A person must have a name"@en ;
+        sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
     ] ,
     nde-dataset:FoafNameLangStringProperty .

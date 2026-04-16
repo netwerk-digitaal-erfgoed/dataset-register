@@ -85,10 +85,10 @@
         }
       ],
       "dcat:accessURL": {
-        "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
+        "@id": "https://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
       },
       "dcat:downloadURL": {
-        "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
+        "@id": "https://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
       },
       "dcat:byteSize": "12 MB",
       "dct:description": "Turtle dump",
@@ -100,10 +100,10 @@
         "@id": "https://www.iana.org/assignments/media-types/application/ld+json"
       },
       "dcat:accessURL": {
-        "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld"
+        "@id": "https://data.bibliotheken.nl/id/dataset/rise-alba.jsonld"
       },
       "dcat:downloadURL": {
-        "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld"
+        "@id": "https://data.bibliotheken.nl/id/dataset/rise-alba.jsonld"
       },
       "dcat:byteSize": "14M",
       "dct:conformsTo": {
@@ -132,10 +132,10 @@
         "@id": "https://www.iana.org/assignments/media-types/application/n-triples+gzip"
       },
       "dcat:accessURL": {
-        "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.nt.gz"
+        "@id": "https://data.bibliotheken.nl/id/dataset/rise-alba.nt.gz"
       },
       "dcat:downloadURL": {
-        "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.nt.gz"
+        "@id": "https://data.bibliotheken.nl/id/dataset/rise-alba.nt.gz"
       },
       "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
     }
