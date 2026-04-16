@@ -26,6 +26,7 @@ const keyword = 'keyword';
 const spatialCoverage = 'spatialCoverage';
 const temporalCoverage = 'temporalCoverage';
 const genre = 'genre';
+const about = 'about';
 const mainEntityOfPage = 'mainEntityOfPage';
 const version = 'version';
 const includedInDataCatalog = 'includedInDataCatalog';
@@ -186,12 +187,8 @@ function schemaOrgMultiValuedUnions(prefix: string): string {
       `FILTER(!isBlank(?${spatialCoverage}))`,
     ),
     multiValuedUnion(type, `${prefix}:temporalCoverage`, temporalCoverage),
-    multiValuedUnion(
-      type,
-      `${prefix}:genre`,
-      genre,
-      `FILTER(isLiteral(?${genre}))`,
-    ),
+    multiValuedUnion(type, `${prefix}:genre`, genre),
+    multiValuedUnion(type, `${prefix}:about`, about),
     multiValuedUnion(type, `${prefix}:version`, version),
     multiValuedUnion(
       type,
@@ -223,7 +220,6 @@ function dcatMultiValuedUnions(): string {
       `FILTER(!isBlank(?${spatialCoverage}))`,
     ),
     multiValuedUnion(type, `dct:temporal`, temporalCoverage),
-    multiValuedUnion(type, `dct:genre`, genre, `FILTER(isLiteral(?${genre}))`),
     multiValuedUnion(type, `dcat:version`, version),
     multiValuedUnion(type, `dct:isPartOf`, includedInDataCatalog),
     multiValuedUnion(type, `dct:hasPart`, hasPart),
@@ -260,7 +256,6 @@ export const constructQuery = `
       dcat:landingPage ?${mainEntityOfPage} ;
       dct:spatial ?${spatialCoverage} ;
       dct:temporal ?${temporalCoverage} ;
-      dct:type ?${genre} ;
       dcat:version ?${version} ;
       dct:isPartOf ?${includedInDataCatalog} ;
       dct:hasPart ?${hasPart} ;
@@ -268,6 +263,8 @@ export const constructQuery = `
       dct:accessRights ?${accessRights} ;
       dcat:theme ?theme ;
       dcat:theme ?themeDefault ;
+      dcat:theme ?${genre} ;
+      dcat:theme ?${about} ;
       dct:accrualPeriodicity ?${accrualPeriodicity} ;
       dct:publisher ?${publisher} ;
       dct:creator ?${creator} ;

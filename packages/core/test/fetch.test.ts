@@ -365,6 +365,82 @@ describe('Fetch', () => {
     ).toBe(true);
   });
 
+  it('projects schema:about IRI to dcat:theme', async () => {
+    const response = await file('dataset-schema-org-about-iri.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/schema-org-about-iri')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/schema-org-about-iri'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const datasetUri = factory.namedNode(
+      'http://data.bibliotheken.nl/id/dataset/about-iri',
+    );
+    const themes = [...dataset.match(datasetUri, dcat('theme'), null)].map(
+      (quad) => quad.object.value,
+    );
+    expect(themes).toContain('http://vocab.getty.edu/aat/300046300');
+    expect(themes).toContain(
+      'http://publications.europa.eu/resource/authority/data-theme/EDUC',
+    );
+    // schema:about IRI must survive as a NamedNode, not be coerced to a literal.
+    const aatQuad = [...dataset.match(datasetUri, dcat('theme'), null)].find(
+      (quad) => quad.object.value === 'http://vocab.getty.edu/aat/300046300',
+    );
+    expect(aatQuad?.object.termType).toEqual('NamedNode');
+  });
+
+  it('projects schema:genre IRI to dcat:theme', async () => {
+    const response = await file('dataset-schema-org-genre-deprecated.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/schema-org-genre-iri')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/schema-org-genre-iri'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const datasetUri = factory.namedNode(
+      'http://data.bibliotheken.nl/id/dataset/genre-deprecated',
+    );
+    const aatQuad = [...dataset.match(datasetUri, dcat('theme'), null)].find(
+      (quad) => quad.object.value === 'http://vocab.getty.edu/aat/300046300',
+    );
+    expect(aatQuad?.object.termType).toEqual('NamedNode');
+  });
+
+  it('preserves literal schema:genre as dcat:theme literal without STR() coercion', async () => {
+    const response = await file('dataset-schema-org-gouda-tijdmachine.ttl');
+    nock('https://www.goudatijdmachine.nl')
+      .defaultReplyHeaders({ 'Content-Type': 'text/turtle' })
+      .get('/omeka/api/items/3030723')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://www.goudatijdmachine.nl/omeka/api/items/3030723'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const datasetUri = factory.namedNode(
+      'https://www.goudatijdmachine.nl/omeka/api/items/3030723',
+    );
+    const literalTheme = [
+      ...dataset.match(datasetUri, dcat('theme'), null),
+    ].find((quad) => quad.object.termType === 'Literal');
+    expect(literalTheme).toBeDefined();
+    expect(literalTheme?.object.value).toEqual('Historische persoonsgegevens');
+    expect((literalTheme?.object as Literal).language).toEqual('nl');
+  });
+
   it('preserves user-provided themes alongside default EDUC theme', async () => {
     const response = await file('dataset-dcat-valid-minimal.jsonld');
     const datasetWithTheme = response.replace(

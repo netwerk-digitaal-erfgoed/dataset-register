@@ -388,12 +388,35 @@ nde-dataset:DatasetShape
         ] ,
         [
             sh:path schema:genre ;
+            sh:maxCount 0 ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:description """`schema:genre` is verouderd. Gebruik `schema:about` met een URI (bijv. uit AAT of GTAA via het Termennetwerk) voor zowel onderwerp als materiaaltype."""@nl,
+                """`schema:genre` is deprecated. Use `schema:about` with a URI (e.g. from AAT or GTAA via the Network of Terms) for both subject and material type."""@en ;
+            sh:message "schema:genre is verouderd; gebruik schema:about met een URI (bijvoorbeeld uit het Termennetwerk)"@nl, "schema:genre is deprecated; use schema:about with a URI (for example from the Network of Terms)"@en ;
+        ] ,
+        [
+            sh:path schema:about ;
             sh:minCount 1 ;
             sh:severity sh:Info ;
-            sh:description """
-                The genre or genres which describe the dataset.
-            """@en ;
-            sh:message "Voeg een of meer genres toe"@nl, "Add one or more genres"@en ;
+            sh:description """Het onderwerp of de onderwerpen van de dataset, waaronder zowel inhoudelijke thema’s (zoals ‘Wederopbouw’ of ‘Koloniale geschiedenis’) als materiaaltypen (zoals ‘Foto’s’ of ‘Bouwtekeningen’).
+                Gebruik een URI uit een gecontroleerd vocabulaire (bijv. AAT, GTAA of Brinkman via het [Termennetwerk](https://termennetwerk.netwerkdigitaalerfgoed.nl/))."""@nl,
+                """The subject matter of the dataset, covering both topical themes (such as ‘post-war reconstruction’ or ‘colonial history’) and material types (such as ‘photographs’ or ‘architectural drawings’).
+                Use a URI from a controlled vocabulary (e.g. AAT, GTAA, or Brinkman via the [Network of Terms](https://termennetwerk.netwerkdigitaalerfgoed.nl/en))."""@en ;
+            sh:message "Voeg een URI toe die het onderwerp of materiaaltype van de dataset beschrijft (bijv. uit het Termennetwerk)"@nl, "Add a URI describing the dataset’s subject matter or material type (for example from the Network of Terms)"@en ;
+        ] ,
+        [
+            sh:path schema:about ;
+            sh:nodeKind sh:IRI ;
+            sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
+        ] ,
+        [
+            sh:path schema:about ;
+            sh:pattern "^https?://" ;
+            sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
         ] ,
         [
             sh:path schema:keywords ;
@@ -407,11 +430,9 @@ nde-dataset:DatasetShape
             sh:minCount 1 ;
             sh:severity sh:Info ;
             sh:description """Het geografische gebied waarop de gegevens in de dataset betrekking hebben.
-                Gebruik een URI uit een gecontroleerd vocabulaire zoals [GeoNames](https://www.geonames.org/).
-                Zoek plaats-URI’s via het [Termennetwerk](https://termennetwerk.netwerkdigitaalerfgoed.nl/)."""@nl,
+                Gebruik een URI uit een gecontroleerd vocabulaire zoals [GeoNames](https://www.geonames.org/) via het [Termennetwerk](https://termennetwerk.netwerkdigitaalerfgoed.nl/)."""@nl,
                 """The geographical area to which the data in the dataset pertains.
-                Use a URI from a controlled vocabulary such as [GeoNames](https://www.geonames.org/).
-                Find place URIs via the [Network of Terms](https://termennetwerk.netwerkdigitaalerfgoed.nl/en)."""@en ;
+                Use a URI from a controlled vocabulary such as [GeoNames](https://www.geonames.org/) via the [Network of Terms](https://termennetwerk.netwerkdigitaalerfgoed.nl/en)."""@en ;
             sh:message "Voeg een gebiedsaanduiding toe (bijv. een URI uit GeoNames)"@nl, "Add spatial coverage (such as a GeoNames URI)"@en ;
         ] ,
         [
@@ -1353,10 +1374,10 @@ dcat:DatasetShape
         sh:pattern "^https?://" ;
         sh:description """De categorie van de dataset. Gebruik minimaal een waarde uit het Europese Dataset Theme Vocabulary.
         Aanbevolen wordt om daarnaast waarden op te nemen uit domeinspecifieke vocabulaires.
-        Standaard wordt 'Education, culture and sport' (data-theme/EDUC) toegevoegd."""@nl,
+        Standaard wordt ‘Education, culture and sport’ (data-theme/EDUC) toegevoegd."""@nl,
             """The category of the dataset. Use at least one value from the European Dataset Theme Vocabulary.
         It is recommended to also include values from domain-specific vocabularies.
-        The default theme 'Education, culture and sport' (data-theme/EDUC) is auto-assigned."""@en ;
+        The default theme ‘Education, culture and sport’ (data-theme/EDUC) is auto-assigned."""@en ;
         sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
     ],
     [

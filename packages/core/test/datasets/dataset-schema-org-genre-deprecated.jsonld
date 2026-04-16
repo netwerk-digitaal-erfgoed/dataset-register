@@ -1,0 +1,13 @@
+{
+  "@context": "https://schema.org/",
+  "@type": "Dataset",
+  "@id": "http://data.bibliotheken.nl/id/dataset/genre-deprecated",
+  "name": "Dataset with schema:genre (deprecated) carrying an AAT material-type URI",
+  "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "genre": { "@id": "http://vocab.getty.edu/aat/300046300" },
+  "publisher": {
+    "@type": "Organization",
+    "@id": "https://example.com/publisher",
+    "name": "Koninklijke Bibliotheek"
+  }
+}

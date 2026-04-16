@@ -1,0 +1,13 @@
+{
+  "@context": "https://schema.org/",
+  "@type": "Dataset",
+  "@id": "http://data.bibliotheken.nl/id/dataset/about-iri",
+  "name": "Dataset with schema:about pointing to an AAT material-type URI",
+  "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "about": { "@id": "http://vocab.getty.edu/aat/300046300" },
+  "publisher": {
+    "@type": "Organization",
+    "@id": "https://example.com/publisher",
+    "name": "Koninklijke Bibliotheek"
+  }
+}
