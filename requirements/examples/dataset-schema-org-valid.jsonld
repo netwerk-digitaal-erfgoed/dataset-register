@@ -68,21 +68,21 @@
             "application/rdf+xml",
             "text/turtle"
           ],
-          "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf",
+          "contentUrl": "https://data.bibliotheken.nl/id/dataset/rise-alba.rdf",
           "contentSize": 12582912,
           "description": "Turtle dump"
         },
         {
           "@type": "DataDownload",
           "encodingFormat": "application/ld+json",
-          "contentUrl": "http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld",
+          "contentUrl": "https://data.bibliotheken.nl/id/dataset/rise-alba.jsonld",
           "usageInfo": "https://docs.nde.nl/schema-profile/",
           "description": "JSON-LD dump"
         },
         {
           "@type": "DataDownload",
           "encodingFormat": "application/sparql-query",
-          "contentUrl": "http://data.bibliotheken.nl/id/dataset/sparql",
+          "contentUrl": "https://data.bibliotheken.nl/id/dataset/sparql",
           "usageInfo": "https://www.w3.org/TR/sparql11-protocol/",
           "description": "SPARQL endpoint"
         }
@@ -99,7 +99,7 @@
       "sameAs": "https://ror.org/02w4jbg70",
       "contactPoint": {
         "@type": "ContactPoint",
-        "name": "Datasets Manager",
+        "name": { "@value": "Datasets Manager", "@language": "en" },
         "email": "datasets@example.com"
       }
     }

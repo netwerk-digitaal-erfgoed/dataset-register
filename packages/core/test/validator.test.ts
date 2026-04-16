@@ -231,8 +231,14 @@ describe('Validator', () => {
     expect(identifierResult).toBeDefined();
 
     for (const [result, expectedMessage] of [
-      [contactPointResult, 'An organization must have a ContactPoint'],
-      [identifierResult, 'An organization must have one or more identifiers'],
+      [
+        contactPointResult,
+        'Add a contact point with a name and email address, preferably of the department that manages the dataset or catalogue',
+      ],
+      [
+        identifierResult,
+        'Add an identifier for the organisation, such as a Chamber of Commerce number or ISIL',
+      ],
     ] as const) {
       expect(literal(result, shacl('focusNode'))).toEqual(
         'https://www.goudatijdmachine.nl/omeka/api/items/232',
@@ -273,10 +279,10 @@ describe('Validator', () => {
 
     expect(report.state).toEqual('valid');
     expect(formatReport(report)).toMatchInlineSnapshot(`
-      "[Warning] https://schema.org/contactPoint on <https://www.goudatijdmachine.nl/omeka/api/items/232>: An organization must have a ContactPoint
-      [Warning] https://schema.org/identifier on <https://www.goudatijdmachine.nl/omeka/api/items/232>: An organization must have one or more identifiers
-      [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use one of the recommended canonical license IRIs
-      [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use the canonical Creative Commons license IRI with https:// (e.g. https://creativecommons.org/publicdomain/zero/1.0/)"
+      "[Warning] https://schema.org/contactPoint on <https://www.goudatijdmachine.nl/omeka/api/items/232>: Add a contact point with a name and email address, preferably of the department that manages the dataset or catalogue
+      [Warning] https://schema.org/identifier on <https://www.goudatijdmachine.nl/omeka/api/items/232>: Add an identifier for the organisation, such as a Chamber of Commerce number or ISIL
+      [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use https:// (not http://) in the Creative Commons license URL
+      [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use one of the Creative Commons licenses, such as https://creativecommons.org/publicdomain/zero/1.0/ (CC0) or https://creativecommons.org/licenses/by/4.0/ (CC BY 4.0)"
     `);
   });
 
@@ -369,13 +375,7 @@ describe('Validator', () => {
     )) as Valid;
 
     const messagesFor = (path: string) =>
-      [
-        ...report.errors.match(
-          null,
-          shacl('resultPath'),
-          rdf.namedNode(path),
-        ),
-      ]
+      [...report.errors.match(null, shacl('resultPath'), rdf.namedNode(path))]
         .map((quad) => quad.subject)
         .flatMap((resultNode) => [
           ...report.errors.match(
@@ -393,26 +393,26 @@ describe('Validator', () => {
 
     // datePublished "not-a-date": wrong datatype AND wrong format
     expect(messagesFor('https://schema.org/datePublished')).toEqual([
-      'Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime',
-      'Date must be valid according to ISO-8601 (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS with optional timezone)',
+      'Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime',
+      'Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00',
     ]);
 
     // dateModified "2024-01-15": plain string literal (wrong datatype) but
     // lexical form matches the ISO pattern — exactly one message expected.
     expect(messagesFor('https://schema.org/dateModified')).toEqual([
-      'Date must be of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime',
+      'Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime',
     ]);
 
     // spatialCoverage "Netherlands": not an IRI and does not start with http(s)
     expect(messagesFor('https://schema.org/spatialCoverage')).toEqual([
-      'IRI must start with http:// or https://',
-      'Value must be an IRI (RDF resource), not a string literal that looks like a URL',
+      'Use a value of type URI (RDF resource), not text',
+      'Use a web URI starting with http:// or https://',
     ]);
 
     // includedInDataCatalog "ftp://…": literal with non-http(s) scheme
     expect(messagesFor('https://schema.org/includedInDataCatalog')).toEqual([
-      'IRI must start with http:// or https://',
-      'Value must be an IRI (RDF resource), not a string literal that looks like a URL',
+      'Use a value of type URI (RDF resource), not text',
+      'Use a web URI starting with http:// or https://',
     ]);
 
     // No generic sh:node fallback leaked through.
@@ -421,7 +421,9 @@ describe('Validator', () => {
     ].map((quad) => quad.object.value);
     expect(allMessages).not.toContain('Value does not have shape');
     expect(
-      allMessages.some((message) => message.startsWith('Value does not have shape')),
+      allMessages.some((message) =>
+        message.startsWith('Value does not have shape'),
+      ),
     ).toBe(false);
   });
 

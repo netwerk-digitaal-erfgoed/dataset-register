@@ -96,7 +96,7 @@ describe('Fetch', () => {
           distributions[1].object as BlankNode,
           dcat('downloadURL'),
           factory.namedNode(
-            'http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld',
+            'https://data.bibliotheken.nl/id/dataset/rise-alba.jsonld',
           ),
         ),
       ),
@@ -487,7 +487,7 @@ describe('Fetch', () => {
         ) &&
         quad.object.equals(
           factory.namedNode(
-            'http://data.bibliotheken.nl/id/dataset/rise-alba.jsonld',
+            'https://data.bibliotheken.nl/id/dataset/rise-alba.jsonld',
           ),
         ),
     );
