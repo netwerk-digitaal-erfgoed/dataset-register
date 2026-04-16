@@ -280,10 +280,87 @@ describe('Validator', () => {
     expect(report.state).toEqual('valid');
     expect(formatReport(report)).toMatchInlineSnapshot(`
       "[Warning] https://schema.org/contactPoint on <https://www.goudatijdmachine.nl/omeka/api/items/232>: Add a contact point with a name and email address, preferably of the department that manages the dataset or catalogue
+      [Warning] https://schema.org/genre on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: schema:genre is deprecated; use schema:about with a SKOS concept URI (for example from the Network of Terms)
       [Warning] https://schema.org/identifier on <https://www.goudatijdmachine.nl/omeka/api/items/232>: Add an identifier for the organisation, such as a Chamber of Commerce number or ISIL
       [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use https:// (not http://) in the Creative Commons license URL
       [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use one of the Creative Commons licenses, such as https://creativecommons.org/publicdomain/zero/1.0/ (CC0) or https://creativecommons.org/licenses/by/4.0/ (CC BY 4.0)"
     `);
+  });
+
+  it('warns that schema:genre is deprecated', async () => {
+    const report = (await validate(
+      'dataset-schema-org-genre-deprecated.jsonld',
+    )) as Valid;
+    expect(report.state).toEqual('valid');
+    const genreResults = [
+      ...report.errors.match(
+        null,
+        shacl('resultPath'),
+        rdf.namedNode('https://schema.org/genre'),
+      ),
+    ].map((quad) => quad.subject);
+    expect(genreResults).toHaveLength(1);
+    const [genreResult] = genreResults;
+    expect(
+      [
+        ...report.errors.match(genreResult, shacl('resultSeverity'), null),
+      ][0]?.object.value,
+    ).toEqual('http://www.w3.org/ns/shacl#Warning');
+    const messages = [
+      ...report.errors.match(genreResult, shacl('resultMessage'), null),
+    ]
+      .filter(
+        (quad) =>
+          quad.object.termType === 'Literal' && quad.object.language === 'en',
+      )
+      .map((quad) => quad.object.value);
+    expect(messages).toContain(
+      'schema:genre is deprecated; use schema:about with a SKOS concept URI (for example from the Network of Terms)',
+    );
+  });
+
+  it('accepts schema:about with a SKOS concept URI without warnings', async () => {
+    const report = (await validate(
+      'dataset-schema-org-about-iri.jsonld',
+    )) as Valid;
+    expect(report.state).toEqual('valid');
+    expectViolations(report, ['https://schema.org/about'], 0);
+    expectViolations(report, ['https://schema.org/genre'], 0);
+  });
+
+  it('warns when schema:about is a literal instead of an IRI', async () => {
+    const stringAboutFixture = (await file(
+      'dataset-schema-org-about-iri.jsonld',
+    )) as string;
+    const literalAboutJson = stringAboutFixture.replace(
+      '"about": { "@id": "http://vocab.getty.edu/aat/300046300" }',
+      '"about": "photographs"',
+    );
+    const input = (await rdf
+      .dataset()
+      .import(
+        Readable.from(literalAboutJson).pipe(
+          new JsonLdParser() as unknown as Transform,
+        ),
+      )) as unknown as Dataset;
+    const report = (await validator.validate(input)) as Valid;
+    expect(report.state).toEqual('valid');
+    // Both sh:nodeKind and sh:pattern fire as separate results, matching the
+    // schema:spatialCoverage precedent for literal values on an IRI shape.
+    expectViolations(report, ['https://schema.org/about'], 2);
+    const aboutResults = [
+      ...report.errors.match(
+        null,
+        shacl('resultPath'),
+        rdf.namedNode('https://schema.org/about'),
+      ),
+    ].map((quad) => quad.subject);
+    for (const result of aboutResults) {
+      expect(
+        [...report.errors.match(result, shacl('resultSeverity'), null)][0]
+          ?.object.value,
+      ).toEqual('http://www.w3.org/ns/shacl#Warning');
+    }
   });
 
   it('validates PropertyValue identifier sub-constraints (propertyID, value, name)', async () => {

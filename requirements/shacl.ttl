@@ -388,12 +388,28 @@ nde-dataset:DatasetShape
         ] ,
         [
             sh:path schema:genre ;
-            sh:minCount 1 ;
-            sh:severity sh:Info ;
-            sh:description """
-                The genre or genres which describe the dataset.
-            """@en ;
-            sh:message "Voeg een of meer genres toe"@nl, "Add one or more genres"@en ;
+            sh:maxCount 0 ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:description """schema:genre is verouderd. Gebruik schema:about met een SKOS-concept-URI (bijv. uit AAT of GTAA via het Termennetwerk) voor zowel onderwerp als materiaaltype."""@nl,
+                """schema:genre is deprecated. Use schema:about with a SKOS concept URI (e.g. from AAT or GTAA via the Network of Terms) for both subject and material type."""@en ;
+            sh:message "schema:genre is verouderd; gebruik schema:about met een SKOS-concept-URI (bijvoorbeeld uit het Termennetwerk)"@nl, "schema:genre is deprecated; use schema:about with a SKOS concept URI (for example from the Network of Terms)"@en ;
+        ] ,
+        [
+            sh:path schema:about ;
+            sh:nodeKind sh:IRI ;
+            sh:pattern "^https?://" ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:description "Gebruik een SKOS-concept-URI (bijv. uit AAT of GTAA via het Termennetwerk) als waarde voor schema:about."@nl,
+                "Use a SKOS concept URI (e.g. from AAT or GTAA via the Network of Terms) as the value for schema:about."@en ;
+            sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
         ] ,
         [
             sh:path schema:keywords ;
@@ -1351,12 +1367,17 @@ dcat:DatasetShape
         sh:path dcat:theme ;
         sh:nodeKind sh:IRI ;
         sh:pattern "^https?://" ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
         sh:description """De categorie van de dataset. Gebruik minimaal een waarde uit het Europese Dataset Theme Vocabulary.
         Aanbevolen wordt om daarnaast waarden op te nemen uit domeinspecifieke vocabulaires.
-        Standaard wordt 'Education, culture and sport' (data-theme/EDUC) toegevoegd."""@nl,
+        Standaard wordt ‘Education, culture and sport’ (data-theme/EDUC) toegevoegd."""@nl,
             """The category of the dataset. Use at least one value from the European Dataset Theme Vocabulary.
         It is recommended to also include values from domain-specific vocabularies.
-        The default theme 'Education, culture and sport' (data-theme/EDUC) is auto-assigned."""@en ;
+        The default theme ‘Education, culture and sport’ (data-theme/EDUC) is auto-assigned."""@en ;
         sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
     ],
     [

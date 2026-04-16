@@ -19,7 +19,7 @@
         "@language": "en"
       },
       "keywords": "alba amicorum",
-      "genre": "Interesting data",
+      "about": { "@id": "http://vocab.getty.edu/aat/300026680" },
       "url": "https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum",
       "identifier": "http://data.bibliotheken.nl/id/dataset/rise-alba",
       "license": "https://creativecommons.org/publicdomain/zero/1.0/",
