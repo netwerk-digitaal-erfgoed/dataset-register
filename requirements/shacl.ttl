@@ -394,9 +394,9 @@ nde-dataset:DatasetShape
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
-            sh:description """schema:genre is verouderd. Gebruik schema:about met een SKOS-concept-URI (bijv. uit AAT of GTAA via het Termennetwerk) voor zowel onderwerp als materiaaltype."""@nl,
-                """schema:genre is deprecated. Use schema:about with a SKOS concept URI (e.g. from AAT or GTAA via the Network of Terms) for both subject and material type."""@en ;
-            sh:message "schema:genre is verouderd; gebruik schema:about met een SKOS-concept-URI (bijvoorbeeld uit het Termennetwerk)"@nl, "schema:genre is deprecated; use schema:about with a SKOS concept URI (for example from the Network of Terms)"@en ;
+            sh:description """`schema:genre` is verouderd. Gebruik `schema:about` met een URI (bijv. uit AAT of GTAA via het Termennetwerk) voor zowel onderwerp als materiaaltype."""@nl,
+                """`schema:genre` is deprecated. Use `schema:about` with a URI (e.g. from AAT or GTAA via the Network of Terms) for both subject and material type."""@en ;
+            sh:message "schema:genre is verouderd; gebruik schema:about met een URI (bijvoorbeeld uit het Termennetwerk)"@nl, "schema:genre is deprecated; use schema:about with a URI (for example from the Network of Terms)"@en ;
         ] ,
         [
             sh:path schema:about ;
@@ -407,8 +407,12 @@ nde-dataset:DatasetShape
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
-            sh:description "Gebruik een SKOS-concept-URI (bijv. uit AAT of GTAA via het Termennetwerk) als waarde voor schema:about."@nl,
-                "Use a SKOS concept URI (e.g. from AAT or GTAA via the Network of Terms) as the value for schema:about."@en ;
+            sh:description """Het onderwerp of de onderwerpen van de dataset, waaronder zowel inhoudelijke thema’s (zoals ‘Wederopbouw’ of ‘Koloniale geschiedenis’) als materiaaltypen (zoals ‘Foto’s’ of ‘Bouwtekeningen’).
+                Gebruik een SKOS-concept-URI uit een domeinspecifiek vocabulaire (bijv. AAT, GTAA of Brinkman via het [Termennetwerk](https://termennetwerk.netwerkdigitaalerfgoed.nl/)).
+                Wordt geprojecteerd naar dcat:theme."""@nl,
+                """The subject matter of the dataset, covering both topical themes (such as ‘post-war reconstruction’ or ‘colonial history’) and material types (such as ‘photographs’ or ‘architectural drawings’).
+                Use a SKOS concept URI from a domain-specific vocabulary (e.g. AAT, GTAA, or Brinkman via the [Network of Terms](https://termennetwerk.netwerkdigitaalerfgoed.nl/en)).
+                Projected to dcat:theme."""@en ;
             sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
         ] ,
         [
