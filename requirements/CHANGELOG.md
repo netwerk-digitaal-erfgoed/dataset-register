@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.6.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.5.3...requirements-1.6.0) (2026-04-16)
+
+
+### Features
+
+* **shacl:** deprecate schema:genre; make schema:about canonical for dcat:theme ([#1858](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1858)) ([bdbd789](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/bdbd78973b533f1ed7cddb0ef6e5e5118d77b85f))
+
+
+### Bug Fixes
+
+* **shacl:** target sh:nodeKind sh:IRI for contentUrl in v2, not xsd:anyURI ([#1854](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1854)) ([1e86b9f](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/1e86b9fa0df1b0f3e61b325c6c6e7d9954c185e1))
+
 ## [1.5.3](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.5.2...requirements-1.5.3) (2026-04-15)
 
 
