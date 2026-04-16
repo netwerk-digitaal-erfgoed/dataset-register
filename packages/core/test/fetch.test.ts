@@ -148,6 +148,53 @@ describe('Fetch', () => {
     ).toBe(true);
   });
 
+  it('strips +zip from mediaType and sets application/zip compressFormat', async () => {
+    const response = await file('dataset-dcat-valid-zip.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/valid-dcat-dataset-zip')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/valid-dcat-dataset-zip'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const distributions = [
+      ...dataset.match(
+        factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba-zip'),
+        dcat('distribution'),
+        null,
+      ),
+    ];
+    expect(distributions).toHaveLength(1);
+    const zipDist = distributions[0].object as BlankNode;
+
+    expect(
+      dataset.has(
+        factory.quad(
+          zipDist,
+          dcat('mediaType'),
+          factory.namedNode(
+            'https://www.iana.org/assignments/media-types/application/n-triples',
+          ),
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      dataset.has(
+        factory.quad(
+          zipDist,
+          dcat('compressFormat'),
+          factory.namedNode(
+            'https://www.iana.org/assignments/media-types/application/zip',
+          ),
+        ),
+      ),
+    ).toBe(true);
+  });
+
   it('preserves ODRL policy on DCAT distributions', async () => {
     const response = await file('dataset-dcat-valid-with-policy.jsonld');
     nock('https://example.com')

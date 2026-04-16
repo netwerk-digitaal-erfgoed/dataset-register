@@ -39,19 +39,20 @@ export const normalizeLicense = (variable: string) =>
  * - Already-formed IANA URIs pass through unchanged
  * - Normalizes http:// to https:// for consistency
  * - Strips parameters (e.g., "text/html; charset=utf-8" becomes "text/html")
- * - Strips +gzip suffix (e.g., "application/n-triples+gzip" becomes "application/n-triples");
- *   the compression format is captured separately by compressFormatFromMediaType()
+ * - Strips +gzip or +zip suffix (e.g., "application/n-triples+gzip" becomes
+ *   "application/n-triples"); the compression format is captured separately by
+ *   compressFormatFromMediaType()
  */
 export const normalizeMediaType = (variable: string) =>
   `?${variable}Raw ;
         BIND(
           IF(
             isIRI(?${variable}Raw),
-            IRI(REPLACE(REPLACE(STR(?${variable}Raw), "\\\\+gzip$", ""), "^http://", "https://")),
+            IRI(REPLACE(REPLACE(STR(?${variable}Raw), "\\\\+g?zip$", ""), "^http://", "https://")),
             IRI(
               CONCAT(
                 "https://www.iana.org/assignments/media-types/",
-                REPLACE(REPLACE(STR(?${variable}Raw), ";.*$", ""), "\\\\+gzip$", "")
+                REPLACE(REPLACE(STR(?${variable}Raw), ";.*$", ""), "\\\\+g?zip$", "")
               )
             )
           )
@@ -59,11 +60,12 @@ export const normalizeMediaType = (variable: string) =>
         )`;
 
 /**
- * Detect +gzip in the raw media type and bind a compress format URI.
+ * Detect +gzip or +zip in the raw media type and bind a compress format URI.
  *
  * Returns a SPARQL BIND that sets the compress format variable to
- * <https://www.iana.org/assignments/media-types/application/gzip> when the raw
- * media type contains +gzip, or leaves it unbound otherwise.
+ * <https://www.iana.org/assignments/media-types/application/gzip> for +gzip,
+ * <https://www.iana.org/assignments/media-types/application/zip> for +zip,
+ * or leaves it unbound otherwise.
  */
 export const compressFormatFromMediaType = (
   mediaTypeVariable: string,
@@ -73,7 +75,11 @@ export const compressFormatFromMediaType = (
     IF(
       REGEX(STR(?${mediaTypeVariable}Raw), "\\\\+gzip$"),
       <https://www.iana.org/assignments/media-types/application/gzip>,
-      ?unbound
+      IF(
+        REGEX(STR(?${mediaTypeVariable}Raw), "\\\\+zip$"),
+        <https://www.iana.org/assignments/media-types/application/zip>,
+        ?unbound
+      )
     ) AS ?${compressFormatVariable}
   )`;
 
