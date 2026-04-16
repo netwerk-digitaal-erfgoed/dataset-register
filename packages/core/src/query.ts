@@ -220,7 +220,6 @@ function dcatMultiValuedUnions(): string {
       `FILTER(!isBlank(?${spatialCoverage}))`,
     ),
     multiValuedUnion(type, `dct:temporal`, temporalCoverage),
-    multiValuedUnion(type, `dct:genre`, genre),
     multiValuedUnion(type, `dcat:version`, version),
     multiValuedUnion(type, `dct:isPartOf`, includedInDataCatalog),
     multiValuedUnion(type, `dct:hasPart`, hasPart),
