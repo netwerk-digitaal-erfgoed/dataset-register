@@ -400,19 +400,22 @@ nde-dataset:DatasetShape
         ] ,
         [
             sh:path schema:about ;
-            sh:nodeKind sh:IRI ;
-            sh:pattern "^https?://" ;
-            sh:severity sh:Warning ;
-            nde:futureChange [
-                nde:version "2.0" ;
-                sh:severity sh:Violation ;
-            ] ;
+            sh:minCount 1 ;
+            sh:severity sh:Info ;
             sh:description """Het onderwerp of de onderwerpen van de dataset, waaronder zowel inhoudelijke thema’s (zoals ‘Wederopbouw’ of ‘Koloniale geschiedenis’) als materiaaltypen (zoals ‘Foto’s’ of ‘Bouwtekeningen’).
-                Gebruik een SKOS-concept-URI uit een domeinspecifiek vocabulaire (bijv. AAT, GTAA of Brinkman via het [Termennetwerk](https://termennetwerk.netwerkdigitaalerfgoed.nl/)).
-                Wordt geprojecteerd naar dcat:theme."""@nl,
+                Gebruik een URI uit een gecontroleerd vocabulaire (bijv. AAT, GTAA of Brinkman via het [Termennetwerk](https://termennetwerk.netwerkdigitaalerfgoed.nl/))."""@nl,
                 """The subject matter of the dataset, covering both topical themes (such as ‘post-war reconstruction’ or ‘colonial history’) and material types (such as ‘photographs’ or ‘architectural drawings’).
-                Use a SKOS concept URI from a domain-specific vocabulary (e.g. AAT, GTAA, or Brinkman via the [Network of Terms](https://termennetwerk.netwerkdigitaalerfgoed.nl/en)).
-                Projected to dcat:theme."""@en ;
+                Use a URI from a controlled vocabulary (e.g. AAT, GTAA, or Brinkman via the [Network of Terms](https://termennetwerk.netwerkdigitaalerfgoed.nl/en))."""@en ;
+            sh:message "Voeg een URI toe die het onderwerp of materiaaltype van de dataset beschrijft (bijv. uit het Termennetwerk)"@nl, "Add a URI describing the dataset’s subject matter or material type (for example from the Network of Terms)"@en ;
+        ] ,
+        [
+            sh:path schema:about ;
+            sh:nodeKind sh:IRI ;
+            sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
+        ] ,
+        [
+            sh:path schema:about ;
+            sh:pattern "^https?://" ;
             sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
         ] ,
         [
@@ -427,11 +430,9 @@ nde-dataset:DatasetShape
             sh:minCount 1 ;
             sh:severity sh:Info ;
             sh:description """Het geografische gebied waarop de gegevens in de dataset betrekking hebben.
-                Gebruik een URI uit een gecontroleerd vocabulaire zoals [GeoNames](https://www.geonames.org/).
-                Zoek plaats-URI’s via het [Termennetwerk](https://termennetwerk.netwerkdigitaalerfgoed.nl/)."""@nl,
+                Gebruik een URI uit een gecontroleerd vocabulaire zoals [GeoNames](https://www.geonames.org/) via het [Termennetwerk](https://termennetwerk.netwerkdigitaalerfgoed.nl/)."""@nl,
                 """The geographical area to which the data in the dataset pertains.
-                Use a URI from a controlled vocabulary such as [GeoNames](https://www.geonames.org/).
-                Find place URIs via the [Network of Terms](https://termennetwerk.netwerkdigitaalerfgoed.nl/en)."""@en ;
+                Use a URI from a controlled vocabulary such as [GeoNames](https://www.geonames.org/) via the [Network of Terms](https://termennetwerk.netwerkdigitaalerfgoed.nl/en)."""@en ;
             sh:message "Voeg een gebiedsaanduiding toe (bijv. een URI uit GeoNames)"@nl, "Add spatial coverage (such as a GeoNames URI)"@en ;
         ] ,
         [

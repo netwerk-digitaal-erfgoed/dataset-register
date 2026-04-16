@@ -279,7 +279,8 @@ describe('Validator', () => {
 
     expect(report.state).toEqual('valid');
     expect(formatReport(report)).toMatchInlineSnapshot(`
-      "[Warning] https://schema.org/contactPoint on <https://www.goudatijdmachine.nl/omeka/api/items/232>: Add a contact point with a name and email address, preferably of the department that manages the dataset or catalogue
+      "[Info] https://schema.org/about on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Add a URI describing the dataset’s subject matter or material type (for example from the Network of Terms)
+      [Warning] https://schema.org/contactPoint on <https://www.goudatijdmachine.nl/omeka/api/items/232>: Add a contact point with a name and email address, preferably of the department that manages the dataset or catalogue
       [Warning] https://schema.org/genre on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: schema:genre is deprecated; use schema:about with a URI (for example from the Network of Terms)
       [Warning] https://schema.org/identifier on <https://www.goudatijdmachine.nl/omeka/api/items/232>: Add an identifier for the organisation, such as a Chamber of Commerce number or ISIL
       [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use https:// (not http://) in the Creative Commons license URL
@@ -327,7 +328,7 @@ describe('Validator', () => {
     expectViolations(report, ['https://schema.org/genre'], 0);
   });
 
-  it('warns when schema:about is a literal instead of an IRI', async () => {
+  it('rejects schema:about as a literal with two specific violation messages', async () => {
     const stringAboutFixture = (await file(
       'dataset-schema-org-about-iri.jsonld',
     )) as string;
@@ -342,10 +343,10 @@ describe('Validator', () => {
           new JsonLdParser() as unknown as Transform,
         ),
       )) as unknown as Dataset;
-    const report = (await validator.validate(input)) as Valid;
-    expect(report.state).toEqual('valid');
-    // Both sh:nodeKind and sh:pattern fire as separate results, matching the
-    // schema:spatialCoverage precedent for literal values on an IRI shape.
+    const report = (await validator.validate(input)) as InvalidDataset;
+    expect(report.state).toEqual('invalid');
+    // Split shapes: nodeKind and pattern each fire as their own violation with
+    // a specific message.
     expectViolations(report, ['https://schema.org/about'], 2);
     const aboutResults = [
       ...report.errors.match(
@@ -358,7 +359,7 @@ describe('Validator', () => {
       expect(
         [...report.errors.match(result, shacl('resultSeverity'), null)][0]
           ?.object.value,
-      ).toEqual('http://www.w3.org/ns/shacl#Warning');
+      ).toEqual('http://www.w3.org/ns/shacl#Violation');
     }
   });
 
