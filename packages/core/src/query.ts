@@ -100,6 +100,8 @@ export const rdf = (property: string): NamedNode =>
   factory.namedNode(`http://www.w3.org/1999/02/22-rdf-syntax-ns#${property}`);
 export const vcard = (property: string): NamedNode =>
   factory.namedNode(`http://www.w3.org/2006/vcard/ns#${property}`);
+export const xsd = (property: string): NamedNode =>
+  factory.namedNode(`http://www.w3.org/2001/XMLSchema#${property}`);
 
 export const datasetType = dcat('Dataset');
 export const sparqlLimit = 1_000_000;

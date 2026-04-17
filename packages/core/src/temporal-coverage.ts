@@ -17,15 +17,13 @@
 export function parseTemporalCoverage(
   literal: string,
 ): { start?: string; end?: string } | null {
-  const stripped = literal.trim().replace(/^(?:ca\.|circa)\s+/i, '');
-  if (stripped === '') return null;
-
-  const normalized = stripped.includes('/')
-    ? stripped
-    : stripped
-        .replace(/\s*[\u2013\u2014]\s*/g, '/')
-        .replace(/\s+-\s+/g, '/')
-        .replace(/^(\d{4})-(\d{4})$/, '$1/$2');
+  const normalized = literal
+    .trim()
+    .replace(approximationPrefix, '')
+    .replace(enOrEmDash, '/')
+    .replace(spacedHyphen, '/')
+    .replace(bareYearRange, '$1/$2');
+  if (normalized === '') return null;
 
   if (!normalized.includes('/')) {
     // Single ISO 8601 point (e.g. "2011", "2011-05", "2011-05-01") represents
@@ -51,6 +49,12 @@ export function parseTemporalCoverage(
   };
 }
 
+const approximationPrefix = /^(?:ca\.|circa)\s+/i;
+const enOrEmDash = /\s*[\u2013\u2014]\s*/g;
+const spacedHyphen = /\s+-\s+/g;
+// Collapse "YYYY-YYYY" to "YYYY/YYYY" only when that is the *entire* string —
+// ISO 8601 dates like "2011-05" or "2011-05-01" must not be touched.
+const bareYearRange = /^(\d{4})-(\d{4})$/;
 const isoPointPattern = /^-?\d{4}(-\d{2}(-\d{2}(T\d{2}:\d{2}(:\d{2})?)?)?)?$/;
 
 const openEndMarkers = new Set(['..', 'heden', 'nu', 'present', 'now']);

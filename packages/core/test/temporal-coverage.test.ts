@@ -95,6 +95,14 @@ describe('parseTemporalCoverage', () => {
       });
     });
 
+    it('normalises dashes even when an explicit / is already present', () => {
+      // Mixed notation — the dash-to-slash rules still apply on the start side
+      // so the open-end marker can be recognised.
+      expect(parseTemporalCoverage('1875 - heden/2025')).toEqual({
+        start: '1875',
+      });
+    });
+
     it('leaves ISO dates (no surrounding spaces) untouched', () => {
       expect(parseTemporalCoverage('2011-05-01')).toEqual({
         start: '2011-05-01',

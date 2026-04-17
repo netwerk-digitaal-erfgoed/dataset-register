@@ -3,7 +3,7 @@ import type { TransformCallback } from 'node:stream';
 import factory from 'rdf-ext';
 import type { DatasetCore, NamedNode, Quad } from '@rdfjs/types';
 import type DatasetExt from 'rdf-ext/lib/Dataset.js';
-import { dcat, dct, foaf, vcard } from './query.ts';
+import { dcat, dct, foaf, rdf, vcard, xsd } from './query.ts';
 import { parseTemporalCoverage } from './temporal-coverage.ts';
 
 /**
@@ -35,10 +35,7 @@ export function standardizeSchemaOrgPrefix(dataset: DatasetCore): DatasetExt {
 /**
  * Add a default language tag to untagged string literals on properties where language tags are expected.
  */
-export function addDefaultLanguageTags(
-  quads: Quad[],
-  lang = 'nl',
-): DatasetExt {
+export function addDefaultLanguageTags(quads: Quad[], lang = 'nl'): DatasetExt {
   return factory.dataset(quads.map((quad) => addLanguageTag(quad, lang)));
 }
 
@@ -58,12 +55,11 @@ const languageTagPredicates = new Set([
  * IRI values pass through — they already reference a PeriodOfTime resource.
  */
 export function normalizeTemporalCoverage(quads: Quad[]): Quad[] {
+  if (!quads.some(isTemporalCoverageLiteral)) return quads;
+
   const result: Quad[] = [];
   for (const quad of quads) {
-    if (
-      !quad.predicate.equals(dct('temporal')) ||
-      quad.object.termType !== 'Literal'
-    ) {
+    if (!isTemporalCoverageLiteral(quad)) {
       result.push(quad);
       continue;
     }
@@ -77,13 +73,13 @@ export function normalizeTemporalCoverage(quads: Quad[]): Quad[] {
     const periodOfTime = factory.blankNode();
     result.push(
       factory.quad(quad.subject, quad.predicate, periodOfTime, quad.graph),
-      factory.quad(periodOfTime, rdfType, dct('PeriodOfTime'), quad.graph),
+      factory.quad(periodOfTime, rdf('type'), dctPeriodOfTime, quad.graph),
     );
     if (parsed.start !== undefined) {
       result.push(
         factory.quad(
           periodOfTime,
-          dcat('startDate'),
+          dcatStartDate,
           factory.literal(parsed.start, xsdDatatypeForIsoPoint(parsed.start)),
           quad.graph,
         ),
@@ -93,7 +89,7 @@ export function normalizeTemporalCoverage(quads: Quad[]): Quad[] {
       result.push(
         factory.quad(
           periodOfTime,
-          dcat('endDate'),
+          dcatEndDate,
           factory.literal(parsed.end, xsdDatatypeForIsoPoint(parsed.end)),
           quad.graph,
         ),
@@ -103,25 +99,29 @@ export function normalizeTemporalCoverage(quads: Quad[]): Quad[] {
   return result;
 }
 
-const rdfType = factory.namedNode(
-  'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
-);
+const dctTemporal = dct('temporal');
+const dctPeriodOfTime = dct('PeriodOfTime');
+const dcatStartDate = dcat('startDate');
+const dcatEndDate = dcat('endDate');
+const xsdGYear = xsd('gYear');
+const xsdGYearMonth = xsd('gYearMonth');
+const xsdDate = xsd('date');
+const xsdDateTime = xsd('dateTime');
+
+function isTemporalCoverageLiteral(quad: Quad): boolean {
+  return (
+    quad.predicate.equals(dctTemporal) && quad.object.termType === 'Literal'
+  );
+}
 
 function xsdDatatypeForIsoPoint(value: string): NamedNode {
   const body = value.startsWith('-') ? value.slice(1) : value;
-  if (body.includes('T')) return xsdDatatypes.dateTime;
+  if (body.includes('T')) return xsdDateTime;
   const separators = (body.match(/-/g) ?? []).length;
-  if (separators === 0) return xsdDatatypes.gYear;
-  if (separators === 1) return xsdDatatypes.gYearMonth;
-  return xsdDatatypes.date;
+  if (separators === 0) return xsdGYear;
+  if (separators === 1) return xsdGYearMonth;
+  return xsdDate;
 }
-
-const xsdDatatypes = {
-  gYear: factory.namedNode('http://www.w3.org/2001/XMLSchema#gYear'),
-  gYearMonth: factory.namedNode('http://www.w3.org/2001/XMLSchema#gYearMonth'),
-  date: factory.namedNode('http://www.w3.org/2001/XMLSchema#date'),
-  dateTime: factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime'),
-} as const;
 
 function addLanguageTag(quad: Quad, lang: string): Quad {
   const object = quad.object;
