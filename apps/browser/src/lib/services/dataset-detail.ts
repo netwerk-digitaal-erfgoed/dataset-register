@@ -78,7 +78,7 @@ export const DatasetDetailSchema = {
     '@multilang': true,
   },
   theme: {
-    '@id': 'http://www.w3.org/ns/dcat#theme',
+    '@id': dcat.theme,
     '@optional': true,
     '@array': true,
   },
@@ -108,7 +108,7 @@ export const DatasetDetailSchema = {
     '@optional': true,
   },
   landingPage: {
-    '@id': 'http://www.w3.org/ns/dcat#landingPage',
+    '@id': dcat.landingPage,
     '@optional': true,
   },
   publisher: {
