@@ -1191,7 +1191,7 @@
   {/if}
 
   <!-- VoID Summary Section -->
-  {#if hasVoidStats}
+  {#if summary && hasVoidStats}
     <div class="mb-8">
       <h2
         class="mb-4 flex items-center gap-2 text-xl font-semibold text-gray-900 dark:text-white"

@@ -36,7 +36,7 @@ jobs:
 
       # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
       # - run: npx nx-cloud record -- echo Hello World
-      - run: npx nx affected -t lint test typecheck build
+      - run: npx nx affected -t lint test typecheck check build
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
