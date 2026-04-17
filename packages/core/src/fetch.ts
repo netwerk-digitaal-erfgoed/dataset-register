@@ -5,6 +5,7 @@ import { constructQuery, dcat, rdf } from './query.ts';
 import { pipeline } from 'node:stream';
 import {
   addDefaultLanguageTags,
+  normalizeTemporalCoverage,
   StandardizeSchemaOrgPrefixToHttps,
 } from './transform.ts';
 import { rdfDereferencer } from 'rdf-dereference';
@@ -134,7 +135,9 @@ async function* query(url: URL, data: DatasetExt) {
   }
 
   for (const datasetIri of datasetOrder) {
-    yield addDefaultLanguageTags(groupedQuads.get(datasetIri)!);
+    yield addDefaultLanguageTags(
+      normalizeTemporalCoverage(groupedQuads.get(datasetIri)!),
+    );
   }
 }
 

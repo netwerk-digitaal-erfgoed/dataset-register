@@ -47,6 +47,7 @@
   const totalDistributions = $derived(data.totalDistributions);
   const summary = $derived(data.summary);
   const linksets = $derived(data.linksets);
+  const temporalCoverages = $derived(data.temporalCoverages);
 
   // SEO: canonical and hreflang URLs
   const datasetPath = $derived(`/datasets/${dataset.$id}`);
@@ -425,7 +426,7 @@
   </div>
 
   <!-- Dataset Details Section (compact) -->
-  {#if localizedKeywords.length > 0 || dataset.publisher?.name || dataset.license || (dataset.spatial && dataset.spatial.length > 0) || dataset.temporal || localizedGenres.length > 0 || (dataset.language && dataset.language.length > 0)}
+  {#if localizedKeywords.length > 0 || dataset.publisher?.name || dataset.license || (dataset.spatial && dataset.spatial.length > 0) || temporalCoverages.length > 0 || localizedGenres.length > 0 || (dataset.language && dataset.language.length > 0)}
     <div class="mb-8">
       <div
         class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
@@ -813,7 +814,7 @@
           {/if}
 
           <!-- Temporal Coverage -->
-          {#if dataset.temporal}
+          {#if temporalCoverages.length > 0}
             <div
               class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
             >
@@ -843,26 +844,40 @@
                   >{m.detail_temporal_coverage_description()}</Tooltip
                 >
               </dt>
-              <dd class="text-sm text-gray-700 dark:text-gray-300 break-all">
-                {#await data.resolvedTerms}
-                  {dataset.temporal}
-                {:then resolvedTerms}
-                  {#if resolvedTerms[dataset.temporal!]}
-                    <a
-                      href={dataset.temporal}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="text-blue-600 hover:underline dark:text-blue-400"
-                    >
-                      {resolvedTerms[dataset.temporal!]}
-                      <span class="sr-only">
-                        ({m.opens_in_new_tab()})
-                      </span>
-                    </a>
+              <dd
+                class="text-sm text-gray-700 dark:text-gray-300 break-all space-y-1"
+              >
+                {#each temporalCoverages as coverage (coverage)}
+                  {#if coverage.kind === 'period'}
+                    <div>
+                      {coverage.start ?? '…'} – {coverage.end ?? '…'}
+                    </div>
+                  {:else if coverage.kind === 'iri'}
+                    {#await data.resolvedTerms}
+                      <div>{coverage.iri}</div>
+                    {:then resolvedTerms}
+                      <div>
+                        {#if resolvedTerms[coverage.iri]}
+                          <a
+                            href={coverage.iri}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-blue-600 hover:underline dark:text-blue-400"
+                          >
+                            {resolvedTerms[coverage.iri]}
+                            <span class="sr-only">
+                              ({m.opens_in_new_tab()})
+                            </span>
+                          </a>
+                        {:else}
+                          {coverage.iri}
+                        {/if}
+                      </div>
+                    {/await}
                   {:else}
-                    {dataset.temporal}
+                    <div>{coverage.value}</div>
                   {/if}
-                {/await}
+                {/each}
               </dd>
             </div>
           {/if}

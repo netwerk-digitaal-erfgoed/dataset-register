@@ -578,7 +578,9 @@ describe('Fetch', () => {
     // an extra byteSize triple, one more propagated license (4 vs 3 distributions),
     // a mediaType on the SPARQL distribution (suppressed for API distributions),
     // and a dcat:theme triple (auto-assigned for Schema.org, explicit in DCAT).
-    expect(dataset.size).toEqual(dcatEquivalent.size + 7 - 9);
+    // Fetch also replaces the `dct:temporal "..."` literal with a PeriodOfTime
+    // blank node (1 → 4 quads: dct:temporal link + rdf:type + startDate + endDate).
+    expect(dataset.size).toEqual(dcatEquivalent.size + 7 - 9 + 3);
 
     // Check that SPARQL endpoint has conformsTo triple
     const sparqlConformsToTriples = [...dataset].filter(

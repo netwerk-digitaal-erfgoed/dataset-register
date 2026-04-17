@@ -93,10 +93,11 @@ export const DatasetDetailSchema = {
     '@optional': true,
     '@array': true,
   },
-  temporal: {
-    '@id': dcterms.temporal,
-    '@optional': true,
-  },
+  // Note: dct:temporal is fetched separately (see fetchTemporalCoverage) because
+  // the same predicate can carry three incompatible object shapes: an IRI, a
+  // dct:PeriodOfTime blank node with dcat:startDate / dcat:endDate, or — for
+  // unparseable inputs — a plain literal. ldkit cannot model this polymorphism
+  // in a single schema.
   issued: {
     '@id': dcterms.issued,
     '@type': xsd.dateTime,
@@ -343,12 +344,18 @@ export type DatasetSummary = SchemaInterface<typeof DatasetSummarySchema> & {
 
 const DISTRIBUTION_LIMIT = 20;
 
+export type TemporalCoverage =
+  | { kind: 'iri'; iri: string }
+  | { kind: 'period'; iri?: string; start?: string; end?: string }
+  | { kind: 'literal'; value: string };
+
 export interface DatasetDetailResult {
   dataset: DatasetDetail;
   distributions: DistributionDetail[];
   totalDistributions: number;
   summary: DatasetSummary | null;
   linksets: Linkset[];
+  temporalCoverages: TemporalCoverage[];
   resolvedTerms: Promise<Record<string, string>>;
 }
 
@@ -368,6 +375,57 @@ async function fetchDistributionCount(query: string): Promise<number> {
     }
   }
   return 0;
+}
+
+async function fetchTemporalCoverage(
+  datasetUri: string,
+): Promise<TemporalCoverage[]> {
+  const query = `
+    PREFIX dct: <http://purl.org/dc/terms/>
+    PREFIX dcat: <http://www.w3.org/ns/dcat#>
+    SELECT ?temporal ?startDate ?endDate WHERE {
+      GRAPH ?g {
+        <${datasetUri}> dct:temporal ?temporal .
+        OPTIONAL { ?temporal dcat:startDate ?startDate }
+        OPTIONAL { ?temporal dcat:endDate ?endDate }
+      }
+    }
+  `;
+  const bindingsStream = await fetcher.fetchBindings(
+    PUBLIC_SPARQL_ENDPOINT,
+    query,
+  );
+
+  const byKey = new Map<string, TemporalCoverage>();
+  for await (const raw of bindingsStream) {
+    const binding = raw as unknown as {
+      temporal: { termType: string; value: string };
+      startDate?: { value: string };
+      endDate?: { value: string };
+    };
+    const { temporal, startDate, endDate } = binding;
+    const key = `${temporal.termType}:${temporal.value}`;
+
+    if (temporal.termType === 'Literal') {
+      byKey.set(key, { kind: 'literal', value: temporal.value });
+      continue;
+    }
+
+    const existing = byKey.get(key);
+    if (startDate?.value || endDate?.value) {
+      const period: TemporalCoverage = {
+        kind: 'period',
+        ...(temporal.termType === 'NamedNode' && { iri: temporal.value }),
+        ...(existing?.kind === 'period' && existing),
+        ...(startDate?.value && { start: startDate.value }),
+        ...(endDate?.value && { end: endDate.value }),
+      };
+      byKey.set(key, period);
+    } else if (!existing && temporal.termType === 'NamedNode') {
+      byKey.set(key, { kind: 'iri', iri: temporal.value });
+    }
+  }
+  return [...byKey.values()];
 }
 
 // Main function to fetch all dataset detail data
@@ -450,6 +508,7 @@ export async function fetchDatasetDetail(
     summary,
     linksets,
     classPartitionResult,
+    temporalCoverages,
   ] = await Promise.all([
     detailLens.findByIri(datasetUri),
     distributionLens.query(distributionQuery),
@@ -463,6 +522,7 @@ export async function fetchDatasetDetail(
     }),
     linksLens.find({ where: { subjectsTarget: datasetUri } }),
     classPartitionLens.findByIri(datasetUri),
+    fetchTemporalCoverage(datasetUri),
   ]);
 
   if (!dataset) {
@@ -480,9 +540,14 @@ export async function fetchDatasetDetail(
   // Resolve term URIs (e.g. spatial/temporal) to human-readable labels
   // via the Network of Terms API. Returned as an unawaited promise so
   // SvelteKit can stream the result without blocking the page response.
+  const temporalIris = temporalCoverages.flatMap((coverage) =>
+    coverage.kind === 'iri' || (coverage.kind === 'period' && coverage.iri)
+      ? [(coverage as { iri: string }).iri].filter(isUri)
+      : [],
+  );
   const termUris = [
     ...(dataset.spatial?.filter(isUri) ?? []),
-    ...(dataset.temporal && isUri(dataset.temporal) ? [dataset.temporal] : []),
+    ...temporalIris,
   ];
   const resolvedTerms =
     termUris.length > 0
@@ -495,6 +560,7 @@ export async function fetchDatasetDetail(
     totalDistributions,
     summary: summaryWithClassPartition,
     linksets,
+    temporalCoverages,
     resolvedTerms,
   };
 }
