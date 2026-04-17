@@ -173,7 +173,14 @@ test.describe('Accessibility - Dataset Detail Page', () => {
   test('dataset detail page has no accessibility violations', async ({
     page,
   }) => {
-    await page.goto('/datasets/https%3A%2F%2Fexample.org%2Fdataset%2F1');
+    const response = await page.goto(
+      '/datasets/https%3A%2F%2Fexample.org%2Fdataset%2F1',
+    );
+    // SSR hits the live SPARQL endpoint (page.route only intercepts browser
+    // requests), so this URI returns a 404 "not found" page. Assert that the
+    // route does not crash (5xx) — see issue #1860 for the kind of regression
+    // this guards against.
+    expect(response?.status()).toBeLessThan(500);
     await page.waitForLoadState('load');
 
     const results = await new AxeBuilder({ page })
@@ -192,7 +199,14 @@ test.describe('Accessibility - Dataset Detail Page', () => {
   });
 
   test('dataset detail page has proper heading structure', async ({ page }) => {
-    await page.goto('/datasets/https%3A%2F%2Fexample.org%2Fdataset%2F1');
+    const response = await page.goto(
+      '/datasets/https%3A%2F%2Fexample.org%2Fdataset%2F1',
+    );
+    // SSR hits the live SPARQL endpoint (page.route only intercepts browser
+    // requests), so this URI returns a 404 "not found" page. Assert that the
+    // route does not crash (5xx) — see issue #1860 for the kind of regression
+    // this guards against.
+    expect(response?.status()).toBeLessThan(500);
     await page.waitForLoadState('load');
 
     // Check for main heading (h1 with dataset title)
@@ -210,7 +224,14 @@ test.describe('Accessibility - Dataset Detail Page', () => {
   });
 
   test('dataset detail page is keyboard accessible', async ({ page }) => {
-    await page.goto('/datasets/https%3A%2F%2Fexample.org%2Fdataset%2F1');
+    const response = await page.goto(
+      '/datasets/https%3A%2F%2Fexample.org%2Fdataset%2F1',
+    );
+    // SSR hits the live SPARQL endpoint (page.route only intercepts browser
+    // requests), so this URI returns a 404 "not found" page. Assert that the
+    // route does not crash (5xx) — see issue #1860 for the kind of regression
+    // this guards against.
+    expect(response?.status()).toBeLessThan(500);
     await page.waitForLoadState('load');
 
     // Find a link and verify it can receive focus
@@ -220,7 +241,14 @@ test.describe('Accessibility - Dataset Detail Page', () => {
   });
 
   test('dataset detail page meets WCAG AA color contrast', async ({ page }) => {
-    await page.goto('/datasets/https%3A%2F%2Fexample.org%2Fdataset%2F1');
+    const response = await page.goto(
+      '/datasets/https%3A%2F%2Fexample.org%2Fdataset%2F1',
+    );
+    // SSR hits the live SPARQL endpoint (page.route only intercepts browser
+    // requests), so this URI returns a 404 "not found" page. Assert that the
+    // route does not crash (5xx) — see issue #1860 for the kind of regression
+    // this guards against.
+    expect(response?.status()).toBeLessThan(500);
     await page.waitForLoadState('load');
 
     const results = await new AxeBuilder({ page })

@@ -360,9 +360,11 @@ async function fetchDistributionCount(query: string): Promise<number> {
     query,
   );
   for await (const bindings of bindingsStream) {
-    const count = bindings['count'];
-    if (count && 'value' in count) {
-      return parseInt(count.value as string, 10);
+    const typedBinding = bindings as unknown as {
+      count?: { value: string };
+    };
+    if (typedBinding.count?.value) {
+      return parseInt(typedBinding.count.value, 10);
     }
   }
   return 0;

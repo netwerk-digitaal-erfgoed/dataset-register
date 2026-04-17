@@ -74,6 +74,13 @@
           "build"
         ]
       },
+      "check": {
+        "cache": true,
+        "inputs": [
+          "default",
+          "^default"
+        ]
+      },
       "prune-lockfile": {
         "options": {
           "outputPath": "apps/browser/build"

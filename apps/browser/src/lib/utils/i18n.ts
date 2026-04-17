@@ -2,6 +2,7 @@ import {
   getLocale,
   localizeHref as localizeHrefDecorated,
   deLocalizeUrl as delocalizeUrlDecorated,
+  type Locale,
 } from '$lib/paraglide/runtime';
 import { encodeDatasetPath } from '$lib/utils/dataset-uri';
 
@@ -52,7 +53,7 @@ export function getLocalizedArray(
  */
 export function localizeHref(
   href: string,
-  options?: { locale?: string },
+  options?: { locale?: Locale },
 ): string {
   const encoded = encodeDatasetPath(href);
   const localized = localizeHrefDecorated(encoded, {
