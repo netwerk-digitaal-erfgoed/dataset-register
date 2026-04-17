@@ -78,7 +78,7 @@ export const DatasetDetailSchema = {
     '@multilang': true,
   },
   theme: {
-    '@id': dcat.theme,
+    '@id': 'http://www.w3.org/ns/dcat#theme',
     '@optional': true,
     '@array': true,
   },
