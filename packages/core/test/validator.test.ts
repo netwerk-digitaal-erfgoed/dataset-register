@@ -285,7 +285,7 @@ describe('Validator', () => {
       [Warning] https://schema.org/identifier on <https://www.goudatijdmachine.nl/omeka/api/items/232>: Add an identifier for the organisation, such as a Chamber of Commerce number or ISIL
       [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use https:// (not http://) in the Creative Commons license URL
       [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use one of the Creative Commons licenses, such as https://creativecommons.org/publicdomain/zero/1.0/ (CC0) or https://creativecommons.org/licenses/by/4.0/ (CC BY 4.0)
-      [Warning] https://schema.org/temporalCoverage on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use an ISO 8601 date or time interval (such as ‘2011/2012’, ‘-0753/0476’ for BCE, or ‘1440/..’) or a web URI"
+      [Warning] https://schema.org/temporalCoverage on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use an ISO 8601 date or time interval (such as ‘2011/2012’, ‘-0431/-0404’ for BCE, or ‘1440/..’) or a web URI"
     `);
   });
 

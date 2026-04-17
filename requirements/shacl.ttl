@@ -474,8 +474,8 @@ nde-dataset:DatasetShape
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
-            sh:description "De waarde moet een ISO 8601-datum of -tijdsinterval zijn (bijv. ‘2011’, ‘2011/2012’, ‘-0753/0476’ voor v.Chr.-dateringen, of ‘1440/..’ voor een open einde), of een HTTP(S)-URI."@nl, "The value must be an ISO 8601 date or time interval (such as ‘2011’, ‘2011/2012’, ‘-0753/0476’ for BCE dates, or ‘1440/..’ for an open-ended range), or an HTTP(S) URI."@en ;
-            sh:message "Gebruik een ISO 8601-datum of -tijdsinterval (bijv. ‘2011/2012’, ‘-0753/0476’ voor v.Chr., of ‘1440/..’) of een web-URI"@nl, "Use an ISO 8601 date or time interval (such as ‘2011/2012’, ‘-0753/0476’ for BCE, or ‘1440/..’) or a web URI"@en ;
+            sh:description "De waarde moet een ISO 8601-datum of -tijdsinterval zijn (bijv. ‘2011’, ‘2011/2012’, ‘-0431/-0404’ voor v.Chr.-dateringen, of ‘1440/..’ voor een open einde), of een HTTP(S)-URI."@nl, "The value must be an ISO 8601 date or time interval (such as ‘2011’, ‘2011/2012’, ‘-0431/-0404’ for BCE dates, or ‘1440/..’ for an open-ended range), or an HTTP(S) URI."@en ;
+            sh:message "Gebruik een ISO 8601-datum of -tijdsinterval (bijv. ‘2011/2012’, ‘-0431/-0404’ voor v.Chr., of ‘1440/..’) of een web-URI"@nl, "Use an ISO 8601 date or time interval (such as ‘2011/2012’, ‘-0431/-0404’ for BCE, or ‘1440/..’) or a web URI"@en ;
         ] ,
         [
             a sh:PropertyShape ;
