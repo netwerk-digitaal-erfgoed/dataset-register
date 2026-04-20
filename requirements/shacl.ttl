@@ -709,10 +709,6 @@ nde-dataset:DistributionShape
             ] ;
             sh:message "Gebruik een web URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
         ] ,
-        # schema:description is Recommended (0..n) on Distribution per
-        # DCAT-AP-NL 3.0 \u00a74.2.8 \u2014 permanent sh:Info, no nde:futureChange,
-        # matching the house style for other Recommended properties
-        # (keywords, spatialCoverage, temporalCoverage).
         [
             sh:path schema:description ;
             sh:minCount 1 ;
