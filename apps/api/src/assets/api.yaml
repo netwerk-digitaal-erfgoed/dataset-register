@@ -36,13 +36,13 @@ paths:
                 summary: A valid dataset
                 value:
                   {
-                    '@id': 'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html',
+                    '@id': 'https://example.com/dataset',
                   }
               invalid:
                 summary: An invalid dataset
                 value:
                   {
-                    '@id': 'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2a.html',
+                    '@id': 'https://example.com/invalid-dataset',
                   }
       responses:
         202:
@@ -158,13 +158,13 @@ paths:
                 summary: A valid dataset
                 value:
                   {
-                    '@id': 'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html',
+                    '@id': 'https://example.com/dataset',
                   }
               invalid:
                 summary: An invalid dataset
                 value:
                   {
-                    '@id': 'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2a.html',
+                    '@id': 'https://example.com/invalid-dataset',
                   }
       responses:
         200:
