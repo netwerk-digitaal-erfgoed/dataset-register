@@ -280,7 +280,9 @@ describe('Validator', () => {
     expect(report.state).toEqual('valid');
     expect(formatReport(report)).toMatchInlineSnapshot(`
       "[Info] https://schema.org/about on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Add a URI describing the dataset’s subject matter or material type (for example from the Network of Terms)
+      [Warning]  on <https://www.goudatijdmachine.nl/omeka/api/items/3030722>: Add the SPARQL protocol URI (https://www.w3.org/TR/sparql11-protocol/) to schema:usageInfo for SPARQL endpoints
       [Warning] https://schema.org/contactPoint on <https://www.goudatijdmachine.nl/omeka/api/items/232>: Add a contact point with a name and email address, preferably of the department that manages the dataset or catalogue
+      [Warning] https://schema.org/encodingFormat on <https://www.goudatijdmachine.nl/omeka/api/items/3030722>: Remove the SPARQL MIME type from schema:encodingFormat; SPARQL endpoints are declared via schema:usageInfo
       [Warning] https://schema.org/genre on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: schema:genre is deprecated; use schema:about with a URI (for example from the Network of Terms)
       [Warning] https://schema.org/identifier on <https://www.goudatijdmachine.nl/omeka/api/items/232>: Add an identifier for the organisation, such as a Chamber of Commerce number or ISIL
       [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use https:// (not http://) in the Creative Commons license URL

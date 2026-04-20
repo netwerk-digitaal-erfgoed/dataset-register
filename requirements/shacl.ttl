@@ -582,6 +582,16 @@ nde-dataset:DistributionShape
             When the distribution is compressed, the compression format (such as `zip`, `gzip`) must be included (such as `text/turtle+gzip`)."""@en ;
             sh:message "Vul een geldig MIME-type in, bijv. application/n-triples"@nl, "Enter a valid MIME type, such as application/n-triples"@en ;
         ] ,
+        [
+            sh:path schema:encodingFormat ;
+            sh:not [ sh:pattern "application/sparql-" ] ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:message "Verwijder het SPARQL MIME-type uit schema:encodingFormat; SPARQL-endpoints worden gedeclareerd via schema:usageInfo"@nl, "Remove the SPARQL MIME type from schema:encodingFormat; SPARQL endpoints are declared via schema:usageInfo"@en ;
+        ] ,
         # Recommended properties
         [
             sh:path schema:description ;
@@ -746,6 +756,59 @@ nde-dataset:DistributionLicenseRequiredShape
                 ?dataset schema:distribution $this .
                 FILTER NOT EXISTS { $this schema:license ?distLicense }
                 FILTER NOT EXISTS { ?dataset schema:license ?datasetLicense }
+            }
+        """ ;
+    ] .
+
+# SPARQL endpoints must declare the SPARQL protocol URI in schema:usageInfo so the
+# Dataset Register can identify them as APIs. A SPARQL MIME type in schema:encodingFormat
+# is not sufficient on its own. See [[#usage-information]].
+nde-dataset:DistributionSparqlEncodingRequiresProtocolShape
+    a sh:NodeShape ;
+    sh:targetObjectsOf schema:distribution ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "Voeg de SPARQL protocol-URI (https://www.w3.org/TR/sparql11-protocol/) toe aan schema:usageInfo voor SPARQL-endpoints"@nl, "Add the SPARQL protocol URI (https://www.w3.org/TR/sparql11-protocol/) to schema:usageInfo for SPARQL endpoints"@en ;
+    sh:sparql [
+        sh:select """
+            PREFIX schema: <https://schema.org/>
+            SELECT $this
+            WHERE {
+                $this schema:encodingFormat ?format .
+                FILTER(CONTAINS(STR(?format), "application/sparql-"))
+                FILTER NOT EXISTS {
+                    $this schema:usageInfo <https://www.w3.org/TR/sparql11-protocol/> .
+                }
+            }
+        """ ;
+    ] .
+
+# DCAT mirror of the shape above: SPARQL endpoints must declare the SPARQL protocol URI
+# in dct:conformsTo. A SPARQL MIME type in dcat:mediaType is not sufficient on its own.
+# See [[#usage-information]].
+dcat:DistributionSparqlMediaTypeRequiresProtocolShape
+    a sh:NodeShape ;
+    sh:targetObjectsOf dcat:distribution ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "Voeg de SPARQL protocol-URI (https://www.w3.org/TR/sparql11-protocol/) toe aan dct:conformsTo voor SPARQL-endpoints"@nl, "Add the SPARQL protocol URI (https://www.w3.org/TR/sparql11-protocol/) to dct:conformsTo for SPARQL endpoints"@en ;
+    sh:sparql [
+        sh:select """
+            PREFIX dcat: <http://www.w3.org/ns/dcat#>
+            PREFIX dct: <http://purl.org/dc/terms/>
+            SELECT $this
+            WHERE {
+                $this dcat:mediaType ?mediaType .
+                FILTER(CONTAINS(STR(?mediaType), "application/sparql-"))
+                FILTER NOT EXISTS {
+                    $this dct:conformsTo <https://www.w3.org/TR/sparql11-protocol/> .
+                }
             }
         """ ;
     ] .
@@ -1485,6 +1548,16 @@ dcat:DistributionShape
         ] ]
     ) ;
     sh:property [
+        sh:path dcat:mediaType ;
+        sh:not [ sh:pattern "application/sparql-" ] ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Verwijder het SPARQL MIME-type uit dcat:mediaType; SPARQL-endpoints worden gedeclareerd via dct:conformsTo"@nl, "Remove the SPARQL MIME type from dcat:mediaType; SPARQL endpoints are declared via dct:conformsTo"@en ;
+    ] ,
+    [
         sh:path dc:license ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
