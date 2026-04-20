@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.7.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.6.0...requirements-1.7.0) (2026-04-20)
+
+
+### Features
+
+* **core:** map schema:temporalCoverage to dct:PeriodOfTime ([#1863](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1863)) ([a700556](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/a700556f29831d19d0780f43de0658639833c179))
+
+
+### Bug Fixes
+
+* **shacl:** accept ISO 8601 shortened-end intervals in temporalCoverage ([#1866](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1866)) ([61ffdf7](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/61ffdf7c4a302ad2795f16217d3fc44c03f3f378))
+
 ## [1.6.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.5.3...requirements-1.6.0) (2026-04-16)
 
 
