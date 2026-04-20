@@ -58,7 +58,7 @@ export async function server(
     })
     .register(fastifySwaggerUi, {
       theme: {
-        title: 'NDE Datasetregister API',
+        title: 'NDE Dataset Register API',
       },
       logo: {
         type: 'image/svg+xml',
