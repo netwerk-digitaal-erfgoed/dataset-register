@@ -490,10 +490,6 @@ function schemaOrgQuery(prefix: string): string {
       }
       OPTIONAL { ?${distribution} ${prefix}:license ${normalizeLicense(distributionLicense + 'Provided')} }
       BIND(COALESCE(?${distributionLicense}Provided, ?${license}) AS ?${distributionLicense})
-      # ${prefix}:name → dct:title on Distribution (DCAT-AP-NL §4.2.24, Optional).
-      # When #698 lands and service-type distributions become dcat:DataService,
-      # the DataService shape requires dct:title as Mandatory (1..n) — route
-      # there instead of here for the DataService branch.
       OPTIONAL { ?${distribution} ${prefix}:name ?${distributionName} }
       OPTIONAL { ?${distribution} ${prefix}:contentSize ?${distributionSize} }
       OPTIONAL {
