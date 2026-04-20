@@ -90,6 +90,23 @@ paths:
       operationId: validate-body
       requestBody:
         content:
+          text/turtle:
+            schema:
+              type: string
+            examples:
+              valid:
+                summary: A valid dataset in the request body
+                value: |-
+                  @prefix schema: <https://schema.org/> .
+                  <http://data.bibliotheken.nl/id/dataset/rise-alba>
+                    a schema:Dataset ;
+                    schema:name "Alba amicorum van de Koninklijke Bibliotheek" ;
+                    schema:license <http://creativecommons.org/publicdomain/zero/1.0/> ;
+                    schema:publisher <https://example.com/publisher> .
+
+                  <https://example.com/publisher>
+                    a schema:Organization ;
+                    schema:name "Koninklijke Bibliotheek" .
           application/ld+json:
             schema:
               type: object
