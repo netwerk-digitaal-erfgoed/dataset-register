@@ -344,13 +344,19 @@ export const constructQuery = `
         OPTIONAL {
           ?${dataset} dcat:distribution ?${distribution} .
           ?${distribution} a dcat:Distribution .
-          ?${distribution} dcat:mediaType ${normalizeMediaType(distributionMediaType)} .
           ?${distribution} dcat:accessURL ${convertToIri(distributionUrl)} .
+          OPTIONAL {
+            ?${distribution} dcat:mediaType ${normalizeMediaType(distributionMediaType)} .
+          }
           OPTIONAL { ?${distribution} dct:conformsTo ?${distributionConformsTo} . }
           OPTIONAL {
             ?${distribution} dct:conformsTo ?${distributionConformsToProtocol} .
             VALUES ?${distributionConformsToProtocol} { ${apiProtocolValues} }
           }
+          # Infer the SPARQL protocol URI from a SPARQL-ish mediaType so distributions
+          # that haven't declared it explicitly via dct:conformsTo are still classified
+          # as APIs. Drop when DistributionSparqlMediaTypeRequiresProtocolShape escalates
+          # to Violation (nde:futureChange "2.0" in shacl.ttl).
           BIND(
             IF(
               CONTAINS(STR(?${distributionMediaType}), "sparql"),
@@ -462,9 +468,16 @@ function schemaOrgQuery(prefix: string): string {
     OPTIONAL {
       ?${dataset} ${prefix}:distribution ?${distribution} .
       ?${distribution} a ${prefix}:DataDownload .
-      ?${distribution} ${prefix}:encodingFormat ${normalizeMediaType(distributionMediaType)} .
       ?${distribution} ${prefix}:contentUrl ${convertToIri(distributionUrl)} .
 
+      OPTIONAL {
+        ?${distribution} ${prefix}:encodingFormat ${normalizeMediaType(distributionMediaType)} .
+      }
+
+      # Infer the SPARQL protocol URI from a SPARQL-ish encodingFormat so distributions
+      # that haven't declared it explicitly via schema:usageInfo are still classified
+      # as APIs. Drop when DistributionSparqlEncodingRequiresProtocolShape escalates
+      # to Violation (nde:futureChange "2.0" in shacl.ttl).
       BIND(
         IF(
           CONTAINS(STR(?${distributionMediaType}), "sparql"),

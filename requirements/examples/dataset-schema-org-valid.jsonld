@@ -81,7 +81,6 @@
         },
         {
           "@type": "DataDownload",
-          "encodingFormat": "application/sparql-query",
           "contentUrl": "https://data.bibliotheken.nl/id/dataset/sparql",
           "usageInfo": "https://www.w3.org/TR/sparql11-protocol/",
           "description": "SPARQL endpoint"
