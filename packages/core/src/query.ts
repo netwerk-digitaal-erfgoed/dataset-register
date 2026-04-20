@@ -58,6 +58,7 @@ const distributionDateModified = 'distribution_dateModified';
 const distributionDescription = 'distribution_description';
 const distributionLanguage = 'distribution_language';
 const distributionLicense = 'distribution_license';
+const distributionName = 'distribution_name';
 const distributionSize = 'distribution_size';
 const distributionCompressFormat = 'distribution_compressFormat';
 const distributionDownloadUrl = 'distribution_downloadUrl';
@@ -299,6 +300,7 @@ export const constructQuery = `
       dct:description ?${distributionDescription} ;
       dct:language ?${distributionLanguage} ;
       dct:license ?${distributionLicense} ;
+      dct:title ?${distributionName} ;
       dcat:byteSize ?${distributionSize} ;
       odrl:hasPolicy ?policy .
 
@@ -371,6 +373,7 @@ export const constructQuery = `
             ${normalizeLanguage(`?${distributionLanguage}Raw`, distributionLanguage)}
           }
           OPTIONAL { ?${distribution} dct:license ${normalizeLicense(distributionLicense)} }
+          OPTIONAL { ?${distribution} dct:title ?${distributionName} }
           OPTIONAL { ?${distribution} dcat:byteSize ?${distributionSize} }
           OPTIONAL {
             ?${distribution} odrl:hasPolicy ?policy .
@@ -487,6 +490,7 @@ function schemaOrgQuery(prefix: string): string {
       }
       OPTIONAL { ?${distribution} ${prefix}:license ${normalizeLicense(distributionLicense + 'Provided')} }
       BIND(COALESCE(?${distributionLicense}Provided, ?${license}) AS ?${distributionLicense})
+      OPTIONAL { ?${distribution} ${prefix}:name ?${distributionName} }
       OPTIONAL { ?${distribution} ${prefix}:contentSize ?${distributionSize} }
       OPTIONAL {
         ?${distribution} ${prefix}:usageInfo ?${distributionConformsTo} .

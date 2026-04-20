@@ -709,7 +709,12 @@ nde-dataset:DistributionShape
             ] ;
             sh:message "Gebruik een web URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
         ] ,
-        nde-dataset:SchemaDescriptionPropertyShouldExist .
+        [
+            sh:path schema:description ;
+            sh:minCount 1 ;
+            sh:severity sh:Info ;
+            sh:message "Voeg een beschrijving toe"@nl, "Add a description"@en ;
+        ] .
 
 # Dedicated SPARQL constraint shape, structured the same way as the two
 # Organization-required shapes below: sh:targetObjectsOf for the entry, sh:message
