@@ -49,7 +49,6 @@ nde-dataset:DatacatalogShape
         [
             sh:path schema:publisher ;
             sh:minCount 1 ;
-            sh:maxCount 1 ;
             sh:severity sh:Warning ;
             nde:futureChange [
                 nde:version "2.0" ;
@@ -64,6 +63,16 @@ nde-dataset:DatacatalogShape
                 [ sh:class schema:Organization ]
                 [ sh:class schema:Person ]
             ) ;
+        ] ,
+        [
+            sh:path schema:publisher ;
+            sh:maxCount 1 ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:message "Gebruik maximaal één uitgever"@nl, "Use at most one publisher"@en ;
         ] ,
         [
             sh:path schema:dataset ;
@@ -107,7 +116,6 @@ nde-dataset:DatasetShape
         [
             sh:path schema:publisher ;
             sh:minCount 1 ;
-            sh:maxCount 1 ;
             sh:name "Uitgever van de dataset"@nl, "Publisher of the dataset"@en ;
             sh:description "De organisatie of persoon die verantwoordelijk is voor de publicatie van de dataset."@nl, "An entity (organisation or person) responsible for making the Dataset available."@en ;
             sh:message "Voeg een uitgever toe"@nl, "Add a publisher"@en ;
@@ -115,6 +123,11 @@ nde-dataset:DatasetShape
                 [ sh:class schema:Organization ]
                 [ sh:class schema:Person ]
             ) ;
+        ] ,
+        [
+            sh:path schema:publisher ;
+            sh:maxCount 1 ;
+            sh:message "Gebruik maximaal één uitgever"@nl, "Use at most one publisher"@en ;
         ] ,
         [
             sh:path schema:license ;
@@ -1342,7 +1355,6 @@ dcat:DatasetShape
     [
         sh:path dc:publisher ;
         sh:minCount 1 ;
-        sh:maxCount 1 ;
         sh:severity sh:Warning ;
         nde:futureChange [
             nde:version "2.0" ;
@@ -1354,6 +1366,16 @@ dcat:DatasetShape
             [ sh:class foaf:Organization ]
             [ sh:class foaf:Person ]
         ) ;
+    ],
+    [
+        sh:path dc:publisher ;
+        sh:maxCount 1 ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Gebruik maximaal één uitgever"@nl, "Use at most one publisher"@en ;
     ],
     [
         sh:path dc:creator ;
@@ -1570,7 +1592,6 @@ dcat:CatalogShape
     [
         sh:path dc:publisher ;
         sh:minCount 1 ;
-        sh:maxCount 1 ;
         sh:severity sh:Warning ;
         nde:futureChange [
             nde:version "2.0" ;
@@ -1579,6 +1600,16 @@ dcat:CatalogShape
         sh:description "De organisatie die verantwoordelijk is voor de publicatie van de catalogus."@nl,
             "The organization responsible for publishing the catalog."@en ;
         sh:message "Voeg een uitgever toe"@nl, "Add a publisher"@en ;
+    ],
+    [
+        sh:path dc:publisher ;
+        sh:maxCount 1 ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Gebruik maximaal één uitgever"@nl, "Use at most one publisher"@en ;
     ],
     [
         sh:path dcat:contactPoint ;

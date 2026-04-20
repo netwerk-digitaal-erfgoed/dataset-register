@@ -518,6 +518,42 @@ describe('Validator', () => {
     ).toBe(false);
   });
 
+  it('reports multiple publishers with a max-count message, not the min-count message', async () => {
+    // Regression: min-count and max-count on schema:publisher previously shared
+    // a single sh:message ("Add a publisher"), so a dataset with two publishers
+    // returned a misleading result message. Each failure mode must carry its
+    // own message.
+    const report = (await validate(
+      'dataset-schema-org-multiple-publishers.jsonld',
+    )) as InvalidDataset;
+
+    expect(report.state).toBe('invalid');
+
+    const publisherMessages = [
+      ...report.errors.match(
+        null,
+        shacl('resultPath'),
+        rdf.namedNode('https://schema.org/publisher'),
+      ),
+    ]
+      .map((quad) => quad.subject)
+      .flatMap((resultNode) => [
+        ...report.errors.match(
+          resultNode as never,
+          shacl('resultMessage'),
+          null,
+        ),
+      ])
+      .filter(
+        (quad) =>
+          quad.object.termType === 'Literal' && quad.object.language === 'en',
+      )
+      .map((quad) => quad.object.value);
+
+    expect(publisherMessages).toContain('Use at most one publisher');
+    expect(publisherMessages).not.toContain('Add a publisher');
+  });
+
   it('reports invalid encoding format', async () => {
     const report = await validate(
       'dataset-schema-org-invalid-encoding-format.jsonld',
