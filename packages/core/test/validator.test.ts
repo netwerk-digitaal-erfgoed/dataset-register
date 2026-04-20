@@ -289,6 +289,19 @@ describe('Validator', () => {
     `);
   });
 
+  it('accepts ISO 8601 shortened-end temporal coverage notation', async () => {
+    const report = (await validate(
+      'dataset-schema-org-temporal-shortened.jsonld',
+    )) as Valid;
+    expect(report.state).toEqual('valid');
+    const temporalResults = report.errors.match(
+      null,
+      shacl('resultPath'),
+      rdf.namedNode('https://schema.org/temporalCoverage'),
+    );
+    expect(temporalResults.size).toEqual(0);
+  });
+
   it('warns that schema:genre is deprecated', async () => {
     const report = (await validate(
       'dataset-schema-org-genre-deprecated.jsonld',

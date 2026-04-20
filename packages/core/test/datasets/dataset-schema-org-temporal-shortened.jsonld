@@ -1,0 +1,13 @@
+{
+  "@context": "https://schema.org/",
+  "@type": "Dataset",
+  "@id": "http://data.bibliotheken.nl/id/dataset/temporal-shortened",
+  "name": "Temporal coverage in ISO 8601 shortened-end notation",
+  "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "temporalCoverage": "1889-06/07",
+  "publisher": {
+    "@type": "Organization",
+    "@id": "https://example.com/publisher",
+    "name": "Koninklijke Bibliotheek"
+  }
+}
