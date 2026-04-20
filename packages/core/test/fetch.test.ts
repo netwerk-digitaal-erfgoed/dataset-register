@@ -757,6 +757,38 @@ describe('Fetch', () => {
     expect(accessUrls[0].object.termType).toBe('NamedNode');
   });
 
+  it('maps schema:name on DataDownload to dct:title on Distribution', async () => {
+    const response = await file('dataset-schema-org-distribution-name.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/distribution-name')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/distribution-name'),
+    );
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const distributions = [
+      ...dataset.match(
+        factory.namedNode('https://example.com/dataset/distribution-name'),
+        dcat('distribution'),
+        null,
+      ),
+    ];
+    expect(distributions).toHaveLength(1);
+
+    const titleTriples = [
+      ...dataset.match(
+        distributions[0].object as BlankNode,
+        dct('title'),
+        null,
+      ),
+    ];
+    expect(titleTriples).toHaveLength(1);
+    expect((titleTriples[0].object as Literal).value).toBe('Turtle dump');
+  });
+
   it('accepts valid HTTP Schema.org dataset in JSON-LD', async () => {
     const response = await file('dataset-http-schema-org-valid.jsonld');
     nock('https://example.com')
