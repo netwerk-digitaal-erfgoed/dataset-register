@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.8.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.7.0...requirements-1.8.0) (2026-04-20)
+
+
+### Features
+
+* **shacl:** require SPARQL protocol URI in usageInfo for SPARQL mediaType ([#1873](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1873)) ([0dfc6c6](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/0dfc6c620a47a234ae5951a35e637d5a0cb7981f))
+
+
+### Bug Fixes
+
+* **core:** align Distribution with DCAT-AP-NL 3.0 (title + description) ([#1869](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1869)) ([e901005](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/e90100529b220aeed62cf98b2a025d4a5543dade))
+* **shacl:** split publisher min/max-count constraints into separate shapes ([#1875](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1875)) ([2e060e4](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/2e060e4d6fef18890daa95374cf3818b78c02bff))
+
 ## [1.7.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.6.0...requirements-1.7.0) (2026-04-20)
 
 
