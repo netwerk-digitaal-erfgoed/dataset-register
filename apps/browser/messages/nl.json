@@ -251,7 +251,7 @@
   "validate_running": "Bezig met valideren…",
   "validate_parse_failed_title": "Kan invoer niet verwerken",
   "validate_result_not_found_title": "URL kan niet worden bereikt",
-  "validate_result_not_found_body": "Het Dataset Register kan deze URL niet oplossen. Controleer of deze publiek bereikbaar is en een datasetbeschrijving teruggeeft.",
+  "validate_result_not_found_body": "Het Datasetregister kan deze URL niet ophalen. Controleer of deze publiek bereikbaar is en een datasetbeschrijving teruggeeft.",
   "validate_result_no_dataset_title": "Geen datasetbeschrijving gevonden",
   "validate_result_no_dataset_body": "De URL is bereikbaar, maar bevat geen schema:Dataset of dcat:Dataset. Zie de requirements voor details.",
   "validate_summary_valid": "Geldig",
@@ -260,7 +260,7 @@
   "validate_summary_invalid": "Ongeldig",
   "validate_summary_invalid_body": "Je datasetbeschrijving heeft fouten die opgelost moeten worden voordat registratie mogelijk is.",
   "validate_summary_warnings_only": "Geldig met aanbevelingen",
-  "validate_summary_warnings_only_body": "Geen fouten, dus de beschrijving kan worden geregistreerd. De aanbevelingen hieronder helpen consumenten je dataset te vinden, begrijpen en hergebruiken en houden je beschrijving robuust als de vereisten worden aangepast.",
+  "validate_summary_warnings_only_body": "Geen fouten, dus de beschrijving kan worden geregistreerd. De aanbevelingen hieronder helpen gebruikers je dataset te vinden, begrijpen en hergebruiken en houden je beschrijving robuust als de vereisten worden aangepast.",
   "validate_summary_violations": [
     {
       "declarations": ["input count", "local countPlural = count: plural"],
