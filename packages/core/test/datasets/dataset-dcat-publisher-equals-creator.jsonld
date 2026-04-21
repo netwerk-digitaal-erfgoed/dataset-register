@@ -1,0 +1,31 @@
+{
+  "@context": {
+    "dcat": "http://www.w3.org/ns/dcat#",
+    "dct": "http://purl.org/dc/terms/",
+    "foaf": "http://xmlns.com/foaf/0.1/"
+  },
+  "@graph": [
+    {
+      "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
+      "@type": "dcat:Dataset",
+      "dct:title": [
+        { "@value": "Alba amicorum", "@language": "en" },
+        { "@value": "Alba amicorum", "@language": "nl" }
+      ],
+      "dct:description": [
+        { "@value": "Description", "@language": "en" },
+        { "@value": "Beschrijving", "@language": "nl" }
+      ],
+      "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" },
+      "dct:publisher": { "@id": "http://data.bibliotheken.nl/id/thes/p075301482" },
+      "dct:creator": { "@id": "http://data.bibliotheken.nl/id/thes/p075301482" }
+    },
+    {
+      "@id": "http://data.bibliotheken.nl/id/thes/p075301482",
+      "foaf:name": [
+        { "@value": "KB, national library of the Netherlands", "@language": "en" },
+        { "@value": "KB, nationale bibliotheek", "@language": "nl" }
+      ]
+    }
+  ]
+}

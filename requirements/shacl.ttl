@@ -813,7 +813,7 @@ dcat:DistributionSparqlMediaTypeRequiresProtocolShape
         """ ;
     ] .
 
-nde-dataset:OrganizationShape
+nde-dataset:AgentShape
     a sh:NodeShape ;
     sh:targetObjectsOf schema:publisher, schema:creator ;
     sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
@@ -827,8 +827,8 @@ nde-dataset:OrganizationShape
                 [ sh:datatype xsd:string ]
                 [ sh:datatype rdf:langString ]
             ) ;
-            sh:description "The organization’s full name."@en ;
-            sh:message "Vul een naam in voor de organisatie"@nl, "Enter a name for the organisation"@en ;
+            sh:description "The full name of the publisher or creator."@en ;
+            sh:message "Vul een naam in voor de uitgever of maker"@nl, "Enter a name for the publisher or creator"@en ;
         ] ,
         nde-dataset:SchemaNameUniqueLangProperty,
         nde-dataset:SchemaNameLangStringProperty,
@@ -1027,23 +1027,11 @@ nde-dataset:ContactPointShape
         sh:message "Vul een e-mailadres in voor het contactpunt"@nl, "Enter an email address for the contact point"@en ;
     ] .
 
-nde-dataset:PersonShape
-    a sh:NodeShape ;
-    sh:targetObjectsOf schema:publisher, schema:creator ;
-    sh:nodeKind sh:IRI ;
-    sh:pattern "^https?://" ;
-    sh:message "Gebruik een web URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
-    sh:property [
-        sh:path schema:name ;
-        sh:minCount 1 ;
-        sh:or (
-            [ sh:datatype xsd:string ]
-            [ sh:datatype rdf:langString ]
-        ) ;
-        sh:uniqueLang true ;
-        sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
-    ] ,
-    nde-dataset:SchemaNameLangStringProperty .
+# Publisher/creator validation is consolidated into nde-dataset:AgentShape above,
+# which covers both schema:Organization and schema:Person instances. Separate Organization
+# and Person shapes would duplicate every constraint (nodeKind, pattern, name) and fire
+# two identical violations on the same focus node. Organization-specific requirements are
+# gated by SPARQL with "$this a schema:Organization" so Persons aren’t caught by those.
 
 #
 # Property shapes
@@ -1729,7 +1717,7 @@ dcat:ContactPointShape
         sh:message "Vul een e-mailadres in voor het contactpunt, als mailto:-URL"@nl, "Enter an email address for the contact point, as a mailto: URL"@en ;
     ] .
 
-dcat:OrganizationShape
+dcat:AgentShape
     a sh:NodeShape ;
     sh:targetObjectsOf dc:publisher, dc:creator ;
     sh:nodeKind sh:IRI ;
@@ -1742,25 +1730,12 @@ dcat:OrganizationShape
             [ sh:datatype rdf:langString ]
         ) ;
         sh:uniqueLang true ;
-        sh:description "De naam van de organisatie."@nl, "The name of the organization."@en ;
+        sh:description "De naam van de uitgever of maker."@nl, "The name of the publisher or creator."@en ;
         sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
     ] ,
     nde-dataset:FoafNameLangStringProperty .
 
-dcat:PersonShape
-    a sh:NodeShape ;
-    sh:targetObjectsOf dc:publisher, dc:creator ;
-    sh:nodeKind sh:IRI ;
-    sh:pattern "^https?://" ;
-    sh:property [
-        sh:path foaf:name ;
-        sh:minCount 1 ;
-        sh:or (
-            [ sh:datatype xsd:string ]
-            [ sh:datatype rdf:langString ]
-        ) ;
-        sh:uniqueLang true ;
-        sh:description "De naam van de persoon."@nl, "The name of the person."@en ;
-        sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
-    ] ,
-    nde-dataset:FoafNameLangStringProperty .
+# Publisher/creator validation is consolidated into dcat:AgentShape above, which covers
+# both foaf:Organization and foaf:Person instances. Separate Organization and Person
+# shapes would duplicate every constraint (nodeKind, pattern, foaf:name) and fire two
+# identical violations on the same focus node.
