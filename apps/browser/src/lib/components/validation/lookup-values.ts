@@ -79,7 +79,9 @@ function extractValue(entry: unknown): DataValue | null {
     return {
       value: String(record['@value']),
       language:
-        typeof record['@language'] === 'string' ? record['@language'] : undefined,
+        typeof record['@language'] === 'string'
+          ? record['@language']
+          : undefined,
       datatype:
         typeof record['@type'] === 'string' ? record['@type'] : undefined,
       isIri: false,

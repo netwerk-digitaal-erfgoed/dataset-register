@@ -98,10 +98,7 @@ function indexShapes(json: unknown, locale: string): ShapesIndex {
 
       const metadata: ShapeMetadata = {
         name,
-        description: pickLocalized(
-          propertyShape[`${SH}description`],
-          locale,
-        ),
+        description: pickLocalized(propertyShape[`${SH}description`], locale),
         targetClass,
       };
 

@@ -62,7 +62,9 @@ export function pickLocalized(
   return byLang.get(locale) ?? byLang.get('en') ?? byLang.get('nl') ?? untagged;
 }
 
-export function normalizeNodes<T = Record<string, unknown>>(json: unknown): T[] {
+export function normalizeNodes<T = Record<string, unknown>>(
+  json: unknown,
+): T[] {
   if (Array.isArray(json)) return json as T[];
   if (json && typeof json === 'object') {
     const graph = (json as Record<string, unknown>)['@graph'];
