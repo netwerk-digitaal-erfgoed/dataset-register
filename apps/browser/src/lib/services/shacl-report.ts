@@ -29,7 +29,10 @@ export interface ShaclReport {
   results: ShaclResult[];
 }
 
-type JsonLdNode = Record<string, unknown> & { '@id'?: string; '@type'?: string[] };
+type JsonLdNode = Record<string, unknown> & {
+  '@id'?: string;
+  '@type'?: string[];
+};
 
 /**
  * Parse a JSON-LD SHACL validation report into a locale-picked typed report.
@@ -169,6 +172,10 @@ function pickLocalizedString(
     else if (untagged === undefined) untagged = value;
   }
   return (
-    byLang.get(locale) ?? byLang.get('en') ?? byLang.get('nl') ?? untagged ?? (values[0] as { '@value'?: unknown })?.['@value']?.toString()
+    byLang.get(locale) ??
+    byLang.get('en') ??
+    byLang.get('nl') ??
+    untagged ??
+    (values[0] as { '@value'?: unknown })?.['@value']?.toString()
   );
 }

@@ -10,7 +10,11 @@ function isPrivateAddress(address: string): boolean {
   if (address.includes(':')) {
     const lower = address.toLowerCase();
     if (lower === '::1' || lower === '::') return true;
-    if (lower.startsWith('fe80:') || lower.startsWith('fc') || lower.startsWith('fd')) {
+    if (
+      lower.startsWith('fe80:') ||
+      lower.startsWith('fc') ||
+      lower.startsWith('fd')
+    ) {
       return true;
     }
     if (lower.startsWith('::ffff:')) {
@@ -19,7 +23,10 @@ function isPrivateAddress(address: string): boolean {
     return false;
   }
   const parts = address.split('.').map(Number);
-  if (parts.length !== 4 || parts.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) {
+  if (
+    parts.length !== 4 ||
+    parts.some((n) => !Number.isInteger(n) || n < 0 || n > 255)
+  ) {
     return true;
   }
   const [a, b] = parts;
@@ -70,7 +77,9 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
   } catch (err) {
     error(
       502,
-      err instanceof Error ? `Upstream fetch failed: ${err.message}` : 'Upstream fetch failed',
+      err instanceof Error
+        ? `Upstream fetch failed: ${err.message}`
+        : 'Upstream fetch failed',
     );
   }
 

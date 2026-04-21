@@ -30,7 +30,9 @@ describe('detectContentType', () => {
 
   it('detects Turtle by @prefix/@base', () => {
     expect(
-      detectContentType('@prefix schema: <https://schema.org/> .\n<a> schema:name "x" .'),
+      detectContentType(
+        '@prefix schema: <https://schema.org/> .\n<a> schema:name "x" .',
+      ),
     ).toBe('text/turtle');
     expect(detectContentType('@base <https://ex/> .')).toBe('text/turtle');
   });
@@ -43,7 +45,9 @@ describe('detectContentType', () => {
 
   it('detects N-Triples when first line starts with <iri>', () => {
     expect(
-      detectContentType('<https://a> <https://b> "c" .\n<https://x> <https://y> "z" .'),
+      detectContentType(
+        '<https://a> <https://b> "c" .\n<https://x> <https://y> "z" .',
+      ),
     ).toBe('application/n-triples');
   });
 

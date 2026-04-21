@@ -2,14 +2,8 @@
   import { Accordion, AccordionItem } from 'flowbite-svelte';
   import SeverityBadge from './SeverityBadge.svelte';
   import * as m from '$lib/paraglide/messages';
-  import type {
-    ShaclReport,
-    ShaclResult,
-  } from '$lib/services/shacl-report.js';
-  import {
-    fetchShapes,
-    type ShapesIndex,
-  } from '$lib/services/shacl-shapes.js';
+  import type { ShaclReport, ShaclResult } from '$lib/services/shacl-report.js';
+  import { fetchShapes, type ShapesIndex } from '$lib/services/shacl-shapes.js';
   import ResultRow from './ResultRow.svelte';
   import { buildFocusNodeTypes } from './focus-node-types.js';
   import type { ContentType } from './detect-content-type.js';
@@ -162,10 +156,7 @@
     {#if grouped.infos.length > 0}
       <AccordionItem bind:open={infosOpen} class="[&_button]:cursor-pointer">
         {#snippet header()}
-          <span
-            class="flex items-center gap-2"
-            data-validation-section="infos"
-          >
+          <span class="flex items-center gap-2" data-validation-section="infos">
             <SeverityBadge tone="blue" large>
               {grouped.infos.length}
             </SeverityBadge>

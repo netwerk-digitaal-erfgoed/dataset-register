@@ -43,9 +43,7 @@
   let warningsOpen = $state(false);
   let infosOpen = $state(false);
 
-  const activeSourceText = $derived(
-    inlineSourceText ?? urlSource?.text,
-  );
+  const activeSourceText = $derived(inlineSourceText ?? urlSource?.text);
   const activeSourceContentType = $derived(
     inlineSourceContentType ?? urlSource?.contentType,
   );
@@ -190,49 +188,49 @@
       </p>
     </header>
 
-  <Tabs tabStyle="underline" divider>
-    <TabItem
-      open={urlTabOpen}
-      title={m.validate_tab_url()}
-      activeClass={activeTab}
-      inactiveClass={inactiveTab}
-      onclick={resetValidation}
-    >
-      <div class="pt-4">
-        <UrlValidationForm
-          initialUrl={data.prefillUrl}
-          autoSubmit={Boolean(data.prefillUrl)}
-          onOutcome={handleUrlOutcome}
-          onStart={handleStart}
-          bind:goToLine={urlGoToLine}
-          bind:source={urlSource}
-        />
-      </div>
-    </TabItem>
-    <TabItem
-      open={inlineTabOpen}
-      title={m.validate_tab_inline()}
-      activeClass={activeTab}
-      inactiveClass={inactiveTab}
-      onclick={resetValidation}
-    >
-      <div class="pt-4">
-        <InlineValidationForm
-          onOutcome={handleInlineOutcome}
-          onStart={handleStart}
-          bind:goToLine={inlineGoToLine}
-        />
-      </div>
-    </TabItem>
-  </Tabs>
+    <Tabs tabStyle="underline" divider>
+      <TabItem
+        open={urlTabOpen}
+        title={m.validate_tab_url()}
+        activeClass={activeTab}
+        inactiveClass={inactiveTab}
+        onclick={resetValidation}
+      >
+        <div class="pt-4">
+          <UrlValidationForm
+            initialUrl={data.prefillUrl}
+            autoSubmit={Boolean(data.prefillUrl)}
+            onOutcome={handleUrlOutcome}
+            onStart={handleStart}
+            bind:goToLine={urlGoToLine}
+            bind:source={urlSource}
+          />
+        </div>
+      </TabItem>
+      <TabItem
+        open={inlineTabOpen}
+        title={m.validate_tab_inline()}
+        activeClass={activeTab}
+        inactiveClass={inactiveTab}
+        onclick={resetValidation}
+      >
+        <div class="pt-4">
+          <InlineValidationForm
+            onOutcome={handleInlineOutcome}
+            onStart={handleStart}
+            bind:goToLine={inlineGoToLine}
+          />
+        </div>
+      </TabItem>
+    </Tabs>
 
-  {#if summaryState.kind !== 'empty'}
-    <ValidationSummary
-      state={summaryState}
-      {submitHref}
-      onExpand={expandSection}
-    />
-  {/if}
+    {#if summaryState.kind !== 'empty'}
+      <ValidationSummary
+        state={summaryState}
+        {submitHref}
+        onExpand={expandSection}
+      />
+    {/if}
 
     {#if summaryState.kind === 'report'}
       <ValidationReport

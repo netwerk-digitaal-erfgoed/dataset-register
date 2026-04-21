@@ -64,17 +64,14 @@
   }
 
   async function buildThemeExtension(dark: boolean) {
-    const [
-      { EditorView },
-      { syntaxHighlighting, defaultHighlightStyle },
-    ] = await Promise.all([
-      import('@codemirror/view'),
-      import('@codemirror/language'),
-    ]);
+    const [{ EditorView }, { syntaxHighlighting, defaultHighlightStyle }] =
+      await Promise.all([
+        import('@codemirror/view'),
+        import('@codemirror/language'),
+      ]);
     if (dark) {
-      const { oneDark, oneDarkHighlightStyle } = await import(
-        '@codemirror/theme-one-dark'
-      );
+      const { oneDark, oneDarkHighlightStyle } =
+        await import('@codemirror/theme-one-dark');
       return [oneDark, syntaxHighlighting(oneDarkHighlightStyle)];
     }
     return [
@@ -106,7 +103,13 @@
 
     const [
       { EditorState, Compartment, EditorSelection },
-      { EditorView, keymap, lineNumbers, highlightActiveLine, placeholder: placeholderExt },
+      {
+        EditorView,
+        keymap,
+        lineNumbers,
+        highlightActiveLine,
+        placeholder: placeholderExt,
+      },
       { defaultKeymap, history, historyKeymap },
       { bracketMatching, indentOnInput },
     ] = await Promise.all([
@@ -167,7 +170,10 @@
       const pos = view.state.doc.line(lineNumber).from;
       const dom = view.domAtPos(pos).node;
       let el: Node | null = dom;
-      while (el && !(el instanceof HTMLElement && el.classList.contains('cm-line'))) {
+      while (
+        el &&
+        !(el instanceof HTMLElement && el.classList.contains('cm-line'))
+      ) {
         el = el.parentNode;
       }
       if (!(el instanceof HTMLElement)) return;

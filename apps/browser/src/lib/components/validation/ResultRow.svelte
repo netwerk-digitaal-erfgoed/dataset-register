@@ -1,11 +1,7 @@
 <script lang="ts">
-  import { Tooltip } from 'flowbite-svelte';
   import * as m from '$lib/paraglide/messages';
   import type { ShaclResult } from '$lib/services/shacl-report.js';
-  import {
-    selectShape,
-    type ShapesIndex,
-  } from '$lib/services/shacl-shapes.js';
+  import { selectShape, type ShapesIndex } from '$lib/services/shacl-shapes.js';
   import { shortenUri } from '$lib/utils/prefix.js';
   import { lookupValues, type DataValue } from './lookup-values.js';
   import type { ContentType } from './detect-content-type.js';
@@ -40,10 +36,6 @@
     shapes
       ? selectShape(shapes, result.path, focusType, result.sourceShape)
       : undefined,
-  );
-  const shapeLabel = $derived(
-    shapeMeta?.name ??
-      (result.path ? shortenUri(result.path) : undefined),
   );
   const tone = $derived(
     result.severity === 'Violation'
@@ -105,9 +97,7 @@
   <header class="flex flex-wrap items-start gap-2">
     <div class="min-w-0 flex-1">
       {#if result.message}
-        <h3
-          class="text-base font-semibold text-gray-900 dark:text-white"
-        >
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">
           <span class="mr-2 inline-flex align-middle"
             ><SeverityBadge {tone}>{severityLabel}</SeverityBadge></span
           ><span class="align-middle">{result.message}</span>
@@ -122,6 +112,7 @@
           {/if}
           {#if shapeMeta?.description}
             {#if result.path}<span class="mx-1">·</span>{/if}
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -->
             {@html shapeMeta.description}
           {/if}
         </p>
@@ -153,7 +144,9 @@
       <dd>
         <ul class="space-y-1">
           {#each currentValues as value, index (index)}
-            {@const display = value.isIri ? shortenUri(value.value) : value.value}
+            {@const display = value.isIri
+              ? shortenUri(value.value)
+              : value.value}
             {@const line = lineFor(value.value)}
             <li class="flex flex-wrap items-center gap-2">
               <code class="font-mono break-all">{display}</code>

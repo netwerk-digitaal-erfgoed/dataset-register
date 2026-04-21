@@ -32,11 +32,7 @@
     goToLine?: (line: number) => void;
   }
 
-  let {
-    onOutcome,
-    onStart,
-    goToLine = $bindable(),
-  }: Props = $props();
+  let { onOutcome, onStart, goToLine = $bindable() }: Props = $props();
 
   const contentTypeLabels: Record<ContentType, string> = {
     'text/turtle': 'Turtle',
@@ -151,7 +147,11 @@
     validating = true;
     onStart();
     try {
-      const outcome = await validateInline(body, contentType, controller.signal);
+      const outcome = await validateInline(
+        body,
+        contentType,
+        controller.signal,
+      );
       if (!controller.signal.aborted) {
         onOutcome(outcome, body, contentType);
       }
@@ -160,8 +160,7 @@
       onOutcome(
         {
           kind: 'error',
-          message:
-            error instanceof Error ? error.message : 'Validation failed',
+          message: error instanceof Error ? error.message : 'Validation failed',
         },
         body,
         contentType,

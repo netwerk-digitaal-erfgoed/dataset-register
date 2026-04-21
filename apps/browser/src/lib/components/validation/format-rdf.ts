@@ -37,7 +37,9 @@ export async function formatRdf(
     // whereas `parse(text, callback)` fires the callback asynchronously and
     // the caller sees an empty quad set.
     const quads = parser.parse(text);
-    const prefixes = (parser as unknown as { _prefixes?: Record<string, string> })._prefixes ?? {};
+    const prefixes =
+      (parser as unknown as { _prefixes?: Record<string, string> })._prefixes ??
+      {};
     const writer = new Writer({ format, prefixes });
     writer.addQuads(quads);
     return await new Promise<FormatOutcome>((resolve) => {

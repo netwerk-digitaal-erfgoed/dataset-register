@@ -60,8 +60,6 @@
   let fetchedLanguage = $state<'json' | 'xml' | 'turtle' | 'plain'>('plain');
   let fetchedContentType = $state<ContentType | null>(null);
   let fetchController: AbortController | null = null;
-  let fetchError = $state<string | null>(null);
-  let fetchLoading = $state(false);
   let innerGoToLine = $state<((line: number) => void) | undefined>(undefined);
 
   // Expose a wrapped goToLine: auto-open the accordion and wait for the
@@ -137,17 +135,12 @@
     fetchController = controller;
     fetchedText = null;
     fetchedContentType = null;
-    fetchError = null;
-    fetchLoading = true;
     try {
       const response = await fetch(
         `/api/dereference?url=${encodeURIComponent(targetUrl)}`,
         { signal: controller.signal },
       );
-      if (!response.ok) {
-        fetchError = `HTTP ${response.status}`;
-        return;
-      }
+      if (!response.ok) return;
       const body = await response.text();
       const guessed =
         detectContentType(body) ??
@@ -162,12 +155,8 @@
       } else {
         fetchedText = body;
       }
-    } catch (error) {
-      if (controller.signal.aborted) return;
-      fetchError =
-        error instanceof Error ? error.message : String(error);
-    } finally {
-      if (!controller.signal.aborted) fetchLoading = false;
+    } catch {
+      // Proxy failures are non-fatal — the main validation can still succeed.
     }
   }
 

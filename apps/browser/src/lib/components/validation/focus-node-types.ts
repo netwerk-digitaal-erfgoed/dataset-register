@@ -27,7 +27,9 @@ export async function buildFocusNodeTypes(
   ) {
     try {
       const { Parser } = await import('n3');
-      const parser = new Parser({ format: n3FormatFor(contentType) ?? 'Turtle' });
+      const parser = new Parser({
+        format: n3FormatFor(contentType) ?? 'Turtle',
+      });
       for (const quad of parser.parse(sourceText)) {
         if (
           quad.predicate.value ===
@@ -115,4 +117,3 @@ function joinIri(base: string, suffix: string): string {
   if (base.endsWith('/') || base.endsWith('#')) return base + suffix;
   return `${base}/${suffix}`;
 }
-
