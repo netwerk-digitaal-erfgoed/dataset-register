@@ -45,8 +45,25 @@ export default defineConfig(
       // Disable buggy rule
       'svelte/no-navigation-without-resolve': 'off',
 
+      // `$bindable()` defaults look like useless assignments to the linter
+      // but are the canonical Svelte 5 syntax for two-way props.
+      'no-useless-assignment': 'off',
+
       // Allow THSP for ActiveFilters range.
       'no-irregular-whitespace': ['error', { skipTemplates: true }],
+    },
+  },
+  {
+    files: [
+      '**/validation/**/*.svelte',
+      '**/validate/+page.svelte',
+      '**/api/dereference/+server.ts',
+    ],
+    rules: {
+      // Inside $derived/$effect bodies we create short-lived builtins
+      // (URLSearchParams, URL, Map) that don't need Svelte's reactive
+      // wrappers — they're not stored as reactive state.
+      'svelte/prefer-svelte-reactivity': 'off',
     },
   },
   {

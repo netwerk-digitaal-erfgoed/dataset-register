@@ -367,7 +367,7 @@
   </DropdownItem>
 {/snippet}
 
-<main class="mx-auto max-w-7xl px-1 py-8 sm:px-6 lg:px-8">
+<div class="mx-auto max-w-7xl px-1 sm:px-6 lg:px-8">
   <!-- Gone/Invalid Dataset Warning -->
   {#if registrationStatus === 'invalid' || registrationStatus === 'gone'}
     <Alert border color="red" class="mb-6">
@@ -1506,11 +1506,9 @@
                   <span class="sr-only"> ({m.opens_in_new_tab()})</span>
                 </a>
                 <a
-                  href="https://datasetregister.netwerkdigitaalerfgoed.nl/validate.php?url={encodeURIComponent(
-                    dataset.subjectOf.$id,
-                  )}"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={localizeHref(
+                    `/validate?url=${encodeURIComponent(dataset.subjectOf.$id)}`,
+                  )}
                   class="inline-flex flex-shrink-0 items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium text-white transition-colors {registrationStatus
                     ? 'bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600'
                     : 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600'}"
@@ -1662,4 +1660,4 @@
       </dl>
     </div>
   </div>
-</main>
+</div>

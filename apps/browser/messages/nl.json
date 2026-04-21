@@ -229,5 +229,87 @@
   "detail_language_description": "Taal of talen waarin de dataset beschikbaar is.",
   "detail_classes_for_value_type": "Typen voor {valueTypeName}",
   "detail_properties_for_value_type": "Eigenschappen voor {valueTypeName}",
-  "opens_in_new_tab": "opent in nieuw tabblad"
+  "opens_in_new_tab": "opent in nieuw tabblad",
+  "validate_page_title": "Valideer een datasetbeschrijving",
+  "validate_page_intro_before": "Controleer of een datasetbeschrijving voldoet aan de ",
+  "validate_page_intro_after": " voordat je deze registreert. Vul een URL in of plak de beschrijving direct.",
+  "validate_requirements_link": "Requirements for Datasets",
+  "validate_tab_url": "URL valideren",
+  "validate_tab_inline": "Plakken",
+  "validate_url_label": "URL van de datasetbeschrijving",
+  "validate_url_placeholder": "https://example.org/dataset",
+  "validate_url_submit": "URL valideren",
+  "validate_url_source_title": "Opgehaalde beschrijving",
+  "validate_inline_editor_label": "Datasetbeschrijving",
+  "validate_inline_placeholder": "Plak JSON-LD, Turtle, N-Triples…",
+  "validate_inline_content_type": "Inhoudstype",
+  "validate_inline_autodetected": "automatisch gedetecteerd",
+  "validate_format_button": "Opmaken",
+  "validate_format_unsupported": "Automatisch opmaken is voor dit inhoudstype niet beschikbaar.",
+  "validate_editor_copy": "Kopiëren",
+  "validate_editor_copied": "Gekopieerd",
+  "validate_running": "Bezig met valideren…",
+  "validate_parse_failed_title": "Kan invoer niet verwerken",
+  "validate_result_not_found_title": "URL kan niet worden bereikt",
+  "validate_result_not_found_body": "Het Datasetregister kan deze URL niet ophalen. Controleer of deze publiek bereikbaar is en een datasetbeschrijving teruggeeft.",
+  "validate_result_no_dataset_title": "Geen datasetbeschrijving gevonden",
+  "validate_result_no_dataset_body": "De URL is bereikbaar, maar bevat geen schema:Dataset of dcat:Dataset. Zie de requirements voor details.",
+  "validate_summary_valid": "Geldig",
+  "validate_summary_valid_body": "Je datasetbeschrijving voldoet aan de vereisten.",
+  "validate_summary_submit_cta": "Aanmelden bij het Dataset Register",
+  "validate_summary_invalid": "Ongeldig",
+  "validate_summary_invalid_body": "Je datasetbeschrijving heeft fouten die opgelost moeten worden voordat registratie mogelijk is.",
+  "validate_summary_warnings_only": "Geldig met aanbevelingen",
+  "validate_summary_warnings_only_body": "Geen fouten, dus de beschrijving kan worden geregistreerd. De aanbevelingen hieronder helpen gebruikers je dataset te vinden, begrijpen en hergebruiken en houden je beschrijving robuust als de vereisten worden aangepast.",
+  "validate_summary_violations": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "1 fout",
+        "countPlural=other": "{count} fouten"
+      }
+    }
+  ],
+  "validate_summary_warnings": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "1 waarschuwing",
+        "countPlural=other": "{count} waarschuwingen"
+      }
+    }
+  ],
+  "validate_summary_infos": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "1 suggestie",
+        "countPlural=other": "{count} suggesties"
+      }
+    }
+  ],
+  "validate_report_violations_heading": "Fouten",
+  "validate_report_warnings_heading": "Waarschuwingen",
+  "validate_report_infos_heading": "Suggesties",
+  "validate_report_focus_node": "In",
+  "validate_report_value": "Waarde",
+  "validate_report_current_values": "Huidige waarden",
+  "validate_report_jump_to_line": "Ga naar regel {line}",
+  "validate_report_show_extras": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "+ 1 ander item",
+        "countPlural=other": "+ {count} andere items"
+      }
+    }
+  ],
+  "validate_report_hide_extras": "Verberg andere items",
+  "severity_Violation": "Fout",
+  "severity_Warning": "Waarschuwing",
+  "severity_Info": "Suggestie"
 }
