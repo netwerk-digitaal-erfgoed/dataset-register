@@ -1,5 +1,6 @@
 import { PUBLIC_API_ENDPOINT } from '$env/static/public';
 import { getLocale } from '$lib/paraglide/runtime';
+import { normalizeNodes, pickIri, pickLocalized } from './jsonld-helpers.js';
 
 const SH = 'http://www.w3.org/ns/shacl#';
 
@@ -7,7 +8,6 @@ export interface ShapeMetadata {
   name: string;
   description?: string;
   targetClass?: string;
-  targetSubjectsOf?: string;
 }
 
 export interface ShapesIndex {
@@ -41,8 +41,9 @@ export function fetchShapes(signal?: AbortSignal): Promise<ShapesIndex> {
 
 /**
  * Given a path IRI and the focusNode's rdf:type (optional), pick the best
- * matching shape name. Prefers the shape whose `sh:targetClass` matches the
- * focus-node type; falls back to the first entry.
+ * matching shape. Prefers a direct hit by `sh:sourceShape` IRI, then
+ * `sh:targetClass` match; when multiple shapes share a path we avoid
+ * guessing so the caller can fall back to the CURIE-shortened path.
  */
 export function selectShape(
   index: ShapesIndex,
@@ -56,23 +57,16 @@ export function selectShape(
   }
   if (!pathIri) return undefined;
   const candidates = index.byPath.get(pathIri);
-  if (!candidates || candidates.length === 0) return undefined;
+  if (!candidates?.length) return undefined;
   if (focusNodeType) {
     const matching = candidates.find((c) => c.targetClass === focusNodeType);
     if (matching) return matching;
   }
-  // When we can't disambiguate between shapes sharing a path (e.g. both
-  // Dataset and DataCatalog define sh:name), avoid guessing — the caller
-  // falls back to the CURIE-shortened path.
-  if (candidates.length === 1) return candidates[0];
-  return undefined;
+  return candidates.length === 1 ? candidates[0] : undefined;
 }
 
 function indexShapes(json: unknown, locale: string): ShapesIndex {
-  const nodes = Array.isArray(json)
-    ? (json as Record<string, unknown>[])
-    : extractGraph(json);
-
+  const nodes = normalizeNodes<Record<string, unknown>>(json);
   const byId = new Map<string, Record<string, unknown>>();
   for (const node of nodes) {
     const id = node['@id'];
@@ -84,13 +78,9 @@ function indexShapes(json: unknown, locale: string): ShapesIndex {
 
   for (const node of nodes) {
     const types = node['@type'];
-    const isNodeShape =
-      Array.isArray(types) && types.includes(`${SH}NodeShape`);
-    if (!isNodeShape) continue;
+    if (!Array.isArray(types) || !types.includes(`${SH}NodeShape`)) continue;
 
     const targetClass = pickIri(node[`${SH}targetClass`]);
-    const targetSubjectsOf = pickIri(node[`${SH}targetSubjectsOf`]);
-
     const propertyRefs = node[`${SH}property`];
     if (!Array.isArray(propertyRefs)) continue;
 
@@ -103,68 +93,27 @@ function indexShapes(json: unknown, locale: string): ShapesIndex {
       const propertyShape = byId.get(refId);
       if (!propertyShape) continue;
 
-      const pathIri = pickIri(propertyShape[`${SH}path`]);
       const name = pickLocalized(propertyShape[`${SH}name`], locale);
-      const description = pickLocalized(
-        propertyShape[`${SH}description`],
-        locale,
-      );
       if (!name) continue;
 
       const metadata: ShapeMetadata = {
         name,
-        description,
-        targetClass: targetClass ?? undefined,
-        targetSubjectsOf: targetSubjectsOf ?? undefined,
+        description: pickLocalized(
+          propertyShape[`${SH}description`],
+          locale,
+        ),
+        targetClass,
       };
 
+      const pathIri = pickIri(propertyShape[`${SH}path`]);
       if (pathIri) {
         const list = byPath.get(pathIri);
         if (list) list.push(metadata);
         else byPath.set(pathIri, [metadata]);
       }
-      if (!refId.startsWith('_:')) {
-        shapeById.set(refId, metadata);
-      }
+      if (!refId.startsWith('_:')) shapeById.set(refId, metadata);
     }
   }
 
   return { byPath, byId: shapeById };
-}
-
-function extractGraph(json: unknown): Record<string, unknown>[] {
-  if (json && typeof json === 'object') {
-    const graph = (json as Record<string, unknown>)['@graph'];
-    if (Array.isArray(graph)) return graph as Record<string, unknown>[];
-    return [json as Record<string, unknown>];
-  }
-  return [];
-}
-
-function pickIri(values: unknown): string | undefined {
-  const first = pickFirst(values);
-  if (first && typeof first === 'object' && '@id' in first) {
-    return String((first as { '@id': unknown })['@id']);
-  }
-  return undefined;
-}
-
-function pickLocalized(values: unknown, locale: string): string | undefined {
-  if (!values) return undefined;
-  const array = Array.isArray(values) ? values : [values];
-  const byLang = new Map<string, string>();
-  let untagged: string | undefined;
-  for (const entry of array) {
-    if (!entry || typeof entry !== 'object' || !('@value' in entry)) continue;
-    const value = String((entry as { '@value': unknown })['@value']);
-    const lang = (entry as { '@language'?: string })['@language'];
-    if (lang) byLang.set(lang, value);
-    else if (untagged === undefined) untagged = value;
-  }
-  return byLang.get(locale) ?? byLang.get('en') ?? byLang.get('nl') ?? untagged;
-}
-
-function pickFirst(values: unknown): unknown {
-  if (Array.isArray(values)) return values[0];
-  return values;
 }
