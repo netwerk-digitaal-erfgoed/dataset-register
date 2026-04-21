@@ -583,6 +583,42 @@ describe('Validator', () => {
     const report = await validate('dataset-schema-org-valid-minimal.jsonld');
     expect(report.state).toEqual('valid');
   });
+
+  it('emits uniqueLang violation once per focus node, not once per shape', async () => {
+    // Regression: Organization and Person shapes both targeted objects of
+    // dct:publisher and dct:creator with identical foaf:name constraints, so
+    // every uniqueLang violation fired twice on the same focus node.
+    const report = (await validate(
+      'dataset-dcat-organization-person-duplicate-shapes.jsonld',
+    )) as Valid;
+    const foafName = rdf.namedNode('http://xmlns.com/foaf/0.1/name');
+    const uniqueLangResults = [
+      ...report.errors.match(null, shacl('resultPath'), foafName),
+    ]
+      .map((quad) => quad.subject)
+      .filter(
+        (resultNode) =>
+          [
+            ...report.errors.match(
+              resultNode as never,
+              shacl('sourceConstraintComponent'),
+              shacl('UniqueLangConstraintComponent'),
+            ),
+          ].length > 0,
+      );
+    expect(uniqueLangResults).toHaveLength(1);
+  });
+
+  it('does not emit spurious foaf:name violations when publisher equals creator', async () => {
+    const report = (await validate(
+      'dataset-dcat-publisher-equals-creator.jsonld',
+    )) as Valid;
+    const foafName = rdf.namedNode('http://xmlns.com/foaf/0.1/name');
+    const foafNameResults = [
+      ...report.errors.match(null, shacl('resultPath'), foafName),
+    ];
+    expect(foafNameResults).toHaveLength(0);
+  });
 });
 
 export const validate = async (filename: string, parser?: Transform) =>

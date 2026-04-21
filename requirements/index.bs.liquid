@@ -804,7 +804,7 @@ This is an overview of required and recommended attributes.
 {% render 'attributes', name: 'Dataset', nodeShape: datasetShape %}
 
 {% for shape in nodeShapes -%}
-{%- if shape['@id'] == 'nde-dataset:OrganizationShape' %}{% assign organizationShape = shape %}{% endif -%}
+{%- if shape['@id'] == 'nde-dataset:AgentShape' %}{% assign organizationShape = shape %}{% endif -%}
 {%- if shape['@id'] == 'nde-dataset:DistributionShape' %}{% assign distributionShape = shape %}{% endif -%}
 {%- endfor %}
 {% render 'attributes', name: 'Organization', nodeShape: organizationShape, targetClass: 'schema:Organization' %}
