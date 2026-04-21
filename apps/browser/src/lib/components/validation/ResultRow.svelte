@@ -56,10 +56,26 @@
     if (!sourceText) return null;
     const needle = result.value ?? result.focusNode;
     if (!needle) return null;
+    // Prefer the line where the focus node appears as a *subject* — it usually
+    // shows up earlier as an object reference (e.g. <catalog> schema:dataset
+    // <dataset>), and indexOf would jump to that wrong place.
+    if (!result.value && result.focusNode) {
+      const subjectMatch = new RegExp(
+        `^[ \\t]*<${escapeRegex(result.focusNode)}>`,
+        'm',
+      ).exec(sourceText);
+      if (subjectMatch) {
+        return sourceText.slice(0, subjectMatch.index).split(/\r?\n/).length;
+      }
+    }
     const index = sourceText.indexOf(needle);
     if (index === -1) return null;
     return sourceText.slice(0, index).split(/\r?\n/).length;
   });
+
+  function escapeRegex(input: string): string {
+    return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
 
   let currentValues = $state<DataValue[]>([]);
   $effect(() => {
