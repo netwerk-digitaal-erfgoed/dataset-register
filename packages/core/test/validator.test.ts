@@ -588,9 +588,9 @@ describe('Validator', () => {
     // Regression: Organization and Person shapes both targeted objects of
     // dct:publisher and dct:creator with identical foaf:name constraints, so
     // every uniqueLang violation fired twice on the same focus node.
-    const report = await validate(
+    const report = (await validate(
       'dataset-dcat-organization-person-duplicate-shapes.jsonld',
-    );
+    )) as Valid;
     const foafName = rdf.namedNode('http://xmlns.com/foaf/0.1/name');
     const uniqueLangResults = [
       ...report.errors.match(null, shacl('resultPath'), foafName),
