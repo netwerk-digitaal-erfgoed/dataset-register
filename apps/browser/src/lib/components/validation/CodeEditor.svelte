@@ -8,6 +8,7 @@
     placeholder?: string;
     ariaLabel: string;
     minHeight?: string;
+    maxHeight?: string;
     readOnly?: boolean;
     flush?: boolean;
     focusEditor?: () => void;
@@ -20,6 +21,7 @@
     placeholder = '',
     ariaLabel,
     minHeight = '20rem',
+    maxHeight,
     readOnly = false,
     flush = false,
     focusEditor = $bindable(),
@@ -139,7 +141,7 @@
         EditorView.editable.of(!readOnly),
         languageCompartment.of(languageExt),
         themeCompartment.of(themeExt),
-        baseTheme(EditorView, minHeight),
+        baseTheme(EditorView, minHeight, maxHeight, flush),
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !suppressUpdate) {
             value = update.state.doc.toString();
@@ -184,22 +186,31 @@
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function baseTheme(EditorView: any, minHeightValue: string) {
+  function baseTheme(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    EditorView: any,
+    minHeightValue: string,
+    maxHeightValue: string | undefined,
+    flushValue: boolean,
+  ) {
+    const root: Record<string, string> = {
+      minHeight: minHeightValue,
+      fontSize: '0.875rem',
+      borderRadius: flushValue ? '0' : '0.5rem',
+      border: flushValue ? 'none' : '1px solid transparent',
+    };
+    if (maxHeightValue) root.maxHeight = maxHeightValue;
+    const scroller: Record<string, string> = {
+      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+    };
+    // When a maxHeight is set, let CodeMirror's internal scroller take over
+    // so long pastes don't stretch the page — the header stays in view.
+    if (maxHeightValue) scroller.overflow = 'auto';
     return EditorView.theme({
-      '&': {
-        minHeight: minHeightValue,
-        fontSize: '0.875rem',
-        borderRadius: '0.5rem',
-        border: '1px solid transparent',
-      },
-      '.cm-scroller': {
-        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-      },
+      '&': root,
+      '.cm-scroller': scroller,
       '.cm-content': { padding: '0.75rem 0' },
-      '.cm-gutters': {
-        border: 'none',
-      },
+      '.cm-gutters': { border: 'none' },
       '&.cm-focused': {
         outline: '2px solid #3b82f6',
         outlineOffset: '1px',

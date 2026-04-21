@@ -137,7 +137,7 @@
     fetchedContentType = null;
     try {
       const response = await fetch(
-        `/api/dereference?url=${encodeURIComponent(targetUrl)}`,
+        `/proxy/dereference?url=${encodeURIComponent(targetUrl)}`,
         { signal: controller.signal },
       );
       if (!response.ok) return;
@@ -275,6 +275,7 @@
             language={fetchedLanguage}
             ariaLabel={m.validate_url_source_title()}
             minHeight="16rem"
+            maxHeight="60vh"
             readOnly
             flush
             bind:goToLine={innerGoToLine}
