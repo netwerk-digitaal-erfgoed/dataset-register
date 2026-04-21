@@ -229,5 +229,87 @@
   "detail_language_description": "Language or languages in which the dataset is available.",
   "detail_classes_for_value_type": "Classes for {valueTypeName}",
   "detail_properties_for_value_type": "Properties for {valueTypeName}",
-  "opens_in_new_tab": "opens in new tab"
+  "opens_in_new_tab": "opens in new tab",
+  "validate_page_title": "Validate a dataset description",
+  "validate_page_intro_before": "Check whether a dataset description meets the ",
+  "validate_page_intro_after": " before registering it. Enter a URL or paste the description directly.",
+  "validate_requirements_link": "Requirements for Datasets",
+  "validate_tab_url": "Validate URL",
+  "validate_tab_inline": "Paste",
+  "validate_url_label": "URL of the dataset description",
+  "validate_url_placeholder": "https://example.org/dataset",
+  "validate_url_submit": "Validate URL",
+  "validate_url_source_title": "Fetched description",
+  "validate_inline_editor_label": "Dataset description",
+  "validate_inline_placeholder": "Paste JSON-LD, Turtle, N-Triples…",
+  "validate_inline_content_type": "Content type",
+  "validate_inline_autodetected": "Auto-detected",
+  "validate_format_button": "Format",
+  "validate_editor_copy": "Copy",
+  "validate_editor_copied": "Copied",
+  "validate_format_unsupported": "Automatic formatting isn’t available for this content type.",
+  "validate_running": "Validating…",
+  "validate_parse_failed_title": "Couldn’t parse your input",
+  "validate_result_not_found_title": "URL couldn’t be reached",
+  "validate_result_not_found_body": "The Dataset Register couldn’t resolve this URL. Check that it is publicly reachable and returns a dataset description.",
+  "validate_result_no_dataset_title": "No dataset description found",
+  "validate_result_no_dataset_body": "The URL resolves, but no schema:Dataset or dcat:Dataset was found. See the requirements for details.",
+  "validate_summary_valid": "Valid",
+  "validate_summary_valid_body": "Your dataset description meets the requirements.",
+  "validate_summary_submit_cta": "Submit to the Dataset Register",
+  "validate_summary_invalid": "Invalid",
+  "validate_summary_invalid_body": "Your dataset description has issues that need to be fixed before it can be registered.",
+  "validate_summary_warnings_only": "Valid with recommendations",
+  "validate_summary_warnings_only_body": "No violations, so the description can be registered. The recommendations below help consumers discover, understand and reuse your dataset and keep your description robust when the requirements evolve.",
+  "validate_summary_violations": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "1 violation",
+        "countPlural=other": "{count} violations"
+      }
+    }
+  ],
+  "validate_summary_warnings": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "1 warning",
+        "countPlural=other": "{count} warnings"
+      }
+    }
+  ],
+  "validate_summary_infos": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "1 suggestion",
+        "countPlural=other": "{count} suggestions"
+      }
+    }
+  ],
+  "validate_report_violations_heading": "Violations",
+  "validate_report_warnings_heading": "Warnings",
+  "validate_report_infos_heading": "Suggestions",
+  "validate_report_focus_node": "On",
+  "validate_report_value": "Value",
+  "validate_report_current_values": "Current values",
+  "validate_report_jump_to_line": "Jump to line {line}",
+  "validate_report_show_extras": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "+ 1 more item",
+        "countPlural=other": "+ {count} more items"
+      }
+    }
+  ],
+  "validate_report_hide_extras": "Hide other items",
+  "severity_Violation": "Violation",
+  "severity_Warning": "Warning",
+  "severity_Info": "Suggestion"
 }

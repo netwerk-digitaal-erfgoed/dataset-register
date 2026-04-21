@@ -750,12 +750,13 @@ nde-dataset:DistributionLicenseRequiredShape
     sh:sparql [
         sh:select """
             PREFIX schema: <https://schema.org/>
-            SELECT $this
+            SELECT $this ?path
             WHERE {
                 $this a schema:DataDownload .
                 ?dataset schema:distribution $this .
                 FILTER NOT EXISTS { $this schema:license ?distLicense }
                 FILTER NOT EXISTS { ?dataset schema:license ?datasetLicense }
+                BIND(schema:license AS ?path)
             }
         """ ;
     ] .
@@ -775,13 +776,14 @@ nde-dataset:DistributionSparqlEncodingRequiresProtocolShape
     sh:sparql [
         sh:select """
             PREFIX schema: <https://schema.org/>
-            SELECT $this
+            SELECT $this ?path
             WHERE {
                 $this schema:encodingFormat ?format .
                 FILTER(CONTAINS(STR(?format), "application/sparql-"))
                 FILTER NOT EXISTS {
                     $this schema:usageInfo <https://www.w3.org/TR/sparql11-protocol/> .
                 }
+                BIND(schema:usageInfo AS ?path)
             }
         """ ;
     ] .
@@ -802,13 +804,14 @@ dcat:DistributionSparqlMediaTypeRequiresProtocolShape
         sh:select """
             PREFIX dcat: <http://www.w3.org/ns/dcat#>
             PREFIX dct: <http://purl.org/dc/terms/>
-            SELECT $this
+            SELECT $this ?path
             WHERE {
                 $this dcat:mediaType ?mediaType .
                 FILTER(CONTAINS(STR(?mediaType), "application/sparql-"))
                 FILTER NOT EXISTS {
                     $this dct:conformsTo <https://www.w3.org/TR/sparql11-protocol/> .
                 }
+                BIND(dct:conformsTo AS ?path)
             }
         """ ;
     ] .

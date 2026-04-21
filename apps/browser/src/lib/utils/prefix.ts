@@ -12,7 +12,7 @@ export function shortenUri(uri: string): string {
     ore: 'https://openarchives.org/ore/terms/',
     pico: 'https://personsincontext.org/model#',
     pnv: 'https://w3id.org/pnv#',
-    sdo: 'https://schema.org/',
+    schema: 'https://schema.org/',
   });
   return shortened || uri;
 }
@@ -28,7 +28,7 @@ export function stripUrlPrefix(url: string): string {
 /**
  * Truncates a string in the middle if it exceeds maxLength.
  * Shows beginning and end with ellipsis in the middle.
- * @example truncateMiddle('sdo:hasExactMatch', 12) => 'sdo:h…Match'
+ * @example truncateMiddle('schema:hasExactMatch', 14) => 'schema:hasE…atch'
  */
 export function truncateMiddle(str: string, maxLength: number): string {
   if (str.length <= maxLength) return str;

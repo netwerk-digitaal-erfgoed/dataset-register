@@ -220,8 +220,7 @@
           </li>
           <li>
             <a
-              href={`https://datasetregister.netwerkdigitaalerfgoed.nl/validate.php?lang=${locale}`}
-              rel="external"
+              href={localizeHref('/validate')}
               class="text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 px-4 py-2 text-base font-normal no-underline inline-block transition-colors"
             >
               {m.nav_validate()}
@@ -281,8 +280,7 @@
             {m.nav_create()}
           </a>
           <a
-            href={`https://datasetregister.netwerkdigitaalerfgoed.nl/validate.php?lang=${locale}`}
-            rel="external"
+            href={localizeHref('/validate')}
             class="text-gray-900 dark:text-gray-100 text-lg font-normal block py-3 no-underline"
           >
             {m.nav_validate()}
@@ -315,7 +313,7 @@
     {/if}
   </header>
 
-  <main class="container mx-auto px-4 py-8 pt-20 lg:pt-24">
+  <main class="container mx-auto px-4 py-8 pt-28 lg:pt-32">
     {@render children()}
   </main>
 </div>
