@@ -244,6 +244,7 @@
       placeholder={m.validate_inline_placeholder()}
       ariaLabel={m.validate_inline_editor_label()}
       minHeight="22rem"
+      maxHeight="60vh"
       bind:focusEditor={innerFocus}
       bind:goToLine
     />

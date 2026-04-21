@@ -27,12 +27,19 @@ export async function formatRdf(
     }
   }
 
-  const format = n3FormatFor(contentType);
-  if (!format) return { kind: 'unsupported' };
+  const inputFormat = n3FormatFor(contentType);
+  if (!inputFormat) return { kind: 'unsupported' };
+  // N-Triples / N-Quads are hard to read at a glance; upgrade the writer to
+  // Turtle / TriG so CURIEs and multi-object blocks collapse nicely.
+  const outputFormat = inputFormat.startsWith('N-Quads')
+    ? 'TriG'
+    : inputFormat.startsWith('N-')
+      ? 'Turtle'
+      : inputFormat;
 
   try {
     const { Parser, Writer } = await import('n3');
-    const parser = new Parser({ format });
+    const parser = new Parser({ format: inputFormat });
     // Use the synchronous form — `parse(text)` returns an array immediately,
     // whereas `parse(text, callback)` fires the callback asynchronously and
     // the caller sees an empty quad set.
@@ -40,7 +47,7 @@ export async function formatRdf(
     const prefixes =
       (parser as unknown as { _prefixes?: Record<string, string> })._prefixes ??
       {};
-    const writer = new Writer({ format, prefixes });
+    const writer = new Writer({ format: outputFormat, prefixes });
     writer.addQuads(quads);
     return await new Promise<FormatOutcome>((resolve) => {
       writer.end((error, result) => {
