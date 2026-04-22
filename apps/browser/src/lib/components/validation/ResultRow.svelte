@@ -37,6 +37,12 @@
       ? selectShape(shapes, result.path, focusType, result.sourceShape)
       : undefined,
   );
+  const descriptionHtml = $derived(
+    shapeMeta?.description?.replace(
+      /`([^`]+)`/g,
+      '<code class="font-mono">$1</code>',
+    ),
+  );
   const tone = $derived(
     result.severity === 'Violation'
       ? 'red'
@@ -126,10 +132,10 @@
           {#if result.path}
             <code class="font-mono text-xs">{shortenUri(result.path)}</code>
           {/if}
-          {#if shapeMeta?.description}
+          {#if descriptionHtml}
             {#if result.path}<span class="mx-1">·</span>{/if}
             <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-            {@html shapeMeta.description}
+            {@html descriptionHtml}
           {/if}
         </p>
       {/if}
