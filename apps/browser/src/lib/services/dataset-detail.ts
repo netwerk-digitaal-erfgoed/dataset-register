@@ -458,6 +458,49 @@ export async function fetchDatasetDetail(
     sources: [PUBLIC_SPARQL_ENDPOINT],
   });
 
+  // Custom CONSTRUCT that sidesteps ldkit's auto-generated findByIri query.
+  // ldkit's default places every property under OPTIONAL in a single BGP, which
+  // Cartesian-products multi-valued properties (keyword, theme, spatial, etc.).
+  // On a dataset with 20 keywords × 13 spatial × 9 themes, that produced
+  // ~674k wire triples and a ~22s page load. Isolating each linked resource
+  // (dataset, publisher, creator, subjectOf, contentRating) into its own UNION
+  // branch keeps results proportional to the data (~200 triples, <1s).
+  const datasetQuery = `
+    PREFIX dct: <http://purl.org/dc/terms/>
+    PREFIX dcat: <http://www.w3.org/ns/dcat#>
+    PREFIX schema: <https://schema.org/>
+    PREFIX ldkit: <https://ldkit.io/ontology/>
+
+    CONSTRUCT {
+      ?s ?p ?o .
+      <${datasetUri}> a ldkit:Resource .
+    }
+    WHERE {
+      GRAPH ?g {
+        {
+          <${datasetUri}> ?p ?o .
+          BIND(<${datasetUri}> AS ?s)
+        } UNION {
+          <${datasetUri}> dct:publisher ?publisher .
+          ?publisher ?p ?o .
+          BIND(?publisher AS ?s)
+        } UNION {
+          <${datasetUri}> dct:creator ?creator .
+          ?creator ?p ?o .
+          BIND(?creator AS ?s)
+        } UNION {
+          <${datasetUri}> schema:subjectOf ?subjectOf .
+          ?subjectOf ?p ?o .
+          BIND(?subjectOf AS ?s)
+        } UNION {
+          <${datasetUri}> schema:contentRating ?contentRating .
+          ?contentRating ?p ?o .
+          BIND(?contentRating AS ?s)
+        }
+      }
+    }
+  `;
+
   const distributionQuery = `
     PREFIX dcat: <http://www.w3.org/ns/dcat#>
     PREFIX dct: <http://purl.org/dc/terms/>
@@ -502,7 +545,7 @@ export async function fetchDatasetDetail(
   `;
 
   const [
-    dataset,
+    datasets,
     distributions,
     totalDistributions,
     summary,
@@ -510,7 +553,7 @@ export async function fetchDatasetDetail(
     classPartitionResult,
     temporalCoverages,
   ] = await Promise.all([
-    detailLens.findByIri(datasetUri),
+    detailLens.query(datasetQuery),
     distributionLens.query(distributionQuery),
     fetchDistributionCount(distributionCountQuery),
     summaryLens.findByIri(datasetUri).catch((e: unknown) => {
@@ -525,6 +568,7 @@ export async function fetchDatasetDetail(
     fetchTemporalCoverage(datasetUri),
   ]);
 
+  const dataset = datasets.find((d) => d.$id === datasetUri) ?? datasets[0];
   if (!dataset) {
     error(404, 'Dataset not found');
   }
