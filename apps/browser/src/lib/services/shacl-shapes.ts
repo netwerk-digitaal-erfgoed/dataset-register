@@ -5,7 +5,7 @@ import { normalizeNodes, pickIri, pickLocalized } from './jsonld-helpers.js';
 const SH = 'http://www.w3.org/ns/shacl#';
 
 export interface ShapeMetadata {
-  name: string;
+  name?: string;
   description?: string;
   targetClass?: string;
 }
@@ -42,8 +42,9 @@ export function fetchShapes(signal?: AbortSignal): Promise<ShapesIndex> {
 /**
  * Given a path IRI and the focusNode's rdf:type (optional), pick the best
  * matching shape. Prefers a direct hit by `sh:sourceShape` IRI, then
- * `sh:targetClass` match; when multiple shapes share a path we avoid
- * guessing so the caller can fall back to the CURIE-shortened path.
+ * `sh:targetClass` match; when multiple shapes share a path we pick the
+ * first one carrying a `sh:description`, since that description applies to
+ * the property as a whole regardless of which specific constraint failed.
  */
 export function selectShape(
   index: ShapesIndex,
@@ -62,7 +63,11 @@ export function selectShape(
     const matching = candidates.find((c) => c.targetClass === focusNodeType);
     if (matching) return matching;
   }
-  return candidates.length === 1 ? candidates[0] : undefined;
+  if (candidates.length === 1) return candidates[0];
+  // Multiple property shapes share this path (different constraints on the
+  // same property). The generic property description is shared across them,
+  // so pick the first candidate that actually carries one.
+  return candidates.find((c) => c.description) ?? undefined;
 }
 
 function indexShapes(json: unknown, locale: string): ShapesIndex {
@@ -94,11 +99,15 @@ function indexShapes(json: unknown, locale: string): ShapesIndex {
       if (!propertyShape) continue;
 
       const name = pickLocalized(propertyShape[`${SH}name`], locale);
-      if (!name) continue;
+      const description = pickLocalized(
+        propertyShape[`${SH}description`],
+        locale,
+      );
+      if (!name && !description) continue;
 
       const metadata: ShapeMetadata = {
         name,
-        description: pickLocalized(propertyShape[`${SH}description`], locale),
+        description,
         targetClass,
       };
 
