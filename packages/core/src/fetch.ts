@@ -17,8 +17,18 @@ export class HttpError extends FetchError {
   public readonly statusCode: number;
 
   constructor(url: URL, message: string, statusCode: number) {
-    super(`URL ${url.toString()} returned HTTP error`, {
-      cause: `The provided URL ${url.toString()} returned HTTP status code ${statusCode}: ${message}`,
+    // rdf-dereference’s message has the shape
+    //   “Could not retrieve <URL> (HTTP status N):\n<body>”
+    // so extract just the <body> – the URL is already in context for callers.
+    const body = message
+      .split(/\(HTTP status \d+\):\s*/)
+      .slice(1)
+      .join(' ')
+      .trim();
+    super(`URL ${url.toString()} returned HTTP status ${statusCode}`, {
+      cause: body
+        ? `HTTP status ${statusCode}: ${body}`
+        : `HTTP status ${statusCode}.`,
     });
     this.statusCode = statusCode;
   }
