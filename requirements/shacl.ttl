@@ -467,7 +467,7 @@ nde-dataset:DatasetShape
                 nde:version "2.0" ;
                 sh:severity sh:Violation ;
             ] ;
-            sh:description "Spatial coverage must be an HTTP(S) URI, such as from [GeoNames](https://www.geonames.org/)."@en ;
+            sh:description "Spatial coverage must be an HTTP(S) URI, such as from <a href=\"https://www.geonames.org/\">GeoNames</a>."@en ;
             sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
         ] ,
         [
@@ -1414,7 +1414,7 @@ dcat:DatasetShape
             sh:nodeKind sh:IRI ;
             sh:pattern "^http://publications\\.europa\\.eu/resource/authority/language/" ;
         ] ;
-        sh:description "De natuurlijke taal van de tekstuele waarden in de dataset. Gebruik een waarde uit de [EU Vocabularies Languages Named Authority List](https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language)."@nl, "The natural language of the textual values in the dataset. Use a value from the [EU Vocabularies Languages Named Authority List](https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language)."@en ;
+        sh:description "De natuurlijke taal van de tekstuele waarden in de dataset. Gebruik een waarde uit de <a href=\"https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language\">EU Vocabularies Languages Named Authority List</a>."@nl, "The natural language of the textual values in the dataset. Use a value from the <a href=\"https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language\">EU Vocabularies Languages Named Authority List</a>."@en ;
         sh:message "Vul de taal of talen in"@nl, "Enter the language or languages of the dataset"@en ;
     ],
     [
@@ -1615,7 +1615,7 @@ dcat:DistributionShape
             sh:nodeKind sh:IRI ;
             sh:pattern "^http://publications\\.europa\\.eu/resource/authority/language/" ;
         ] ;
-        sh:description "De natuurlijke taal van de tekstuele waarden in de distributie. Gebruik een waarde uit de [EU Vocabularies Languages Named Authority List](https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language)."@nl, "The natural language of the textual values in the distribution. Use a value from the [EU Vocabularies Languages Named Authority List](https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language)."@en ;
+        sh:description "De natuurlijke taal van de tekstuele waarden in de distributie. Gebruik een waarde uit de <a href=\"https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language\">EU Vocabularies Languages Named Authority List</a>."@nl, "The natural language of the textual values in the distribution. Use a value from the <a href=\"https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language\">EU Vocabularies Languages Named Authority List</a>."@en ;
         sh:message "Vul de taal of talen in waarin de distributie beschikbaar is"@nl, "Enter the language or languages of the distribution"@en ;
     ] .
 
