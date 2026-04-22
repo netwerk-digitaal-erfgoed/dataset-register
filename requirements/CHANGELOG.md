@@ -5,9 +5,8 @@
 
 ### Features
 
-* **browser:** replace validate page ([#1432](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1432)) ([#1893](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1893)) ([84aded5](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/84aded5501bed022fa45db17f6b81fca566da9b8))
 * **shacl:** downgrade missing organisation identifier to sh:Info ([#1909](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1909)) ([6624d71](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/6624d71d903bdc4928e6abccd77e138a5ee558b4))
-* **shacl:** redirect URIs in schema:keywords to schema:about ([#1905](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1905)) ([fcf9055](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/fcf9055223a47f7d01d61282d07147e2865b6f34))
+* **shacl:** recommend schema:about instead of schema:keywords for URIs  ([#1905](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1905)) ([fcf9055](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/fcf9055223a47f7d01d61282d07147e2865b6f34))
 
 
 ### Bug Fixes
