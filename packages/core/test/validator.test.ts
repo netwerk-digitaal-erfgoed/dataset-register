@@ -245,7 +245,9 @@ describe('Validator', () => {
       expect(literal(result, shacl('focusNode'))).toEqual(
         'https://www.goudatijdmachine.nl/omeka/api/items/232',
       );
-      expect(literal(result, shacl('resultSeverity'))).toEqual(expectedSeverity);
+      expect(literal(result, shacl('resultSeverity'))).toEqual(
+        expectedSeverity,
+      );
       expect(literal(result, shacl('sourceConstraintComponent'))).toEqual(
         'http://www.w3.org/ns/shacl#SPARQLConstraintComponent',
       );
