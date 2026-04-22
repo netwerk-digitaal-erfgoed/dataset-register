@@ -379,6 +379,37 @@ describe('Validator', () => {
     }
   });
 
+  it('warns when schema:keywords contains an http(s) URI', async () => {
+    const report = (await validate(
+      'dataset-schema-org-keyword-uri.jsonld',
+    )) as Valid;
+    expect(report.state).toEqual('valid');
+    const keywordResults = [
+      ...report.errors.match(
+        null,
+        shacl('resultPath'),
+        rdf.namedNode('https://schema.org/keywords'),
+      ),
+    ].map((quad) => quad.subject);
+    expect(keywordResults).toHaveLength(1);
+    const [keywordResult] = keywordResults;
+    expect(
+      [...report.errors.match(keywordResult, shacl('resultSeverity'), null)][0]
+        ?.object.value,
+    ).toEqual('http://www.w3.org/ns/shacl#Warning');
+    const messages = [
+      ...report.errors.match(keywordResult, shacl('resultMessage'), null),
+    ]
+      .filter(
+        (quad) =>
+          quad.object.termType === 'Literal' && quad.object.language === 'en',
+      )
+      .map((quad) => quad.object.value);
+    expect(messages).toContain(
+      'Use schema:about for URIs describing the subject matter',
+    );
+  });
+
   it('validates PropertyValue identifier sub-constraints (propertyID, value, name)', async () => {
     // PropertyValue identifiers carry their own internal structure: propertyID
     // (must be IRI), value (must be xsd:string), name (must be string/langString

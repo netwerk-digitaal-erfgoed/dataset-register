@@ -435,8 +435,19 @@ nde-dataset:DatasetShape
             sh:path schema:keywords ;
             sh:minCount 1 ;
             sh:severity sh:Info ;
-            sh:description "Woorden of geformaliseerde zinnen om een dataset te beschrijven."@nl, "Words or formalized phrases to describe the dataset."@en ;
+            sh:description """Woorden of geformaliseerde zinnen om een dataset te beschrijven. Trefwoorden zijn vrije tekst; gebruik `schema:about` voor URI’s die het onderwerp beschrijven."""@nl,
+                """Words or formalized phrases to describe the dataset. Keywords are free text; use `schema:about` for URIs describing the subject matter."""@en ;
             sh:message "Voeg trefwoorden toe"@nl, "Add keywords"@en ;
+        ] ,
+        [
+            sh:path schema:keywords ;
+            sh:not [ sh:pattern "^https?://" ] ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:message "Gebruik schema:about voor URI’s die het onderwerp beschrijven"@nl, "Use schema:about for URIs describing the subject matter"@en ;
         ] ,
         [
             sh:path schema:spatialCoverage ;
