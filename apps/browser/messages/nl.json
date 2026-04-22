@@ -176,7 +176,7 @@
   "detail_terminology_sources_description": "Terminologiebronnen die door objecten in de dataset worden gebruikt.",
   "detail_object_types_help": "Informatie over objecttypen",
   "detail_object_types_description": "Toont de verdeling tussen literale waarden en URI-verwijzingen in de objectposities van de dataset.",
-  "detail_genres": "Genres",
+  "detail_about": "Onderwerp",
   "detail_linked_data_summary_description": "Statistische informatie over deze dataset opgehaald uit de Dataset Knowledge Graph, inclusief het aantal feiten, entiteiten, eigenschappen en typeverdeling.",
   "detail_registered_url": "Geregistreerde URL",
   "detail_registered_url_description": "URL waar de dataset wordt beschreven.",

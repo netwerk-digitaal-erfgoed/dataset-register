@@ -167,13 +167,13 @@
     return downloadDistributions[0];
   });
 
-  // Extract keywords and genres for current locale. dcat:theme is the canonical
-  // target for subject/material classification; dct:type is kept for datasets
-  // registered before the schema:about → dcat:theme transition.
+  // Extract keywords and subject matter for current locale. dcat:theme is the
+  // canonical target for subject/material classification; dct:type is kept for
+  // datasets registered before the schema:about → dcat:theme transition.
   const EDUC_DEFAULT_THEME =
     'http://publications.europa.eu/resource/authority/data-theme/EDUC';
   const localizedKeywords = $derived(getLocalizedArray(dataset.keyword));
-  const localizedGenres = $derived([
+  const localizedAbout = $derived([
     ...(dataset.theme?.filter((value) => value !== EDUC_DEFAULT_THEME) ?? []),
     ...getLocalizedArray(dataset.type),
   ]);
@@ -426,7 +426,7 @@
   </div>
 
   <!-- Dataset Details Section (compact) -->
-  {#if localizedKeywords.length > 0 || dataset.publisher?.name || dataset.license || (dataset.spatial && dataset.spatial.length > 0) || temporalCoverages.length > 0 || localizedGenres.length > 0 || (dataset.language && dataset.language.length > 0)}
+  {#if localizedKeywords.length > 0 || dataset.publisher?.name || dataset.license || (dataset.spatial && dataset.spatial.length > 0) || temporalCoverages.length > 0 || localizedAbout.length > 0 || (dataset.language && dataset.language.length > 0)}
     <div class="mb-8">
       <div
         class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
@@ -921,8 +921,8 @@
             </div>
           {/if}
 
-          <!-- Genre -->
-          {#if localizedGenres.length > 0}
+          <!-- About -->
+          {#if localizedAbout.length > 0}
             <div
               class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
             >
@@ -942,29 +942,29 @@
                     d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
                   />
                 </svg>
-                {m.detail_genres()}
+                {m.detail_about()}
               </dt>
               <dd class="text-sm text-gray-700 dark:text-gray-300 break-all">
                 {#await data.resolvedTerms}
-                  {localizedGenres.join(', ')}
+                  {localizedAbout.join(', ')}
                 {:then resolvedTerms}
-                  {#each localizedGenres as genreValue, index (genreValue)}
+                  {#each localizedAbout as aboutValue, index (aboutValue)}
                     {#if index > 0},
                     {/if}
-                    {#if resolvedTerms[genreValue]}
+                    {#if resolvedTerms[aboutValue]}
                       <a
-                        href={genreValue}
+                        href={aboutValue}
                         target="_blank"
                         rel="noopener noreferrer"
                         class="text-blue-600 hover:underline dark:text-blue-400"
                       >
-                        {resolvedTerms[genreValue]}
+                        {resolvedTerms[aboutValue]}
                         <span class="sr-only">
                           ({m.opens_in_new_tab()})
                         </span>
                       </a>
                     {:else}
-                      {genreValue}
+                      {aboutValue}
                     {/if}
                   {/each}
                 {/await}
