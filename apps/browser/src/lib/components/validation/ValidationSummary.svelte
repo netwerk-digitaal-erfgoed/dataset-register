@@ -141,16 +141,12 @@
     <span class="font-semibold">{m.validate_parse_failed_title()}</span>
     <p class="mt-1 font-mono text-sm break-words">{state.message}</p>
   {:else if state.kind === 'not-found'}
-    <span class="font-semibold">
-      {state.details?.title ?? m.validate_result_not_found_title()}
-    </span>
+    <span class="font-semibold">{m.validate_result_not_found_title()}</span>
     <p class="mt-1 text-sm">
       {state.details?.description ?? m.validate_result_not_found_body()}
     </p>
   {:else if state.kind === 'no-dataset'}
-    <span class="font-semibold">
-      {state.details?.title ?? m.validate_result_no_dataset_title()}
-    </span>
+    <span class="font-semibold">{m.validate_result_no_dataset_title()}</span>
     <p class="mt-1 text-sm">
       {state.details?.description ?? m.validate_result_no_dataset_body()}
     </p>
