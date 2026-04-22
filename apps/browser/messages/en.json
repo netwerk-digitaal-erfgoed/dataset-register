@@ -197,6 +197,7 @@
   "lang_badge_unspecified": "Unspecified",
   "detail_is_part_of": "Part of",
   "detail_is_part_of_description": "The data catalog this dataset belongs to.",
+  "detail_browse_catalog": "Browse catalog",
   "license_cc0_1_0": "CC0 1.0 Universal",
   "license_cc_by_4_0": "CC BY 4.0 International",
   "license_cc_by_3_0": "CC BY 3.0 Unported",
