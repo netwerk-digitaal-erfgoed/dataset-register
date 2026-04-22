@@ -176,7 +176,7 @@
   "detail_terminology_sources_description": "Terminology sources used by objects in the dataset.",
   "detail_object_types_help": "Information about object types",
   "detail_object_types_description": "Shows the distribution between literal values and URI references in the dataset's object positions.",
-  "detail_genres": "Genres",
+  "detail_about": "About",
   "detail_linked_data_summary_description": "Statistical information about this dataset retrieved from the Knowledge Graph, including the number of triples, entities, properties, and class distribution.",
   "detail_registered_url": "Registered URL",
   "detail_registered_url_description": "URL where the dataset is described.",
