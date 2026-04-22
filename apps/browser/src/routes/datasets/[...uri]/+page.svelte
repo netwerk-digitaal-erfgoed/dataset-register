@@ -467,9 +467,10 @@
                 href={dataset.$id}
                 target="_blank"
                 rel="noopener noreferrer"
-                class="break-all text-blue-600 hover:underline dark:text-blue-400"
+                class="inline-flex items-center gap-1 break-all text-blue-600 hover:underline dark:text-blue-400"
               >
                 {dataset.$id}
+                <ArrowUpRightFromSquareOutline class="h-3 w-3 shrink-0" />
                 <span class="sr-only"> ({m.opens_in_new_tab()})</span>
               </a>
               <Clipboard value={dataset.$id} class="p-0">
@@ -626,9 +627,10 @@
                       href={creator.$id}
                       target="_blank"
                       rel="noopener noreferrer"
-                      class="text-blue-600 hover:underline dark:text-blue-400"
+                      class="inline-flex items-center gap-1 text-blue-600 hover:underline dark:text-blue-400"
                     >
                       {getLocalizedValue(creator.name)}
+                      <ArrowUpRightFromSquareOutline class="h-3 w-3 shrink-0" />
                       <span class="sr-only"> ({m.opens_in_new_tab()})</span>
                     </a>
                     <LanguageBadge values={creator.name} />
@@ -669,15 +671,27 @@
                   >{m.detail_is_part_of_description()}</Tooltip
                 >
               </dt>
-              <dd class="text-sm text-gray-700 dark:text-gray-300">
+              <dd
+                class="text-sm text-gray-700 dark:text-gray-300 flex flex-wrap items-center gap-2"
+              >
                 {#if dataset.isPartOf.startsWith('http://') || dataset.isPartOf.startsWith('https://')}
+                  <a
+                    href={dataset.isPartOf}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex items-center gap-1 break-all text-blue-600 hover:underline dark:text-blue-400"
+                  >
+                    {dataset.isPartOf}
+                    <ArrowUpRightFromSquareOutline class="h-3 w-3 shrink-0" />
+                    <span class="sr-only"> ({m.opens_in_new_tab()})</span>
+                  </a>
                   <a
                     href={`https://datasetregister.netwerkdigitaalerfgoed.nl/catalog.php?lang=${getLocale()}&uri=${encodeURIComponent(dataset.isPartOf)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="text-blue-600 hover:underline dark:text-blue-400"
+                    class="inline-flex items-center gap-1 rounded-full border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
                   >
-                    {dataset.isPartOf}
+                    {m.detail_browse_catalog()}
                     <span class="sr-only"> ({m.opens_in_new_tab()})</span>
                   </a>
                 {:else}
@@ -744,10 +758,11 @@
                   href={dataset.license}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-blue-600 hover:underline dark:text-blue-400"
+                  class="inline-flex items-center gap-1 text-blue-600 hover:underline dark:text-blue-400"
                   title={dataset.license}
                 >
                   {getLicenseName(dataset.license)}
+                  <ArrowUpRightFromSquareOutline class="h-3 w-3 shrink-0" />
                   <span class="sr-only"> ({m.opens_in_new_tab()})</span>
                 </a>
               </dd>
@@ -797,9 +812,12 @@
                         href={spatialValue}
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="text-blue-600 hover:underline dark:text-blue-400"
+                        class="inline-flex items-center gap-1 text-blue-600 hover:underline dark:text-blue-400"
                       >
                         {resolvedTerms[spatialValue]}
+                        <ArrowUpRightFromSquareOutline
+                          class="h-3 w-3 shrink-0"
+                        />
                         <span class="sr-only">
                           ({m.opens_in_new_tab()})
                         </span>
@@ -862,9 +880,12 @@
                             href={coverage.iri}
                             target="_blank"
                             rel="noopener noreferrer"
-                            class="text-blue-600 hover:underline dark:text-blue-400"
+                            class="inline-flex items-center gap-1 text-blue-600 hover:underline dark:text-blue-400"
                           >
                             {resolvedTerms[coverage.iri]}
+                            <ArrowUpRightFromSquareOutline
+                              class="h-3 w-3 shrink-0"
+                            />
                             <span class="sr-only">
                               ({m.opens_in_new_tab()})
                             </span>
@@ -956,9 +977,12 @@
                         href={genreValue}
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="text-blue-600 hover:underline dark:text-blue-400"
+                        class="inline-flex items-center gap-1 text-blue-600 hover:underline dark:text-blue-400"
                       >
                         {resolvedTerms[genreValue]}
+                        <ArrowUpRightFromSquareOutline
+                          class="h-3 w-3 shrink-0"
+                        />
                         <span class="sr-only">
                           ({m.opens_in_new_tab()})
                         </span>

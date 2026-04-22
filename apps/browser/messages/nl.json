@@ -197,6 +197,7 @@
   "lang_badge_unspecified": "Niet gespecificeerd",
   "detail_is_part_of": "Onderdeel van",
   "detail_is_part_of_description": "De datacatalogus waar deze dataset bij hoort.",
+  "detail_browse_catalog": "Doorzoek catalogus",
   "license_cc0_1_0": "CC0 1.0 Universeel",
   "license_cc_by_4_0": "CC BY 4.0 Internationaal",
   "license_cc_by_3_0": "CC BY 3.0 Unported",
