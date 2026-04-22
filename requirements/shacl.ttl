@@ -934,7 +934,7 @@ nde-dataset:OrganizationContactPointRequiredShape
 nde-dataset:OrganizationIdentifierRequiredShape
     a sh:NodeShape ;
     sh:targetObjectsOf schema:publisher, schema:creator ;
-    sh:severity sh:Warning ;
+    sh:severity sh:Info ;
     sh:message "Voeg een identificatie toe voor de organisatie, zoals een KvK-nummer of ISIL"@nl, "Add an identifier for the organisation, such as a Chamber of Commerce number or ISIL"@en ;
     sh:sparql [
         sh:select """

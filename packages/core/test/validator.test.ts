@@ -230,13 +230,15 @@ describe('Validator', () => {
     expect(contactPointResult).toBeDefined();
     expect(identifierResult).toBeDefined();
 
-    for (const [result, expectedMessage] of [
+    for (const [result, expectedSeverity, expectedMessage] of [
       [
         contactPointResult,
+        'http://www.w3.org/ns/shacl#Warning',
         'Add a contact point with a name and email address, preferably of the department that manages the dataset or catalogue',
       ],
       [
         identifierResult,
+        'http://www.w3.org/ns/shacl#Info',
         'Add an identifier for the organisation, such as a Chamber of Commerce number or ISIL',
       ],
     ] as const) {
@@ -244,7 +246,7 @@ describe('Validator', () => {
         'https://www.goudatijdmachine.nl/omeka/api/items/232',
       );
       expect(literal(result, shacl('resultSeverity'))).toEqual(
-        'http://www.w3.org/ns/shacl#Warning',
+        expectedSeverity,
       );
       expect(literal(result, shacl('sourceConstraintComponent'))).toEqual(
         'http://www.w3.org/ns/shacl#SPARQLConstraintComponent',
@@ -261,8 +263,9 @@ describe('Validator', () => {
   });
 
   it('SPARQL-constrained Organization checks skip Person publishers/creators', async () => {
-    // Persons must pass v2.0 validation: contactPoint and identifier are promoted
-    // from Warning to Violation, and Person instances legitimately lack both.
+    // Person instances legitimately lack contactPoint and identifier, so the
+    // Organization-targeted SPARQL shapes must not fire against them — including
+    // when contactPoint is promoted to Violation at v2.0.
     const report = (await validate(
       'dataset-dcat-valid-minimal.jsonld',
     )) as Valid;
@@ -280,10 +283,10 @@ describe('Validator', () => {
     expect(report.state).toEqual('valid');
     expect(formatReport(report)).toMatchInlineSnapshot(`
       "[Info] https://schema.org/about on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Add a URI describing the dataset’s subject matter or material type (for example from the Network of Terms)
+      [Info] https://schema.org/identifier on <https://www.goudatijdmachine.nl/omeka/api/items/232>: Add an identifier for the organisation, such as a Chamber of Commerce number or ISIL
       [Warning] https://schema.org/contactPoint on <https://www.goudatijdmachine.nl/omeka/api/items/232>: Add a contact point with a name and email address, preferably of the department that manages the dataset or catalogue
       [Warning] https://schema.org/encodingFormat on <https://www.goudatijdmachine.nl/omeka/api/items/3030722>: Remove the SPARQL MIME type from schema:encodingFormat; SPARQL endpoints are declared via schema:usageInfo
       [Warning] https://schema.org/genre on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: schema:genre is deprecated; use schema:about with a URI (for example from the Network of Terms)
-      [Warning] https://schema.org/identifier on <https://www.goudatijdmachine.nl/omeka/api/items/232>: Add an identifier for the organisation, such as a Chamber of Commerce number or ISIL
       [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use https:// (not http://) in the Creative Commons license URL
       [Warning] https://schema.org/license on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use one of the Creative Commons licenses, such as https://creativecommons.org/publicdomain/zero/1.0/ (CC0) or https://creativecommons.org/licenses/by/4.0/ (CC BY 4.0)
       [Warning] https://schema.org/temporalCoverage on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Use an ISO 8601 date or time interval (such as ‘2011/2012’, ‘-0431/-0404’ for BCE, or ‘1440/..’) or a web URI
