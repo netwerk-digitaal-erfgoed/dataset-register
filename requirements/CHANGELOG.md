@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.9.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.8.0...requirements-1.9.0) (2026-04-22)
+
+
+### Features
+
+* **shacl:** downgrade missing organisation identifier to sh:Info ([#1909](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1909)) ([6624d71](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/6624d71d903bdc4928e6abccd77e138a5ee558b4))
+* **shacl:** recommend schema:about instead of schema:keywords for URIs  ([#1905](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1905)) ([fcf9055](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/fcf9055223a47f7d01d61282d07147e2865b6f34))
+
+
+### Bug Fixes
+
+* **shacl:** consolidate publisher/creator shapes ([#1892](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1892)) ([b533f0a](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/b533f0a4cff82e1f5c94973ece8c84e6f793fa5a))
+
 ## [1.8.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.7.0...requirements-1.8.0) (2026-04-20)
 
 
