@@ -589,7 +589,11 @@ export async function fetchDatasetDetail(
       ? [(coverage as { iri: string }).iri].filter(isUri)
       : [],
   );
-  const termUris = [...(dataset.spatial?.filter(isUri) ?? []), ...temporalIris];
+  const termUris = [
+    ...(dataset.spatial?.filter(isUri) ?? []),
+    ...temporalIris,
+    ...(dataset.theme?.filter(isUri) ?? []),
+  ];
   const resolvedTerms =
     termUris.length > 0
       ? lookupTermLabels(termUris, getLocale())

@@ -944,8 +944,30 @@
                 </svg>
                 {m.detail_genres()}
               </dt>
-              <dd class="text-sm text-gray-700 dark:text-gray-300">
-                {localizedGenres.join(', ')}
+              <dd class="text-sm text-gray-700 dark:text-gray-300 break-all">
+                {#await data.resolvedTerms}
+                  {localizedGenres.join(', ')}
+                {:then resolvedTerms}
+                  {#each localizedGenres as genreValue, index (genreValue)}
+                    {#if index > 0},
+                    {/if}
+                    {#if resolvedTerms[genreValue]}
+                      <a
+                        href={genreValue}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-blue-600 hover:underline dark:text-blue-400"
+                      >
+                        {resolvedTerms[genreValue]}
+                        <span class="sr-only">
+                          ({m.opens_in_new_tab()})
+                        </span>
+                      </a>
+                    {:else}
+                      {genreValue}
+                    {/if}
+                  {/each}
+                {/await}
               </dd>
             </div>
           {/if}
