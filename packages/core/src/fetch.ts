@@ -16,19 +16,9 @@ export class FetchError extends Error {}
 export class HttpError extends FetchError {
   public readonly statusCode: number;
 
-  constructor(url: URL, message: string, statusCode: number) {
-    // rdf-dereference’s message has the shape
-    //   “Could not retrieve <URL> (HTTP status N):\n<body>”
-    // so extract just the <body> – the URL is already in context for callers.
-    const body = message
-      .split(/\(HTTP status \d+\):\s*/)
-      .slice(1)
-      .join(' ')
-      .trim();
+  constructor(url: URL, statusCode: number) {
     super(`URL ${url.toString()} returned HTTP status ${statusCode}`, {
-      cause: body
-        ? `HTTP status ${statusCode}: ${body}`
-        : `HTTP status ${statusCode}.`,
+      cause: `The URL returned HTTP status ${statusCode}.`,
     });
     this.statusCode = statusCode;
   }
@@ -158,13 +148,13 @@ function handleComunicaError(e: unknown, url: URL): never {
   if (e instanceof Error) {
     // Match error thrown in Comunica’s ActorRdfDereferenceHttpParseBase.
     if (e.message.match(/404: unknown error/)) {
-      throw new HttpError(url, e.message, 404);
+      throw new HttpError(url, 404);
     }
 
     const matches = e.message.match(/HTTP status (\d+)/);
     if (matches) {
       const statusCode = parseInt(matches[1]);
-      throw new HttpError(url, e.message, statusCode);
+      throw new HttpError(url, statusCode);
     }
 
     // Extract media type from "Unrecognized media type: <type>" errors.
