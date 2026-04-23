@@ -5,7 +5,10 @@
   import InfoCircleSolid from 'flowbite-svelte-icons/InfoCircleSolid.svelte';
   import SeverityBadge from './SeverityBadge.svelte';
   import * as m from '$lib/paraglide/messages';
-  import type { ShaclReport } from '$lib/services/shacl-report.js';
+  import {
+    resultGroupKey,
+    type ShaclReport,
+  } from '$lib/services/shacl-report.js';
   import type { ApiErrorDetails } from '$lib/services/validation.js';
 
   interface Props {
@@ -27,12 +30,11 @@
     if (state.kind !== 'report') {
       return { violations: 0, warnings: 0, infos: 0 };
     }
-    // Count unique messages per severity. Multiple focus nodes failing the
-    // same check collapse into one — the user wants to see the number of
-    // distinct problems to fix, not one row per affected node.
+    // Count distinct (severity, path, constraint, message) groups – the same
+    // grouping as ValidationReport so the summary badges match the row counts.
     const seen = new Map<string, 'Violation' | 'Warning' | 'Info'>();
     for (const result of state.report.results) {
-      const key = `${result.severity}\u0001${result.message}`;
+      const key = resultGroupKey(result);
       if (!seen.has(key)) seen.set(key, result.severity);
     }
     let violations = 0;

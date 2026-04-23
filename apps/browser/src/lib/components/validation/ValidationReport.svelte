@@ -2,7 +2,11 @@
   import { Accordion, AccordionItem } from 'flowbite-svelte';
   import SeverityBadge from './SeverityBadge.svelte';
   import * as m from '$lib/paraglide/messages';
-  import type { ShaclReport, ShaclResult } from '$lib/services/shacl-report.js';
+  import {
+    resultGroupKey,
+    type ShaclReport,
+    type ShaclResult,
+  } from '$lib/services/shacl-report.js';
   import { fetchShapes, type ShapesIndex } from '$lib/services/shacl-shapes.js';
   import ResultRow from './ResultRow.svelte';
   import { buildFocusNodeTypes } from './focus-node-types.js';
@@ -49,22 +53,10 @@
     });
   });
 
-  // Fold repeats of the same (path, message, constraint) across focus nodes —
-  // common when validating a catalog where N datasets share a flaw — and sort
-  // stably so the UI doesn’t shuffle between validations.
-  function groupKey(result: ShaclResult): string {
-    return [
-      result.severity,
-      result.path ?? '',
-      result.sourceConstraintComponent ?? '',
-      result.message,
-    ].join('\u0001');
-  }
-
   const grouped = $derived.by(() => {
     const buckets = new Map<string, ShaclResult[]>();
     for (const result of report.results) {
-      const key = groupKey(result);
+      const key = resultGroupKey(result);
       const list = buckets.get(key);
       if (list) list.push(result);
       else buckets.set(key, [result]);
