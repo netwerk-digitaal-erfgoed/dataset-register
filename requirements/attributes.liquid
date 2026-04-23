@@ -32,34 +32,45 @@
         {% unless property.path %}{% continue %}{% endunless %}
         {%- assign pattern_str = property.pattern | default: "" -%}
         {%- assign is_date_shape = pattern_str contains "[0-9]{4}" -%}
+        {%- assign description = property.description | lang: "en"
+            | replace: "IANA media types", "[[IANA-MEDIA-TYPES]]"
+            | replace: "BCP 47", "[[!BCP47]]"
+            | replace: "DERA", "[[!DERA]]"
+            | replace: "IRI", "[[!IRI]]"
+            | replace: "MUST", "*MUST*"
+            | replace: "SHOULD", "*SHOULD*"
+        -%}
         <tr>
             <th scope="row">[{{ property.path }}]({{ property.path }})</th>
             <td>
                 {%- if is_date_shape -%}
-                    {%- assign description = property.description | lang: "en" -%}
                     {%- if description != "" -%}{{ description }} {% endif -%}See [[#dataset-date]].
                 {%- elsif property.path == "schema:publisher" or property.path == "schema:creator" -%}
-                    {{ property.name | lang: "en" }}. See [[#creator-publisher-information]].
+                    {{ description }} See [[#creator-publisher-information]].
                 {%- elsif property.path == "schema:contactPoint" -%}
-                    {{ property.description | lang: "en" }} See [[#contact]].
+                    {{ description }} See [[#contact]].
+                {%- elsif property.path == "schema:mainEntityOfPage" -%}
+                    {{ description }} See [[#resolvable-iris]].
+                {%- elsif property.path == "schema:usageInfo" -%}
+                    {{ description }} See [[#usage-information]].
                 {%- elsif name == 'Dataset' -%}
                     {%- if property.path == "schema:name" -%}
-                        {{ property.name | lang: "en" }}. See [[#dataset-basic]].
+                        {{ description }} See [[#dataset-basic]].
                     {%- elsif property.path == "schema:description" -%}
-                        {{ property.description | lang: "en" }} See [[#dataset-basic]].
+                        {{ description }} See [[#dataset-basic]].
                     {%- elsif property.path == "schema:license" -%}
-                        {{ property.description | lang: "en" }} See [[#dataset-license]].
+                        {{ description }} See [[#dataset-license]].
                     {%- elsif property.path == "schema:distribution" -%}
-                        {{ property.description | lang: "en" }} See [[#dataset-distributions]].
+                        {{ description }} See [[#dataset-distributions]].
                     {%- elsif property.path == "schema:version" -%}
-                        {{ property.description | lang: "en" }} See [[#dataset-versions]].
+                        {{ description }} See [[#dataset-versions]].
                     {%- elsif is_date_shape -%}
                         See [[#dataset-date]].
                     {%- else -%}
-                        {{ property.description | lang: "en" }}
+                        {{ description }}
                     {%- endif -%}
                 {%- else -%}
-                    {{ property.description | lang: "en" }}
+                    {{ description }}
                 {%- endif -%}
             </td>
             <td>
