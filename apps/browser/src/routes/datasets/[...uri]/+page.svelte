@@ -339,6 +339,18 @@
       {distribution.accessURL}
       <span class="sr-only"> ({m.opens_in_new_tab()})</span>
     </a>
+    {#if distribution.landingPage}
+      <a
+        href={distribution.landingPage}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="block max-w-full truncate text-xs text-blue-600 hover:underline dark:text-blue-400"
+        title={distribution.landingPage}
+      >
+        {m.detail_distribution_landing_page()}: {distribution.landingPage}
+        <span class="sr-only"> ({m.opens_in_new_tab()})</span>
+      </a>
+    {/if}
     {#if distribution.description}
       <span class="text-xs text-gray-500 dark:text-gray-400">
         {getLocalizedValue(distribution.description)}

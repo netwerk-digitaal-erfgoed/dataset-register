@@ -211,6 +211,7 @@
   "detail_issued": "Uitgegeven",
   "detail_modified": "Gewijzigd",
   "detail_landing_page": "Landingspagina",
+  "detail_distribution_landing_page": "Webpagina",
   "missing_properties": "Ontbrekende eigenschappen",
   "facets_status": "Status",
   "facets_status_invalid": "Ongeldige datasets",

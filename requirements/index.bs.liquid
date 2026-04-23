@@ -506,11 +506,15 @@ The person/organization data is then included as the dataset's publisher:
 [=Distributions=] tell consumers where and how they can get the data.
 
 > Therefore, publishers *SHOULD* add at least one distribution.
-> Each distribution *MUST* have at least a MIME format and the URL where the distribution can be accessed.
+> Each distribution *MUST* have at least a MIME format and the URL where the distribution can be directly accessed by machines.
 
 Examples of distributions are data dumps in one or more RDF serializations, such as JSON-LD and Turtle,
 CSV files, SPARQL endpoints, OAI-PMH endpoints or other [=web APIs=].
 All distributions of a dataset *MUST* contain broadly the same data.
+
+`schema:contentUrl` is reserved for the machine-readable URL: the data file itself, or the endpoint of the [=web API=].
+If a human-readable web page exists alongside it – such as a SPARQL query UI or a download landing page –
+add it on the distribution with `schema:mainEntityOfPage`.
 
 <div class="example">
     A minimal definition of a SPARQL endpoint distribution.
@@ -531,6 +535,7 @@ The distributions are then included under the `distribution` attribute with the 
 
 <div class="example">
     A dataset with one SPARQL and two download distributions.
+    The SPARQL endpoint separates its machine-readable `contentUrl` from the human-readable SPARQL UI via `mainEntityOfPage`.
 
     <pre highlight=json-ld>
         {
@@ -538,9 +543,9 @@ The distributions are then included under the `distribution` attribute with the 
           "@type": "Dataset",
           "distribution": [
             {
-              "@id": "http://vocab.getty.edu/aat/sparql",
               "@type": "DataDownload",
-              "contentUrl": "http://vocab.getty.edu/sparql",
+              "contentUrl": "https://service.archief.nl/sparql",
+              "mainEntityOfPage": "https://www.nationaalarchief.nl/onderzoeken/sparql",
               "usageInfo": "https://www.w3.org/TR/sparql11-protocol/"
             },
             {

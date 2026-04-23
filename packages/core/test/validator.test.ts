@@ -600,6 +600,39 @@ describe('Validator', () => {
     ]);
   });
 
+  it('flags non-https mainEntityOfPage on a distribution', async () => {
+    const jsonld = JSON.stringify({
+      '@context': 'https://schema.org/',
+      '@type': 'Dataset',
+      '@id': 'https://example.com/dataset/distribution-landing-page',
+      name: 'Dataset with distribution landing page',
+      license: 'https://creativecommons.org/publicdomain/zero/1.0/',
+      publisher: {
+        '@type': 'Organization',
+        '@id': 'https://example.com/publisher',
+        name: 'Example Publisher',
+      },
+      distribution: [
+        {
+          '@type': 'DataDownload',
+          encodingFormat: 'text/turtle',
+          contentUrl: 'https://example.com/dataset.ttl',
+          mainEntityOfPage: 'http://example.com/dataset/landing',
+        },
+      ],
+    });
+    const input = (await rdf
+      .dataset()
+      .import(
+        Readable.from(jsonld).pipe(
+          new JsonLdParser() as unknown as Transform,
+        ),
+      )) as unknown as Dataset;
+    const report = (await validator.validate(input)) as InvalidDataset;
+    expect(report.state).toEqual('invalid');
+    expectViolations(report, ['https://schema.org/mainEntityOfPage']);
+  });
+
   it('reports missing class', async () => {
     const report = await validate(
       'dataset-schema-missing-publisher-class.ttl',
