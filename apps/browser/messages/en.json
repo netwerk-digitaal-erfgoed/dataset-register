@@ -211,6 +211,7 @@
   "detail_issued": "Issued",
   "detail_modified": "Modified",
   "detail_landing_page": "Landing Page",
+  "detail_distribution_documentation": "Documentation",
   "missing_properties": "Missing properties",
   "facets_status": "Status",
   "facets_status_invalid": "Invalid datasets",

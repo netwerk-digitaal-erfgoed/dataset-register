@@ -163,7 +163,9 @@ describe('Fetch', () => {
     const dataset = datasets[0];
     const distributions = [
       ...dataset.match(
-        factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba-zip'),
+        factory.namedNode(
+          'http://data.bibliotheken.nl/id/dataset/rise-alba-zip',
+        ),
         dcat('distribution'),
         null,
       ),
@@ -573,14 +575,15 @@ describe('Fetch', () => {
     );
     // The Schema.org dataset has extra triples compared to the DCAT equivalent:
     // SPARQL conformsTo, auto-assigned accessRights, contactPoint (4 triples:
-    // dcat:contactPoint, a vcard:Kind, vcard:fn, vcard:hasEmail), and dcat:theme.
+    // dcat:contactPoint, a vcard:Kind, vcard:fn, vcard:hasEmail), dcat:theme,
+    // and foaf:page on the SPARQL distribution (from schema:documentation).
     // The DCAT file has a 4th gzip distribution (5 triples incl. downloadURL),
     // an extra byteSize triple, one more propagated license (4 vs 3 distributions),
     // a mediaType on the SPARQL distribution (suppressed for API distributions),
     // and a dcat:theme triple (auto-assigned for Schema.org, explicit in DCAT).
     // Fetch also replaces the `dct:temporal "..."` literal with a PeriodOfTime
     // blank node (1 → 4 quads: dct:temporal link + rdf:type + startDate + endDate).
-    expect(dataset.size).toEqual(dcatEquivalent.size + 7 - 9 + 3);
+    expect(dataset.size).toEqual(dcatEquivalent.size + 8 - 9 + 3);
 
     // Check that SPARQL endpoint has conformsTo triple
     const sparqlConformsToTriples = [...dataset].filter(

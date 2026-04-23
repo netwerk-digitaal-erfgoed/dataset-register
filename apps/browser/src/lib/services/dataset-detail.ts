@@ -19,6 +19,10 @@ const DetailDistributionSchema = {
   accessURL: {
     '@id': dcat.accessURL,
   },
+  documentation: {
+    '@id': foaf.page,
+    '@optional': true,
+  },
   description: {
     '@id': dcterms.description,
     '@optional': true,
@@ -504,11 +508,13 @@ export async function fetchDatasetDetail(
   const distributionQuery = `
     PREFIX dcat: <http://www.w3.org/ns/dcat#>
     PREFIX dct: <http://purl.org/dc/terms/>
+    PREFIX foaf: <http://xmlns.com/foaf/0.1/>
     PREFIX ldkit: <https://ldkit.io/ontology/>
 
     CONSTRUCT {
       ?distribution a dcat:Distribution, ldkit:Resource ;
         dcat:accessURL ?accessURL ;
+        foaf:page ?landingPage ;
         dct:description ?description ;
         dcat:mediaType ?rawMediaType ;
         dct:format ?format ;
@@ -522,6 +528,7 @@ export async function fetchDatasetDetail(
       GRAPH ?g {
         <${datasetUri}> dcat:distribution ?distribution .
         ?distribution dcat:accessURL ?accessURL .
+        OPTIONAL { ?distribution foaf:page ?landingPage }
         OPTIONAL { ?distribution dct:description ?description }
         OPTIONAL { ?distribution dcat:mediaType ?rawMediaType }
         OPTIONAL { ?distribution dct:format ?format }
