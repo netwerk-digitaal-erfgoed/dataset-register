@@ -1,4 +1,6 @@
 import {
+  CompositeValidator,
+  DistributionProbeStage,
   readUrl,
   ShaclEngineValidator,
   startInstrumentation,
@@ -16,7 +18,13 @@ await (async () => {
   } = stores(config.SPARQL_URL, config.SPARQL_ACCESS_TOKEN);
   startInstrumentation(datasetStore);
   const shacl = await readUrl('requirements/shacl.ttl');
-  const validator = new ShaclEngineValidator(shacl);
+  // Strict mode for the API: any failing distribution probe emits sh:Violation, so a
+  // registration with a broken link is rejected synchronously. No health-store state is
+  // read or written on this path; the crawler path has its own lenient composite.
+  const validator = new CompositeValidator(
+    new ShaclEngineValidator(shacl),
+    new DistributionProbeStage(),
+  );
 
   try {
     // Start web server.
