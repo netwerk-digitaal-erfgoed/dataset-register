@@ -600,12 +600,12 @@ describe('Validator', () => {
     ]);
   });
 
-  it('flags non-https mainEntityOfPage on a distribution', async () => {
+  it('flags non-https documentation on a distribution', async () => {
     const jsonld = JSON.stringify({
       '@context': 'https://schema.org/',
       '@type': 'Dataset',
-      '@id': 'https://example.com/dataset/distribution-landing-page',
-      name: 'Dataset with distribution landing page',
+      '@id': 'https://example.com/dataset/distribution-documentation',
+      name: 'Dataset with distribution documentation',
       license: 'https://creativecommons.org/publicdomain/zero/1.0/',
       publisher: {
         '@type': 'Organization',
@@ -617,7 +617,7 @@ describe('Validator', () => {
           '@type': 'DataDownload',
           encodingFormat: 'text/turtle',
           contentUrl: 'https://example.com/dataset.ttl',
-          mainEntityOfPage: 'http://example.com/dataset/landing',
+          documentation: 'http://example.com/dataset/docs',
         },
       ],
     });
@@ -628,7 +628,7 @@ describe('Validator', () => {
       )) as unknown as Dataset;
     const report = (await validator.validate(input)) as InvalidDataset;
     expect(report.state).toEqual('invalid');
-    expectViolations(report, ['https://schema.org/mainEntityOfPage']);
+    expectViolations(report, ['https://schema.org/documentation']);
   });
 
   it('reports missing class', async () => {

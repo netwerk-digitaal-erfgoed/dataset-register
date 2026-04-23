@@ -576,7 +576,7 @@ describe('Fetch', () => {
     // The Schema.org dataset has extra triples compared to the DCAT equivalent:
     // SPARQL conformsTo, auto-assigned accessRights, contactPoint (4 triples:
     // dcat:contactPoint, a vcard:Kind, vcard:fn, vcard:hasEmail), dcat:theme,
-    // and foaf:page on the SPARQL distribution (from schema:mainEntityOfPage).
+    // and foaf:page on the SPARQL distribution (from schema:documentation).
     // The DCAT file has a 4th gzip distribution (5 triples incl. downloadURL),
     // an extra byteSize triple, one more propagated license (4 vs 3 distributions),
     // a mediaType on the SPARQL distribution (suppressed for API distributions),

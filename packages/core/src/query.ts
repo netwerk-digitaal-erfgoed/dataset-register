@@ -49,7 +49,7 @@ const publisherAlternateName = 'publisher_alternate_name';
 const publisherSameAs = 'publisher_sameAs';
 
 const distributionUrl = 'distribution_url';
-const distributionMainEntityOfPage = 'distribution_mainEntityOfPage';
+const distributionDocumentation = 'distribution_documentation';
 const distributionMediaType = 'distribution_mediaType';
 const distributionConformsTo = 'distribution_conformsTo';
 const distributionConformsToProtocol = 'distribution_conformsTo_protocol';
@@ -303,7 +303,7 @@ export const constructQuery = `
       dct:license ?${distributionLicense} ;
       dct:title ?${distributionName} ;
       dcat:byteSize ?${distributionSize} ;
-      foaf:page ?${distributionMainEntityOfPage} ;
+      foaf:page ?${distributionDocumentation} ;
       odrl:hasPolicy ?policy .
 
     ?policy a ?policy_type ;
@@ -384,8 +384,8 @@ export const constructQuery = `
           OPTIONAL { ?${distribution} dct:title ?${distributionName} }
           OPTIONAL { ?${distribution} dcat:byteSize ?${distributionSize} }
           OPTIONAL {
-            ?${distribution} foaf:page ?${distributionMainEntityOfPage} .
-            FILTER(isIRI(?${distributionMainEntityOfPage}))
+            ?${distribution} foaf:page ?${distributionDocumentation} .
+            FILTER(isIRI(?${distributionDocumentation}))
           }
           OPTIONAL {
             ?${distribution} odrl:hasPolicy ?policy .
@@ -512,8 +512,8 @@ function schemaOrgQuery(prefix: string): string {
       OPTIONAL { ?${distribution} ${prefix}:name ?${distributionName} }
       OPTIONAL { ?${distribution} ${prefix}:contentSize ?${distributionSize} }
       OPTIONAL {
-        ?${distribution} ${prefix}:mainEntityOfPage ?${distributionMainEntityOfPage} .
-        FILTER(isIRI(?${distributionMainEntityOfPage}))
+        ?${distribution} ${prefix}:documentation ?${distributionDocumentation} .
+        FILTER(isIRI(?${distributionDocumentation}))
       }
       OPTIONAL {
         ?${distribution} ${prefix}:usageInfo ?${distributionConformsTo} .

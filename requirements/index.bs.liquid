@@ -506,15 +506,15 @@ The person/organization data is then included as the dataset's publisher:
 [=Distributions=] tell consumers where and how they can get the data.
 
 > Therefore, publishers *SHOULD* add at least one distribution.
-> Each distribution *MUST* have at least a MIME format and the URL where the distribution can be directly accessed by machines.
+> Each distribution *MUST* have at least a MIME format and the URL where the distribution can be directly accessed.
 
 Examples of distributions are data dumps in one or more RDF serializations, such as JSON-LD and Turtle,
 CSV files, SPARQL endpoints, OAI-PMH endpoints or other [=web APIs=].
 All distributions of a dataset *MUST* contain broadly the same data.
 
-`schema:contentUrl` is reserved for the machine-readable URL: the data file itself, or the endpoint of the [=web API=].
-If a human-readable web page exists alongside it – such as a SPARQL query UI or a download landing page –
-add it on the distribution with `schema:mainEntityOfPage`.
+`schema:contentUrl` is the URL of the distribution itself: the data file, or the endpoint of the [=web API=].
+If a documentation page describes or provides access to the distribution alongside it – for example a SPARQL query editor for the endpoint, or a download landing page –
+add it on the distribution with `schema:documentation`.
 
 <div class="example">
     A minimal definition of a SPARQL endpoint distribution.
@@ -535,7 +535,7 @@ The distributions are then included under the `distribution` attribute with the 
 
 <div class="example">
     A dataset with one SPARQL and two download distributions.
-    The SPARQL endpoint separates its machine-readable `contentUrl` from the human-readable SPARQL UI via `mainEntityOfPage`.
+    The SPARQL endpoint separates the endpoint URL (`contentUrl`) from its query UI (`documentation`).
 
     <pre highlight=json-ld>
         {
@@ -545,7 +545,7 @@ The distributions are then included under the `distribution` attribute with the 
             {
               "@type": "DataDownload",
               "contentUrl": "https://service.archief.nl/sparql",
-              "mainEntityOfPage": "https://www.nationaalarchief.nl/onderzoeken/sparql",
+              "documentation": "https://www.nationaalarchief.nl/onderzoeken/sparql",
               "usageInfo": "https://www.w3.org/TR/sparql11-protocol/"
             },
             {

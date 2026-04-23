@@ -19,7 +19,7 @@ const DetailDistributionSchema = {
   accessURL: {
     '@id': dcat.accessURL,
   },
-  landingPage: {
+  documentation: {
     '@id': foaf.page,
     '@optional': true,
   },
