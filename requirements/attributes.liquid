@@ -100,7 +100,7 @@
                     {% elsif change.maxCount -%}
                         {% assign future_text = change.maxCount | prepend: "max " -%}
                     {% elsif change.severity == "Violation" and property.maxCount == 0 -%}
-                        {% assign future_text = "becomes forbidden" -%}
+                        {% assign future_text = "no longer allowed" -%}
                     {% elsif change.severity == "Violation" and property.nodeKind == "IRI" -%}
                         {% assign future_text = "must be IRI" -%}
                     {% elsif change.severity == "Violation" and property.datatype -%}
