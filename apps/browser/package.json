@@ -42,13 +42,13 @@
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/typography": "^0.5.18",
-    "@tailwindcss/vite": "^4.2.3",
+    "@tailwindcss/vite": "^4.2.4",
     "@types/sparqljs": "^3.1.12",
     "eslint-plugin-svelte": "^3.17.0",
     "prettier-plugin-svelte": "^3.5.1",
     "svelte": "^5.55.4",
     "svelte-check": "^4.4.6",
-    "tailwindcss": "^4.2.3",
+    "tailwindcss": "^4.2.4",
     "vite": "^8.0.9"
   },
   "nx": {
