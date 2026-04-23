@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.10.0...requirements-1.11.0) (2026-04-23)
+
+
+### Features
+
+* **shacl:** state temporal coverage format in description and validate dc:temporal ([#1920](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1920)) ([f71bde4](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/f71bde4bfaa75d1f4b99044d937fb8e959960624))
+
 ## [1.10.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.9.0...requirements-1.10.0) (2026-04-23)
 
 
