@@ -5,7 +5,6 @@ import { normalizeNodes, pickIri, pickLocalized } from './jsonld-helpers.js';
 const SH = 'http://www.w3.org/ns/shacl#';
 
 export interface ShapeMetadata {
-  name?: string;
   description?: string;
   targetClass?: string;
 }
@@ -98,15 +97,13 @@ function indexShapes(json: unknown, locale: string): ShapesIndex {
       const propertyShape = byId.get(refId);
       if (!propertyShape) continue;
 
-      const name = pickLocalized(propertyShape[`${SH}name`], locale);
       const description = pickLocalized(
         propertyShape[`${SH}description`],
         locale,
       );
-      if (!name && !description) continue;
+      if (!description) continue;
 
       const metadata: ShapeMetadata = {
-        name,
         description,
         targetClass,
       };
