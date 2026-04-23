@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseShaclReport } from './shacl-report.js';
+import { parseShaclReport, resultGroupKey } from './shacl-report.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function makeResult(partial: Record<string, any>) {
@@ -149,5 +149,32 @@ describe('parseShaclReport', () => {
       conforms: true,
       results: [],
     });
+  });
+});
+
+describe('resultGroupKey', () => {
+  it('distinguishes results with the same message but different paths', () => {
+    const a = {
+      severity: 'Warning' as const,
+      path: 'https://schema.org/name',
+      sourceConstraintComponent:
+        'http://www.w3.org/ns/shacl#MinCountConstraintComponent',
+      message: 'Add a value',
+    };
+    const b = { ...a, path: 'https://schema.org/description' };
+    expect(resultGroupKey(a)).not.toBe(resultGroupKey(b));
+  });
+
+  it('collapses repeats of the same constraint across focus nodes', () => {
+    const base = {
+      severity: 'Warning' as const,
+      path: 'https://schema.org/name',
+      sourceConstraintComponent:
+        'http://www.w3.org/ns/shacl#MinCountConstraintComponent',
+      message: 'Add a value',
+    };
+    expect(resultGroupKey({ ...base, focusNode: 'x' })).toBe(
+      resultGroupKey({ ...base, focusNode: 'y' }),
+    );
   });
 });

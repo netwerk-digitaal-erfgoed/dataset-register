@@ -34,6 +34,15 @@ export interface ShaclReport {
   results: ShaclResult[];
 }
 
+export function resultGroupKey(result: ShaclResult): string {
+  return [
+    result.severity,
+    result.path ?? '',
+    result.sourceConstraintComponent ?? '',
+    result.message,
+  ].join(String.fromCharCode(1));
+}
+
 type JsonLdNode = Record<string, unknown> & {
   '@id'?: string;
   '@type'?: string[];
