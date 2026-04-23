@@ -624,9 +624,7 @@ describe('Validator', () => {
     const input = (await rdf
       .dataset()
       .import(
-        Readable.from(jsonld).pipe(
-          new JsonLdParser() as unknown as Transform,
-        ),
+        Readable.from(jsonld).pipe(new JsonLdParser() as unknown as Transform),
       )) as unknown as Dataset;
     const report = (await validator.validate(input)) as InvalidDataset;
     expect(report.state).toEqual('invalid');

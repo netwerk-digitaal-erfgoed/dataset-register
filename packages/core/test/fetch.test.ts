@@ -163,7 +163,9 @@ describe('Fetch', () => {
     const dataset = datasets[0];
     const distributions = [
       ...dataset.match(
-        factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba-zip'),
+        factory.namedNode(
+          'http://data.bibliotheken.nl/id/dataset/rise-alba-zip',
+        ),
         dcat('distribution'),
         null,
       ),
