@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.10.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.9.0...requirements-1.10.0) (2026-04-23)
+
+
+### Features
+
+* **shacl:** add schema:documentation to distribution for documentation page URL ([#1917](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1917)) ([8e30b05](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/8e30b051098439d6fe79b417dd89b7c661b96365))
+
+
+### Bug Fixes
+
+* **shacl:** plain-HTML sh:description, spec-side Bikeshed expansion, drop sh:name ([#1915](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1915)) ([28198fe](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/28198fed8159e184dbed77e53fe8d5bd5bf7e4c9))
+* **shacl:** use HTML anchors for links in sh:description ([#1910](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1910)) ([49642a7](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/49642a73c527516682048f66b829aeca2f8d4e88))
+* **spec:** render maxCount 0 and ‘becomes forbidden’ in attribute tables ([#1916](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1916)) ([47af7ce](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/47af7cee78b0d4fe771b48e44f45bbd5cda51d4e))
+
 ## [1.9.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.8.0...requirements-1.9.0) (2026-04-22)
 
 
