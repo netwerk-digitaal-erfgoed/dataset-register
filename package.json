@@ -12,7 +12,7 @@
     "test": "nx run-many -t test"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.5.0",
+    "@commitlint/cli": "^20.5.2",
     "@commitlint/config-conventional": "^20.5.0",
     "@eslint/js": "^10.0.1",
     "@nx/docker": "22.6.5",
