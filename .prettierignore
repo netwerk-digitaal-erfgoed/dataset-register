@@ -7,3 +7,5 @@
 requirements
 docker
 LICENSE.md
+
+.nx/self-healing
