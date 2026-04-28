@@ -703,6 +703,20 @@ nde-dataset:DistributionShape
             sh:minCount 1 ;
             sh:severity sh:Info ;
             sh:message "Voeg een beschrijving toe"@nl, "Add a description"@en ;
+        ] ,
+        [
+            sh:path schema:contentUrl ;
+            nde:probeReachable true ;
+            sh:severity sh:Warning ;
+            sh:message "De contentUrl is niet bereikbaar; de distributie kan niet worden opgehaald."@nl ,
+                       "The contentUrl is not reachable; the distribution cannot be retrieved."@en ;
+        ] ,
+        [
+            sh:path schema:contentUrl ;
+            nde:probeFormatMatch true ;
+            sh:severity sh:Warning ;
+            sh:message "Het Content-Type van contentUrl komt niet overeen met het opgegeven schema:encodingFormat."@nl ,
+                       "The Content-Type of contentUrl does not match the declared schema:encodingFormat."@en ;
         ] .
 
 # Dedicated SPARQL constraint shape, structured the same way as the two
@@ -1590,6 +1604,34 @@ dcat:DistributionShape
         ] ;
         sh:description "De natuurlijke taal van de tekstuele waarden in de distributie. Gebruik een waarde uit de <a href=\"https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language\">EU Vocabularies Languages Named Authority List</a>."@nl, "The natural language of the textual values in the distribution. Use a value from the <a href=\"https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language\">EU Vocabularies Languages Named Authority List</a>."@en ;
         sh:message "Vul de taal of talen in waarin de distributie beschikbaar is"@nl, "Enter the language or languages of the distribution"@en ;
+    ] ,
+    [
+        sh:path dcat:accessURL ;
+        nde:probeReachable true ;
+        sh:severity sh:Warning ;
+        sh:message "De accessURL is niet bereikbaar; de dataset kan niet worden geraadpleegd."@nl ,
+                   "The accessURL is not reachable; the dataset cannot be accessed."@en ;
+    ] ,
+    [
+        sh:path dcat:downloadURL ;
+        nde:probeReachable true ;
+        sh:severity sh:Warning ;
+        sh:message "De downloadURL is niet bereikbaar; het bestand kan niet worden opgehaald."@nl ,
+                   "The downloadURL is not reachable; the file cannot be retrieved."@en ;
+    ] ,
+    [
+        sh:path dcat:accessURL ;
+        nde:probeFormatMatch true ;
+        sh:severity sh:Warning ;
+        sh:message "Het Content-Type van de accessURL komt niet overeen met de opgegeven dcat:mediaType."@nl ,
+                   "The Content-Type of the accessURL does not match the declared dcat:mediaType."@en ;
+    ] ,
+    [
+        sh:path dcat:downloadURL ;
+        nde:probeFormatMatch true ;
+        sh:severity sh:Warning ;
+        sh:message "Het Content-Type van de downloadURL komt niet overeen met de opgegeven dcat:mediaType."@nl ,
+                   "The Content-Type of the downloadURL does not match the declared dcat:mediaType."@en ;
     ] .
 
 dcat:CatalogShape
@@ -1726,3 +1768,83 @@ dcat:AgentShape
 # both foaf:Organization and foaf:Person instances. Separate Organization and Person
 # shapes would duplicate every constraint (nodeKind, pattern, foaf:name) and fire two
 # identical violations on the same focus node.
+
+##
+## Distribution probe extensions
+##
+## These constraint components and the nde:ProbeOutcome vocabulary are used by the
+## Dataset Register's distribution-probe stage (see packages/core/src/distribution-probe/).
+## shacl-engine itself ignores these annotations; results carrying these
+## sh:sourceConstraintComponent IRIs are emitted by the probe stage after SHACL runs,
+## because reachability and Content-Type verification require network I/O.
+##
+
+nde:DistributionReachableConstraintComponent
+    a sh:ConstraintComponent ;
+    rdfs:label "Distribution reachability check"@en ,
+               "Distributie-bereikbaarheidscontrole"@nl ;
+    rdfs:comment """
+        Asserts that the IRI value at the annotated property path responds successfully to
+        an HTTP probe. Activated on a property shape by setting nde:probeReachable true.
+    """@en ;
+    sh:parameter [
+        sh:path nde:probeReachable ;
+        sh:datatype xsd:boolean ;
+    ] .
+
+nde:DistributionFormatMatchConstraintComponent
+    a sh:ConstraintComponent ;
+    rdfs:label "Distribution format match check"@en ,
+               "Distributie-formaatcontrole"@nl ;
+    rdfs:comment """
+        Asserts that the HTTP Content-Type returned by the probed URL is compatible with
+        the declared dcat:mediaType (or schema:encodingFormat). Activated on a property
+        shape by setting nde:probeFormatMatch true.
+    """@en ;
+    sh:parameter [
+        sh:path nde:probeFormatMatch ;
+        sh:datatype xsd:boolean ;
+    ] .
+
+# Probe outcome vocabulary. Every failing probe result carries one of these IRIs as the
+# object of nde:probeOutcome, giving consumers a structured failure-kind signal in
+# addition to the human-readable sh:resultMessage.
+
+nde:ProbeOutcome a rdfs:Class ;
+    rdfs:label "Distribution probe outcome"@en ,
+               "Uitkomst distributiecontrole"@nl .
+
+nde:NetworkError a nde:ProbeOutcome ;
+    rdfs:label "Network error before any HTTP response"@en ,
+               "Netwerkfout voor enige HTTP-respons"@nl .
+
+nde:NotFound a nde:ProbeOutcome ;
+    rdfs:label "HTTP 404 Not Found"@en , "HTTP 404 niet gevonden"@nl .
+
+nde:ServerError a nde:ProbeOutcome ;
+    rdfs:label "HTTP 5xx server error"@en , "HTTP 5xx-serverfout"@nl .
+
+nde:AuthRequired a nde:ProbeOutcome ;
+    rdfs:label "Authentication required (HTTP 401 or 403)"@en ,
+               "Authenticatie vereist (HTTP 401 of 403)"@nl .
+
+nde:RateLimited a nde:ProbeOutcome ;
+    rdfs:label "Rate limited (HTTP 429)"@en , "Rate-limiet (HTTP 429)"@nl .
+
+nde:ContentTypeHardMismatch a nde:ProbeOutcome ;
+    rdfs:label "Response Content-Type does not match the declared media type"@en ,
+               "Content-Type van respons komt niet overeen met het opgegeven mediatype"@nl .
+
+nde:ContentTypeMissing a nde:ProbeOutcome ;
+    rdfs:label "Response has no Content-Type header"@en ,
+               "Respons heeft geen Content-Type-header"@nl .
+
+nde:EmptyBody a nde:ProbeOutcome ;
+    rdfs:label "Response body is empty"@en , "Responsbody is leeg"@nl .
+
+nde:SparqlProbeFailed a nde:ProbeOutcome ;
+    rdfs:label "SPARQL probe query failed"@en , "SPARQL-probequery mislukt"@nl .
+
+nde:RdfParseFailed a nde:ProbeOutcome ;
+    rdfs:label "RDF data dump could not be parsed"@en ,
+               "RDF-databundel kon niet worden geparseerd"@nl .
