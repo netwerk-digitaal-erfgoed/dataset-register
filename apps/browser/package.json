@@ -30,7 +30,7 @@
     "@lde/dataset-registry-client": "^0.7.5",
     "@zazuko/prefixes": "^2.6.1",
     "codemirror": "^6.0.2",
-    "feed": "^5.2.0",
+    "feed": "^5.2.1",
     "fetch-sparql-endpoint": "^7.1.0",
     "flowbite": "^4.0.1",
     "flowbite-svelte": "^2.0.0-next.14",
