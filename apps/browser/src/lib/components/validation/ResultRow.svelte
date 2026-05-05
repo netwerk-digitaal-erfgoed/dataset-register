@@ -235,7 +235,7 @@
                   <code class="font-mono break-all">{display}</code>
                 {:else}
                   <span class="text-gray-500 italic dark:text-gray-400">
-                    {m.validate_report_unnamed_item()}
+                    {m.validate_report_blank_node()}
                   </span>
                 {/if}
               </li>
