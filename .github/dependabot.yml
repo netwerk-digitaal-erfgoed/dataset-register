@@ -25,6 +25,9 @@ updates:
         patterns:
           - '@fastify/*'
           - 'fastify'
+      opentelemetry:
+        patterns:
+          - '@opentelemetry/*'
       flowbite:
         patterns:
           - 'flowbite'
