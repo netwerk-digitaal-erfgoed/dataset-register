@@ -785,9 +785,8 @@ dcat:DistributionSparqlMediaTypeRequiresProtocolShape
 nde-dataset:AgentShape
     a sh:NodeShape ;
     sh:targetObjectsOf schema:publisher, schema:creator ;
-    sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
     sh:nodeKind sh:IRI ;
-    sh:pattern "^https?://" ;
+    sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
     sh:property
         [
             sh:path schema:name ;
@@ -860,6 +859,12 @@ nde-dataset:AgentShape
             sh:description "Contactinformatie waar eindgebruikers terecht kunnen met vragen over de dataset. Gebruik bij voorkeur de gegevens van de afdeling die de dataset of catalogus beheert, niet die van een individuele medewerker."@nl, "Contact information where end users can get in touch with questions about the dataset. Preferably use the details of the department that manages the dataset or catalogue, rather than an individual employee."@en ;
         ]
 .
+
+nde-dataset:AgentUriPatternShape
+    a sh:NodeShape ;
+    sh:targetObjectsOf schema:publisher, schema:creator ;
+    sh:pattern "^https?://" ;
+    sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en .
 
 # Separate node shapes for Organization-specific constraints that must fire only on
 # schema:Organization instances (not on Person publishers/creators). Each carries its own

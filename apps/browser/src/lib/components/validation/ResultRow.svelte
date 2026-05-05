@@ -104,6 +104,19 @@
       ? shortenUri(result.focusNode)
       : null,
   );
+  const showFocusBlock = $derived(
+    focusNodeDisplay !== null || extras.length > 0,
+  );
+
+  function extraDisplay(extra: ShaclResult): string | null {
+    if (extra.focusNode && !extra.focusNodeIsBlank) {
+      return shortenUri(extra.focusNode);
+    }
+    if (extra.value && extra.valueIsIri && !extra.value.startsWith('_:')) {
+      return shortenUri(extra.value);
+    }
+    return null;
+  }
 
   function lineFor(value: string): number | null {
     if (!sourceText) return null;
@@ -192,15 +205,19 @@
       </dd>
     {/if}
 
-    {#if focusNodeDisplay}
+    {#if showFocusBlock}
       <dt class="font-medium">{m.validate_report_focus_node()}</dt>
       <dd>
-        <code class="font-mono break-all">{focusNodeDisplay}</code>
+        {#if focusNodeDisplay}
+          <code class="font-mono break-all">{focusNodeDisplay}</code>
+        {/if}
         {#if extras.length > 0}
           <button
             type="button"
             onclick={() => (showAllFocusNodes = !showAllFocusNodes)}
-            class="ml-2 text-blue-700 underline hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:text-blue-400 cursor-pointer"
+            class="text-blue-700 underline hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:text-blue-400 cursor-pointer {focusNodeDisplay
+              ? 'ml-2'
+              : ''}"
           >
             {#if showAllFocusNodes}
               {m.validate_report_hide_extras()}
@@ -212,13 +229,16 @@
         {#if extras.length > 0 && showAllFocusNodes}
           <ul class="mt-1 space-y-0.5">
             {#each extras as extra, index (index)}
-              {#if extra.focusNode && !extra.focusNodeIsBlank}
-                <li>
-                  <code class="font-mono break-all">
-                    {shortenUri(extra.focusNode)}
-                  </code>
-                </li>
-              {/if}
+              {@const display = extraDisplay(extra)}
+              <li>
+                {#if display}
+                  <code class="font-mono break-all">{display}</code>
+                {:else}
+                  <span class="text-gray-500 italic dark:text-gray-400">
+                    {m.validate_report_blank_node()}
+                  </span>
+                {/if}
+              </li>
             {/each}
           </ul>
         {/if}
