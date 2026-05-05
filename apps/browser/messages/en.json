@@ -311,6 +311,7 @@
     }
   ],
   "validate_report_hide_extras": "Hide other items",
+  "validate_report_unnamed_item": "unnamed item",
   "severity_Violation": "Violation",
   "severity_Warning": "Warning",
   "severity_Info": "Suggestion"

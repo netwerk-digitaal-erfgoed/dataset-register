@@ -311,6 +311,7 @@
     }
   ],
   "validate_report_hide_extras": "Verberg andere items",
+  "validate_report_unnamed_item": "naamloos item",
   "severity_Violation": "Fout",
   "severity_Warning": "Waarschuwing",
   "severity_Info": "Suggestie"
