@@ -21,6 +21,9 @@ const validator = (isValid: boolean, errors = new Store()): Validator => ({
       errors: errors,
     }),
 });
+const noDatasetValidator: Validator = {
+  validate: () => Promise.resolve({ state: 'no-dataset' }),
+};
 
 describe('Crawler', () => {
   beforeEach(async () => {
@@ -83,7 +86,7 @@ describe('Crawler', () => {
     expect(readRegistration.datasets).toHaveLength(1); // Any references to datasets are kept.
   });
 
-  it('ignores datasets no longer available', async () => {
+  it('marks registration gone when URL no longer serves a dataset', async () => {
     await storeRegistrationFixture(
       new URL('https://example.com/no-more-datasets'),
     );
@@ -94,7 +97,8 @@ describe('Crawler', () => {
     await crawler.crawl(new Date('3000-01-01'));
 
     const readRegistration = registrationStore.all()[0];
-    expect(readRegistration.statusCode).toBe(200);
+    expect(readRegistration.statusCode).toBeUndefined();
+    expect(readRegistration.registrationStatus).toBe('gone');
     expect(readRegistration.datasets).toHaveLength(1); // Any references to datasets are kept.
   });
 
@@ -116,6 +120,45 @@ describe('Crawler', () => {
 
     const readRegistration = registrationStore.all()[0];
     expect(readRegistration.validUntil).not.toBeUndefined();
+    expect(readRegistration.registrationStatus).toBe('invalid');
+  });
+
+  it('marks registration gone when validator finds no datasets', async () => {
+    crawler = new Crawler(
+      registrationStore,
+      new MockDatasetStore(),
+      new MockRatingStore(),
+      noDatasetValidator,
+      pino({ enabled: false }),
+    );
+    await storeRegistrationFixture(new URL('https://example.com/no-dataset'));
+
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/no-dataset')
+      .reply(200);
+    await crawler.crawl(new Date('3000-01-01'));
+
+    const readRegistration = registrationStore.all()[0];
+    expect(readRegistration.statusCode).toBeUndefined();
+    expect(readRegistration.registrationStatus).toBe('gone');
+  });
+
+  it('marks registration gone when content type is unrecognized', async () => {
+    await storeRegistrationFixture(new URL('https://example.com/wrong-type'));
+
+    // image/jpeg trips rdf-dereferencer's "Unrecognized media type" path,
+    // which surfaces as InvalidContentType – neither HttpError nor
+    // NoDatasetFoundAtUrl, so it exercises the catch-all warn log.
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'image/jpeg' })
+      .get('/wrong-type')
+      .reply(200, '');
+    await crawler.crawl(new Date('3000-01-01'));
+
+    const readRegistration = registrationStore.all()[0];
+    expect(readRegistration.statusCode).toBeUndefined();
+    expect(readRegistration.registrationStatus).toBe('gone');
   });
 });
 

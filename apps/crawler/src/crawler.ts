@@ -38,15 +38,16 @@ export class Crawler {
       await this.registrationStore.findRegistrationsReadBefore(dateLastRead);
     for (const registration of registrations) {
       this.logger.info(`Crawling registration URL ${registration.url}...`);
-      let statusCode = 200;
+      let statusCode: number | undefined = undefined;
       let isValid = false;
       let datasetIris = registration.datasets;
 
       try {
         const data = await dereference(registration.url);
         const validationResult = await this.validator.validate(data);
-        isValid = validationResult.state === 'valid';
-        if (isValid) {
+        if (validationResult.state === 'valid') {
+          statusCode = 200;
+          isValid = true;
           this.logger.info(`${registration.url} passes validation`);
           datasetIris = []; // Start with a fresh list.
           for await (const dataset of fetch(registration.url, data)) {
@@ -56,8 +57,12 @@ export class Crawler {
             const rating = rate(dcatValidationResult as Valid);
             await this.ratingStore.store(extractIri(dataset), rating);
           }
-        } else {
+        } else if (validationResult.state === 'invalid') {
+          statusCode = 200;
           this.logger.info(`${registration.url} does not pass validation`);
+        } else {
+          // 'no-dataset': URL responded but contained no Dataset triples.
+          this.logger.info(`${registration.url} contains no datasets`);
         }
       } catch (e) {
         if (e instanceof HttpError) {
@@ -65,11 +70,16 @@ export class Crawler {
           this.logger.info(
             `${registration.url} returned HTTP error ${statusCode}`,
           );
-        }
-
-        if (e instanceof NoDatasetFoundAtUrl) {
-          // Request was successful, but no datasets exist any longer at the URL.
-          this.logger.info(`${registration.url} has no datasets`);
+        } else if (e instanceof NoDatasetFoundAtUrl) {
+          this.logger.info(
+            { err: e },
+            `${registration.url} has no datasets`,
+          );
+        } else {
+          this.logger.warn(
+            { err: e },
+            `${registration.url} fetch or parse failed`,
+          );
         }
       }
 

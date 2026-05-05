@@ -60,5 +60,28 @@ describe('Registration', () => {
 
       expect(registration.registrationStatus).toBe('gone');
     });
+
+    it('returns gone when no statusCode is recorded', () => {
+      // No status code means we never had a usable HTTP response we could
+      // classify – fetch error, parse error, or no Dataset triples in the body.
+      const registration = new Registration(
+        new URL('https://example.com/registration'),
+        new Date(),
+      ).read([], undefined, false);
+
+      expect(registration.registrationStatus).toBe('gone');
+      expect(registration.validUntil).not.toBeUndefined();
+    });
+
+    it('returns gone for unreachable URLs even when valid was true', () => {
+      // valid=true with no statusCode (e.g. a recovered Registration before its
+      // first crawl) still surfaces as gone until we actually reach the URL.
+      const registration = new Registration(
+        new URL('https://example.com/registration'),
+        new Date(),
+      ).read([], undefined, true);
+
+      expect(registration.registrationStatus).toBe('gone');
+    });
   });
 });

@@ -30,7 +30,7 @@ export class Registration {
    */
   public read(
     datasets: URL[],
-    statusCode: number,
+    statusCode: number | undefined,
     valid: boolean,
     date: Date = new Date(),
   ): Registration {
@@ -60,12 +60,13 @@ export class Registration {
 
   /**
    * Computed registration status based on statusCode and validUntil.
-   * - 'invalid': validation failed (has validUntil)
-   * - 'gone': URL unavailable (HTTP status > 200)
-   * - 'valid': healthy registration
+   * - 'gone': URL did not yield a usable RDF response (HTTP status > 200, or no
+   *   response we could classify – fetch error, parse error, no datasets in body).
+   * - 'invalid': URL responded with usable RDF but validation failed (has validUntil).
+   * - 'valid': healthy registration.
    */
   get registrationStatus(): 'valid' | 'invalid' | 'gone' {
-    if (this._statusCode !== undefined && this._statusCode > 200) {
+    if (this._statusCode === undefined || this._statusCode > 200) {
       return 'gone';
     }
     if (this.validUntil !== undefined) {
