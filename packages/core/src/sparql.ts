@@ -21,7 +21,7 @@ export function stores(
   registrationsGraphIri = 'https://demo.netwerkdigitaalerfgoed.nl/registry/registrations',
   allowedRegistrationDomainsGraphIri = 'https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names',
   ratingGraphIri = 'https://data.netwerkdigitaalerfgoed.nl/registry/ratings',
-  distributionHealthGraphIri = 'https://data.netwerkdigitaalerfgoed.nl/registry/distribution-health',
+  distributionHealthGraphIri = 'https://datasetregister.netwerkdigitaalerfgoed.nl/sparql/distribution-health',
 ) {
   const client = new SparqlClient(url, accessToken);
 

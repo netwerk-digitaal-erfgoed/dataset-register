@@ -24,7 +24,7 @@ export interface DistributionHealthStore {
 export class SparqlDistributionHealthStore implements DistributionHealthStore {
   public constructor(
     private readonly client: SparqlClient,
-    private readonly graphIri = 'https://data.netwerkdigitaalerfgoed.nl/registry/distribution-health',
+    private readonly graphIri = 'https://datasetregister.netwerkdigitaalerfgoed.nl/sparql/distribution-health',
   ) {}
 
   public async get(url: URL): Promise<DistributionHealthRecord | null> {
