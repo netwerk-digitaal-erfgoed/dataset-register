@@ -284,7 +284,7 @@ The value MUST be the canonical URI of a license. For example, use `https://crea
             sh:maxCount 1 ;
             sh:severity sh:Info ;
             sh:description "De meest recente datum waarop de dataset is gewijzigd of aangepast."@nl, "The most recent date on which the dataset was changed or modified."@en ;
-            sh:message "Vul de wijzigingsdatum datum in"@nl, "Enter the last modified date"@en ;
+            sh:message "Vul de wijzigingsdatum in"@nl, "Enter the last modified date"@en ;
         ] ,
         [
             sh:path schema:dateModified ;
