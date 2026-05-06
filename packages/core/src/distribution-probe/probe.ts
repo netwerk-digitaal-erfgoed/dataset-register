@@ -93,11 +93,15 @@ export class DistributionProbeStage {
       const candidate = candidates[index];
       if (settled.status === 'rejected') {
         quads.push(
-          ...emitViolation(candidate, {
-            success: false,
-            outcome: probeOutcomes.NetworkError,
-            detail: String(settled.reason),
-          }, null),
+          ...emitViolation(
+            candidate,
+            {
+              success: false,
+              outcome: probeOutcomes.NetworkError,
+              detail: String(settled.reason),
+            },
+            null,
+          ),
         );
         continue;
       }
@@ -110,9 +114,10 @@ export class DistributionProbeStage {
     return quads;
   }
 
-  private async probeCandidate(
-    candidate: DistributionCandidate,
-  ): Promise<{ verdict: ProbeVerdict; record: DistributionHealthRecord | null }> {
+  private async probeCandidate(candidate: DistributionCandidate): Promise<{
+    verdict: ProbeVerdict;
+    record: DistributionHealthRecord | null;
+  }> {
     const distribution = toLdeDistribution(candidate);
     const result: ProbeResultType = await probeDistribution(distribution, {
       timeoutMs: this.timeoutMs,
@@ -313,7 +318,11 @@ function toLdeDistribution(candidate: DistributionCandidate): Distribution {
     (mediaType !== undefined && /sparql/i.test(mediaType)
       ? new URL(SPARQL_PROTOCOL_URL)
       : undefined);
-  return new Distribution(new URL(candidate.urlNode.value), mediaType, conformsTo);
+  return new Distribution(
+    new URL(candidate.urlNode.value),
+    mediaType,
+    conformsTo,
+  );
 }
 
 function emitViolation(
@@ -335,7 +344,11 @@ function emitViolation(
     factory.quad(resultNode, shacl('resultPath'), candidate.path),
     factory.quad(resultNode, shacl('value'), candidate.urlNode),
     factory.quad(resultNode, shacl('resultSeverity'), shacl('Violation')),
-    factory.quad(resultNode, shacl('sourceConstraintComponent'), constraintComponent),
+    factory.quad(
+      resultNode,
+      shacl('sourceConstraintComponent'),
+      constraintComponent,
+    ),
     factory.quad(resultNode, nde('probeOutcome'), outcome),
   ];
 
@@ -355,10 +368,7 @@ function emitViolation(
         factory.quad(
           resultNode,
           nde('firstFailureAt'),
-          factory.literal(
-            record.firstFailureAt.toISOString(),
-            xsd('dateTime'),
-          ),
+          factory.literal(record.firstFailureAt.toISOString(), xsd('dateTime')),
         ),
       );
     }

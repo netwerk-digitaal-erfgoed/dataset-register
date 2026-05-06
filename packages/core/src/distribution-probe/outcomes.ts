@@ -23,7 +23,8 @@ export const probeOutcomes = {
   RdfParseFailed: nde('RdfParseFailed'),
 } as const;
 
-export type ProbeOutcomeIri = (typeof probeOutcomes)[keyof typeof probeOutcomes];
+export type ProbeOutcomeIri =
+  (typeof probeOutcomes)[keyof typeof probeOutcomes];
 
 export interface ProbeVerdict {
   success: boolean;
@@ -93,7 +94,11 @@ function classifyHttpFailure(
     return { success: false, outcome: probeOutcomes.ServerError, detail };
   }
   if (result.contentType === null) {
-    return { success: false, outcome: probeOutcomes.ContentTypeMissing, detail };
+    return {
+      success: false,
+      outcome: probeOutcomes.ContentTypeMissing,
+      detail,
+    };
   }
   return {
     success: false,

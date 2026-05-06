@@ -213,12 +213,10 @@ describe('DistributionProbeStage', () => {
     nock('https://example.org').head('/recovering').replyWithError('ENOTFOUND');
     // Use a large Content-Length so the probe treats the HEAD as authoritative and does
     // not fall back to a GET (which would require a second mock).
-    nock('https://example.org')
-      .head('/recovering')
-      .reply(200, '', {
-        'Content-Type': 'text/turtle',
-        'Content-Length': '100000',
-      });
+    nock('https://example.org').head('/recovering').reply(200, '', {
+      'Content-Type': 'text/turtle',
+      'Content-Length': '100000',
+    });
 
     const dataset = factory.dataset();
     const datasetNode = factory.namedNode('https://example.org/d4');
