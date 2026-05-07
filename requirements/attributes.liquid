@@ -44,7 +44,8 @@
             <th scope="row">[{{ property.path }}]({{ property.path }})</th>
             <td>
                 {%- if is_date_shape -%}
-                    {%- if description != "" -%}{{ description }} {% endif -%}See [[#dataset-date]].
+                    {%- if description != "" -%}{{ description }} {% endif -%}
+                    {%- if name == 'Distribution' -%}See [[#distribution-date]].{%- else -%}See [[#dataset-date]].{%- endif -%}
                 {%- elsif property.path == "schema:publisher" or property.path == "schema:creator" -%}
                     {{ description }} See [[#creator-publisher-information]].
                 {%- elsif property.path == "schema:contactPoint" -%}
