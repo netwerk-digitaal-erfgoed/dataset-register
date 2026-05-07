@@ -255,22 +255,22 @@ constraints, and the effective cardinality, calling out where the register narro
 Legend: ✅ matches DCAT-AP-NL, ⚠️ looser than DCAT-AP-NL today (Warning, planned to become a
 Violation in requirements v2.0). The `→` notation shows the effective cardinality after auto-fill.
 
-| schema.org input | DCAT term | Data type (deviation) | Cardinality (deviation) |
-| ---------------- | --------- | --------------------- | ----------------------- |
-| `schema:name` | `dct:title` | – | 1..n ✅ |
-| `schema:description` | `dct:description` | – | 1..n ✅ |
-| – (dataset `@id`) | `dct:identifier` | Auto-derived from dataset IRI | 1..1 ✅ (filled at ingest) |
-| `schema:publisher` | `dct:publisher` | – | 0..1 ⚠️ (DCAT-AP-NL: 1..1) |
-| `schema:creator` | `dct:creator` | – | 0..n ⚠️ (DCAT-AP-NL: 1..n) |
-| `schema:publisher/schema:contactPoint` | `dcat:contactPoint` | `vcard:Kind` with `vcard:fn` and `vcard:hasEmail` | 0..1 ⚠️ (DCAT-AP-NL: 1..1) |
-| – | `dct:accessRights` | EU Access Rights NAL (3 values) | 0..1 → 1..1 ✅ (auto-`PUBLIC` at ingest) |
-| `schema:about` (+ deprecated `schema:genre`) | `dcat:theme` | IRI only; no authority restriction (DCAT-AP-NL prefers EU Data Theme NAL) | 0..n → 1..n ✅ (auto-`data-theme/EDUC` at ingest) |
-| `schema:inLanguage` | `dct:language` | Normalized at ingest to EU Language Authority IRIs | 0..n ✅ |
-| `schema:spatialCoverage` | `dct:spatial` | IRI only – DCAT-AP-NL also allows `dct:Location` with `dcat:bbox`/`dcat:centroid`/`dcat:geometry` | 0..n ✅ |
-| `schema:temporalCoverage` | `dct:temporal` | ISO 8601 literal accepted, normalized at ingest to `dct:PeriodOfTime` with `dcat:startDate`/`dcat:endDate` | 0..n ✅ |
-| `schema:license` | `dct:license` | Any IRI (DCAT-AP-NL narrows to Creative Commons or the ‘licenties’ NAL) | dataset 0..1 ✅; distribution 0..1 ⚠️ (DCAT-AP-NL: 1..1 on distribution) |
-| `schema:contentUrl` | `dcat:accessURL` | Coerced to IRI on ingest | 1..1 ✅ |
-| `schema:encodingFormat` | `dcat:mediaType` (+ `dcat:compressFormat` when `+gzip` stripped) | IANA-style MIME pattern | 0..1 ✅ |
+| schema.org input                             | DCAT term                                                        | Data type (deviation)                                                                                      | Cardinality (deviation)                                                  |
+| -------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `schema:name`                                | `dct:title`                                                      | –                                                                                                          | 1..n ✅                                                                  |
+| `schema:description`                         | `dct:description`                                                | –                                                                                                          | 1..n ✅                                                                  |
+| – (dataset `@id`)                            | `dct:identifier`                                                 | Auto-derived from dataset IRI                                                                              | 1..1 ✅ (filled at ingest)                                               |
+| `schema:publisher`                           | `dct:publisher`                                                  | –                                                                                                          | 0..1 ⚠️ (DCAT-AP-NL: 1..1)                                               |
+| `schema:creator`                             | `dct:creator`                                                    | –                                                                                                          | 0..n ⚠️ (DCAT-AP-NL: 1..n)                                               |
+| `schema:publisher/schema:contactPoint`       | `dcat:contactPoint`                                              | `vcard:Kind` with `vcard:fn` and `vcard:hasEmail`                                                          | 0..1 ⚠️ (DCAT-AP-NL: 1..1)                                               |
+| –                                            | `dct:accessRights`                                               | EU Access Rights NAL (3 values)                                                                            | 0..1 → 1..1 ✅ (auto-`PUBLIC` at ingest)                                 |
+| `schema:about` (+ deprecated `schema:genre`) | `dcat:theme`                                                     | IRI only; no authority restriction (DCAT-AP-NL prefers EU Data Theme NAL)                                  | 0..n → 1..n ✅ (auto-`data-theme/EDUC` at ingest)                        |
+| `schema:inLanguage`                          | `dct:language`                                                   | Normalized at ingest to EU Language Authority IRIs                                                         | 0..n ✅                                                                  |
+| `schema:spatialCoverage`                     | `dct:spatial`                                                    | IRI only – DCAT-AP-NL also allows `dct:Location` with `dcat:bbox`/`dcat:centroid`/`dcat:geometry`          | 0..n ✅                                                                  |
+| `schema:temporalCoverage`                    | `dct:temporal`                                                   | ISO 8601 literal accepted, normalized at ingest to `dct:PeriodOfTime` with `dcat:startDate`/`dcat:endDate` | 0..n ✅                                                                  |
+| `schema:license`                             | `dct:license`                                                    | Any IRI (DCAT-AP-NL narrows to Creative Commons or the ‘licenties’ NAL)                                    | dataset 0..1 ✅; distribution 0..1 ⚠️ (DCAT-AP-NL: 1..1 on distribution) |
+| `schema:contentUrl`                          | `dcat:accessURL`                                                 | Coerced to IRI on ingest                                                                                   | 1..1 ✅                                                                  |
+| `schema:encodingFormat`                      | `dcat:mediaType` (+ `dcat:compressFormat` when `+gzip` stripped) | IANA-style MIME pattern                                                                                    | 0..1 ✅                                                                  |
 
 ### Allow list
 
