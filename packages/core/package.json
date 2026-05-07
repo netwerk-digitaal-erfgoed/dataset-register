@@ -48,5 +48,8 @@
     "nock": "^14.0.13",
     "rdfa-streaming-parser": "^3.0.1",
     "testcontainers": "^11.13.0"
+  },
+  "nx": {
+    "projectType": "library"
   }
 }
