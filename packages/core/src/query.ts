@@ -11,7 +11,6 @@ import type { NamedNode } from '@rdfjs/types';
 const dataset = 'dataset';
 const identifier = 'identifier';
 const name = 'name';
-const alternateName = 'alternateName';
 const description = 'description';
 const license = 'license';
 const creator = 'creator';
@@ -175,7 +174,6 @@ function schemaOrgMultiValuedUnions(prefix: string): string {
   const type = `a ${prefix}:Dataset`;
   return [
     multiValuedUnion(type, `${prefix}:description`, description),
-    multiValuedUnion(type, `${prefix}:alternateName`, alternateName),
     multiValuedUnion(type, `${prefix}:isBasedOn`, source),
     multiValuedUnion(type, `${prefix}:isBasedOnUrl`, source),
     multiValuedUnion(
@@ -209,7 +207,6 @@ function dcatMultiValuedUnions(): string {
   const type = `a dcat:Dataset`;
   return [
     multiValuedUnion(type, `dct:description`, description),
-    multiValuedUnion(type, `dct:alternative`, alternateName),
     multiValuedUnion(type, `dct:source`, source),
     multiValuedUnion(
       type,
@@ -247,7 +244,6 @@ export const constructQuery = `
   CONSTRUCT {
     ?${dataset} a dcat:Dataset ;
       dct:title ?${name} ;
-      dct:alternative ?${alternateName} ;
       dct:description ?${description} ;
       dct:identifier ?${identifier} ;
       dct:license ?${license} ;

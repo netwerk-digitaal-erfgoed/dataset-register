@@ -1201,10 +1201,6 @@ dcat:DatasetShape
     ],
     nde-dataset:DcTitleLangStringProperty,
     [
-        sh:path dc:alternative ;
-        sh:description "Een alternatieve naam van de dataset."@nl, "An alternative name of the dataset."@en ;
-    ],
-    [
         sh:path dc:description ;
         sh:minCount 1 ;
         sh:severity sh:Warning ;
