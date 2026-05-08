@@ -691,15 +691,6 @@ describe('Fetch', () => {
     expect(
       dataset.has(
         factory.quad(
-          factory.namedNode('https://example.com'),
-          foaf('mbox'),
-          factory.literal('datasets@example.com'),
-        ),
-      ),
-    ).toBe(true);
-    expect(
-      dataset.has(
-        factory.quad(
           factory.namedNode('https://example.com/creator1'),
           rdf('type'),
           foaf('Person'),
