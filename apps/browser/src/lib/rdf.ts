@@ -30,6 +30,12 @@ export const owlNs = createNamespace({
   terms: ['sameAs'],
 } as const);
 
+export const vcardNs = createNamespace({
+  iri: 'http://www.w3.org/2006/vcard/ns#',
+  prefix: 'vcard:',
+  terms: ['hasEmail'],
+} as const);
+
 /**
  * Schema.org namespace using https://, overriding LDkit's built-in http:// variant.
  */
