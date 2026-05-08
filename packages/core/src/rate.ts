@@ -8,6 +8,8 @@ import type { NamedNode } from '@rdfjs/types';
 const penalties = new Map<NamedNode[], number>([
   [[dct('description')], 20],
   [[dcat('distribution')], 20],
+  [[dcat('accessURL'), dcat('downloadURL')], 15],
+  [[dcat('mediaType')], 10],
   [[dct('creator')], 10],
   [[dct('created'), dct('issued')], 10],
   [[dct('modified')], 5],

@@ -3,11 +3,12 @@
 
 import factory from 'rdf-ext';
 import { rdfDereferencer } from 'rdf-dereference';
-import type { Dataset, DatasetCore } from '@rdfjs/types';
+import type { Dataset, DatasetCore, Quad } from '@rdfjs/types';
 import type { ValidationReport } from 'shacl-engine';
 import { Validator as ShaclValidator } from 'shacl-engine';
 import { validations as sparqlValidations } from 'shacl-engine/sparql.js';
 import { standardizeSchemaOrgPrefix } from './transform.ts';
+import type { DistributionProbeStage } from './distribution-probe/probe.ts';
 
 export interface Validator {
   validate(datasets: DatasetCore): Promise<ValidationResult>;
@@ -52,6 +53,37 @@ export class ShaclEngineValidator implements Validator {
   }
 }
 
+/**
+ * Runs SHACL validation first, then — when SHACL passes — runs the distribution probe stage
+ * and merges its sh:ValidationResult quads into the SHACL report's dataset. Any probe-emitted
+ * sh:Violation flips the state back to `invalid`.
+ */
+export class CompositeValidator implements Validator {
+  public constructor(
+    private readonly shacl: Validator,
+    private readonly probeStage: DistributionProbeStage,
+  ) {}
+
+  public async validate(input: DatasetCore): Promise<ValidationResult> {
+    const shaclResult = await this.shacl.validate(input);
+    if (shaclResult.state !== 'valid') return shaclResult;
+
+    const probeQuads = await this.probeStage.run(
+      standardizeSchemaOrgPrefix(input),
+    );
+    if (probeQuads.length === 0) return shaclResult;
+
+    const merged = factory.dataset([
+      ...shaclResult.errors,
+      ...probeQuads,
+    ]) as unknown as Dataset;
+    return {
+      state: hasQuadViolation(probeQuads) ? 'invalid' : 'valid',
+      errors: merged,
+    };
+  }
+}
+
 export async function readUrl(url: string): Promise<DatasetCore> {
   const { data } = await rdfDereferencer.dereference(url.toString(), {
     localFiles: true,
@@ -85,3 +117,19 @@ export const shacl = (property: string) =>
  */
 const hasViolation = (report: ValidationReport) =>
   report.results.some((result) => result.severity.equals(shacl('Violation')));
+
+const shaclResultSeverity = shacl('resultSeverity');
+const shaclViolation = shacl('Violation');
+
+/**
+ * Scan emitted quads for at least one `sh:resultSeverity sh:Violation` triple.
+ * Used by {@link CompositeValidator} to decide the merged report's state, since the
+ * probe stage returns plain quads rather than a {@link ValidationReport}.
+ */
+function hasQuadViolation(quads: Quad[]): boolean {
+  return quads.some(
+    (quad) =>
+      quad.predicate.equals(shaclResultSeverity) &&
+      quad.object.equals(shaclViolation),
+  );
+}
