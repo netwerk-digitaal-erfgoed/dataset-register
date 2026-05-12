@@ -339,11 +339,13 @@ function filterClauses(searchFilters: SearchRequest, skipDefaults = false) {
     filterClausesArray.push(
       `?dataset dct:title ?title .
       ?dataset dct:publisher/foaf:name ?publisher_name .
+      OPTIONAL { ?dataset dct:creator/foaf:name ?creator_name }
       OPTIONAL { ?dataset dct:description ?description }
 
        FILTER(CONTAINS(LCASE(?title), LCASE("${query}"))
         || CONTAINS(LCASE(?description), LCASE("${query}"))
-        || CONTAINS(LCASE(?publisher_name), LCASE("${query}")))`,
+        || CONTAINS(LCASE(?publisher_name), LCASE("${query}"))
+        || CONTAINS(LCASE(?creator_name), LCASE("${query}")))`,
     );
   }
 
