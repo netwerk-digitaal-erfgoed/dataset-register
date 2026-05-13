@@ -316,7 +316,18 @@ export const constructQuery = `
           dct:title ?${name} ;
           dct:publisher ?${publisher} .
 
-        OPTIONAL { ?${dataset} dct:license ${normalizeLicense(license)} }
+        # DCAT-AP-NL places dct:license only on the distribution, but DCAT
+        # and DCAT-AP both allow it on the dataset and many publishers do
+        # provide it there. Read the dataset license when present, but leave
+        # ?${license} unbound for literal placeholders (e.g. "see distributions")
+        # so a non-IRI value neither crashes the IRI() call nor pollutes the
+        # index. IRI() is only invoked inside the isIRI() branch — bare
+        # FILTER(isIRI(...)) doesn't prevent Comunica from eagerly evaluating
+        # IRI() on a literal.
+        OPTIONAL {
+          ?${dataset} dct:license ?${license}Raw .
+          BIND(IF(isIRI(?${license}Raw), IRI(REPLACE(REPLACE(STR(?${license}Raw), "deed.nl", ""), "http://creativecommons.org", "https://creativecommons.org")), ?unbound) AS ?${license})
+        }
 
         ?${publisher} a ?foafOrganizationOrPerson ;
           a ?${publisherType} ;
@@ -338,6 +349,7 @@ export const constructQuery = `
           ?${dataset} dcat:distribution ?${distribution} .
           ?${distribution} a dcat:Distribution .
           ?${distribution} dcat:accessURL ${convertToIri(distributionUrl)} .
+          ?${distribution} dct:license ${normalizeLicense(distributionLicense)} .
           OPTIONAL {
             ?${distribution} dcat:mediaType ${normalizeMediaType(distributionMediaType)} .
           }
@@ -369,8 +381,6 @@ export const constructQuery = `
             ?${distribution} dct:language ?${distributionLanguage}Raw .
             ${normalizeLanguage(`?${distributionLanguage}Raw`, distributionLanguage)}
           }
-          OPTIONAL { ?${distribution} dct:license ${normalizeLicense(distributionLicense + 'Provided')} }
-          BIND(COALESCE(?${distributionLicense}Provided, ?${license}) AS ?${distributionLicense})
           OPTIONAL { ?${distribution} dct:title ?${distributionName} }
           OPTIONAL { ?${distribution} dcat:byteSize ?${distributionSize} }
           OPTIONAL {

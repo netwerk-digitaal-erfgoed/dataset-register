@@ -30,6 +30,9 @@
     "dcat:accessURL": {
       "@id": "http://example.com/sparql"
     },
+    "dct:license": {
+      "@id": "https://creativecommons.org/publicdomain/zero/1.0/"
+    },
     "odrl:hasPolicy": {
       "@type": "odrl:Offer",
       "odrl:profile": {

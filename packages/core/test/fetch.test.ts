@@ -990,7 +990,10 @@ describe('Fetch', () => {
     );
   });
 
-  it('tolerates a literal dct:license value', async () => {
+  it('ignores a literal dct:license on a DCAT dataset and emits the distribution license', async () => {
+    // KB-style data: dataset has a free-text dct:license placeholder
+    // ("see distributions") and the actual license lives on the distribution.
+    // The DCAT branch must not crash on the literal and must not emit it.
     const response = await file('dataset-dcat-literal-license.jsonld');
     nock('https://example.com')
       .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
@@ -1010,9 +1013,7 @@ describe('Fetch', () => {
     const datasetLicenses = [
       ...dataset.match(datasetUri, dct('license'), null),
     ];
-    expect(datasetLicenses).toHaveLength(1);
-    expect(datasetLicenses[0].object.termType).toBe('Literal');
-    expect(datasetLicenses[0].object.value).toBe('see distributions');
+    expect(datasetLicenses).toHaveLength(0);
 
     const distributionLicenses = [...dataset].filter(
       (quad) =>
