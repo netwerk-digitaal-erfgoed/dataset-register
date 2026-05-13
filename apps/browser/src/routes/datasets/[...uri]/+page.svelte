@@ -548,13 +548,13 @@
                   >
                 {/if}
                 <LanguageBadge values={dataset.publisher.name} />
-                {#if dataset.publisher.email || dataset.publisher.sameAs}
+                {#if dataset.contactPoint?.email || dataset.publisher.sameAs}
                   <div
                     class="mt-1.5 flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400"
                   >
-                    {#if dataset.publisher.email}
+                    {#if dataset.contactPoint?.email}
                       <a
-                        href="mailto:{dataset.publisher.email}"
+                        href={dataset.contactPoint.email}
                         class="inline-flex items-center gap-1.5 hover:text-blue-600 dark:hover:text-blue-400"
                       >
                         <svg
@@ -571,7 +571,7 @@
                           />
                         </svg>
                         <span class="break-all"
-                          >{dataset.publisher.email.replace(
+                          >{dataset.contactPoint.email.replace(
                             'mailto:',
                             '',
                           )}</span

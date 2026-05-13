@@ -39,7 +39,6 @@ const creatorType = 'creator_type';
 
 const publisherType = 'publisher_type';
 const publisherName = 'publisher_name';
-const publisherEmail = 'publisher_email';
 const contactPoint = 'contactPoint';
 const contactPointName = 'contactPoint_name';
 const contactPointEmail = 'contactPoint_email';
@@ -162,11 +161,6 @@ function schemaOrgContactPointUnion(prefix: string): string {
         ?${contactPoint} ${prefix}:email ?contactPointEmailRaw .
         BIND(IRI(CONCAT("mailto:", STR(?contactPointEmailRaw))) AS ?${contactPointEmail})
         OPTIONAL { ?${contactPoint} ${prefix}:name ?${contactPointName} . }
-      }
-      UNION {
-        ?${dataset} a ${prefix}:Dataset .
-        ?${dataset} ${prefix}:publisher ?${publisher} .
-        ?${publisher} ${prefix}:contactPoint/${prefix}:email ?${publisherEmail} .
       }`;
 }
 
@@ -279,7 +273,6 @@ export const constructQuery = `
       foaf:name ?${publisherName} ;
       foaf:nick ?${publisherAlternateName} ;
       dct:identifier ?${publisherIdentifier} ;
-      foaf:mbox ?${publisherEmail} ;
       owl:sameAs ?${publisherSameAs} .
 
     ?${creator} a ?${creatorType} ;
@@ -330,7 +323,6 @@ export const constructQuery = `
 
         OPTIONAL { ?${publisher} foaf:nick ?${publisherAlternateName} ; }
         OPTIONAL { ?${publisher} dct:identifier ?${publisherIdentifier} ; }
-        OPTIONAL { ?${publisher} foaf:mbox ?${publisherEmail} ; }
         OPTIONAL { ?${publisher} owl:sameAs ?${publisherSameAs} ; }
 
         OPTIONAL {

@@ -580,10 +580,12 @@ describe('Fetch', () => {
     // The DCAT file has a 4th gzip distribution (5 triples incl. downloadURL),
     // an extra byteSize triple, one more propagated license (4 vs 3 distributions),
     // a mediaType on the SPARQL distribution (suppressed for API distributions),
-    // and a dcat:theme triple (auto-assigned for Schema.org, explicit in DCAT).
+    // a dcat:theme triple (auto-assigned for Schema.org, explicit in DCAT),
+    // and a foaf:mbox triple on the publisher (no longer emitted from
+    // Schema.org input now that the contactPoint is the canonical email channel).
     // Fetch also replaces the `dct:temporal "..."` literal with a PeriodOfTime
     // blank node (1 → 4 quads: dct:temporal link + rdf:type + startDate + endDate).
-    expect(dataset.size).toEqual(dcatEquivalent.size + 8 - 9 + 3);
+    expect(dataset.size).toEqual(dcatEquivalent.size + 8 - 10 + 3);
 
     // Check that SPARQL endpoint has conformsTo triple
     const sparqlConformsToTriples = [...dataset].filter(
@@ -683,15 +685,6 @@ describe('Fetch', () => {
           factory.namedNode('https://example.com'),
           rdf('type'),
           foaf('Organization'),
-        ),
-      ),
-    ).toBe(true);
-    expect(
-      dataset.has(
-        factory.quad(
-          factory.namedNode('https://example.com'),
-          foaf('mbox'),
-          factory.literal('datasets@example.com'),
         ),
       ),
     ).toBe(true);

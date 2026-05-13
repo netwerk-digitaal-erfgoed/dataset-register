@@ -3,7 +3,7 @@ import { dcterms, foaf, ldkit, xsd } from 'ldkit/namespaces';
 import { createLens, type SchemaInterface } from 'ldkit';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { error } from '@sveltejs/kit';
-import { owlNs, schemaNs as schema, voidExtNs, voidNs } from '../rdf.js';
+import { owlNs, schemaNs as schema, vcardNs, voidExtNs, voidNs } from '../rdf.js';
 import { BaseDatasetSchema, BaseDistributionSchema } from './datasets.js';
 import { shortenUri } from '$lib/utils/prefix';
 import { isUri, lookupTermLabels } from './network-of-terms.js';
@@ -62,12 +62,17 @@ const DetailPublisherSchema = {
     '@optional': true,
     '@multilang': true,
   },
-  email: {
-    '@id': foaf.mbox,
-    '@optional': true,
-  },
   sameAs: {
     '@id': owlNs.sameAs,
+    '@optional': true,
+  },
+} as const;
+
+// Contact point schema — the canonical location of the dataset's contact email.
+// vcard:hasEmail is stored as a mailto: IRI; UI strips the prefix for display.
+const DetailContactPointSchema = {
+  email: {
+    '@id': vcardNs.hasEmail,
     '@optional': true,
   },
 } as const;
@@ -120,6 +125,11 @@ export const DatasetDetailSchema = {
     '@id': dcterms.publisher,
     '@optional': true,
     '@schema': DetailPublisherSchema,
+  },
+  contactPoint: {
+    '@id': dcat.contactPoint,
+    '@optional': true,
+    '@schema': DetailContactPointSchema,
   },
   subjectOf: {
     '@id': schema.subjectOf,
