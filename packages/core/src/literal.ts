@@ -19,16 +19,42 @@ export const convertToIri = (variable: string) =>
         BIND(IRI(?${variable}Raw) AS ?${variable})`;
 
 /**
+ * Normalize a license value. If the raw value is an IRI, strip the "deed.nl"
+ * suffix and upgrade http://creativecommons.org to https://. If the raw value
+ * is a literal, pass it through unchanged so that a non-IRI license (allowed
+ * by SHACL with sh:nodeKind sh:IRIOrLiteral) does not crash the CONSTRUCT
+ * with an invalid-IRI error.
+ *
  * https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1141
  */
 export const normalizeLicense = (variable: string) =>
   `?${variable}Raw ;
         BIND(
-          IRI(
-            REPLACE(REPLACE(STR(?${variable}Raw), "deed.nl", ""), "http://creativecommons.org", "https://creativecommons.org")
+          IF(
+            isIRI(?${variable}Raw),
+            IRI(
+              REPLACE(REPLACE(STR(?${variable}Raw), "deed.nl", ""), "http://creativecommons.org", "https://creativecommons.org")
+            ),
+            ?${variable}Raw
           )
           AS ?${variable}
         )`;
+
+/**
+ * Bind ?out to the normalized IRI form of ?in if ?in is an IRI; otherwise
+ * leave ?out unbound (via the ?unbound trick). Used for dataset-level license
+ * reads where we want to ignore literal placeholders rather than emit them.
+ * IRI() is only invoked inside the isIRI() branch — a bare FILTER(isIRI(...))
+ * does not prevent Comunica from eagerly evaluating IRI() on a literal.
+ */
+export const bindIriLicense = (rawVar: string, outVar: string) =>
+  `BIND(
+        IF(
+          isIRI(?${rawVar}),
+          IRI(REPLACE(REPLACE(STR(?${rawVar}), "deed.nl", ""), "http://creativecommons.org", "https://creativecommons.org")),
+          ?unbound
+        ) AS ?${outVar}
+      )`;
 
 /**
  * Normalize mediaType to IANA URI format.
@@ -93,4 +119,3 @@ export const compressFormatFromMediaType = (
 export const convertUriToLiteral = (variable: string) =>
   `?${variable}Raw ;
         BIND(IF(isIRI(?${variable}Raw), STR(?${variable}Raw), ?${variable}Raw) AS ?${variable})`;
-

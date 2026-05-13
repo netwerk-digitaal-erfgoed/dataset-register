@@ -1,5 +1,6 @@
 import factory from 'rdf-ext';
 import {
+  bindIriLicense,
   compressFormatFromMediaType,
   convertToIri,
   convertToXsdDate,
@@ -311,12 +312,33 @@ export const constructQuery = `
         ${schemaOrgQuery('schema')}
       } UNION {
         ${schemaOrgQuery('httpSchema')}
-      } UNION { 
+      } UNION {
         ?${dataset} a dcat:Dataset ;
           dct:title ?${name} ;
-          dct:publisher ?${publisher} ;
-          dct:license ${normalizeLicense(license)} .
-          
+          dct:publisher ?${publisher} .
+
+        # DCAT-AP-NL puts dct:license on the distribution. We index a
+        # denormalized dataset-level license for query convenience (browsers,
+        # external SPARQL consumers): prefer the publisher's own dataset
+        # license when it's an IRI, otherwise sample one IRI license from
+        # the distributions. Literal placeholders (e.g. KB's
+        # "zie distributies") are skipped so they don't pollute the index.
+        OPTIONAL {
+          ?${dataset} dct:license ?datasetLicenseRaw .
+          ${bindIriLicense('datasetLicenseRaw', 'datasetLicenseExplicit')}
+        }
+        OPTIONAL {
+          {
+            SELECT ?${dataset} (SAMPLE(?distLic) AS ?distributionLicenseSample) WHERE {
+              ?${dataset} dcat:distribution ?distForLicense .
+              ?distForLicense a dcat:Distribution ;
+                dct:license ?distLicRaw .
+              ${bindIriLicense('distLicRaw', 'distLic')}
+            } GROUP BY ?${dataset}
+          }
+        }
+        BIND(COALESCE(?datasetLicenseExplicit, ?distributionLicenseSample) AS ?${license})
+
         ?${publisher} a ?foafOrganizationOrPerson ;
           a ?${publisherType} ;
           foaf:name ?${publisherName} .
@@ -337,6 +359,7 @@ export const constructQuery = `
           ?${dataset} dcat:distribution ?${distribution} .
           ?${distribution} a dcat:Distribution .
           ?${distribution} dcat:accessURL ${convertToIri(distributionUrl)} .
+          ?${distribution} dct:license ${normalizeLicense(distributionLicense)} .
           OPTIONAL {
             ?${distribution} dcat:mediaType ${normalizeMediaType(distributionMediaType)} .
           }
@@ -368,7 +391,6 @@ export const constructQuery = `
             ?${distribution} dct:language ?${distributionLanguage}Raw .
             ${normalizeLanguage(`?${distributionLanguage}Raw`, distributionLanguage)}
           }
-          OPTIONAL { ?${distribution} dct:license ${normalizeLicense(distributionLicense)} }
           OPTIONAL { ?${distribution} dct:title ?${distributionName} }
           OPTIONAL { ?${distribution} dcat:byteSize ?${distributionSize} }
           OPTIONAL {
@@ -417,10 +439,19 @@ export const constructQuery = `
 function schemaOrgQuery(prefix: string): string {
   return `
     ?${dataset} a ${prefix}:Dataset ;
-      ${prefix}:name ?${name} ; 
-      ${prefix}:license ${normalizeLicense(license)} .
+      ${prefix}:name ?${name} .
 
-    OPTIONAL { 
+    # Dataset-level license: the schema.org convention places license here, so
+    # consumers (such as the browser app) read it directly from the dataset.
+    # Read the publisher's value and project it only when it's an IRI; literal
+    # values are accepted as input (SHACL allows them with sh:IRIOrLiteral)
+    # but leave ?${license} unbound so they don't end up as junk literals.
+    OPTIONAL {
+      ?${dataset} ${prefix}:license ?datasetLicenseRaw .
+      ${bindIriLicense('datasetLicenseRaw', license)}
+    }
+
+    OPTIONAL {
       ?${dataset} ${prefix}:creator ?${creator} .        
       ?${creator} a ?creatorTypeRaw ;
         ${prefix}:name ?${creatorName} .
