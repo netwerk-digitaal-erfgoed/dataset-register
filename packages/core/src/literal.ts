@@ -41,6 +41,22 @@ export const normalizeLicense = (variable: string) =>
         )`;
 
 /**
+ * Bind ?out to the normalized IRI form of ?in if ?in is an IRI; otherwise
+ * leave ?out unbound (via the ?unbound trick). Used for dataset-level license
+ * reads where we want to ignore literal placeholders rather than emit them.
+ * IRI() is only invoked inside the isIRI() branch — a bare FILTER(isIRI(...))
+ * does not prevent Comunica from eagerly evaluating IRI() on a literal.
+ */
+export const bindIriLicense = (rawVar: string, outVar: string) =>
+  `BIND(
+        IF(
+          isIRI(?${rawVar}),
+          IRI(REPLACE(REPLACE(STR(?${rawVar}), "deed.nl", ""), "http://creativecommons.org", "https://creativecommons.org")),
+          ?unbound
+        ) AS ?${outVar}
+      )`;
+
+/**
  * Normalize mediaType to IANA URI format.
  *
  * DCAT-3 requires dcat:mediaType to be URIs pointing to the IANA media type registry.
@@ -103,4 +119,3 @@ export const compressFormatFromMediaType = (
 export const convertUriToLiteral = (variable: string) =>
   `?${variable}Raw ;
         BIND(IF(isIRI(?${variable}Raw), STR(?${variable}Raw), ?${variable}Raw) AS ?${variable})`;
-
