@@ -3,7 +3,13 @@ import { dcterms, foaf, ldkit, xsd } from 'ldkit/namespaces';
 import { createLens, type SchemaInterface } from 'ldkit';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { error } from '@sveltejs/kit';
-import { owlNs, schemaNs as schema, vcardNs, voidExtNs, voidNs } from '../rdf.js';
+import {
+  owlNs,
+  schemaNs as schema,
+  vcardNs,
+  voidExtNs,
+  voidNs,
+} from '../rdf.js';
 import { BaseDatasetSchema, BaseDistributionSchema } from './datasets.js';
 import { shortenUri } from '$lib/utils/prefix';
 import { isUri, lookupTermLabels } from './network-of-terms.js';
@@ -510,6 +516,10 @@ export async function fetchDatasetDetail(
           <${datasetUri}> schema:contentRating ?contentRating .
           ?contentRating ?p ?o .
           BIND(?contentRating AS ?s)
+        } UNION {
+          <${datasetUri}> dcat:contactPoint ?contactPoint .
+          ?contactPoint ?p ?o .
+          BIND(?contactPoint AS ?s)
         }
       }
     }
