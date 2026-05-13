@@ -311,12 +311,13 @@ export const constructQuery = `
         ${schemaOrgQuery('schema')}
       } UNION {
         ${schemaOrgQuery('httpSchema')}
-      } UNION { 
+      } UNION {
         ?${dataset} a dcat:Dataset ;
           dct:title ?${name} ;
-          dct:publisher ?${publisher} ;
-          dct:license ${normalizeLicense(license)} .
-          
+          dct:publisher ?${publisher} .
+
+        OPTIONAL { ?${dataset} dct:license ${normalizeLicense(license)} }
+
         ?${publisher} a ?foafOrganizationOrPerson ;
           a ?${publisherType} ;
           foaf:name ?${publisherName} .
@@ -368,7 +369,8 @@ export const constructQuery = `
             ?${distribution} dct:language ?${distributionLanguage}Raw .
             ${normalizeLanguage(`?${distributionLanguage}Raw`, distributionLanguage)}
           }
-          OPTIONAL { ?${distribution} dct:license ${normalizeLicense(distributionLicense)} }
+          OPTIONAL { ?${distribution} dct:license ${normalizeLicense(distributionLicense + 'Provided')} }
+          BIND(COALESCE(?${distributionLicense}Provided, ?${license}) AS ?${distributionLicense})
           OPTIONAL { ?${distribution} dct:title ?${distributionName} }
           OPTIONAL { ?${distribution} dcat:byteSize ?${distributionSize} }
           OPTIONAL {
@@ -417,10 +419,11 @@ export const constructQuery = `
 function schemaOrgQuery(prefix: string): string {
   return `
     ?${dataset} a ${prefix}:Dataset ;
-      ${prefix}:name ?${name} ; 
-      ${prefix}:license ${normalizeLicense(license)} .
+      ${prefix}:name ?${name} .
 
-    OPTIONAL { 
+    OPTIONAL { ?${dataset} ${prefix}:license ${normalizeLicense(license)} }
+
+    OPTIONAL {
       ?${dataset} ${prefix}:creator ?${creator} .        
       ?${creator} a ?creatorTypeRaw ;
         ${prefix}:name ?${creatorName} .

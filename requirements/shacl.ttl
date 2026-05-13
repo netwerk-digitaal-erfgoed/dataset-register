@@ -123,28 +123,30 @@ nde-dataset:DatasetShape
         ] ,
         [
             sh:path schema:license ;
-            sh:minCount 1 ;
-            sh:maxCount 1 ;
-            sh:severity sh:Warning ;
-            sh:description """Licentie die van toepassing is op de dataset.
-                Als de dataset een licentie heeft, wordt deze overgenomen door alle distributies die geen eigen licentie hebben."""@nl, """License applicable to the dataset. As a convenience, this license is inherited by all distributions that do not specify their own license. Publishers MUST make known under which <a href="https://www.w3.org/TR/dwbp/#licenses">license</a> the dataset may be used.
-
-This license specifies the conditions under which the metadata records in the dataset may be accessed and reused. It does not cover the heritage objects (either physical or digital) that the metadata describes. Access conditions for these objects should be specified in their own descriptions within the dataset.
-
-The DERA requires metadata to be published openly, so this value SHOULD be an open license that allows consumers to reuse the data, such as `https://creativecommons.org/publicdomain/zero/1.0/` (CC0), `https://creativecommons.org/licenses/by/4.0/` (CC BY 4.0), or `https://creativecommons.org/licenses/by-sa/4.0/` (CC BY-SA 4.0). Adopting a non-open license will severely limit reuse and does not comply with the DERA principles.
-
-The value MUST be the canonical URI of a license. For example, use `https://creativecommons.org/publicdomain/zero/1.0/` instead of `https://creativecommons.org/publicdomain/zero/1.0/deed.nl`."""@en ;
-            sh:message "Voeg één licentie toe"@nl, "Add one license"@en ;
-        ] ,
-        [
-            sh:path schema:license ;
             sh:nodeKind sh:IRIOrLiteral ;
             nde:futureChange [
                 nde:version "2.0" ;
                 sh:nodeKind sh:IRI ;
             ] ;
             sh:severity sh:Warning ;
+            sh:description """Licentie die van toepassing is op de dataset. Als de dataset een licentie heeft, wordt deze overgenomen door alle distributies die geen eigen licentie hebben.
+
+Een licentie moet beschikbaar zijn op de distributie of op de dataset."""@nl, """License applicable to the dataset. If the dataset has a license, it is inherited by all distributions that do not specify their own license. Publishers MUST make known under which <a href="https://www.w3.org/TR/dwbp/#licenses">license</a> the dataset may be used.
+
+This license specifies the conditions under which the metadata records in the dataset may be accessed and reused. It does not cover the heritage objects (either physical or digital) that the metadata describes. Access conditions for these objects should be specified in their own descriptions within the dataset.
+
+A license must be available on either the distribution or the dataset.
+
+The DERA requires metadata to be published openly, so this value SHOULD be an open license that allows consumers to reuse the data, such as `https://creativecommons.org/publicdomain/zero/1.0/` (CC0), `https://creativecommons.org/licenses/by/4.0/` (CC BY 4.0), or `https://creativecommons.org/licenses/by-sa/4.0/` (CC BY-SA 4.0). Adopting a non-open license will severely limit reuse and does not comply with the DERA principles.
+
+The value MUST be the canonical URI of a license. For example, use `https://creativecommons.org/publicdomain/zero/1.0/` instead of `https://creativecommons.org/publicdomain/zero/1.0/deed.nl`."""@en ;
             sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
+        ] ,
+        [
+            sh:path schema:license ;
+            sh:maxCount 1 ;
+            sh:severity sh:Warning ;
+            sh:message "Gebruik maximaal één licentie"@nl, "Use at most one license"@en ;
         ] ,
         [
             sh:path schema:license ;

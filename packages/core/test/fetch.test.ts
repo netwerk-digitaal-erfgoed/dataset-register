@@ -956,6 +956,74 @@ describe('Fetch', () => {
       ),
     );
   });
+
+  it('emits DCAT dataset whose license lives only on the distribution', async () => {
+    const response = await file('dataset-dcat-license-on-distribution.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/dcat-license-on-distribution')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/dcat-license-on-distribution'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const datasetUri = factory.namedNode(
+      'http://data.bibliotheken.nl/id/dataset/license-on-distribution',
+    );
+
+    const datasetLicenses = [
+      ...dataset.match(datasetUri, dct('license'), null),
+    ];
+    expect(datasetLicenses).toHaveLength(0);
+
+    const distributionLicenses = [...dataset].filter(
+      (quad) =>
+        quad.predicate.equals(dct('license')) &&
+        !quad.subject.equals(datasetUri),
+    );
+    expect(distributionLicenses).toHaveLength(1);
+    expect(distributionLicenses[0].object.value).toBe(
+      'https://creativecommons.org/publicdomain/zero/1.0/',
+    );
+  });
+
+  it('tolerates a literal dct:license value', async () => {
+    const response = await file('dataset-dcat-literal-license.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/dcat-literal-license')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/dcat-literal-license'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const datasetUri = factory.namedNode(
+      'http://data.bibliotheken.nl/id/dataset/literal-license',
+    );
+
+    const datasetLicenses = [
+      ...dataset.match(datasetUri, dct('license'), null),
+    ];
+    expect(datasetLicenses).toHaveLength(1);
+    expect(datasetLicenses[0].object.termType).toBe('Literal');
+    expect(datasetLicenses[0].object.value).toBe('see distributions');
+
+    const distributionLicenses = [...dataset].filter(
+      (quad) =>
+        quad.predicate.equals(dct('license')) &&
+        !quad.subject.equals(datasetUri),
+    );
+    expect(distributionLicenses).toHaveLength(1);
+    expect(distributionLicenses[0].object.value).toBe(
+      'https://creativecommons.org/publicdomain/zero/1.0/',
+    );
+  });
 });
 
 describe('discoverDatacatalog', () => {

@@ -1,0 +1,21 @@
+{
+  "@context": {
+    "dcat": "http://www.w3.org/ns/dcat#",
+    "dct": "http://purl.org/dc/terms/",
+    "foaf": "http://xmlns.com/foaf/0.1/"
+  },
+  "@type": "dcat:Dataset",
+  "@id": "http://data.bibliotheken.nl/id/dataset/literal-license",
+  "dct:title": "Dataset with literal license",
+  "dct:license": "see distributions",
+  "dct:publisher": {
+    "@id": "https://example.com/publisher",
+    "@type": "foaf:Organization",
+    "foaf:name": "Example Publisher"
+  },
+  "dcat:distribution": {
+    "@type": "dcat:Distribution",
+    "dcat:accessURL": { "@id": "https://example.com/dataset.ttl" },
+    "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
+  }
+}

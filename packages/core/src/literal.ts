@@ -19,13 +19,23 @@ export const convertToIri = (variable: string) =>
         BIND(IRI(?${variable}Raw) AS ?${variable})`;
 
 /**
+ * Normalize a license value. If the raw value is an IRI, strip the "deed.nl"
+ * suffix and upgrade http://creativecommons.org to https://. If the raw value
+ * is a literal, pass it through unchanged so that a non-IRI license (allowed
+ * by SHACL with sh:nodeKind sh:IRIOrLiteral) does not crash the CONSTRUCT
+ * with an invalid-IRI error.
+ *
  * https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1141
  */
 export const normalizeLicense = (variable: string) =>
   `?${variable}Raw ;
         BIND(
-          IRI(
-            REPLACE(REPLACE(STR(?${variable}Raw), "deed.nl", ""), "http://creativecommons.org", "https://creativecommons.org")
+          IF(
+            isIRI(?${variable}Raw),
+            IRI(
+              REPLACE(REPLACE(STR(?${variable}Raw), "deed.nl", ""), "http://creativecommons.org", "https://creativecommons.org")
+            ),
+            ?${variable}Raw
           )
           AS ?${variable}
         )`;
