@@ -1,9 +1,10 @@
 name: Nx migrate
 
 on:
-  schedule:
-    - cron: '0 6 * * *'
-  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
 
 jobs:
   migrate:
