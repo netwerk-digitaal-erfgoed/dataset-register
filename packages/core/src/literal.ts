@@ -109,13 +109,3 @@ export const compressFormatFromMediaType = (
     ) AS ?${compressFormatVariable}
   )`;
 
-/**
- * Convert URI keywords to string literals while preserving language-tagged literals.
- *
- * Some datasets use URIs as keywords (e.g., SKOS Concepts) while others use
- * language-tagged literals. This normalizes URIs to string literals so they
- * can be processed uniformly, while preserving language tags on literals.
- */
-export const convertUriToLiteral = (variable: string) =>
-  `?${variable}Raw ;
-        BIND(IF(isIRI(?${variable}Raw), STR(?${variable}Raw), ?${variable}Raw) AS ?${variable})`;

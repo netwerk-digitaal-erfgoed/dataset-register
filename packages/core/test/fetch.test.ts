@@ -443,6 +443,28 @@ describe('Fetch', () => {
     expect((literalTheme?.object as Literal).language).toEqual('nl');
   });
 
+  it('drops URI-shaped schema:keywords from dcat:keyword output', async () => {
+    const response = await file('dataset-schema-org-keyword-uri.jsonld');
+    nock('http://data.bibliotheken.nl')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/id/dataset/keyword-uri')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('http://data.bibliotheken.nl/id/dataset/keyword-uri'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const datasetUri = factory.namedNode(
+      'http://data.bibliotheken.nl/id/dataset/keyword-uri',
+    );
+    const keywordValues = [
+      ...dataset.match(datasetUri, dcat('keyword'), null),
+    ].map((quad) => quad.object.value);
+    expect(keywordValues).toEqual(['photographs']);
+  });
+
   it('preserves user-provided themes alongside default EDUC theme', async () => {
     const response = await file('dataset-dcat-valid-minimal.jsonld');
     const datasetWithTheme = response.replace(

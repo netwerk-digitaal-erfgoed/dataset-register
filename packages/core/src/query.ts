@@ -174,8 +174,8 @@ function schemaOrgMultiValuedUnions(prefix: string): string {
     multiValuedUnion(
       type,
       `${prefix}:keywords`,
-      `${keyword}Raw`,
-      `BIND(IF(isIRI(?${keyword}Raw), STR(?${keyword}Raw), ?${keyword}Raw) AS ?${keyword})`,
+      keyword,
+      `FILTER(!REGEX(STR(?${keyword}), "^https?://"))`,
     ),
     multiValuedUnion(
       type,
@@ -206,8 +206,8 @@ function dcatMultiValuedUnions(): string {
     multiValuedUnion(
       type,
       `dcat:keyword`,
-      `${keyword}Raw`,
-      `BIND(IF(isIRI(?${keyword}Raw), STR(?${keyword}Raw), ?${keyword}Raw) AS ?${keyword})`,
+      keyword,
+      `FILTER(!REGEX(STR(?${keyword}), "^https?://"))`,
     ),
     multiValuedUnion(
       type,
