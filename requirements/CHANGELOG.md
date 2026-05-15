@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.11.1](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.11.0...requirements-1.11.1) (2026-05-15)
+
+
+### Bug Fixes
+
+* **requirements:** fix v2.0 labels for sh:or and sh:not shapes ([#1968](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1968)) ([2ef2ac7](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/2ef2ac7f32bf734d8fc9d826237bbc018ba697d5))
+* fix typo ([#1943](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1943)) ([c6bfa41](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/c6bfa41adf55ba2dc5111d1600f185f0d17474cd))
+
 ## [1.11.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.10.0...requirements-1.11.0) (2026-04-23)
 
 
