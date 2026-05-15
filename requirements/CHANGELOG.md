@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.11.1](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.11.0...requirements-1.11.1) (2026-05-15)
+
+
+### Bug Fixes
+
+* **browser:** show extras count when focus nodes are blank ([#1936](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1936)) ([0248cc7](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/0248cc754c3b6d0dfbe0822447bdae7bb11aab6e))
+* **core:** accept datasets whose license lives on the distribution ([#1959](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1959)) ([ef58deb](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/ef58deb7bfbcd42480ecc814329d82a412eba8a8))
+* drop dct:alternative from the dataset model ([#1947](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1947)) ([8cf2bbf](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/8cf2bbf47d0824da21d40190ab11f9940e1cddbc))
+* **requirements:** label v2.0 changes for sh:or and sh:not shapes ([#1968](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1968)) ([2ef2ac7](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/2ef2ac7f32bf734d8fc9d826237bbc018ba697d5))
+* typo ([#1943](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1943)) ([c6bfa41](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/c6bfa41adf55ba2dc5111d1600f185f0d17474cd))
+
+
+### Documentation
+
+* **requirements:** link distribution date attributes to #distribution-date ([#1945](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1945)) ([efa4c5d](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/efa4c5d5b2b47fc68ad69e868d00631b41ce3ea4))
+
 ## [1.11.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.10.0...requirements-1.11.0) (2026-04-23)
 
 
