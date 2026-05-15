@@ -15,6 +15,7 @@
   import { getLicenseName } from '$lib/utils/license.js';
   import { shortenUri, languageCode } from '$lib/utils/prefix.js';
   import { getMediaTypeLabel } from '$lib/utils/media-type.js';
+  import { datasetDetailHref } from '$lib/url';
   import LanguageBadge from '$lib/components/LanguageBadge.svelte';
   import { SvelteSet } from 'svelte/reactivity';
   import {
@@ -50,7 +51,7 @@
   const temporalCoverages = $derived(data.temporalCoverages);
 
   // SEO: canonical and hreflang URLs
-  const datasetPath = $derived(`/datasets/${dataset.$id}`);
+  const datasetPath = $derived(datasetDetailHref(dataset.$id));
   const canonicalUrl = $derived(
     `${page.url.origin}${localizeHref(datasetPath, { locale: 'nl' })}`,
   );
