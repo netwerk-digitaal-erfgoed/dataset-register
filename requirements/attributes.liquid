@@ -119,6 +119,22 @@
                         {% assign future_text = property.datatype | replace: 'http://www.w3.org/2001/XMLSchema#', 'xsd:' | replace: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'rdf:' | prepend: 'must be ' -%}
                     {% elsif change.severity == "Violation" and is_date_shape -%}
                         {% assign future_text = "must be valid ISO 8601" -%}
+                    {% elsif change.severity == "Violation" and property.or -%}
+                        {%- assign has_iri_alt = false -%}
+                        {%- assign has_date_alt = false -%}
+                        {%- for alt in property.or -%}
+                            {%- if alt.nodeKind == "IRI" -%}{%- assign has_iri_alt = true -%}{%- endif -%}
+                            {%- assign alt_pattern = alt.pattern | default: "" -%}
+                            {%- if alt_pattern contains "{4}" -%}{%- assign has_date_alt = true -%}{%- endif -%}
+                        {%- endfor -%}
+                        {%- if has_iri_alt and has_date_alt -%}
+                            {% assign future_text = "must be valid ISO 8601 or IRI" -%}
+                        {%- endif -%}
+                    {% elsif change.severity == "Violation" and property.not.pattern -%}
+                        {%- assign not_pattern = property.not.pattern -%}
+                        {%- if not_pattern contains "https?" or not_pattern contains "http" -%}
+                            {% assign future_text = "IRIs not allowed" -%}
+                        {%- endif -%}
                     {% elsif change.severity == "Violation" and is_required == false -%}
                         {% assign future_text = "becomes required" -%}
                     {% endif -%}
