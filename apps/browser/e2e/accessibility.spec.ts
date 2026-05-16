@@ -174,7 +174,7 @@ test.describe('Accessibility - Dataset Detail Page', () => {
     page,
   }) => {
     const response = await page.goto(
-      '/datasets/https%3A%2F%2Fexample.org%2Fdataset%2F1',
+      '/dataset?uri=https%3A%2F%2Fexample.org%2Fdataset%2F1',
     );
     // SSR hits the live SPARQL endpoint (page.route only intercepts browser
     // requests), so this URI returns a 404 "not found" page. Assert that the
@@ -200,7 +200,7 @@ test.describe('Accessibility - Dataset Detail Page', () => {
 
   test('dataset detail page has proper heading structure', async ({ page }) => {
     const response = await page.goto(
-      '/datasets/https%3A%2F%2Fexample.org%2Fdataset%2F1',
+      '/dataset?uri=https%3A%2F%2Fexample.org%2Fdataset%2F1',
     );
     // SSR hits the live SPARQL endpoint (page.route only intercepts browser
     // requests), so this URI returns a 404 "not found" page. Assert that the
@@ -225,7 +225,7 @@ test.describe('Accessibility - Dataset Detail Page', () => {
 
   test('dataset detail page is keyboard accessible', async ({ page }) => {
     const response = await page.goto(
-      '/datasets/https%3A%2F%2Fexample.org%2Fdataset%2F1',
+      '/dataset?uri=https%3A%2F%2Fexample.org%2Fdataset%2F1',
     );
     // SSR hits the live SPARQL endpoint (page.route only intercepts browser
     // requests), so this URI returns a 404 "not found" page. Assert that the
@@ -242,7 +242,7 @@ test.describe('Accessibility - Dataset Detail Page', () => {
 
   test('dataset detail page meets WCAG AA color contrast', async ({ page }) => {
     const response = await page.goto(
-      '/datasets/https%3A%2F%2Fexample.org%2Fdataset%2F1',
+      '/dataset?uri=https%3A%2F%2Fexample.org%2Fdataset%2F1',
     );
     // SSR hits the live SPARQL endpoint (page.route only intercepts browser
     // requests), so this URI returns a 404 "not found" page. Assert that the

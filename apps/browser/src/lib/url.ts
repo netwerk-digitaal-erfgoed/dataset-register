@@ -20,13 +20,32 @@ export function decodeDiscreteParam(
 }
 
 /**
- * Encode a dataset URI for use in URLs.
- * Only encodes characters that would cause issues:
- * - % (preserves existing percent-encoded sequences)
- * - # (prevents browser fragment interpretation)
- *
- * Uses minimal encoding instead of encodeURIComponent to keep URLs human-readable.
+ * Encode a value for embedding inside a URL query string with the smallest
+ * possible footprint. The standard `encodeURIComponent` also escapes `:`,
+ * `/`, `?` and `@`, which are allowed unencoded in a query value per
+ * RFC 3986 §3.4 and just clutter the URL. Encode only what genuinely breaks
+ * query parsing:
+ * - `%` escape character (encode first so existing `%XX` survive a round-trip)
+ * - `&` separates query parameters
+ * - `#` starts the fragment
+ * - `+` interpreted as space by URLSearchParams (form-urlencoded legacy)
  */
-export function encodeDatasetUri(uri: string): string {
-  return uri.replace(/%/g, '%25').replace(/#/g, '%23');
+function encodeQueryValue(value: string): string {
+  return value
+    .replace(/%/g, '%25')
+    .replace(/&/g, '%26')
+    .replace(/#/g, '%23')
+    .replace(/\+/g, '%2B');
+}
+
+/**
+ * Build the href for a dataset detail page.
+ *
+ * The dataset IRI lives in a query parameter rather than the path so it
+ * survives URL normalisers (Outlook autolinking, Paraglide localisation,
+ * Apache `MergeSlashes`, CDN path canonicalisation, …) that mangle the
+ * `://` inside a path-embedded URI.
+ */
+export function datasetDetailHref(uri: string): string {
+  return `/dataset?uri=${encodeQueryValue(uri)}`;
 }

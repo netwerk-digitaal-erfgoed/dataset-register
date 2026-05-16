@@ -4,9 +4,9 @@ import { fetchDatasets, type SearchRequest } from '$lib/services/datasets';
 import { extractLocaleFromUrl, setLocale } from '$lib/paraglide/runtime';
 import * as m from '$lib/paraglide/messages';
 import {
+  datasetDetailHref,
   decodeDiscreteParam,
   decodeRangeParam,
-  encodeDatasetUri,
 } from '$lib/url';
 import { getLocalizedValue, localizeHref } from '$lib/utils/i18n';
 
@@ -78,7 +78,7 @@ export async function GET({ url }: RequestEvent) {
       : undefined;
 
     // Link to the dataset detail page
-    const datasetLink = `${url.origin}${localizeHref('/datasets/' + encodeDatasetUri(dataset.$id))}`;
+    const datasetLink = `${url.origin}${localizeHref(datasetDetailHref(dataset.$id))}`;
 
     feed.addItem({
       title,

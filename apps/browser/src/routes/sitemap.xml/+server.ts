@@ -1,7 +1,7 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { PUBLIC_SPARQL_ENDPOINT } from '$env/static/public';
-import { encodeDatasetUri } from '$lib/url';
+import { datasetDetailHref } from '$lib/url';
 
 const fetcher = new SparqlEndpointFetcher();
 const CACHE_TTL = 86400; // 24 hours in seconds
@@ -59,7 +59,7 @@ async function fetchDatasetUris(): Promise<DatasetInfo[]> {
 function generateSitemapXml(datasets: DatasetInfo[], origin: string): string {
   const urls = datasets
     .map((dataset) => {
-      const loc = `${origin}/datasets/${encodeDatasetUri(dataset.uri)}`;
+      const loc = `${origin}${datasetDetailHref(dataset.uri)}`;
       const lastmod = dataset.dateRead
         ? `\n    <lastmod>${dataset.dateRead.split('T')[0]}</lastmod>`
         : '';
