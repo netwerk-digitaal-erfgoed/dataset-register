@@ -15,6 +15,7 @@
   import { getLicenseName } from '$lib/utils/license.js';
   import { shortenUri, languageCode } from '$lib/utils/prefix.js';
   import { getMediaTypeLabel } from '$lib/utils/media-type.js';
+  import { encodeUrlParam } from '$lib/utils/url-param.js';
   import LanguageBadge from '$lib/components/LanguageBadge.svelte';
   import { SvelteSet } from 'svelte/reactivity';
   import {
@@ -1565,7 +1566,7 @@
                 </a>
                 <a
                   href={localizeHref(
-                    `/validate?url=${encodeURIComponent(dataset.subjectOf.$id)}`,
+                    `/validate?url=${encodeUrlParam(dataset.subjectOf.$id)}`,
                   )}
                   class="inline-flex flex-shrink-0 items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium text-white transition-colors {registrationStatus
                     ? 'bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600'
