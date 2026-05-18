@@ -8,13 +8,13 @@ describe('encodeUrlParam', () => {
     );
   });
 
-  it('encodes characters that would break the surrounding query string', () => {
+  it('encodes & so it does not split the query into another parameter', () => {
     expect(
       encodeUrlParam(
         'https://studiezaal.nijmegen.nl/AtlantisPubliek/Opendata/download-set?name=Catalog&format=RDF',
       ),
     ).toBe(
-      'https://studiezaal.nijmegen.nl/AtlantisPubliek/Opendata/download-set%3Fname=Catalog%26format=RDF',
+      'https://studiezaal.nijmegen.nl/AtlantisPubliek/Opendata/download-set?name=Catalog%26format=RDF',
     );
   });
 
@@ -30,9 +30,9 @@ describe('encodeUrlParam', () => {
     );
   });
 
-  it('encodes % first to avoid corrupting pre-encoded sequences', () => {
-    expect(encodeUrlParam('https://example.com/100%')).toBe(
-      'https://example.com/100%25',
+  it('leaves a second ? intact (RFC 3986 allows it in queries)', () => {
+    expect(encodeUrlParam('https://example.com/path?x=1')).toBe(
+      'https://example.com/path?x=1',
     );
   });
 
