@@ -32,6 +32,14 @@ export class NoDatasetFoundAtUrl extends FetchError {
   }
 }
 
+export class CouldNotFetchUrl extends FetchError {
+  constructor(url: URL, reason: string) {
+    super(`Could not fetch URL ${url.toString()}: ${reason}`, {
+      cause: `Could not fetch ${url.toString()}: ${reason}. Please check that the URL is publicly reachable and returns RDF.`,
+    });
+  }
+}
+
 export class InvalidContentType extends FetchError {
   constructor(url: URL, mediaType: string) {
     super(`Invalid Content-Type at ${url.toString()}`, {
@@ -163,10 +171,26 @@ function handleComunicaError(e: unknown, url: URL): never {
       throw new InvalidContentType(url, mediaTypeMatch[1]);
     }
 
+    if (e.cause instanceof Error) {
+      throw new CouldNotFetchUrl(url, deepestErrorMessage(e));
+    }
     throw new NoDatasetFoundAtUrl(url, e.message);
   }
 
   throw e;
+}
+
+function deepestErrorMessage(error: Error): string {
+  let current: unknown = error;
+  let message = error.message;
+  for (let depth = 0; depth < 10; depth++) {
+    if (!(current instanceof Error) || current.cause === undefined) break;
+    current = current.cause;
+    if (current instanceof Error && current.message) {
+      message = current.message;
+    }
+  }
+  return message;
 }
 
 const HYDRA = 'http://www.w3.org/ns/hydra/core#';

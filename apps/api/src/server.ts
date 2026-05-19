@@ -7,6 +7,7 @@ import fastify, {
 import bearerAuth from '@fastify/bearer-auth';
 import {
   AllowedRegistrationDomainStore,
+  CouldNotFetchUrl,
   DatasetStore,
   dereference,
   discoverDatacatalog,
@@ -121,6 +122,12 @@ export async function server(
             statusCode: e.statusCode === 404 ? 404 : 406,
           }),
         );
+        return null;
+      }
+
+      if (e instanceof CouldNotFetchUrl) {
+        reply.log.info(`Could not fetch URL ${url.toString()}: ${e.message}`);
+        await reply.sendHydraError(Object.assign(e, { statusCode: 502 }));
         return null;
       }
 
