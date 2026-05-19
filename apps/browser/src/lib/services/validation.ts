@@ -7,6 +7,21 @@ export interface ApiErrorDetails {
   description?: string;
 }
 
+/**
+ * Pull the bare reason out of a CouldNotFetchUrl Hydra title.
+ *
+ * Title shape: `${COULD_NOT_FETCH_URL_PREFIX} <url>: <reason>`. Splitting on
+ * ': ' (colon-space) avoids matching the colons inside the URL, since URLs
+ * cannot contain ': '.
+ */
+export function fetchErrorReason(
+  title: string | undefined,
+): string | undefined {
+  if (!title?.startsWith(COULD_NOT_FETCH_URL_PREFIX)) return undefined;
+  const idx = title.indexOf(': ');
+  return idx >= 0 ? title.slice(idx + 2) : undefined;
+}
+
 export type UrlValidationOutcome =
   | { kind: 'report'; report: ShaclReport }
   | { kind: 'not-found'; details?: ApiErrorDetails }
