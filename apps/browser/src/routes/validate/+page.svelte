@@ -28,6 +28,7 @@
     | { kind: 'parse-error'; message: string }
     | { kind: 'not-found'; details?: ApiErrorDetails }
     | { kind: 'no-dataset'; details?: ApiErrorDetails }
+    | { kind: 'fetch-failed'; details?: ApiErrorDetails }
     | { kind: 'error'; message: string };
 
   let summaryState = $state<SummaryState>({ kind: 'empty' });
@@ -116,6 +117,8 @@
       summaryState = { kind: 'not-found', details: outcome.details };
     } else if (outcome.kind === 'no-dataset') {
       summaryState = { kind: 'no-dataset', details: outcome.details };
+    } else if (outcome.kind === 'fetch-failed') {
+      summaryState = { kind: 'fetch-failed', details: outcome.details };
     } else {
       summaryState = { kind: 'error', message: outcome.message };
     }

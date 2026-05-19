@@ -134,6 +134,26 @@ describe('Server', () => {
     expect(response.statusCode).toEqual(200);
   });
 
+  it('surfaces the fetch reason when the URL cannot be fetched (e.g. redirect loop)', async () => {
+    const wrapped = new TypeError('fetch failed', {
+      cause: new Error('redirect count exceeded'),
+    });
+    nock('https://example.com/').get('/loop').replyWithError(wrapped);
+    const response = await httpServer.inject({
+      method: 'PUT',
+      url: '/datasets/validate',
+      headers: { 'Content-Type': 'application/ld+json' },
+      payload: JSON.stringify({
+        '@id': 'https://example.com/loop',
+      }),
+    });
+    expect(response.statusCode).toEqual(406);
+    expect(response.json()['title']).toContain(
+      'Could not fetch URL https://example.com/loop',
+    );
+    expect(response.json()['description']).toContain('redirect count exceeded');
+  });
+
   it('rejects validation requests that point to URL with invalid Content-Type', async () => {
     nock('https://example.com/')
       .get('/invalid-content-type')

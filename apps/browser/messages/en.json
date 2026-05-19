@@ -256,6 +256,8 @@
   "validate_result_not_found_body": "The Dataset Register couldn’t resolve this URL. Check that it is publicly reachable and returns a dataset description.",
   "validate_result_no_dataset_title": "No datasets found at URL",
   "validate_result_no_dataset_body": "The URL resolves, but no schema:Dataset or dcat:Dataset was found. See the requirements for details.",
+  "validate_result_fetch_failed_title": "Couldn’t fetch the URL",
+  "validate_result_fetch_failed_body": "The Dataset Register couldn’t fetch this URL. Check that it is publicly reachable and serves RDF (for example via content negotiation for application/ld+json or text/turtle).",
   "validate_summary_valid": "Valid",
   "validate_summary_valid_body": "Your dataset description meets the requirements.",
   "validate_summary_submit_cta": "Submit to the Dataset Register",

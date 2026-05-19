@@ -1,5 +1,6 @@
 import { URL } from 'url';
 import {
+  CouldNotFetchUrl,
   dereference as fetchDereference,
   discoverDatacatalog,
   fetch,
@@ -904,6 +905,21 @@ describe('Fetch', () => {
     await expect(
       fetchDatasetsAsArray(new URL('https://example.com/200')),
     ).rejects.toThrow(NoDatasetFoundAtUrl);
+  });
+
+  it('surfaces the underlying fetch cause in the error message', async () => {
+    const wrapped = new TypeError('fetch failed', {
+      cause: new Error('redirect count exceeded'),
+    });
+    nock('https://example.com').get('/loop').replyWithError(wrapped);
+
+    expect.assertions(2);
+    try {
+      await fetchDatasetsAsArray(new URL('https://example.com/loop'));
+    } catch (e) {
+      expect(e).toBeInstanceOf(CouldNotFetchUrl);
+      expect((e as Error).cause).toMatch(/redirect count exceeded/);
+    }
   });
 
   it('handles paginated JSON-LD responses', async () => {
