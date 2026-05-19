@@ -7,7 +7,6 @@ import fastify, {
 import bearerAuth from '@fastify/bearer-auth';
 import {
   AllowedRegistrationDomainStore,
-  CouldNotFetchUrl,
   DatasetStore,
   dereference,
   discoverDatacatalog,
@@ -125,16 +124,8 @@ export async function server(
         return null;
       }
 
-      if (e instanceof CouldNotFetchUrl) {
-        reply.log.info(`Could not fetch URL ${url.toString()}: ${e.message}`);
-        await reply.sendHydraError(Object.assign(e, { statusCode: 502 }));
-        return null;
-      }
-
       if (e instanceof FetchError) {
-        reply.log.info(
-          `No dataset found at URL ${url.toString()}: ${e.message}`,
-        );
+        reply.log.info(`Error at URL ${url.toString()}: ${e.message}`);
         await reply.sendHydraError(Object.assign(e, { statusCode: 406 }));
         return null;
       }

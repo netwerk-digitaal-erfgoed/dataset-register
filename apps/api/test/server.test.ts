@@ -134,7 +134,7 @@ describe('Server', () => {
     expect(response.statusCode).toEqual(200);
   });
 
-  it('returns 502 when the URL cannot be fetched (e.g. redirect loop)', async () => {
+  it('surfaces the fetch reason when the URL cannot be fetched (e.g. redirect loop)', async () => {
     const wrapped = new TypeError('fetch failed', {
       cause: new Error('redirect count exceeded'),
     });
@@ -147,7 +147,7 @@ describe('Server', () => {
         '@id': 'https://example.com/loop',
       }),
     });
-    expect(response.statusCode).toEqual(502);
+    expect(response.statusCode).toEqual(406);
     expect(response.json()['title']).toContain(
       'Could not fetch URL https://example.com/loop',
     );

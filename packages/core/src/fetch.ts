@@ -1,6 +1,7 @@
 import { QueryEngine } from '@comunica/query-sparql';
 import factory from 'rdf-ext';
 import { Store } from 'n3';
+import { COULD_NOT_FETCH_URL_PREFIX } from './constants.ts';
 import { constructQuery, dcat, rdf } from './query.ts';
 import { pipeline } from 'node:stream';
 import {
@@ -34,8 +35,8 @@ export class NoDatasetFoundAtUrl extends FetchError {
 
 export class CouldNotFetchUrl extends FetchError {
   constructor(url: URL, reason: string) {
-    super(`Could not fetch URL ${url.toString()}: ${reason}`, {
-      cause: `Could not fetch ${url.toString()}: ${reason}. Please check that the URL is publicly reachable and returns RDF.`,
+    super(`${COULD_NOT_FETCH_URL_PREFIX} ${url.toString()}: ${reason}`, {
+      cause: `${reason}. Please check that the URL is publicly reachable and returns RDF.`,
     });
   }
 }

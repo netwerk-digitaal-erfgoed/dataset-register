@@ -1,4 +1,5 @@
 import { PUBLIC_API_ENDPOINT } from '$env/static/public';
+import { COULD_NOT_FETCH_URL_PREFIX } from '@dataset-register/core/constants';
 import { parseShaclReport, type ShaclReport } from './shacl-report.js';
 
 export interface ApiErrorDetails {
@@ -37,10 +38,11 @@ export async function validateByUrl(
     return { kind: 'not-found', details: await readHydraError(response) };
   }
   if (response.status === 406) {
-    return { kind: 'no-dataset', details: await readHydraError(response) };
-  }
-  if (response.status === 502) {
-    return { kind: 'fetch-failed', details: await readHydraError(response) };
+    const details = await readHydraError(response);
+    if (details?.title?.startsWith(COULD_NOT_FETCH_URL_PREFIX)) {
+      return { kind: 'fetch-failed', details };
+    }
+    return { kind: 'no-dataset', details };
   }
   if (response.status === 200 || response.status === 400) {
     const json = await response.json();
