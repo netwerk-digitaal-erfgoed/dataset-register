@@ -40,10 +40,12 @@ export function fetchShapes(signal?: AbortSignal): Promise<ShapesIndex> {
 
 /**
  * Given a path IRI and the focusNode's rdf:type (optional), pick the best
- * matching shape. Prefers a direct hit by `sh:sourceShape` IRI, then
- * `sh:targetClass` match; when multiple shapes share a path we pick the
- * first one carrying a `sh:description`, since that description applies to
- * the property as a whole regardless of which specific constraint failed.
+ * matching shape. Prefers a direct hit by `sh:sourceShape` IRI, then a class
+ * match against the focus node's type. When focusNodeType is known we never
+ * fall back across siblings: descriptions on `schema:name` (and similar
+ * shared paths) belong to a specific class, and inheriting one from another
+ * NodeShape would mislead the reader – e.g. the data-catalog description
+ * surfacing on a contact-point validation result.
  */
 export function selectShape(
   index: ShapesIndex,
@@ -59,13 +61,9 @@ export function selectShape(
   const candidates = index.byPath.get(pathIri);
   if (!candidates?.length) return undefined;
   if (focusNodeType) {
-    const matching = candidates.find((c) => c.targetClass === focusNodeType);
-    if (matching) return matching;
+    return candidates.find((c) => c.targetClass === focusNodeType);
   }
   if (candidates.length === 1) return candidates[0];
-  // Multiple property shapes share this path (different constraints on the
-  // same property). The generic property description is shared across them,
-  // so pick the first candidate that actually carries one.
   return candidates.find((c) => c.description) ?? undefined;
 }
 
@@ -84,7 +82,8 @@ function indexShapes(json: unknown, locale: string): ShapesIndex {
     const types = node['@type'];
     if (!Array.isArray(types) || !types.includes(`${SH}NodeShape`)) continue;
 
-    const targetClass = pickIri(node[`${SH}targetClass`]);
+    const targetClass =
+      pickIri(node[`${SH}targetClass`]) ?? pickIri(node[`${SH}class`]);
     const propertyRefs = node[`${SH}property`];
     if (!Array.isArray(propertyRefs)) continue;
 
