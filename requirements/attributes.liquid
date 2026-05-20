@@ -75,15 +75,38 @@
                 {%- endif -%}
             </td>
             <td>
-                {% if property.maxCount == 0 -%}
-                    0
-                {% elsif property.minCount -%}
-                    {% if property.minCount == property.maxCount -%}
-                        {{ property.minCount }}
-                    {% else -%}
-                        {{ property.minCount }}..{{ property.maxCount | default: "n" }}
-                    {% endif -%}
-                {% endif -%}
+                {%- assign current_min = property.minCount | default: 0 -%}
+                {%- assign current_max = property.maxCount | default: "n" -%}
+                {%- if property.maxCount == 0 -%}
+                    {%- assign current_card = "0" -%}
+                {%- elsif property.minCount and property.minCount == property.maxCount -%}
+                    {%- capture current_card %}{{ property.minCount }}{% endcapture -%}
+                {%- else -%}
+                    {%- capture current_card %}{{ current_min }}..{{ current_max }}{% endcapture -%}
+                {%- endif -%}
+                {{ current_card }}
+                {%- if property['nde:futureChange'] -%}
+                    {%- assign change = property['nde:futureChange'] -%}
+                    {%- assign future_min = current_min -%}
+                    {%- assign future_max = current_max -%}
+                    {%- if change.minCount -%}{%- assign future_min = change.minCount -%}{%- endif -%}
+                    {%- if change.maxCount -%}{%- assign future_max = change.maxCount -%}{%- endif -%}
+                    {%- if change.severity == "Violation" and current_min == 0 and property.maxCount != 0 -%}
+                        {%- unless change.datatype or change.pattern or change.nodeKind or property.datatype or property.pattern or property.nodeKind or property.or or property.not -%}
+                            {%- assign future_min = 1 -%}
+                        {%- endunless -%}
+                    {%- endif -%}
+                    {%- if future_max == 0 -%}
+                        {%- assign future_card = "0" -%}
+                    {%- elsif future_min == future_max -%}
+                        {%- capture future_card %}{{ future_min }}{% endcapture -%}
+                    {%- else -%}
+                        {%- capture future_card %}{{ future_min }}..{{ future_max }}{% endcapture -%}
+                    {%- endif -%}
+                    {%- if future_card != current_card -%}
+                        <br><small>v{{ change['nde:version'] }}: {{ future_card }}</small>
+                    {%- endif -%}
+                {%- endif -%}
             </td>
             <td>
                 {% assign is_required = false -%}
