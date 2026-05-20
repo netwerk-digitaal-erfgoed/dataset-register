@@ -153,10 +153,25 @@
     activeGoToLine?.(line);
   }
 
-  const hasInlineHash =
-    typeof window !== 'undefined' && /(?:^|&)rdf=/.test(window.location.hash);
+  let hasInlineHash = $state(
+    typeof window !== 'undefined' && /(?:^|&)rdf=/.test(window.location.hash),
+  );
+  // Bumping this key forces InlineValidationForm to remount so its `onMount`
+  // re-reads the freshly written `window.location.hash`.
+  let inlineSeedVersion = $state(0);
   const urlTabOpen = $derived(data.tab !== 'inline' && !hasInlineHash);
   const inlineTabOpen = $derived(data.tab === 'inline' || hasInlineHash);
+
+  function handleValidatorLink(hashValue: string): void {
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.delete('url');
+    newUrl.searchParams.delete('tab');
+    newUrl.hash = `#${hashValue}`;
+    history.replaceState(history.state, '', newUrl.toString());
+    hasInlineHash = true;
+    inlineSeedVersion += 1;
+    resetValidation();
+  }
 
   const activeTab =
     'inline-block rounded-t-lg border-b-2 border-blue-700 p-4 text-blue-700 dark:border-blue-400 dark:text-blue-400 cursor-pointer';
@@ -205,6 +220,7 @@
             autoSubmit={Boolean(data.prefillUrl)}
             onOutcome={handleUrlOutcome}
             onStart={handleStart}
+            onValidatorLink={handleValidatorLink}
             bind:goToLine={urlGoToLine}
             bind:source={urlSource}
           />
@@ -218,11 +234,13 @@
         onclick={resetValidation}
       >
         <div class="pt-4">
-          <InlineValidationForm
-            onOutcome={handleInlineOutcome}
-            onStart={handleStart}
-            bind:goToLine={inlineGoToLine}
-          />
+          {#key inlineSeedVersion}
+            <InlineValidationForm
+              onOutcome={handleInlineOutcome}
+              onStart={handleStart}
+              bind:goToLine={inlineGoToLine}
+            />
+          {/key}
         </div>
       </TabItem>
     </Tabs>
