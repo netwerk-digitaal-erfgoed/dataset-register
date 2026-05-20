@@ -32,6 +32,7 @@ nde-dataset:DatacatalogShape
         [
             sh:path schema:name ;
             sh:minCount 1 ;
+            sh:severity sh:Violation ;
             sh:or (
                 [ sh:datatype xsd:string ]
                 [ sh:datatype rdf:langString ]
@@ -93,6 +94,7 @@ nde-dataset:DatasetShape
         [
             sh:path schema:name ;
             sh:minCount 1 ;
+            sh:severity sh:Violation ;
             sh:or (
                 [ sh:datatype xsd:string ]
                 [ sh:datatype rdf:langString ]
@@ -135,7 +137,7 @@ Een licentie moet beschikbaar zijn op de distributie of op de dataset."""@nl, ""
 
 This license specifies the conditions under which the metadata records in the dataset may be accessed and reused. It does not cover the heritage objects (either physical or digital) that the metadata describes. Access conditions for these objects should be specified in their own descriptions within the dataset.
 
-A license must be available on either the distribution or the dataset.
+A license MUST be available on either the distribution or the dataset.
 
 The DERA requires metadata to be published openly, so this value SHOULD be an open license that allows consumers to reuse the data, such as `https://creativecommons.org/publicdomain/zero/1.0/` (CC0), `https://creativecommons.org/licenses/by/4.0/` (CC BY 4.0), or `https://creativecommons.org/licenses/by-sa/4.0/` (CC BY-SA 4.0). Adopting a non-open license will severely limit reuse and does not comply with the DERA principles.
 
@@ -493,6 +495,7 @@ nde-dataset:DistributionShape
             sh:path schema:contentUrl ;
             sh:minCount 1 ;
             sh:maxCount 1 ;
+            sh:severity sh:Violation ;
             sh:description """De URL die rechtstreeks toegang biedt tot de distributie zelf: het databestand of het endpoint van de [=web API=].
                 Gebruik `schema:documentation` als er daarnaast een documentatiepagina is die de distributie beschrijft of ontsluit (zoals een SPARQL-UI of een downloadlandingspagina)."""@nl,
                 """The URL that provides direct access to the distribution itself: the data file or the [=web API=] endpoint.
@@ -644,7 +647,7 @@ nde-dataset:DistributionShape
         Er moet altijd een licentie beschikbaar zijn, hetzij op de distributie, hetzij op het dataset."""@nl,
                 """License applicable to the distribution.
         If the distribution has no license of its own, the license of the parent dataset is inherited.
-        A license must always be available, either on the distribution or on the dataset."""@en ;
+        A license MUST always be available, either on the distribution or on the dataset."""@en ;
             sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
         ] ,
         [
@@ -793,6 +796,7 @@ nde-dataset:AgentShape
         [
             sh:path schema:name ;
             sh:minCount 1 ;
+            sh:severity sh:Violation ;
             sh:or (
                 [ sh:datatype xsd:string ]
                 [ sh:datatype rdf:langString ]
@@ -853,11 +857,16 @@ nde-dataset:AgentShape
             sh:severity sh:Info ;
             sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
         ] ,
-        # Metadata-only property shape so the UI can surface a description for
-        # the schema:contactPoint path emitted by OrganizationContactPointRequiredShape
-        # below (which is SPARQL-bound and therefore not indexed by sh:path).
+        # Metadata-only property shape so the UI can surface a description and
+        # the v2.0 "becomes required" annotation for the schema:contactPoint path
+        # emitted by OrganizationContactPointRequiredShape below (which is
+        # SPARQL-bound and therefore not indexed by sh:path).
         [
             sh:path schema:contactPoint ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
             sh:description "Contactinformatie waar eindgebruikers terecht kunnen met vragen over de dataset. Gebruik bij voorkeur de gegevens van de afdeling die de dataset of catalogus beheert, niet die van een individuele medewerker."@nl, "Contact information where end users can get in touch with questions about the dataset. Preferably use the details of the department that manages the dataset or catalogue, rather than an individual employee."@en ;
         ]
 .
