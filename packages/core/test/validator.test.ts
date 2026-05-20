@@ -650,9 +650,9 @@ describe('Validator', () => {
   });
 
   it('does not warn when dataset license is absent but distribution carries one', async () => {
-    // DCAT-AP-NL places license on the distribution. The dataset-level
-    // schema:license shape must not double-warn in that case; the
-    // DistributionLicenseRequiredShape covers the must-exist-somewhere rule.
+    // DCAT-AP-NL places license on the distribution. The schema.org
+    // DatasetShape requires schema:license, but this fixture is pure DCAT
+    // (dcat:Dataset) so the schema.org shape does not fire on it.
     const report = (await validate(
       'dataset-dcat-license-on-distribution.jsonld',
     )) as Valid;
