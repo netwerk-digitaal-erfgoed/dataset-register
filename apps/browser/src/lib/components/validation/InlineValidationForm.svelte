@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import {
-    compressToEncodedURIComponent,
-    decompressFromEncodedURIComponent,
-  } from 'lz-string';
+    decodeFromShareUrl,
+    encodeForShareUrl,
+  } from './share-link.js';
   import { Label, Select, Tooltip } from 'flowbite-svelte';
   import AlignLeftOutline from 'flowbite-svelte-icons/AlignLeftOutline.svelte';
   import ClipboardOutline from 'flowbite-svelte-icons/ClipboardOutline.svelte';
@@ -61,10 +61,13 @@
   });
   let innerFocus = $state<(() => void) | undefined>(undefined);
 
-  // Hash-based deep link: on mount, seed the editor from `#rdf=<lz>` and
-  // optionally `#ct=<mime>`. The fragment stays client-side so pasted RDF
-  // never reaches the server or access logs.
-  function readHash(): { text?: string; contentType?: ContentType } {
+  // Hash-based deep link: on mount, seed the editor from `#rdf=<payload>`
+  // and optionally `#ct=<mime>`. The fragment stays client-side so pasted
+  // RDF never reaches the server or access logs.
+  async function readHash(): Promise<{
+    text?: string;
+    contentType?: ContentType;
+  }> {
     if (typeof window === 'undefined') return {};
     const hash = window.location.hash.replace(/^#/, '');
     if (!hash) return {};
@@ -72,7 +75,7 @@
     const encoded = params.get('rdf');
     const ct = params.get('ct') as ContentType | null;
     if (!encoded) return {};
-    const decoded = decompressFromEncodedURIComponent(encoded);
+    const decoded = await decodeFromShareUrl(encoded);
     return decoded
       ? {
           text: decoded,
@@ -81,8 +84,8 @@
       : {};
   }
 
-  onMount(() => {
-    const seed = readHash();
+  onMount(async () => {
+    const seed = await readHash();
     if (seed.text) {
       text = seed.text;
       if (seed.contentType) {
@@ -100,10 +103,10 @@
     const contentType = selectedContentType;
     if (typeof window === 'undefined') return;
     clearTimeout(hashTimer);
-    hashTimer = setTimeout(() => {
+    hashTimer = setTimeout(async () => {
       const fragment = new URLSearchParams();
       if (body) {
-        fragment.set('rdf', compressToEncodedURIComponent(body));
+        fragment.set('rdf', await encodeForShareUrl(body));
         if (userOverride) fragment.set('ct', contentType);
       }
       const url = new URL(window.location.href);
