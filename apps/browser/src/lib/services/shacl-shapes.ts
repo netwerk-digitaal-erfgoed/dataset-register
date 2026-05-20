@@ -39,13 +39,14 @@ export function fetchShapes(signal?: AbortSignal): Promise<ShapesIndex> {
 }
 
 /**
- * Given a path IRI and the focusNode's rdf:type (optional), pick the best
- * matching shape. Prefers a direct hit by `sh:sourceShape` IRI, then a class
- * match against the focus node's type. When focusNodeType is known we never
- * fall back across siblings: descriptions on `schema:name` (and similar
- * shared paths) belong to a specific class, and inheriting one from another
- * NodeShape would mislead the reader – e.g. the data-catalog description
- * surfacing on a contact-point validation result.
+ * Pick the property-shape metadata that describes a SHACL validation result.
+ *
+ * Prefers a direct hit by `sh:sourceShape` – the API emits stable blank-node
+ * IDs across the `/shacl` and validation endpoints, so blank-node sourceShapes
+ * match too. Falls back to a path lookup, narrowed by the focus node's
+ * rdf:type when that is known: descriptions on shared paths like
+ * `schema:name` belong to a specific class, and inheriting one from another
+ * NodeShape would mislead the reader.
  */
 export function selectShape(
   index: ShapesIndex,
@@ -53,7 +54,7 @@ export function selectShape(
   focusNodeType?: string,
   sourceShapeIri?: string,
 ): ShapeMetadata | undefined {
-  if (sourceShapeIri && !sourceShapeIri.startsWith('_:')) {
+  if (sourceShapeIri) {
     const direct = index.byId.get(sourceShapeIri);
     if (direct) return direct;
   }
@@ -67,7 +68,7 @@ export function selectShape(
   return candidates.find((c) => c.description) ?? undefined;
 }
 
-function indexShapes(json: unknown, locale: string): ShapesIndex {
+export function indexShapes(json: unknown, locale: string): ShapesIndex {
   const nodes = normalizeNodes<Record<string, unknown>>(json);
   const byId = new Map<string, Record<string, unknown>>();
   for (const node of nodes) {
@@ -87,6 +88,12 @@ function indexShapes(json: unknown, locale: string): ShapesIndex {
     const propertyRefs = node[`${SH}property`];
     if (!Array.isArray(propertyRefs)) continue;
 
+    // Collect every property shape this NodeShape owns. Per requirements/AGENTS.md
+    // the main shape for a property carries `sh:description`; sibling shapes
+    // (different constraints on the same path) only carry `sh:message`. Group
+    // siblings by path so each sibling can surface the main shape's description.
+    type Sibling = { refId: string; pathIri: string; description?: string };
+    const siblings: Sibling[] = [];
     for (const ref of propertyRefs) {
       const refId =
         ref && typeof ref === 'object' && '@id' in ref
@@ -95,25 +102,30 @@ function indexShapes(json: unknown, locale: string): ShapesIndex {
       if (!refId) continue;
       const propertyShape = byId.get(refId);
       if (!propertyShape) continue;
-
+      const pathIri = pickIri(propertyShape[`${SH}path`]);
+      if (!pathIri) continue;
       const description = pickLocalized(
         propertyShape[`${SH}description`],
         locale,
       );
-      if (!description) continue;
+      siblings.push({ refId, pathIri, description });
+    }
 
-      const metadata: ShapeMetadata = {
-        description,
-        targetClass,
-      };
-
-      const pathIri = pickIri(propertyShape[`${SH}path`]);
-      if (pathIri) {
-        const list = byPath.get(pathIri);
-        if (list) list.push(metadata);
-        else byPath.set(pathIri, [metadata]);
+    const descriptionByPath = new Map<string, string>();
+    for (const sibling of siblings) {
+      if (sibling.description && !descriptionByPath.has(sibling.pathIri)) {
+        descriptionByPath.set(sibling.pathIri, sibling.description);
       }
-      if (!refId.startsWith('_:')) shapeById.set(refId, metadata);
+    }
+
+    for (const sibling of siblings) {
+      const description = descriptionByPath.get(sibling.pathIri);
+      if (!description) continue;
+      const metadata: ShapeMetadata = { description, targetClass };
+      const list = byPath.get(sibling.pathIri);
+      if (list) list.push(metadata);
+      else byPath.set(sibling.pathIri, [metadata]);
+      shapeById.set(sibling.refId, metadata);
     }
   }
 
