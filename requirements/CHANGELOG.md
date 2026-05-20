@@ -5,10 +5,9 @@
 
 ### Bug Fixes
 
-* **requirements:** correct Required vs Recommended in attributes table ([#1984](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1984)) ([58e3a69](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/58e3a69fb0e8e0d171256496d764eab16c5b0608))
-* **requirements:** require schema:license on the Dataset ([#1986](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1986)) ([c0c1e68](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/c0c1e6899c2cfd64c24e15a7770a16da3cc6af41))
-* **requirements:** update Register API URLs to production endpoint ([#1980](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1980)) ([58e3b33](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/58e3b33859d6fa83416300d30ba1d21e10bb6d4d))
-* scope schema:name description to the matching shape ([#1972](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1972)) ([0b45306](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/0b45306cf5b533661f34c1d45d074593b7794ce0))
+* **requirements:** fix v2 Required vs Recommended in attributes table ([#1984](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1984)) ([58e3a69](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/58e3a69fb0e8e0d171256496d764eab16c5b0608))
+* **requirements:** require schema:license on the Dataset as before ([#1986](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1986)) ([c0c1e68](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/c0c1e6899c2cfd64c24e15a7770a16da3cc6af41))
+* **requirements:** update Register API URLs ([#1980](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1980)) ([58e3b33](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/58e3b33859d6fa83416300d30ba1d21e10bb6d4d))
 
 ## [1.11.1](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.11.0...requirements-1.11.1) (2026-05-15)
 
