@@ -32,6 +32,7 @@ nde-dataset:DatacatalogShape
         [
             sh:path schema:name ;
             sh:minCount 1 ;
+            sh:severity sh:Violation ;
             sh:or (
                 [ sh:datatype xsd:string ]
                 [ sh:datatype rdf:langString ]
@@ -93,6 +94,7 @@ nde-dataset:DatasetShape
         [
             sh:path schema:name ;
             sh:minCount 1 ;
+            sh:severity sh:Violation ;
             sh:or (
                 [ sh:datatype xsd:string ]
                 [ sh:datatype rdf:langString ]
@@ -493,6 +495,7 @@ nde-dataset:DistributionShape
             sh:path schema:contentUrl ;
             sh:minCount 1 ;
             sh:maxCount 1 ;
+            sh:severity sh:Violation ;
             sh:description """De URL die rechtstreeks toegang biedt tot de distributie zelf: het databestand of het endpoint van de [=web API=].
                 Gebruik `schema:documentation` als er daarnaast een documentatiepagina is die de distributie beschrijft of ontsluit (zoals een SPARQL-UI of een downloadlandingspagina)."""@nl,
                 """The URL that provides direct access to the distribution itself: the data file or the [=web API=] endpoint.
@@ -793,6 +796,7 @@ nde-dataset:AgentShape
         [
             sh:path schema:name ;
             sh:minCount 1 ;
+            sh:severity sh:Violation ;
             sh:or (
                 [ sh:datatype xsd:string ]
                 [ sh:datatype rdf:langString ]
@@ -853,11 +857,16 @@ nde-dataset:AgentShape
             sh:severity sh:Info ;
             sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
         ] ,
-        # Metadata-only property shape so the UI can surface a description for
-        # the schema:contactPoint path emitted by OrganizationContactPointRequiredShape
-        # below (which is SPARQL-bound and therefore not indexed by sh:path).
+        # Metadata-only property shape so the UI can surface a description and
+        # the v2.0 "becomes required" annotation for the schema:contactPoint path
+        # emitted by OrganizationContactPointRequiredShape below (which is
+        # SPARQL-bound and therefore not indexed by sh:path).
         [
             sh:path schema:contactPoint ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
             sh:description "Contactinformatie waar eindgebruikers terecht kunnen met vragen over de dataset. Gebruik bij voorkeur de gegevens van de afdeling die de dataset of catalogus beheert, niet die van een individuele medewerker."@nl, "Contact information where end users can get in touch with questions about the dataset. Preferably use the details of the department that manages the dataset or catalogue, rather than an individual employee."@en ;
         ]
 .

@@ -91,7 +91,7 @@
                     Discouraged
                 {% elsif property.minCount > 0 -%}
                     {% assign severity = property.severity | default: "Violation" -%}
-                    {% if severity == "Violation" or property.severity == "Warning" -%}
+                    {% if severity == "Violation" -%}
                         Required
                         {% assign is_required = true -%}
                     {% else -%}
@@ -135,7 +135,15 @@
                         {%- if not_pattern contains "https?" or not_pattern contains "http" -%}
                             {% assign future_text = "IRIs not allowed" -%}
                         {%- endif -%}
-                    {% elsif change.severity == "Violation" and is_required == false -%}
+                    {% endif -%}
+                    {% if property.minCount > 0 and property.severity == "Warning" and change.severity == "Violation" -%}
+                        {% if future_text == "" -%}
+                            {% assign future_text = "becomes required" -%}
+                        {% elsif future_text != "becomes required" -%}
+                            {% assign future_text = future_text | prepend: "becomes required; " -%}
+                        {% endif -%}
+                    {% endif -%}
+                    {% if future_text == "" and change.severity == "Violation" and is_required == false and property.maxCount != 0 -%}
                         {% assign future_text = "becomes required" -%}
                     {% endif -%}
                     {% if future_text != "" -%}
