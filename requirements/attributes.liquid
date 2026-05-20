@@ -87,9 +87,7 @@
             </td>
             <td>
                 {% assign is_required = false -%}
-                {% if property['nde:usage'] -%}
-                    {{ property['nde:usage'] }}
-                {% elsif property.maxCount == 0 -%}
+                {% if property.maxCount == 0 -%}
                     Discouraged
                 {% elsif property.minCount > 0 -%}
                     {% assign severity = property.severity | default: "Violation" -%}

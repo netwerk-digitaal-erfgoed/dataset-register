@@ -130,7 +130,6 @@ nde-dataset:DatasetShape
                 nde:version "2.0" ;
                 sh:nodeKind sh:IRI ;
             ] ;
-            nde:usage "Conditional" ;
             sh:severity sh:Warning ;
             sh:description """Licentie die van toepassing is op de dataset. Als de dataset een licentie heeft, wordt deze overgenomen door alle distributies die geen eigen licentie hebben.
 
@@ -643,7 +642,6 @@ nde-dataset:DistributionShape
                 nde:version "2.0" ;
                 sh:nodeKind sh:IRI ;
             ] ;
-            nde:usage "Conditional" ;
             sh:description """Licentie die van toepassing is op de distributie.
         Als de distributie geen eigen licentie heeft, wordt de licentie van de bovenliggende dataset overgenomen.
         Er moet altijd een licentie beschikbaar zijn, hetzij op de distributie, hetzij op het dataset."""@nl,
