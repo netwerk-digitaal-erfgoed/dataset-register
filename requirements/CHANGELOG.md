@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.3](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.11.2...requirements-1.11.3) (2026-05-21)
+
+
+### Bug Fixes
+
+* **requirements:** render cardinality for properties without sh:minCount/maxCount ([#1987](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1987)) ([c521c74](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/c521c74572d39d1c9b7fbd27bdd828e68413bc2b))
+
 ## [1.11.2](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.11.1...requirements-1.11.2) (2026-05-20)
 
 
