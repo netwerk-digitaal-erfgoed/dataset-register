@@ -15,6 +15,7 @@
   import { getLicenseName } from '$lib/utils/license.js';
   import { shortenUri, languageCode } from '$lib/utils/prefix.js';
   import { getMediaTypeLabel } from '$lib/utils/media-type.js';
+  import { encodeUrlParam } from '$lib/utils/url-param.js';
   import LanguageBadge from '$lib/components/LanguageBadge.svelte';
   import { SvelteSet } from 'svelte/reactivity';
   import {
@@ -548,13 +549,13 @@
                   >
                 {/if}
                 <LanguageBadge values={dataset.publisher.name} />
-                {#if dataset.publisher.email || dataset.publisher.sameAs}
+                {#if dataset.contactPoint?.email || dataset.publisher.sameAs}
                   <div
                     class="mt-1.5 flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400"
                   >
-                    {#if dataset.publisher.email}
+                    {#if dataset.contactPoint?.email}
                       <a
-                        href="mailto:{dataset.publisher.email}"
+                        href={dataset.contactPoint.email}
                         class="inline-flex items-center gap-1.5 hover:text-blue-600 dark:hover:text-blue-400"
                       >
                         <svg
@@ -571,7 +572,7 @@
                           />
                         </svg>
                         <span class="break-all"
-                          >{dataset.publisher.email.replace(
+                          >{dataset.contactPoint.email.replace(
                             'mailto:',
                             '',
                           )}</span
@@ -1565,7 +1566,7 @@
                 </a>
                 <a
                   href={localizeHref(
-                    `/validate?url=${encodeURIComponent(dataset.subjectOf.$id)}`,
+                    `/validate?url=${encodeUrlParam(dataset.subjectOf.$id)}`,
                   )}
                   class="inline-flex flex-shrink-0 items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium text-white transition-colors {registrationStatus
                     ? 'bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600'

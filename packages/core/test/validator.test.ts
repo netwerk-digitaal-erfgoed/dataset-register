@@ -649,6 +649,24 @@ describe('Validator', () => {
     expect(report.state).toEqual('valid');
   });
 
+  it('does not warn when dataset license is absent but distribution carries one', async () => {
+    // DCAT-AP-NL places license on the distribution. The schema.org
+    // DatasetShape requires schema:license, but this fixture is pure DCAT
+    // (dcat:Dataset) so the schema.org shape does not fire on it.
+    const report = (await validate(
+      'dataset-dcat-license-on-distribution.jsonld',
+    )) as Valid;
+    expect(report.state).toEqual('valid');
+    const licenseResults = [
+      ...report.errors.match(
+        null,
+        shacl('resultPath'),
+        rdf.namedNode('https://schema.org/license'),
+      ),
+    ];
+    expect(licenseResults).toHaveLength(0);
+  });
+
   it('emits uniqueLang violation once per focus node, not once per shape', async () => {
     // Regression: Organization and Person shapes both targeted objects of
     // dct:publisher and dct:creator with identical foaf:name constraints, so

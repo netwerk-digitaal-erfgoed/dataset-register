@@ -44,7 +44,8 @@
             <th scope="row">[{{ property.path }}]({{ property.path }})</th>
             <td>
                 {%- if is_date_shape -%}
-                    {%- if description != "" -%}{{ description }} {% endif -%}See [[#dataset-date]].
+                    {%- if description != "" -%}{{ description }} {% endif -%}
+                    {%- if name == 'Distribution' -%}See [[#distribution-date]].{%- else -%}See [[#dataset-date]].{%- endif -%}
                 {%- elsif property.path == "schema:publisher" or property.path == "schema:creator" -%}
                     {{ description }} See [[#creator-publisher-information]].
                 {%- elsif property.path == "schema:contactPoint" -%}
@@ -74,15 +75,38 @@
                 {%- endif -%}
             </td>
             <td>
-                {% if property.maxCount == 0 -%}
-                    0
-                {% elsif property.minCount -%}
-                    {% if property.minCount == property.maxCount -%}
-                        {{ property.minCount }}
-                    {% else -%}
-                        {{ property.minCount }}..{{ property.maxCount | default: "n" }}
-                    {% endif -%}
-                {% endif -%}
+                {%- assign current_min = property.minCount | default: 0 -%}
+                {%- assign current_max = property.maxCount | default: "n" -%}
+                {%- if property.maxCount == 0 -%}
+                    {%- assign current_card = "0" -%}
+                {%- elsif property.minCount and property.minCount == property.maxCount -%}
+                    {%- capture current_card %}{{ property.minCount }}{% endcapture -%}
+                {%- else -%}
+                    {%- capture current_card %}{{ current_min }}..{{ current_max }}{% endcapture -%}
+                {%- endif -%}
+                {{ current_card }}
+                {%- if property['nde:futureChange'] -%}
+                    {%- assign change = property['nde:futureChange'] -%}
+                    {%- assign future_min = current_min -%}
+                    {%- assign future_max = current_max -%}
+                    {%- if change.minCount -%}{%- assign future_min = change.minCount -%}{%- endif -%}
+                    {%- if change.maxCount -%}{%- assign future_max = change.maxCount -%}{%- endif -%}
+                    {%- if change.severity == "Violation" and current_min == 0 and property.maxCount != 0 -%}
+                        {%- unless change.datatype or change.pattern or change.nodeKind or property.datatype or property.pattern or property.nodeKind or property.or or property.not -%}
+                            {%- assign future_min = 1 -%}
+                        {%- endunless -%}
+                    {%- endif -%}
+                    {%- if future_max == 0 -%}
+                        {%- assign future_card = "0" -%}
+                    {%- elsif future_min == future_max -%}
+                        {%- capture future_card %}{{ future_min }}{% endcapture -%}
+                    {%- else -%}
+                        {%- capture future_card %}{{ future_min }}..{{ future_max }}{% endcapture -%}
+                    {%- endif -%}
+                    {%- if future_card != current_card -%}
+                        <br><small>v{{ change['nde:version'] }}: {{ future_card }}</small>
+                    {%- endif -%}
+                {%- endif -%}
             </td>
             <td>
                 {% assign is_required = false -%}
@@ -90,7 +114,7 @@
                     Discouraged
                 {% elsif property.minCount > 0 -%}
                     {% assign severity = property.severity | default: "Violation" -%}
-                    {% if severity == "Violation" or property.severity == "Warning" -%}
+                    {% if severity == "Violation" -%}
                         Required
                         {% assign is_required = true -%}
                     {% else -%}
@@ -118,7 +142,31 @@
                         {% assign future_text = property.datatype | replace: 'http://www.w3.org/2001/XMLSchema#', 'xsd:' | replace: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'rdf:' | prepend: 'must be ' -%}
                     {% elsif change.severity == "Violation" and is_date_shape -%}
                         {% assign future_text = "must be valid ISO 8601" -%}
-                    {% elsif change.severity == "Violation" and is_required == false -%}
+                    {% elsif change.severity == "Violation" and property.or -%}
+                        {%- assign has_iri_alt = false -%}
+                        {%- assign has_date_alt = false -%}
+                        {%- for alt in property.or -%}
+                            {%- if alt.nodeKind == "IRI" -%}{%- assign has_iri_alt = true -%}{%- endif -%}
+                            {%- assign alt_pattern = alt.pattern | default: "" -%}
+                            {%- if alt_pattern contains "{4}" -%}{%- assign has_date_alt = true -%}{%- endif -%}
+                        {%- endfor -%}
+                        {%- if has_iri_alt and has_date_alt -%}
+                            {% assign future_text = "must be valid ISO 8601 or IRI" -%}
+                        {%- endif -%}
+                    {% elsif change.severity == "Violation" and property.not.pattern -%}
+                        {%- assign not_pattern = property.not.pattern -%}
+                        {%- if not_pattern contains "https?" or not_pattern contains "http" -%}
+                            {% assign future_text = "IRIs not allowed" -%}
+                        {%- endif -%}
+                    {% endif -%}
+                    {% if property.minCount > 0 and property.severity == "Warning" and change.severity == "Violation" -%}
+                        {% if future_text == "" -%}
+                            {% assign future_text = "becomes required" -%}
+                        {% elsif future_text != "becomes required" -%}
+                            {% assign future_text = future_text | prepend: "becomes required; " -%}
+                        {% endif -%}
+                    {% endif -%}
+                    {% if future_text == "" and change.severity == "Violation" and is_required == false and property.maxCount != 0 -%}
                         {% assign future_text = "becomes required" -%}
                     {% endif -%}
                     {% if future_text != "" -%}

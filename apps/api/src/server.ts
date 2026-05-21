@@ -125,9 +125,7 @@ export async function server(
       }
 
       if (e instanceof FetchError) {
-        reply.log.info(
-          `No dataset found at URL ${url.toString()}: ${e.message}`,
-        );
+        reply.log.info(`Error at URL ${url.toString()}: ${e.message}`);
         await reply.sendHydraError(Object.assign(e, { statusCode: 406 }));
         return null;
       }

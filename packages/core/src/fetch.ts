@@ -1,6 +1,7 @@
 import { QueryEngine } from '@comunica/query-sparql';
 import factory from 'rdf-ext';
 import { Store } from 'n3';
+import { COULD_NOT_FETCH_URL_PREFIX } from './constants.ts';
 import { constructQuery, dcat, rdf } from './query.ts';
 import { pipeline } from 'node:stream';
 import {
@@ -28,6 +29,14 @@ export class NoDatasetFoundAtUrl extends FetchError {
   constructor(url: URL, message?: string) {
     super(`No dataset found at URL ${url.toString()}`, {
       cause: `The provided URL does not contain either a schema:Dataset or a dcat:Dataset${message ? ': ' + message : ''}. Please ensure your submitted URL includes at least one dataset description.`,
+    });
+  }
+}
+
+export class CouldNotFetchUrl extends FetchError {
+  constructor(url: URL, reason: string) {
+    super(`${COULD_NOT_FETCH_URL_PREFIX} ${url.toString()}: ${reason}`, {
+      cause: `${reason}. Please check that the URL is publicly reachable and returns RDF.`,
     });
   }
 }
@@ -163,10 +172,26 @@ function handleComunicaError(e: unknown, url: URL): never {
       throw new InvalidContentType(url, mediaTypeMatch[1]);
     }
 
+    if (e.cause instanceof Error) {
+      throw new CouldNotFetchUrl(url, deepestErrorMessage(e));
+    }
     throw new NoDatasetFoundAtUrl(url, e.message);
   }
 
   throw e;
+}
+
+function deepestErrorMessage(error: Error): string {
+  let current: unknown = error;
+  let message = error.message;
+  for (let depth = 0; depth < 10; depth++) {
+    if (!(current instanceof Error) || current.cause === undefined) break;
+    current = current.cause;
+    if (current instanceof Error && current.message) {
+      message = current.message;
+    }
+  }
+  return message;
 }
 
 const HYDRA = 'http://www.w3.org/ns/hydra/core#';

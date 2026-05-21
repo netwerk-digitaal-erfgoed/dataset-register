@@ -1,5 +1,6 @@
 import { URL } from 'url';
 import {
+  CouldNotFetchUrl,
   dereference as fetchDereference,
   discoverDatacatalog,
   fetch,
@@ -443,6 +444,28 @@ describe('Fetch', () => {
     expect((literalTheme?.object as Literal).language).toEqual('nl');
   });
 
+  it('drops URI-shaped schema:keywords from dcat:keyword output', async () => {
+    const response = await file('dataset-schema-org-keyword-uri.jsonld');
+    nock('http://data.bibliotheken.nl')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/id/dataset/keyword-uri')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('http://data.bibliotheken.nl/id/dataset/keyword-uri'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const datasetUri = factory.namedNode(
+      'http://data.bibliotheken.nl/id/dataset/keyword-uri',
+    );
+    const keywordValues = [
+      ...dataset.match(datasetUri, dcat('keyword'), null),
+    ].map((quad) => quad.object.value);
+    expect(keywordValues).toEqual(['photographs']);
+  });
+
   it('preserves user-provided themes alongside default EDUC theme', async () => {
     const response = await file('dataset-dcat-valid-minimal.jsonld');
     const datasetWithTheme = response.replace(
@@ -580,10 +603,12 @@ describe('Fetch', () => {
     // The DCAT file has a 4th gzip distribution (5 triples incl. downloadURL),
     // an extra byteSize triple, one more propagated license (4 vs 3 distributions),
     // a mediaType on the SPARQL distribution (suppressed for API distributions),
-    // and a dcat:theme triple (auto-assigned for Schema.org, explicit in DCAT).
+    // a dcat:theme triple (auto-assigned for Schema.org, explicit in DCAT),
+    // and a foaf:mbox triple on the publisher (no longer emitted from
+    // Schema.org input now that the contactPoint is the canonical email channel).
     // Fetch also replaces the `dct:temporal "..."` literal with a PeriodOfTime
     // blank node (1 → 4 quads: dct:temporal link + rdf:type + startDate + endDate).
-    expect(dataset.size).toEqual(dcatEquivalent.size + 8 - 9 + 3);
+    expect(dataset.size).toEqual(dcatEquivalent.size + 8 - 10 + 3);
 
     // Check that SPARQL endpoint has conformsTo triple
     const sparqlConformsToTriples = [...dataset].filter(
@@ -683,15 +708,6 @@ describe('Fetch', () => {
           factory.namedNode('https://example.com'),
           rdf('type'),
           foaf('Organization'),
-        ),
-      ),
-    ).toBe(true);
-    expect(
-      dataset.has(
-        factory.quad(
-          factory.namedNode('https://example.com'),
-          foaf('mbox'),
-          factory.literal('datasets@example.com'),
         ),
       ),
     ).toBe(true);
@@ -891,6 +907,21 @@ describe('Fetch', () => {
     ).rejects.toThrow(NoDatasetFoundAtUrl);
   });
 
+  it('surfaces the underlying fetch cause in the error message', async () => {
+    const wrapped = new TypeError('fetch failed', {
+      cause: new Error('redirect count exceeded'),
+    });
+    nock('https://example.com').get('/loop').replyWithError(wrapped);
+
+    expect.assertions(2);
+    try {
+      await fetchDatasetsAsArray(new URL('https://example.com/loop'));
+    } catch (e) {
+      expect(e).toBeInstanceOf(CouldNotFetchUrl);
+      expect((e as Error).cause).toMatch(/redirect count exceeded/);
+    }
+  });
+
   it('handles paginated JSON-LD responses', async () => {
     // First request is consumed by dereference(); second by Comunica (Hydra fallback).
     nock('https://example.com')
@@ -961,6 +992,85 @@ describe('Fetch', () => {
       expect(quad.object.value).toBe(
         'https://creativecommons.org/publicdomain/zero/1.0/',
       ),
+    );
+  });
+
+  it('denormalizes distribution license onto a DCAT dataset that has none', async () => {
+    const response = await file('dataset-dcat-license-on-distribution.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/dcat-license-on-distribution')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/dcat-license-on-distribution'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const datasetUri = factory.namedNode(
+      'http://data.bibliotheken.nl/id/dataset/license-on-distribution',
+    );
+
+    // Dataset has no own license; the distribution's CC0 is sampled onto it
+    // so query consumers can find the license at the dataset level.
+    const datasetLicenses = [
+      ...dataset.match(datasetUri, dct('license'), null),
+    ];
+    expect(datasetLicenses).toHaveLength(1);
+    expect(datasetLicenses[0].object.value).toBe(
+      'https://creativecommons.org/publicdomain/zero/1.0/',
+    );
+
+    const distributionLicenses = [...dataset].filter(
+      (quad) =>
+        quad.predicate.equals(dct('license')) &&
+        !quad.subject.equals(datasetUri),
+    );
+    expect(distributionLicenses).toHaveLength(1);
+    expect(distributionLicenses[0].object.value).toBe(
+      'https://creativecommons.org/publicdomain/zero/1.0/',
+    );
+  });
+
+  it('skips a literal dct:license on a DCAT dataset and samples one from distributions', async () => {
+    // KB-style data: dataset has a free-text dct:license placeholder
+    // ("see distributions") and the actual license lives on the distribution.
+    // The DCAT branch must not crash on the literal and must not emit it.
+    // The distribution's CC0 is then sampled onto the dataset.
+    const response = await file('dataset-dcat-literal-license.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/dcat-literal-license')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/dcat-literal-license'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const datasetUri = factory.namedNode(
+      'http://data.bibliotheken.nl/id/dataset/literal-license',
+    );
+
+    const datasetLicenses = [
+      ...dataset.match(datasetUri, dct('license'), null),
+    ];
+    expect(datasetLicenses).toHaveLength(1);
+    expect(datasetLicenses[0].object.termType).toBe('NamedNode');
+    expect(datasetLicenses[0].object.value).toBe(
+      'https://creativecommons.org/publicdomain/zero/1.0/',
+    );
+
+    const distributionLicenses = [...dataset].filter(
+      (quad) =>
+        quad.predicate.equals(dct('license')) &&
+        !quad.subject.equals(datasetUri),
+    );
+    expect(distributionLicenses).toHaveLength(1);
+    expect(distributionLicenses[0].object.value).toBe(
+      'https://creativecommons.org/publicdomain/zero/1.0/',
     );
   });
 });

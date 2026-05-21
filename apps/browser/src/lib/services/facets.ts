@@ -173,13 +173,23 @@ interface FacetConfig {
 
 export const facetConfigs: Record<string, FacetConfig> = {
   publisher: {
-    where: `?dataset dct:publisher ?value .
-      ?value foaf:name ?label`,
+    where: `{
+        ?dataset dct:publisher ?value .
+        ?value foaf:name ?label
+      } UNION {
+        ?dataset dct:creator ?value .
+        ?value foaf:name ?label
+      }`,
     filterClause: (values) => {
-      const publisherValues = values.map((p) => `<${p}>`).join(', ');
+      const organizationValues = values.map((p) => `<${p}>`).join(', ');
 
-      return `?dataset dct:publisher ?publisher .
-        FILTER(?publisher IN (${publisherValues}))`;
+      return `{
+          ?dataset dct:publisher ?organization .
+          FILTER(?organization IN (${organizationValues}))
+        } UNION {
+          ?dataset dct:creator ?organization .
+          FILTER(?organization IN (${organizationValues}))
+        }`;
     },
   },
   // Why does QLever need the repeated { ?dataset dcat:distribution ?distribution } inside the UNION?
