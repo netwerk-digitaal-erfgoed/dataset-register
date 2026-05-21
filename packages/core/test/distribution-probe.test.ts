@@ -15,7 +15,7 @@ import type {
   DistributionHealthStore,
 } from '../src/distribution-health-store.js';
 
-const ndePrefix = 'https://def.nde.nl#';
+const ndeProbePrefix = 'https://def.nde.nl/probe#';
 
 function mockResponse(
   init: { status?: number; headers?: Record<string, string> } = {},
@@ -27,7 +27,7 @@ function mockResponse(
 }
 
 describe('probe outcome classifier', () => {
-  it('maps NetworkError to nde:NetworkError', () => {
+  it('maps NetworkError to nde-probe:NetworkError', () => {
     const verdict = classify(
       new NetworkError('https://example.org/x', 'DNS lookup failed', 12),
     );
@@ -36,7 +36,7 @@ describe('probe outcome classifier', () => {
     expect(verdict.detail).toBe('DNS lookup failed');
   });
 
-  it('maps HTTP 404 to nde:NotFound', () => {
+  it('maps HTTP 404 to nde-probe:NotFound', () => {
     const result = new DataDumpProbeResult(
       'https://example.org/x',
       mockResponse({ status: 404, headers: { 'Content-Type': 'text/html' } }),
@@ -46,7 +46,7 @@ describe('probe outcome classifier', () => {
     expect(verdict.outcome?.equals(probeOutcomes.NotFound)).toBe(true);
   });
 
-  it('maps HTTP 503 to nde:ServerError', () => {
+  it('maps HTTP 503 to nde-probe:ServerError', () => {
     const result = new DataDumpProbeResult(
       'https://example.org/x',
       mockResponse({ status: 503 }),
@@ -56,7 +56,7 @@ describe('probe outcome classifier', () => {
     expect(verdict.outcome?.equals(probeOutcomes.ServerError)).toBe(true);
   });
 
-  it('maps HTTP 401 / 403 to nde:AuthRequired', () => {
+  it('maps HTTP 401 / 403 to nde-probe:AuthRequired', () => {
     for (const status of [401, 403]) {
       const verdict = classify(
         new DataDumpProbeResult(
@@ -69,7 +69,7 @@ describe('probe outcome classifier', () => {
     }
   });
 
-  it('maps SparqlProbeResult failureReason to nde:SparqlProbeFailed', () => {
+  it('maps SparqlProbeResult failureReason to nde-probe:SparqlProbeFailed', () => {
     const result = new SparqlProbeResult(
       'https://example.org/sparql',
       mockResponse({
@@ -138,9 +138,9 @@ describe('DistributionProbeStage', () => {
     expect(violation).toBeDefined();
 
     const outcome = quads.find((quad) =>
-      quad.predicate.equals(factory.namedNode(`${ndePrefix}probeOutcome`)),
+      quad.predicate.equals(factory.namedNode(`${ndeProbePrefix}probeOutcome`)),
     );
-    expect(outcome?.object.value).toBe(`${ndePrefix}NetworkError`);
+    expect(outcome?.object.value).toBe(`${ndeProbePrefix}NetworkError`);
 
     const resultPath = quads.find((quad) =>
       quad.predicate.equals(shacl('resultPath')),

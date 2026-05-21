@@ -24,23 +24,23 @@ export interface DistributionHealthStore {
 export class SparqlDistributionHealthStore implements DistributionHealthStore {
   public constructor(
     private readonly client: SparqlClient,
-    private readonly graphIri = 'https://datasetregister.netwerkdigitaalerfgoed.nl/sparql/distribution-health',
+    private readonly graphIri: string,
   ) {}
 
   public async get(url: URL): Promise<DistributionHealthRecord | null> {
     const result = await this.client.query(`
-      PREFIX nde: <https://def.nde.nl#>
+      PREFIX nde-probe: <https://def.nde.nl/probe#>
       PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
       SELECT ?lastProbedAt ?lastOutcome ?lastSuccessAt ?firstFailureAt ?consecutiveFailures
       FROM <${this.graphIri}>
       WHERE {
-        <${url.toString()}> a nde:DistributionHealthRecord ;
-            nde:lastProbedAt ?lastProbedAt ;
-            nde:consecutiveFailures ?consecutiveFailures .
-        OPTIONAL { <${url.toString()}> nde:lastOutcome ?lastOutcome }
-        OPTIONAL { <${url.toString()}> nde:lastSuccessAt ?lastSuccessAt }
-        OPTIONAL { <${url.toString()}> nde:firstFailureAt ?firstFailureAt }
+        <${url.toString()}> a nde-probe:DistributionHealthRecord ;
+            nde-probe:lastProbedAt ?lastProbedAt ;
+            nde-probe:consecutiveFailures ?consecutiveFailures .
+        OPTIONAL { <${url.toString()}> nde-probe:lastOutcome ?lastOutcome }
+        OPTIONAL { <${url.toString()}> nde-probe:lastSuccessAt ?lastSuccessAt }
+        OPTIONAL { <${url.toString()}> nde-probe:firstFailureAt ?firstFailureAt }
       }
       LIMIT 1`);
 
@@ -61,26 +61,28 @@ export class SparqlDistributionHealthStore implements DistributionHealthStore {
   public async store(record: DistributionHealthRecord): Promise<void> {
     const iri = record.url.toString();
     const triples = [
-      `<${iri}> a nde:DistributionHealthRecord .`,
-      `<${iri}> nde:lastProbedAt "${record.lastProbedAt.toISOString()}"^^xsd:dateTime .`,
-      `<${iri}> nde:consecutiveFailures "${record.consecutiveFailures}"^^xsd:integer .`,
+      `<${iri}> a nde-probe:DistributionHealthRecord .`,
+      `<${iri}> nde-probe:lastProbedAt "${record.lastProbedAt.toISOString()}"^^xsd:dateTime .`,
+      `<${iri}> nde-probe:consecutiveFailures "${record.consecutiveFailures}"^^xsd:integer .`,
     ];
     if (record.lastOutcome !== null) {
-      triples.push(`<${iri}> nde:lastOutcome <${record.lastOutcome.value}> .`);
+      triples.push(
+        `<${iri}> nde-probe:lastOutcome <${record.lastOutcome.value}> .`,
+      );
     }
     if (record.lastSuccessAt !== null) {
       triples.push(
-        `<${iri}> nde:lastSuccessAt "${record.lastSuccessAt.toISOString()}"^^xsd:dateTime .`,
+        `<${iri}> nde-probe:lastSuccessAt "${record.lastSuccessAt.toISOString()}"^^xsd:dateTime .`,
       );
     }
     if (record.firstFailureAt !== null) {
       triples.push(
-        `<${iri}> nde:firstFailureAt "${record.firstFailureAt.toISOString()}"^^xsd:dateTime .`,
+        `<${iri}> nde-probe:firstFailureAt "${record.firstFailureAt.toISOString()}"^^xsd:dateTime .`,
       );
     }
 
     await this.client.update(`
-      PREFIX nde: <https://def.nde.nl#>
+      PREFIX nde-probe: <https://def.nde.nl/probe#>
       PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
       WITH <${this.graphIri}>

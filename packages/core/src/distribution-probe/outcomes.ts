@@ -7,20 +7,20 @@ import {
   type ProbeResultType,
 } from '@lde/distribution-probe';
 
-export const nde = (property: string): NamedNode =>
-  factory.namedNode(`https://def.nde.nl#${property}`);
+export const ndeProbe = (property: string): NamedNode =>
+  factory.namedNode(`https://def.nde.nl/probe#${property}`);
 
 export const probeOutcomes = {
-  NetworkError: nde('NetworkError'),
-  NotFound: nde('NotFound'),
-  ServerError: nde('ServerError'),
-  AuthRequired: nde('AuthRequired'),
-  RateLimited: nde('RateLimited'),
-  ContentTypeHardMismatch: nde('ContentTypeHardMismatch'),
-  ContentTypeMissing: nde('ContentTypeMissing'),
-  EmptyBody: nde('EmptyBody'),
-  SparqlProbeFailed: nde('SparqlProbeFailed'),
-  RdfParseFailed: nde('RdfParseFailed'),
+  NetworkError: ndeProbe('NetworkError'),
+  NotFound: ndeProbe('NotFound'),
+  ServerError: ndeProbe('ServerError'),
+  AuthRequired: ndeProbe('AuthRequired'),
+  RateLimited: ndeProbe('RateLimited'),
+  ContentTypeMismatch: ndeProbe('ContentTypeMismatch'),
+  ContentTypeMissing: ndeProbe('ContentTypeMissing'),
+  EmptyBody: ndeProbe('EmptyBody'),
+  SparqlProbeFailed: ndeProbe('SparqlProbeFailed'),
+  RdfParseFailed: ndeProbe('RdfParseFailed'),
 } as const;
 
 export type ProbeOutcomeIri =
@@ -34,8 +34,8 @@ export interface ProbeVerdict {
 
 /**
  * Classify a {@link ProbeResultType} into a success verdict plus, on failure, an
- * nde:ProbeOutcome IRI and a human-readable detail string. Content-type mismatches
- * on an otherwise successful probe surface as a failed verdict with a ContentTypeHardMismatch
+ * nde-probe:ProbeOutcome IRI and a human-readable detail string. Content-type mismatches
+ * on an otherwise successful probe surface as a failed verdict with a ContentTypeMismatch
  * outcome so the registration path can reject and the rating can penalise.
  */
 export function classify(result: ProbeResultType): ProbeVerdict {
@@ -55,7 +55,7 @@ export function classify(result: ProbeResultType): ProbeVerdict {
   if (mismatch !== null) {
     return {
       success: false,
-      outcome: probeOutcomes.ContentTypeHardMismatch,
+      outcome: probeOutcomes.ContentTypeMismatch,
       detail: mismatch,
     };
   }
@@ -102,7 +102,7 @@ function classifyHttpFailure(
   }
   return {
     success: false,
-    outcome: probeOutcomes.ContentTypeHardMismatch,
+    outcome: probeOutcomes.ContentTypeMismatch,
     detail,
   };
 }

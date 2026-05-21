@@ -11,7 +11,7 @@ import { probe as probeDistribution } from '@lde/distribution-probe';
 import type { ProbeResultType } from '@lde/distribution-probe';
 import { dcat, dct, rdf, xsd } from '../query.ts';
 import { shacl } from '../validator.ts';
-import { classify, nde, probeOutcomes } from './outcomes.ts';
+import { classify, ndeProbe, probeOutcomes } from './outcomes.ts';
 import type { ProbeVerdict } from './outcomes.ts';
 import type {
   DistributionHealthRecord,
@@ -335,8 +335,8 @@ function emitViolation(
   const constraintComponent =
     candidate.path.equals(dcat('mediaType')) ||
     candidate.path.equals(schema('encodingFormat'))
-      ? nde('DistributionFormatMatchConstraintComponent')
-      : nde('DistributionReachableConstraintComponent');
+      ? ndeProbe('DistributionFormatMatchConstraintComponent')
+      : ndeProbe('DistributionReachableConstraintComponent');
 
   const quads: Quad[] = [
     factory.quad(resultNode, rdf('type'), shacl('ValidationResult')),
@@ -349,7 +349,7 @@ function emitViolation(
       shacl('sourceConstraintComponent'),
       constraintComponent,
     ),
-    factory.quad(resultNode, nde('probeOutcome'), outcome),
+    factory.quad(resultNode, ndeProbe('probeOutcome'), outcome),
   ];
 
   if (verdict.detail !== null) {
@@ -367,7 +367,7 @@ function emitViolation(
       quads.push(
         factory.quad(
           resultNode,
-          nde('firstFailureAt'),
+          ndeProbe('firstFailureAt'),
           factory.literal(record.firstFailureAt.toISOString(), xsd('dateTime')),
         ),
       );
@@ -375,7 +375,7 @@ function emitViolation(
     quads.push(
       factory.quad(
         resultNode,
-        nde('consecutiveFailures'),
+        ndeProbe('consecutiveFailures'),
         factory.literal(String(record.consecutiveFailures), xsd('integer')),
       ),
     );
