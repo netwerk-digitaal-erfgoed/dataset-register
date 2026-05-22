@@ -9,6 +9,7 @@ import {
   toRdf,
 } from './registration.js';
 import { Rating, RatingStore } from './rate.js';
+import { ALLOWED_DOMAIN_NAME_PREDICATE } from './constants.js';
 import type { DatasetCore, Quad } from '@rdfjs/types';
 import { URL } from 'node:url';
 
@@ -328,9 +329,9 @@ export class SparqlAllowedRegistrationDomainStore implements AllowedRegistration
     return await this.client.queryBoolean(`
       ASK {
         GRAPH <${this.graphIri}> {
-          ?s <https://data.netwerkdigitaalerfgoed.nl/allowed_domain_names/def/domain_name> ?domainNames .
+          ?s <${ALLOWED_DOMAIN_NAME_PREDICATE}> ?domainNames .
           VALUES ?domainNames { ${domainNames
-            .map((domainName) => `"${domainName}"`)
+            .map((domainName) => JSON.stringify(domainName))
             .join(' ')}
           }
         }
@@ -341,11 +342,10 @@ export class SparqlAllowedRegistrationDomainStore implements AllowedRegistration
     if (await this.contains(domainName)) {
       return;
     }
-    const escapedDomainName = JSON.stringify(domainName);
     await this.client.update(`
       INSERT DATA {
         GRAPH <${this.graphIri}> {
-          [] <https://data.netwerkdigitaalerfgoed.nl/allowed_domain_names/def/domain_name> ${escapedDomainName} .
+          [] <${ALLOWED_DOMAIN_NAME_PREDICATE}> ${JSON.stringify(domainName)} .
         }
       }`);
   }
