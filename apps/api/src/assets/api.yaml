@@ -12,10 +12,22 @@ servers:
     description: 'Dataset Register API'
   - url: 'http://localhost:3000'
     description: 'Local development Dataset Register API'
+tags:
+  - name: Onboarding
+    description: Check whether a URL is eligible for registration before submitting it.
+  - name: Validation
+    description: |-
+      Validate dataset descriptions against the [Requirements for Datasets](https://docs.nde.nl/requirements-datasets/).
+      Read-only; safe to call as often as you like.
+  - name: Registration
+    description: Register or update dataset descriptions in the Dataset Register.
+  - name: Administration
+    description: Operations restricted to NDE-issued Bearer tokens. Most integrators will not need these.
 paths:
   /datasets:
     post:
       summary: Add dataset description to the Dataset Register
+      tags: [Registration]
       description: |-
         Submit dataset description(s) to the Dataset Register. Each dataset description will be validated before it is added to the Dataset Register.
 
@@ -53,6 +65,7 @@ paths:
           description: The URL can be resolved but it contains no datasets.
     delete:
       summary: Delete a dataset registration
+      tags: [Administration]
       description: |-
         Delete a registration from the Dataset Register, including all dataset descriptions
         that were fetched from the registered URL. This operation requires authentication
@@ -79,6 +92,7 @@ paths:
   /datasets/validate:
     post:
       summary: Validate dataset description(s) in the request body
+      tags: [Validation]
       description: |-
         Validate dataset description(s) according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a>.
       operationId: validate-body
@@ -129,6 +143,7 @@ paths:
 
     put:
       summary: Validate dataset description(s)s at a URL
+      tags: [Validation]
       description: |-
         Validate dataset description(s) according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a> that are available at the submitted URL. That URL may resolve:
 
@@ -166,6 +181,7 @@ paths:
   /allowed-domains:
     get:
       summary: Check whether a URL’s domain is on the allow list
+      tags: [Onboarding]
       description: |-
         Check whether the domain of the given URL is on the allow list.
         Only URLs on allowed domains can be registered via POST /datasets.
@@ -186,6 +202,7 @@ paths:
           description: The URL’s domain is not on the allow list.
     post:
       summary: Add a domain to the allow list
+      tags: [Administration]
       description: |-
         Add a domain to the allow list, so that URLs on that domain (or any of its subdomains)
         can be registered via POST /datasets. This operation requires authentication
@@ -223,6 +240,7 @@ paths:
   /shacl:
     get:
       summary: Get the SHACL shape that is used to validate dataset descriptions.
+      tags: [Validation]
       description: |-
         Get the <a href="https://www.w3.org/TR/shacl/">SHACL shape graph</a> that is used to validate dataset descriptions.
       responses:
