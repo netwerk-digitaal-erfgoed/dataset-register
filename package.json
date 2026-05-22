@@ -11,6 +11,9 @@
     "prepare": "husky",
     "test": "nx run-many -t test"
   },
+  "overrides": {
+    "@lde/dataset": "^0.7.4"
+  },
   "devDependencies": {
     "@commitlint/cli": "^21.0.1",
     "@commitlint/config-conventional": "^21.0.1",
