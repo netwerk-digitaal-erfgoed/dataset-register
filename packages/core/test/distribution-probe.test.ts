@@ -479,6 +479,63 @@ describe('DistributionProbeStage', () => {
     expect(quads.length).toBeGreaterThan(0); // probe ran with IRI mediaType
   });
 
+  it('tolerates a malformed dct:conformsTo IRI without crashing the probe', async () => {
+    nock('https://example.org').head('/bad-conforms').replyWithError('ENOTFOUND');
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-bad-conforms');
+    const distributionNode = factory.blankNode();
+    const url = factory.namedNode('https://example.org/bad-conforms');
+    const dct = (property: string) =>
+      factory.namedNode(`http://purl.org/dc/terms/${property}`);
+
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    dataset.add(factory.quad(distributionNode, dcat('accessURL'), url));
+    dataset.add(
+      // A NamedNode whose value isn’t a parsable URL — exercises iriValue’s catch.
+      factory.quad(distributionNode, dct('conformsTo'), factory.namedNode('not a url')),
+    );
+
+    const stage = new DistributionProbeStage();
+    const quads = await stage.run(dataset);
+    expect(quads.length).toBeGreaterThan(0);
+  });
+
+  it('records a rejected probe when the health store throws', async () => {
+    nock('https://example.org').head('/store-throws').replyWithError('ENOTFOUND');
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-store-throws');
+    const distributionNode = factory.blankNode();
+    const url = factory.namedNode('https://example.org/store-throws');
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    dataset.add(factory.quad(distributionNode, dcat('accessURL'), url));
+
+    const throwingStore: DistributionHealthStore = {
+      get: async () => {
+        throw new Error('store unavailable');
+      },
+      store: async () => {
+        throw new Error('store unavailable');
+      },
+      delete: async () => {
+        throw new Error('store unavailable');
+      },
+    };
+    const stage = new DistributionProbeStage({ healthStore: throwingStore });
+    const quads = await stage.run(dataset);
+
+    // The worker should catch the error and still emit a NetworkError violation.
+    const outcome = quads.find((quad) =>
+      quad.predicate.equals(factory.namedNode(`${ndeProbePrefix}probeOutcome`)),
+    );
+    expect(outcome?.object.value).toBe(`${ndeProbePrefix}NetworkError`);
+  });
+
   it('treats a SPARQL mediaType as inferring the SPARQL protocol conformsTo', async () => {
     nock('https://example.org').head('/sparql').replyWithError('ENOTFOUND');
 
