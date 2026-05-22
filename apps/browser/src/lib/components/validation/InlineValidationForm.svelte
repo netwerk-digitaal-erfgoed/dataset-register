@@ -1,9 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
-  import {
-    decodeFromShareUrl,
-    encodeForShareUrl,
-  } from './share-link.js';
+  import { decodeFromShareUrl, encodeForShareUrl } from './share-link.js';
   import { Label, Select, Tooltip } from 'flowbite-svelte';
   import AlignLeftOutline from 'flowbite-svelte-icons/AlignLeftOutline.svelte';
   import ClipboardOutline from 'flowbite-svelte-icons/ClipboardOutline.svelte';

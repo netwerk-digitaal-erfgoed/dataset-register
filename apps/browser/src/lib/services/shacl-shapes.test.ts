@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  indexShapes,
-  selectShape,
-  type ShapesIndex,
-} from './shacl-shapes.js';
+import { indexShapes, selectShape, type ShapesIndex } from './shacl-shapes.js';
 
 const SH = 'http://www.w3.org/ns/shacl#';
 const SCHEMA = 'https://schema.org/';

@@ -94,6 +94,12 @@ export interface AllowedRegistrationDomainStore {
    * Returns true if the store contains at least one of `domainNames`.
    */
   contains(...domainNames: Array<string>): Promise<boolean>;
+
+  /**
+   * Add `domainName` to the allow list. Idempotent: adding an already-allowed
+   * domain is a no-op.
+   */
+  add(domainName: string): Promise<void>;
 }
 
 export function toRdf(registration: Registration) {

@@ -12,10 +12,22 @@ servers:
     description: 'Dataset Register API'
   - url: 'http://localhost:3000'
     description: 'Local development Dataset Register API'
+tags:
+  - name: Onboarding
+    description: Check whether a URL is eligible for registration before submitting it.
+  - name: Validation
+    description: |-
+      Validate dataset descriptions against the [Requirements for Datasets](https://docs.nde.nl/requirements-datasets/).
+      Read-only; safe to call as often as you like.
+  - name: Registration
+    description: Register or update dataset descriptions in the Dataset Register.
+  - name: Administration
+    description: Operations restricted to NDE-issued Bearer tokens. Most integrators will not need these.
 paths:
   /datasets:
     post:
       summary: Add dataset description to the Dataset Register
+      tags: [Registration]
       description: |-
         Submit dataset description(s) to the Dataset Register. Each dataset description will be validated before it is added to the Dataset Register.
 
@@ -34,16 +46,10 @@ paths:
             examples:
               valid:
                 summary: A valid dataset
-                value:
-                  {
-                    '@id': 'https://example.com/dataset',
-                  }
+                value: { '@id': 'https://example.com/dataset' }
               invalid:
                 summary: An invalid dataset
-                value:
-                  {
-                    '@id': 'https://example.com/invalid-dataset',
-                  }
+                value: { '@id': 'https://example.com/invalid-dataset' }
       responses:
         202:
           description: All dataset descriptions at the submitted URL are valid according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a>. The datasets will added to the Dataset Register shortly.
@@ -59,6 +65,7 @@ paths:
           description: The URL can be resolved but it contains no datasets.
     delete:
       summary: Delete a dataset registration
+      tags: [Administration]
       description: |-
         Delete a registration from the Dataset Register, including all dataset descriptions
         that were fetched from the registered URL. This operation requires authentication
@@ -85,6 +92,7 @@ paths:
   /datasets/validate:
     post:
       summary: Validate dataset description(s) in the request body
+      tags: [Validation]
       description: |-
         Validate dataset description(s) according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a>.
       operationId: validate-body
@@ -135,6 +143,7 @@ paths:
 
     put:
       summary: Validate dataset description(s)s at a URL
+      tags: [Validation]
       description: |-
         Validate dataset description(s) according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a> that are available at the submitted URL. That URL may resolve:
 
@@ -156,16 +165,10 @@ paths:
             examples:
               valid:
                 summary: A valid dataset
-                value:
-                  {
-                    '@id': 'https://example.com/dataset',
-                  }
+                value: { '@id': 'https://example.com/dataset' }
               invalid:
                 summary: An invalid dataset
-                value:
-                  {
-                    '@id': 'https://example.com/invalid-dataset',
-                  }
+                value: { '@id': 'https://example.com/invalid-dataset' }
       responses:
         200:
           $ref: '#/components/responses/Valid'
@@ -177,7 +180,8 @@ paths:
           description: The URL can be resolved but it contains no datasets.
   /allowed-domains:
     get:
-      summary: Check whether a URL's domain is on the allow list
+      summary: Check whether a URL’s domain is on the allow list
+      tags: [Onboarding]
       description: |-
         Check whether the domain of the given URL is on the allow list.
         Only URLs on allowed domains can be registered via POST /datasets.
@@ -191,14 +195,52 @@ paths:
           example: 'https://example.com/dataset.ttl'
       responses:
         200:
-          description: The URL's domain is on the allow list.
+          description: The URL’s domain is on the allow list.
         400:
           description: Missing or invalid URL parameter.
         404:
-          description: The URL's domain is not on the allow list.
+          description: The URL’s domain is not on the allow list.
+    post:
+      summary: Add a domain to the allow list
+      tags: [Administration]
+      description: |-
+        Add a domain to the allow list, so that URLs on that domain (or any of its subdomains)
+        can be registered via POST /datasets. This operation requires authentication
+        via a Bearer token.
+
+        Pass either a registrable domain (e.g. `example.com`) or a specific subdomain
+        (e.g. `sub.example.com`) to allow only that subdomain. Submitting a subdomain
+        whose registrable parent is already on the list is a no-op, since the parent
+        already covers it.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - domain
+              properties:
+                domain:
+                  type: string
+                  description: Registrable domain or full hostname to add to the allow list.
+            examples:
+              valid:
+                summary: Add a domain
+                value: { 'domain': 'example.com' }
+      responses:
+        204:
+          description: The domain has been added to the allow list.
+        400:
+          description: Missing or invalid domain.
+        401:
+          description: Missing or invalid Authorization header.
   /shacl:
     get:
       summary: Get the SHACL shape that is used to validate dataset descriptions.
+      tags: [Validation]
       description: |-
         Get the <a href="https://www.w3.org/TR/shacl/">SHACL shape graph</a> that is used to validate dataset descriptions.
       responses:

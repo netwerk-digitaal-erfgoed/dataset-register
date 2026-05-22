@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { compressToEncodedURIComponent } from 'lz-string';
-import {
-  decodeFromShareUrl,
-  encodeForShareUrl,
-} from './share-link.js';
+import { decodeFromShareUrl, encodeForShareUrl } from './share-link.js';
 
 const LIMA_TURTLE = `@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix schema:<http://schema.org/> .
