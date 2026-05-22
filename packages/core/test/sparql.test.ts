@@ -8,6 +8,8 @@ import {
   SparqlRegistrationStore,
   stores,
 } from '../src/sparql.js';
+import { SparqlDistributionHealthStore } from '../src/distribution-health-store.js';
+import factory from 'rdf-ext';
 import {
   createTestDataset,
   createTestDatasetWithPublisher,
@@ -21,6 +23,7 @@ import { Penalty, Rating } from '../src/index.js';
 const registrationsGraphIri = 'http://example.org/registrations';
 const allowedDomainsGraphIri = 'http://example.org/allowed-domains';
 const ratingsGraphIri = 'http://example.org/ratings';
+const distributionHealthGraphIri = 'http://example.org/distribution-health';
 
 describe('SPARQL', () => {
   let qleverContainer: QLeverContainer;
@@ -29,6 +32,7 @@ describe('SPARQL', () => {
   let datasetStore: SparqlDatasetStore;
   let allowedRegistrationDomainStore: SparqlAllowedRegistrationDomainStore;
   let ratingStore: SparqlRatingStore;
+  let distributionHealthStore: SparqlDistributionHealthStore;
 
   beforeAll(async () => {
     qleverContainer = new QLeverContainer();
@@ -42,12 +46,14 @@ describe('SPARQL', () => {
       registrationStore,
       allowedRegistrationDomainStore,
       ratingStore,
+      distributionHealthStore,
     } = stores(
       sparqlEndpoint,
       qleverContainer.accessToken,
       registrationsGraphIri,
       allowedDomainsGraphIri,
       ratingsGraphIri,
+      distributionHealthGraphIri,
     ));
   }, 20_000);
 
@@ -425,6 +431,104 @@ describe('SPARQL', () => {
         }
       `);
       expect(await after.toArray()).toHaveLength(0);
+    });
+  });
+
+  describe('SparqlDistributionHealthStore', () => {
+    const url = new URL('https://example.com/dump.nt.gz');
+
+    it('returns null when no record exists', async () => {
+      expect(await distributionHealthStore.get(url)).toBeNull();
+    });
+
+    it('stores and retrieves a record with all optional fields populated', async () => {
+      const probedAt = new Date('2026-05-01T10:00:00.000Z');
+      const lastSuccessAt = new Date('2026-04-25T08:00:00.000Z');
+      const firstFailureAt = new Date('2026-04-30T09:00:00.000Z');
+      const outcome = factory.namedNode('https://def.nde.nl/probe#NotFound');
+
+      await distributionHealthStore.store({
+        url,
+        lastProbedAt: probedAt,
+        lastOutcome: outcome,
+        lastSuccessAt,
+        firstFailureAt,
+        consecutiveFailures: 2,
+      });
+
+      const fetched = await distributionHealthStore.get(url);
+      expect(fetched).not.toBeNull();
+      expect(fetched!.url.toString()).toBe(url.toString());
+      expect(fetched!.lastProbedAt.toISOString()).toBe(probedAt.toISOString());
+      expect(fetched!.lastOutcome?.value).toBe(outcome.value);
+      expect(fetched!.lastSuccessAt?.toISOString()).toBe(
+        lastSuccessAt.toISOString(),
+      );
+      expect(fetched!.firstFailureAt?.toISOString()).toBe(
+        firstFailureAt.toISOString(),
+      );
+      expect(fetched!.consecutiveFailures).toBe(2);
+    });
+
+    it('stores and retrieves a record with optional fields omitted', async () => {
+      const probedAt = new Date('2026-05-02T10:00:00.000Z');
+
+      await distributionHealthStore.store({
+        url,
+        lastProbedAt: probedAt,
+        lastOutcome: null,
+        lastSuccessAt: null,
+        firstFailureAt: null,
+        consecutiveFailures: 0,
+      });
+
+      const fetched = await distributionHealthStore.get(url);
+      expect(fetched).not.toBeNull();
+      expect(fetched!.lastOutcome).toBeNull();
+      expect(fetched!.lastSuccessAt).toBeNull();
+      expect(fetched!.firstFailureAt).toBeNull();
+      expect(fetched!.consecutiveFailures).toBe(0);
+    });
+
+    it('replaces the previous record on store (no accumulation)', async () => {
+      await distributionHealthStore.store({
+        url,
+        lastProbedAt: new Date('2026-05-01T10:00:00.000Z'),
+        lastOutcome: factory.namedNode('https://def.nde.nl/probe#NetworkError'),
+        lastSuccessAt: null,
+        firstFailureAt: new Date('2026-05-01T10:00:00.000Z'),
+        consecutiveFailures: 1,
+      });
+
+      await distributionHealthStore.store({
+        url,
+        lastProbedAt: new Date('2026-05-02T10:00:00.000Z'),
+        lastOutcome: null,
+        lastSuccessAt: new Date('2026-05-02T10:00:00.000Z'),
+        firstFailureAt: null,
+        consecutiveFailures: 0,
+      });
+
+      const fetched = await distributionHealthStore.get(url);
+      expect(fetched!.consecutiveFailures).toBe(0);
+      expect(fetched!.lastOutcome).toBeNull();
+      expect(fetched!.firstFailureAt).toBeNull();
+      expect(fetched!.lastSuccessAt).not.toBeNull();
+    });
+
+    it('deletes a record', async () => {
+      await distributionHealthStore.store({
+        url,
+        lastProbedAt: new Date(),
+        lastOutcome: null,
+        lastSuccessAt: new Date(),
+        firstFailureAt: null,
+        consecutiveFailures: 0,
+      });
+      expect(await distributionHealthStore.get(url)).not.toBeNull();
+
+      await distributionHealthStore.delete(url);
+      expect(await distributionHealthStore.get(url)).toBeNull();
     });
   });
 });

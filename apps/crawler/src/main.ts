@@ -1,17 +1,32 @@
 import { scheduleJob } from 'node-schedule';
 import { Crawler } from './crawler.js';
-import { readUrl, ShaclEngineValidator, stores } from '@dataset-register/core';
+import {
+  CompositeValidator,
+  DistributionProbeStage,
+  readUrl,
+  ShaclEngineValidator,
+  stores,
+} from '@dataset-register/core';
 import pino from 'pino';
 import { config } from './config.js';
 
-const { datasetStore, registrationStore, ratingStore } = stores(
-  config.SPARQL_URL,
-  config.SPARQL_ACCESS_TOKEN,
-);
+const {
+  datasetStore,
+  registrationStore,
+  ratingStore,
+  distributionHealthStore,
+} = stores(config.SPARQL_URL, config.SPARQL_ACCESS_TOKEN);
 
 const shacl = await readUrl('requirements/shacl.ttl');
 const logger = pino();
-const validator = new ShaclEngineValidator(shacl);
+// Lenient mode: probe every distribution each crawl round, but only promote failures to
+// sh:Violation when the health store shows the streak is persistent (defaults: 3
+// consecutive failures or 7 days since the first failure). Transient blips don’t
+// penalise the rating.
+const validator = new CompositeValidator(
+  new ShaclEngineValidator(shacl),
+  new DistributionProbeStage({ healthStore: distributionHealthStore }),
+);
 
 const crawler = new Crawler(
   registrationStore,

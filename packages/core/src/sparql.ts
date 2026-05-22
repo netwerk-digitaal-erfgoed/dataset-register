@@ -9,6 +9,7 @@ import {
   toRdf,
 } from './registration.js';
 import { Rating, RatingStore } from './rate.js';
+import { SparqlDistributionHealthStore } from './distribution-health-store.js';
 import { ALLOWED_DOMAIN_NAME_PREDICATE } from './constants.js';
 import type { DatasetCore, Quad } from '@rdfjs/types';
 import { URL } from 'node:url';
@@ -21,6 +22,7 @@ export function stores(
   registrationsGraphIri = 'https://demo.netwerkdigitaalerfgoed.nl/registry/registrations',
   allowedRegistrationDomainsGraphIri = 'https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names',
   ratingGraphIri = 'https://data.netwerkdigitaalerfgoed.nl/registry/ratings',
+  distributionHealthGraphIri = 'https://datasetregister.netwerkdigitaalerfgoed.nl/sparql/distribution-health',
 ) {
   const client = new SparqlClient(url, accessToken);
 
@@ -35,6 +37,10 @@ export function stores(
       allowedRegistrationDomainsGraphIri,
     ),
     ratingStore: new SparqlRatingStore(client, ratingGraphIri),
+    distributionHealthStore: new SparqlDistributionHealthStore(
+      client,
+      distributionHealthGraphIri,
+    ),
   };
 }
 

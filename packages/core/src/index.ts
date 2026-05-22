@@ -1,5 +1,7 @@
 export * from './constants.ts';
 export * from './dataset.ts';
+export * from './distribution-health-store.ts';
+export * from './distribution-probe/probe.ts';
 export * from './fetch.ts';
 export * from './instrumentation.ts';
 export * from './literal.ts';
