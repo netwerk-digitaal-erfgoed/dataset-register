@@ -26,6 +26,7 @@
       allowed?: boolean,
     ) => void;
     onStart: () => void;
+    onValidatorLink?: (hash: string) => void;
     goToLine?: (line: number) => void;
     source?: { text: string; contentType: ContentType } | null;
   }
@@ -35,6 +36,7 @@
     autoSubmit = false,
     onOutcome,
     onStart,
+    onValidatorLink,
     goToLine = $bindable(),
     source = $bindable(null),
   }: Props = $props();
@@ -106,6 +108,19 @@
       return null;
     }
   }
+
+  // Detect a pasted validator self-link with an inline `#rdf=` payload and
+  // hand the fragment to the parent so it can switch to the Inline tab.
+  $effect(() => {
+    const current = url;
+    const parsed = parseUrl(current);
+    if (!parsed || !/(?:^|#|&)rdf=/.test(parsed.hash)) return;
+    const hashValue = parsed.hash.replace(/^#/, '');
+    untrack(() => {
+      url = '';
+      onValidatorLink?.(hashValue);
+    });
+  });
 
   $effect(() => {
     const current = url;

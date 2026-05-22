@@ -9,7 +9,10 @@
     resultGroupKey,
     type ShaclReport,
   } from '$lib/services/shacl-report.js';
-  import type { ApiErrorDetails } from '$lib/services/validation.js';
+  import {
+    fetchErrorReason,
+    type ApiErrorDetails,
+  } from '$lib/services/validation.js';
 
   interface Props {
     state:
@@ -19,6 +22,7 @@
       | { kind: 'parse-error'; message: string }
       | { kind: 'not-found'; details?: ApiErrorDetails }
       | { kind: 'no-dataset'; details?: ApiErrorDetails }
+      | { kind: 'fetch-failed'; details?: ApiErrorDetails }
       | { kind: 'error'; message: string };
     submitHref?: string;
     onExpand?: (section: 'warnings' | 'infos') => void;
@@ -152,6 +156,13 @@
     <p class="mt-1 text-sm">
       {state.details?.description ?? m.validate_result_no_dataset_body()}
     </p>
+  {:else if state.kind === 'fetch-failed'}
+    {@const reason = fetchErrorReason(state.details?.title)}
+    <span class="font-semibold">{m.validate_result_fetch_failed_title()}</span>
+    <p class="mt-1 text-sm">{m.validate_result_fetch_failed_body()}</p>
+    {#if reason}
+      <p class="mt-1 font-mono text-sm break-words">{reason}</p>
+    {/if}
   {:else if state.kind === 'error'}
     <span class="font-semibold">{m.validate_parse_failed_title()}</span>
     <p class="mt-1 text-sm">{state.message}</p>
