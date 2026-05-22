@@ -67,7 +67,10 @@ async function inflateRaw(bytes: Uint8Array): Promise<Uint8Array | undefined> {
 function base64UrlEncode(bytes: Uint8Array): string {
   let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
 }
 
 function base64UrlDecode(value: string): Uint8Array | undefined {
