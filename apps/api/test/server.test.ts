@@ -506,7 +506,12 @@ describe('POST /allowed-domains', () => {
     expect(response.statusCode).toEqual(400);
   });
 
-  it('returns 400 for a subdomain', async () => {
+  it('adds a subdomain when its registrable parent is not on the list', async () => {
+    expect(await allowedDomainStore.contains('sub.subdomain-only.com')).toBe(
+      false,
+    );
+    expect(await allowedDomainStore.contains('subdomain-only.com')).toBe(false);
+
     const response = await httpServerWithAuth.inject({
       method: 'POST',
       url: '/allowed-domains',
@@ -515,9 +520,36 @@ describe('POST /allowed-domains', () => {
         'Content-Type': 'application/json',
         Accept: '*/*',
       },
-      payload: JSON.stringify({ domain: 'sub.example.com' }),
+      payload: JSON.stringify({ domain: 'sub.subdomain-only.com' }),
     });
-    expect(response.statusCode).toEqual(400);
+
+    expect(response.statusCode).toEqual(204);
+    expect(await allowedDomainStore.contains('sub.subdomain-only.com')).toBe(
+      true,
+    );
+    // The registrable parent must not have been added.
+    expect(await allowedDomainStore.contains('subdomain-only.com')).toBe(false);
+  });
+
+  it('is a no-op for a subdomain whose registrable parent is already allowed', async () => {
+    await allowedDomainStore.add('parent-allowed.com');
+
+    const response = await httpServerWithAuth.inject({
+      method: 'POST',
+      url: '/allowed-domains',
+      headers: {
+        Authorization: `Bearer ${testToken}`,
+        'Content-Type': 'application/json',
+        Accept: '*/*',
+      },
+      payload: JSON.stringify({ domain: 'sub.parent-allowed.com' }),
+    });
+
+    expect(response.statusCode).toEqual(204);
+    // The subdomain must not have been stored, since the parent already covers it.
+    expect(await allowedDomainStore.contains('sub.parent-allowed.com')).toBe(
+      false,
+    );
   });
 
   it('returns 204 and adds a registrable domain', async () => {

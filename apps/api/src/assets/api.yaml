@@ -191,8 +191,10 @@ paths:
         can be registered via POST /datasets. This operation requires authentication
         via a Bearer token.
 
-        The domain must be a registrable domain (e.g. `example.com`), not a subdomain
-        or full URL. Adding a domain that is already on the allow list is a no-op.
+        Pass either a registrable domain (e.g. `example.com`) or a specific subdomain
+        (e.g. `sub.example.com`) to allow only that subdomain. Submitting a subdomain
+        whose registrable parent is already on the list is a no-op, since the parent
+        already covers it.
       security:
         - bearerAuth: []
       requestBody:
@@ -206,7 +208,7 @@ paths:
               properties:
                 domain:
                   type: string
-                  description: Registrable domain to add to the allow list.
+                  description: Registrable domain or full hostname to add to the allow list.
             examples:
               valid:
                 summary: Add a domain

@@ -299,14 +299,19 @@ export async function server(
           if (result.error || result.domain === null) {
             return reply.code(400).send();
           }
-          // Only accept registrable domains, not subdomains or full hostnames.
-          if (result.input !== result.domain) {
-            return reply.code(400).send();
+
+          // Skip subdomains whose registrable parent is already allowed:
+          // they are already covered transitively.
+          if (
+            result.input !== result.domain &&
+            (await allowedRegistrationDomainStore.contains(result.domain))
+          ) {
+            return reply.code(204).send();
           }
 
-          await allowedRegistrationDomainStore.add(result.domain);
+          await allowedRegistrationDomainStore.add(result.input);
 
-          request.log.info(`Added ${result.domain} to allowed domains`);
+          request.log.info(`Added ${result.input} to allowed domains`);
 
           return reply.code(204).send();
         },
