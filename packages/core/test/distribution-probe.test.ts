@@ -383,19 +383,23 @@ describe('DistributionProbeStage', () => {
   });
 
   it('probes schema:contentUrl on a Schema.org distribution', async () => {
-    nock('https://example.org').head('/schema-broken').replyWithError('ENOTFOUND');
+    nock('https://example.org')
+      .head('/schema-broken')
+      .replyWithError('ENOTFOUND');
 
     const dataset = factory.dataset();
     const datasetNode = factory.namedNode('https://example.org/d-schema');
     const distributionNode = factory.blankNode();
-    const contentUrl = factory.namedNode(
-      'https://example.org/schema-broken',
-    );
+    const contentUrl = factory.namedNode('https://example.org/schema-broken');
     const schema = (property: string) =>
       factory.namedNode(`https://schema.org/${property}`);
 
-    dataset.add(factory.quad(datasetNode, schema('distribution'), distributionNode));
-    dataset.add(factory.quad(distributionNode, schema('contentUrl'), contentUrl));
+    dataset.add(
+      factory.quad(datasetNode, schema('distribution'), distributionNode),
+    );
+    dataset.add(
+      factory.quad(distributionNode, schema('contentUrl'), contentUrl),
+    );
     dataset.add(
       factory.quad(
         distributionNode,
@@ -446,6 +450,33 @@ describe('DistributionProbeStage', () => {
     const quads = await stage.run(dataset);
     // probe runs; we just need to exercise the dct:format mediaType lookup branch.
     expect(quads.length).toBeGreaterThan(0);
+  });
+
+  it('reads mediaType as an IRI (NamedNode) value', async () => {
+    nock('https://example.org').head('/iri-mt').replyWithError('ENOTFOUND');
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-iri-mt');
+    const distributionNode = factory.blankNode();
+    const url = factory.namedNode('https://example.org/iri-mt');
+
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    dataset.add(factory.quad(distributionNode, dcat('accessURL'), url));
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('mediaType'),
+        factory.namedNode(
+          'https://www.iana.org/assignments/media-types/application/n-triples',
+        ),
+      ),
+    );
+
+    const stage = new DistributionProbeStage();
+    const quads = await stage.run(dataset);
+    expect(quads.length).toBeGreaterThan(0); // probe ran with IRI mediaType
   });
 
   it('treats a SPARQL mediaType as inferring the SPARQL protocol conformsTo', async () => {
