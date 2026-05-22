@@ -27,9 +27,9 @@ const DEFAULT_TIMEOUT_MS = 5000;
 export interface DistributionProbeStageOptions {
   /**
    * When set, each failing probe is assessed against this store and promoted to
-   * sh:Violation only once consecutiveFailures >= consecutiveFailureThreshold or the
-   * firstFailureAt timestamp is older than failureStreakMaxAgeMs. When null, every
-   * failure is emitted at sh:Violation (the registration path).
+   * sh:Violation only once the firstFailureAt timestamp is older than
+   * failureStreakMaxAgeMs. When null, every failure is emitted at sh:Violation
+   * (the registration path).
    */
   healthStore?: DistributionHealthStore | null;
   /**
@@ -37,19 +37,20 @@ export interface DistributionProbeStageOptions {
    */
   timeoutMs?: number;
   /**
-   * Minimum consecutive failures before the health store promotes a probe to
-   * sh:Violation. Default 3.
-   */
-  consecutiveFailureThreshold?: number;
-  /**
    * Minimum age of a failure streak (ms) before the health store promotes a probe to
-   * sh:Violation regardless of streak length. Default 7 days.
+   * sh:Violation. Operators tune this relative to crawl cadence. Default 7 days.
    */
   failureStreakMaxAgeMs?: number;
+  /**
+   * Maximum number of distribution probes to run in parallel. Bounded because a dataset
+   * can declare thousands of distributions and an unbounded fan-out exhausts sockets,
+   * trips rate limiters on the target host, and starves the event loop. Default 20.
+   */
+  probeConcurrency?: number;
 }
 
-const DEFAULT_CONSECUTIVE_FAILURES = 3;
 const DEFAULT_FAILURE_STREAK_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const DEFAULT_PROBE_CONCURRENCY = 20;
 
 interface DistributionCandidate {
   distributionNode: NamedNode | BlankNode;
@@ -67,24 +68,26 @@ interface DistributionCandidate {
 export class DistributionProbeStage {
   private readonly healthStore: DistributionHealthStore | null;
   private readonly timeoutMs: number;
-  private readonly consecutiveFailureThreshold: number;
   private readonly failureStreakMaxAgeMs: number;
+  private readonly probeConcurrency: number;
 
   public constructor(options: DistributionProbeStageOptions = {}) {
     this.healthStore = options.healthStore ?? null;
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-    this.consecutiveFailureThreshold =
-      options.consecutiveFailureThreshold ?? DEFAULT_CONSECUTIVE_FAILURES;
     this.failureStreakMaxAgeMs =
       options.failureStreakMaxAgeMs ?? DEFAULT_FAILURE_STREAK_MAX_AGE_MS;
+    this.probeConcurrency =
+      options.probeConcurrency ?? DEFAULT_PROBE_CONCURRENCY;
   }
 
   public async run(input: DatasetCore): Promise<Quad[]> {
     const candidates = collectDistributions(input);
     if (candidates.length === 0) return [];
 
-    const probed = await Promise.allSettled(
-      candidates.map((candidate) => this.probeCandidate(candidate)),
+    const probed = await allSettledLimited(
+      candidates,
+      this.probeConcurrency,
+      (candidate) => this.probeCandidate(candidate),
     );
 
     const quads: Quad[] = [];
@@ -180,9 +183,7 @@ export class DistributionProbeStage {
         ? 0
         : Date.now() - record.firstFailureAt.getTime();
 
-    const persistent =
-      record.consecutiveFailures >= this.consecutiveFailureThreshold ||
-      streakAgeMs >= this.failureStreakMaxAgeMs;
+    const persistent = streakAgeMs >= this.failureStreakMaxAgeMs;
 
     return persistent ? verdict : { ...verdict, success: true };
   }
@@ -382,4 +383,33 @@ function emitViolation(
   }
 
   return quads;
+}
+
+/**
+ * Promise.allSettled with a worker-pool concurrency cap. Preserves input ordering in the
+ * returned array. Used to bound the fan-out of distribution probes per dataset.
+ */
+async function allSettledLimited<TItem, TResult>(
+  items: readonly TItem[],
+  limit: number,
+  task: (item: TItem) => Promise<TResult>,
+): Promise<PromiseSettledResult<TResult>[]> {
+  const results: PromiseSettledResult<TResult>[] = new Array(items.length);
+  let cursor = 0;
+  const worker = async (): Promise<void> => {
+    while (cursor < items.length) {
+      const index = cursor++;
+      try {
+        results[index] = {
+          status: 'fulfilled',
+          value: await task(items[index]!),
+        };
+      } catch (reason) {
+        results[index] = { status: 'rejected', reason };
+      }
+    }
+  };
+  const workerCount = Math.max(1, Math.min(limit, items.length));
+  await Promise.all(Array.from({ length: workerCount }, worker));
+  return results;
 }

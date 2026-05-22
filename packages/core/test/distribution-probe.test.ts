@@ -163,7 +163,6 @@ describe('DistributionProbeStage', () => {
     const healthStore = new InMemoryHealthStore();
     const stage = new DistributionProbeStage({
       healthStore,
-      consecutiveFailureThreshold: 3,
       failureStreakMaxAgeMs: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -173,10 +172,10 @@ describe('DistributionProbeStage', () => {
     expect(stored?.consecutiveFailures).toBe(1);
   });
 
-  it('promotes to sh:Violation once consecutiveFailures reaches the threshold', async () => {
+  it('promotes to sh:Violation once firstFailureAt is older than failureStreakMaxAgeMs', async () => {
     nock('https://example.org')
       .head('/persistent')
-      .times(3)
+      .times(2)
       .replyWithError('ECONNREFUSED');
 
     const dataset = factory.dataset();
@@ -191,13 +190,15 @@ describe('DistributionProbeStage', () => {
     const healthStore = new InMemoryHealthStore();
     const stage = new DistributionProbeStage({
       healthStore,
-      consecutiveFailureThreshold: 3,
-      failureStreakMaxAgeMs: 7 * 24 * 60 * 60 * 1000,
+      failureStreakMaxAgeMs: 20,
     });
 
-    await stage.run(dataset);
-    await stage.run(dataset);
-    const quads = await stage.run(dataset); // third failure → promoted.
+    const firstRun = await stage.run(dataset);
+    expect(firstRun).toHaveLength(0); // streak too young; suppressed.
+
+    await new Promise((resolve) => setTimeout(resolve, 30));
+
+    const quads = await stage.run(dataset); // streak now older than threshold → promoted.
 
     const violation = quads.find(
       (quad) =>
@@ -206,7 +207,7 @@ describe('DistributionProbeStage', () => {
     );
     expect(violation).toBeDefined();
     const stored = await healthStore.get(new URL(url.value));
-    expect(stored?.consecutiveFailures).toBe(3);
+    expect(stored?.consecutiveFailures).toBe(2);
   });
 
   it('clears health state after a successful probe', async () => {
@@ -244,6 +245,54 @@ describe('DistributionProbeStage', () => {
     expect(stored?.consecutiveFailures).toBe(0);
     expect(stored?.firstFailureAt).toBeNull();
     expect(stored?.lastSuccessAt).toBeInstanceOf(Date);
+  });
+
+  it('caps the number of in-flight probes at probeConcurrency', async () => {
+    const distributionCount = 20;
+    const concurrencyLimit = 4;
+    let inFlight = 0;
+    let peakInFlight = 0;
+    nock('https://example.org')
+      .head(/\/cap-\d+/)
+      .times(distributionCount)
+      .reply(async function () {
+        inFlight++;
+        peakInFlight = Math.max(peakInFlight, inFlight);
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        inFlight--;
+        return [200, '', { 'Content-Type': 'text/turtle' }];
+      });
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-cap');
+    for (let index = 0; index < distributionCount; index++) {
+      const distributionNode = factory.blankNode();
+      dataset.add(
+        factory.quad(datasetNode, dcat('distribution'), distributionNode),
+      );
+      dataset.add(
+        factory.quad(
+          distributionNode,
+          dcat('accessURL'),
+          factory.namedNode(`https://example.org/cap-${index}`),
+        ),
+      );
+      dataset.add(
+        factory.quad(
+          distributionNode,
+          dcat('mediaType'),
+          factory.literal('text/turtle'),
+        ),
+      );
+    }
+
+    const stage = new DistributionProbeStage({
+      probeConcurrency: concurrencyLimit,
+    });
+    await stage.run(dataset);
+
+    expect(peakInFlight).toBeLessThanOrEqual(concurrencyLimit);
+    expect(peakInFlight).toBeGreaterThan(0);
   });
 });
 
