@@ -34,16 +34,10 @@ paths:
             examples:
               valid:
                 summary: A valid dataset
-                value:
-                  {
-                    '@id': 'https://example.com/dataset',
-                  }
+                value: { '@id': 'https://example.com/dataset' }
               invalid:
                 summary: An invalid dataset
-                value:
-                  {
-                    '@id': 'https://example.com/invalid-dataset',
-                  }
+                value: { '@id': 'https://example.com/invalid-dataset' }
       responses:
         202:
           description: All dataset descriptions at the submitted URL are valid according to the <a href="https://netwerk-digitaal-erfgoed.github.io/requirements-datasets/">Requirements for Datasets</a>. The datasets will added to the Dataset Register shortly.
@@ -156,16 +150,10 @@ paths:
             examples:
               valid:
                 summary: A valid dataset
-                value:
-                  {
-                    '@id': 'https://example.com/dataset',
-                  }
+                value: { '@id': 'https://example.com/dataset' }
               invalid:
                 summary: An invalid dataset
-                value:
-                  {
-                    '@id': 'https://example.com/invalid-dataset',
-                  }
+                value: { '@id': 'https://example.com/invalid-dataset' }
       responses:
         200:
           $ref: '#/components/responses/Valid'
@@ -177,7 +165,7 @@ paths:
           description: The URL can be resolved but it contains no datasets.
   /allowed-domains:
     get:
-      summary: Check whether a URL's domain is on the allow list
+      summary: Check whether a URL’s domain is on the allow list
       description: |-
         Check whether the domain of the given URL is on the allow list.
         Only URLs on allowed domains can be registered via POST /datasets.
@@ -191,11 +179,45 @@ paths:
           example: 'https://example.com/dataset.ttl'
       responses:
         200:
-          description: The URL's domain is on the allow list.
+          description: The URL’s domain is on the allow list.
         400:
           description: Missing or invalid URL parameter.
         404:
-          description: The URL's domain is not on the allow list.
+          description: The URL’s domain is not on the allow list.
+    post:
+      summary: Add a domain to the allow list
+      description: |-
+        Add a domain to the allow list, so that URLs on that domain (or any of its subdomains)
+        can be registered via POST /datasets. This operation requires authentication
+        via a Bearer token.
+
+        The domain must be a registrable domain (e.g. `example.com`), not a subdomain
+        or full URL. Adding a domain that is already on the allow list is a no-op.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - domain
+              properties:
+                domain:
+                  type: string
+                  description: Registrable domain to add to the allow list.
+            examples:
+              valid:
+                summary: Add a domain
+                value: { 'domain': 'example.com' }
+      responses:
+        204:
+          description: The domain has been added to the allow list.
+        400:
+          description: Missing or invalid domain.
+        401:
+          description: Missing or invalid Authorization header.
   /shacl:
     get:
       summary: Get the SHACL shape that is used to validate dataset descriptions.

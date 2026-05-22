@@ -350,6 +350,33 @@ describe('SPARQL', () => {
         true,
       );
     });
+
+    it('adds allowed domain names', async () => {
+      expect(
+        await allowedRegistrationDomainStore.contains('added-via-store.test'),
+      ).toBe(false);
+
+      await allowedRegistrationDomainStore.add('added-via-store.test');
+
+      expect(
+        await allowedRegistrationDomainStore.contains('added-via-store.test'),
+      ).toBe(true);
+    });
+
+    it('does not duplicate when adding the same domain twice', async () => {
+      await allowedRegistrationDomainStore.add('duplicate.test');
+      await allowedRegistrationDomainStore.add('duplicate.test');
+
+      const result = await sparqlClient.query(`
+        SELECT (COUNT(*) AS ?count) WHERE {
+          GRAPH <${allowedDomainsGraphIri}> {
+            ?s <https://data.netwerkdigitaalerfgoed.nl/allowed_domain_names/def/domain_name> "duplicate.test" .
+          }
+        }
+      `);
+      const bindings = await result.toArray();
+      expect(parseInt(bindings[0]!.get('count')!.value)).toEqual(1);
+    });
   });
 
   describe('SparqlRatingStores', () => {
