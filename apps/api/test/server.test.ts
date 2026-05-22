@@ -433,6 +433,162 @@ describe('Server', () => {
   });
 });
 
+describe('POST /allowed-domains', () => {
+  let httpServerWithAuth: FastifyInstance<Server>;
+  let allowedDomainStore: MockAllowedRegistrationDomainStore;
+  const testToken = 'test-api-token';
+
+  beforeAll(async () => {
+    const shacl = await readUrl('../../requirements/shacl.ttl');
+    allowedDomainStore = new MockAllowedRegistrationDomainStore();
+    httpServerWithAuth = await server(
+      new MockDatasetStore(),
+      new MockRegistrationStore(),
+      allowedDomainStore,
+      new ShaclEngineValidator(shacl),
+      shacl,
+      '/',
+      { logger: false },
+      new MockRatingStore(),
+      testToken,
+    );
+  });
+
+  it('returns 401 without Authorization header', async () => {
+    const response = await httpServerWithAuth.inject({
+      method: 'POST',
+      url: '/allowed-domains',
+      headers: { 'Content-Type': 'application/json', Accept: '*/*' },
+      payload: JSON.stringify({ domain: 'example.com' }),
+    });
+    expect(response.statusCode).toEqual(401);
+  });
+
+  it('returns 401 with invalid token', async () => {
+    const response = await httpServerWithAuth.inject({
+      method: 'POST',
+      url: '/allowed-domains',
+      headers: {
+        Authorization: 'Bearer invalid-token',
+        'Content-Type': 'application/json',
+        Accept: '*/*',
+      },
+      payload: JSON.stringify({ domain: 'example.com' }),
+    });
+    expect(response.statusCode).toEqual(401);
+  });
+
+  it('returns 400 without domain in body', async () => {
+    const response = await httpServerWithAuth.inject({
+      method: 'POST',
+      url: '/allowed-domains',
+      headers: {
+        Authorization: `Bearer ${testToken}`,
+        'Content-Type': 'application/json',
+        Accept: '*/*',
+      },
+      payload: JSON.stringify({}),
+    });
+    expect(response.statusCode).toEqual(400);
+  });
+
+  it('returns 400 for an invalid domain', async () => {
+    const response = await httpServerWithAuth.inject({
+      method: 'POST',
+      url: '/allowed-domains',
+      headers: {
+        Authorization: `Bearer ${testToken}`,
+        'Content-Type': 'application/json',
+        Accept: '*/*',
+      },
+      payload: JSON.stringify({ domain: 'not a domain' }),
+    });
+    expect(response.statusCode).toEqual(400);
+  });
+
+  it('adds a subdomain when its registrable parent is not on the list', async () => {
+    expect(await allowedDomainStore.contains('sub.subdomain-only.com')).toBe(
+      false,
+    );
+    expect(await allowedDomainStore.contains('subdomain-only.com')).toBe(false);
+
+    const response = await httpServerWithAuth.inject({
+      method: 'POST',
+      url: '/allowed-domains',
+      headers: {
+        Authorization: `Bearer ${testToken}`,
+        'Content-Type': 'application/json',
+        Accept: '*/*',
+      },
+      payload: JSON.stringify({ domain: 'sub.subdomain-only.com' }),
+    });
+
+    expect(response.statusCode).toEqual(204);
+    expect(await allowedDomainStore.contains('sub.subdomain-only.com')).toBe(
+      true,
+    );
+    // The registrable parent must not have been added.
+    expect(await allowedDomainStore.contains('subdomain-only.com')).toBe(false);
+  });
+
+  it('is a no-op for a subdomain whose registrable parent is already allowed', async () => {
+    await allowedDomainStore.add('parent-allowed.com');
+
+    const response = await httpServerWithAuth.inject({
+      method: 'POST',
+      url: '/allowed-domains',
+      headers: {
+        Authorization: `Bearer ${testToken}`,
+        'Content-Type': 'application/json',
+        Accept: '*/*',
+      },
+      payload: JSON.stringify({ domain: 'sub.parent-allowed.com' }),
+    });
+
+    expect(response.statusCode).toEqual(204);
+    // The subdomain must not have been stored, since the parent already covers it.
+    expect(await allowedDomainStore.contains('sub.parent-allowed.com')).toBe(
+      false,
+    );
+  });
+
+  it('returns 204 and adds a registrable domain', async () => {
+    expect(await allowedDomainStore.contains('newly-allowed.com')).toBe(false);
+
+    const response = await httpServerWithAuth.inject({
+      method: 'POST',
+      url: '/allowed-domains',
+      headers: {
+        Authorization: `Bearer ${testToken}`,
+        'Content-Type': 'application/json',
+        Accept: '*/*',
+      },
+      payload: JSON.stringify({ domain: 'newly-allowed.com' }),
+    });
+
+    expect(response.statusCode).toEqual(204);
+    expect(await allowedDomainStore.contains('newly-allowed.com')).toBe(true);
+  });
+
+  it('returns 204 when adding a domain that is already allowed', async () => {
+    await allowedDomainStore.add('already-allowed.com');
+
+    const response = await httpServerWithAuth.inject({
+      method: 'POST',
+      url: '/allowed-domains',
+      headers: {
+        Authorization: `Bearer ${testToken}`,
+        'Content-Type': 'application/json',
+        Accept: '*/*',
+      },
+      payload: JSON.stringify({ domain: 'already-allowed.com' }),
+    });
+
+    expect(response.statusCode).toEqual(204);
+    expect(await allowedDomainStore.contains('already-allowed.com')).toBe(true);
+  });
+});
+
 describe('DELETE /datasets', () => {
   let httpServerWithAuth: FastifyInstance<Server>;
   let deleteRegistrationStore: MockRegistrationStore;

@@ -280,6 +280,43 @@ export async function server(
     await server.register(async function protectedRoutes(protectedServer) {
       await protectedServer.register(bearerAuth, { keys: [apiAccessToken] });
 
+      protectedServer.post(
+        '/allowed-domains',
+        {
+          schema: {
+            body: {
+              type: 'object',
+              required: ['domain'],
+              properties: {
+                domain: { type: 'string' },
+              },
+            },
+          },
+        },
+        async (request, reply) => {
+          const { domain } = request.body as { domain: string };
+          const result = psl.parse(domain);
+          if (result.error || result.domain === null) {
+            return reply.code(400).send();
+          }
+
+          // Skip subdomains whose registrable parent is already allowed:
+          // they are already covered transitively.
+          if (
+            result.input !== result.domain &&
+            (await allowedRegistrationDomainStore.contains(result.domain))
+          ) {
+            return reply.code(204).send();
+          }
+
+          await allowedRegistrationDomainStore.add(result.input);
+
+          request.log.info(`Added ${result.input} to allowed domains`);
+
+          return reply.code(204).send();
+        },
+      );
+
       protectedServer.delete('/datasets', async (request, reply) => {
         const { url: urlParam } = request.query as { url?: string };
         if (!urlParam) {

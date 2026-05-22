@@ -58,6 +58,12 @@ export class MockAllowedRegistrationDomainStore implements AllowedRegistrationDo
   contains(domainName: string): Promise<boolean> {
     return Promise.resolve(this.domainNames.includes(domainName));
   }
+
+  async add(domainName: string): Promise<void> {
+    if (!this.domainNames.includes(domainName)) {
+      this.domainNames.push(domainName);
+    }
+  }
 }
 
 export class MockDatasetStore implements DatasetStore {
