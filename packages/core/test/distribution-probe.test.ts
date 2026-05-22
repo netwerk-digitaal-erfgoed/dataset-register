@@ -98,6 +98,93 @@ describe('probe outcome classifier', () => {
     expect(verdict.success).toBe(true);
     expect(verdict.outcome).toBeNull();
   });
+
+  it('maps HTTP 429 to nde-probe:RateLimited', () => {
+    const result = new DataDumpProbeResult(
+      'https://example.org/x',
+      mockResponse({ status: 429 }),
+      10,
+    );
+    const verdict = classify(result);
+    expect(verdict.outcome?.equals(probeOutcomes.RateLimited)).toBe(true);
+  });
+
+  it('maps a content-type-mismatch warning on success to ContentTypeMismatch', () => {
+    const result = new DataDumpProbeResult(
+      'https://example.org/x',
+      mockResponse({
+        status: 200,
+        headers: { 'Content-Type': 'text/turtle' },
+      }),
+      10,
+    );
+    result.warnings.push(
+      'Server Content-Type text/html does not match declared media type text/turtle',
+    );
+    const verdict = classify(result);
+    expect(verdict.success).toBe(false);
+    expect(verdict.outcome?.equals(probeOutcomes.ContentTypeMismatch)).toBe(
+      true,
+    );
+    expect(verdict.detail).toMatch(/Content-Type/);
+  });
+
+  it('maps a missing Content-Type header to ContentTypeMissing', () => {
+    const result = new DataDumpProbeResult(
+      'https://example.org/x',
+      mockResponse({ status: 406, headers: {} }),
+      10,
+    );
+    const verdict = classify(result);
+    expect(verdict.outcome?.equals(probeOutcomes.ContentTypeMissing)).toBe(
+      true,
+    );
+  });
+
+  it('falls back to ContentTypeMismatch for unhandled non-2xx with content type', () => {
+    const result = new DataDumpProbeResult(
+      'https://example.org/x',
+      mockResponse({
+        status: 406,
+        headers: { 'Content-Type': 'text/html' },
+      }),
+      10,
+    );
+    const verdict = classify(result);
+    expect(verdict.outcome?.equals(probeOutcomes.ContentTypeMismatch)).toBe(
+      true,
+    );
+  });
+
+  it('maps an "empty" failureReason to EmptyBody', () => {
+    const result = new DataDumpProbeResult(
+      'https://example.org/x',
+      mockResponse({
+        status: 200,
+        headers: { 'Content-Type': 'text/turtle' },
+      }),
+      10,
+    );
+    (result as { failureReason: string }).failureReason =
+      'Distribution contains no RDF triples (empty)';
+    const verdict = classify(result);
+    expect(verdict.outcome?.equals(probeOutcomes.EmptyBody)).toBe(true);
+  });
+
+  it('maps non-empty failureReason on data dump to RdfParseFailed', () => {
+    const result = new DataDumpProbeResult(
+      'https://example.org/x',
+      mockResponse({
+        status: 200,
+        headers: { 'Content-Type': 'text/turtle' },
+      }),
+      10,
+    );
+    (result as { failureReason: string }).failureReason =
+      'Unexpected "foo" on line 1';
+    const verdict = classify(result);
+    expect(verdict.outcome?.equals(probeOutcomes.RdfParseFailed)).toBe(true);
+  });
 });
 
 describe('DistributionProbeStage', () => {
