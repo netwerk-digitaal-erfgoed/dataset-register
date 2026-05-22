@@ -20,7 +20,10 @@ function callGet(
     );
   } catch (thrown) {
     const value = thrown as { status?: number; location?: string };
-    if (typeof value.status !== 'number' || typeof value.location !== 'string') {
+    if (
+      typeof value.status !== 'number' ||
+      typeof value.location !== 'string'
+    ) {
       throw thrown;
     }
     return { status: value.status, location: value.location };
