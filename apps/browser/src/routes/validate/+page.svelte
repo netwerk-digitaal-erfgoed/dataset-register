@@ -204,6 +204,9 @@
           ></a
         >{m.validate_page_intro_after()}
       </p>
+      <p>
+        {m.validate_page_intro_non_nde()}
+      </p>
     </header>
 
     <Tabs tabStyle="underline" divider>

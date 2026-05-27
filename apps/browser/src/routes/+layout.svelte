@@ -244,15 +244,6 @@
             </a>
           </li>
           <li>
-            <a
-              href={`https://datasetregister.netwerkdigitaalerfgoed.nl/faq.php?lang=${locale}`}
-              rel="external"
-              class="text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 px-4 py-2 text-base font-normal no-underline inline-block transition-colors"
-            >
-              {m.nav_faq()}
-            </a>
-          </li>
-          <li>
             <LanguageToggle />
           </li>
         </ul>
@@ -297,13 +288,6 @@
             class="text-gray-900 dark:text-gray-100 text-lg font-normal block py-3 no-underline"
           >
             {m.nav_search()}
-          </a>
-          <a
-            href={`https://datasetregister.netwerkdigitaalerfgoed.nl/faq.php?lang=${locale}`}
-            rel="external"
-            class="text-gray-900 dark:text-gray-100 text-lg font-normal block py-3 no-underline"
-          >
-            {m.nav_faq()}
           </a>
           <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
             <LanguageToggle />
