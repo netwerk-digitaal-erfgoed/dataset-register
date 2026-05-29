@@ -38,8 +38,30 @@ jobs:
       # - run: npx nx-cloud record -- echo Hello World
       - run: npx nx affected -t lint test typecheck check build docker:build
 
+      - name: Resolve Playwright version
+        id: playwright-version
+        run: echo "version=$(npx playwright --version | cut -d ' ' -f 2)" >> "$GITHUB_OUTPUT"
+        working-directory: apps/browser
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        # On a cache hit, only (re)install the OS dependencies, which are not
+        # cacheable; the browser binaries are restored from the cache. On a miss,
+        # download the browser together with its dependencies. The cache key is
+        # derived from the installed Playwright version, so a Dependabot bump of
+        # @playwright/test invalidates it automatically – no manual version sync.
+        run: |
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = "true" ]; then
+            npx playwright install-deps chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
         working-directory: apps/browser
 
       - name: Run E2E tests
