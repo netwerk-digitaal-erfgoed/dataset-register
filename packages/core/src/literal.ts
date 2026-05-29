@@ -41,16 +41,27 @@ export const normalizeLicense = (variable: string) =>
         )`;
 
 /**
- * Bind ?out to the normalized IRI form of ?in if ?in is an IRI; otherwise
- * leave ?out unbound (via the ?unbound trick). Used for dataset-level license
- * reads where we want to ignore literal placeholders rather than emit them.
- * IRI() is only invoked inside the isIRI() branch — a bare FILTER(isIRI(...))
- * does not prevent Comunica from eagerly evaluating IRI() on a literal.
+ * Bind ?out to the normalized IRI form of ?in if ?in is an IRI, or a literal
+ * whose lexical form is a URL; otherwise leave ?out unbound (via the ?unbound
+ * trick). Used for dataset-level license reads where we want to ignore literal
+ * placeholders rather than emit them.
+ *
+ * Some publishers (e.g. the Atlantis export behind Literatuurmuseum) emit
+ * schema:license as a plain literal holding a URL rather than as an IRI
+ * resource. SHACL accepts those (sh:nodeKind sh:IRIOrLiteral), so we coerce a
+ * URL-shaped literal to an IRI here to keep the indexed dct:license populated.
+ * https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1997
+ *
+ * IRI() is only invoked inside the IF true-branch — a bare FILTER(isIRI(...))
+ * does not prevent Comunica from eagerly evaluating IRI() on a literal. The
+ * "^https?://" anchor keeps the true-branch limited to values that are already
+ * valid URLs, so a placeholder like "zie distributies" (or prose merely
+ * containing a URL) stays unbound and does not crash the CONSTRUCT.
  */
 export const bindIriLicense = (rawVar: string, outVar: string) =>
   `BIND(
         IF(
-          isIRI(?${rawVar}),
+          isIRI(?${rawVar}) || REGEX(STR(?${rawVar}), "^https?://"),
           IRI(REPLACE(REPLACE(STR(?${rawVar}), "deed.nl", ""), "http://creativecommons.org", "https://creativecommons.org")),
           ?unbound
         ) AS ?${outVar}
