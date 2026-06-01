@@ -5,6 +5,7 @@ interface Env {
   SPARQL_ACCESS_TOKEN: string;
   REGISTRATION_URL_TTL: number;
   CRAWLER_SCHEDULE?: string;
+  HTTP_REQUEST_TIMEOUT: number;
 }
 
 const schema: JSONSchemaType<Env> = {
@@ -24,6 +25,10 @@ const schema: JSONSchemaType<Env> = {
     CRAWLER_SCHEDULE: {
       type: 'string',
       nullable: true,
+    },
+    HTTP_REQUEST_TIMEOUT: {
+      type: 'number',
+      default: 30,
     },
   },
 };

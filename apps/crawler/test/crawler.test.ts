@@ -144,6 +144,32 @@ describe('Crawler', () => {
     expect(readRegistration.registrationStatus).toBe('gone');
   });
 
+  it('passes the configured HTTP request timeout through to dereference and fetch', async () => {
+    crawler = new Crawler(
+      registrationStore,
+      new MockDatasetStore(),
+      new MockRatingStore(),
+      validator(true),
+      pino({ enabled: false }),
+      { httpRequestTimeoutMs: 5000 },
+    );
+    await storeRegistrationFixture(new URL('https://example.com/timeout'));
+
+    const response = await validSchemaOrgDataset();
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/timeout')
+      .times(2)
+      .reply(200, response);
+    await crawler.crawl(new Date('3000-01-01'));
+
+    const readRegistration = registrationStore.all()[0];
+    expect(readRegistration.statusCode).toBe(200);
+    expect(readRegistration.datasets).toEqual([
+      new URL('http://data.bibliotheken.nl/id/dataset/rise-alba'),
+    ]);
+  });
+
   it('marks registration gone when content type is unrecognized', async () => {
     await storeRegistrationFixture(new URL('https://example.com/wrong-type'));
 

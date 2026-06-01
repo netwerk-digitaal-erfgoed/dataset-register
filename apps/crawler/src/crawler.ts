@@ -1,6 +1,7 @@
 import { RegistrationStore } from '@dataset-register/core';
 import { DatasetStore, extractIri } from '@dataset-register/core';
 import {
+  DEFAULT_HTTP_REQUEST_TIMEOUT_MS,
   dereference,
   fetch,
   HttpError,
@@ -11,14 +12,30 @@ import { Valid, Validator } from '@dataset-register/core';
 import { crawlCounter } from '@dataset-register/core';
 import { rate, RatingStore } from '@dataset-register/core';
 
+export interface CrawlerOptions {
+  /**
+   * Per-request HTTP timeout (ms) applied to every page GET while dereferencing and
+   * paginating a registration URL. Without it a slow or trickling host can hold a single
+   * request open indefinitely and freeze the sequential crawl loop. Each page gets its
+   * own fresh deadline, so a large healthy paginated catalogue is not cut off.
+   */
+  httpRequestTimeoutMs?: number;
+}
+
 export class Crawler {
+  private readonly httpRequestTimeoutMs: number;
+
   constructor(
     private registrationStore: RegistrationStore,
     private datasetStore: DatasetStore,
     private ratingStore: RatingStore,
     private validator: Validator,
     private logger: pino.Logger,
-  ) {}
+    options: CrawlerOptions = {},
+  ) {
+    this.httpRequestTimeoutMs =
+      options.httpRequestTimeoutMs ?? DEFAULT_HTTP_REQUEST_TIMEOUT_MS;
+  }
 
   /**
    * Crawl all registered URLs that were last read before `dateLastRead`.
@@ -43,14 +60,21 @@ export class Crawler {
       let datasetIris = registration.datasets;
 
       try {
-        const data = await dereference(registration.url);
+        const data = await dereference(
+          registration.url,
+          this.httpRequestTimeoutMs,
+        );
         const validationResult = await this.validator.validate(data);
         if (validationResult.state === 'valid') {
           statusCode = 200;
           isValid = true;
           this.logger.info(`${registration.url} passes validation`);
           datasetIris = []; // Start with a fresh list.
-          for await (const dataset of fetch(registration.url, data)) {
+          for await (const dataset of fetch(
+            registration.url,
+            data,
+            this.httpRequestTimeoutMs,
+          )) {
             datasetIris.push(extractIri(dataset));
             await this.datasetStore.store(dataset);
             const dcatValidationResult = await this.validator.validate(dataset);
@@ -71,10 +95,7 @@ export class Crawler {
             `${registration.url} returned HTTP error ${statusCode}`,
           );
         } else if (e instanceof NoDatasetFoundAtUrl) {
-          this.logger.info(
-            { err: e },
-            `${registration.url} has no datasets`,
-          );
+          this.logger.info({ err: e }, `${registration.url} has no datasets`);
         } else {
           this.logger.warn(
             { err: e },

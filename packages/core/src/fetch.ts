@@ -12,6 +12,28 @@ import {
 import { rdfDereferencer } from 'rdf-dereference';
 import type DatasetExt from 'rdf-ext/lib/Dataset.js';
 
+/**
+ * Default per-request HTTP timeout (ms) applied to every page GET while dereferencing
+ * and paginating a registration URL.
+ */
+export const DEFAULT_HTTP_REQUEST_TIMEOUT_MS = 30_000;
+
+/**
+ * Build a `fetch` that aborts each request after `timeoutMs`. The deadline is created
+ * per call, so a paginated traversal gives every page its own fresh timeout instead of
+ * sharing one total budget – a large healthy catalogue is never cut off mid-traversal.
+ * Any caller-supplied signal (e.g. the one Comunica passes) is merged in, not clobbered.
+ */
+export function fetchWithTimeout(timeoutMs: number): typeof globalThis.fetch {
+  return (input, init) => {
+    const timeout = AbortSignal.timeout(timeoutMs);
+    const signal = init?.signal
+      ? AbortSignal.any([init.signal, timeout])
+      : timeout;
+    return globalThis.fetch(input, { ...init, signal });
+  };
+}
+
 export class FetchError extends Error {}
 
 export class HttpError extends FetchError {
@@ -52,9 +74,10 @@ export class InvalidContentType extends FetchError {
 export async function* fetch(
   url: URL,
   data: DatasetExt,
+  timeoutMs: number = DEFAULT_HTTP_REQUEST_TIMEOUT_MS,
 ): AsyncGenerator<DatasetExt> {
   try {
-    yield* query(url, data);
+    yield* query(url, data, timeoutMs);
   } catch (e) {
     handleComunicaError(e, url);
   }
@@ -63,9 +86,14 @@ export async function* fetch(
 /**
  * Fetch dataset description(s) by dereferencing the registration URL.
  */
-export async function dereference(url: URL): Promise<DatasetExt> {
+export async function dereference(
+  url: URL,
+  timeoutMs: number = DEFAULT_HTTP_REQUEST_TIMEOUT_MS,
+): Promise<DatasetExt> {
   try {
-    const { data } = await rdfDereferencer.dereference(url.toString());
+    const { data } = await rdfDereferencer.dereference(url.toString(), {
+      fetch: fetchWithTimeout(timeoutMs),
+    });
     const stream = pipeline(
       data,
       new StandardizeSchemaOrgPrefixToHttps(),
@@ -89,13 +117,14 @@ export async function dereference(url: URL): Promise<DatasetExt> {
 // });
 const engine = new QueryEngine();
 
-async function* query(url: URL, data: DatasetExt) {
+async function* query(url: URL, data: DatasetExt, timeoutMs: number) {
   // Work around Comunica bug where JSON-LD with @graph in HTML <script> tags
   // produces 0 results (comunica/comunica#1684). Use in-memory data as source
   // unless Hydra pagination is detected, which requires Comunica to follow links.
   const source = hasHydraPagination(data) ? url.toString() : toN3Store(data);
   const quadStream = await engine.queryQuads(constructQuery, {
     sources: [source],
+    fetch: fetchWithTimeout(timeoutMs),
   });
 
   // Collect quads grouped by dataset subject. UNION branches in the CONSTRUCT
