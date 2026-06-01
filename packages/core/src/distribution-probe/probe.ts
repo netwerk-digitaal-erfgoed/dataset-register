@@ -6,7 +6,7 @@ import type {
   Quad,
   Term,
 } from '@rdfjs/types';
-import { Distribution, IANA_MEDIA_TYPE_PREFIX } from '@lde/dataset';
+import { Distribution } from '@lde/dataset';
 import { probe as probeDistribution } from '@lde/distribution-probe';
 import type { ProbeResultType } from '@lde/distribution-probe';
 import { dcat, dct, rdf, xsd } from '../query.ts';
@@ -56,8 +56,11 @@ interface DistributionCandidate {
   distributionNode: NamedNode | BlankNode;
   urlNode: NamedNode;
   path: NamedNode;
-  mediaType: string | undefined;
-  conformsTo: URL | undefined;
+  /**
+   * The LDE Distribution this candidate probes, built once so the dedup key and the probe
+   * agree by construction. Null when the access URL is not a parsable URL.
+   */
+  distribution: Distribution | null;
 }
 
 /**
@@ -90,7 +93,7 @@ export class DistributionProbeStage {
     // vs. dct:conformsTo. Probing each separately reissues an identical query and trips
     // the host's rate limiter, so we coalesce candidates into one probe per endpoint and
     // reuse the verdict for every member.
-    const groups = groupByProbe(candidates);
+    const groups = groupByProbeTarget(candidates);
 
     const probed = await allSettledLimited(
       groups,
@@ -127,7 +130,18 @@ export class DistributionProbeStage {
     verdict: ProbeVerdict;
     record: DistributionHealthRecord | null;
   }> {
-    const distribution = toLdeDistribution(candidate);
+    const { distribution } = candidate;
+    if (distribution === null) {
+      return {
+        verdict: {
+          success: false,
+          outcome: probeOutcomes.NetworkError,
+          detail: `Distribution access URL is not a valid URL: ${candidate.urlNode.value}`,
+        },
+        record: null,
+      };
+    }
+
     const result: ProbeResultType = await probeDistribution(distribution, {
       timeoutMs: this.timeoutMs,
     });
@@ -137,19 +151,21 @@ export class DistributionProbeStage {
       return { verdict, record: null };
     }
 
-    const record = await this.updateHealth(candidate.urlNode, verdict);
+    const record = await this.updateHealth(
+      canonicalProbeUrl(distribution.accessUrl),
+      verdict,
+    );
     return { verdict: this.applyPromotion(verdict, record), record };
   }
 
   private async updateHealth(
-    url: NamedNode,
+    probeUrl: URL,
     verdict: ProbeVerdict,
   ): Promise<DistributionHealthRecord> {
     const store = this.healthStore;
     if (store === null) {
       throw new Error('healthStore is required');
     }
-    const probeUrl = new URL(canonicalProbeUrl(url.value));
     const now = new Date();
     const existing = await store.get(probeUrl);
 
@@ -206,7 +222,7 @@ interface ProbeGroup {
  * Candidates keep their own focus node and path, so every member still receives its own
  * sh:ValidationResult — only the network request and verdict are shared.
  */
-function groupByProbe(candidates: DistributionCandidate[]): ProbeGroup[] {
+function groupByProbeTarget(candidates: DistributionCandidate[]): ProbeGroup[] {
   const groups = new Map<string, ProbeGroup>();
   for (const candidate of candidates) {
     const key = probeKey(candidate);
@@ -221,38 +237,30 @@ function groupByProbe(candidates: DistributionCandidate[]): ProbeGroup[] {
 }
 
 /**
- * Identity of the probe a candidate will trigger. A SPARQL endpoint issues an identical
- * request regardless of how it is declared, so it is keyed by URL alone; a data dump
- * negotiates and compares against its declared media type, so that is part of the key.
+ * Identity of the probe a candidate triggers, derived from the same Distribution that is
+ * probed so the key can never disagree with the actual request. A SPARQL endpoint issues
+ * an identical request regardless of how it is declared, so it is keyed by URL alone; a
+ * data dump negotiates on its media type, so that is part of the key. Fields are joined
+ * with a newline, which cannot appear in a URL or media type, so they cannot run together
+ * into a colliding key.
  */
 function probeKey(candidate: DistributionCandidate): string {
-  const url = canonicalProbeUrl(candidate.urlNode.value);
-  return isSparqlProbe(candidate)
+  const { distribution } = candidate;
+  if (distribution === null) return `invalid\n${candidate.urlNode.value}`;
+  const url = canonicalProbeUrl(distribution.accessUrl).toString();
+  return distribution.isSparql()
     ? `sparql\n${url}`
-    : `dump\n${url}\n${candidate.mediaType ?? ''}`;
+    : `dump\n${url}\n${distribution.mimeType ?? ''}`;
 }
 
 /**
- * Mirrors the SPARQL detection in {@link toLdeDistribution}: an explicit SPARQL-protocol
- * dct:conformsTo, or a media type that names SPARQL (the legacy signal we still map).
+ * The URL fetch() actually requests: the fragment is dropped because it is never sent, so
+ * distributions that differ only by a #query fragment share one probe and one health record.
  */
-function isSparqlProbe(candidate: DistributionCandidate): boolean {
-  if (candidate.conformsTo?.toString() === SPARQL_PROTOCOL_URL) return true;
-  return candidate.mediaType !== undefined && /sparql/i.test(candidate.mediaType);
-}
-
-/**
- * The URL fetch() actually requests: the fragment is dropped because it is never sent.
- * Falls back to the raw value when the IRI cannot be parsed as a URL.
- */
-function canonicalProbeUrl(value: string): string {
-  try {
-    const url = new URL(value);
-    url.hash = '';
-    return url.toString();
-  } catch {
-    return value;
-  }
+function canonicalProbeUrl(accessUrl: URL): URL {
+  const canonical = new URL(accessUrl.toString());
+  canonical.hash = '';
+  return canonical;
 }
 
 function collectDistributions(input: DatasetCore): DistributionCandidate[] {
@@ -308,8 +316,7 @@ function candidatesFor(
         distributionNode,
         urlNode: urlTerm,
         path,
-        mediaType,
-        conformsTo,
+        distribution: toDistribution(urlTerm.value, mediaType, conformsTo),
       });
     }
   }
@@ -372,24 +379,30 @@ function literalValue(
   return undefined;
 }
 
-function toLdeDistribution(candidate: DistributionCandidate): Distribution {
-  const mediaType = candidate.mediaType
-    ? candidate.mediaType.startsWith(IANA_MEDIA_TYPE_PREFIX) ||
-      candidate.mediaType.startsWith('http://') ||
-      candidate.mediaType.startsWith('https://')
-      ? candidate.mediaType
-      : candidate.mediaType
-    : undefined;
-  const conformsTo =
-    candidate.conformsTo ??
+/**
+ * Build the Distribution we probe. When no dct:conformsTo is declared, a SPARQL-flavoured
+ * media type is mapped to the SPARQL protocol so Distribution.isSparql() recognizes the
+ * endpoint — the legacy signal we still honor; modern descriptions declare conformsTo
+ * directly. Returns null when the access URL is not a parsable URL, so the caller surfaces
+ * a reachability violation instead of throwing.
+ */
+function toDistribution(
+  accessUrl: string,
+  mediaType: string | undefined,
+  conformsTo: URL | undefined,
+): Distribution | null {
+  let url: URL;
+  try {
+    url = new URL(accessUrl);
+  } catch {
+    return null;
+  }
+  const resolvedConformsTo =
+    conformsTo ??
     (mediaType !== undefined && /sparql/i.test(mediaType)
       ? new URL(SPARQL_PROTOCOL_URL)
       : undefined);
-  return new Distribution(
-    new URL(candidate.urlNode.value),
-    mediaType,
-    conformsTo,
-  );
+  return new Distribution(url, mediaType, resolvedConformsTo);
 }
 
 function emitViolation(

@@ -480,7 +480,9 @@ describe('DistributionProbeStage', () => {
   });
 
   it('tolerates a malformed dct:conformsTo IRI without crashing the probe', async () => {
-    nock('https://example.org').head('/bad-conforms').replyWithError('ENOTFOUND');
+    nock('https://example.org')
+      .head('/bad-conforms')
+      .replyWithError('ENOTFOUND');
 
     const dataset = factory.dataset();
     const datasetNode = factory.namedNode('https://example.org/d-bad-conforms');
@@ -495,7 +497,11 @@ describe('DistributionProbeStage', () => {
     dataset.add(factory.quad(distributionNode, dcat('accessURL'), url));
     dataset.add(
       // A NamedNode whose value isn’t a parsable URL — exercises iriValue’s catch.
-      factory.quad(distributionNode, dct('conformsTo'), factory.namedNode('not a url')),
+      factory.quad(
+        distributionNode,
+        dct('conformsTo'),
+        factory.namedNode('not a url'),
+      ),
     );
 
     const stage = new DistributionProbeStage();
@@ -504,7 +510,9 @@ describe('DistributionProbeStage', () => {
   });
 
   it('records a rejected probe when the health store throws', async () => {
-    nock('https://example.org').head('/store-throws').replyWithError('ENOTFOUND');
+    nock('https://example.org')
+      .head('/store-throws')
+      .replyWithError('ENOTFOUND');
 
     const dataset = factory.dataset();
     const datasetNode = factory.namedNode('https://example.org/d-store-throws');
@@ -572,7 +580,9 @@ describe('DistributionProbeStage', () => {
       });
 
     const dataset = factory.dataset();
-    const datasetNode = factory.namedNode('https://example.org/d-shared-sparql');
+    const datasetNode = factory.namedNode(
+      'https://example.org/d-shared-sparql',
+    );
     // Two distributions point at one endpoint, differing only by the #query fragment
     // that fetch() strips before the request — the classic SPARQL-explorer pattern.
     for (const fragment of ['#query=one', '#query=two']) {
