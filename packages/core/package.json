@@ -27,7 +27,7 @@
     "@comunica/query-sparql": "^5.1.3",
     "@comunica/types": "^5.1.3",
     "@lde/dataset": "^0.7.3",
-    "@lde/distribution-probe": "^0.1.2",
+    "@lde/distribution-probe": "^0.1.4",
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/exporter-metrics-otlp-proto": "^0.218.0",
     "@opentelemetry/resources": "^2.7.0",
