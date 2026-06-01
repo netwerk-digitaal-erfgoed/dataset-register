@@ -38,9 +38,35 @@ jobs:
       # - run: npx nx-cloud record -- echo Hello World
       - run: npx nx affected -t lint test typecheck check build docker:build
 
+      # Only set up Playwright when a project that owns an e2e target is actually
+      # affected, so config-only PRs do not pay for (or flake on) a browser download
+      # they do not need.
+      - name: Check whether E2E tests are affected
+        id: e2e
+        run: |
+          if [ -n "$(npx nx show projects --affected -t e2e)" ]; then
+            echo "affected=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "affected=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # npx playwright install --with-deps is the install method Playwright recommends
+      # for CI (it also advises against caching browser binaries). The download stalls
+      # intermittently and has no timeout of its own, which used to wedge the job for
+      # hours, so bound each attempt and retry to fail fast and recover.
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        if: steps.e2e.outputs.affected == 'true'
         working-directory: apps/browser
+        run: |
+          for attempt in 1 2 3; do
+            if timeout 300 npx playwright install --with-deps chromium; then
+              exit 0
+            fi
+            echo "::warning::Playwright install attempt ${attempt} failed or timed out after 300s; retrying"
+          done
+          echo "::error::Playwright install failed after 3 attempts"
+          exit 1
 
       - name: Run E2E tests
+        if: steps.e2e.outputs.affected == 'true'
         run: npx nx affected -t e2e
