@@ -382,6 +382,104 @@ describe('DistributionProbeStage', () => {
     expect(peakInFlight).toBeGreaterThan(0);
   });
 
+  it('caps probing at maxProbes distinct endpoints and logs how many were skipped', async () => {
+    const distributionCount = 5;
+    const maxProbes = 2;
+    let probeCount = 0;
+    // Each distribution has a distinct accessURL, so it is its own probe endpoint. A large
+    // Content-Length keeps the probe on HEAD (no GET fallback), so each probed endpoint
+    // maps to exactly one intercepted request.
+    nock('https://example.org')
+      .head(/\/capped-\d+/)
+      .times(distributionCount)
+      .reply(() => {
+        probeCount++;
+        return [
+          200,
+          '',
+          { 'Content-Type': 'text/turtle', 'Content-Length': '100000' },
+        ];
+      });
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-capped');
+    for (let index = 0; index < distributionCount; index++) {
+      const distributionNode = factory.blankNode();
+      dataset.add(
+        factory.quad(datasetNode, dcat('distribution'), distributionNode),
+      );
+      dataset.add(
+        factory.quad(
+          distributionNode,
+          dcat('accessURL'),
+          factory.namedNode(`https://example.org/capped-${index}`),
+        ),
+      );
+      dataset.add(
+        factory.quad(
+          distributionNode,
+          dcat('mediaType'),
+          factory.literal('text/turtle'),
+        ),
+      );
+    }
+
+    const messages: string[] = [];
+    const stage = new DistributionProbeStage({
+      maxProbes,
+      logger: { warn: (message) => messages.push(message) },
+    });
+    await stage.run(dataset);
+
+    expect(probeCount).toBe(maxProbes); // only the first maxProbes endpoints are probed.
+    expect(messages).toHaveLength(1);
+    expect(messages[0]).toContain('skipped 3');
+  });
+
+  it('caps probing without a logger and does not throw', async () => {
+    const maxProbes = 1;
+    let probeCount = 0;
+    nock('https://example.org')
+      .head(/\/nolog-\d+/)
+      .times(3)
+      .reply(() => {
+        probeCount++;
+        return [
+          200,
+          '',
+          { 'Content-Type': 'text/turtle', 'Content-Length': '100000' },
+        ];
+      });
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-nolog');
+    for (let index = 0; index < 3; index++) {
+      const distributionNode = factory.blankNode();
+      dataset.add(
+        factory.quad(datasetNode, dcat('distribution'), distributionNode),
+      );
+      dataset.add(
+        factory.quad(
+          distributionNode,
+          dcat('accessURL'),
+          factory.namedNode(`https://example.org/nolog-${index}`),
+        ),
+      );
+      dataset.add(
+        factory.quad(
+          distributionNode,
+          dcat('mediaType'),
+          factory.literal('text/turtle'),
+        ),
+      );
+    }
+
+    const stage = new DistributionProbeStage({ maxProbes }); // no logger passed.
+    await stage.run(dataset);
+
+    expect(probeCount).toBe(maxProbes); // cap still enforced without a logger.
+  });
+
   it('probes schema:contentUrl on a Schema.org distribution', async () => {
     nock('https://example.org')
       .head('/schema-broken')

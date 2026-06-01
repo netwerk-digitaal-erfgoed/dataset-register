@@ -105,6 +105,9 @@ You can configure the application through environment variables:
   cannot hold a request open indefinitely and stall the crawl, while a large healthy paginated catalogue is not cut off
   mid-traversal. When a request times out the registration is left untouched and retried on the next pass, rather than
   being recorded as gone (default: `30`).
+- `CRAWLER_MAX_DISTRIBUTION_PROBES`: the maximum number of distinct distribution endpoints probed per dataset (minimum
+  `1`). A single dataset can declare tens of thousands of distributions; probing every endpoint stalls a crawl pass for
+  hours. Endpoints beyond the cap are skipped and the skipped count is logged, never silently dropped (default: `100`).
 
 ## Run the tests
 
