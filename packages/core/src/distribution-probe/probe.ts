@@ -84,34 +84,40 @@ export class DistributionProbeStage {
     const candidates = collectDistributions(input);
     if (candidates.length === 0) return [];
 
+    // Distributions frequently resolve to the same probe: a dataset commonly declares
+    // one SPARQL endpoint across many distributions that differ only by a #query
+    // fragment (which fetch() strips before the request) or by legacy dcat:mediaType
+    // vs. dct:conformsTo. Probing each separately reissues an identical query and trips
+    // the host's rate limiter, so we coalesce candidates into one probe per endpoint and
+    // reuse the verdict for every member.
+    const groups = groupByProbe(candidates);
+
     const probed = await allSettledLimited(
-      candidates,
+      groups,
       this.probeConcurrency,
-      (candidate) => this.probeCandidate(candidate),
+      (group) => this.probeCandidate(group.representative),
     );
 
     const quads: Quad[] = [];
     for (let index = 0; index < probed.length; index++) {
       const settled = probed[index];
-      const candidate = candidates[index];
-      if (settled.status === 'rejected') {
-        quads.push(
-          ...emitViolation(
-            candidate,
-            {
-              success: false,
-              outcome: probeOutcomes.NetworkError,
-              detail: String(settled.reason),
-            },
-            null,
-          ),
-        );
-        continue;
-      }
-      const { verdict, record } = settled.value;
+      const { members } = groups[index];
+      const { verdict, record } =
+        settled.status === 'rejected'
+          ? {
+              verdict: {
+                success: false,
+                outcome: probeOutcomes.NetworkError,
+                detail: String(settled.reason),
+              } satisfies ProbeVerdict,
+              record: null,
+            }
+          : settled.value;
       if (verdict.success) continue;
 
-      quads.push(...emitViolation(candidate, verdict, record));
+      for (const member of members) {
+        quads.push(...emitViolation(member, verdict, record));
+      }
     }
 
     return quads;
@@ -143,7 +149,7 @@ export class DistributionProbeStage {
     if (store === null) {
       throw new Error('healthStore is required');
     }
-    const probeUrl = new URL(url.value);
+    const probeUrl = new URL(canonicalProbeUrl(url.value));
     const now = new Date();
     const existing = await store.get(probeUrl);
 
@@ -186,6 +192,66 @@ export class DistributionProbeStage {
     const persistent = streakAgeMs >= this.failureStreakMaxAgeMs;
 
     return persistent ? verdict : { ...verdict, success: true };
+  }
+}
+
+interface ProbeGroup {
+  /** The candidate actually probed; its verdict is reused for every member. */
+  representative: DistributionCandidate;
+  members: DistributionCandidate[];
+}
+
+/**
+ * Coalesce candidates that resolve to an identical probe so the endpoint is hit once.
+ * Candidates keep their own focus node and path, so every member still receives its own
+ * sh:ValidationResult — only the network request and verdict are shared.
+ */
+function groupByProbe(candidates: DistributionCandidate[]): ProbeGroup[] {
+  const groups = new Map<string, ProbeGroup>();
+  for (const candidate of candidates) {
+    const key = probeKey(candidate);
+    const existing = groups.get(key);
+    if (existing === undefined) {
+      groups.set(key, { representative: candidate, members: [candidate] });
+    } else {
+      existing.members.push(candidate);
+    }
+  }
+  return [...groups.values()];
+}
+
+/**
+ * Identity of the probe a candidate will trigger. A SPARQL endpoint issues an identical
+ * request regardless of how it is declared, so it is keyed by URL alone; a data dump
+ * negotiates and compares against its declared media type, so that is part of the key.
+ */
+function probeKey(candidate: DistributionCandidate): string {
+  const url = canonicalProbeUrl(candidate.urlNode.value);
+  return isSparqlProbe(candidate)
+    ? `sparql\n${url}`
+    : `dump\n${url}\n${candidate.mediaType ?? ''}`;
+}
+
+/**
+ * Mirrors the SPARQL detection in {@link toLdeDistribution}: an explicit SPARQL-protocol
+ * dct:conformsTo, or a media type that names SPARQL (the legacy signal we still map).
+ */
+function isSparqlProbe(candidate: DistributionCandidate): boolean {
+  if (candidate.conformsTo?.toString() === SPARQL_PROTOCOL_URL) return true;
+  return candidate.mediaType !== undefined && /sparql/i.test(candidate.mediaType);
+}
+
+/**
+ * The URL fetch() actually requests: the fragment is dropped because it is never sent.
+ * Falls back to the raw value when the IRI cannot be parsed as a URL.
+ */
+function canonicalProbeUrl(value: string): string {
+  try {
+    const url = new URL(value);
+    url.hash = '';
+    return url.toString();
+  } catch {
+    return value;
   }
 }
 

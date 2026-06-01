@@ -560,6 +560,128 @@ describe('DistributionProbeStage', () => {
     const quads = await stage.run(dataset);
     expect(quads.length).toBeGreaterThan(0); // probe ran with SPARQL conformsTo derived
   });
+
+  it('probes a shared SPARQL endpoint once and reuses the verdict across distributions', async () => {
+    let postCount = 0;
+    nock('https://example.org')
+      .post('/sparql')
+      .times(2) // permit a second request so a regression is a counted call, not a nock error
+      .reply(() => {
+        postCount++;
+        return [429, '', { 'Content-Type': 'application/sparql-results+json' }];
+      });
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-shared-sparql');
+    // Two distributions point at one endpoint, differing only by the #query fragment
+    // that fetch() strips before the request — the classic SPARQL-explorer pattern.
+    for (const fragment of ['#query=one', '#query=two']) {
+      const distributionNode = factory.blankNode();
+      dataset.add(
+        factory.quad(datasetNode, dcat('distribution'), distributionNode),
+      );
+      dataset.add(
+        factory.quad(
+          distributionNode,
+          dcat('accessURL'),
+          factory.namedNode(`https://example.org/sparql${fragment}`),
+        ),
+      );
+      dataset.add(
+        factory.quad(
+          distributionNode,
+          dcat('mediaType'),
+          factory.literal('application/sparql-query'),
+        ),
+      );
+    }
+
+    const stage = new DistributionProbeStage();
+    const quads = await stage.run(dataset);
+
+    expect(postCount).toBe(1); // the two distributions collapse to a single probe
+
+    // Each distribution still receives its own result carrying the shared verdict.
+    const violations = quads.filter(
+      (quad) =>
+        quad.predicate.equals(shacl('resultSeverity')) &&
+        quad.object.equals(shacl('Violation')),
+    );
+    expect(violations).toHaveLength(2);
+
+    const outcomes = quads.filter((quad) =>
+      quad.predicate.equals(factory.namedNode(`${ndeProbePrefix}probeOutcome`)),
+    );
+    expect(outcomes).toHaveLength(2);
+    outcomes.forEach((quad) =>
+      expect(quad.object.value).toBe(`${ndeProbePrefix}RateLimited`),
+    );
+  });
+
+  it('detects a SPARQL endpoint declared via dct:conformsTo without a media type', async () => {
+    let postCount = 0;
+    nock('https://example.org')
+      .post('/sparql-c')
+      .reply(() => {
+        postCount++;
+        return [429, ''];
+      });
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-conformsto');
+    const distributionNode = factory.blankNode();
+    const dct = (property: string) =>
+      factory.namedNode(`http://purl.org/dc/terms/${property}`);
+
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('accessURL'),
+        factory.namedNode('https://example.org/sparql-c'),
+      ),
+    );
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dct('conformsTo'),
+        factory.namedNode('https://www.w3.org/TR/sparql11-protocol/'),
+      ),
+    );
+
+    const stage = new DistributionProbeStage();
+    const quads = await stage.run(dataset);
+
+    expect(postCount).toBe(1); // probed as SPARQL (POST), not a data dump (HEAD)
+    const outcome = quads.find((quad) =>
+      quad.predicate.equals(factory.namedNode(`${ndeProbePrefix}probeOutcome`)),
+    );
+    expect(outcome?.object.value).toBe(`${ndeProbePrefix}RateLimited`);
+  });
+
+  it('tolerates a malformed dcat:accessURL without crashing the probe', async () => {
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-bad-url');
+    const distributionNode = factory.blankNode();
+
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    dataset.add(
+      // A NamedNode whose value isn’t a parsable URL — exercises canonicalProbeUrl’s catch.
+      factory.quad(
+        distributionNode,
+        dcat('accessURL'),
+        factory.namedNode('not a url'),
+      ),
+    );
+
+    const stage = new DistributionProbeStage();
+    const quads = await stage.run(dataset);
+    expect(quads.length).toBeGreaterThan(0); // emits a NetworkError violation, no throw
+  });
 });
 
 class InMemoryHealthStore implements DistributionHealthStore {
