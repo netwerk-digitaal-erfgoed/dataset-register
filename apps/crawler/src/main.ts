@@ -34,6 +34,7 @@ const crawler = new Crawler(
   ratingStore,
   validator,
   logger,
+  { httpRequestTimeoutMs: config.HTTP_REQUEST_TIMEOUT * 1000 },
 );
 
 // Schedule crawler to check every hour for registrations that have expired their REGISTRATION_URL_TTL.
