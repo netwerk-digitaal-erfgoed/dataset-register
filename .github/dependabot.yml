@@ -60,3 +60,9 @@ updates:
         patterns:
           - '@vitest/*'
           - 'vitest'
+      all-other-npm: # Catch-all (listed last, so the specific groups above win): collapse
+        # every remaining npm update into one PR instead of a daily trickle of small PRs.
+        patterns:
+          - '*'
+        exclude-patterns:
+          - '@lde/*'
