@@ -1073,6 +1073,39 @@ describe('Fetch', () => {
       'https://creativecommons.org/publicdomain/zero/1.0/',
     );
   });
+
+  it('coerces a URL-shaped literal schema:license to an indexed IRI', async () => {
+    // Atlantis-style data: the export publishes schema:license as a plain
+    // literal holding a URL rather than as an IRI resource. SHACL accepts it
+    // (sh:IRIOrLiteral), so the dataset stays valid, but #1959 only indexed
+    // IRI licenses, dropping the license from the index. We now coerce the
+    // URL-shaped literal to its canonical IRI so dct:license stays populated.
+    // https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1997
+    const response = await file('dataset-schema-org-literal-url-license.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/literal-url-license')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/literal-url-license'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const datasetUri = factory.namedNode(
+      'https://archief.literatuurmuseum.nl/dataset/atlantis-publiek',
+    );
+
+    const datasetLicenses = [
+      ...dataset.match(datasetUri, dct('license'), null),
+    ];
+    expect(datasetLicenses).toHaveLength(1);
+    expect(datasetLicenses[0].object.termType).toBe('NamedNode');
+    expect(datasetLicenses[0].object.value).toBe(
+      'https://creativecommons.org/publicdomain/zero/1.0/',
+    );
+  });
 });
 
 describe('discoverDatacatalog', () => {
