@@ -28,6 +28,9 @@ const schema: JSONSchemaType<Env> = {
     },
     HTTP_REQUEST_TIMEOUT: {
       type: 'number',
+      // At least 1 second: 0 would abort every request immediately (indexing
+      // nothing) and a negative value throws when used as an AbortSignal delay.
+      minimum: 1,
       default: 30,
     },
   },

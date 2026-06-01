@@ -100,10 +100,11 @@ You can configure the application through environment variables:
   (default: crawling disabled).
 - `REGISTRATION_URL_TTL`: if crawling is enabled, a registered URL’s maximum age (in seconds) before it is fetched again
   (default: `86400`, so one day).
-- `HTTP_REQUEST_TIMEOUT`: the per-request HTTP timeout (in seconds) applied to every page fetched while dereferencing
-  and paginating a registration URL. Each page gets its own fresh deadline, so a slow or trickling host cannot hold a
-  request open indefinitely and stall the crawl, while a large healthy paginated catalogue is not cut off mid-traversal
-  (default: `30`).
+- `HTTP_REQUEST_TIMEOUT`: the per-request HTTP timeout (in seconds, minimum `1`) applied to every page fetched while
+  dereferencing and paginating a registration URL. Each page gets its own fresh deadline, so a slow or trickling host
+  cannot hold a request open indefinitely and stall the crawl, while a large healthy paginated catalogue is not cut off
+  mid-traversal. When a request times out the registration is left untouched and retried on the next pass, rather than
+  being recorded as gone (default: `30`).
 
 ## Run the tests
 

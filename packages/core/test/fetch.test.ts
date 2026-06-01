@@ -7,6 +7,7 @@ import {
   fetchWithTimeout,
   HttpError,
   NoDatasetFoundAtUrl,
+  RequestTimeout,
 } from '../src/fetch.js';
 import nock from 'nock';
 import { dcat, dct, foaf, odrl, rdf } from '../src/query.js';
@@ -1266,10 +1267,12 @@ describe('Request timeout', () => {
       .reply(200, response);
 
     // A 20 ms per-request timeout must abort the stalled fetch instead of waiting,
-    // so one trickling host can never freeze the crawl loop (issue #2000).
+    // so one trickling host can never freeze the crawl loop (issue #2000). The abort
+    // must surface as a RequestTimeout (a distinct, retry-worthy outcome) rather than
+    // being misclassified as NoDatasetFoundAtUrl.
     await expect(
       fetchDereference(new URL('https://slow.example/stalls'), 20),
-    ).rejects.toThrow();
+    ).rejects.toThrow(RequestTimeout);
   });
 
   it('applies the request timeout to every page of a paginated catalogue', async () => {

@@ -14,9 +14,10 @@ import type DatasetExt from 'rdf-ext/lib/Dataset.js';
 
 /**
  * Default per-request HTTP timeout (ms) applied to every page GET while dereferencing
- * and paginating a registration URL.
+ * and paginating a registration URL. Callers that omit a timeout fall back to this; it
+ * is the single source of truth for the default, so it is intentionally not exported.
  */
-export const DEFAULT_HTTP_REQUEST_TIMEOUT_MS = 30_000;
+const DEFAULT_HTTP_REQUEST_TIMEOUT_MS = 30_000;
 
 /**
  * Build a `fetch` that aborts each request after `timeoutMs`. The deadline is created
@@ -30,7 +31,13 @@ export function fetchWithTimeout(timeoutMs: number): typeof globalThis.fetch {
     const signal = init?.signal
       ? AbortSignal.any([init.signal, timeout])
       : timeout;
-    return globalThis.fetch(input, { ...init, signal });
+    const response = globalThis.fetch(input, { ...init, signal });
+    // Comunica can have several pages in flight; if one aborts and the consumer
+    // unwinds, the siblings’ rejections would otherwise go unhandled and could crash
+    // the process. A no-op catch keeps the promise handled while still returning the
+    // original promise, so a caller that does await it still observes the rejection.
+    void response.catch(() => undefined);
+    return response;
   };
 }
 
@@ -59,6 +66,14 @@ export class CouldNotFetchUrl extends FetchError {
   constructor(url: URL, reason: string) {
     super(`${COULD_NOT_FETCH_URL_PREFIX} ${url.toString()}: ${reason}`, {
       cause: `${reason}. Please check that the URL is publicly reachable and returns RDF.`,
+    });
+  }
+}
+
+export class RequestTimeout extends FetchError {
+  constructor(url: URL) {
+    super(`Request to ${url.toString()} exceeded the HTTP request timeout`, {
+      cause: `The URL did not respond within the configured HTTP request timeout.`,
     });
   }
 }
@@ -184,6 +199,13 @@ async function* query(url: URL, data: DatasetExt, timeoutMs: number) {
  */
 function handleComunicaError(e: unknown, url: URL): never {
   if (e instanceof Error) {
+    // A per-request timeout abort surfaces (possibly wrapped by Comunica) as a
+    // TimeoutError. Classify it as its own error so the caller can leave the
+    // registration untouched and retry next pass, rather than recording it as gone.
+    if (isTimeoutError(e)) {
+      throw new RequestTimeout(url);
+    }
+
     // Match error thrown in Comunica’s ActorRdfDereferenceHttpParseBase.
     if (e.message.match(/404: unknown error/)) {
       throw new HttpError(url, 404);
@@ -208,6 +230,23 @@ function handleComunicaError(e: unknown, url: URL): never {
   }
 
   throw e;
+}
+
+/**
+ * Walk the error’s cause chain looking for an `AbortSignal.timeout` rejection, which
+ * surfaces as a DOMException named `TimeoutError` – directly when our fetch wrapper
+ * rejects, or nested in `cause` once Comunica wraps it.
+ */
+function isTimeoutError(error: Error): boolean {
+  let current: unknown = error;
+  for (let depth = 0; depth < 10; depth++) {
+    if (current instanceof Error && current.name === 'TimeoutError') {
+      return true;
+    }
+    if (!(current instanceof Error) || current.cause === undefined) break;
+    current = current.cause;
+  }
+  return false;
 }
 
 function deepestErrorMessage(error: Error): string {

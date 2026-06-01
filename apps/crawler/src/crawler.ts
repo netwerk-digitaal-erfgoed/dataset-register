@@ -1,11 +1,11 @@
 import { RegistrationStore } from '@dataset-register/core';
 import { DatasetStore, extractIri } from '@dataset-register/core';
 import {
-  DEFAULT_HTTP_REQUEST_TIMEOUT_MS,
   dereference,
   fetch,
   HttpError,
   NoDatasetFoundAtUrl,
+  RequestTimeout,
 } from '@dataset-register/core';
 import pino from 'pino';
 import { Valid, Validator } from '@dataset-register/core';
@@ -23,7 +23,7 @@ export interface CrawlerOptions {
 }
 
 export class Crawler {
-  private readonly httpRequestTimeoutMs: number;
+  private readonly httpRequestTimeoutMs: number | undefined;
 
   constructor(
     private registrationStore: RegistrationStore,
@@ -33,8 +33,8 @@ export class Crawler {
     private logger: pino.Logger,
     options: CrawlerOptions = {},
   ) {
-    this.httpRequestTimeoutMs =
-      options.httpRequestTimeoutMs ?? DEFAULT_HTTP_REQUEST_TIMEOUT_MS;
+    // Leave undefined when unset: dereference()/fetch() own the single default.
+    this.httpRequestTimeoutMs = options.httpRequestTimeoutMs;
   }
 
   /**
@@ -89,7 +89,20 @@ export class Crawler {
           this.logger.info(`${registration.url} contains no datasets`);
         }
       } catch (e) {
-        if (e instanceof HttpError) {
+        if (e instanceof RequestTimeout) {
+          // A page exceeded the HTTP request timeout. Leave the registration
+          // untouched so the next pass retries it, rather than recording a bogus
+          // crawl result (e.g. marking a transiently slow host as gone).
+          this.logger.warn(
+            `Crawling registration URL ${registration.url} exceeded the HTTP request timeout; leaving it for the next pass`,
+          );
+          crawlCounter.add(1, {
+            status: undefined,
+            valid: false,
+            timedOut: true,
+          });
+          continue;
+        } else if (e instanceof HttpError) {
           statusCode = e.statusCode;
           this.logger.info(
             `${registration.url} returned HTTP error ${statusCode}`,

@@ -37,6 +37,13 @@ describe('Crawler', () => {
     );
   });
 
+  afterEach(() => {
+    // The timeout test aborts a stalled request, leaving nock's delayed-response
+    // timer pending; cancel it so it cannot fire during a later test.
+    nock.abortPendingRequests();
+    nock.cleanAll();
+  });
+
   it('crawls valid URLs', async () => {
     await storeRegistrationFixture(new URL('https://example.com/valid'));
 
@@ -144,30 +151,32 @@ describe('Crawler', () => {
     expect(readRegistration.registrationStatus).toBe('gone');
   });
 
-  it('passes the configured HTTP request timeout through to dereference and fetch', async () => {
+  it('leaves a registration untouched when a request times out', async () => {
+    // A 20 ms timeout proves the configured value is threaded through to dereference:
+    // a host that stalls past it must abort, and the registration must be left for the
+    // next pass (not recorded as gone), so a transiently slow host is retried.
     crawler = new Crawler(
       registrationStore,
       new MockDatasetStore(),
       new MockRatingStore(),
       validator(true),
       pino({ enabled: false }),
-      { httpRequestTimeoutMs: 5000 },
+      { httpRequestTimeoutMs: 20 },
     );
-    await storeRegistrationFixture(new URL('https://example.com/timeout'));
+    await storeRegistrationFixture(new URL('https://slow.example/stalls'));
 
     const response = await validSchemaOrgDataset();
-    nock('https://example.com')
+    nock('https://slow.example')
       .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
-      .get('/timeout')
-      .times(2)
+      .get('/stalls')
+      .delayConnection(500) // Far longer than the 20 ms timeout.
       .reply(200, response);
     await crawler.crawl(new Date('3000-01-01'));
 
+    // The registration is untouched: its original 2000-01-01 dateRead still stands,
+    // so the next pass retries it instead of recording a bogus crawl result.
     const readRegistration = registrationStore.all()[0];
-    expect(readRegistration.statusCode).toBe(200);
-    expect(readRegistration.datasets).toEqual([
-      new URL('http://data.bibliotheken.nl/id/dataset/rise-alba'),
-    ]);
+    expect(readRegistration.dateRead).toEqual(new Date('2000-01-01'));
   });
 
   it('marks registration gone when content type is unrecognized', async () => {
