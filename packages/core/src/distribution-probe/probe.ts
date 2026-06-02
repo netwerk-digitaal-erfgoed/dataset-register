@@ -24,6 +24,14 @@ const schema = (property: string): NamedNode =>
 const SPARQL_PROTOCOL_URL = 'https://www.w3.org/TR/sparql11-protocol/';
 const DEFAULT_TIMEOUT_MS = 5000;
 
+/**
+ * Minimal structural logger used to report skipped probes. Compatible with a pino logger,
+ * so callers can pass their existing logger without core depending on pino.
+ */
+export interface ProbeLogger {
+  warn(message: string): void;
+}
+
 export interface DistributionProbeStageOptions {
   /**
    * When set, each failing probe is assessed against this store and promoted to
@@ -47,10 +55,23 @@ export interface DistributionProbeStageOptions {
    * trips rate limiters on the target host, and starves the event loop. Default 20.
    */
   probeConcurrency?: number;
+  /**
+   * Maximum number of candidate distribution URLs to probe per dataset. Bounded because a
+   * single dataset can declare tens of thousands of distributions; probing all of them
+   * stalls a crawl pass for hours. Candidate URLs beyond the cap are skipped (and logged),
+   * never silently dropped. Default 100.
+   */
+  maxProbes?: number;
+  /**
+   * Optional logger used to report how many candidate URLs were skipped once the maxProbes
+   * cap is reached. When omitted, skipped probes are still bounded but not reported.
+   */
+  logger?: ProbeLogger | null;
 }
 
 const DEFAULT_FAILURE_STREAK_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const DEFAULT_PROBE_CONCURRENCY = 20;
+const DEFAULT_MAX_PROBES = 100;
 
 interface DistributionCandidate {
   distributionNode: NamedNode | BlankNode;
@@ -73,6 +94,8 @@ export class DistributionProbeStage {
   private readonly timeoutMs: number;
   private readonly failureStreakMaxAgeMs: number;
   private readonly probeConcurrency: number;
+  private readonly maxProbes: number;
+  private readonly logger: ProbeLogger | null;
 
   public constructor(options: DistributionProbeStageOptions = {}) {
     this.healthStore = options.healthStore ?? null;
@@ -81,6 +104,8 @@ export class DistributionProbeStage {
       options.failureStreakMaxAgeMs ?? DEFAULT_FAILURE_STREAK_MAX_AGE_MS;
     this.probeConcurrency =
       options.probeConcurrency ?? DEFAULT_PROBE_CONCURRENCY;
+    this.maxProbes = options.maxProbes ?? DEFAULT_MAX_PROBES;
+    this.logger = options.logger ?? null;
   }
 
   public async run(input: DatasetCore): Promise<Quad[]> {
@@ -93,7 +118,18 @@ export class DistributionProbeStage {
     // vs. dct:conformsTo. Probing each separately reissues an identical query and trips
     // the host's rate limiter, so we coalesce candidates into one probe per endpoint and
     // reuse the verdict for every member.
-    const groups = groupByProbeTarget(candidates);
+    const allGroups = groupByProbeTarget(candidates);
+
+    // Cap the number of distinct endpoints probed. Dedup runs first so the cap is spent on
+    // genuinely different endpoints, never on duplicates; a dataset can declare tens of
+    // thousands of distributions and probing every endpoint stalls a crawl pass for hours.
+    const groups = allGroups.slice(0, this.maxProbes);
+    const skipped = allGroups.length - groups.length;
+    if (skipped > 0) {
+      this.logger?.warn(
+        `Probing ${groups.length} of ${allGroups.length} distinct distribution endpoints; skipped ${skipped} beyond the cap of ${this.maxProbes}`,
+      );
+    }
 
     const probed = await allSettledLimited(
       groups,

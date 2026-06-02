@@ -25,7 +25,11 @@ const logger = pino();
 // penalise the rating.
 const validator = new CompositeValidator(
   new ShaclEngineValidator(shacl),
-  new DistributionProbeStage({ healthStore: distributionHealthStore }),
+  new DistributionProbeStage({
+    healthStore: distributionHealthStore,
+    maxProbes: config.CRAWLER_MAX_DISTRIBUTION_PROBES,
+    logger,
+  }),
 );
 
 const crawler = new Crawler(

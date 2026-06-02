@@ -6,6 +6,7 @@ interface Env {
   REGISTRATION_URL_TTL: number;
   CRAWLER_SCHEDULE?: string;
   HTTP_REQUEST_TIMEOUT: number;
+  CRAWLER_MAX_DISTRIBUTION_PROBES: number;
 }
 
 const schema: JSONSchemaType<Env> = {
@@ -32,6 +33,13 @@ const schema: JSONSchemaType<Env> = {
       // nothing) and a negative value throws when used as an AbortSignal delay.
       minimum: 1,
       default: 30,
+    },
+    CRAWLER_MAX_DISTRIBUTION_PROBES: {
+      type: 'number',
+      // At least 1: 0 would skip every probe and a negative value makes the
+      // slice drop endpoints from the end instead of capping.
+      minimum: 1,
+      default: 100,
     },
   },
 };
