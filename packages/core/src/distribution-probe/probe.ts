@@ -299,31 +299,37 @@ function canonicalProbeUrl(accessUrl: URL): URL {
   return canonical;
 }
 
+/**
+ * Collect every distribution URL worth probing.
+ *
+ * Performance: every lookup goes through `input.match(subject, predicate, null)` rather
+ * than iterating the whole graph. The datasets we receive are `@rdfjs/dataset` instances,
+ * which maintain a subject/predicate/object index, so each `match()` is O(matches) and the
+ * whole pass is O(graph size). A previous version hand-rolled `for (const quad of input)`
+ * scans inside the per-distribution helpers, which is O(distributions × graph size) —
+ * quadratic — and stalled a crawl pass for ~16 minutes on a 13,789-distribution catalogue.
+ *
+ * Two tests guard this and MUST keep passing: "collects distributions through the index
+ * without scanning the whole dataset" fails if a lookup reverts to iterating the dataset,
+ * and "collects a large catalogue in roughly linear time" fails if `match()` ever loses its
+ * index. Do not replace these `match()` calls with manual iteration over `input`.
+ */
 function collectDistributions(input: DatasetCore): DistributionCandidate[] {
   const candidates: DistributionCandidate[] = [];
-
-  for (const quad of input) {
-    const isDcat =
-      quad.predicate.value === dcat('distribution').value &&
-      quad.object.termType !== 'Literal';
-    const isSchema =
-      quad.predicate.value === schema('distribution').value &&
-      quad.object.termType !== 'Literal';
-
-    if (!isDcat && !isSchema) continue;
-
-    const distributionNode = quad.object;
-    if (
-      distributionNode.termType !== 'NamedNode' &&
-      distributionNode.termType !== 'BlankNode'
-    ) {
-      continue;
+  for (const profile of ['dcat', 'schema'] as const) {
+    const distributionPath =
+      profile === 'dcat' ? dcat('distribution') : schema('distribution');
+    for (const quad of input.match(null, distributionPath, null)) {
+      const distributionNode = quad.object;
+      if (
+        distributionNode.termType !== 'NamedNode' &&
+        distributionNode.termType !== 'BlankNode'
+      ) {
+        continue;
+      }
+      candidates.push(...candidatesFor(input, distributionNode, profile));
     }
-    candidates.push(
-      ...candidatesFor(input, distributionNode, isDcat ? 'dcat' : 'schema'),
-    );
   }
-
   return candidates;
 }
 
@@ -365,12 +371,8 @@ function iriValues(
   predicate: NamedNode,
 ): NamedNode[] {
   const values: NamedNode[] = [];
-  for (const quad of input) {
-    if (
-      quad.subject.equals(subject) &&
-      quad.predicate.equals(predicate) &&
-      quad.object.termType === 'NamedNode'
-    ) {
+  for (const quad of input.match(subject, predicate, null)) {
+    if (quad.object.termType === 'NamedNode') {
       values.push(quad.object);
     }
   }
@@ -396,17 +398,9 @@ function literalValue(
   subject: Term,
   predicate: NamedNode,
 ): string | undefined {
-  for (const quad of input) {
+  for (const quad of input.match(subject, predicate, null)) {
     if (
-      quad.subject.equals(subject) &&
-      quad.predicate.equals(predicate) &&
-      quad.object.termType === 'Literal'
-    ) {
-      return quad.object.value;
-    }
-    if (
-      quad.subject.equals(subject) &&
-      quad.predicate.equals(predicate) &&
+      quad.object.termType === 'Literal' ||
       quad.object.termType === 'NamedNode'
     ) {
       return quad.object.value;
