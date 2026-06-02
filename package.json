@@ -11,6 +11,9 @@
     "prepare": "husky",
     "test": "nx run-many -t test"
   },
+  "overrides": {
+    "undici@^7.0.0": "7.24.8"
+  },
   "devDependencies": {
     "@commitlint/cli": "^21.0.1",
     "@commitlint/config-conventional": "^21.0.1",

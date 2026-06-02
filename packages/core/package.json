@@ -44,7 +44,6 @@
   },
   "devDependencies": {
     "@rdfjs/types": "^2.0.1",
-    "@types/psl": "^1.11.0",
     "@types/rdf-ext": "^2.0.1",
     "microdata-rdf-streaming-parser": "^3.0.0",
     "nock": "^14.0.15",
