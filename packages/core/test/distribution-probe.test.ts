@@ -1,6 +1,8 @@
 import { URL } from 'url';
+import { performance } from 'node:perf_hooks';
 import nock from 'nock';
 import factory from 'rdf-ext';
+import type { DatasetCore, Quad, Term } from '@rdfjs/types';
 import {
   NetworkError,
   SparqlProbeResult,
@@ -14,6 +16,51 @@ import type {
   DistributionHealthRecord,
   DistributionHealthStore,
 } from '../src/distribution-health-store.js';
+
+/**
+ * Wraps a dataset to count how it is read: every `match()` (the indexed lookup we rely on)
+ * and every full `[Symbol.iterator]` scan. Used to prove collection never falls back to
+ * scanning the whole graph per distribution, which would be O(distributions × graph size).
+ */
+class CountingDataset implements DatasetCore {
+  public matchCalls = 0;
+  public fullScans = 0;
+
+  public constructor(private readonly inner: DatasetCore) {}
+
+  public get size(): number {
+    return this.inner.size;
+  }
+
+  public add(quad: Quad): this {
+    this.inner.add(quad);
+    return this;
+  }
+
+  public delete(quad: Quad): this {
+    this.inner.delete(quad);
+    return this;
+  }
+
+  public has(quad: Quad): boolean {
+    return this.inner.has(quad);
+  }
+
+  public match(
+    subject?: Term | null,
+    predicate?: Term | null,
+    object?: Term | null,
+    graph?: Term | null,
+  ): DatasetCore {
+    this.matchCalls++;
+    return this.inner.match(subject, predicate, object, graph);
+  }
+
+  public [Symbol.iterator](): Iterator<Quad> {
+    this.fullScans++;
+    return this.inner[Symbol.iterator]();
+  }
+}
 
 const ndeProbePrefix = 'https://def.nde.nl/probe#';
 
@@ -479,6 +526,120 @@ describe('DistributionProbeStage', () => {
 
     expect(probeCount).toBe(maxProbes); // cap still enforced without a logger.
   });
+
+  it('yields no candidate for a dangling distribution node with no quads of its own', async () => {
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-dangling');
+    const distributionNode = factory.blankNode();
+    // The distribution is linked but has no accessURL / mediaType / anything.
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+
+    const stage = new DistributionProbeStage();
+    const quads = await stage.run(dataset);
+
+    expect(quads).toHaveLength(0); // nothing to probe, no violation emitted.
+  });
+
+  it('ignores a distribution link whose object is a literal', async () => {
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-literal-dist');
+    // A malformed `dcat:distribution "text"` — the object is not a node, so it is skipped.
+    dataset.add(
+      factory.quad(
+        datasetNode,
+        dcat('distribution'),
+        factory.literal('not a distribution node'),
+      ),
+    );
+
+    const stage = new DistributionProbeStage();
+    const quads = await stage.run(dataset);
+
+    expect(quads).toHaveLength(0);
+  });
+
+  it('ignores a distribution mediaType that is a blank node (neither literal nor IRI)', async () => {
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-bnode-mt');
+    const distributionNode = factory.blankNode();
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    // mediaType points to a blank node, which literalValue must skip; with no URL to
+    // probe, no candidate is produced.
+    dataset.add(
+      factory.quad(distributionNode, dcat('mediaType'), factory.blankNode()),
+    );
+
+    const stage = new DistributionProbeStage();
+    const quads = await stage.run(dataset);
+
+    expect(quads).toHaveLength(0);
+  });
+
+  // Regression guard: collection must resolve distribution properties through the dataset's
+  // index (match()), never by scanning the whole graph per distribution. See the doc comment
+  // on collectDistributions; a regression here reintroduces the O(distributions × graph)
+  // stall this code was written to remove.
+  it('collects distributions through the index without scanning the whole dataset', async () => {
+    const inner = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-idx');
+    // Distributions without an accessURL: collected (exercising every property lookup) but
+    // never probed, so the test needs no network mock.
+    for (let index = 0; index < 3; index++) {
+      const distributionNode = factory.blankNode();
+      inner.add(
+        factory.quad(datasetNode, dcat('distribution'), distributionNode),
+      );
+      inner.add(
+        factory.quad(
+          distributionNode,
+          dcat('mediaType'),
+          factory.literal('text/turtle'),
+        ),
+      );
+    }
+    const counting = new CountingDataset(inner);
+
+    const stage = new DistributionProbeStage();
+    await stage.run(counting);
+
+    // Collection must go through match(); it must never iterate the whole dataset.
+    expect(counting.matchCalls).toBeGreaterThan(0);
+    expect(counting.fullScans).toBe(0);
+  });
+
+  // Regression guard for the dependency: if the dataset ever stops being indexed, match()
+  // degrades to a full scan and this collection becomes quadratic (minutes). The generous
+  // budget separates O(n) (~hundreds of ms) from O(n²) (minutes) without flaking on slow CI.
+  it('collects a large catalogue in roughly linear time', async () => {
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-big');
+    const distributionCount = 20000;
+    for (let index = 0; index < distributionCount; index++) {
+      const distributionNode = factory.blankNode();
+      dataset.add(
+        factory.quad(datasetNode, dcat('distribution'), distributionNode),
+      );
+      dataset.add(
+        factory.quad(
+          distributionNode,
+          dcat('mediaType'),
+          factory.literal('text/turtle'),
+        ),
+      );
+    }
+
+    const stage = new DistributionProbeStage();
+    const start = performance.now();
+    const quads = await stage.run(dataset);
+    const elapsedMs = performance.now() - start;
+
+    expect(quads).toHaveLength(0); // no accessURL, nothing to probe
+    expect(elapsedMs).toBeLessThan(5000); // a quadratic regression would take minutes
+  }, 30000);
 
   it('probes schema:contentUrl on a Schema.org distribution', async () => {
     nock('https://example.org')
