@@ -56,15 +56,15 @@ export interface DistributionProbeStageOptions {
    */
   probeConcurrency?: number;
   /**
-   * Maximum number of candidate distribution URLs to probe per dataset. Bounded because a
-   * single dataset can declare tens of thousands of distributions; probing all of them
-   * stalls a crawl pass for hours. Candidate URLs beyond the cap are skipped (and logged),
-   * never silently dropped. Default 100.
+   * Maximum number of distinct distribution endpoints to probe per dataset, applied after
+   * candidates are coalesced by probe target. Bounded because a single dataset can declare
+   * tens of thousands of distributions; probing every endpoint stalls a crawl pass for hours.
+   * Endpoints beyond the cap are skipped (and logged), never silently dropped. Default 100.
    */
   maxProbes?: number;
   /**
-   * Optional logger used to report how many candidate URLs were skipped once the maxProbes
-   * cap is reached. When omitted, skipped probes are still bounded but not reported.
+   * Optional logger used to report how many distinct endpoints were skipped once the
+   * maxProbes cap is reached. When omitted, skipped probes are still bounded but not reported.
    */
   logger?: ProbeLogger | null;
 }
