@@ -21,9 +21,16 @@ await (async () => {
   // Strict mode for the API: any failing distribution probe emits sh:Violation, so a
   // registration with a broken link is rejected synchronously. No health-store state is
   // read or written on this path; the crawler path has its own lenient composite.
+  //
+  // The probe cap (default 100 distinct endpoints) still applies here, so a registration
+  // declaring tens of thousands of distributions is bounded rather than hanging the request;
+  // endpoints beyond the cap are not link-checked at submit time. Pass a logger so that
+  // truncation is reported rather than silently dropped.
   const validator = new CompositeValidator(
     new ShaclEngineValidator(shacl),
-    new DistributionProbeStage(),
+    new DistributionProbeStage({
+      logger: config.LOG ? { warn: (message) => console.warn(message) } : null,
+    }),
   );
 
   try {
