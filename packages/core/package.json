@@ -44,12 +44,11 @@
   },
   "devDependencies": {
     "@rdfjs/types": "^2.0.1",
-    "@types/psl": "^1.1.0",
     "@types/rdf-ext": "^2.0.1",
     "microdata-rdf-streaming-parser": "^3.0.0",
-    "nock": "^14.0.13",
+    "nock": "^14.0.15",
     "rdfa-streaming-parser": "^3.0.1",
-    "testcontainers": "^11.13.0"
+    "testcontainers": "^12.0.0"
   },
   "nx": {
     "projectType": "library"
