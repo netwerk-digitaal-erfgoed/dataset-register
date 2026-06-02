@@ -4,8 +4,10 @@ import {
   dereference as fetchDereference,
   discoverDatacatalog,
   fetch,
+  fetchWithTimeout,
   HttpError,
   NoDatasetFoundAtUrl,
+  RequestTimeout,
 } from '../src/fetch.js';
 import nock from 'nock';
 import { dcat, dct, foaf, odrl, rdf } from '../src/query.js';
@@ -1081,7 +1083,9 @@ describe('Fetch', () => {
     // IRI licenses, dropping the license from the index. We now coerce the
     // URL-shaped literal to its canonical IRI so dct:license stays populated.
     // https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1997
-    const response = await file('dataset-schema-org-literal-url-license.jsonld');
+    const response = await file(
+      'dataset-schema-org-literal-url-license.jsonld',
+    );
     nock('https://example.com')
       .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
       .get('/literal-url-license')
@@ -1242,6 +1246,81 @@ describe('Language tag defaults', () => {
     for (const title of titles) {
       expect((title.object as Literal).language).not.toBe('');
     }
+  });
+});
+
+describe('Request timeout', () => {
+  // A distinct host keeps the aborted, poisoned connection out of the example.com
+  // pool the other tests reuse. The afterEach cancels nock's delayed-response timer
+  // (left pending by the abort) so it cannot fire during a later test.
+  afterEach(() => {
+    nock.abortPendingRequests();
+    nock.cleanAll();
+  });
+
+  it('aborts a dereference whose host stalls past the request timeout', async () => {
+    const response = await validSchemaOrgDataset();
+    nock('https://slow.example')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/stalls')
+      .delayConnection(500) // Far longer than the 20 ms timeout below.
+      .reply(200, response);
+
+    // A 20 ms per-request timeout must abort the stalled fetch instead of waiting,
+    // so one trickling host can never freeze the crawl loop (issue #2000). The abort
+    // must surface as a RequestTimeout (a distinct, retry-worthy outcome) rather than
+    // being misclassified as NoDatasetFoundAtUrl.
+    await expect(
+      fetchDereference(new URL('https://slow.example/stalls'), 20),
+    ).rejects.toThrow(RequestTimeout);
+  });
+
+  it('applies the request timeout to every page of a paginated catalogue', async () => {
+    // Page 1 is dereferenced; Comunica then follows the Hydra link to page 2. Passing an
+    // explicit per-request timeout to fetch() must reach the page-2 GET too, proving
+    // pages 2..N are bounded by the same deadline – not just the first dereference (#2000).
+    nock('https://slow.example')
+      .get('/datasets/hydra-page1.jsonld')
+      .times(2)
+      .replyWithFile(200, 'test/datasets/hydra-page1.jsonld', {
+        'Content-Type': 'application/ld+json',
+      });
+    nock('https://slow.example')
+      .get('/datasets/hydra-page2.jsonld')
+      .replyWithFile(200, 'test/datasets/hydra-page2.jsonld', {
+        'Content-Type': 'application/ld+json',
+      });
+
+    const data = await fetchDereference(
+      new URL('https://slow.example/datasets/hydra-page1.jsonld'),
+    );
+    const datasets = [];
+    for await (const dataset of fetch(
+      new URL('https://slow.example/datasets/hydra-page1.jsonld'),
+      data,
+      5000,
+    )) {
+      datasets.push(dataset);
+    }
+
+    expect(datasets).toHaveLength(3);
+  });
+
+  it('merges a caller-supplied abort signal with the timeout', async () => {
+    nock('https://slow.example')
+      .get('/merge')
+      .delayConnection(500)
+      .reply(200, 'never delivered');
+
+    // The timeout is generous, so the caller's own signal must still abort the
+    // request – proving the timeout signal is merged with, not substituted for, it.
+    const controller = new AbortController();
+    const timedFetch = fetchWithTimeout(10_000);
+    const pending = timedFetch('https://slow.example/merge', {
+      signal: controller.signal,
+    });
+    controller.abort();
+    await expect(pending).rejects.toThrow();
   });
 });
 

@@ -5,20 +5,37 @@ import {
   fetch,
   HttpError,
   NoDatasetFoundAtUrl,
+  RequestTimeout,
 } from '@dataset-register/core';
 import pino from 'pino';
 import { Valid, Validator } from '@dataset-register/core';
 import { crawlCounter } from '@dataset-register/core';
 import { rate, RatingStore } from '@dataset-register/core';
 
+export interface CrawlerOptions {
+  /**
+   * Per-request HTTP timeout (ms) applied to every page GET while dereferencing and
+   * paginating a registration URL. Without it a slow or trickling host can hold a single
+   * request open indefinitely and freeze the sequential crawl loop. Each page gets its
+   * own fresh deadline, so a large healthy paginated catalogue is not cut off.
+   */
+  httpRequestTimeoutMs?: number;
+}
+
 export class Crawler {
+  private readonly httpRequestTimeoutMs: number | undefined;
+
   constructor(
     private registrationStore: RegistrationStore,
     private datasetStore: DatasetStore,
     private ratingStore: RatingStore,
     private validator: Validator,
     private logger: pino.Logger,
-  ) {}
+    options: CrawlerOptions = {},
+  ) {
+    // Leave undefined when unset: dereference()/fetch() own the single default.
+    this.httpRequestTimeoutMs = options.httpRequestTimeoutMs;
+  }
 
   /**
    * Crawl all registered URLs that were last read before `dateLastRead`.
@@ -43,14 +60,21 @@ export class Crawler {
       let datasetIris = registration.datasets;
 
       try {
-        const data = await dereference(registration.url);
+        const data = await dereference(
+          registration.url,
+          this.httpRequestTimeoutMs,
+        );
         const validationResult = await this.validator.validate(data);
         if (validationResult.state === 'valid') {
           statusCode = 200;
           isValid = true;
           this.logger.info(`${registration.url} passes validation`);
           datasetIris = []; // Start with a fresh list.
-          for await (const dataset of fetch(registration.url, data)) {
+          for await (const dataset of fetch(
+            registration.url,
+            data,
+            this.httpRequestTimeoutMs,
+          )) {
             datasetIris.push(extractIri(dataset));
             await this.datasetStore.store(dataset);
             const dcatValidationResult = await this.validator.validate(dataset);
@@ -65,16 +89,26 @@ export class Crawler {
           this.logger.info(`${registration.url} contains no datasets`);
         }
       } catch (e) {
-        if (e instanceof HttpError) {
+        if (e instanceof RequestTimeout) {
+          // A page exceeded the HTTP request timeout. Leave the registration
+          // untouched so the next pass retries it, rather than recording a bogus
+          // crawl result (e.g. marking a transiently slow host as gone).
+          this.logger.warn(
+            `Crawling registration URL ${registration.url} exceeded the HTTP request timeout; leaving it for the next pass`,
+          );
+          crawlCounter.add(1, {
+            status: undefined,
+            valid: false,
+            timedOut: true,
+          });
+          continue;
+        } else if (e instanceof HttpError) {
           statusCode = e.statusCode;
           this.logger.info(
             `${registration.url} returned HTTP error ${statusCode}`,
           );
         } else if (e instanceof NoDatasetFoundAtUrl) {
-          this.logger.info(
-            { err: e },
-            `${registration.url} has no datasets`,
-          );
+          this.logger.info({ err: e }, `${registration.url} has no datasets`);
         } else {
           this.logger.warn(
             { err: e },
