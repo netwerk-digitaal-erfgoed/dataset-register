@@ -9,7 +9,10 @@ import {
   DataDumpProbeResult,
 } from '@lde/distribution-probe';
 import { classify, probeOutcomes } from '../src/distribution-probe/outcomes.js';
-import { DistributionProbeStage } from '../src/distribution-probe/probe.js';
+import {
+  DistributionProbeStage,
+  readProbeSeverities,
+} from '../src/distribution-probe/probe.js';
 import { dcat, rdf } from '../src/query.js';
 import { shacl } from '../src/validator.js';
 import type {
@@ -950,6 +953,133 @@ describe('DistributionProbeStage', () => {
     const stage = new DistributionProbeStage();
     const quads = await stage.run(dataset);
     expect(quads.length).toBeGreaterThan(0); // emits a NetworkError violation, no throw
+  });
+
+  it('emits the declared reachability severity instead of a hardcoded Violation', async () => {
+    nock('https://example.org').head('/warn').replyWithError('ENOTFOUND');
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-sev');
+    const distributionNode = factory.blankNode();
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('accessURL'),
+        factory.namedNode('https://example.org/warn'),
+      ),
+    );
+
+    const stage = new DistributionProbeStage({
+      severities: { reachable: shacl('Warning'), formatMatch: shacl('Info') },
+    });
+    const quads = await stage.run(dataset);
+
+    const severity = quads.find((quad) =>
+      quad.predicate.equals(shacl('resultSeverity')),
+    );
+    expect(severity?.object.equals(shacl('Warning'))).toBe(true);
+    const constraint = quads.find((quad) =>
+      quad.predicate.equals(shacl('sourceConstraintComponent')),
+    );
+    expect(constraint?.object.value).toBe(
+      `${ndeProbePrefix}DistributionReachableConstraintComponent`,
+    );
+  });
+
+  it('emits the format-match severity and constraint for a content-type mismatch', async () => {
+    // A large Content-Length keeps the probe on HEAD; the served type contradicts the declared
+    // one, so the verdict is a ContentTypeMismatch — the format-match check, not reachability.
+    nock('https://example.org').head('/typed').reply(200, '', {
+      'Content-Type': 'application/json',
+      'Content-Length': '100000',
+    });
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-fmt');
+    const distributionNode = factory.blankNode();
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('accessURL'),
+        factory.namedNode('https://example.org/typed'),
+      ),
+    );
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('mediaType'),
+        factory.literal('text/turtle'),
+      ),
+    );
+
+    const stage = new DistributionProbeStage({
+      severities: { reachable: shacl('Warning'), formatMatch: shacl('Info') },
+    });
+    const quads = await stage.run(dataset);
+
+    const outcome = quads.find((quad) =>
+      quad.predicate.equals(factory.namedNode(`${ndeProbePrefix}probeOutcome`)),
+    );
+    expect(outcome?.object.value).toBe(`${ndeProbePrefix}ContentTypeMismatch`);
+    const severity = quads.find((quad) =>
+      quad.predicate.equals(shacl('resultSeverity')),
+    );
+    expect(severity?.object.equals(shacl('Info'))).toBe(true);
+    const constraint = quads.find((quad) =>
+      quad.predicate.equals(shacl('sourceConstraintComponent')),
+    );
+    expect(constraint?.object.value).toBe(
+      `${ndeProbePrefix}DistributionFormatMatchConstraintComponent`,
+    );
+  });
+});
+
+describe('readProbeSeverities', () => {
+  const probeMarker = (property: string) =>
+    factory.namedNode(`${ndeProbePrefix}${property}`);
+
+  const shapeWithMarker = (
+    graph: ReturnType<typeof factory.dataset>,
+    marker: string,
+    severity: ReturnType<typeof shacl>,
+  ) => {
+    const shape = factory.blankNode();
+    graph.add(factory.quad(shape, probeMarker(marker), factory.literal('true')));
+    graph.add(factory.quad(shape, shacl('severity'), severity));
+  };
+
+  it('reads the sh:severity declared for each probe check', () => {
+    const graph = factory.dataset();
+    shapeWithMarker(graph, 'probeReachable', shacl('Warning'));
+    shapeWithMarker(graph, 'probeFormatMatch', shacl('Warning'));
+
+    const severities = readProbeSeverities(graph);
+    expect(severities.reachable.equals(shacl('Warning'))).toBe(true);
+    expect(severities.formatMatch.equals(shacl('Warning'))).toBe(true);
+  });
+
+  it('falls back to sh:Violation when a check has no marked shape', () => {
+    const graph = factory.dataset();
+    shapeWithMarker(graph, 'probeReachable', shacl('Warning'));
+
+    const severities = readProbeSeverities(graph);
+    expect(severities.reachable.equals(shacl('Warning'))).toBe(true);
+    expect(severities.formatMatch.equals(shacl('Violation'))).toBe(true);
+  });
+
+  it('falls back to sh:Violation when marked shapes declare conflicting severities', () => {
+    const graph = factory.dataset();
+    shapeWithMarker(graph, 'probeReachable', shacl('Warning'));
+    shapeWithMarker(graph, 'probeReachable', shacl('Info'));
+
+    const severities = readProbeSeverities(graph);
+    expect(severities.reachable.equals(shacl('Violation'))).toBe(true);
   });
 });
 
