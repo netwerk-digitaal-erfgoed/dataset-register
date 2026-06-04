@@ -11,8 +11,12 @@ import {
   IIIF_PRESENTATION_API,
   MANIFESTS_SAMPLED_METRIC,
   MANIFESTS_VALIDATED_METRIC,
+  QUADS_VALIDATED_METRIC,
+  SCHEMA_AP_NDE_CONFORMANCE_METRIC,
   iiifState,
+  schemaApNdeState,
   type IiifManifests,
+  type SchemaApNdeConformance,
 } from '$lib/services/nde-compatibility';
 
 export const SPARQL_ENDPOINT = PUBLIC_SPARQL_ENDPOINT;
@@ -122,6 +126,18 @@ export const DatasetCardSchema = {
     '@type': xsd.integer,
     '@optional': true,
   },
+  // SCHEMA-AP-NDE sample-conformance measurements, projected onto the dataset by
+  // the card query so the badge can be limited to conforming datasets.
+  schemaApNdeQuadsValidated: {
+    '@id': QUADS_VALIDATED_METRIC,
+    '@type': xsd.integer,
+    '@optional': true,
+  },
+  schemaApNdeConformant: {
+    '@id': SCHEMA_AP_NDE_CONFORMANCE_METRIC,
+    '@type': xsd.boolean,
+    '@optional': true,
+  },
   datePosted: {
     '@id': schema.datePosted,
     '@type': xsd.dateTime,
@@ -157,6 +173,24 @@ export function iiifManifestCount(dataset: DatasetCard): number {
 // when none are declared.
 export function providesWorkingIiif(dataset: DatasetCard): boolean {
   return iiifState(cardIiifManifests(dataset)) === 'met';
+}
+
+// The SCHEMA-AP-NDE conformance figures for a card. The card only ever shows the
+// badge in the `met` state, which never depends on the `dct:conformsTo` claim
+// (that claim only splits the `failed`/`unmet` branch), so the card leaves it
+// false rather than fetching it.
+function cardSchemaApNde(dataset: DatasetCard): SchemaApNdeConformance {
+  return {
+    quadsValidated: dataset.schemaApNdeQuadsValidated ?? null,
+    conformant: dataset.schemaApNdeConformant ?? null,
+    declaresProfile: false,
+  };
+}
+
+// Whether the dataset conforms to the NDE Schema.org Application Profile in the
+// sampled resources. The card badge is shown only in this case.
+export function conformsToSchemaApNde(dataset: DatasetCard): boolean {
+  return schemaApNdeState(cardSchemaApNde(dataset)).state === 'met';
 }
 
 const datasetCards = createLens(DatasetCardSchema, {
@@ -240,6 +274,8 @@ export function datasetCardsQuery(
       void:subset ?iiifSubset ;
       nde:manifests-sampled ?iiifSampled ;
       nde:manifests-validated ?iiifValidated ;
+      nde:quads-validated ?schemaApNdeQuadsValidated ;
+      nde:schema-ap-nde-sample-conformance ?schemaApNdeConformant ;
       schema:status ?status ;
       schema:datePosted ?datePosted .
     ?publisher a foaf:Agent ;
@@ -338,6 +374,20 @@ export function datasetCardsQuery(
               dqv:value ?iiifValidated
             ] .
           }
+        }
+        # SCHEMA-AP-NDE sample conformance. Anchored on quads-validated with the
+        # conformance boolean co-required in the same OPTIONAL: the two are
+        # co-emitted, so this single left-join boundary keeps one row per dataset
+        # (no UNION, no nested OPTIONAL) and does not multiply the multi-valued
+        # patterns outside the SERVICE block.
+        OPTIONAL {
+          ?dataset dqv:hasQualityMeasurement [
+            dqv:isMeasurementOf nde:quads-validated ;
+            dqv:value ?schemaApNdeQuadsValidated
+          ] , [
+            dqv:isMeasurementOf nde:schema-ap-nde-sample-conformance ;
+            dqv:value ?schemaApNdeConformant
+          ] .
         }
       }
     }

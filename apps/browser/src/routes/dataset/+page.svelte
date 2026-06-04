@@ -52,6 +52,7 @@
   const linksets = $derived(data.linksets);
   const temporalCoverages = $derived(data.temporalCoverages);
   const iiifManifests = $derived(data.iiifManifests);
+  const schemaApNde = $derived(data.schemaApNde);
 
   // SEO: canonical and hreflang URLs
   const datasetPath = $derived(datasetDetailHref(dataset.$id));
@@ -1268,7 +1269,7 @@
   {/if}
 
   <!-- NDE compatibility (“vinkjes”) -->
-  <NdeCompatibility {iiifManifests} />
+  <NdeCompatibility {iiifManifests} {schemaApNde} />
 
   <!-- VoID Summary Section -->
   {#if summary && hasVoidStats}

@@ -15,7 +15,9 @@ import { shortenUri } from '$lib/utils/prefix';
 import { isUri, lookupTermLabels } from './network-of-terms.js';
 import {
   IIIF_PRESENTATION_API,
+  SCHEMA_AP_NDE_PROFILE,
   type IiifManifests,
+  type SchemaApNdeConformance,
 } from './nde-compatibility.js';
 import { getLocale } from '$lib/paraglide/runtime';
 import { REGISTRATION_STATUS_BASE_URI } from '@dataset-register/core/constants';
@@ -381,6 +383,7 @@ export interface DatasetDetailResult {
   linksets: Linkset[];
   temporalCoverages: TemporalCoverage[];
   iiifManifests: IiifManifests;
+  schemaApNde: SchemaApNdeConformance;
   resolvedTerms: Promise<Record<string, string>>;
 }
 
@@ -448,6 +451,86 @@ async function fetchIiifManifests(datasetUri: string): Promise<IiifManifests> {
     );
   }
   return none;
+}
+
+// Reads the SCHEMA-AP-NDE sample conformance for a dataset: the co-emitted
+// quads-validated count and conformance boolean from the Knowledge Graph, plus
+// whether any distribution declares the profile in the register.
+// quadsValidated/conformant are null when no measurement exists yet.
+async function fetchSchemaApNdeConformance(
+  datasetUri: string,
+): Promise<SchemaApNdeConformance> {
+  const measurementQuery = `
+    PREFIX dqv: <http://www.w3.org/ns/dqv#>
+    PREFIX nde: <https://def.nde.nl/metric#>
+    SELECT ?quadsValidated ?conformant WHERE {
+      <${datasetUri}> dqv:hasQualityMeasurement
+        [ dqv:isMeasurementOf nde:quads-validated ; dqv:value ?quadsValidated ] ,
+        [ dqv:isMeasurementOf nde:schema-ap-nde-sample-conformance ; dqv:value ?conformant ] .
+    }
+    LIMIT 1
+  `;
+  // The register’s internal model is DCAT: the publisher-facing schema:usageInfo
+  // is normalised to dct:conformsTo on the distribution at ingest, so the claim
+  // is read from dct:conformsTo here. A distribution may carry several values
+  // (e.g. the SPARQL protocol URI alongside the profile), so match the profile
+  // URI specifically.
+  const declarationQuery = `
+    PREFIX dcat: <http://www.w3.org/ns/dcat#>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    ASK {
+      GRAPH ?g {
+        <${datasetUri}> dcat:distribution/dct:conformsTo <${SCHEMA_AP_NDE_PROFILE}> .
+      }
+    }
+  `;
+
+  const measurement = (async () => {
+    try {
+      const bindingsStream = await fetcher.fetchBindings(
+        PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+        measurementQuery,
+      );
+      for await (const raw of bindingsStream) {
+        const binding = raw as unknown as {
+          quadsValidated?: { value: string };
+          conformant?: { value: string };
+        };
+        return {
+          quadsValidated: binding.quadsValidated?.value
+            ? parseInt(binding.quadsValidated.value, 10)
+            : null,
+          conformant: binding.conformant?.value
+            ? binding.conformant.value === 'true'
+            : null,
+        };
+      }
+    } catch (e: unknown) {
+      console.error(
+        'SCHEMA-AP-NDE conformance query failed:',
+        e instanceof Error ? e.message : e,
+      );
+    }
+    return { quadsValidated: null, conformant: null };
+  })();
+
+  const declaresProfile = (async () => {
+    try {
+      return await fetcher.fetchAsk(PUBLIC_SPARQL_ENDPOINT, declarationQuery);
+    } catch (e: unknown) {
+      console.error(
+        'SCHEMA-AP-NDE conformsTo query failed:',
+        e instanceof Error ? e.message : e,
+      );
+      return false;
+    }
+  })();
+
+  const [{ quadsValidated, conformant }, declares] = await Promise.all([
+    measurement,
+    declaresProfile,
+  ]);
+  return { quadsValidated, conformant, declaresProfile: declares };
 }
 
 async function fetchDistributionCount(query: string): Promise<number> {
@@ -649,6 +732,7 @@ export async function fetchDatasetDetail(
     classPartitionResult,
     temporalCoverages,
     iiifManifests,
+    schemaApNde,
   ] = await Promise.all([
     detailLens.query(datasetQuery),
     distributionLens.query(distributionQuery),
@@ -664,6 +748,7 @@ export async function fetchDatasetDetail(
     classPartitionLens.findByIri(datasetUri),
     fetchTemporalCoverage(datasetUri),
     fetchIiifManifests(datasetUri),
+    fetchSchemaApNdeConformance(datasetUri),
   ]);
 
   const dataset = datasets.find((d) => d.$id === datasetUri) ?? datasets[0];
@@ -705,6 +790,7 @@ export async function fetchDatasetDetail(
     linksets,
     temporalCoverages,
     iiifManifests,
+    schemaApNde,
     resolvedTerms,
   };
 }

@@ -12,6 +12,12 @@ export const IIIF_PRESENTATION_API = 'http://iiif.io/api/presentation/';
 export const IIIF_VINKJES_URL =
   'https://netwerkdigitaalerfgoed.nl/aanpak/bruikbaar/#vinkjes';
 
+// The NDE Schema.org Application Profile. A distribution declares compliance with
+// `dct:conformsTo` pointing here (the register’s internal model is DCAT, so the
+// publisher-facing schema:usageInfo is normalised to dct:conformsTo at ingest).
+// Also linked from the detail page as the criterion’s documentation.
+export const SCHEMA_AP_NDE_PROFILE = 'https://docs.nde.nl/schema-profile/';
+
 // DQV metric IRIs for the IIIF manifest validation measurements recorded by the
 // Dataset Knowledge Graph.
 export const MANIFESTS_SAMPLED_METRIC =
@@ -19,7 +25,19 @@ export const MANIFESTS_SAMPLED_METRIC =
 export const MANIFESTS_VALIDATED_METRIC =
   'https://def.nde.nl/metric#manifests-validated';
 
-export type CompatibilityCriterionKey = 'iiif';
+// DQV metric IRIs for the SCHEMA-AP-NDE sample-conformance measurements recorded
+// by the Dataset Knowledge Graph. `quads-validated` is how many quads of the
+// sampled resources were validated against the profile; the conformance boolean
+// is whether that sample passed. The two are co-emitted, so both are present or
+// both absent.
+export const SCHEMA_AP_NDE_CONFORMANCE_METRIC =
+  'https://def.nde.nl/metric#schema-ap-nde-sample-conformance';
+export const QUADS_VALIDATED_METRIC =
+  'https://def.nde.nl/metric#quads-validated';
+
+// The schema-ap-nde criterion is ordered before iiif, matching the usual order
+// in NDE communication.
+export type CompatibilityCriterionKey = 'schema-ap-nde' | 'iiif';
 
 // 'met'    — the dataset provides working media (validated, or declared with no
 //            evidence of failure).
@@ -27,6 +45,15 @@ export type CompatibilityCriterionKey = 'iiif';
 //            load (declared but broken).
 // 'unmet'  — the dataset declares no media. A legitimate, neutral state.
 export type CompatibilityState = 'met' | 'failed' | 'unmet';
+
+// Why a schema-ap-nde criterion is in the `failed` state:
+// 'violations'         — the sample exercised the profile’s classes but at least
+//                        one sampled resource violated a constraint.
+// 'declared-but-empty' — the dataset declares conformance (a distribution’s
+//                        `dct:conformsTo` points at the profile), yet the
+//                        sample validated zero quads: none of its resources use
+//                        the profile’s classes.
+export type CompatibilityFailureReason = 'violations' | 'declared-but-empty';
 
 // IIIF manifest figures from the Knowledge Graph: how many manifests the dataset
 // declares (void:entities), and — once the pipeline has sampled them — how many
@@ -38,14 +65,59 @@ export interface IiifManifests {
   validated: number | null;
 }
 
+// SCHEMA-AP-NDE sample-conformance figures from the Knowledge Graph plus whether
+// the dataset declares conformance via a distribution’s `dct:conformsTo`.
+// `quadsValidated`/`conformant` are null when no conformance measurement exists
+// yet; they are co-emitted, so they are null together.
+export interface SchemaApNdeConformance {
+  quadsValidated: number | null;
+  conformant: boolean | null;
+  declaresProfile: boolean;
+}
+
 export interface CompatibilityCriterion {
   key: CompatibilityCriterionKey;
   state: CompatibilityState;
   count: number;
+  reason?: CompatibilityFailureReason;
 }
 
 export interface CompatibilityInput {
+  schemaApNde: SchemaApNdeConformance;
   iiif: IiifManifests;
+}
+
+// Derives the SCHEMA-AP-NDE conformance state. The measurement is authoritative
+// wherever it is conclusive (`quadsValidated > 0`): a passing sample is `met`, a
+// failing one is `failed`/'violations'. The `dct:conformsTo` claim only tips
+// the otherwise-neutral branch where the sample validated zero quads — a dataset
+// that claims the profile but uses none of its classes is a real discrepancy
+// ('declared-but-empty'), not a neutral “different model”. Absent any
+// measurement the criterion is neutral (`unmet`), claim or not.
+//
+// The input is treated defensively: a missing object or undefined fields (e.g. a
+// partial payload, never the full contract) collapse to the same neutral `unmet`
+// as an absent measurement rather than throwing or reading as a false negative.
+export function schemaApNdeState(
+  conformance: Partial<SchemaApNdeConformance> | undefined | null,
+): {
+  state: CompatibilityState;
+  reason?: CompatibilityFailureReason;
+} {
+  const quadsValidated = conformance?.quadsValidated ?? null;
+  const conformant = conformance?.conformant ?? null;
+  const declaresProfile = conformance?.declaresProfile ?? false;
+  if (quadsValidated === null) {
+    return { state: 'unmet' };
+  }
+  if (quadsValidated > 0) {
+    return conformant
+      ? { state: 'met' }
+      : { state: 'failed', reason: 'violations' };
+  }
+  return declaresProfile
+    ? { state: 'failed', reason: 'declared-but-empty' }
+    : { state: 'unmet' };
 }
 
 export function iiifState(manifests: IiifManifests): CompatibilityState {
@@ -63,13 +135,19 @@ export function iiifState(manifests: IiifManifests): CompatibilityState {
   return 'met';
 }
 
-// Builds the list of NDE criteria for a dataset. Today this is a single IIIF
-// row; follow-up work (#1222, #1969) appends rows here without the component
-// having to change.
+// Builds the list of NDE criteria for a dataset. The schema-ap-nde row leads,
+// matching the usual order in NDE communication; the IIIF row follows.
 export function compatibilityCriteria(
   input: CompatibilityInput,
 ): CompatibilityCriterion[] {
+  const schemaApNde = schemaApNdeState(input.schemaApNde);
   return [
+    {
+      key: 'schema-ap-nde',
+      state: schemaApNde.state,
+      count: 0,
+      reason: schemaApNde.reason,
+    },
     {
       key: 'iiif',
       state: iiifState(input.iiif),

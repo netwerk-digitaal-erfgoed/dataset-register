@@ -3,9 +3,11 @@
   import { getLocale } from '$lib/paraglide/runtime';
   import {
     type DatasetCard,
+    conformsToSchemaApNde,
     iiifManifestCount,
     providesWorkingIiif,
   } from '$lib/services/datasets';
+  import BadgeCheckOutline from 'flowbite-svelte-icons/BadgeCheckOutline.svelte';
   import { getLocalizedValue, localizeHref } from '$lib/utils/i18n';
   import { RDF_MEDIA_TYPES } from '$lib/constants.js';
   import { datasetDetailHref } from '$lib/url';
@@ -43,6 +45,10 @@
         ),
     ),
   );
+
+  // Show the badge only when the dataset conforms to the NDE Schema.org
+  // Application Profile in the sampled resources.
+  const conformsToProfile = $derived(conformsToSchemaApNde(dataset));
 
   // Show the icon only for working IIIF; the tooltip reports the declared count.
   const hasWorkingIiif = $derived(providesWorkingIiif(dataset));
@@ -130,8 +136,28 @@
     </div>
   {/if}
 
-  {#if hasSparqlDistribution || hasRdfDistribution || dataset.size || hasWorkingIiif}
+  {#if conformsToProfile || hasSparqlDistribution || hasRdfDistribution || dataset.size || hasWorkingIiif}
     <div class="mt-2.5 text-[0.9375rem] leading-[1.5] flex items-center gap-4">
+      {#if conformsToProfile}
+        <!-- Leftmost: conforms to the NDE Schema.org Application Profile. The
+             green glyph reads as “verified”; the tooltip carries the full,
+             sample-scoped claim. -->
+        <div class="group relative flex items-center gap-1.5">
+          <div
+            class="invisible absolute bottom-full left-1/2 mb-2 -translate-x-1/2 transform rounded bg-gray-800 px-2 py-1 text-xs whitespace-nowrap text-white opacity-0 transition-opacity duration-200 group-hover:visible group-hover:opacity-100"
+          >
+            {m.dataset_schema_ap_nde()}
+            <div
+              class="absolute top-full left-1/2 h-0 w-0 -translate-x-1/2 border-t-4 border-r-4 border-l-4 border-t-gray-800 border-r-transparent border-l-transparent"
+            ></div>
+          </div>
+          <BadgeCheckOutline
+            class="h-4 w-4 flex-shrink-0 text-green-600 dark:text-green-500"
+            aria-label={m.dataset_schema_ap_nde()}
+          />
+        </div>
+      {/if}
+
       {#if hasSparqlDistribution}
         <div class="group relative flex items-center gap-1.5">
           <div

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  conformsToSchemaApNde,
   iiifManifestCount,
   providesWorkingIiif,
   type DatasetCard,
@@ -71,5 +72,35 @@ describe('providesWorkingIiif', () => {
 
   it('is false when no IIIF subset is declared', () => {
     expect(providesWorkingIiif(card({ iiifSubset: null }))).toBe(false);
+  });
+});
+
+describe('conformsToSchemaApNde', () => {
+  it('is true when the validated sample conforms', () => {
+    expect(
+      conformsToSchemaApNde(
+        card({ schemaApNdeQuadsValidated: 200, schemaApNdeConformant: true }),
+      ),
+    ).toBe(true);
+  });
+
+  it('is false when the validated sample does not conform', () => {
+    expect(
+      conformsToSchemaApNde(
+        card({ schemaApNdeQuadsValidated: 200, schemaApNdeConformant: false }),
+      ),
+    ).toBe(false);
+  });
+
+  it('is false when zero quads were validated (profile does not apply)', () => {
+    expect(
+      conformsToSchemaApNde(
+        card({ schemaApNdeQuadsValidated: 0, schemaApNdeConformant: false }),
+      ),
+    ).toBe(false);
+  });
+
+  it('is false when no conformance measurement exists', () => {
+    expect(conformsToSchemaApNde(card({}))).toBe(false);
   });
 });

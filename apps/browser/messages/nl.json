@@ -246,8 +246,16 @@
       }
     }
   ],
+  "dataset_schema_ap_nde": "Voldoet aan het NDE Schema.org-applicatieprofiel (steekproef)",
   "nde_compatibility": "NDE-compatibiliteit",
   "nde_compatibility_description": "Laat zien aan welke NDE-criteria deze dataset voldoet.",
+  "nde_compat_schema_ap_nde_heading_conforms": "Voldoet aan het NDE Schema.org-applicatieprofiel",
+  "nde_compat_schema_ap_nde_heading_not_conforms": "Voldoet niet aan het NDE Schema.org-applicatieprofiel",
+  "nde_compat_schema_ap_nde_heading_not_applicable": "Het NDE Schema.org-applicatieprofiel is niet van toepassing",
+  "nde_compat_schema_ap_nde_explanation_conforms": "Er zijn geen overtredingen gevonden in een steekproef van deze dataset.",
+  "nde_compat_schema_ap_nde_explanation_violations": "Ten minste één gecontroleerde resource voldeed niet aan het NDE Schema.org-applicatieprofiel.",
+  "nde_compat_schema_ap_nde_explanation_declared_but_empty": "Deze dataset geeft aan te voldoen aan het NDE Schema.org-applicatieprofiel, maar geen van de resources gebruikt de klassen van het profiel.",
+  "nde_compat_schema_ap_nde_explanation_not_applicable": "Deze dataset gebruikt een ander datamodel, dus het profiel is niet van toepassing.",
   "nde_compat_iiif_heading_provided": "Biedt IIIF-media",
   "nde_compat_iiif_heading_not_provided": "Biedt geen IIIF-media",
   "nde_compat_iiif_heading_unavailable": "IIIF-media niet beschikbaar",
