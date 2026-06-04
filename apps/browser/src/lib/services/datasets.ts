@@ -7,6 +7,13 @@ import { PUBLIC_SPARQL_ENDPOINT } from '$env/static/public';
 import { schemaNs as schema, voidNs } from '../rdf.js';
 import { getLocale } from '$lib/paraglide/runtime';
 import { normalizeMediaType } from '$lib/utils/sparql';
+import {
+  IIIF_PRESENTATION_API,
+  MANIFESTS_SAMPLED_METRIC,
+  MANIFESTS_VALIDATED_METRIC,
+  iiifState,
+  type IiifManifests,
+} from '$lib/services/nde-compatibility';
 
 export const SPARQL_ENDPOINT = PUBLIC_SPARQL_ENDPOINT;
 const fetcher = new SparqlEndpointFetcher();
@@ -86,6 +93,35 @@ export const DatasetCardSchema = {
     '@type': xsd.integer,
     '@optional': true,
   },
+  // The number of IIIF Presentation manifests detected in the dataset, recorded
+  // in the Knowledge Graph as a void:subset keyed on dcterms:conformsTo. The
+  // card query only ever projects the IIIF subset (see datasetCardsQuery), so a
+  // single optional value suffices.
+  iiifSubset: {
+    '@id': voidNs.subset,
+    '@optional': true,
+    '@schema': {
+      conformsTo: {
+        '@id': dcterms.conformsTo,
+      },
+      entities: {
+        '@id': voidNs.entities,
+        '@type': xsd.integer,
+      },
+    },
+  },
+  // IIIF manifest validation measurements, projected onto the dataset by the
+  // card query so the icon can be limited to datasets with working IIIF.
+  iiifManifestsSampled: {
+    '@id': MANIFESTS_SAMPLED_METRIC,
+    '@type': xsd.integer,
+    '@optional': true,
+  },
+  iiifManifestsValidated: {
+    '@id': MANIFESTS_VALIDATED_METRIC,
+    '@type': xsd.integer,
+    '@optional': true,
+  },
   datePosted: {
     '@id': schema.datePosted,
     '@type': xsd.dateTime,
@@ -95,6 +131,34 @@ export const DatasetCardSchema = {
 
 export type DatasetCard = SchemaInterface<typeof DatasetCardSchema>;
 
+// The IIIF manifest figures for a card: declared count plus the validation
+// measurements (null when the dataset declares no IIIF or has no measurement).
+function cardIiifManifests(dataset: DatasetCard): IiifManifests {
+  const subset = dataset.iiifSubset;
+  const declared =
+    subset && subset.conformsTo === IIIF_PRESENTATION_API
+      ? (subset.entities ?? 0)
+      : 0;
+  return {
+    declared,
+    sampled: dataset.iiifManifestsSampled ?? null,
+    validated: dataset.iiifManifestsValidated ?? null,
+  };
+}
+
+// The number of IIIF Presentation manifests the dataset declares, for the card
+// tooltip.
+export function iiifManifestCount(dataset: DatasetCard): number {
+  return cardIiifManifests(dataset).declared;
+}
+
+// Whether the dataset provides working IIIF media. The card icon is shown only
+// in this case — not when manifests are declared but failed validation, and not
+// when none are declared.
+export function providesWorkingIiif(dataset: DatasetCard): boolean {
+  return iiifState(cardIiifManifests(dataset)) === 'met';
+}
+
 const datasetCards = createLens(DatasetCardSchema, {
   sources: [SPARQL_ENDPOINT],
 });
@@ -102,8 +166,10 @@ const datasetCards = createLens(DatasetCardSchema, {
 export const prefixes = `
 PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX dqv: <http://www.w3.org/ns/dqv#>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>			
+PREFIX nde: <https://def.nde.nl/metric#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX schema: <https://schema.org/>
 PREFIX void: <http://rdfs.org/ns/void#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
@@ -171,6 +237,9 @@ export function datasetCardsQuery(
       dct:license ?license ;
       dcat:distribution ?distribution ;
       void:triples ?size ;
+      void:subset ?iiifSubset ;
+      nde:manifests-sampled ?iiifSampled ;
+      nde:manifests-validated ?iiifValidated ;
       schema:status ?status ;
       schema:datePosted ?datePosted .
     ?publisher a foaf:Agent ;
@@ -178,6 +247,8 @@ export function datasetCardsQuery(
     ?distribution a dcat:Distribution ;
       dcat:mediaType ?mediaType ;
       dct:conformsTo ?conformsTo .
+    ?iiifSubset dct:conformsTo <${IIIF_PRESENTATION_API}> ;
+      void:entities ?iiifManifests .
   }
   WHERE {
     # Inside the default graph, which contains the registry's metadata.
@@ -244,11 +315,30 @@ export function datasetCardsQuery(
       }
     }
 
-    # Fetch dataset size from Dataset Knowledge Graph via SPARQL Federation
+    # Fetch dataset size and IIIF manifest count from the Dataset Knowledge Graph
+    # via SPARQL Federation. The IIIF subset is itself optional: not every
+    # dataset exposes IIIF Presentation manifests.
     OPTIONAL {
       SERVICE <https://triplestore.netwerkdigitaalerfgoed.nl/repositories/dataset-knowledge-graph> {
         ?dataset a void:Dataset ;
           void:triples ?size .
+        OPTIONAL {
+          ?dataset void:subset ?iiifSubset .
+          ?iiifSubset dct:conformsTo <${IIIF_PRESENTATION_API}> ;
+            void:entities ?iiifManifests .
+          OPTIONAL {
+            ?dataset dqv:hasQualityMeasurement [
+              dqv:isMeasurementOf nde:manifests-sampled ;
+              dqv:value ?iiifSampled
+            ] .
+          }
+          OPTIONAL {
+            ?dataset dqv:hasQualityMeasurement [
+              dqv:isMeasurementOf nde:manifests-validated ;
+              dqv:value ?iiifValidated
+            ] .
+          }
+        }
       }
     }
   }

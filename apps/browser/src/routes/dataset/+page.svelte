@@ -41,6 +41,7 @@
   } from '$lib/services/dataset-detail.js';
   import { getRelativeTimeString } from '$lib/utils/relative-time';
   import ClassPropertiesWidget from '$lib/components/ClassPropertiesWidget.svelte';
+  import NdeCompatibility from '$lib/components/NdeCompatibility.svelte';
 
   // Data is loaded server-side via +page.ts for SEO
   const { data }: { data: DatasetDetailResult } = $props();
@@ -50,6 +51,7 @@
   const summary = $derived(data.summary);
   const linksets = $derived(data.linksets);
   const temporalCoverages = $derived(data.temporalCoverages);
+  const iiifManifests = $derived(data.iiifManifests);
 
   // SEO: canonical and hreflang URLs
   const datasetPath = $derived(datasetDetailHref(dataset.$id));
@@ -1264,6 +1266,9 @@
       {/if}
     </div>
   {/if}
+
+  <!-- NDE compatibility (“vinkjes”) -->
+  <NdeCompatibility {iiifManifests} />
 
   <!-- VoID Summary Section -->
   {#if summary && hasVoidStats}

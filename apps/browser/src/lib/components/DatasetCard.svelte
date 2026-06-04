@@ -1,7 +1,11 @@
 <script lang="ts">
   import * as m from '$lib/paraglide/messages';
   import { getLocale } from '$lib/paraglide/runtime';
-  import { type DatasetCard } from '$lib/services/datasets';
+  import {
+    type DatasetCard,
+    iiifManifestCount,
+    providesWorkingIiif,
+  } from '$lib/services/datasets';
   import { getLocalizedValue, localizeHref } from '$lib/utils/i18n';
   import { RDF_MEDIA_TYPES } from '$lib/constants.js';
   import { datasetDetailHref } from '$lib/url';
@@ -38,6 +42,13 @@
           distribution.mediaType as (typeof RDF_MEDIA_TYPES)[number],
         ),
     ),
+  );
+
+  // Show the icon only for working IIIF; the tooltip reports the declared count.
+  const hasWorkingIiif = $derived(providesWorkingIiif(dataset));
+  const iiifManifests = $derived(iiifManifestCount(dataset));
+  const iiifManifestsDisplay = $derived(
+    formatNumber(iiifManifests, getLocale()),
   );
 </script>
 
@@ -119,7 +130,7 @@
     </div>
   {/if}
 
-  {#if hasSparqlDistribution || hasRdfDistribution || dataset.size}
+  {#if hasSparqlDistribution || hasRdfDistribution || dataset.size || hasWorkingIiif}
     <div class="mt-2.5 text-[0.9375rem] leading-[1.5] flex items-center gap-4">
       {#if hasSparqlDistribution}
         <div class="group relative flex items-center gap-1.5">
@@ -204,6 +215,44 @@
           <span class="text-gray-700 dark:text-gray-300"
             >{formatNumber(dataset.size, getLocale())}
             {m.dataset_triples({ count: dataset.size })}</span
+          >
+        </div>
+      {/if}
+
+      {#if hasWorkingIiif}
+        <!-- The manifest count lives in the tooltip. -->
+        <div class="group relative flex items-center gap-1.5">
+          <div
+            class="invisible absolute bottom-full left-1/2 mb-2 -translate-x-1/2 transform rounded bg-gray-800 px-2 py-1 text-xs whitespace-nowrap text-white opacity-0 transition-opacity duration-200 group-hover:visible group-hover:opacity-100"
+          >
+            {m.dataset_iiif_manifests({
+              count: iiifManifests,
+              display: iiifManifestsDisplay,
+            })}
+            <div
+              class="absolute top-full left-1/2 h-0 w-0 -translate-x-1/2 border-t-4 border-r-4 border-l-4 border-t-gray-800 border-r-transparent border-l-transparent"
+            ></div>
+          </div>
+          <svg
+            class="w-4 h-4 text-gray-600 dark:text-gray-400 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-label={m.dataset_iiif_manifests({
+              count: iiifManifests,
+              display: iiifManifestsDisplay,
+            })}
+          >
+            <!-- Image icon: IIIF exposes the dataset’s images. -->
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+          <span class="text-gray-700 dark:text-gray-300"
+            >{iiifManifestsDisplay} IIIF</span
           >
         </div>
       {/if}

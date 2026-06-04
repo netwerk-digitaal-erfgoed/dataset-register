@@ -232,6 +232,55 @@
   "detail_classes_for_value_type": "Classes for {valueTypeName}",
   "detail_properties_for_value_type": "Properties for {valueTypeName}",
   "opens_in_new_tab": "opens in new tab",
+  "dataset_iiif_manifests": [
+    {
+      "declarations": [
+        "input count",
+        "input display",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{display} IIIF manifest",
+        "countPlural=other": "{display} IIIF manifests"
+      }
+    }
+  ],
+  "nde_compatibility": "NDE compatibility",
+  "nde_compatibility_description": "Shows which NDE criteria this dataset meets.",
+  "nde_compat_iiif_heading_provided": "Provides IIIF media",
+  "nde_compat_iiif_heading_not_provided": "Does not provide IIIF media",
+  "nde_compat_iiif_heading_unavailable": "IIIF media unavailable",
+  "nde_compat_iiif_explanation": "With IIIF, the images in a dataset can be viewed in any IIIF viewer.",
+  "nde_compat_iiif_count": [
+    {
+      "declarations": [
+        "input count",
+        "input display",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{display} manifest found.",
+        "countPlural=other": "{display} manifests found."
+      }
+    }
+  ],
+  "nde_compat_iiif_count_failed": [
+    {
+      "declarations": [
+        "input count",
+        "input display",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{display} manifest declared, but it could not be validated.",
+        "countPlural=other": "{display} manifests declared, but none of the sampled manifests could be validated."
+      }
+    }
+  ],
+  "nde_compat_learn_more": "Learn more",
   "validate_page_title": "Validate a dataset description",
   "validate_page_intro_before": "Have you created and published your dataset description? And do you want to know if it meets the ",
   "validate_page_intro_after": "? And do you have a NDE-compatible collection information system? Then this validation will happen automatically. Why is this important? Only descriptions that meet the requirements will be included in the Dataset Register.",
