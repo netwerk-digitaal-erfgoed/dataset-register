@@ -14,6 +14,11 @@ export default defineConfig({
       outdir: './src/lib/paraglide',
     }),
   ],
+  ssr: {
+    // lz-string is a CommonJS module; let Vite bundle it during SSR so its
+    // named exports (compressToEncodedURIComponent, …) resolve under Vite 8.
+    noExternal: ['lz-string'],
+  },
   test: {
     passWithNoTests: true,
     expect: { requireAssertions: true },
