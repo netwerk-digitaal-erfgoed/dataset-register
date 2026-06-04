@@ -499,9 +499,9 @@ nde-dataset:DistributionShape
             sh:minCount 1 ;
             sh:maxCount 1 ;
             sh:severity sh:Violation ;
-            sh:description """De URL die rechtstreeks toegang biedt tot de distributie zelf: het databestand of het endpoint van de [=web API=].
+            sh:description """De URL die rechtstreeks toegang biedt tot de distributie zelf: het databestand of het endpoint van de web-API.
                 Gebruik `schema:documentation` als er daarnaast een documentatiepagina is die de distributie beschrijft of ontsluit (zoals een SPARQL-UI of een downloadlandingspagina)."""@nl,
-                """The URL that provides direct access to the distribution itself: the data file or the [=web API=] endpoint.
+                """The URL that provides direct access to the distribution itself: the data file or the web API endpoint.
                 Use `schema:documentation` if there is also a documentation page that describes or provides access to the distribution (such as a SPARQL UI or a download landing page)."""@en ;
             sh:message "Voeg de URL toe waar de distributie rechtstreeks toegankelijk is"@nl, "Add the URL where the distribution can be directly accessed"@en ;
         ] ,
