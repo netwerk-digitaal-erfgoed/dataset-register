@@ -3,6 +3,7 @@ import { Crawler } from './crawler.js';
 import {
   CompositeValidator,
   DistributionProbeStage,
+  readProbeSeverities,
   readUrl,
   ShaclEngineValidator,
   stores,
@@ -19,15 +20,16 @@ const {
 
 const shacl = await readUrl('requirements/shacl.ttl');
 const logger = pino();
-// Lenient mode: probe every distribution each crawl round, but only promote failures to
-// sh:Violation when the health store shows the streak is persistent (defaults: 3
-// consecutive failures or 7 days since the first failure). Transient blips don’t
-// penalise the rating.
+// Lenient mode: probe every distribution each crawl round, but only emit a failure once the
+// health store shows the streak is persistent (default: 7 days since the first failure).
+// Transient blips don’t penalise the rating. Emitted failures carry the sh:severity the shapes
+// declare for each check (reachability and format-match are sh:Warning today).
 const validator = new CompositeValidator(
   new ShaclEngineValidator(shacl),
   new DistributionProbeStage({
     healthStore: distributionHealthStore,
     maxProbes: config.CRAWLER_MAX_DISTRIBUTION_PROBES,
+    severities: readProbeSeverities(shacl),
     logger,
   }),
 );

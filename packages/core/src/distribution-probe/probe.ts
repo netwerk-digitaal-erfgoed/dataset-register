@@ -32,12 +32,25 @@ export interface ProbeLogger {
   warn(message: string): void;
 }
 
+/**
+ * The sh:severity at which each probe check reports a failure. Read from the SHACL shapes
+ * (see {@link readProbeSeverities}) so the requirements graph is the single source of truth:
+ * bumping a shape from sh:Warning to sh:Violation changes runtime behaviour — a Warning informs
+ * without invalidating the dataset, a Violation invalidates it — with no code change here.
+ */
+export interface ProbeSeverities {
+  /** Reachability failures: network error, 4xx/5xx, SPARQL or RDF-parse failures, empty body. */
+  reachable: NamedNode;
+  /** The server Content-Type does not match the declared media type. */
+  formatMatch: NamedNode;
+}
+
 export interface DistributionProbeStageOptions {
   /**
-   * When set, each failing probe is assessed against this store and promoted to
-   * sh:Violation only once the firstFailureAt timestamp is older than
-   * failureStreakMaxAgeMs. When null, every failure is emitted at sh:Violation
-   * (the registration path).
+   * When set, each failing probe is assessed against this store and emitted only once the
+   * firstFailureAt timestamp is older than failureStreakMaxAgeMs; transient blips are
+   * suppressed. When null, every failure is emitted (the registration path). Either way the
+   * severity of an emitted result is governed by {@link severities}, not by this store.
    */
   healthStore?: DistributionHealthStore | null;
   /**
@@ -45,8 +58,8 @@ export interface DistributionProbeStageOptions {
    */
   timeoutMs?: number;
   /**
-   * Minimum age of a failure streak (ms) before the health store promotes a probe to
-   * sh:Violation. Operators tune this relative to crawl cadence. Default 7 days.
+   * Minimum age of a failure streak (ms) before the health store stops suppressing a failing
+   * probe and lets it be emitted. Operators tune this relative to crawl cadence. Default 7 days.
    */
   failureStreakMaxAgeMs?: number;
   /**
@@ -67,6 +80,14 @@ export interface DistributionProbeStageOptions {
    * maxProbes cap is reached. When omitted, skipped probes are still bounded but not reported.
    */
   logger?: ProbeLogger | null;
+  /**
+   * The sh:severity emitted for each probe check. Pass the shapes-derived severities from
+   * {@link readProbeSeverities} (as the crawler does) to let the requirements graph govern
+   * severity. Omit it to emit every failure at sh:Violation — SHACL's own default severity —
+   * regardless of the shapes; this is the strict mode the registration API uses so a faulty
+   * distribution invalidates the dataset.
+   */
+  severities?: ProbeSeverities;
 }
 
 const DEFAULT_FAILURE_STREAK_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -96,6 +117,7 @@ export class DistributionProbeStage {
   private readonly probeConcurrency: number;
   private readonly maxProbes: number;
   private readonly logger: ProbeLogger | null;
+  private readonly severities: ProbeSeverities;
 
   public constructor(options: DistributionProbeStageOptions = {}) {
     this.healthStore = options.healthStore ?? null;
@@ -106,6 +128,10 @@ export class DistributionProbeStage {
       options.probeConcurrency ?? DEFAULT_PROBE_CONCURRENCY;
     this.maxProbes = options.maxProbes ?? DEFAULT_MAX_PROBES;
     this.logger = options.logger ?? null;
+    this.severities = options.severities ?? {
+      reachable: shacl('Violation'),
+      formatMatch: shacl('Violation'),
+    };
   }
 
   public async run(input: DatasetCore): Promise<Quad[]> {
@@ -155,7 +181,7 @@ export class DistributionProbeStage {
       if (verdict.success) continue;
 
       for (const member of members) {
-        quads.push(...emitViolation(member, verdict, record));
+        quads.push(...emitProbeResult(member, verdict, record, this.severities));
       }
     }
 
@@ -245,6 +271,45 @@ export class DistributionProbeStage {
 
     return persistent ? verdict : { ...verdict, success: true };
   }
+}
+
+const probeReachableMarker = ndeProbe('probeReachable');
+const probeFormatMatchMarker = ndeProbe('probeFormatMatch');
+
+/**
+ * Read the sh:severity declared for the reachability and format-match probe checks from the
+ * SHACL shapes graph. A property shape opts a check in by carrying nde-probe:probeReachable or
+ * nde-probe:probeFormatMatch; the shape's sh:severity is the severity the probe emits for that
+ * check. Falls back to sh:Violation — SHACL's own default when a shape omits sh:severity — when
+ * the marker is absent or the marked shapes disagree, so a misconfigured graph fails closed.
+ */
+export function readProbeSeverities(shaclGraph: DatasetCore): ProbeSeverities {
+  return {
+    reachable: severityForMarker(shaclGraph, probeReachableMarker),
+    formatMatch: severityForMarker(shaclGraph, probeFormatMatchMarker),
+  };
+}
+
+function severityForMarker(
+  shaclGraph: DatasetCore,
+  marker: NamedNode,
+): NamedNode {
+  const declared = new Set<string>();
+  for (const quad of shaclGraph) {
+    if (!quad.predicate.equals(marker)) continue;
+    for (const severityQuad of shaclGraph) {
+      if (
+        severityQuad.subject.equals(quad.subject) &&
+        severityQuad.predicate.equals(shacl('severity')) &&
+        severityQuad.object.termType === 'NamedNode'
+      ) {
+        declared.add(severityQuad.object.value);
+      }
+    }
+  }
+  return declared.size === 1
+    ? factory.namedNode([...declared][0]!)
+    : shacl('Violation');
 }
 
 interface ProbeGroup {
@@ -435,16 +500,35 @@ function toDistribution(
   return new Distribution(url, mediaType, resolvedConformsTo);
 }
 
-function emitViolation(
+/**
+ * The probe check a verdict belongs to. A content-type outcome is a format-match failure;
+ * every other outcome (unreachable, server error, SPARQL/parse failure) is a reachability
+ * failure. The verdict outcome decides this, not the result path, because the path always
+ * carries the access/download/content URL — never the media-type property.
+ */
+function checkKind(verdict: ProbeVerdict): keyof ProbeSeverities {
+  const outcome = verdict.outcome;
+  if (
+    outcome !== null &&
+    (outcome.equals(probeOutcomes.ContentTypeMismatch) ||
+      outcome.equals(probeOutcomes.ContentTypeMissing))
+  ) {
+    return 'formatMatch';
+  }
+  return 'reachable';
+}
+
+function emitProbeResult(
   candidate: DistributionCandidate,
   verdict: ProbeVerdict,
   record: DistributionHealthRecord | null,
+  severities: ProbeSeverities,
 ): Quad[] {
   const resultNode = factory.blankNode();
   const outcome = verdict.outcome ?? probeOutcomes.NetworkError;
+  const kind = checkKind(verdict);
   const constraintComponent =
-    candidate.path.equals(dcat('mediaType')) ||
-    candidate.path.equals(schema('encodingFormat'))
+    kind === 'formatMatch'
       ? ndeProbe('DistributionFormatMatchConstraintComponent')
       : ndeProbe('DistributionReachableConstraintComponent');
 
@@ -453,7 +537,7 @@ function emitViolation(
     factory.quad(resultNode, shacl('focusNode'), candidate.distributionNode),
     factory.quad(resultNode, shacl('resultPath'), candidate.path),
     factory.quad(resultNode, shacl('value'), candidate.urlNode),
-    factory.quad(resultNode, shacl('resultSeverity'), shacl('Violation')),
+    factory.quad(resultNode, shacl('resultSeverity'), severities[kind]),
     factory.quad(
       resultNode,
       shacl('sourceConstraintComponent'),
