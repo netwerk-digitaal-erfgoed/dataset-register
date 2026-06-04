@@ -49,7 +49,7 @@
     "@inlang/paraglide-js": "^2.18.1",
     "@playwright/test": "^1.60.0",
     "@sveltejs/adapter-node": "^5.5.4",
-    "@sveltejs/kit": "^2.59.1",
+    "@sveltejs/kit": "^2.61.1",
     "@sveltejs/vite-plugin-svelte": "^7.1.2",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/typography": "^0.5.18",
@@ -57,7 +57,7 @@
     "@types/sparqljs": "^3.1.12",
     "eslint-plugin-svelte": "^3.18.0",
     "prettier-plugin-svelte": "^4.0.1",
-    "svelte": "^5.55.5",
+    "svelte": "^5.55.10",
     "svelte-check": "^4.4.8",
     "tailwindcss": "^4.3.0",
     "vite": "^8.0.16"
