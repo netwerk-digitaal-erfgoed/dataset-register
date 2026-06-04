@@ -1,8 +1,10 @@
 <script lang="ts">
   import { onDestroy, untrack } from 'svelte';
   import { slide } from 'svelte/transition';
-  import { Input, Label } from 'flowbite-svelte';
+  import { Input, Label, Tooltip } from 'flowbite-svelte';
   import ChevronDownOutline from 'flowbite-svelte-icons/ChevronDownOutline.svelte';
+  import ClipboardOutline from 'flowbite-svelte-icons/ClipboardOutline.svelte';
+  import ClipboardCheckOutline from 'flowbite-svelte-icons/ClipboardCheckOutline.svelte';
   import * as m from '$lib/paraglide/messages';
   import {
     checkDomainAllowed,
@@ -50,6 +52,21 @@
   let hasSubmitted = $state(false);
   let sourceOpen = $state(false);
   let hideFetched = $state(false);
+  let copied = $state(false);
+
+  async function handleCopy() {
+    if (fetchedText === null) return;
+    try {
+      await navigator.clipboard.writeText(fetchedText);
+      copied = true;
+      setTimeout(() => {
+        copied = false;
+      }, 1500);
+    } catch {
+      // ignore — some browsers block clipboard without a user gesture on
+      // certain origins; fallback to selection would be the next step.
+    }
+  }
 
   onDestroy(() => {
     submitController?.abort();
@@ -284,7 +301,7 @@
           ? 'grid-rows-[1fr]'
           : 'grid-rows-[0fr]'}"
       >
-        <div class="overflow-hidden">
+        <div class="relative overflow-hidden">
           <CodeEditor
             value={fetchedText}
             language={fetchedLanguage}
@@ -295,6 +312,26 @@
             flush
             bind:goToLine={innerGoToLine}
           />
+          <div class="absolute top-2 right-3 z-10">
+            <button
+              id="url-source-copy"
+              type="button"
+              onclick={handleCopy}
+              aria-label={copied
+                ? m.validate_editor_copied()
+                : m.validate_editor_copy()}
+              class="p-1.5 rounded text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            >
+              {#if copied}
+                <ClipboardCheckOutline class="w-4 h-4" />
+              {:else}
+                <ClipboardOutline class="w-4 h-4" />
+              {/if}
+            </button>
+            <Tooltip triggeredBy="#url-source-copy">
+              {copied ? m.validate_editor_copied() : m.validate_editor_copy()}
+            </Tooltip>
+          </div>
         </div>
       </div>
     </div>
