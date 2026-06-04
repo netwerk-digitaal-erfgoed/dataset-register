@@ -181,7 +181,9 @@ export class DistributionProbeStage {
       if (verdict.success) continue;
 
       for (const member of members) {
-        quads.push(...emitProbeResult(member, verdict, record, this.severities));
+        quads.push(
+          ...emitProbeResult(member, verdict, record, this.severities),
+        );
       }
     }
 
@@ -551,7 +553,10 @@ function emitProbeResult(
       factory.quad(
         resultNode,
         shacl('resultMessage'),
-        factory.literal(verdict.detail, 'en'),
+        factory.literal(
+          verdict.detail + sparqlWebPageRemedy(candidate, verdict),
+          'en',
+        ),
       ),
     );
   }
@@ -576,6 +581,24 @@ function emitProbeResult(
   }
 
   return quads;
+}
+
+/**
+ * A profile-specific remedy appended to the sh:resultMessage when a SPARQL endpoint answered
+ * with an HTML page – the tell-tale sign that the access URL points at a SPARQL query web UI
+ * rather than the protocol endpoint. The remedy names the right property because the machine
+ * endpoint and its human-facing page live under different vocabularies: schema:contentUrl +
+ * schema:documentation for a Schema.org description, dcat:accessURL + foaf:page for a DCAT one.
+ * Returns an empty string for every other failure, so the diagnostic stands on its own.
+ */
+function sparqlWebPageRemedy(
+  candidate: DistributionCandidate,
+  verdict: ProbeVerdict,
+): string {
+  if (verdict.sparqlWebPage !== true) return '';
+  return candidate.path.equals(schema('contentUrl'))
+    ? ' Put the SPARQL protocol endpoint in schema:contentUrl and move the query UI to schema:documentation.'
+    : ' Put the SPARQL protocol endpoint in dcat:accessURL and move the query UI to foaf:page.';
 }
 
 /**

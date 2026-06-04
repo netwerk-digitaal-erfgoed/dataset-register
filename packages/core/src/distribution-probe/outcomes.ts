@@ -30,6 +30,14 @@ export interface ProbeVerdict {
   success: boolean;
   outcome: ProbeOutcomeIri | null;
   detail: string | null;
+  /**
+   * True when a distribution declared as a SPARQL endpoint answered with an HTML page – the
+   * tell-tale sign that the access URL points at a SPARQL query web UI rather than the
+   * protocol endpoint. The emission layer turns this into a profile-specific remedy (move the
+   * UI to schema:documentation / foaf:page), which it can only do there because it knows the
+   * focus node’s path while this classifier, shared across a probe group, does not.
+   */
+  sparqlWebPage?: boolean;
 }
 
 /**
@@ -100,11 +108,40 @@ function classifyHttpFailure(
       detail,
     };
   }
+  if (result instanceof SparqlProbeResult) {
+    const mediaType = result.contentType.split(';')[0].trim();
+    return {
+      success: false,
+      outcome: probeOutcomes.ContentTypeMismatch,
+      detail: sparqlContentTypeMismatchDetail(mediaType),
+      sparqlWebPage: mediaType.toLowerCase() === 'text/html',
+    };
+  }
   return {
     success: false,
     outcome: probeOutcomes.ContentTypeMismatch,
     detail,
   };
+}
+
+/**
+ * Message for a SPARQL endpoint that answered with a non-SPARQL content type. The Dataset
+ * Register Web UI renders this string verbatim (it becomes the sh:resultMessage), so it names
+ * what actually arrived instead of the bare “HTTP 200 OK”. It deliberately does not name an
+ * expected media type: a SPARQL endpoint may legitimately return any of several results
+ * serializations (e.g. SPARQL-results JSON/XML/CSV for SELECT, RDF for CONSTRUCT), so the
+ * message states only that the response is not a results document. When the endpoint served
+ * an HTML page it adds the most common cause: the access URL points at a SPARQL query editor
+ * or landing page rather than the SPARQL protocol endpoint itself — a frequent mistake when
+ * publishers copy the URL from their browser’s address bar. The profile-specific remedy
+ * (declare the UI on schema:documentation / foaf:page) is appended later, by emitViolation.
+ */
+function sparqlContentTypeMismatchDetail(mediaType: string): string {
+  const base = `SPARQL endpoint returned ${mediaType}, which is not a SPARQL query results media type.`;
+  if (mediaType.toLowerCase() === 'text/html') {
+    return `${base} The URL likely points to a web page, such as a SPARQL query editor, rather than the SPARQL protocol endpoint.`;
+  }
+  return base;
 }
 
 function probeResultToRdfOrEmptyOutcome(

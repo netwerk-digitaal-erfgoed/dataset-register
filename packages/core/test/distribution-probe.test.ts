@@ -13,7 +13,7 @@ import {
   DistributionProbeStage,
   readProbeSeverities,
 } from '../src/distribution-probe/probe.js';
-import { dcat, rdf } from '../src/query.js';
+import { dcat, dct, rdf } from '../src/query.js';
 import { shacl } from '../src/validator.js';
 import type {
   DistributionHealthRecord,
@@ -179,6 +179,46 @@ describe('probe outcome classifier', () => {
     expect(verdict.detail).toMatch(/Content-Type/);
   });
 
+  it('explains a SPARQL endpoint that returns an HTML web page', () => {
+    const result = new SparqlProbeResult(
+      'https://example.org/sparql',
+      mockResponse({
+        status: 200,
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      }),
+      10,
+      'application/sparql-results+json',
+    );
+    const verdict = classify(result);
+    expect(verdict.success).toBe(false);
+    expect(verdict.outcome?.equals(probeOutcomes.ContentTypeMismatch)).toBe(
+      true,
+    );
+    expect(verdict.detail).toMatch(/text\/html/);
+    expect(verdict.detail).toMatch(/web page/);
+    expect(verdict.sparqlWebPage).toBe(true);
+  });
+
+  it('names the actual content type for a non-HTML SPARQL mismatch', () => {
+    const result = new SparqlProbeResult(
+      'https://example.org/sparql',
+      mockResponse({
+        status: 200,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      }),
+      10,
+      'application/sparql-results+json',
+    );
+    const verdict = classify(result);
+    expect(verdict.success).toBe(false);
+    expect(verdict.outcome?.equals(probeOutcomes.ContentTypeMismatch)).toBe(
+      true,
+    );
+    expect(verdict.detail).toMatch(/text\/plain/);
+    expect(verdict.detail).not.toMatch(/web page/);
+    expect(verdict.sparqlWebPage).toBe(false);
+  });
+
   it('maps a missing Content-Type header to ContentTypeMissing', () => {
     const result = new DataDumpProbeResult(
       'https://example.org/x',
@@ -283,6 +323,71 @@ describe('DistributionProbeStage', () => {
       quad.predicate.equals(shacl('resultPath')),
     );
     expect(resultPath?.object.equals(dcat('accessURL'))).toBe(true);
+  });
+
+  it('tells a DCAT publisher to move a SPARQL query UI to foaf:page', async () => {
+    nock('https://example.org')
+      .post('/sparql')
+      .reply(200, '<!doctype html><html><body>YASGUI</body></html>', {
+        'Content-Type': 'text/html; charset=utf-8',
+      });
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/ds-dcat');
+    const distributionNode = factory.blankNode();
+    const url = factory.namedNode('https://example.org/sparql');
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    dataset.add(factory.quad(distributionNode, dcat('accessURL'), url));
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dct('conformsTo'),
+        factory.namedNode('https://www.w3.org/TR/sparql11-protocol/'),
+      ),
+    );
+
+    const quads = await new DistributionProbeStage().run(dataset);
+    const message = quads.find((quad) =>
+      quad.predicate.equals(shacl('resultMessage')),
+    );
+    expect(message?.object.value).toMatch(/dcat:accessURL/);
+    expect(message?.object.value).toMatch(/foaf:page/);
+    expect(message?.object.value).not.toMatch(/schema:documentation/);
+  });
+
+  it('tells a Schema.org publisher to move a SPARQL query UI to schema:documentation', async () => {
+    nock('https://example.org')
+      .post('/sparql')
+      .reply(200, '<!doctype html><html></html>', {
+        'Content-Type': 'text/html',
+      });
+
+    const schema = (property: string) =>
+      factory.namedNode(`https://schema.org/${property}`);
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/ds-schema');
+    const distributionNode = factory.blankNode();
+    const url = factory.namedNode('https://example.org/sparql');
+    dataset.add(
+      factory.quad(datasetNode, schema('distribution'), distributionNode),
+    );
+    dataset.add(factory.quad(distributionNode, schema('contentUrl'), url));
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        schema('usageInfo'),
+        factory.namedNode('https://www.w3.org/TR/sparql11-protocol/'),
+      ),
+    );
+
+    const quads = await new DistributionProbeStage().run(dataset);
+    const message = quads.find((quad) =>
+      quad.predicate.equals(shacl('resultMessage')),
+    );
+    expect(message?.object.value).toMatch(/schema:documentation/);
+    expect(message?.object.value).not.toMatch(/foaf:page/);
   });
 
   it('suppresses the violation when the health store marks the failure as transient', async () => {
@@ -1050,7 +1155,9 @@ describe('readProbeSeverities', () => {
     severity: ReturnType<typeof shacl>,
   ) => {
     const shape = factory.blankNode();
-    graph.add(factory.quad(shape, probeMarker(marker), factory.literal('true')));
+    graph.add(
+      factory.quad(shape, probeMarker(marker), factory.literal('true')),
+    );
     graph.add(factory.quad(shape, shacl('severity'), severity));
   };
 
