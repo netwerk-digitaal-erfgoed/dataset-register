@@ -13,6 +13,10 @@ import {
 import { BaseDatasetSchema, BaseDistributionSchema } from './datasets.js';
 import { shortenUri } from '$lib/utils/prefix';
 import { isUri, lookupTermLabels } from './network-of-terms.js';
+import {
+  IIIF_PRESENTATION_API,
+  type IiifManifests,
+} from './nde-compatibility.js';
 import { getLocale } from '$lib/paraglide/runtime';
 import { REGISTRATION_STATUS_BASE_URI } from '@dataset-register/core/constants';
 import {
@@ -376,10 +380,75 @@ export interface DatasetDetailResult {
   summary: DatasetSummary | null;
   linksets: Linkset[];
   temporalCoverages: TemporalCoverage[];
+  iiifManifests: IiifManifests;
   resolvedTerms: Promise<Record<string, string>>;
 }
 
 const fetcher = new SparqlEndpointFetcher();
+
+// Reads the IIIF manifest figures from the Knowledge Graph: the declared count
+// (void:subset keyed on dcterms:conformsTo, counted with void:entities) plus the
+// validation measurements (how many manifests were sampled and how many of those
+// resolved to a valid IIIF Presentation manifest). sampled/validated are null
+// when no validation measurement has been recorded yet.
+async function fetchIiifManifests(datasetUri: string): Promise<IiifManifests> {
+  const query = `
+    PREFIX void: <http://rdfs.org/ns/void#>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    PREFIX dqv: <http://www.w3.org/ns/dqv#>
+    PREFIX nde: <https://def.nde.nl/metric#>
+    SELECT ?declared ?sampled ?validated WHERE {
+      <${datasetUri}> void:subset [
+        dct:conformsTo <${IIIF_PRESENTATION_API}> ;
+        void:entities ?declared
+      ] .
+      OPTIONAL {
+        <${datasetUri}> dqv:hasQualityMeasurement [
+          dqv:isMeasurementOf nde:manifests-sampled ;
+          dqv:value ?sampled
+        ]
+      }
+      OPTIONAL {
+        <${datasetUri}> dqv:hasQualityMeasurement [
+          dqv:isMeasurementOf nde:manifests-validated ;
+          dqv:value ?validated
+        ]
+      }
+    }
+    LIMIT 1
+  `;
+  const none: IiifManifests = { declared: 0, sampled: null, validated: null };
+  try {
+    const bindingsStream = await fetcher.fetchBindings(
+      PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+      query,
+    );
+    for await (const raw of bindingsStream) {
+      const binding = raw as unknown as {
+        declared?: { value: string };
+        sampled?: { value: string };
+        validated?: { value: string };
+      };
+      return {
+        declared: binding.declared?.value
+          ? parseInt(binding.declared.value, 10)
+          : 0,
+        sampled: binding.sampled?.value
+          ? parseInt(binding.sampled.value, 10)
+          : null,
+        validated: binding.validated?.value
+          ? parseInt(binding.validated.value, 10)
+          : null,
+      };
+    }
+  } catch (e: unknown) {
+    console.error(
+      'IIIF manifests query failed:',
+      e instanceof Error ? e.message : e,
+    );
+  }
+  return none;
+}
 
 async function fetchDistributionCount(query: string): Promise<number> {
   const bindingsStream = await fetcher.fetchBindings(
@@ -579,6 +648,7 @@ export async function fetchDatasetDetail(
     linksets,
     classPartitionResult,
     temporalCoverages,
+    iiifManifests,
   ] = await Promise.all([
     detailLens.query(datasetQuery),
     distributionLens.query(distributionQuery),
@@ -593,6 +663,7 @@ export async function fetchDatasetDetail(
     linksLens.find({ where: { subjectsTarget: datasetUri } }),
     classPartitionLens.findByIri(datasetUri),
     fetchTemporalCoverage(datasetUri),
+    fetchIiifManifests(datasetUri),
   ]);
 
   const dataset = datasets.find((d) => d.$id === datasetUri) ?? datasets[0];
@@ -633,6 +704,7 @@ export async function fetchDatasetDetail(
     summary: summaryWithClassPartition,
     linksets,
     temporalCoverages,
+    iiifManifests,
     resolvedTerms,
   };
 }

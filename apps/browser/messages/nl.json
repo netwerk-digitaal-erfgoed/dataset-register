@@ -232,6 +232,55 @@
   "detail_classes_for_value_type": "Typen voor {valueTypeName}",
   "detail_properties_for_value_type": "Eigenschappen voor {valueTypeName}",
   "opens_in_new_tab": "opent in nieuw tabblad",
+  "dataset_iiif_manifests": [
+    {
+      "declarations": [
+        "input count",
+        "input display",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{display} IIIF-manifest",
+        "countPlural=other": "{display} IIIF-manifesten"
+      }
+    }
+  ],
+  "nde_compatibility": "NDE-compatibiliteit",
+  "nde_compatibility_description": "Laat zien aan welke NDE-criteria deze dataset voldoet.",
+  "nde_compat_iiif_heading_provided": "Biedt IIIF-media",
+  "nde_compat_iiif_heading_not_provided": "Biedt geen IIIF-media",
+  "nde_compat_iiif_heading_unavailable": "IIIF-media niet beschikbaar",
+  "nde_compat_iiif_explanation": "Met IIIF zijn de afbeeldingen in een dataset in elke IIIF-viewer te bekijken.",
+  "nde_compat_iiif_count": [
+    {
+      "declarations": [
+        "input count",
+        "input display",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{display} manifest gevonden.",
+        "countPlural=other": "{display} manifesten gevonden."
+      }
+    }
+  ],
+  "nde_compat_iiif_count_failed": [
+    {
+      "declarations": [
+        "input count",
+        "input display",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{display} manifest opgegeven, maar deze kon niet worden gevalideerd.",
+        "countPlural=other": "{display} manifesten opgegeven, maar geen van de gecontroleerde manifesten kon worden gevalideerd."
+      }
+    }
+  ],
+  "nde_compat_learn_more": "Meer informatie",
   "validate_page_title": "Controleer een datasetbeschrijving",
   "validate_page_intro_before": "Heb je je datasetbeschrijving gemaakt en gepubliceerd? En wil je weten of deze voldoet aan de ",
   "validate_page_intro_after": "? En beschik je over een NDE-compatibel collectie-informatiesysteem? Dan gebeurt die controle automatisch. Waarom is dit belangrijk? Alleen beschrijvingen die aan de eisen voldoen, neemt het Datasetregister op.",

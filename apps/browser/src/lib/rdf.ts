@@ -21,6 +21,7 @@ export const voidNs = createNamespace({
     'objectsTarget',
     'dataDump',
     'sparqlEndpoint',
+    'subset',
   ],
 } as const);
 
