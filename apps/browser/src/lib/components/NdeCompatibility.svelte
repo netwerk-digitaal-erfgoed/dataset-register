@@ -8,19 +8,37 @@
   import {
     compatibilityCriteria,
     IIIF_VINKJES_URL,
+    SCHEMA_AP_NDE_PROFILE,
     type CompatibilityCriterion,
     type IiifManifests,
+    type SchemaApNdeConformance,
   } from '$lib/services/nde-compatibility';
 
-  let { iiifManifests }: { iiifManifests: IiifManifests } = $props();
+  let {
+    iiifManifests,
+    schemaApNde,
+  }: { iiifManifests: IiifManifests; schemaApNde: SchemaApNdeConformance } =
+    $props();
 
-  const criteria = $derived(compatibilityCriteria({ iiif: iiifManifests }));
+  const criteria = $derived(
+    compatibilityCriteria({ schemaApNde, iiif: iiifManifests }),
+  );
 
   // The heading states the actual situation: a dataset legitimately may have no
   // media (unmet, neutral), may provide working media (met), or may declare media
   // that could not be loaded (failed).
   function heading(criterion: CompatibilityCriterion): string {
     switch (criterion.key) {
+      case 'schema-ap-nde':
+        switch (criterion.state) {
+          case 'met':
+            return m.nde_compat_schema_ap_nde_heading_conforms();
+          case 'failed':
+            return m.nde_compat_schema_ap_nde_heading_not_conforms();
+          case 'unmet':
+            return m.nde_compat_schema_ap_nde_heading_not_applicable();
+        }
+      // eslint-disable-next-line no-fallthrough
       case 'iiif':
         switch (criterion.state) {
           case 'met':
@@ -35,6 +53,18 @@
 
   function explanation(criterion: CompatibilityCriterion): string {
     switch (criterion.key) {
+      case 'schema-ap-nde':
+        switch (criterion.state) {
+          case 'met':
+            return m.nde_compat_schema_ap_nde_explanation_conforms();
+          case 'failed':
+            return criterion.reason === 'declared-but-empty'
+              ? m.nde_compat_schema_ap_nde_explanation_declared_but_empty()
+              : m.nde_compat_schema_ap_nde_explanation_violations();
+          case 'unmet':
+            return m.nde_compat_schema_ap_nde_explanation_not_applicable();
+        }
+      // eslint-disable-next-line no-fallthrough
       case 'iiif':
         return m.nde_compat_iiif_explanation();
     }
@@ -49,6 +79,9 @@
     const count = criterion.count;
     const display = count.toLocaleString(getLocale());
     switch (criterion.key) {
+      case 'schema-ap-nde':
+        // No raw counts for the profile criterion in this version.
+        return null;
       case 'iiif':
         switch (criterion.state) {
           case 'met':
@@ -63,6 +96,8 @@
 
   function learnMoreHref(criterion: CompatibilityCriterion): string {
     switch (criterion.key) {
+      case 'schema-ap-nde':
+        return SCHEMA_AP_NDE_PROFILE;
       case 'iiif':
         return IIIF_VINKJES_URL;
     }

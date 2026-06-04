@@ -246,8 +246,16 @@
       }
     }
   ],
+  "dataset_schema_ap_nde": "Conforms to the NDE Schema.org Application Profile (sampled)",
   "nde_compatibility": "NDE compatibility",
   "nde_compatibility_description": "Shows which NDE criteria this dataset meets.",
+  "nde_compat_schema_ap_nde_heading_conforms": "Conforms to the NDE Schema.org Application Profile",
+  "nde_compat_schema_ap_nde_heading_not_conforms": "Does not conform to the NDE Schema.org Application Profile",
+  "nde_compat_schema_ap_nde_heading_not_applicable": "The NDE Schema.org Application Profile does not apply",
+  "nde_compat_schema_ap_nde_explanation_conforms": "No violations were found in a sample of this dataset.",
+  "nde_compat_schema_ap_nde_explanation_violations": "At least one sampled resource violated the NDE Schema.org Application Profile.",
+  "nde_compat_schema_ap_nde_explanation_declared_but_empty": "This dataset declares conformance to the NDE Schema.org Application Profile, but none of its resources use the profile’s classes.",
+  "nde_compat_schema_ap_nde_explanation_not_applicable": "This dataset uses a different data model, so the profile does not apply.",
   "nde_compat_iiif_heading_provided": "Provides IIIF media",
   "nde_compat_iiif_heading_not_provided": "Does not provide IIIF media",
   "nde_compat_iiif_heading_unavailable": "IIIF media unavailable",
