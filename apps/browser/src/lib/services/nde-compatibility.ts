@@ -39,6 +39,13 @@ export const QUADS_VALIDATED_METRIC =
 // in NDE communication.
 export type CompatibilityCriterionKey = 'schema-ap-nde' | 'iiif';
 
+// Criteria that can only be assessed from the dataset’s analysis in the Dataset
+// Knowledge Graph, so they are shown only for an analyzed dataset. A criterion
+// that applies to any dataset is left out of this set; it is always shown and so
+// keeps the section visible even for a dataset that has not been analyzed.
+const ANALYSIS_DEPENDENT_CRITERIA: ReadonlySet<CompatibilityCriterionKey> =
+  new Set(['schema-ap-nde', 'iiif']);
+
 // 'met'    — the dataset provides working media (validated, or declared with no
 //            evidence of failure).
 // 'failed' — the dataset declares media, but every sampled manifest failed to
@@ -83,6 +90,9 @@ export interface CompatibilityCriterion {
 }
 
 export interface CompatibilityInput {
+  // Whether the dataset has been analyzed by the Dataset Knowledge Graph.
+  // Analysis-dependent criteria are dropped when this is false.
+  isAnalyzed: boolean;
   schemaApNde: SchemaApNdeConformance;
   iiif: IiifManifests;
 }
@@ -136,12 +146,15 @@ export function iiifState(manifests: IiifManifests): CompatibilityState {
 }
 
 // Builds the list of NDE criteria for a dataset. The schema-ap-nde row leads,
-// matching the usual order in NDE communication; the IIIF row follows.
+// matching the usual order in NDE communication; the IIIF row follows. Criteria
+// that depend on the dataset’s analysis are dropped when the dataset has not
+// been analyzed; the detail page shows the section whenever any criterion
+// remains.
 export function compatibilityCriteria(
   input: CompatibilityInput,
 ): CompatibilityCriterion[] {
   const schemaApNde = schemaApNdeState(input.schemaApNde);
-  return [
+  const criteria: CompatibilityCriterion[] = [
     {
       key: 'schema-ap-nde',
       state: schemaApNde.state,
@@ -154,4 +167,8 @@ export function compatibilityCriteria(
       count: input.iiif.declared,
     },
   ];
+  return criteria.filter(
+    (criterion) =>
+      input.isAnalyzed || !ANALYSIS_DEPENDENT_CRITERIA.has(criterion.key),
+  );
 }

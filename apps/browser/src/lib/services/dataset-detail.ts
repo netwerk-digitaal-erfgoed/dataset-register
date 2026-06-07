@@ -795,6 +795,14 @@ export async function fetchDatasetDetail(
   };
 }
 
+// Whether the dataset has been analyzed by the Dataset Knowledge Graph. The DKG
+// produces a VoID summary only once it has crawled the dataset, so its presence
+// signals that the dataset was analyzed. The NDE compatibility criteria are
+// assessed from that analysis, so they are only shown for an analyzed dataset.
+export function isAnalyzed(summary: DatasetSummary | null): boolean {
+  return summary !== null;
+}
+
 export function displayMissingProperties(ratingExplanation: string): string[] {
   return ratingExplanation
     .split(', ')
