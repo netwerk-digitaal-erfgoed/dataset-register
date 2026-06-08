@@ -2,17 +2,21 @@ import { describe, expect, it } from 'vitest';
 import {
   compatibilityCriteria,
   iiifState,
+  linkedDataState,
   registrationState,
   schemaApNdeState,
   termsState,
-  type SchemaApNdeConformance,
+  type LinkedData,
 } from './nde-compatibility';
 
-// A neutral conformance fixture for tests that focus on another criterion.
-const noSchemaApNde: SchemaApNdeConformance = {
-  quadsValidated: null,
+// A neutral linked-data fixture for tests that focus on another criterion: no
+// distribution declared and nothing analyzed yet.
+const noLinkedData: LinkedData = {
+  declared: false,
+  hasVoidDataset: false,
+  hasContent: false,
   conformant: null,
-  declaresProfile: false,
+  triples: null,
 };
 
 describe('iiifState', () => {
@@ -117,6 +121,93 @@ describe('schemaApNdeState', () => {
   });
 });
 
+describe('linkedDataState', () => {
+  it('is met when content conforms to the profile', () => {
+    expect(
+      linkedDataState({
+        declared: true,
+        hasVoidDataset: true,
+        hasContent: true,
+        conformant: true,
+        triples: 1000,
+      }),
+    ).toEqual({ state: 'met' });
+  });
+
+  it('is a warning when content does not (yet) conform', () => {
+    expect(
+      linkedDataState({
+        declared: true,
+        hasVoidDataset: true,
+        hasContent: true,
+        conformant: false,
+        triples: 1000,
+      }),
+    ).toEqual({ state: 'warning' });
+    // No conformance measurement yet still warns: there is content, just no
+    // confirmation it conforms.
+    expect(
+      linkedDataState({
+        declared: true,
+        hasVoidDataset: true,
+        hasContent: true,
+        conformant: null,
+        triples: 1000,
+      }),
+    ).toEqual({ state: 'warning' });
+  });
+
+  it('lets content win even when no distribution was detected in the register', () => {
+    // The detail page loads a bounded set of distributions, so `declared` can be
+    // a false negative; extracted content is authoritative.
+    expect(
+      linkedDataState({
+        declared: false,
+        hasVoidDataset: true,
+        hasContent: true,
+        conformant: true,
+        triples: 1000,
+      }),
+    ).toEqual({ state: 'met' });
+  });
+
+  it('is failed/no-linked-data when nothing is declared and there is no content', () => {
+    expect(
+      linkedDataState({
+        declared: false,
+        hasVoidDataset: false,
+        hasContent: false,
+        conformant: null,
+        triples: null,
+      }),
+    ).toEqual({ state: 'failed', reason: 'no-linked-data' });
+  });
+
+  it('is unmet (pending) when declared but not yet analyzed', () => {
+    expect(
+      linkedDataState({
+        declared: true,
+        hasVoidDataset: false,
+        hasContent: false,
+        conformant: null,
+        triples: null,
+      }),
+    ).toEqual({ state: 'unmet' });
+  });
+
+  it('is failed/empty when declared and analyzed but no content was extracted', () => {
+    expect(
+      linkedDataState({
+        declared: true,
+        hasVoidDataset: true,
+        hasContent: false,
+        conformant: null,
+        triples: null,
+      }),
+    ).toEqual({ state: 'failed', reason: 'empty' });
+  });
+});
+
 describe('registrationState', () => {
   it('is met when the dataset is registered and valid', () => {
     expect(registrationState(null)).toEqual({ state: 'met' });
@@ -164,7 +255,7 @@ describe('compatibilityCriteria', () => {
     const [, , iiif] = compatibilityCriteria({
       isAnalyzed: true,
       registration: null,
-      schemaApNde: noSchemaApNde,
+      linkedData: noLinkedData,
       terms: null,
       iiif: { declared: 4152, sampled: 10, validated: 0 },
     });
@@ -177,7 +268,7 @@ describe('compatibilityCriteria', () => {
     const [registration] = compatibilityCriteria({
       isAnalyzed: true,
       registration: 'gone',
-      schemaApNde: noSchemaApNde,
+      linkedData: noLinkedData,
       terms: null,
       iiif: { declared: 0, sampled: null, validated: null },
     });
@@ -186,21 +277,42 @@ describe('compatibilityCriteria', () => {
     expect(registration.reason).toBe('gone');
   });
 
-  it('carries the schema-ap-nde failure reason on the second criterion', () => {
-    const [, schemaApNde] = compatibilityCriteria({
+  it('exposes the linked-data state and fact count on the second criterion', () => {
+    const [, linkedData] = compatibilityCriteria({
       isAnalyzed: true,
       registration: null,
-      schemaApNde: {
-        quadsValidated: 0,
-        conformant: false,
-        declaresProfile: true,
+      linkedData: {
+        declared: true,
+        hasVoidDataset: true,
+        hasContent: true,
+        conformant: true,
+        triples: 1234,
       },
       terms: null,
       iiif: { declared: 0, sampled: null, validated: null },
     });
-    expect(schemaApNde.key).toBe('schema-ap-nde');
-    expect(schemaApNde.state).toBe('failed');
-    expect(schemaApNde.reason).toBe('declared-but-empty');
+    expect(linkedData.key).toBe('linked-data');
+    expect(linkedData.state).toBe('met');
+    expect(linkedData.count).toBe(1234);
+  });
+
+  it('carries the linked-data failure reason on the second criterion', () => {
+    const [, linkedData] = compatibilityCriteria({
+      isAnalyzed: true,
+      registration: null,
+      linkedData: {
+        declared: true,
+        hasVoidDataset: true,
+        hasContent: false,
+        conformant: null,
+        triples: null,
+      },
+      terms: null,
+      iiif: { declared: 0, sampled: null, validated: null },
+    });
+    expect(linkedData.key).toBe('linked-data');
+    expect(linkedData.state).toBe('failed');
+    expect(linkedData.reason).toBe('empty');
   });
 
   it('renders all three criteria regardless of state for an analyzed dataset', () => {
@@ -208,29 +320,29 @@ describe('compatibilityCriteria', () => {
       compatibilityCriteria({
         isAnalyzed: true,
         registration: null,
-        schemaApNde: noSchemaApNde,
+        linkedData: noLinkedData,
         terms: null,
         iiif: { declared: 0, sampled: null, validated: null },
       }),
     ).toHaveLength(3);
   });
 
-  it('places the terms criterion after schema-ap-nde and before iiif when present', () => {
+  it('places the terms criterion after linked-data and before iiif when present', () => {
     const keys = compatibilityCriteria({
       isAnalyzed: true,
       registration: null,
-      schemaApNde: noSchemaApNde,
+      linkedData: noLinkedData,
       terms: { links: 42, distinctObjectsUri: 1000 },
       iiif: { declared: 0, sampled: null, validated: null },
     }).map((criterion) => criterion.key);
-    expect(keys).toEqual(['registration', 'schema-ap-nde', 'terms', 'iiif']);
+    expect(keys).toEqual(['registration', 'linked-data', 'terms', 'iiif']);
   });
 
   it('exposes the links count and met state for the terms criterion', () => {
     const terms = compatibilityCriteria({
       isAnalyzed: true,
       registration: null,
-      schemaApNde: noSchemaApNde,
+      linkedData: noLinkedData,
       terms: { links: 42, distinctObjectsUri: 1000 },
       iiif: { declared: 0, sampled: null, validated: null },
     }).find((criterion) => criterion.key === 'terms');
@@ -242,7 +354,7 @@ describe('compatibilityCriteria', () => {
     const terms = compatibilityCriteria({
       isAnalyzed: true,
       registration: null,
-      schemaApNde: noSchemaApNde,
+      linkedData: noLinkedData,
       terms: { links: 0, distinctObjectsUri: 500 },
       iiif: { declared: 0, sampled: null, validated: null },
     }).find((criterion) => criterion.key === 'terms');
@@ -253,28 +365,31 @@ describe('compatibilityCriteria', () => {
     const keys = compatibilityCriteria({
       isAnalyzed: true,
       registration: null,
-      schemaApNde: noSchemaApNde,
+      linkedData: noLinkedData,
       terms: { links: 0, distinctObjectsUri: 0 },
       iiif: { declared: 0, sampled: null, validated: null },
     }).map((criterion) => criterion.key);
     expect(keys).not.toContain('terms');
   });
 
-  it('keeps the registration criterion when the dataset is not analyzed', () => {
-    // The analysis-dependent criteria are dropped, but registration applies to
-    // any dataset, so it remains and keeps the section visible.
+  it('keeps the foundational criteria when the dataset is not analyzed', () => {
+    // The analysis-dependent criteria (terms, IIIF) are dropped, but registration
+    // and linked data are foundational, so they remain and keep the section
+    // visible.
     expect(
       compatibilityCriteria({
         isAnalyzed: false,
         registration: null,
-        schemaApNde: {
-          quadsValidated: 200,
-          conformant: true,
-          declaresProfile: true,
+        linkedData: {
+          declared: true,
+          hasVoidDataset: false,
+          hasContent: false,
+          conformant: null,
+          triples: null,
         },
         terms: { links: 42, distinctObjectsUri: 1000 },
         iiif: { declared: 4152, sampled: 10, validated: 8 },
       }).map((criterion) => criterion.key),
-    ).toEqual(['registration']);
+    ).toEqual(['registration', 'linked-data']);
   });
 });

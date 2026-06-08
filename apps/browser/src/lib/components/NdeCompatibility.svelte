@@ -4,6 +4,7 @@
   import { Tooltip } from 'flowbite-svelte';
   import CheckOutline from 'flowbite-svelte-icons/CheckOutline.svelte';
   import CloseOutline from 'flowbite-svelte-icons/CloseOutline.svelte';
+  import ExclamationCircleOutline from 'flowbite-svelte-icons/ExclamationCircleOutline.svelte';
   import InfoCircleSolid from 'flowbite-svelte-icons/InfoCircleSolid.svelte';
   import {
     compatibilityCriteria,
@@ -11,8 +12,8 @@
     SCHEMA_AP_NDE_PROFILE,
     type CompatibilityCriterion,
     type IiifManifests,
+    type LinkedData,
     type RegistrationFailureReason,
-    type SchemaApNdeConformance,
     type TermLinks,
   } from '$lib/services/nde-compatibility';
 
@@ -21,20 +22,20 @@
     registrationStatus,
     terms,
     iiifManifests,
-    schemaApNde,
+    linkedData,
   }: {
     isAnalyzed: boolean;
     registrationStatus: RegistrationFailureReason | null;
     terms: TermLinks | null;
     iiifManifests: IiifManifests;
-    schemaApNde: SchemaApNdeConformance;
+    linkedData: LinkedData;
   } = $props();
 
   const criteria = $derived(
     compatibilityCriteria({
       isAnalyzed,
       registration: registrationStatus,
-      schemaApNde,
+      linkedData,
       terms,
       iiif: iiifManifests,
     }),
@@ -54,14 +55,18 @@
           default:
             return m.nde_compat_registration_heading_registered();
         }
-      case 'schema-ap-nde':
+      case 'linked-data':
         switch (criterion.state) {
           case 'met':
-            return m.nde_compat_schema_ap_nde_heading_conforms();
-          case 'failed':
-            return m.nde_compat_schema_ap_nde_heading_not_conforms();
+            return m.nde_compat_linked_data_heading_conforms();
+          case 'warning':
+            return m.nde_compat_linked_data_heading_not_conforms();
           case 'unmet':
-            return m.nde_compat_schema_ap_nde_heading_not_applicable();
+            return m.nde_compat_linked_data_heading_pending();
+          case 'failed':
+            return criterion.reason === 'empty'
+              ? m.nde_compat_linked_data_heading_empty()
+              : m.nde_compat_linked_data_heading_none();
         }
       // The terms criterion is binary: met (green) or failed (red).
       // eslint-disable-next-line no-fallthrough
@@ -75,7 +80,8 @@
             return m.nde_compat_iiif_heading_provided();
           case 'failed':
             return m.nde_compat_iiif_heading_unavailable();
-          case 'unmet':
+          // IIIF has no warning tier; unmet means no media.
+          default:
             return m.nde_compat_iiif_heading_not_provided();
         }
     }
@@ -92,16 +98,18 @@
           default:
             return m.nde_compat_registration_explanation_registered();
         }
-      case 'schema-ap-nde':
+      case 'linked-data':
         switch (criterion.state) {
           case 'met':
-            return m.nde_compat_schema_ap_nde_explanation_conforms();
-          case 'failed':
-            return criterion.reason === 'declared-but-empty'
-              ? m.nde_compat_schema_ap_nde_explanation_declared_but_empty()
-              : m.nde_compat_schema_ap_nde_explanation_violations();
+            return m.nde_compat_linked_data_explanation_conforms();
+          case 'warning':
+            return m.nde_compat_linked_data_explanation_not_conforms();
           case 'unmet':
-            return m.nde_compat_schema_ap_nde_explanation_not_applicable();
+            return m.nde_compat_linked_data_explanation_pending();
+          case 'failed':
+            return criterion.reason === 'empty'
+              ? m.nde_compat_linked_data_explanation_empty()
+              : m.nde_compat_linked_data_explanation_none();
         }
       // A single explanation regardless of state, following the IIIF pattern.
       // eslint-disable-next-line no-fallthrough
@@ -124,9 +132,13 @@
       case 'registration':
         // The registration criterion carries no count.
         return null;
-      case 'schema-ap-nde':
-        // No raw counts for the profile criterion in this version.
-        return null;
+      case 'linked-data':
+        // The fact count (void:triples) is shown only when the dataset actually
+        // has linked data with a known triple count.
+        return (criterion.state === 'met' || criterion.state === 'warning') &&
+          count > 0
+          ? m.nde_compat_linked_data_count({ count, display })
+          : null;
       case 'terms':
         // The count line reports how many links to terms were found; it is
         // shown only when met and links down to the Terminology Sources section
@@ -140,7 +152,8 @@
             return m.nde_compat_iiif_count({ count, display });
           case 'failed':
             return m.nde_compat_iiif_count_failed({ count, display });
-          case 'unmet':
+          // IIIF has no warning tier; unmet carries no count.
+          default:
             return null;
         }
     }
@@ -150,7 +163,7 @@
     switch (criterion.key) {
       case 'registration':
         return NDE_VINKJES_URL;
-      case 'schema-ap-nde':
+      case 'linked-data':
         return SCHEMA_AP_NDE_PROFILE;
       case 'terms':
         return NDE_VINKJES_URL;
@@ -202,22 +215,26 @@
           {@const detailText = detail(criterion)}
           {@const sectionHref = sectionAnchor(criterion)}
           <li class="flex items-start gap-3 px-4 py-3">
-            <!-- Status box. Green tick = met, red cross = declared but broken,
-               neutral empty = not provided (a legitimate, non-failure state).
-               The heading carries the status for assistive technology, so the
-               box is decorative. -->
+            <!-- Status box. Green tick = met, orange exclamation = warning, red
+               cross = error, neutral empty = pending or not applicable. The
+               heading carries the status for assistive technology, so the box is
+               decorative. -->
             <span
               class={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border ${
                 criterion.state === 'met'
                   ? 'border-green-600 bg-green-600 text-white dark:border-green-500 dark:bg-green-500'
-                  : criterion.state === 'failed'
-                    ? 'border-red-600 bg-red-600 text-white dark:border-red-500 dark:bg-red-500'
-                    : 'border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700'
+                  : criterion.state === 'warning'
+                    ? 'border-orange-500 bg-orange-500 text-white dark:border-orange-400 dark:bg-orange-400'
+                    : criterion.state === 'failed'
+                      ? 'border-red-600 bg-red-600 text-white dark:border-red-500 dark:bg-red-500'
+                      : 'border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700'
               }`}
               aria-hidden="true"
             >
               {#if criterion.state === 'met'}
                 <CheckOutline class="h-3.5 w-3.5" />
+              {:else if criterion.state === 'warning'}
+                <ExclamationCircleOutline class="h-3.5 w-3.5" />
               {:else if criterion.state === 'failed'}
                 <CloseOutline class="h-3.5 w-3.5" />
               {/if}

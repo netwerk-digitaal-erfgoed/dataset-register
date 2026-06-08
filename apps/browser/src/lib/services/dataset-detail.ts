@@ -15,11 +15,12 @@ import { shortenUri } from '$lib/utils/prefix';
 import { isUri, lookupTermLabels } from './network-of-terms.js';
 import {
   IIIF_PRESENTATION_API,
-  SCHEMA_AP_NDE_PROFILE,
   type IiifManifests,
-  type SchemaApNdeConformance,
+  type LinkedData,
   type TermLinks,
 } from './nde-compatibility.js';
+import { offersLinkedData } from '$lib/utils/distribution';
+import { normalizeMediaType } from '$lib/utils/sparql';
 import { getLocale } from '$lib/paraglide/runtime';
 import { REGISTRATION_STATUS_BASE_URI } from '@dataset-register/core/constants';
 import {
@@ -384,7 +385,7 @@ export interface DatasetDetailResult {
   linksets: Linkset[];
   temporalCoverages: TemporalCoverage[];
   iiifManifests: IiifManifests;
-  schemaApNde: SchemaApNdeConformance;
+  linkedData: LinkedData;
   terms: TermLinks | null;
   resolvedTerms: Promise<Record<string, string>>;
 }
@@ -455,84 +456,42 @@ async function fetchIiifManifests(datasetUri: string): Promise<IiifManifests> {
   return none;
 }
 
-// Reads the SCHEMA-AP-NDE sample conformance for a dataset: the co-emitted
-// quads-validated count and conformance boolean from the Knowledge Graph, plus
-// whether any distribution declares the profile in the register.
-// quadsValidated/conformant are null when no measurement exists yet.
-async function fetchSchemaApNdeConformance(
+// Reads the SCHEMA-AP-NDE sample conformance boolean for a dataset from the
+// Knowledge Graph. This co-emitted measurement decides whether a dataset that
+// provides linked data conforms to the profile (🟢) or only warns (🟠). Returns
+// null when no conformance measurement exists yet.
+async function fetchSchemaApNdeConformant(
   datasetUri: string,
-): Promise<SchemaApNdeConformance> {
-  const measurementQuery = `
+): Promise<boolean | null> {
+  const query = `
     PREFIX dqv: <http://www.w3.org/ns/dqv#>
     PREFIX nde: <https://def.nde.nl/metric#>
-    SELECT ?quadsValidated ?conformant WHERE {
+    SELECT ?conformant WHERE {
       <${datasetUri}> dqv:hasQualityMeasurement
-        [ dqv:isMeasurementOf nde:quads-validated ; dqv:value ?quadsValidated ] ,
         [ dqv:isMeasurementOf nde:schema-ap-nde-sample-conformance ; dqv:value ?conformant ] .
     }
     LIMIT 1
   `;
-  // The register’s internal model is DCAT: the publisher-facing schema:usageInfo
-  // is normalised to dct:conformsTo on the distribution at ingest, so the claim
-  // is read from dct:conformsTo here. A distribution may carry several values
-  // (e.g. the SPARQL protocol URI alongside the profile), so match the profile
-  // URI specifically.
-  const declarationQuery = `
-    PREFIX dcat: <http://www.w3.org/ns/dcat#>
-    PREFIX dct: <http://purl.org/dc/terms/>
-    ASK {
-      GRAPH ?g {
-        <${datasetUri}> dcat:distribution/dct:conformsTo <${SCHEMA_AP_NDE_PROFILE}> .
-      }
+  try {
+    const bindingsStream = await fetcher.fetchBindings(
+      PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+      query,
+    );
+    for await (const raw of bindingsStream) {
+      const binding = raw as unknown as {
+        conformant?: { value: string };
+      };
+      return binding.conformant?.value
+        ? binding.conformant.value === 'true'
+        : null;
     }
-  `;
-
-  const measurement = (async () => {
-    try {
-      const bindingsStream = await fetcher.fetchBindings(
-        PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
-        measurementQuery,
-      );
-      for await (const raw of bindingsStream) {
-        const binding = raw as unknown as {
-          quadsValidated?: { value: string };
-          conformant?: { value: string };
-        };
-        return {
-          quadsValidated: binding.quadsValidated?.value
-            ? parseInt(binding.quadsValidated.value, 10)
-            : null,
-          conformant: binding.conformant?.value
-            ? binding.conformant.value === 'true'
-            : null,
-        };
-      }
-    } catch (e: unknown) {
-      console.error(
-        'SCHEMA-AP-NDE conformance query failed:',
-        e instanceof Error ? e.message : e,
-      );
-    }
-    return { quadsValidated: null, conformant: null };
-  })();
-
-  const declaresProfile = (async () => {
-    try {
-      return await fetcher.fetchAsk(PUBLIC_SPARQL_ENDPOINT, declarationQuery);
-    } catch (e: unknown) {
-      console.error(
-        'SCHEMA-AP-NDE conformsTo query failed:',
-        e instanceof Error ? e.message : e,
-      );
-      return false;
-    }
-  })();
-
-  const [{ quadsValidated, conformant }, declares] = await Promise.all([
-    measurement,
-    declaresProfile,
-  ]);
-  return { quadsValidated, conformant, declaresProfile: declares };
+  } catch (e: unknown) {
+    console.error(
+      'SCHEMA-AP-NDE conformance query failed:',
+      e instanceof Error ? e.message : e,
+    );
+  }
+  return null;
 }
 
 async function fetchDistributionCount(query: string): Promise<number> {
@@ -690,7 +649,7 @@ export async function fetchDatasetDetail(
         dcat:accessURL ?accessURL ;
         foaf:page ?landingPage ;
         dct:description ?description ;
-        dcat:mediaType ?rawMediaType ;
+        dcat:mediaType ?mediaType ;
         dct:format ?format ;
         dct:issued ?issued ;
         dct:modified ?modified ;
@@ -704,7 +663,10 @@ export async function fetchDatasetDetail(
         ?distribution dcat:accessURL ?accessURL .
         OPTIONAL { ?distribution foaf:page ?landingPage }
         OPTIONAL { ?distribution dct:description ?description }
-        OPTIONAL { ?distribution dcat:mediaType ?rawMediaType }
+        OPTIONAL {
+          ?distribution dcat:mediaType ?rawMediaType .
+          ${normalizeMediaType('?rawMediaType', '?mediaType')}
+        }
         OPTIONAL { ?distribution dct:format ?format }
         OPTIONAL { ?distribution dct:issued ?issued }
         OPTIONAL { ?distribution dct:modified ?modified }
@@ -734,7 +696,7 @@ export async function fetchDatasetDetail(
     classPartitionResult,
     temporalCoverages,
     iiifManifests,
-    schemaApNde,
+    schemaApNdeConformant,
   ] = await Promise.all([
     detailLens.query(datasetQuery),
     distributionLens.query(distributionQuery),
@@ -762,7 +724,7 @@ export async function fetchDatasetDetail(
     classPartitionLens.findByIri(datasetUri),
     fetchTemporalCoverage(datasetUri),
     fetchIiifManifests(datasetUri),
-    fetchSchemaApNdeConformance(datasetUri),
+    fetchSchemaApNdeConformant(datasetUri),
   ]);
 
   const dataset = datasets.find((d) => d.$id === datasetUri) ?? datasets[0];
@@ -777,6 +739,18 @@ export async function fetchDatasetDetail(
         classPartition: classPartitionResult?.classPartition ?? null,
       }
     : null;
+
+  // The Linked data criterion: whether a linked-data distribution is declared in
+  // the register (reusing the same RDF notion as the search facet, over the
+  // distributions already loaded), whether the Knowledge Graph produced a
+  // void:Dataset with content, and whether that content conforms to SCHEMA-AP-NDE.
+  const linkedData: LinkedData = {
+    declared: offersLinkedData(distributions),
+    hasVoidDataset: summaryWithClassPartition !== null,
+    hasContent: hasLinkedDataContent(summaryWithClassPartition),
+    conformant: schemaApNdeConformant,
+    triples: summaryWithClassPartition?.triples ?? null,
+  };
 
   // Term-usage figures for the NDE compatibility criterion, reusing the data
   // already fetched: `links` is the client-side sum of the linksets’
@@ -822,7 +796,7 @@ export async function fetchDatasetDetail(
     linksets: linksets ?? [],
     temporalCoverages,
     iiifManifests,
-    schemaApNde,
+    linkedData,
     terms,
     resolvedTerms,
   };
@@ -834,6 +808,19 @@ export async function fetchDatasetDetail(
 // assessed from that analysis, so they are only shown for an analyzed dataset.
 export function isAnalyzed(summary: DatasetSummary | null): boolean {
   return summary !== null;
+}
+
+// Whether the Knowledge Graph extracted any linked-data content for the dataset.
+// A composite test rather than void:triples alone: large datasets can have a
+// full class partition (or distinct subjects) yet a missing triples aggregate,
+// so any of the three signals counts as content.
+export function hasLinkedDataContent(summary: DatasetSummary | null): boolean {
+  return (
+    summary !== null &&
+    ((summary.triples ?? 0) > 0 ||
+      (summary.classPartition?.length ?? 0) > 0 ||
+      (summary.distinctSubjects ?? 0) > 0)
+  );
 }
 
 export function displayMissingProperties(ratingExplanation: string): string[] {

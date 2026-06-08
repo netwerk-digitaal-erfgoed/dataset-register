@@ -37,27 +37,30 @@ export const QUADS_VALIDATED_METRIC =
   'https://def.nde.nl/metric#quads-validated';
 
 // The registration criterion leads — every registered dataset has it, so it
-// anchors the section regardless of analysis. The schema-ap-nde and terms
-// criteria follow, then iiif, matching the order in NDE communication.
+// anchors the section regardless of analysis. The linked-data and terms criteria
+// follow, then iiif, matching the order in NDE communication.
 export type CompatibilityCriterionKey =
   | 'registration'
-  | 'schema-ap-nde'
+  | 'linked-data'
   | 'terms'
   | 'iiif';
 
 // Criteria that can only be assessed from the dataset’s analysis in the Dataset
-// Knowledge Graph, so they are shown only for an analyzed dataset. Registration
-// is left out: it applies to any dataset, is always shown, and so keeps the
-// section visible even for a dataset that has not been analyzed.
+// Knowledge Graph, so they are shown only for an analyzed dataset. The
+// foundational criteria (registration, linked data) are left out: they apply to
+// any dataset, are always shown, and so keep the section visible even for a
+// dataset that has not been analyzed.
 const ANALYSIS_DEPENDENT_CRITERIA: ReadonlySet<CompatibilityCriterionKey> =
-  new Set(['schema-ap-nde', 'terms', 'iiif']);
+  new Set(['terms', 'iiif']);
 
-// 'met'    — the dataset provides working media (validated, or declared with no
-//            evidence of failure).
-// 'failed' — the dataset declares media, but every sampled manifest failed to
-//            load (declared but broken).
-// 'unmet'  — the dataset declares no media. A legitimate, neutral state.
-export type CompatibilityState = 'met' | 'failed' | 'unmet';
+// The four assessment tiers a criterion can take. Not every criterion uses all
+// of them (IIIF, for instance, has no 'warning'):
+// 'met'     — 🟢 good.
+// 'warning' — 🟠 present but not (yet) up to the recommended standard.
+// 'failed'  — 🔴 error.
+// 'unmet'   — ⚪ neutral. Either pending (will still be assessed) or, for IIIF,
+//             not applicable.
+export type CompatibilityState = 'met' | 'warning' | 'failed' | 'unmet';
 
 // Why a registration criterion is in the `failed` state, mirroring the dataset’s
 // status in the register:
@@ -65,17 +68,29 @@ export type CompatibilityState = 'met' | 'failed' | 'unmet';
 // 'invalid' — the description no longer conforms to the requirements.
 export type RegistrationFailureReason = 'gone' | 'invalid';
 
-// Why a criterion is in the `failed` state. The schema-ap-nde reasons:
+// Why the linked-data criterion is in the `failed` state:
+// 'no-linked-data' — the register lists no linked-data distribution, so there is
+//                    nothing to assess (“biedt geen linked data”).
+// 'empty'          — a distribution is declared and the dataset was analyzed,
+//                    but the Knowledge Graph extracted no content (“kon geen
+//                    linked data ophalen”).
+export type LinkedDataFailureReason = 'no-linked-data' | 'empty';
+
+// Why the SCHEMA-AP-NDE conformance check (still surfaced on the dataset card)
+// is in the `failed` state:
 // 'violations'         — the sample exercised the profile’s classes but at least
 //                        one sampled resource violated a constraint.
 // 'declared-but-empty' — the dataset declares conformance (a distribution’s
 //                        `dct:conformsTo` points at the profile), yet the
 //                        sample validated zero quads: none of its resources use
 //                        the profile’s classes.
-// The registration reasons ('gone', 'invalid') carry the dataset’s status.
+export type SchemaApNdeFailureReason = 'violations' | 'declared-but-empty';
+
+// Why a criterion is in the `failed` state. The registration reasons ('gone',
+// 'invalid') carry the dataset’s status; the linked-data reasons say why no
+// linked data could be assessed.
 export type CompatibilityFailureReason =
-  | 'violations'
-  | 'declared-but-empty'
+  | LinkedDataFailureReason
   | RegistrationFailureReason;
 
 // IIIF manifest figures from the Knowledge Graph: how many manifests the dataset
@@ -96,6 +111,26 @@ export interface SchemaApNdeConformance {
   quadsValidated: number | null;
   conformant: boolean | null;
   declaresProfile: boolean;
+}
+
+// The signals behind the Linked data criterion:
+// 'declared'       — the register lists a linked-data distribution (a SPARQL
+//                    endpoint or RDF download).
+// 'hasVoidDataset' — the Knowledge Graph produced a void:Dataset (the dataset
+//                    was analyzed).
+// 'hasContent'     — that void:Dataset carries extracted content (triples, a
+//                    class partition, or distinct subjects). A composite test:
+//                    large datasets can have a full class partition yet a missing
+//                    void:triples aggregate.
+// 'conformant'     — whether a sampled set of resources conforms to
+//                    SCHEMA-AP-NDE; null when no conformance measurement exists.
+// 'triples'        — void:triples, for the “n feiten” count; null when absent.
+export interface LinkedData {
+  declared: boolean;
+  hasVoidDataset: boolean;
+  hasContent: boolean;
+  conformant: boolean | null;
+  triples: number | null;
 }
 
 // Term-usage figures for a dataset. `links` is the total number of link
@@ -125,7 +160,7 @@ export interface CompatibilityInput {
   // The dataset’s registration status: null when registered and valid, or the
   // failure reason when the registration is gone or invalid.
   registration: RegistrationFailureReason | null;
-  schemaApNde: SchemaApNdeConformance;
+  linkedData: LinkedData;
   terms: TermLinks | null;
   iiif: IiifManifests;
 }
@@ -160,7 +195,7 @@ export function schemaApNdeState(
   conformance: Partial<SchemaApNdeConformance> | undefined | null,
 ): {
   state: CompatibilityState;
-  reason?: CompatibilityFailureReason;
+  reason?: SchemaApNdeFailureReason;
 } {
   const quadsValidated = conformance?.quadsValidated ?? null;
   const conformant = conformance?.conformant ?? null;
@@ -176,6 +211,30 @@ export function schemaApNdeState(
   return declaresProfile
     ? { state: 'failed', reason: 'declared-but-empty' }
     : { state: 'unmet' };
+}
+
+// Derives the Linked data state. Content is the strongest signal: a dataset the
+// Knowledge Graph extracted content from provides linked data whatever the
+// register lists, so conformance to SCHEMA-AP-NDE then splits good (🟢, `met`)
+// from a warning (🟠, content that does not — or does not yet — conform). With no
+// content the criterion is judged from what is declared: nothing declared is a
+// plain `failed`/'no-linked-data'; a declared distribution awaiting analysis is
+// neutral pending (⚪, `unmet`); a declared distribution that was analyzed but
+// yielded no content is `failed`/'empty'.
+export function linkedDataState(linkedData: LinkedData): {
+  state: CompatibilityState;
+  reason?: LinkedDataFailureReason;
+} {
+  if (linkedData.hasContent) {
+    return linkedData.conformant ? { state: 'met' } : { state: 'warning' };
+  }
+  if (!linkedData.declared) {
+    return { state: 'failed', reason: 'no-linked-data' };
+  }
+  if (!linkedData.hasVoidDataset) {
+    return { state: 'unmet' };
+  }
+  return { state: 'failed', reason: 'empty' };
 }
 
 export function iiifState(manifests: IiifManifests): CompatibilityState {
@@ -218,16 +277,17 @@ export function termsState(terms: TermLinks | null): CompatibilityState | null {
 }
 
 // Builds the list of NDE criteria for a dataset. The registration row leads — it
-// applies to any dataset, so it anchors the section; schema-ap-nde and terms
-// follow, then IIIF, matching the order in NDE communication. The terms row is
-// omitted when it cannot be assessed. Criteria that depend on the dataset’s
-// analysis are dropped when the dataset has not been analyzed; the detail page
-// shows the section whenever any criterion remains.
+// applies to any dataset, so it anchors the section; the linked-data row follows,
+// then terms, then IIIF, matching the order in NDE communication. Registration
+// and linked data are foundational and always shown; the terms row is omitted
+// when it cannot be assessed, and the analysis-dependent rows (terms, IIIF) are
+// dropped when the dataset has not been analyzed. The detail page shows the
+// section whenever any criterion remains.
 export function compatibilityCriteria(
   input: CompatibilityInput,
 ): CompatibilityCriterion[] {
   const registration = registrationState(input.registration);
-  const schemaApNde = schemaApNdeState(input.schemaApNde);
+  const linkedData = linkedDataState(input.linkedData);
   const terms = termsState(input.terms);
   const criteria: CompatibilityCriterion[] = [
     {
@@ -237,10 +297,10 @@ export function compatibilityCriteria(
       reason: registration.reason,
     },
     {
-      key: 'schema-ap-nde',
-      state: schemaApNde.state,
-      count: 0,
-      reason: schemaApNde.reason,
+      key: 'linked-data',
+      state: linkedData.state,
+      count: input.linkedData.triples ?? 0,
+      reason: linkedData.reason,
     },
     ...(terms !== null
       ? [
