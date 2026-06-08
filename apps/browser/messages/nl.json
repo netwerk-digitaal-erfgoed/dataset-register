@@ -255,6 +255,7 @@
   "nde_compat_registration_explanation_registered": "De beschrijving van deze dataset is geregistreerd in het Datasetregister, zodat de dataset vindbaar en herbruikbaar is.",
   "nde_compat_registration_explanation_gone": "De registratie-URL is niet meer toegankelijk, dus de beschrijving kan niet meer worden opgehaald.",
   "nde_compat_registration_explanation_invalid": "De beschrijving voldoet niet meer aan de eisen voor datasets.",
+  "nde_compat_registration_view_details": "Bekijk registratiegegevens",
   "nde_compat_schema_ap_nde_heading_conforms": "Voldoet aan het NDE Schema.org-applicatieprofiel",
   "nde_compat_schema_ap_nde_heading_not_conforms": "Voldoet niet aan het NDE Schema.org-applicatieprofiel",
   "nde_compat_schema_ap_nde_heading_not_applicable": "Het NDE Schema.org-applicatieprofiel is niet van toepassing",

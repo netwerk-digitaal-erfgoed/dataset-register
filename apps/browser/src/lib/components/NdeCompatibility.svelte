@@ -137,6 +137,13 @@
         return NDE_VINKJES_URL;
     }
   }
+
+  // The registration criterion links to the Registration section further down
+  // the same page, where the registration URL, status and date are listed. Other
+  // criteria have no such in-page counterpart.
+  function detailsAnchor(criterion: CompatibilityCriterion): string | null {
+    return criterion.key === 'registration' ? '#registration' : null;
+  }
 </script>
 
 <!-- Analysis-dependent criteria are dropped for a dataset that has not been
@@ -198,6 +205,14 @@
                   {m.nde_compat_learn_more()}
                   <span class="sr-only"> ({m.opens_in_new_tab()})</span>
                 </a>
+                {#if detailsAnchor(criterion)}
+                  <a
+                    href={detailsAnchor(criterion)}
+                    class="text-blue-600 hover:underline dark:text-blue-400"
+                  >
+                    {m.nde_compat_registration_view_details()}
+                  </a>
+                {/if}
               </p>
               {#if detail(criterion)}
                 <p

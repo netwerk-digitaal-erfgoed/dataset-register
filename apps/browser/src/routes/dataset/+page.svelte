@@ -1542,7 +1542,10 @@
 
   <!-- Registration Section -->
   <div class="mb-8">
-    <h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
+    <h2
+      id="registration"
+      class="mb-4 scroll-mt-4 text-xl font-semibold text-gray-900 dark:text-white"
+    >
       {m.detail_registration()}
     </h2>
     <div
