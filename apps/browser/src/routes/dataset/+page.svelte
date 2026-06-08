@@ -57,6 +57,7 @@
   const temporalCoverages = $derived(data.temporalCoverages);
   const iiifManifests = $derived(data.iiifManifests);
   const linkedData = $derived(data.linkedData);
+  const terms = $derived(data.terms);
 
   // SEO: canonical and hreflang URLs
   const datasetPath = $derived(datasetDetailHref(dataset.$id));
@@ -1261,6 +1262,7 @@
   <NdeCompatibility
     isAnalyzed={isAnalyzed(summary)}
     {registrationStatus}
+    {terms}
     {iiifManifests}
     {linkedData}
   />
@@ -1484,7 +1486,7 @@
 
       <!-- Terminology Sources Section -->
       {#if linksets.length > 0}
-        <div class="mt-6">
+        <div id="terminology-sources" class="mt-6">
           <h3
             class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
           >

@@ -17,6 +17,7 @@ import {
   IIIF_PRESENTATION_API,
   type IiifManifests,
   type LinkedData,
+  type TermLinks,
 } from './nde-compatibility.js';
 import { offersLinkedData } from '$lib/utils/distribution';
 import { normalizeMediaType } from '$lib/utils/sparql';
@@ -385,6 +386,7 @@ export interface DatasetDetailResult {
   temporalCoverages: TemporalCoverage[];
   iiifManifests: IiifManifests;
   linkedData: LinkedData;
+  terms: TermLinks | null;
   resolvedTerms: Promise<Record<string, string>>;
 }
 
@@ -706,7 +708,19 @@ export async function fetchDatasetDetail(
       );
       return null;
     }),
-    linksLens.find({ where: { subjectsTarget: datasetUri } }),
+    // The terms criterion depends on the linksets, so a Knowledge Graph failure
+    // here must not fail the whole page. Catch it and treat the result as
+    // unavailable (null), distinct from an empty result: the terms criterion is
+    // then left indeterminate rather than read as “no links to terms”.
+    linksLens
+      .find({ where: { subjectsTarget: datasetUri } })
+      .catch((e: unknown) => {
+        console.error(
+          'Linkset query failed:',
+          e instanceof Error ? e.message : e,
+        );
+        return null;
+      }),
     classPartitionLens.findByIri(datasetUri),
     fetchTemporalCoverage(datasetUri),
     fetchIiifManifests(datasetUri),
@@ -738,6 +752,24 @@ export async function fetchDatasetDetail(
     triples: summaryWithClassPartition?.triples ?? null,
   };
 
+  // Term-usage figures for the NDE compatibility criterion, reusing the data
+  // already fetched: `links` is the client-side sum of the linksets’
+  // void:triples, `distinctObjectsUri` the top-level VoID’s distinct-URI-objects
+  // count. The criterion is left indeterminate (null) — and so omitted, never
+  // rendered red — when there is no top-level VoID or the linksets could not be
+  // retrieved.
+  const terms: TermLinks | null =
+    summaryWithClassPartition === null || linksets === null
+      ? null
+      : {
+          links: linksets.reduce(
+            (total, linkset) => total + linkset.triples,
+            0,
+          ),
+          distinctObjectsUri:
+            summaryWithClassPartition.distinctObjectsURI ?? null,
+        };
+
   // Resolve term URIs (e.g. spatial/temporal) to human-readable labels
   // via the Network of Terms API. Returned as an unawaited promise so
   // SvelteKit can stream the result without blocking the page response.
@@ -761,10 +793,11 @@ export async function fetchDatasetDetail(
     distributions,
     totalDistributions,
     summary: summaryWithClassPartition,
-    linksets,
+    linksets: linksets ?? [],
     temporalCoverages,
     iiifManifests,
     linkedData,
+    terms,
     resolvedTerms,
   };
 }

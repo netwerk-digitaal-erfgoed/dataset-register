@@ -312,6 +312,23 @@
       }
     }
   ],
+  "nde_compat_terms_heading_uses": "Gebruikt termen uit het Termennetwerk",
+  "nde_compat_terms_heading_not_uses": "Gebruikt geen termen uit het Termennetwerk",
+  "nde_compat_terms_explanation": "Objecten in deze dataset linken naar gedeelde termen uit terminologiebronnen in het Termennetwerk, waardoor de data interoperabel en beter vindbaar wordt.",
+  "nde_compat_terms_count": [
+    {
+      "declarations": [
+        "input count",
+        "input display",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "bevat {display} link naar termen",
+        "countPlural=other": "bevat {display} links naar termen"
+      }
+    }
+  ],
   "nde_compat_learn_more": "Meer informatie",
   "validate_page_title": "Controleer een datasetbeschrijving",
   "validate_page_intro_before": "Heb je je datasetbeschrijving gemaakt en gepubliceerd? En wil je weten of deze voldoet aan de ",

@@ -312,6 +312,23 @@
       }
     }
   ],
+  "nde_compat_terms_heading_uses": "Uses terms from the Network of Terms",
+  "nde_compat_terms_heading_not_uses": "Does not use terms from the Network of Terms",
+  "nde_compat_terms_explanation": "Objects in this dataset link to shared terms from terminology sources in the Network of Terms, which makes the data interoperable and easier to find.",
+  "nde_compat_terms_count": [
+    {
+      "declarations": [
+        "input count",
+        "input display",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "contains {display} link to terms",
+        "countPlural=other": "contains {display} links to terms"
+      }
+    }
+  ],
   "nde_compat_learn_more": "Learn more",
   "validate_page_title": "Validate a dataset description",
   "validate_page_intro_before": "Have you created and published your dataset description? And do you want to know if it meets the ",

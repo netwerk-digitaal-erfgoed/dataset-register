@@ -37,9 +37,13 @@ export const QUADS_VALIDATED_METRIC =
   'https://def.nde.nl/metric#quads-validated';
 
 // The registration criterion leads — every registered dataset has it, so it
-// anchors the section regardless of analysis. The linked-data criterion is
-// ordered before iiif, matching the usual order in NDE communication.
-export type CompatibilityCriterionKey = 'registration' | 'linked-data' | 'iiif';
+// anchors the section regardless of analysis. The linked-data and terms criteria
+// follow, then iiif, matching the order in NDE communication.
+export type CompatibilityCriterionKey =
+  | 'registration'
+  | 'linked-data'
+  | 'terms'
+  | 'iiif';
 
 // Criteria that can only be assessed from the dataset’s analysis in the Dataset
 // Knowledge Graph, so they are shown only for an analyzed dataset. The
@@ -47,7 +51,7 @@ export type CompatibilityCriterionKey = 'registration' | 'linked-data' | 'iiif';
 // any dataset, are always shown, and so keep the section visible even for a
 // dataset that has not been analyzed.
 const ANALYSIS_DEPENDENT_CRITERIA: ReadonlySet<CompatibilityCriterionKey> =
-  new Set(['iiif']);
+  new Set(['terms', 'iiif']);
 
 // The four assessment tiers a criterion can take. Not every criterion uses all
 // of them (IIIF, for instance, has no 'warning'):
@@ -129,6 +133,19 @@ export interface LinkedData {
   triples: number | null;
 }
 
+// Term-usage figures for a dataset. `links` is the total number of link
+// statements from the dataset’s contents to terms (the sum of `void:triples`
+// across the dataset’s linksets). `distinctObjectsUri` is the dataset’s count of
+// distinct URI-valued objects, taken from the top-level VoID — how many outgoing
+// URI links there are to match against. The whole object is null when the
+// criterion cannot be assessed: there is no top-level VoID (the dataset is not
+// `isAnalyzed`: non-RDF or not yet analyzed by the Dataset Knowledge Graph), or
+// the linkset data could not be retrieved.
+export interface TermLinks {
+  links: number;
+  distinctObjectsUri: number | null;
+}
+
 export interface CompatibilityCriterion {
   key: CompatibilityCriterionKey;
   state: CompatibilityState;
@@ -144,6 +161,7 @@ export interface CompatibilityInput {
   // failure reason when the registration is gone or invalid.
   registration: RegistrationFailureReason | null;
   linkedData: LinkedData;
+  terms: TermLinks | null;
   iiif: IiifManifests;
 }
 
@@ -234,17 +252,43 @@ export function iiifState(manifests: IiifManifests): CompatibilityState {
   return 'met';
 }
 
+// Derives the term-usage state, or `null` when the criterion cannot be assessed
+// and so must be omitted (it has no neutral grey state). The Dataset Knowledge
+// Graph emits no positive “terms analysis ran” measurement, so assessability is
+// inferred from the signals it does emit: a top-level VoID with a count of
+// outgoing URI links to match against. Unlike the other criteria, not using
+// terms is treated as a gap (red), not a neutral choice — hence the binary
+// green/red with no `unmet`.
+export function termsState(terms: TermLinks | null): CompatibilityState | null {
+  if (terms === null) {
+    // No top-level VoID (non-RDF, not yet analyzed, or linksets unavailable):
+    // cannot assess, so omit.
+    return null;
+  }
+  if (terms.links > 0) {
+    return 'met';
+  }
+  if ((terms.distinctObjectsUri ?? 0) > 0) {
+    // Analyzed and links out to URIs, but none of them to terms: a genuine gap.
+    return 'failed';
+  }
+  // No outgoing URI links to match against, so there is nothing to assess.
+  return null;
+}
+
 // Builds the list of NDE criteria for a dataset. The registration row leads — it
 // applies to any dataset, so it anchors the section; the linked-data row follows,
-// matching the usual order in NDE communication, then IIIF. Both registration
-// and linked data are foundational and always shown; the analysis-dependent IIIF
-// row is dropped when the dataset has not been analyzed. The detail page shows
-// the section whenever any criterion remains.
+// then terms, then IIIF, matching the order in NDE communication. Registration
+// and linked data are foundational and always shown; the terms row is omitted
+// when it cannot be assessed, and the analysis-dependent rows (terms, IIIF) are
+// dropped when the dataset has not been analyzed. The detail page shows the
+// section whenever any criterion remains.
 export function compatibilityCriteria(
   input: CompatibilityInput,
 ): CompatibilityCriterion[] {
   const registration = registrationState(input.registration);
   const linkedData = linkedDataState(input.linkedData);
+  const terms = termsState(input.terms);
   const criteria: CompatibilityCriterion[] = [
     {
       key: 'registration',
@@ -258,6 +302,15 @@ export function compatibilityCriteria(
       count: input.linkedData.triples ?? 0,
       reason: linkedData.reason,
     },
+    ...(terms !== null
+      ? [
+          {
+            key: 'terms' as const,
+            state: terms,
+            count: input.terms?.links ?? 0,
+          },
+        ]
+      : []),
     {
       key: 'iiif',
       state: iiifState(input.iiif),

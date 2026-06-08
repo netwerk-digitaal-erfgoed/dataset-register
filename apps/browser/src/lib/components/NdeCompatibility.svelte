@@ -14,16 +14,19 @@
     type IiifManifests,
     type LinkedData,
     type RegistrationFailureReason,
+    type TermLinks,
   } from '$lib/services/nde-compatibility';
 
   let {
     isAnalyzed,
     registrationStatus,
+    terms,
     iiifManifests,
     linkedData,
   }: {
     isAnalyzed: boolean;
     registrationStatus: RegistrationFailureReason | null;
+    terms: TermLinks | null;
     iiifManifests: IiifManifests;
     linkedData: LinkedData;
   } = $props();
@@ -33,6 +36,7 @@
       isAnalyzed,
       registration: registrationStatus,
       linkedData,
+      terms,
       iiif: iiifManifests,
     }),
   );
@@ -64,7 +68,12 @@
               ? m.nde_compat_linked_data_heading_empty()
               : m.nde_compat_linked_data_heading_none();
         }
+      // The terms criterion is binary: met (green) or failed (red).
       // eslint-disable-next-line no-fallthrough
+      case 'terms':
+        return criterion.state === 'met'
+          ? m.nde_compat_terms_heading_uses()
+          : m.nde_compat_terms_heading_not_uses();
       case 'iiif':
         switch (criterion.state) {
           case 'met':
@@ -102,7 +111,10 @@
               ? m.nde_compat_linked_data_explanation_empty()
               : m.nde_compat_linked_data_explanation_none();
         }
+      // A single explanation regardless of state, following the IIIF pattern.
       // eslint-disable-next-line no-fallthrough
+      case 'terms':
+        return m.nde_compat_terms_explanation();
       case 'iiif':
         return m.nde_compat_iiif_explanation();
     }
@@ -127,6 +139,13 @@
           count > 0
           ? m.nde_compat_linked_data_count({ count, display })
           : null;
+      case 'terms':
+        // The count line reports how many links to terms were found; it is
+        // shown only when met and links down to the Terminology Sources section
+        // (see sectionAnchor).
+        return criterion.state === 'met'
+          ? m.nde_compat_terms_count({ count, display })
+          : null;
       case 'iiif':
         switch (criterion.state) {
           case 'met':
@@ -146,16 +165,27 @@
         return NDE_VINKJES_URL;
       case 'linked-data':
         return SCHEMA_AP_NDE_PROFILE;
+      case 'terms':
+        return NDE_VINKJES_URL;
       case 'iiif':
         return NDE_VINKJES_URL;
     }
   }
 
-  // The registration criterion links to the Registration section further down
-  // the same page, where the registration URL, status and date are listed. Other
-  // criteria have no such in-page counterpart.
-  function detailsAnchor(criterion: CompatibilityCriterion): string | null {
-    return criterion.key === 'registration' ? '#registration' : null;
+  // In-page anchor to the criterion’s evidence section further down the page, or
+  // null when it has none. Registration points to its Registration section; the
+  // terms criterion (when met) to the Terminology Sources section. The template
+  // attaches this to the count line when there is one, otherwise renders a
+  // dedicated link.
+  function sectionAnchor(criterion: CompatibilityCriterion): string | null {
+    switch (criterion.key) {
+      case 'registration':
+        return '#registration';
+      case 'terms':
+        return criterion.state === 'met' ? '#terminology-sources' : null;
+      default:
+        return null;
+    }
   }
 </script>
 
@@ -182,6 +212,8 @@
     >
       <ul class="divide-y divide-gray-200 dark:divide-gray-700">
         {#each criteria as criterion (criterion.key)}
+          {@const detailText = detail(criterion)}
+          {@const sectionHref = sectionAnchor(criterion)}
           <li class="flex items-start gap-3 px-4 py-3">
             <!-- Status box. Green tick = met, orange exclamation = warning, red
                cross = error, neutral empty = pending or not applicable. The
@@ -222,20 +254,32 @@
                   {m.nde_compat_learn_more()}
                   <span class="sr-only"> ({m.opens_in_new_tab()})</span>
                 </a>
-                {#if detailsAnchor(criterion)}
+                <!-- A criterion with an evidence section but no count line (e.g.
+                     registration) gets a dedicated in-page link here; one with a
+                     count line carries the link on that line instead. -->
+                {#if sectionHref && !detailText}
                   <a
-                    href={detailsAnchor(criterion)}
+                    href={sectionHref}
                     class="text-blue-600 hover:underline dark:text-blue-400"
                   >
                     {m.nde_compat_registration_view_details()}
                   </a>
                 {/if}
               </p>
-              {#if detail(criterion)}
+              {#if detailText}
                 <p
                   class="mt-1 text-sm font-medium text-gray-700 dark:text-gray-300"
                 >
-                  {detail(criterion)}
+                  {#if sectionHref}
+                    <a
+                      href={sectionHref}
+                      class="text-blue-600 hover:underline dark:text-blue-400"
+                    >
+                      {detailText}
+                    </a>
+                  {:else}
+                    {detailText}
+                  {/if}
                 </p>
               {/if}
             </div>
