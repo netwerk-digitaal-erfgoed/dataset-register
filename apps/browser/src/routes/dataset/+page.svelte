@@ -6,7 +6,10 @@
   import * as m from '$lib/paraglide/messages';
   import { getLocale } from '$lib/paraglide/runtime';
   import { page } from '$app/state';
-  import { RDF_MEDIA_TYPES } from '$lib/constants.js';
+  import {
+    isRdfDistribution,
+    isSparqlDistribution,
+  } from '$lib/utils/distribution';
   import {
     getLocalizedValue,
     getLocalizedArray,
@@ -53,7 +56,7 @@
   const linksets = $derived(data.linksets);
   const temporalCoverages = $derived(data.temporalCoverages);
   const iiifManifests = $derived(data.iiifManifests);
-  const schemaApNde = $derived(data.schemaApNde);
+  const linkedData = $derived(data.linkedData);
 
   // SEO: canonical and hreflang URLs
   const datasetPath = $derived(datasetDetailHref(dataset.$id));
@@ -63,21 +66,6 @@
   const enUrl = $derived(
     `${page.url.origin}${localizeHref(datasetPath, { locale: 'en' })}`,
   );
-
-  function isSparqlDistribution(distribution: DistributionDetail) {
-    return distribution.conformsTo?.includes(
-      'https://www.w3.org/TR/sparql11-protocol/',
-    );
-  }
-
-  function isRdfDistribution(distribution: DistributionDetail) {
-    return (
-      distribution.mediaType &&
-      RDF_MEDIA_TYPES.includes(
-        distribution.mediaType as (typeof RDF_MEDIA_TYPES)[number],
-      )
-    );
-  }
 
   function isGzipDistribution(distribution: DistributionDetail) {
     return (
@@ -1274,7 +1262,7 @@
     isAnalyzed={isAnalyzed(summary)}
     {registrationStatus}
     {iiifManifests}
-    {schemaApNde}
+    {linkedData}
   />
 
   <!-- VoID Summary Section -->

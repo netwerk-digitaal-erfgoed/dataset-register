@@ -255,13 +255,30 @@
   "nde_compat_registration_explanation_registered": "This dataset’s description is registered in the Dataset Register, so it can be found and reused.",
   "nde_compat_registration_explanation_gone": "The registration URL is no longer accessible, so the description can no longer be retrieved.",
   "nde_compat_registration_explanation_invalid": "The description no longer conforms to the requirements for datasets.",
-  "nde_compat_schema_ap_nde_heading_conforms": "Conforms to the NDE Schema.org Application Profile",
-  "nde_compat_schema_ap_nde_heading_not_conforms": "Does not conform to the NDE Schema.org Application Profile",
-  "nde_compat_schema_ap_nde_heading_not_applicable": "The NDE Schema.org Application Profile does not apply",
-  "nde_compat_schema_ap_nde_explanation_conforms": "No violations were found in a sample of this dataset.",
-  "nde_compat_schema_ap_nde_explanation_violations": "At least one sampled resource violated the NDE Schema.org Application Profile.",
-  "nde_compat_schema_ap_nde_explanation_declared_but_empty": "This dataset declares conformance to the NDE Schema.org Application Profile, but none of its resources use the profile’s classes.",
-  "nde_compat_schema_ap_nde_explanation_not_applicable": "This dataset uses a different data model, so the profile does not apply.",
+  "nde_compat_linked_data_heading_conforms": "Provides linked data conforming to the NDE Application Profile",
+  "nde_compat_linked_data_heading_not_conforms": "Provides linked data",
+  "nde_compat_linked_data_heading_pending": "Linked data not yet assessed",
+  "nde_compat_linked_data_heading_none": "Does not provide linked data",
+  "nde_compat_linked_data_heading_empty": "Could not retrieve linked data",
+  "nde_compat_linked_data_explanation_conforms": "This dataset provides linked data conforming to the NDE Schema.org Application Profile, making the data easy to find and reuse.",
+  "nde_compat_linked_data_explanation_not_conforms": "This dataset provides linked data, but it does not yet conform to the NDE Schema.org Application Profile.",
+  "nde_compat_linked_data_explanation_pending": "This dataset provides linked data. Its content has not been assessed yet.",
+  "nde_compat_linked_data_explanation_none": "This dataset provides no linked data, which makes the data harder to reuse.",
+  "nde_compat_linked_data_explanation_empty": "This dataset declares linked data, but its content could not be retrieved.",
+  "nde_compat_linked_data_count": [
+    {
+      "declarations": [
+        "input count",
+        "input display",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{display} fact found.",
+        "countPlural=other": "{display} facts found."
+      }
+    }
+  ],
   "nde_compat_iiif_heading_provided": "Provides IIIF media",
   "nde_compat_iiif_heading_not_provided": "Does not provide IIIF media",
   "nde_compat_iiif_heading_unavailable": "IIIF media unavailable",
