@@ -330,7 +330,9 @@
   ],
   "nde_compat_terms_heading_uses": "Uses terms from the Network of Terms",
   "nde_compat_terms_heading_not_uses": "Does not use terms from the Network of Terms",
-  "nde_compat_terms_explanation": "Objects in this dataset link to shared terms from terminology sources in the Network of Terms, which makes the data interoperable and easier to find.",
+  "nde_compat_terms_explanation_before": "Objects in this dataset link to shared terms from terminology sources in the ",
+  "nde_compat_terms_explanation_after": ", which makes the data interoperable and easier to find.",
+  "network_of_terms": "Network of Terms",
   "nde_compat_terms_count": [
     {
       "declarations": [

@@ -330,7 +330,9 @@
   ],
   "nde_compat_terms_heading_uses": "Gebruikt termen uit het Termennetwerk",
   "nde_compat_terms_heading_not_uses": "Gebruikt geen termen uit het Termennetwerk",
-  "nde_compat_terms_explanation": "Objecten in deze dataset linken naar gedeelde termen uit terminologiebronnen in het Termennetwerk, waardoor de data interoperabel en beter vindbaar wordt.",
+  "nde_compat_terms_explanation_before": "Objecten in deze dataset linken naar gedeelde termen uit terminologiebronnen in het ",
+  "nde_compat_terms_explanation_after": ", waardoor de data interoperabel en beter vindbaar wordt.",
+  "network_of_terms": "Termennetwerk",
   "nde_compat_terms_count": [
     {
       "declarations": [
