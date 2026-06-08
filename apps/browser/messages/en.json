@@ -255,6 +255,7 @@
   "nde_compat_registration_explanation_registered": "This dataset’s description is registered in the Dataset Register, so it can be found and reused.",
   "nde_compat_registration_explanation_gone": "The registration URL is no longer accessible, so the description can no longer be retrieved.",
   "nde_compat_registration_explanation_invalid": "The description no longer conforms to the requirements for datasets.",
+  "nde_compat_registration_view_details": "View registration details",
   "nde_compat_linked_data_heading_conforms": "Provides linked data conforming to the NDE Application Profile",
   "nde_compat_linked_data_heading_not_conforms": "Provides linked data",
   "nde_compat_linked_data_heading_pending": "Linked data not yet assessed",
