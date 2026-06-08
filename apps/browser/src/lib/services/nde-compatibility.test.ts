@@ -16,6 +16,7 @@ const noLinkedData: LinkedData = {
   hasVoidDataset: false,
   hasContent: false,
   conformant: null,
+  quadsValidated: null,
   triples: null,
 };
 
@@ -129,6 +130,7 @@ describe('linkedDataState', () => {
         hasVoidDataset: true,
         hasContent: true,
         conformant: true,
+        quadsValidated: 200,
         triples: 1000,
       }),
     ).toEqual({ state: 'met' });
@@ -141,6 +143,7 @@ describe('linkedDataState', () => {
         hasVoidDataset: true,
         hasContent: true,
         conformant: false,
+        quadsValidated: 200,
         triples: 1000,
       }),
     ).toEqual({ state: 'warning' });
@@ -152,6 +155,23 @@ describe('linkedDataState', () => {
         hasVoidDataset: true,
         hasContent: true,
         conformant: null,
+        quadsValidated: null,
+        triples: 1000,
+      }),
+    ).toEqual({ state: 'warning' });
+  });
+
+  it('is a warning when conformance is vacuous: conformant but zero quads validated', () => {
+    // The Knowledge Graph co-emits `conformant: true` with `quadsValidated: 0`
+    // when nothing of the profile’s classes was sampled. That `true` is vacuous,
+    // not real conformance, so it must warn rather than confirm the profile.
+    expect(
+      linkedDataState({
+        declared: true,
+        hasVoidDataset: true,
+        hasContent: true,
+        conformant: true,
+        quadsValidated: 0,
         triples: 1000,
       }),
     ).toEqual({ state: 'warning' });
@@ -166,6 +186,7 @@ describe('linkedDataState', () => {
         hasVoidDataset: true,
         hasContent: true,
         conformant: true,
+        quadsValidated: 200,
         triples: 1000,
       }),
     ).toEqual({ state: 'met' });
@@ -178,6 +199,7 @@ describe('linkedDataState', () => {
         hasVoidDataset: false,
         hasContent: false,
         conformant: null,
+        quadsValidated: null,
         triples: null,
       }),
     ).toEqual({ state: 'failed', reason: 'no-linked-data' });
@@ -190,6 +212,7 @@ describe('linkedDataState', () => {
         hasVoidDataset: false,
         hasContent: false,
         conformant: null,
+        quadsValidated: null,
         triples: null,
       }),
     ).toEqual({ state: 'unmet' });
@@ -202,6 +225,7 @@ describe('linkedDataState', () => {
         hasVoidDataset: true,
         hasContent: false,
         conformant: null,
+        quadsValidated: null,
         triples: null,
       }),
     ).toEqual({ state: 'failed', reason: 'empty' });
@@ -320,6 +344,7 @@ describe('compatibilityCriteria', () => {
         hasVoidDataset: true,
         hasContent: true,
         conformant: true,
+        quadsValidated: 200,
         triples: 1234,
       },
       terms: null,
@@ -339,6 +364,7 @@ describe('compatibilityCriteria', () => {
         hasVoidDataset: true,
         hasContent: false,
         conformant: null,
+        quadsValidated: null,
         triples: null,
       },
       terms: null,
@@ -419,6 +445,7 @@ describe('compatibilityCriteria', () => {
           hasVoidDataset: false,
           hasContent: false,
           conformant: null,
+          quadsValidated: null,
           triples: null,
         },
         terms: { links: 42, distinctObjectsUri: 1000 },

@@ -124,12 +124,20 @@ export interface SchemaApNdeConformance {
 //                    void:triples aggregate.
 // 'conformant'     — whether a sampled set of resources conforms to
 //                    SCHEMA-AP-NDE; null when no conformance measurement exists.
+//                    Only conclusive together with 'quadsValidated' > 0: a
+//                    `true` over zero validated quads is vacuous, not real
+//                    conformance.
+// 'quadsValidated' — how many quads the conformance sample actually validated
+//                    against the profile; null when no measurement exists. Zero
+//                    means nothing of the profile’s classes was sampled, so the
+//                    co-emitted 'conformant' carries no evidence.
 // 'triples'        — void:triples, for the “n feiten” count; null when absent.
 export interface LinkedData {
   declared: boolean;
   hasVoidDataset: boolean;
   hasContent: boolean;
   conformant: boolean | null;
+  quadsValidated: number | null;
   triples: number | null;
 }
 
@@ -224,17 +232,23 @@ export function schemaApNdeState(
 // Derives the Linked data state. Content is the strongest signal: a dataset the
 // Knowledge Graph extracted content from provides linked data whatever the
 // register lists, so conformance to SCHEMA-AP-NDE then splits good (🟢, `met`)
-// from a warning (🟠, content that does not — or does not yet — conform). With no
-// content the criterion is judged from what is declared: nothing declared is a
-// plain `failed`/'no-linked-data'; a declared distribution awaiting analysis is
-// neutral pending (⚪, `unmet`); a declared distribution that was analyzed but
-// yielded no content is `failed`/'empty'.
+// from a warning (🟠, content that does not — or does not yet — conform).
+// Conformance counts only when the sample actually validated quads against the
+// profile (`quadsValidated` > 0); a `conformant: true` over zero validated quads
+// is vacuous (no resources of the profile’s classes were sampled), so it warns
+// rather than confirming the profile. With no content the criterion is judged
+// from what is declared: nothing declared is a plain `failed`/'no-linked-data';
+// a declared distribution awaiting analysis is neutral pending (⚪, `unmet`); a
+// declared distribution that was analyzed but yielded no content is
+// `failed`/'empty'.
 export function linkedDataState(linkedData: LinkedData): {
   state: CompatibilityState;
   reason?: LinkedDataFailureReason;
 } {
   if (linkedData.hasContent) {
-    return linkedData.conformant ? { state: 'met' } : { state: 'warning' };
+    const conformanceProven =
+      linkedData.conformant === true && (linkedData.quadsValidated ?? 0) > 0;
+    return conformanceProven ? { state: 'met' } : { state: 'warning' };
   }
   if (!linkedData.declared) {
     return { state: 'failed', reason: 'no-linked-data' };
