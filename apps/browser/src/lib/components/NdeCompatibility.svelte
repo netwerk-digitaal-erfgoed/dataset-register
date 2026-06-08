@@ -186,13 +186,22 @@
 
   // In-page anchor to the criterion’s evidence section further down the page, or
   // null when it has none. Registration points to its Registration section; the
-  // terms criterion (when met) to the Terminology Sources section. The template
-  // attaches this to the count line when there is one, otherwise renders a
-  // dedicated link.
+  // linked-data criterion (when it reports a fact count) to the Linked Data
+  // Summary section; the terms criterion (when met) to the Terminology Sources
+  // section. The template attaches this to the count line when there is one,
+  // otherwise renders a dedicated link.
   function sectionAnchor(criterion: CompatibilityCriterion): string | null {
     switch (criterion.key) {
       case 'registration':
         return '#registration';
+      case 'linked-data':
+        // Link the fact count down to the Linked Data Summary section; gated to
+        // match the count line in detail() so the anchor only appears alongside
+        // it, never as a standalone link.
+        return (criterion.state === 'met' || criterion.state === 'warning') &&
+          criterion.count > 0
+          ? '#linked-data-summary'
+          : null;
       case 'terms':
         return criterion.state === 'met' ? '#terminology-sources' : null;
       default:

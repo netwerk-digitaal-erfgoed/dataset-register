@@ -1273,7 +1273,8 @@
   {#if summary && hasVoidStats}
     <div class="mb-8">
       <h2
-        class="mb-4 flex items-center gap-2 text-xl font-semibold text-gray-900 dark:text-white"
+        id="linked-data-summary"
+        class="mb-4 flex scroll-mt-4 items-center gap-2 text-xl font-semibold text-gray-900 dark:text-white"
       >
         {m.detail_linked_data_summary()}
         <span id="tooltip-linked-data-summary" class="cursor-pointer">
