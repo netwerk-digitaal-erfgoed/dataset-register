@@ -7,25 +7,33 @@
   import InfoCircleSolid from 'flowbite-svelte-icons/InfoCircleSolid.svelte';
   import {
     compatibilityCriteria,
-    IIIF_VINKJES_URL,
+    NDE_VINKJES_URL,
     SCHEMA_AP_NDE_PROFILE,
     type CompatibilityCriterion,
     type IiifManifests,
+    type RegistrationFailureReason,
     type SchemaApNdeConformance,
   } from '$lib/services/nde-compatibility';
 
   let {
     isAnalyzed,
+    registrationStatus,
     iiifManifests,
     schemaApNde,
   }: {
     isAnalyzed: boolean;
+    registrationStatus: RegistrationFailureReason | null;
     iiifManifests: IiifManifests;
     schemaApNde: SchemaApNdeConformance;
   } = $props();
 
   const criteria = $derived(
-    compatibilityCriteria({ isAnalyzed, schemaApNde, iiif: iiifManifests }),
+    compatibilityCriteria({
+      isAnalyzed,
+      registration: registrationStatus,
+      schemaApNde,
+      iiif: iiifManifests,
+    }),
   );
 
   // The heading states the actual situation: a dataset legitimately may have no
@@ -33,6 +41,15 @@
   // that could not be loaded (failed).
   function heading(criterion: CompatibilityCriterion): string {
     switch (criterion.key) {
+      case 'registration':
+        switch (criterion.reason) {
+          case 'gone':
+            return m.nde_compat_registration_heading_gone();
+          case 'invalid':
+            return m.nde_compat_registration_heading_invalid();
+          default:
+            return m.nde_compat_registration_heading_registered();
+        }
       case 'schema-ap-nde':
         switch (criterion.state) {
           case 'met':
@@ -57,6 +74,15 @@
 
   function explanation(criterion: CompatibilityCriterion): string {
     switch (criterion.key) {
+      case 'registration':
+        switch (criterion.reason) {
+          case 'gone':
+            return m.nde_compat_registration_explanation_gone();
+          case 'invalid':
+            return m.nde_compat_registration_explanation_invalid();
+          default:
+            return m.nde_compat_registration_explanation_registered();
+        }
       case 'schema-ap-nde':
         switch (criterion.state) {
           case 'met':
@@ -83,6 +109,9 @@
     const count = criterion.count;
     const display = count.toLocaleString(getLocale());
     switch (criterion.key) {
+      case 'registration':
+        // The registration criterion carries no count.
+        return null;
       case 'schema-ap-nde':
         // No raw counts for the profile criterion in this version.
         return null;
@@ -100,10 +129,12 @@
 
   function learnMoreHref(criterion: CompatibilityCriterion): string {
     switch (criterion.key) {
+      case 'registration':
+        return NDE_VINKJES_URL;
       case 'schema-ap-nde':
         return SCHEMA_AP_NDE_PROFILE;
       case 'iiif':
-        return IIIF_VINKJES_URL;
+        return NDE_VINKJES_URL;
     }
   }
 </script>
