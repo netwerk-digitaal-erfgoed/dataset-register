@@ -1,15 +1,13 @@
 <script lang="ts">
   import * as m from '$lib/paraglide/messages';
   import { getLocale } from '$lib/paraglide/runtime';
-  import { Tooltip } from 'flowbite-svelte';
   import CheckOutline from 'flowbite-svelte-icons/CheckOutline.svelte';
   import CloseOutline from 'flowbite-svelte-icons/CloseOutline.svelte';
   import ExclamationCircleOutline from 'flowbite-svelte-icons/ExclamationCircleOutline.svelte';
-  import InfoCircleSolid from 'flowbite-svelte-icons/InfoCircleSolid.svelte';
   import {
     compatibilityCriteria,
     NDE_VINKJES_URL,
-    SCHEMA_AP_NDE_PROFILE,
+    NETWORK_OF_TERMS_URL,
     type CompatibilityCriterion,
     type IiifManifests,
     type LinkedData,
@@ -121,9 +119,15 @@
               : m.nde_compat_linked_data_explanation_none();
         }
       // A single explanation regardless of state, following the IIIF pattern.
+      // The template renders this with “Network of Terms” as an inline link;
+      // the two halves are joined here as the plain-text fallback.
       // eslint-disable-next-line no-fallthrough
       case 'terms':
-        return m.nde_compat_terms_explanation();
+        return (
+          m.nde_compat_terms_explanation_before() +
+          m.network_of_terms() +
+          m.nde_compat_terms_explanation_after()
+        );
       case 'iiif':
         return m.nde_compat_iiif_explanation();
     }
@@ -171,19 +175,6 @@
     }
   }
 
-  function learnMoreHref(criterion: CompatibilityCriterion): string {
-    switch (criterion.key) {
-      case 'registration':
-        return NDE_VINKJES_URL;
-      case 'linked-data':
-        return SCHEMA_AP_NDE_PROFILE;
-      case 'terms':
-        return NDE_VINKJES_URL;
-      case 'iiif':
-        return NDE_VINKJES_URL;
-    }
-  }
-
   // In-page anchor to the criterion’s evidence section further down the page, or
   // null when it has none. Registration points to its Registration section; the
   // linked-data criterion (when it reports a fact count) to the Linked Data
@@ -216,18 +207,22 @@
   <section class="mb-8" aria-labelledby="nde-compatibility-heading">
     <h2
       id="nde-compatibility-heading"
-      class="mb-4 flex items-center gap-2 text-xl font-semibold text-gray-900 dark:text-white"
+      class="mb-2 text-xl font-semibold text-gray-900 dark:text-white"
     >
       {m.nde_compatibility()}
-      <span id="tooltip-nde-compatibility" class="cursor-pointer">
-        <InfoCircleSolid
-          class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
-        />
-      </span>
-      <Tooltip triggeredBy="#tooltip-nde-compatibility"
-        >{m.nde_compatibility_description()}</Tooltip
-      >
     </h2>
+    <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+      {m.nde_compatibility_description()}
+      <a
+        href={NDE_VINKJES_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-blue-600 hover:underline dark:text-blue-400"
+      >
+        {m.nde_compat_learn_more()}
+        <span class="sr-only"> ({m.opens_in_new_tab()})</span>
+      </a>
+    </p>
     <div
       class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
     >
@@ -265,16 +260,20 @@
                 {heading(criterion)}
               </h3>
               <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                {explanation(criterion)}
-                <a
-                  href={learnMoreHref(criterion)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  {m.nde_compat_learn_more()}
-                  <span class="sr-only"> ({m.opens_in_new_tab()})</span>
-                </a>
+                <!-- The terms explanation links “Network of Terms” to the
+                     Termennetwerk browser in the current locale; other criteria
+                     render their explanation as plain text. -->
+                {#if criterion.key === 'terms'}{m.nde_compat_terms_explanation_before()}<a
+                    href={`${NETWORK_OF_TERMS_URL}/${getLocale()}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-blue-600 hover:underline dark:text-blue-400"
+                    >{m.network_of_terms()}<span class="sr-only">
+                      ({m.opens_in_new_tab()})</span
+                    ></a
+                  >{m.nde_compat_terms_explanation_after()}{:else}{explanation(
+                    criterion,
+                  )}{/if}
                 <!-- A criterion with an evidence section but no count line (e.g.
                      registration) gets a dedicated in-page link here; one with a
                      count line carries the link on that line instead. -->

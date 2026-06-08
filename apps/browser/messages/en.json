@@ -248,7 +248,7 @@
   ],
   "dataset_schema_ap_nde": "Conforms to the NDE Schema.org Application Profile (sampled)",
   "nde_compatibility": "NDE compatibility",
-  "nde_compatibility_description": "Shows which NDE criteria this dataset meets.",
+  "nde_compatibility_description": "These checks run automatically against the current NDE criteria. They give an up-to-date picture and help you improve the findability and reusability of your dataset.",
   "nde_compat_registration_heading_registered": "Registered in the Dataset Register",
   "nde_compat_registration_heading_gone": "Registration no longer accessible",
   "nde_compat_registration_heading_invalid": "Registration no longer valid",
@@ -330,7 +330,9 @@
   ],
   "nde_compat_terms_heading_uses": "Uses terms from the Network of Terms",
   "nde_compat_terms_heading_not_uses": "Does not use terms from the Network of Terms",
-  "nde_compat_terms_explanation": "Objects in this dataset link to shared terms from terminology sources in the Network of Terms, which makes the data interoperable and easier to find.",
+  "nde_compat_terms_explanation_before": "Objects in this dataset link to shared terms from terminology sources in the ",
+  "nde_compat_terms_explanation_after": ", which makes the data interoperable and easier to find.",
+  "network_of_terms": "Network of Terms",
   "nde_compat_terms_count": [
     {
       "declarations": [

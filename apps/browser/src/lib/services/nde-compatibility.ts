@@ -8,16 +8,15 @@
 // Dataset Knowledge Graph.
 export const IIIF_PRESENTATION_API = 'http://iiif.io/api/presentation/';
 
-// NDE’s documentation on the criteria (“vinkjes”). The registration and IIIF
-// criteria both link here.
+// NDE’s documentation on the criteria (“vinkjes”). The NDE compatibility section
+// links here from its introduction.
 export const NDE_VINKJES_URL =
   'https://netwerkdigitaalerfgoed.nl/aanpak/bruikbaar/#vinkjes';
 
-// The NDE Schema.org Application Profile. A distribution declares compliance with
-// `dct:conformsTo` pointing here (the register’s internal model is DCAT, so the
-// publisher-facing schema:usageInfo is normalised to dct:conformsTo at ingest).
-// Also linked from the detail page as the criterion’s documentation.
-export const SCHEMA_AP_NDE_PROFILE = 'https://docs.nde.nl/schema-profile/';
+// The Network of Terms (“Termennetwerk”) browser. The request locale is appended
+// as a path segment (e.g. `/en`, `/nl`) when linking from the terms criterion.
+export const NETWORK_OF_TERMS_URL =
+  'https://termennetwerk.netwerkdigitaalerfgoed.nl';
 
 // DQV metric IRIs for the IIIF manifest validation measurements recorded by the
 // Dataset Knowledge Graph.
