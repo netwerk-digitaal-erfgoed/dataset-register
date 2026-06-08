@@ -248,7 +248,7 @@
   ],
   "dataset_schema_ap_nde": "Conforms to the NDE Schema.org Application Profile (sampled)",
   "nde_compatibility": "NDE compatibility",
-  "nde_compatibility_description": "Shows which NDE criteria this dataset meets.",
+  "nde_compatibility_description": "These checks run automatically against the current NDE criteria. They give an up-to-date picture and help you improve the findability and reusability of your dataset.",
   "nde_compat_registration_heading_registered": "Registered in the Dataset Register",
   "nde_compat_registration_heading_gone": "Registration no longer accessible",
   "nde_compat_registration_heading_invalid": "Registration no longer valid",

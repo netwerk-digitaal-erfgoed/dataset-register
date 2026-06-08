@@ -248,7 +248,7 @@
   ],
   "dataset_schema_ap_nde": "Voldoet aan het NDE Schema.org-applicatieprofiel (steekproef)",
   "nde_compatibility": "NDE-compatibiliteit",
-  "nde_compatibility_description": "Laat zien aan welke NDE-criteria deze dataset voldoet.",
+  "nde_compatibility_description": "Deze controles worden automatisch uitgevoerd op basis van de huidige NDE-criteria. Ze geven een actueel beeld en helpen je de vindbaarheid en herbruikbaarheid van je dataset te vergroten.",
   "nde_compat_registration_heading_registered": "Geregistreerd in het Datasetregister",
   "nde_compat_registration_heading_gone": "Registratie niet meer toegankelijk",
   "nde_compat_registration_heading_invalid": "Registratie niet meer geldig",
