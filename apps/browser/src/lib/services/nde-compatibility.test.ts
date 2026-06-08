@@ -118,6 +118,7 @@ describe('schemaApNdeState', () => {
 describe('compatibilityCriteria', () => {
   it('exposes the declared count and computed state for IIIF', () => {
     const [, iiif] = compatibilityCriteria({
+      isAnalyzed: true,
       schemaApNde: noSchemaApNde,
       iiif: { declared: 4152, sampled: 10, validated: 0 },
     });
@@ -128,6 +129,7 @@ describe('compatibilityCriteria', () => {
 
   it('leads with the schema-ap-nde criterion and carries its failure reason', () => {
     const [schemaApNde] = compatibilityCriteria({
+      isAnalyzed: true,
       schemaApNde: {
         quadsValidated: 0,
         conformant: false,
@@ -140,12 +142,29 @@ describe('compatibilityCriteria', () => {
     expect(schemaApNde.reason).toBe('declared-but-empty');
   });
 
-  it('renders both criteria regardless of state, so publishers always see them', () => {
+  it('renders both criteria regardless of state for an analyzed dataset', () => {
     expect(
       compatibilityCriteria({
+        isAnalyzed: true,
         schemaApNde: noSchemaApNde,
         iiif: { declared: 0, sampled: null, validated: null },
       }),
     ).toHaveLength(2);
+  });
+
+  it('drops the analysis-dependent criteria when the dataset is not analyzed', () => {
+    // Both current criteria depend on analysis, so a non-analyzed dataset yields
+    // none — until a criterion that applies to any dataset is added.
+    expect(
+      compatibilityCriteria({
+        isAnalyzed: false,
+        schemaApNde: {
+          quadsValidated: 200,
+          conformant: true,
+          declaresProfile: true,
+        },
+        iiif: { declared: 4152, sampled: 10, validated: 8 },
+      }),
+    ).toEqual([]);
   });
 });

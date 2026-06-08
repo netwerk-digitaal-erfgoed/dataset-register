@@ -38,6 +38,7 @@
   import {
     displayMissingProperties,
     getRegistrationStatus,
+    isAnalyzed,
   } from '$lib/services/dataset-detail.js';
   import { getRelativeTimeString } from '$lib/utils/relative-time';
   import ClassPropertiesWidget from '$lib/components/ClassPropertiesWidget.svelte';
@@ -1269,7 +1270,11 @@
   {/if}
 
   <!-- NDE compatibility (“vinkjes”) -->
-  <NdeCompatibility {iiifManifests} {schemaApNde} />
+  <NdeCompatibility
+    isAnalyzed={isAnalyzed(summary)}
+    {iiifManifests}
+    {schemaApNde}
+  />
 
   <!-- VoID Summary Section -->
   {#if summary && hasVoidStats}
