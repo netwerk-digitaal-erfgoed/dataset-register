@@ -445,6 +445,7 @@ describe('compatibilityCriteria', () => {
           hasVoidDataset: false,
           hasContent: false,
           conformant: null,
+          quadsValidated: null,
           triples: null,
         },
         terms: { links: 42, distinctObjectsUri: 1000 },
