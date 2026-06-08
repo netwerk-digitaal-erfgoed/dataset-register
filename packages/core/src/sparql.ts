@@ -10,7 +10,10 @@ import {
 } from './registration.js';
 import { Rating, RatingStore } from './rate.js';
 import { SparqlDistributionHealthStore } from './distribution-health-store.js';
-import { ALLOWED_DOMAIN_NAME_PREDICATE } from './constants.js';
+import {
+  ALLOWED_DOMAIN_NAME_PREDICATE,
+  VALIDATION_WARNINGS_RATING_TYPE,
+} from './constants.js';
 import type { DatasetCore, Quad } from '@rdfjs/types';
 import { URL } from 'node:url';
 
@@ -271,6 +274,10 @@ export class SparqlRatingStore implements RatingStore {
             schema:worstRating ${rating.worstRating} ;
             schema:ratingValue ${rating.score} ;
             schema:ratingExplanation "${rating.explanation}" ;
+          ] , [
+            schema:additionalType <${VALIDATION_WARNINGS_RATING_TYPE}> ;
+            schema:bestRating 0 ;
+            schema:ratingValue ${rating.warningCount} ;
           ]
         }
       }

@@ -19,6 +19,7 @@ import {
 } from './fixtures/test-datasets.js';
 import { dereference } from '../src/test-utils.js';
 import { Penalty, Rating } from '../src/index.js';
+import { VALIDATION_WARNINGS_RATING_TYPE } from '../src/constants.js';
 
 const registrationsGraphIri = 'http://example.org/registrations';
 const allowedDomainsGraphIri = 'http://example.org/allowed-domains';
@@ -398,8 +399,25 @@ describe('SPARQL', () => {
       `);
       expect(await ratings.toArray()).toHaveLength(0);
 
-      const rating = new Rating([new Penalty('test/path', 5)], 1);
+      const rating = new Rating([new Penalty('test/path', 5)], 1, 3);
       await ratingStore.store(new URL(TEST_DATASET_IRIS.DATASET_1), rating);
+
+      // The warning count is stored as a second schema:Rating, discriminated by
+      // the validation-warnings additionalType, with schema:bestRating 0.
+      const warnings = await sparqlClient.query(`
+        PREFIX schema: <https://schema.org/>
+
+        SELECT ?warningCount WHERE {
+          GRAPH <${ratingsGraphIri}> {
+            <${TEST_DATASET_IRIS.DATASET_1}> schema:contentRating ?rating .
+            ?rating schema:additionalType <${VALIDATION_WARNINGS_RATING_TYPE}> ;
+              schema:ratingValue ?warningCount .
+          }
+        }
+      `);
+      const warningRows = await warnings.toArray();
+      expect(warningRows).toHaveLength(1);
+      expect(warningRows[0]!.get('warningCount')!.value).toBe('3');
     });
 
     it('deletes ratings', async () => {
@@ -407,7 +425,8 @@ describe('SPARQL', () => {
       const rating = new Rating([new Penalty('test/path', 5)], 1);
       await ratingStore.store(datasetUri, rating);
 
-      // Verify rating exists
+      // Verify both ratings exist: the completeness rating and the
+      // validation-warnings rating.
       const before = await sparqlClient.query(`
         PREFIX schema: <https://schema.org/>
         SELECT * WHERE {
@@ -416,7 +435,7 @@ describe('SPARQL', () => {
           }
         }
       `);
-      expect(await before.toArray()).toHaveLength(1);
+      expect(await before.toArray()).toHaveLength(2);
 
       // Delete
       await ratingStore.delete(datasetUri);
