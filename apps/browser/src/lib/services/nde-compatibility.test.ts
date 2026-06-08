@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   compatibilityCriteria,
   iiifState,
+  registrationState,
   schemaApNdeState,
   type SchemaApNdeConformance,
 } from './nde-compatibility';
@@ -115,10 +116,32 @@ describe('schemaApNdeState', () => {
   });
 });
 
+describe('registrationState', () => {
+  it('is met when the dataset is registered and valid', () => {
+    expect(registrationState(null)).toEqual({ state: 'met' });
+    expect(registrationState(undefined)).toEqual({ state: 'met' });
+  });
+
+  it('is failed and carries the status when the registration is gone', () => {
+    expect(registrationState('gone')).toEqual({
+      state: 'failed',
+      reason: 'gone',
+    });
+  });
+
+  it('is failed and carries the status when the registration is invalid', () => {
+    expect(registrationState('invalid')).toEqual({
+      state: 'failed',
+      reason: 'invalid',
+    });
+  });
+});
+
 describe('compatibilityCriteria', () => {
   it('exposes the declared count and computed state for IIIF', () => {
-    const [, iiif] = compatibilityCriteria({
+    const [, , iiif] = compatibilityCriteria({
       isAnalyzed: true,
+      registration: null,
       schemaApNde: noSchemaApNde,
       iiif: { declared: 4152, sampled: 10, validated: 0 },
     });
@@ -127,9 +150,22 @@ describe('compatibilityCriteria', () => {
     expect(iiif.count).toBe(4152);
   });
 
-  it('leads with the schema-ap-nde criterion and carries its failure reason', () => {
-    const [schemaApNde] = compatibilityCriteria({
+  it('leads with the registration criterion', () => {
+    const [registration] = compatibilityCriteria({
       isAnalyzed: true,
+      registration: 'gone',
+      schemaApNde: noSchemaApNde,
+      iiif: { declared: 0, sampled: null, validated: null },
+    });
+    expect(registration.key).toBe('registration');
+    expect(registration.state).toBe('failed');
+    expect(registration.reason).toBe('gone');
+  });
+
+  it('carries the schema-ap-nde failure reason on the second criterion', () => {
+    const [, schemaApNde] = compatibilityCriteria({
+      isAnalyzed: true,
+      registration: null,
       schemaApNde: {
         quadsValidated: 0,
         conformant: false,
@@ -142,29 +178,31 @@ describe('compatibilityCriteria', () => {
     expect(schemaApNde.reason).toBe('declared-but-empty');
   });
 
-  it('renders both criteria regardless of state for an analyzed dataset', () => {
+  it('renders all three criteria regardless of state for an analyzed dataset', () => {
     expect(
       compatibilityCriteria({
         isAnalyzed: true,
+        registration: null,
         schemaApNde: noSchemaApNde,
         iiif: { declared: 0, sampled: null, validated: null },
       }),
-    ).toHaveLength(2);
+    ).toHaveLength(3);
   });
 
-  it('drops the analysis-dependent criteria when the dataset is not analyzed', () => {
-    // Both current criteria depend on analysis, so a non-analyzed dataset yields
-    // none — until a criterion that applies to any dataset is added.
+  it('keeps the registration criterion when the dataset is not analyzed', () => {
+    // The analysis-dependent criteria are dropped, but registration applies to
+    // any dataset, so it remains and keeps the section visible.
     expect(
       compatibilityCriteria({
         isAnalyzed: false,
+        registration: null,
         schemaApNde: {
           quadsValidated: 200,
           conformant: true,
           declaresProfile: true,
         },
         iiif: { declared: 4152, sampled: 10, validated: 8 },
-      }),
-    ).toEqual([]);
+      }).map((criterion) => criterion.key),
+    ).toEqual(['registration']);
   });
 });

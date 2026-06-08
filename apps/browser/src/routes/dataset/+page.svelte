@@ -1272,6 +1272,7 @@
   <!-- NDE compatibility (“vinkjes”) -->
   <NdeCompatibility
     isAnalyzed={isAnalyzed(summary)}
+    {registrationStatus}
     {iiifManifests}
     {schemaApNde}
   />

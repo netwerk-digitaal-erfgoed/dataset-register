@@ -8,8 +8,9 @@
 // Dataset Knowledge Graph.
 export const IIIF_PRESENTATION_API = 'http://iiif.io/api/presentation/';
 
-// NDE’s documentation on the criteria (“vinkjes”).
-export const IIIF_VINKJES_URL =
+// NDE’s documentation on the criteria (“vinkjes”). The registration and IIIF
+// criteria both link here.
+export const NDE_VINKJES_URL =
   'https://netwerkdigitaalerfgoed.nl/aanpak/bruikbaar/#vinkjes';
 
 // The NDE Schema.org Application Profile. A distribution declares compliance with
@@ -35,14 +36,18 @@ export const SCHEMA_AP_NDE_CONFORMANCE_METRIC =
 export const QUADS_VALIDATED_METRIC =
   'https://def.nde.nl/metric#quads-validated';
 
-// The schema-ap-nde criterion is ordered before iiif, matching the usual order
-// in NDE communication.
-export type CompatibilityCriterionKey = 'schema-ap-nde' | 'iiif';
+// The registration criterion leads — every registered dataset has it, so it
+// anchors the section regardless of analysis. The schema-ap-nde criterion is
+// ordered before iiif, matching the usual order in NDE communication.
+export type CompatibilityCriterionKey =
+  | 'registration'
+  | 'schema-ap-nde'
+  | 'iiif';
 
 // Criteria that can only be assessed from the dataset’s analysis in the Dataset
-// Knowledge Graph, so they are shown only for an analyzed dataset. A criterion
-// that applies to any dataset is left out of this set; it is always shown and so
-// keeps the section visible even for a dataset that has not been analyzed.
+// Knowledge Graph, so they are shown only for an analyzed dataset. Registration
+// is left out: it applies to any dataset, is always shown, and so keeps the
+// section visible even for a dataset that has not been analyzed.
 const ANALYSIS_DEPENDENT_CRITERIA: ReadonlySet<CompatibilityCriterionKey> =
   new Set(['schema-ap-nde', 'iiif']);
 
@@ -53,14 +58,24 @@ const ANALYSIS_DEPENDENT_CRITERIA: ReadonlySet<CompatibilityCriterionKey> =
 // 'unmet'  — the dataset declares no media. A legitimate, neutral state.
 export type CompatibilityState = 'met' | 'failed' | 'unmet';
 
-// Why a schema-ap-nde criterion is in the `failed` state:
+// Why a registration criterion is in the `failed` state, mirroring the dataset’s
+// status in the register:
+// 'gone'    — the registration URL is no longer accessible.
+// 'invalid' — the description no longer conforms to the requirements.
+export type RegistrationFailureReason = 'gone' | 'invalid';
+
+// Why a criterion is in the `failed` state. The schema-ap-nde reasons:
 // 'violations'         — the sample exercised the profile’s classes but at least
 //                        one sampled resource violated a constraint.
 // 'declared-but-empty' — the dataset declares conformance (a distribution’s
 //                        `dct:conformsTo` points at the profile), yet the
 //                        sample validated zero quads: none of its resources use
 //                        the profile’s classes.
-export type CompatibilityFailureReason = 'violations' | 'declared-but-empty';
+// The registration reasons ('gone', 'invalid') carry the dataset’s status.
+export type CompatibilityFailureReason =
+  | 'violations'
+  | 'declared-but-empty'
+  | RegistrationFailureReason;
 
 // IIIF manifest figures from the Knowledge Graph: how many manifests the dataset
 // declares (void:entities), and — once the pipeline has sampled them — how many
@@ -93,8 +108,26 @@ export interface CompatibilityInput {
   // Whether the dataset has been analyzed by the Dataset Knowledge Graph.
   // Analysis-dependent criteria are dropped when this is false.
   isAnalyzed: boolean;
+  // The dataset’s registration status: null when registered and valid, or the
+  // failure reason when the registration is gone or invalid.
+  registration: RegistrationFailureReason | null;
   schemaApNde: SchemaApNdeConformance;
   iiif: IiifManifests;
+}
+
+// Derives the registration state. Being on the detail page means the dataset is
+// registered, so the criterion is `met` unless the register flags its
+// registration as gone (URL no longer accessible) or invalid (description no
+// longer conforms) — both surfaced as `failed` with the status as the reason.
+export function registrationState(
+  status: RegistrationFailureReason | null | undefined,
+): {
+  state: CompatibilityState;
+  reason?: CompatibilityFailureReason;
+} {
+  return status === 'gone' || status === 'invalid'
+    ? { state: 'failed', reason: status }
+    : { state: 'met' };
 }
 
 // Derives the SCHEMA-AP-NDE conformance state. The measurement is authoritative
@@ -145,16 +178,24 @@ export function iiifState(manifests: IiifManifests): CompatibilityState {
   return 'met';
 }
 
-// Builds the list of NDE criteria for a dataset. The schema-ap-nde row leads,
-// matching the usual order in NDE communication; the IIIF row follows. Criteria
+// Builds the list of NDE criteria for a dataset. The registration row leads — it
+// applies to any dataset, so it anchors the section; the schema-ap-nde row
+// follows, matching the usual order in NDE communication, then IIIF. Criteria
 // that depend on the dataset’s analysis are dropped when the dataset has not
 // been analyzed; the detail page shows the section whenever any criterion
 // remains.
 export function compatibilityCriteria(
   input: CompatibilityInput,
 ): CompatibilityCriterion[] {
+  const registration = registrationState(input.registration);
   const schemaApNde = schemaApNdeState(input.schemaApNde);
   const criteria: CompatibilityCriterion[] = [
+    {
+      key: 'registration',
+      state: registration.state,
+      count: 0,
+      reason: registration.reason,
+    },
     {
       key: 'schema-ap-nde',
       state: schemaApNde.state,
