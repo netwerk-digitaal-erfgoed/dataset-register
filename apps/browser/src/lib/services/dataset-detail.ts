@@ -19,6 +19,7 @@ import {
   type LinkedData,
 } from './nde-compatibility.js';
 import { offersLinkedData } from '$lib/utils/distribution';
+import { normalizeMediaType } from '$lib/utils/sparql';
 import { getLocale } from '$lib/paraglide/runtime';
 import { REGISTRATION_STATUS_BASE_URI } from '@dataset-register/core/constants';
 import {
@@ -646,7 +647,7 @@ export async function fetchDatasetDetail(
         dcat:accessURL ?accessURL ;
         foaf:page ?landingPage ;
         dct:description ?description ;
-        dcat:mediaType ?rawMediaType ;
+        dcat:mediaType ?mediaType ;
         dct:format ?format ;
         dct:issued ?issued ;
         dct:modified ?modified ;
@@ -660,7 +661,10 @@ export async function fetchDatasetDetail(
         ?distribution dcat:accessURL ?accessURL .
         OPTIONAL { ?distribution foaf:page ?landingPage }
         OPTIONAL { ?distribution dct:description ?description }
-        OPTIONAL { ?distribution dcat:mediaType ?rawMediaType }
+        OPTIONAL {
+          ?distribution dcat:mediaType ?rawMediaType .
+          ${normalizeMediaType('?rawMediaType', '?mediaType')}
+        }
         OPTIONAL { ?distribution dct:format ?format }
         OPTIONAL { ?distribution dct:issued ?issued }
         OPTIONAL { ?distribution dct:modified ?modified }
