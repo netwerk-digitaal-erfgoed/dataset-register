@@ -462,19 +462,28 @@ async function fetchIiifManifests(datasetUri: string): Promise<IiifManifests> {
   return none;
 }
 
-// Reads the SCHEMA-AP-NDE sample conformance boolean for a dataset from the
-// Knowledge Graph. This co-emitted measurement decides whether a dataset that
-// provides linked data conforms to the profile (🟢) or only warns (🟠). Returns
-// null when no conformance measurement exists yet.
-async function fetchSchemaApNdeConformant(
+// Reads the SCHEMA-AP-NDE sample conformance for a dataset from the Knowledge
+// Graph. Both co-emitted measurements are needed: the `conformant` boolean is
+// only conclusive when `quadsValidated` > 0, since a `true` over zero validated
+// quads is vacuous (no resources of the profile’s classes were sampled). The
+// Linked data criterion uses the pair to split a confirmed profile (🟢) from a
+// warning (🟠). Each field is null when its measurement does not exist yet.
+async function fetchSchemaApNdeConformance(
   datasetUri: string,
-): Promise<boolean | null> {
+): Promise<{ conformant: boolean | null; quadsValidated: number | null }> {
+  const none = { conformant: null, quadsValidated: null };
   const query = `
     PREFIX dqv: <http://www.w3.org/ns/dqv#>
     PREFIX nde: <https://def.nde.nl/metric#>
-    SELECT ?conformant WHERE {
-      <${datasetUri}> dqv:hasQualityMeasurement
-        [ dqv:isMeasurementOf nde:schema-ap-nde-sample-conformance ; dqv:value ?conformant ] .
+    SELECT ?conformant ?quadsValidated WHERE {
+      OPTIONAL {
+        <${datasetUri}> dqv:hasQualityMeasurement
+          [ dqv:isMeasurementOf nde:schema-ap-nde-sample-conformance ; dqv:value ?conformant ] .
+      }
+      OPTIONAL {
+        <${datasetUri}> dqv:hasQualityMeasurement
+          [ dqv:isMeasurementOf nde:quads-validated ; dqv:value ?quadsValidated ] .
+      }
     }
     LIMIT 1
   `;
@@ -486,10 +495,16 @@ async function fetchSchemaApNdeConformant(
     for await (const raw of bindingsStream) {
       const binding = raw as unknown as {
         conformant?: { value: string };
+        quadsValidated?: { value: string };
       };
-      return binding.conformant?.value
-        ? binding.conformant.value === 'true'
-        : null;
+      return {
+        conformant: binding.conformant?.value
+          ? binding.conformant.value === 'true'
+          : null,
+        quadsValidated: binding.quadsValidated?.value
+          ? parseInt(binding.quadsValidated.value, 10)
+          : null,
+      };
     }
   } catch (e: unknown) {
     console.error(
@@ -497,7 +512,7 @@ async function fetchSchemaApNdeConformant(
       e instanceof Error ? e.message : e,
     );
   }
-  return null;
+  return none;
 }
 
 async function fetchDistributionCount(query: string): Promise<number> {
@@ -743,7 +758,7 @@ export async function fetchDatasetDetail(
     classPartitionResult,
     temporalCoverages,
     iiifManifests,
-    schemaApNdeConformant,
+    schemaApNdeConformance,
     warningCount,
   ] = await Promise.all([
     detailLens.query(datasetQuery),
@@ -772,7 +787,7 @@ export async function fetchDatasetDetail(
     classPartitionLens.findByIri(datasetUri),
     fetchTemporalCoverage(datasetUri),
     fetchIiifManifests(datasetUri),
-    fetchSchemaApNdeConformant(datasetUri),
+    fetchSchemaApNdeConformance(datasetUri),
     fetchWarningCount(datasetUri),
   ]);
 
@@ -797,7 +812,8 @@ export async function fetchDatasetDetail(
     declared: offersLinkedData(distributions),
     hasVoidDataset: summaryWithClassPartition !== null,
     hasContent: hasLinkedDataContent(summaryWithClassPartition),
-    conformant: schemaApNdeConformant,
+    conformant: schemaApNdeConformance.conformant,
+    quadsValidated: schemaApNdeConformance.quadsValidated,
     triples: summaryWithClassPartition?.triples ?? null,
   };
 
