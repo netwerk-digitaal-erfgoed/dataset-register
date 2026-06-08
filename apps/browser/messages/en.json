@@ -291,8 +291,8 @@
       ],
       "selectors": ["countPlural"],
       "match": {
-        "countPlural=one": "{display} fact found.",
-        "countPlural=other": "{display} facts found."
+        "countPlural=one": "{display} triple found.",
+        "countPlural=other": "{display} triples found."
       }
     }
   ],
