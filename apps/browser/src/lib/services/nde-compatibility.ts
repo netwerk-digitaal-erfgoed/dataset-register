@@ -160,6 +160,10 @@ export interface CompatibilityInput {
   // The dataset’s registration status: null when registered and valid, or the
   // failure reason when the registration is gone or invalid.
   registration: RegistrationFailureReason | null;
+  // The number of validation warnings on the dataset’s description. A registered,
+  // valid description with warnings is surfaced as `warning` rather than `met`.
+  // Optional: absent is treated as no warnings.
+  registrationWarnings?: number;
   linkedData: LinkedData;
   terms: TermLinks | null;
   iiif: IiifManifests;
@@ -168,16 +172,20 @@ export interface CompatibilityInput {
 // Derives the registration state. Being on the detail page means the dataset is
 // registered, so the criterion is `met` unless the register flags its
 // registration as gone (URL no longer accessible) or invalid (description no
-// longer conforms) — both surfaced as `failed` with the status as the reason.
+// longer conforms) — both surfaced as `failed` with the status as the reason —
+// or the description validated with warnings (`warning`): registered and valid,
+// but not yet up to the recommended standard. The warning count says how far off.
 export function registrationState(
   status: RegistrationFailureReason | null | undefined,
+  warningCount = 0,
 ): {
   state: CompatibilityState;
   reason?: CompatibilityFailureReason;
 } {
-  return status === 'gone' || status === 'invalid'
-    ? { state: 'failed', reason: status }
-    : { state: 'met' };
+  if (status === 'gone' || status === 'invalid') {
+    return { state: 'failed', reason: status };
+  }
+  return warningCount > 0 ? { state: 'warning' } : { state: 'met' };
 }
 
 // Derives the SCHEMA-AP-NDE conformance state. The measurement is authoritative
@@ -286,14 +294,18 @@ export function termsState(terms: TermLinks | null): CompatibilityState | null {
 export function compatibilityCriteria(
   input: CompatibilityInput,
 ): CompatibilityCriterion[] {
-  const registration = registrationState(input.registration);
+  const registration = registrationState(
+    input.registration,
+    input.registrationWarnings,
+  );
   const linkedData = linkedDataState(input.linkedData);
   const terms = termsState(input.terms);
   const criteria: CompatibilityCriterion[] = [
     {
       key: 'registration',
       state: registration.state,
-      count: 0,
+      // The warning count, shown when the criterion is in its warning tier.
+      count: input.registrationWarnings ?? 0,
       reason: registration.reason,
     },
     {
