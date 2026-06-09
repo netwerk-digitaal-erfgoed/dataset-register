@@ -11,6 +11,10 @@ import pino from 'pino';
 import { Valid, Validator } from '@dataset-register/core';
 import { crawlCounter } from '@dataset-register/core';
 import { rate, RatingStore } from '@dataset-register/core';
+import {
+  countWarnings,
+  ValidationReportStore,
+} from '@dataset-register/core';
 
 export interface CrawlerOptions {
   /**
@@ -29,6 +33,7 @@ export class Crawler {
     private registrationStore: RegistrationStore,
     private datasetStore: DatasetStore,
     private ratingStore: RatingStore,
+    private validationReportStore: ValidationReportStore,
     private validator: Validator,
     private logger: pino.Logger,
     options: CrawlerOptions = {},
@@ -58,6 +63,11 @@ export class Crawler {
       let statusCode: number | undefined = undefined;
       let isValid = false;
       let datasetIris = registration.datasets;
+      // Number of sh:Warning results in the registration's own description, taken
+      // from the raw-data validation below — the same report the /validate
+      // endpoint produces, so the dataset page and /validate stay consistent.
+      // Left undefined when the URL yields no report (gone, no datasets).
+      let warningCount: number | undefined = undefined;
 
       try {
         const data = await dereference(
@@ -65,6 +75,16 @@ export class Crawler {
           this.httpRequestTimeoutMs,
         );
         const validationResult = await this.validator.validate(data);
+        if (
+          validationResult.state === 'valid' ||
+          validationResult.state === 'invalid'
+        ) {
+          warningCount = countWarnings(validationResult.errors);
+          await this.validationReportStore.store(
+            registration.url,
+            validationResult.errors,
+          );
+        }
         if (validationResult.state === 'valid') {
           statusCode = 200;
           isValid = true;
@@ -126,6 +146,8 @@ export class Crawler {
         datasetIris,
         statusCode,
         isValid,
+        undefined,
+        warningCount,
       );
       await this.registrationStore.store(updatedRegistration);
     }

@@ -16,6 +16,7 @@ const {
   registrationStore,
   ratingStore,
   distributionHealthStore,
+  validationReportStore,
 } = stores(config.SPARQL_URL, config.SPARQL_ACCESS_TOKEN);
 
 const shacl = await readUrl('requirements/shacl.ttl');
@@ -38,6 +39,7 @@ const crawler = new Crawler(
   registrationStore,
   datasetStore,
   ratingStore,
+  validationReportStore,
   validator,
   logger,
   { httpRequestTimeoutMs: config.HTTP_REQUEST_TIMEOUT * 1000 },

@@ -253,20 +253,20 @@ describe('registrationState', () => {
   });
 
   it('is warning when registered and valid but the description has warnings', () => {
-    expect(registrationState(null, 3)).toEqual({ state: 'warning' });
-    expect(registrationState(undefined, 1)).toEqual({ state: 'warning' });
+    expect(registrationState(null, true)).toEqual({ state: 'warning' });
+    expect(registrationState(undefined, true)).toEqual({ state: 'warning' });
   });
 
   it('is met when registered and valid with no warnings', () => {
-    expect(registrationState(null, 0)).toEqual({ state: 'met' });
+    expect(registrationState(null, false)).toEqual({ state: 'met' });
   });
 
   it('stays failed despite warnings when the registration is gone or invalid', () => {
-    expect(registrationState('gone', 5)).toEqual({
+    expect(registrationState('gone', true)).toEqual({
       state: 'failed',
       reason: 'gone',
     });
-    expect(registrationState('invalid', 5)).toEqual({
+    expect(registrationState('invalid', true)).toEqual({
       state: 'failed',
       reason: 'invalid',
     });
@@ -321,18 +321,20 @@ describe('compatibilityCriteria', () => {
     expect(registration.reason).toBe('gone');
   });
 
-  it('surfaces the registration warning tier with the warning count', () => {
+  it('surfaces the registration warning tier without a count', () => {
     const [registration] = compatibilityCriteria({
       isAnalyzed: true,
       registration: null,
-      registrationWarnings: 3,
+      registrationHasWarnings: true,
       linkedData: noLinkedData,
       terms: null,
       iiif: { declared: 0, sampled: null, validated: null },
     });
     expect(registration.key).toBe('registration');
     expect(registration.state).toBe('warning');
-    expect(registration.count).toBe(3);
+    // Warnings are surfaced at registration granularity, so no per-dataset
+    // count is shown — only the warning state.
+    expect(registration.count).toBe(0);
   });
 
   it('exposes the linked-data state and fact count on the second criterion', () => {

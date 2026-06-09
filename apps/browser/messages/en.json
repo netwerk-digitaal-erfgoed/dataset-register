@@ -257,20 +257,6 @@
   "nde_compat_registration_explanation_invalid": "The description no longer conforms to the requirements for datasets.",
   "nde_compat_registration_heading_warning": "Registered with warnings",
   "nde_compat_registration_explanation_warning": "This dataset’s description is registered and valid, but it validated with warnings: some recommendations for datasets are not yet met.",
-  "nde_compat_registration_warning_count": [
-    {
-      "declarations": [
-        "input count",
-        "input display",
-        "local countPlural = count: plural"
-      ],
-      "selectors": ["countPlural"],
-      "match": {
-        "countPlural=one": "{display} validation warning.",
-        "countPlural=other": "{display} validation warnings."
-      }
-    }
-  ],
   "nde_compat_registration_view_details": "View registration details",
   "nde_compat_linked_data_heading_conforms": "Provides linked data conforming to the NDE Application Profile",
   "nde_compat_linked_data_heading_not_conforms": "Provides linked data",

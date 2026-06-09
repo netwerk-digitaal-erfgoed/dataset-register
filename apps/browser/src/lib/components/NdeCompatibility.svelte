@@ -18,14 +18,14 @@
   let {
     isAnalyzed,
     registrationStatus,
-    registrationWarnings,
+    registrationHasWarnings,
     terms,
     iiifManifests,
     linkedData,
   }: {
     isAnalyzed: boolean;
     registrationStatus: RegistrationFailureReason | null;
-    registrationWarnings: number;
+    registrationHasWarnings: boolean;
     terms: TermLinks | null;
     iiifManifests: IiifManifests;
     linkedData: LinkedData;
@@ -35,7 +35,7 @@
     compatibilityCriteria({
       isAnalyzed,
       registration: registrationStatus,
-      registrationWarnings,
+      registrationHasWarnings,
       linkedData,
       terms,
       iiif: iiifManifests,
@@ -143,11 +143,10 @@
     const display = count.toLocaleString(getLocale());
     switch (criterion.key) {
       case 'registration':
-        // In the warning tier, report how many validation warnings the
-        // description has; otherwise the criterion carries no count.
-        return criterion.state === 'warning' && count > 0
-          ? m.nde_compat_registration_warning_count({ count, display })
-          : null;
+        // Warnings are tracked at registration granularity, so the row shows
+        // only the warning state and a link to the registration’s details
+        // (rendered separately); it carries no count line.
+        return null;
       case 'linked-data':
         // The fact count (void:triples) is shown only when the dataset actually
         // has linked data with a known triple count.

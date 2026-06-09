@@ -1,10 +1,14 @@
 import { URL } from 'node:url';
 import factory from 'rdf-ext';
-import { REGISTRATION_STATUS_BASE_URI } from './constants.js';
+import {
+  REGISTRATION_STATUS_BASE_URI,
+  REGISTRATION_WARNING_COUNT_PREDICATE,
+} from './constants.js';
 
 export class Registration {
   private _dateRead?: Date;
   private _statusCode?: number;
+  private _warningCount?: number;
   private _datasets: URL[];
   public readonly url: URL;
   public readonly datePosted: Date;
@@ -33,6 +37,7 @@ export class Registration {
     statusCode: number | undefined,
     valid: boolean,
     date: Date = new Date(),
+    warningCount?: number,
   ): Registration {
     const registration = new Registration(
       this.url,
@@ -42,6 +47,7 @@ export class Registration {
     );
     registration._statusCode = statusCode;
     registration._dateRead = date;
+    registration._warningCount = warningCount;
 
     return registration;
   }
@@ -52,6 +58,15 @@ export class Registration {
 
   get statusCode() {
     return this._statusCode;
+  }
+
+  /**
+   * The number of sh:Warning-severity results the registration's description
+   * produced at the last crawl, or undefined when no validation report was
+   * recorded (e.g. the URL was gone before it could be validated).
+   */
+  get warningCount() {
+    return this._warningCount;
   }
 
   get datasets() {
@@ -191,6 +206,19 @@ export function toRdf(registration: Registration) {
         factory.literal(
           registration.validUntil.toISOString(),
           factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime'),
+        ),
+      ),
+    );
+  }
+
+  if (registration.warningCount !== undefined) {
+    quads.push(
+      factory.quad(
+        iri,
+        factory.namedNode(REGISTRATION_WARNING_COUNT_PREDICATE),
+        factory.literal(
+          registration.warningCount.toString(),
+          factory.namedNode('http://www.w3.org/2001/XMLSchema#integer'),
         ),
       ),
     );

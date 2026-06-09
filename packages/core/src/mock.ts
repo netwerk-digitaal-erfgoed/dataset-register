@@ -8,6 +8,8 @@ import type { DatasetStore } from './dataset.ts';
 import fs from 'node:fs';
 import DatasetExt from 'rdf-ext/lib/Dataset.js';
 import type { Rating, RatingStore } from './rate.ts';
+import type { DatasetCore } from '@rdfjs/types';
+import type { ValidationReportStore } from './validation-report.ts';
 
 export class MockRegistrationStore implements RegistrationStore {
   private readonly registrations: Map<URL, Registration> = new Map();
@@ -95,6 +97,18 @@ export class MockRatingStore implements RatingStore {
 
   async delete(_datasetUri: URL): Promise<void> {
     // In mock, we don't track ratings by URI, so this is a no-op
+  }
+}
+
+export class MockValidationReportStore implements ValidationReportStore {
+  public readonly reports: Map<string, DatasetCore> = new Map();
+
+  async store(registrationUrl: URL, report: DatasetCore): Promise<void> {
+    this.reports.set(registrationUrl.toString(), report);
+  }
+
+  async delete(registrationUrl: URL): Promise<void> {
+    this.reports.delete(registrationUrl.toString());
   }
 }
 

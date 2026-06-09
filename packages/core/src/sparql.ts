@@ -11,9 +11,10 @@ import {
 import { Rating, RatingStore } from './rate.js';
 import { SparqlDistributionHealthStore } from './distribution-health-store.js';
 import {
-  ALLOWED_DOMAIN_NAME_PREDICATE,
-  VALIDATION_WARNINGS_RATING_TYPE,
-} from './constants.js';
+  ValidationReportStore,
+  validationReportGraphIri,
+} from './validation-report.js';
+import { ALLOWED_DOMAIN_NAME_PREDICATE } from './constants.js';
 import type { DatasetCore, Quad } from '@rdfjs/types';
 import { URL } from 'node:url';
 
@@ -44,6 +45,7 @@ export function stores(
       client,
       distributionHealthGraphIri,
     ),
+    validationReportStore: new SparqlValidationReportStore(client),
   };
 }
 
@@ -94,6 +96,34 @@ export class SparqlDatasetStore implements DatasetStore {
 
   async delete(datasetUri: URL): Promise<void> {
     await this.client.update(`CLEAR GRAPH <${datasetUri}>`);
+  }
+}
+
+/**
+ * Stores each registration's full SHACL validation report in its own named
+ * graph (see {@link validationReportGraphIri}), replacing the previous report
+ * on every crawl so the graph always reflects the latest validation.
+ */
+export class SparqlValidationReportStore implements ValidationReportStore {
+  constructor(private readonly client: SparqlClient) {}
+
+  async store(registrationUrl: URL, report: DatasetCore): Promise<void> {
+    const graph = validationReportGraphIri(registrationUrl).toString();
+    const triples = await quadsToSparql([...report]);
+
+    await this.client.update(`
+      CLEAR GRAPH <${graph}>;
+
+      INSERT DATA {
+        GRAPH <${graph}> {
+          ${triples}
+        }
+      }`);
+  }
+
+  async delete(registrationUrl: URL): Promise<void> {
+    const graph = validationReportGraphIri(registrationUrl).toString();
+    await this.client.update(`CLEAR GRAPH <${graph}>`);
   }
 }
 
@@ -274,10 +304,6 @@ export class SparqlRatingStore implements RatingStore {
             schema:worstRating ${rating.worstRating} ;
             schema:ratingValue ${rating.score} ;
             schema:ratingExplanation "${rating.explanation}" ;
-          ] , [
-            schema:additionalType <${VALIDATION_WARNINGS_RATING_TYPE}> ;
-            schema:bestRating 0 ;
-            schema:ratingValue ${rating.warningCount} ;
           ]
         }
       }

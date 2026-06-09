@@ -10,4 +10,5 @@ export * from './rate.ts';
 export * from './registration.ts';
 export * from './sparql.ts';
 export * from './transform.ts';
+export * from './validation-report.ts';
 export * from './validator.ts';
