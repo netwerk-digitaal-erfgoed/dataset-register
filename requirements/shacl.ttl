@@ -1374,6 +1374,7 @@ dcat:DatasetShape
         sh:or (
             [ sh:nodeKind sh:IRI ; sh:pattern "^https?://" ]
             [ sh:pattern "^(-?\\d{4}(-\\d{2}(-\\d{2}(T\\d{2}:\\d{2}(:\\d{2})?)?)?)?|\\.\\.)(/(-?\\d{4}(-\\d{2}(-\\d{2}(T\\d{2}:\\d{2}(:\\d{2})?)?)?)?|\\d{2}(-\\d{2})?|\\.\\.))?$" ]
+            [ sh:class dc:PeriodOfTime ]
         ) ;
         sh:severity sh:Warning ;
         nde:futureChange [

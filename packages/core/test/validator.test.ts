@@ -307,6 +307,38 @@ describe('Validator', () => {
     expect(temporalResults.size).toEqual(0);
   });
 
+  it('accepts dct:temporal as a dct:PeriodOfTime structured value', async () => {
+    // The register rewrites ISO 8601 dct:temporal literals into dct:PeriodOfTime
+    // blank nodes (see normalizeTemporalCoverage), which is the canonical DCAT
+    // form rendered on the dataset page. The warning shape must treat that
+    // structured value as valid; otherwise the crawler flags a spurious warning
+    // that the /validate endpoint (which sees the raw literal) never reports.
+    const dcatValid = await file('dataset-dcat-valid.jsonld');
+    const withPeriod = dcatValid.replace(
+      '"dct:temporal": "1939/1945",',
+      `"dct:temporal": {
+        "@type": "dct:PeriodOfTime",
+        "dcat:startDate": { "@value": "1939", "@type": "http://www.w3.org/2001/XMLSchema#gYear" },
+        "dcat:endDate": { "@value": "1945", "@type": "http://www.w3.org/2001/XMLSchema#gYear" }
+      },`,
+    );
+    const input = (await rdf
+      .dataset()
+      .import(
+        Readable.from(withPeriod).pipe(
+          new JsonLdParser() as unknown as Transform,
+        ),
+      )) as unknown as Dataset;
+    const report = (await validator.validate(input)) as Valid;
+    expect(report.state).toEqual('valid');
+    const temporalResults = report.errors.match(
+      null,
+      shacl('resultPath'),
+      rdf.namedNode('http://purl.org/dc/terms/temporal'),
+    );
+    expect(temporalResults.size).toEqual(0);
+  });
+
   it('warns that schema:genre is deprecated', async () => {
     const report = (await validate(
       'dataset-schema-org-genre-deprecated.jsonld',
