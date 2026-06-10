@@ -53,6 +53,7 @@
   const distributions = $derived(data.distributions);
   const totalDistributions = $derived(data.totalDistributions);
   const summary = $derived(data.summary);
+  const summaryGeneratedAt = $derived(data.summaryGeneratedAt);
   const linksets = $derived(data.linksets);
   const temporalCoverages = $derived(data.temporalCoverages);
   const iiifManifests = $derived(data.iiifManifests);
@@ -1274,7 +1275,7 @@
     <div class="mb-8">
       <h2
         id="linked-data-summary"
-        class="mb-4 flex scroll-mt-4 items-center gap-2 text-xl font-semibold text-gray-900 dark:text-white"
+        class="mb-4 flex scroll-mt-4 flex-wrap items-center gap-2 text-xl font-semibold text-gray-900 dark:text-white"
       >
         {m.detail_linked_data_summary()}
         <span id="tooltip-linked-data-summary" class="cursor-pointer">
@@ -1285,6 +1286,25 @@
         <Tooltip triggeredBy="#tooltip-linked-data-summary"
           >{m.detail_linked_data_summary_description()}</Tooltip
         >
+        {#if summaryGeneratedAt}
+          <span
+            id="summary-generated-relative"
+            class="ml-auto cursor-default text-sm font-normal text-gray-600 dark:text-gray-400"
+          >
+            {m.detail_summary_updated({
+              time: getRelativeTimeString(new Date(summaryGeneratedAt)),
+            })}
+          </span>
+          <Tooltip triggeredBy="#summary-generated-relative">
+            {new Date(summaryGeneratedAt).toLocaleDateString(getLocale(), {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </Tooltip>
+        {/if}
       </h2>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <!-- Merged: Triples + Subjects + Avg Triples Per Subject -->

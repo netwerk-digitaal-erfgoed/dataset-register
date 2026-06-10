@@ -178,6 +178,7 @@
   "detail_object_types_description": "Shows the distribution between literal values and URI references in the dataset's object positions.",
   "detail_about": "About",
   "detail_linked_data_summary_description": "Statistical information about this dataset retrieved from the Knowledge Graph, including the number of triples, entities, properties, and class distribution.",
+  "detail_summary_updated": "Last updated {time}",
   "detail_registered_url": "Registered URL",
   "detail_registered_url_description": "URL where the dataset is described.",
   "detail_validate": "Validate",
