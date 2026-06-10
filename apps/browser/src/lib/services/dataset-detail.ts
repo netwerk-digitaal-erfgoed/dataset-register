@@ -394,6 +394,9 @@ export interface DatasetDetailResult {
   distributions: DistributionDetail[];
   totalDistributions: number;
   summary: DatasetSummary | null;
+  // When the Knowledge Graph last generated the summary (ISO dateTime from the
+  // DKG's PROV-O provenance), or null when no provenance has been recorded.
+  summaryGeneratedAt: string | null;
   linksets: Linkset[];
   temporalCoverages: TemporalCoverage[];
   iiifManifests: IiifManifests;
@@ -522,6 +525,41 @@ async function fetchSchemaApNdeConformance(
     );
   }
   return none;
+}
+
+// Reads when the Knowledge Graph last generated this dataset's summary, from the
+// PROV-O provenance the DKG records. The DKG runs many analysis steps, each
+// emitting its own prov:Activity (linked via prov:wasGeneratedBy) with a
+// prov:endedAtTime; the latest of those marks the most recent generation. Returns
+// null when no provenance has been recorded yet.
+async function fetchSummaryGeneratedAt(
+  datasetUri: string,
+): Promise<string | null> {
+  const query = `
+    PREFIX prov: <http://www.w3.org/ns/prov#>
+    SELECT (MAX(?ended) AS ?generatedAt) WHERE {
+      <${datasetUri}> prov:wasGeneratedBy ?activity .
+      ?activity prov:endedAtTime ?ended .
+    }
+  `;
+  try {
+    const bindingsStream = await fetcher.fetchBindings(
+      PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+      query,
+    );
+    for await (const raw of bindingsStream) {
+      const binding = raw as unknown as {
+        generatedAt?: { value: string };
+      };
+      return binding.generatedAt?.value ?? null;
+    }
+  } catch (e: unknown) {
+    console.error(
+      'Summary generated-at query failed:',
+      e instanceof Error ? e.message : e,
+    );
+  }
+  return null;
 }
 
 async function fetchDistributionCount(query: string): Promise<number> {
@@ -729,6 +767,7 @@ export async function fetchDatasetDetail(
     summary,
     linksets,
     classPartitionResult,
+    summaryGeneratedAt,
     temporalCoverages,
     iiifManifests,
     schemaApNdeConformance,
@@ -757,6 +796,7 @@ export async function fetchDatasetDetail(
         return null;
       }),
     classPartitionLens.findByIri(datasetUri),
+    fetchSummaryGeneratedAt(datasetUri),
     fetchTemporalCoverage(datasetUri),
     fetchIiifManifests(datasetUri),
     fetchSchemaApNdeConformance(datasetUri),
@@ -829,6 +869,7 @@ export async function fetchDatasetDetail(
     distributions,
     totalDistributions,
     summary: summaryWithClassPartition,
+    summaryGeneratedAt,
     linksets: linksets ?? [],
     temporalCoverages,
     iiifManifests,
