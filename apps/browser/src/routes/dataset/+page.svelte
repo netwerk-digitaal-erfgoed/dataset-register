@@ -58,7 +58,7 @@
   const iiifManifests = $derived(data.iiifManifests);
   const linkedData = $derived(data.linkedData);
   const terms = $derived(data.terms);
-  const registrationWarnings = $derived(data.warningCount);
+  const registrationHasWarnings = $derived(data.warningCount > 0);
 
   // SEO: canonical and hreflang URLs
   const datasetPath = $derived(datasetDetailHref(dataset.$id));
@@ -1263,7 +1263,7 @@
   <NdeCompatibility
     isAnalyzed={isAnalyzed(summary)}
     {registrationStatus}
-    {registrationWarnings}
+    {registrationHasWarnings}
     {terms}
     {iiifManifests}
     {linkedData}

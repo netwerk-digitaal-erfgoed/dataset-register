@@ -6,9 +6,12 @@ import {
   SparqlDatasetStore,
   SparqlRatingStore,
   SparqlRegistrationStore,
+  SparqlValidationReportStore,
   stores,
 } from '../src/sparql.js';
 import { SparqlDistributionHealthStore } from '../src/distribution-health-store.js';
+import { validationReportGraphIri } from '../src/validation-report.js';
+import { shacl } from '../src/validator.js';
 import factory from 'rdf-ext';
 import {
   createTestDataset,
@@ -19,7 +22,6 @@ import {
 } from './fixtures/test-datasets.js';
 import { dereference } from '../src/test-utils.js';
 import { Penalty, Rating } from '../src/index.js';
-import { VALIDATION_WARNINGS_RATING_TYPE } from '../src/constants.js';
 
 const registrationsGraphIri = 'http://example.org/registrations';
 const allowedDomainsGraphIri = 'http://example.org/allowed-domains';
@@ -34,6 +36,7 @@ describe('SPARQL', () => {
   let allowedRegistrationDomainStore: SparqlAllowedRegistrationDomainStore;
   let ratingStore: SparqlRatingStore;
   let distributionHealthStore: SparqlDistributionHealthStore;
+  let validationReportStore: SparqlValidationReportStore;
 
   beforeAll(async () => {
     qleverContainer = new QLeverContainer();
@@ -48,6 +51,7 @@ describe('SPARQL', () => {
       allowedRegistrationDomainStore,
       ratingStore,
       distributionHealthStore,
+      validationReportStore,
     } = stores(
       sparqlEndpoint,
       qleverContainer.accessToken,
@@ -64,6 +68,53 @@ describe('SPARQL', () => {
 
   beforeEach(async () => {
     await qleverContainer.clearData();
+  });
+
+  describe('SparqlValidationReportStore', () => {
+    const warningResult = (id: string) =>
+      factory.quad(
+        factory.blankNode(id),
+        shacl('resultSeverity'),
+        shacl('Warning'),
+      );
+
+    const countTriples = async (graph: string) => {
+      const result = await sparqlClient.query(`
+        SELECT (COUNT(?s) AS ?count) WHERE { GRAPH <${graph}> { ?s ?p ?o } }
+      `);
+      return parseInt((await result.toArray())[0]!.get('count')!.value, 10);
+    };
+
+    it('stores a report in the registration graph and replaces it on re-store', async () => {
+      const registrationUrl = new URL('https://example.com/registration');
+      const graph = validationReportGraphIri(registrationUrl).toString();
+
+      await validationReportStore.store(
+        registrationUrl,
+        factory.dataset([warningResult('r1'), warningResult('r2')]),
+      );
+      expect(await countTriples(graph)).toBe(2);
+
+      // Re-storing replaces the graph rather than appending to it.
+      await validationReportStore.store(
+        registrationUrl,
+        factory.dataset([warningResult('r3')]),
+      );
+      expect(await countTriples(graph)).toBe(1);
+    });
+
+    it('deletes a registration’s report graph', async () => {
+      const registrationUrl = new URL('https://example.com/registration');
+      const graph = validationReportGraphIri(registrationUrl).toString();
+
+      await validationReportStore.store(
+        registrationUrl,
+        factory.dataset([warningResult('r1')]),
+      );
+      await validationReportStore.delete(registrationUrl);
+
+      expect(await countTriples(graph)).toBe(0);
+    });
   });
 
   describe('SparqlDatasetStore', () => {
@@ -399,25 +450,24 @@ describe('SPARQL', () => {
       `);
       expect(await ratings.toArray()).toHaveLength(0);
 
-      const rating = new Rating([new Penalty('test/path', 5)], 1, 3);
+      const rating = new Rating([new Penalty('test/path', 5)], 1);
       await ratingStore.store(new URL(TEST_DATASET_IRIS.DATASET_1), rating);
 
-      // The warning count is stored as a second schema:Rating, discriminated by
-      // the validation-warnings additionalType, with schema:bestRating 0.
-      const warnings = await sparqlClient.query(`
+      // The completeness rating is stored as a single schema:Rating whose
+      // schema:ratingValue is the score (100 minus the applied penalties).
+      const stored = await sparqlClient.query(`
         PREFIX schema: <https://schema.org/>
 
-        SELECT ?warningCount WHERE {
+        SELECT ?score WHERE {
           GRAPH <${ratingsGraphIri}> {
             <${TEST_DATASET_IRIS.DATASET_1}> schema:contentRating ?rating .
-            ?rating schema:additionalType <${VALIDATION_WARNINGS_RATING_TYPE}> ;
-              schema:ratingValue ?warningCount .
+            ?rating schema:ratingValue ?score .
           }
         }
       `);
-      const warningRows = await warnings.toArray();
-      expect(warningRows).toHaveLength(1);
-      expect(warningRows[0]!.get('warningCount')!.value).toBe('3');
+      const storedRows = await stored.toArray();
+      expect(storedRows).toHaveLength(1);
+      expect(storedRows[0]!.get('score')!.value).toBe('95');
     });
 
     it('deletes ratings', async () => {
@@ -425,8 +475,7 @@ describe('SPARQL', () => {
       const rating = new Rating([new Penalty('test/path', 5)], 1);
       await ratingStore.store(datasetUri, rating);
 
-      // Verify both ratings exist: the completeness rating and the
-      // validation-warnings rating.
+      // Verify the completeness rating exists.
       const before = await sparqlClient.query(`
         PREFIX schema: <https://schema.org/>
         SELECT * WHERE {
@@ -435,7 +484,7 @@ describe('SPARQL', () => {
           }
         }
       `);
-      expect(await before.toArray()).toHaveLength(2);
+      expect(await before.toArray()).toHaveLength(1);
 
       // Delete
       await ratingStore.delete(datasetUri);

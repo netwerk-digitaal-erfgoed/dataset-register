@@ -36,4 +36,5 @@ export {
   MockAllowedRegistrationDomainStore,
   MockDatasetStore,
   MockRatingStore,
+  MockValidationReportStore,
 } from './mock.ts';

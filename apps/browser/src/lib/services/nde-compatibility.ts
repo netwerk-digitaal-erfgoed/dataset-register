@@ -167,10 +167,12 @@ export interface CompatibilityInput {
   // The dataset’s registration status: null when registered and valid, or the
   // failure reason when the registration is gone or invalid.
   registration: RegistrationFailureReason | null;
-  // The number of validation warnings on the dataset’s description. A registered,
+  // Whether the dataset’s registration validated with warnings. A registered,
   // valid description with warnings is surfaced as `warning` rather than `met`.
+  // Tracked at registration granularity (the registration URL may describe one
+  // dataset or many), so only the state is shown, not a per-dataset count.
   // Optional: absent is treated as no warnings.
-  registrationWarnings?: number;
+  registrationHasWarnings?: boolean;
   linkedData: LinkedData;
   terms: TermLinks | null;
   iiif: IiifManifests;
@@ -181,10 +183,10 @@ export interface CompatibilityInput {
 // registration as gone (URL no longer accessible) or invalid (description no
 // longer conforms) — both surfaced as `failed` with the status as the reason —
 // or the description validated with warnings (`warning`): registered and valid,
-// but not yet up to the recommended standard. The warning count says how far off.
+// but not yet up to the recommended standard.
 export function registrationState(
   status: RegistrationFailureReason | null | undefined,
-  warningCount = 0,
+  hasWarnings = false,
 ): {
   state: CompatibilityState;
   reason?: CompatibilityFailureReason;
@@ -192,7 +194,7 @@ export function registrationState(
   if (status === 'gone' || status === 'invalid') {
     return { state: 'failed', reason: status };
   }
-  return warningCount > 0 ? { state: 'warning' } : { state: 'met' };
+  return hasWarnings ? { state: 'warning' } : { state: 'met' };
 }
 
 // Derives the SCHEMA-AP-NDE conformance state. The measurement is authoritative
@@ -309,7 +311,7 @@ export function compatibilityCriteria(
 ): CompatibilityCriterion[] {
   const registration = registrationState(
     input.registration,
-    input.registrationWarnings,
+    input.registrationHasWarnings,
   );
   const linkedData = linkedDataState(input.linkedData);
   const terms = termsState(input.terms);
@@ -317,8 +319,9 @@ export function compatibilityCriteria(
     {
       key: 'registration',
       state: registration.state,
-      // The warning count, shown when the criterion is in its warning tier.
-      count: input.registrationWarnings ?? 0,
+      // Warnings are tracked at registration granularity, so the criterion
+      // carries no per-dataset count — the warning state is shown on its own.
+      count: 0,
       reason: registration.reason,
     },
     {

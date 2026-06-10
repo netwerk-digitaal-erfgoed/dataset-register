@@ -257,20 +257,6 @@
   "nde_compat_registration_explanation_invalid": "De beschrijving voldoet niet meer aan de eisen voor datasets.",
   "nde_compat_registration_heading_warning": "Geregistreerd met waarschuwingen",
   "nde_compat_registration_explanation_warning": "De beschrijving van deze dataset is geregistreerd en geldig, maar bij de validatie zijn waarschuwingen gegeven: aan sommige aanbevelingen voor datasets wordt nog niet voldaan.",
-  "nde_compat_registration_warning_count": [
-    {
-      "declarations": [
-        "input count",
-        "input display",
-        "local countPlural = count: plural"
-      ],
-      "selectors": ["countPlural"],
-      "match": {
-        "countPlural=one": "{display} validatiewaarschuwing.",
-        "countPlural=other": "{display} validatiewaarschuwingen."
-      }
-    }
-  ],
   "nde_compat_registration_view_details": "Bekijk registratiegegevens",
   "nde_compat_linked_data_heading_conforms": "Biedt linked data volgens het NDE-applicatieprofiel",
   "nde_compat_linked_data_heading_not_conforms": "Biedt linked data",

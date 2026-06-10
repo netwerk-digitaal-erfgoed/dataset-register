@@ -1,4 +1,5 @@
-import { Registration } from '../src/registration.js';
+import { Registration, toRdf } from '../src/registration.js';
+import { REGISTRATION_WARNING_COUNT_PREDICATE } from '../src/constants.js';
 import { URL } from 'url';
 
 describe('Registration', () => {
@@ -20,6 +21,44 @@ describe('Registration', () => {
 
     const becameValidAgain = stillInvalid.read([], 200, true);
     expect(becameValidAgain.validUntil).toBeUndefined();
+  });
+
+  describe('toRdf', () => {
+    it('emits nde:warningCount when a warning count was recorded', () => {
+      const registration = new Registration(
+        new URL('https://example.com/registration'),
+        new Date(),
+      ).read([], 200, true, new Date(), 3);
+
+      const quads = toRdf(registration);
+      const warningCountQuad = quads.find(
+        (quad) => quad.predicate.value === REGISTRATION_WARNING_COUNT_PREDICATE,
+      );
+
+      expect(warningCountQuad?.object.value).toBe('3');
+      expect(warningCountQuad?.object.termType).toBe('Literal');
+      expect(
+        warningCountQuad?.object.termType === 'Literal'
+          ? warningCountQuad.object.datatype.value
+          : undefined,
+      ).toBe('http://www.w3.org/2001/XMLSchema#integer');
+    });
+
+    it('omits nde:warningCount when no validation report was recorded', () => {
+      const registration = new Registration(
+        new URL('https://example.com/registration'),
+        new Date(),
+      ).read([], 200, true);
+
+      const quads = toRdf(registration);
+
+      expect(
+        quads.find(
+          (quad) =>
+            quad.predicate.value === REGISTRATION_WARNING_COUNT_PREDICATE,
+        ),
+      ).toBeUndefined();
+    });
   });
 
   describe('registrationStatus', () => {

@@ -6,13 +6,29 @@ import {
   MockDatasetStore,
   MockRatingStore,
   MockRegistrationStore,
+  MockValidationReportStore,
   validSchemaOrgDataset,
 } from '@dataset-register/core/test-utils';
 import nock from 'nock';
 import pino from 'pino';
-import { Store } from 'n3';
+import { DataFactory, Store } from 'n3';
+
+const SHACL = 'http://www.w3.org/ns/shacl#';
+const reportWithWarnings = (count: number) => {
+  const { quad, blankNode, namedNode } = DataFactory;
+  return new Store(
+    Array.from({ length: count }, (_unused, index) =>
+      quad(
+        blankNode(`result${index}`),
+        namedNode(`${SHACL}resultSeverity`),
+        namedNode(`${SHACL}Warning`),
+      ),
+    ),
+  );
+};
 
 let registrationStore: MockRegistrationStore;
+let reportStore: MockValidationReportStore;
 let crawler: Crawler;
 const validator = (isValid: boolean, errors = new Store()): Validator => ({
   validate: () =>
@@ -28,10 +44,12 @@ const noDatasetValidator: Validator = {
 describe('Crawler', () => {
   beforeEach(async () => {
     registrationStore = new MockRegistrationStore();
+    reportStore = new MockValidationReportStore();
     crawler = new Crawler(
       registrationStore,
       new MockDatasetStore(),
       new MockRatingStore(),
+      reportStore,
       validator(true),
       pino({ enabled: false }),
     );
@@ -109,11 +127,38 @@ describe('Crawler', () => {
     expect(readRegistration.datasets).toHaveLength(1); // Any references to datasets are kept.
   });
 
+  it('records the warning count and stores the validation report', async () => {
+    crawler = new Crawler(
+      registrationStore,
+      new MockDatasetStore(),
+      new MockRatingStore(),
+      reportStore,
+      validator(true, reportWithWarnings(2)),
+      pino({ enabled: false }),
+    );
+    await storeRegistrationFixture(new URL('https://example.com/valid'));
+
+    const response = await validSchemaOrgDataset();
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/valid')
+      .times(2)
+      .reply(200, response);
+    await crawler.crawl(new Date('3000-01-01'));
+
+    const readRegistration = registrationStore.all()[0];
+    expect(readRegistration.warningCount).toBe(2);
+    expect(
+      reportStore.reports.get('https://example.com/valid'),
+    ).toBeDefined();
+  });
+
   it('logs URLs that no longer validate', async () => {
     crawler = new Crawler(
       registrationStore,
       new MockDatasetStore(),
       new MockRatingStore(),
+      reportStore,
       validator(false),
       pino({ enabled: false }),
     );
@@ -135,6 +180,7 @@ describe('Crawler', () => {
       registrationStore,
       new MockDatasetStore(),
       new MockRatingStore(),
+      reportStore,
       noDatasetValidator,
       pino({ enabled: false }),
     );
@@ -159,6 +205,7 @@ describe('Crawler', () => {
       registrationStore,
       new MockDatasetStore(),
       new MockRatingStore(),
+      reportStore,
       validator(true),
       pino({ enabled: false }),
       { httpRequestTimeoutMs: 20 },

@@ -24,6 +24,7 @@ import { normalizeMediaType } from '$lib/utils/sparql';
 import { getLocale } from '$lib/paraglide/runtime';
 import {
   REGISTRATION_STATUS_BASE_URI,
+  REGISTRATION_WARNING_COUNT_PREDICATE,
   VALIDATION_WARNINGS_RATING_TYPE,
 } from '@dataset-register/core/constants';
 import {
@@ -168,6 +169,14 @@ export const DatasetDetailSchema = {
       },
       additionalType: {
         '@id': schema.additionalType,
+      },
+      // How many sh:Warning results the registration's description produced at
+      // the last crawl. Surfaces "registered with warnings" on the detail page;
+      // tracked per registration, not per dataset.
+      warningCount: {
+        '@id': REGISTRATION_WARNING_COUNT_PREDICATE,
+        '@type': xsd.integer,
+        '@optional': true,
       },
     },
   },
@@ -531,42 +540,6 @@ async function fetchDistributionCount(query: string): Promise<number> {
   return 0;
 }
 
-// Reads the per-dataset validation-warnings count from its schema:Rating (the
-// one marked with the validation-warnings additionalType). Drives the
-// registration criterion's warning tier: how far the description is from full
-// validity. Returns 0 when no warnings rating exists yet (e.g. not re-crawled).
-async function fetchWarningCount(datasetUri: string): Promise<number> {
-  const query = `
-    PREFIX schema: <https://schema.org/>
-    SELECT ?warningCount WHERE {
-      GRAPH ?g {
-        <${datasetUri}> schema:contentRating ?rating .
-        ?rating schema:additionalType <${VALIDATION_WARNINGS_RATING_TYPE}> ;
-          schema:ratingValue ?warningCount .
-      }
-    }
-    LIMIT 1
-  `;
-  try {
-    const bindingsStream = await fetcher.fetchBindings(
-      PUBLIC_SPARQL_ENDPOINT,
-      query,
-    );
-    for await (const raw of bindingsStream) {
-      const binding = raw as unknown as { warningCount?: { value: string } };
-      if (binding.warningCount?.value) {
-        return parseInt(binding.warningCount.value, 10);
-      }
-    }
-  } catch (e: unknown) {
-    console.error(
-      'Warning count query failed:',
-      e instanceof Error ? e.message : e,
-    );
-  }
-  return 0;
-}
-
 async function fetchTemporalCoverage(
   datasetUri: string,
 ): Promise<TemporalCoverage[]> {
@@ -759,7 +732,6 @@ export async function fetchDatasetDetail(
     temporalCoverages,
     iiifManifests,
     schemaApNdeConformance,
-    warningCount,
   ] = await Promise.all([
     detailLens.query(datasetQuery),
     distributionLens.query(distributionQuery),
@@ -788,7 +760,6 @@ export async function fetchDatasetDetail(
     fetchTemporalCoverage(datasetUri),
     fetchIiifManifests(datasetUri),
     fetchSchemaApNdeConformance(datasetUri),
-    fetchWarningCount(datasetUri),
   ]);
 
   const dataset = datasets.find((d) => d.$id === datasetUri) ?? datasets[0];
@@ -864,7 +835,9 @@ export async function fetchDatasetDetail(
     linkedData,
     terms,
     resolvedTerms,
-    warningCount,
+    // The registration's warning count (from its last crawl); 0 when the
+    // registration recorded none or predates warning storage.
+    warningCount: dataset.subjectOf?.warningCount ?? 0,
   };
 }
 

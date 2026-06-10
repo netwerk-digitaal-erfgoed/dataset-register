@@ -52,17 +52,7 @@ export function rate(validationResult: Valid): Rating {
     new Array<Penalty>(),
   );
 
-  // How far the description is from full validity: the number of
-  // sh:Warning-severity results in the report (SHACL warnings and probe-emitted
-  // warnings alike). Counted from the same per-dataset report the penalties use,
-  // so it reflects this dataset only — not its catalogue siblings.
-  const warningCount = validationResult.errors.match(
-    undefined,
-    shacl('resultSeverity'),
-    shacl('Warning'),
-  ).size;
-
-  return new Rating(appliedPenalties, worstRating, warningCount);
+  return new Rating(appliedPenalties, worstRating);
 }
 
 export class Penalty {
@@ -81,21 +71,14 @@ export class Rating {
   readonly penalties: Penalty[];
   public readonly worstRating: number;
   public readonly bestRating: number;
-  /**
-   * Number of sh:Warning-severity validation results for the dataset: how far the
-   * description is from full validity, separate from the completeness score.
-   */
-  public readonly warningCount: number;
 
   public constructor(
     penalties: Penalty[],
     worstRating: number,
-    warningCount = 0,
     bestRating = 100,
   ) {
     this.penalties = penalties;
     this.worstRating = worstRating;
-    this.warningCount = warningCount;
     this.bestRating = bestRating;
     this.score = penalties.reduce(
       (score, penalty) => score - penalty.score,

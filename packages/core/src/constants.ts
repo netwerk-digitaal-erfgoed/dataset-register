@@ -7,6 +7,12 @@ export const REGISTRATION_STATUS_BASE_URI =
 // apart. The completeness rating carries no additionalType.
 export const VALIDATION_WARNINGS_RATING_TYPE = `${REGISTRATION_STATUS_BASE_URI}validation-warnings`;
 
+// Predicate on a registration recording how many sh:Warning-severity results
+// its description produced at the last crawl. Lives in the NDE namespace since
+// it is a register-specific annotation, not a schema.org or DCAT term.
+export const REGISTRATION_WARNING_COUNT_PREDICATE =
+  'https://def.nde.nl/registration#warningCount';
+
 export const ALLOWED_DOMAIN_NAME_PREDICATE =
   'https://data.netwerkdigitaalerfgoed.nl/allowed_domain_names/def/domain_name';
 
