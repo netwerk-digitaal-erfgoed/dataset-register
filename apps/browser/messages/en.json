@@ -127,6 +127,8 @@
   "detail_probe_empty_body": "This download currently returns no data.",
   "detail_probe_sparql_failed": "This SPARQL endpoint did not answer a test query.",
   "detail_probe_rdf_parse_failed": "This distribution returned data that could not be parsed.",
+  "detail_probe_content_type_mismatch": "This distribution serves a different format than it declares.",
+  "detail_probe_content_type_missing": "This distribution did not declare the format it serves.",
   "detail_probe_unavailable_generic": "This distribution is currently unavailable.",
   "detail_download_none_available": "No working download available",
   "detail_download_none_available_tooltip": "None of this dataset’s downloads currently return data, according to the register’s latest check.",

@@ -16,6 +16,7 @@
     type DistributionHealth,
   } from '$lib/services/distribution-health';
   import {
+    compressionSuffix,
     selectPreferredDownload,
     sortDistributionsByAvailability,
   } from '$lib/utils/distribution-ranking';
@@ -271,6 +272,10 @@
         return m.detail_probe_sparql_failed();
       case 'RdfParseFailed':
         return m.detail_probe_rdf_parse_failed();
+      case 'ContentTypeMismatch':
+        return m.detail_probe_content_type_mismatch();
+      case 'ContentTypeMissing':
+        return m.detail_probe_content_type_missing();
       default:
         return m.detail_probe_unavailable_generic();
     }
@@ -365,7 +370,9 @@
           class="inline-flex items-center truncate rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-300"
           title={distribution.mediaType}
         >
-          {getMediaTypeLabel(distribution.mediaType)}
+          {getMediaTypeLabel(distribution.mediaType)}{compressionSuffix(
+            distribution,
+          )}
         </span>
       {/if}
       {#if distribution.byteSize}

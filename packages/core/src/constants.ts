@@ -24,11 +24,8 @@ export const COULD_NOT_FETCH_URL_PREFIX = 'Could not fetch URL';
 export const PROBE_OUTCOME_BASE_URI = 'https://def.nde.nl/probe#';
 
 // The probe outcomes that mean a distribution is currently unreachable, as
-// opposed to a content-type quality issue (ContentTypeMismatch /
-// ContentTypeMissing), which never affects reachability. The Dataset Register
-// Browser reads this list to classify distribution availability, so the register
-// stays the single source of truth for the vocabulary. Keep in sync with
-// classify() in distribution-probe.
+// distinct from a content-type failure (see CONTENT_TYPE_FAILURE_OUTCOMES). Keep
+// in sync with classify() in distribution-probe.
 export const REACHABILITY_FAILURE_OUTCOMES: readonly string[] = [
   'NetworkError',
   'NotFound',
@@ -39,3 +36,23 @@ export const REACHABILITY_FAILURE_OUTCOMES: readonly string[] = [
   'SparqlProbeFailed',
   'RdfParseFailed',
 ].map((name) => `${PROBE_OUTCOME_BASE_URI}${name}`);
+
+// The probe outcomes that mean a distribution serves the wrong format: it
+// answered with a Content-Type that does not match the declared media type
+// (ContentTypeMismatch) or did not declare one at all (ContentTypeMissing). A
+// client that asked for the declared format cannot use such a distribution, so
+// the browser treats these the same as unreachable.
+export const CONTENT_TYPE_FAILURE_OUTCOMES: readonly string[] = [
+  'ContentTypeMismatch',
+  'ContentTypeMissing',
+].map((name) => `${PROBE_OUTCOME_BASE_URI}${name}`);
+
+// Every probe outcome that, once persistent, makes a distribution unavailable to
+// a client: it is either unreachable or serves a format other than the one it
+// declares. The Dataset Register Browser reads this list to classify
+// distribution availability, so the register stays the single source of truth
+// for the vocabulary.
+export const UNAVAILABILITY_OUTCOMES: readonly string[] = [
+  ...REACHABILITY_FAILURE_OUTCOMES,
+  ...CONTENT_TYPE_FAILURE_OUTCOMES,
+];

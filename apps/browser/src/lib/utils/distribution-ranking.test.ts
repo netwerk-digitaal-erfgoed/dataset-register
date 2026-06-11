@@ -135,4 +135,70 @@ describe('sortDistributionsByAvailability', () => {
       sortDistributionsByAvailability([unavailable, noRecord], health, now),
     ).toEqual([noRecord, unavailable]);
   });
+
+  it('puts compressed downloads first (smaller to transfer), then the format preference', () => {
+    const turtle = {
+      accessURL: 'https://example.org/data.ttl',
+      mediaType: 'text/turtle',
+    };
+    const jsonLd = {
+      accessURL: 'https://example.org/data.jsonld',
+      mediaType: 'application/ld+json',
+    };
+    const ntGzip = {
+      accessURL: 'https://example.org/data.nt.gz',
+      mediaType: 'application/n-triples+gzip',
+    };
+    const turtleGzip = {
+      accessURL: 'https://example.org/data.ttl.gz',
+      mediaType: 'text/turtle+gzip',
+    };
+    const health = new Map<string, DistributionHealth>();
+    // Compressed first (N-Triples before Turtle by format preference), then the
+    // uncompressed variants (Turtle before JSON-LD).
+    expect(
+      sortDistributionsByAvailability(
+        [jsonLd, turtle, ntGzip, turtleGzip],
+        health,
+        now,
+      ),
+    ).toEqual([ntGzip, turtleGzip, turtle, jsonLd]);
+  });
+});
+
+describe('selectPreferredDownload matches the topmost dropdown entry', () => {
+  it('points at the compressed N-Triples that also sorts to the top', () => {
+    const jsonLd = {
+      accessURL: 'https://example.org/data.jsonld',
+      mediaType: 'application/ld+json',
+    };
+    const turtle = {
+      accessURL: 'https://example.org/data.ttl',
+      mediaType: 'text/turtle',
+    };
+    const ntGzip = {
+      accessURL: 'https://example.org/data.nt.gz',
+      mediaType: 'application/n-triples+gzip',
+    };
+    const health = new Map<string, DistributionHealth>();
+    const candidates = [jsonLd, turtle, ntGzip];
+    const top = sortDistributionsByAvailability(candidates, health, now)[0];
+    expect(selectPreferredDownload(candidates, health, now)).toBe(top);
+    expect(selectPreferredDownload(candidates, health, now)).toBe(ntGzip);
+  });
+
+  it('skips an unavailable topmost entry and points at the next working one', () => {
+    const ntGzip = {
+      accessURL: 'https://example.org/data.nt.gz',
+      mediaType: 'application/n-triples+gzip',
+    };
+    const turtle = {
+      accessURL: 'https://example.org/data.ttl',
+      mediaType: 'text/turtle',
+    };
+    // The otherwise-preferred compressed download is unavailable, so the button
+    // falls through to the first reachable entry rather than a broken link.
+    const health = new Map([[ntGzip.accessURL, staleFailure]]);
+    expect(selectPreferredDownload([ntGzip, turtle], health, now)).toBe(turtle);
+  });
 });

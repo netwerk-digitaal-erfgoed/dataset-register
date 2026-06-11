@@ -1,4 +1,4 @@
-import { REACHABILITY_FAILURE_OUTCOMES } from '@dataset-register/core/constants';
+import { UNAVAILABILITY_OUTCOMES } from '@dataset-register/core/constants';
 
 // A distribution's current availability, derived from the register's own
 // distribution health probe rather than the Dataset Knowledge Graph's
@@ -16,12 +16,13 @@ export interface DistributionHealth {
   consecutiveFailures: number;
 }
 
-// The reachability outcomes that, once persistent, flip a distribution to
-// unavailable, sourced from the register so the vocabulary stays in one place.
-// Content-type outcomes (ContentTypeMismatch, ContentTypeMissing) are excluded
-// upstream: they are a separate quality concern and never affect availability.
-const REACHABILITY_FAILURES: ReadonlySet<string> = new Set(
-  REACHABILITY_FAILURE_OUTCOMES,
+// The probe outcomes that, once persistent, flip a distribution to unavailable,
+// sourced from the register so the vocabulary stays in one place. Covers both
+// unreachable distributions and ones that serve a different format than they
+// declare (ContentTypeMismatch, ContentTypeMissing): a client that asked for the
+// declared format cannot use either, so both count as unavailable.
+const UNAVAILABILITY_FAILURES: ReadonlySet<string> = new Set(
+  UNAVAILABILITY_OUTCOMES,
 );
 
 // Mirrors the crawler's failure-streak suppression window so the badge stays
@@ -35,7 +36,7 @@ export function distributionAvailability(
 ): DistributionAvailability {
   if (health === null) return 'unknown';
   if (health.lastOutcome === null) return 'reachable';
-  if (!REACHABILITY_FAILURES.has(health.lastOutcome)) return 'reachable';
+  if (!UNAVAILABILITY_FAILURES.has(health.lastOutcome)) return 'reachable';
   if (health.firstFailureAt === null) return 'reachable';
 
   const streakAgeMs = now.getTime() - health.firstFailureAt.getTime();
