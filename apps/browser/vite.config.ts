@@ -19,6 +19,20 @@ export default defineConfig({
     // named exports (compressToEncodedURIComponent, …) resolve under Vite 8.
     noExternal: ['lz-string'],
   },
+  optimizeDeps: {
+    // flowbite-svelte-icons exposes each icon as a deep .svelte subpath whose
+    // export only declares a `svelte` condition. Vite 8’s Rolldown dependency
+    // scanner doesn’t apply that condition, so it failed to resolve the imports
+    // (“Package subpath is not defined by exports”), aborted the scan, and
+    // skipped pre-bundling for every dependency. Excluding the package keeps
+    // its .svelte components out of the scan (they can’t be pre-bundled anyway);
+    // teaching the scanner the `svelte` condition lets it resolve the imports it
+    // still walks past.
+    exclude: ['flowbite-svelte-icons'],
+    esbuildOptions: {
+      conditions: ['svelte', 'browser'],
+    },
+  },
   test: {
     passWithNoTests: true,
     expect: { requireAssertions: true },
