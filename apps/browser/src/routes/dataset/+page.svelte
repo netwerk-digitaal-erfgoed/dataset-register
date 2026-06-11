@@ -1220,7 +1220,7 @@
           <Dropdown
             simple
             triggeredBy="#btn-query-dropdown"
-            class="w-96 max-h-96 overflow-y-auto border border-gray-200 shadow-lg dark:border-gray-600"
+            class="max-h-96 w-max min-w-72 max-w-[28rem] overflow-y-auto overflow-x-hidden border border-gray-200 shadow-lg dark:border-gray-600"
           >
             {#each sparqlDistributions as distribution, distIndex (distribution.$id)}
               <DropdownItem
@@ -1299,7 +1299,7 @@
           <Dropdown
             simple
             triggeredBy="#btn-download-dropdown"
-            class="w-[28rem] max-h-96 overflow-y-auto border border-gray-200 shadow-lg dark:border-gray-600"
+            class="max-h-96 w-max min-w-72 max-w-[28rem] overflow-y-auto overflow-x-hidden border border-gray-200 shadow-lg dark:border-gray-600"
           >
             {#each rdfDownloads as distribution, distIndex (distribution.$id)}
               {@render downloadDropdownItem(distribution, 'rdf', distIndex)}
