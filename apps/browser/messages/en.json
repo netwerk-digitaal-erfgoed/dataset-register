@@ -268,18 +268,19 @@
   "nde_compat_registration_heading_registered": "Registered in the Dataset Register",
   "nde_compat_registration_heading_gone": "Registration no longer accessible",
   "nde_compat_registration_heading_invalid": "Registration no longer valid",
-  "nde_compat_registration_explanation_registered": "This dataset’s description is registered in the Dataset Register, so it can be found and reused.",
+  "nde_compat_registration_explanation_registered": "Others can now find and reuse this dataset.",
   "nde_compat_registration_explanation_gone": "The registration URL is no longer accessible, so the description can no longer be retrieved.",
   "nde_compat_registration_explanation_invalid": "The description no longer conforms to the requirements for datasets.",
   "nde_compat_registration_heading_warning": "Registered with warnings",
-  "nde_compat_registration_explanation_warning": "This dataset’s description is registered and valid, but it validated with warnings: some recommendations for datasets are not yet met.",
-  "nde_compat_registration_view_details": "View registration details",
+  "nde_compat_registration_explanation_warning": "This dataset is registered and valid, but it raised warnings.",
+  "nde_compat_registration_view_details": "View registration",
   "nde_compat_persistent_heading_persistent": "Uses persistent URIs",
   "nde_compat_persistent_heading_resolves": "Uses a non-persistent domain name",
   "nde_compat_persistent_heading_unresolved": "Some URIs are not reachable",
-  "nde_compat_persistent_heading_pending": "Persistent URIs not yet assessed",
+  "nde_compat_persistent_heading_pending": "Persistent URIs not yet checked",
+  "nde_compat_state_legend_label": "What the colours mean",
   "nde_compat_persistent_explanation_persistent": "This dataset’s URIs resolve to a landing page.",
-  "nde_compat_persistent_explanation_resolves": "This dataset’s URIs use a non-persistent domain name, for example one from a software vendor.",
+  "nde_compat_persistent_explanation_resolves": "The URIs resolve, but on a domain that may change, such as a software vendor’s.",
   "nde_compat_persistent_explanation_unresolved": "Some of this dataset’s sampled URIs do not resolve to a landing page.",
   "nde_compat_persistent_explanation_pending": "This dataset’s URIs have not been checked for persistence yet.",
   "nde_compat_persistent_count_unresolved": [
@@ -298,6 +299,8 @@
     }
   ],
   "nde_compat_persistent_issued_by": "Issued by {publisher}.",
+  "nde_compat_persistent_uses_scheme": "Uses {scheme} identifiers.",
+  "nde_compat_persistent_scheme_issued_by": "{scheme}, issued by {publisher}.",
   "nde_compat_linked_data_heading_conforms": "Provides linked data conforming to the NDE Application Profile",
   "nde_compat_linked_data_heading_not_conforms": "Provides linked data",
   "nde_compat_linked_data_heading_pending": "Linked data not yet assessed",
@@ -317,15 +320,19 @@
       ],
       "selectors": ["countPlural"],
       "match": {
-        "countPlural=one": "{display} triple found.",
-        "countPlural=other": "{display} triples found."
+        "countPlural=one": "{display} triple found",
+        "countPlural=other": "{display} triples found"
       }
     }
   ],
   "nde_compat_iiif_heading_provided": "Provides IIIF media",
   "nde_compat_iiif_heading_not_provided": "Does not provide IIIF media",
   "nde_compat_iiif_heading_unavailable": "IIIF media unavailable",
-  "nde_compat_iiif_explanation": "With IIIF, the images in a dataset can be viewed in any IIIF viewer.",
+  "nde_compat_iiif_explanation_before": "With ",
+  "nde_compat_iiif_explanation_after": ", the dataset’s images can be flexibly viewed in other websites and services.",
+  "nde_compat_iiif_explanation_unavailable": "This dataset declares IIIF media, but the sampled manifests are invalid",
+  "nde_compat_iiif_explanation_not_provided": "This dataset provides no IIIF media, so its images can’t be flexibly viewed in other websites and services.",
+  "iiif": "IIIF",
   "nde_compat_iiif_count": [
     {
       "declarations": [
@@ -335,8 +342,8 @@
       ],
       "selectors": ["countPlural"],
       "match": {
-        "countPlural=one": "{display} manifest found.",
-        "countPlural=other": "{display} manifests found."
+        "countPlural=one": "{display} manifest found",
+        "countPlural=other": "{display} manifests found"
       }
     }
   ],
@@ -356,8 +363,10 @@
   ],
   "nde_compat_terms_heading_uses": "Uses terms from the Network of Terms",
   "nde_compat_terms_heading_not_uses": "Does not use terms from the Network of Terms",
-  "nde_compat_terms_explanation_before": "Objects in this dataset link to shared terms from terminology sources in the ",
-  "nde_compat_terms_explanation_after": ", which makes the data interoperable and easier to find.",
+  "nde_compat_terms_explanation_not_before": "Objects in this dataset don’t link to shared terms in the ",
+  "nde_compat_terms_explanation_not_after": ", which makes them harder to link to other datasets.",
+  "nde_compat_terms_explanation_before": "Objects in this dataset link to shared terms in the ",
+  "nde_compat_terms_explanation_after": ", which makes them easier to link to other datasets.",
   "network_of_terms": "Network of Terms",
   "nde_compat_terms_count": [
     {
@@ -368,8 +377,8 @@
       ],
       "selectors": ["countPlural"],
       "match": {
-        "countPlural=one": "contains {display} link to terms",
-        "countPlural=other": "contains {display} links to terms"
+        "countPlural=one": "{display} link to terms found",
+        "countPlural=other": "{display} links to terms found"
       }
     }
   ],

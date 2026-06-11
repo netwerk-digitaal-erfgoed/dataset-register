@@ -1,14 +1,20 @@
 <script lang="ts">
   import * as m from '$lib/paraglide/messages';
   import { getLocale } from '$lib/paraglide/runtime';
+  import { Tooltip } from 'flowbite-svelte';
+  import ArrowUpRightFromSquareOutline from 'flowbite-svelte-icons/ArrowUpRightFromSquareOutline.svelte';
   import CheckOutline from 'flowbite-svelte-icons/CheckOutline.svelte';
   import CloseOutline from 'flowbite-svelte-icons/CloseOutline.svelte';
   import ExclamationCircleOutline from 'flowbite-svelte-icons/ExclamationCircleOutline.svelte';
+  import InfoCircleSolid from 'flowbite-svelte-icons/InfoCircleSolid.svelte';
   import {
     compatibilityCriteria,
+    IIIF_URL,
     NDE_VINKJES_URL,
     NETWORK_OF_TERMS_URL,
     type CompatibilityCriterion,
+    type CompatibilityFailureReason,
+    type CompatibilityState,
     type IiifManifests,
     type LinkedData,
     type PersistentUris,
@@ -24,6 +30,7 @@
     terms,
     iiifManifests,
     linkedData,
+    validateHref,
   }: {
     isAnalyzed: boolean;
     registrationStatus: RegistrationFailureReason | null;
@@ -32,6 +39,11 @@
     terms: TermLinks | null;
     iiifManifests: IiifManifests;
     linkedData: LinkedData;
+    // Localized link to this dataset’s validation page, matching the valid/invalid
+    // button in the Registration section. The IIIF criterion links “IIIF” here so
+    // visitors can inspect the manifest validation results. Null when the dataset
+    // has no registered URL to validate.
+    validateHref: string | null;
   } = $props();
 
   const criteria = $derived(
@@ -145,18 +157,100 @@
               ? m.nde_compat_linked_data_explanation_empty()
               : m.nde_compat_linked_data_explanation_none();
         }
-      // A single explanation regardless of state, following the IIIF pattern.
-      // The template renders this with “Network of Terms” as an inline link;
-      // the two halves are joined here as the plain-text fallback.
+      // Met: a positive explanation the template renders with “Network of Terms”
+      // as an inline link (the two halves are joined here as the plain-text
+      // fallback). Failed: a negative explanation, so the red row no longer reads
+      // as if the dataset does link to terms.
       // eslint-disable-next-line no-fallthrough
       case 'terms':
-        return (
-          m.nde_compat_terms_explanation_before() +
-          m.network_of_terms() +
-          m.nde_compat_terms_explanation_after()
-        );
+        return criterion.state === 'met'
+          ? m.nde_compat_terms_explanation_before() +
+              m.network_of_terms() +
+              m.nde_compat_terms_explanation_after()
+          : m.nde_compat_terms_explanation_not_before() +
+              m.network_of_terms() +
+              m.nde_compat_terms_explanation_not_after();
+      // Met: the benefit of providing IIIF, which the template renders with
+      // “IIIF” as an inline link (the halves are joined here as the plain-text
+      // fallback). Failed/unmet: state-specific text, so a row whose media is
+      // unavailable or absent no longer reads as if IIIF works.
       case 'iiif':
-        return m.nde_compat_iiif_explanation();
+        switch (criterion.state) {
+          case 'met':
+            return (
+              m.nde_compat_iiif_explanation_before() +
+              m.iiif() +
+              m.nde_compat_iiif_explanation_after()
+            );
+          case 'failed':
+            return m.nde_compat_iiif_explanation_unavailable();
+          default:
+            return m.nde_compat_iiif_explanation_not_provided();
+        }
+    }
+  }
+
+  // One line in a criterion’s state legend: the status tier (for the indicator’s
+  // shape and colour), the heading that labels that state, and the explanation of
+  // what that state means.
+  type LegendEntry = {
+    state: CompatibilityState;
+    label: string;
+    description: string;
+  };
+
+  // The states to list in a criterion’s tooltip legend. Each line reuses the same
+  // heading() and explanation() strings as the rows (built from a synthetic
+  // criterion), so the legend has no messages of its own to translate and
+  // maintain. Criteria differ in which tiers they can take: registration and
+  // linked data have two distinct red reasons; terms is binary; IIIF has no
+  // warning tier. The neutral “pending” tier (persistent, linked data) is
+  // transient, so it is only listed while the criterion is actually in it; IIIF’s
+  // neutral tier is a real outcome (“no media”) and is always listed.
+  function legendEntries(criterion: CompatibilityCriterion): LegendEntry[] {
+    const entry = (
+      state: CompatibilityState,
+      reason?: CompatibilityFailureReason,
+    ): LegendEntry => {
+      const synthetic: CompatibilityCriterion = {
+        key: criterion.key,
+        state,
+        count: 0,
+        ...(reason ? { reason } : {}),
+      };
+      return {
+        state,
+        label: heading(synthetic),
+        description: explanation(synthetic),
+      };
+    };
+    switch (criterion.key) {
+      case 'registration':
+        return [
+          entry('met'),
+          entry('warning'),
+          entry('failed', 'gone'),
+          entry('failed', 'invalid'),
+        ];
+      case 'persistent':
+        return [
+          entry('met'),
+          entry('warning'),
+          entry('failed'),
+          ...(criterion.state === 'unmet' ? [entry('unmet')] : []),
+        ];
+      case 'linked-data':
+        return [
+          entry('met'),
+          entry('warning'),
+          entry('failed', 'no-linked-data'),
+          entry('failed', 'empty'),
+          ...(criterion.state === 'unmet' ? [entry('unmet')] : []),
+        ];
+      case 'terms':
+        return [entry('met'), entry('failed')];
+      case 'iiif':
+        return [entry('met'), entry('failed'), entry('unmet')];
     }
   }
 
@@ -190,12 +284,33 @@
               display: sampled.toLocaleString(getLocale()),
             });
           }
-          case 'met':
+          case 'met': {
+            // Surface the recognised PID scheme (ARK/Handle) as a bonus, and
+            // name the issuing organisation when known (ARK only). The scheme
+            // enum maps to its proper-name label, identical in both locales.
+            const schemeLabel =
+              persistentUris.scheme === 'ark'
+                ? 'ARK'
+                : persistentUris.scheme === 'handle'
+                  ? 'Handle'
+                  : null;
+            if (schemeLabel && persistentUris.publisher) {
+              return m.nde_compat_persistent_scheme_issued_by({
+                scheme: schemeLabel,
+                publisher: persistentUris.publisher,
+              });
+            }
+            if (schemeLabel) {
+              return m.nde_compat_persistent_uses_scheme({
+                scheme: schemeLabel,
+              });
+            }
             return persistentUris.publisher
               ? m.nde_compat_persistent_issued_by({
                   publisher: persistentUris.publisher,
                 })
               : null;
+          }
           default:
             return null;
         }
@@ -226,16 +341,17 @@
     }
   }
 
-  // In-page anchor to the criterion’s evidence section further down the page, or
-  // null when it has none. Registration points to its Registration section; the
-  // linked-data criterion (when it reports a fact count) to the Linked Data
-  // Summary section; the terms criterion (when met) to the Terminology Sources
-  // section. The template attaches this to the count line when there is one,
-  // otherwise renders a dedicated link.
+  // Link to the criterion’s evidence, or null when it has none. Registration
+  // points to this dataset’s validation page (the same link as the valid/invalid
+  // button in the Registration section); the linked-data criterion (when it
+  // reports a fact count) to the in-page Linked Data Summary section; the terms
+  // criterion (when met) to the in-page Terminology Sources section. The template
+  // attaches this to the count line when there is one, otherwise renders a
+  // dedicated link.
   function sectionAnchor(criterion: CompatibilityCriterion): string | null {
     switch (criterion.key) {
       case 'registration':
-        return '#registration';
+        return validateHref;
       case 'linked-data':
         // Link the fact count down to the Linked Data Summary section; gated to
         // match the count line in detail() so the anchor only appears alongside
@@ -251,6 +367,32 @@
     }
   }
 </script>
+
+<!-- Mini status indicator for the per-criterion state legend, mirroring each
+     row's status box: the shape (tick / exclamation / cross / empty box) carries
+     the meaning alongside the colour, so the legend stays legible for colourblind
+     users and on the dark tooltip background. Decorative — the adjacent text
+     names the state. -->
+{#snippet statusIndicator(state: CompatibilityState)}
+  <span
+    class={`mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border ${
+      state === 'met'
+        ? 'border-green-600 bg-green-600 text-white dark:border-green-500 dark:bg-green-500'
+        : state === 'warning'
+          ? 'border-orange-500 bg-orange-500 text-white dark:border-orange-400 dark:bg-orange-400'
+          : state === 'failed'
+            ? 'border-red-600 bg-red-600 text-white dark:border-red-500 dark:bg-red-500'
+            : 'border-gray-300 bg-white dark:border-gray-400 dark:bg-gray-700'
+    }`}
+    aria-hidden="true"
+  >
+    {#if state === 'met'}<CheckOutline
+        class="h-3 w-3"
+      />{:else if state === 'warning'}<ExclamationCircleOutline
+        class="h-3 w-3"
+      />{:else if state === 'failed'}<CloseOutline class="h-3 w-3" />{/if}
+  </span>
+{/snippet}
 
 <!-- Analysis-dependent criteria are dropped for a dataset that has not been
      analyzed; the section is shown whenever any criterion remains. -->
@@ -270,8 +412,10 @@
         rel="noopener noreferrer"
         class="text-blue-600 hover:underline dark:text-blue-400"
       >
-        {m.nde_compat_learn_more()}
-        <span class="sr-only"> ({m.opens_in_new_tab()})</span>
+        {m.nde_compat_learn_more()}<ArrowUpRightFromSquareOutline
+          class="ms-1 inline-block h-3 w-3 align-[-0.1em]"
+          aria-hidden="true"
+        /><span class="sr-only"> ({m.opens_in_new_tab()})</span>
       </a>
     </p>
     <div
@@ -308,26 +452,72 @@
             </span>
             <div class="min-w-0">
               <h3 class="text-base font-medium text-gray-900 dark:text-white">
-                {heading(criterion)}
+                {heading(criterion)}<span
+                  id={`tooltip-${criterion.key}-states`}
+                  class="ms-1 inline-flex cursor-pointer align-[-0.125em]"
+                  ><InfoCircleSolid
+                    class="h-4 w-4 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+                  /><span class="sr-only"
+                    >{m.nde_compat_state_legend_label()}</span
+                  ></span
+                >
               </h3>
+              <!-- A per-criterion legend of the states this criterion can take, so
+                   visitors can see what each status means here (and what reaching
+                   green requires). Each line reuses the row’s own heading and
+                   explanation for that state (see legendEntries), so there is a
+                   single source of truth. -->
+              <Tooltip
+                triggeredBy={`#tooltip-${criterion.key}-states`}
+                class="max-w-xs text-left"
+              >
+                <ul class="space-y-1.5">
+                  {#each legendEntries(criterion) as item (item.label)}
+                    <li class="flex items-start gap-2">
+                      {@render statusIndicator(item.state)}
+                      <span
+                        ><span class="font-medium">{item.label}</span>: {item.description}</span
+                      >
+                    </li>
+                  {/each}
+                </ul>
+              </Tooltip>
               <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
                 <!-- The terms explanation links “Network of Terms” to the
-                     Termennetwerk browser in the current locale; other criteria
+                     Termennetwerk browser in the current locale — in both the
+                     met and failed states, with state-specific wording around
+                     the link — and the IIIF explanation links “IIIF” to NDE’s
+                     IIIF page. Both are external (new tab + icon). Other criteria
                      render their explanation as plain text. -->
-                {#if criterion.key === 'terms'}{m.nde_compat_terms_explanation_before()}<a
+                {#if criterion.key === 'terms'}{criterion.state === 'met'
+                    ? m.nde_compat_terms_explanation_before()
+                    : m.nde_compat_terms_explanation_not_before()}<a
                     href={`${NETWORK_OF_TERMS_URL}/${getLocale()}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     class="text-blue-600 hover:underline dark:text-blue-400"
-                    >{m.network_of_terms()}<span class="sr-only">
-                      ({m.opens_in_new_tab()})</span
-                    ></a
-                  >{m.nde_compat_terms_explanation_after()}{:else}{explanation(
+                    >{m.network_of_terms()}<ArrowUpRightFromSquareOutline
+                      class="ms-0.5 inline-block h-3 w-3 align-[-0.1em]"
+                      aria-hidden="true"
+                    /><span class="sr-only"> ({m.opens_in_new_tab()})</span></a
+                  >{criterion.state === 'met'
+                    ? m.nde_compat_terms_explanation_after()
+                    : m.nde_compat_terms_explanation_not_after()}{:else if criterion.key === 'iiif' && criterion.state === 'met'}{m.nde_compat_iiif_explanation_before()}<a
+                    href={IIIF_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-blue-600 hover:underline dark:text-blue-400"
+                    >{m.iiif()}<ArrowUpRightFromSquareOutline
+                      class="ms-0.5 inline-block h-3 w-3 align-[-0.1em]"
+                      aria-hidden="true"
+                    /><span class="sr-only"> ({m.opens_in_new_tab()})</span></a
+                  >{m.nde_compat_iiif_explanation_after()}{:else}{explanation(
                     criterion,
                   )}{/if}
-                <!-- A criterion with an evidence section but no count line (e.g.
-                     registration) gets a dedicated in-page link here; one with a
-                     count line carries the link on that line instead. -->
+                <!-- A criterion with an evidence link but no count line (e.g.
+                     registration, linking to the validation page) gets a
+                     dedicated link here; one with a count line carries the link
+                     on that line instead. -->
                 {#if sectionHref && !detailText}
                   <a
                     href={sectionHref}

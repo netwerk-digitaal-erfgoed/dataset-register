@@ -18,6 +18,10 @@ export const NDE_VINKJES_URL =
 export const NETWORK_OF_TERMS_URL =
   'https://termennetwerk.netwerkdigitaalerfgoed.nl';
 
+// NDE’s public page explaining IIIF. The IIIF criterion links the word “IIIF” in
+// its explanation here.
+export const IIIF_URL = 'https://netwerkdigitaalerfgoed.nl/iiif/';
+
 // DQV metric IRIs for the IIIF manifest validation measurements recorded by the
 // Dataset Knowledge Graph.
 export const MANIFESTS_SAMPLED_METRIC =
