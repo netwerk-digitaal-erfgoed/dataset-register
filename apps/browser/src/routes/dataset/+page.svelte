@@ -57,6 +57,7 @@
   const linksets = $derived(data.linksets);
   const temporalCoverages = $derived(data.temporalCoverages);
   const iiifManifests = $derived(data.iiifManifests);
+  const persistentUris = $derived(data.persistentUris);
   const linkedData = $derived(data.linkedData);
   const terms = $derived(data.terms);
   const registrationHasWarnings = $derived(data.warningCount > 0);
@@ -1265,6 +1266,7 @@
     isAnalyzed={isAnalyzed(summary)}
     {registrationStatus}
     {registrationHasWarnings}
+    {persistentUris}
     {terms}
     {iiifManifests}
     {linkedData}

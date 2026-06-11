@@ -259,6 +259,30 @@
   "nde_compat_registration_heading_warning": "Registered with warnings",
   "nde_compat_registration_explanation_warning": "This dataset’s description is registered and valid, but it validated with warnings: some recommendations for datasets are not yet met.",
   "nde_compat_registration_view_details": "View registration details",
+  "nde_compat_persistent_heading_persistent": "Uses persistent URIs",
+  "nde_compat_persistent_heading_resolves": "Uses a non-persistent domain name",
+  "nde_compat_persistent_heading_unresolved": "Some URIs are not reachable",
+  "nde_compat_persistent_heading_pending": "Persistent URIs not yet assessed",
+  "nde_compat_persistent_explanation_persistent": "This dataset’s URIs resolve to a landing page.",
+  "nde_compat_persistent_explanation_resolves": "This dataset’s URIs use a non-persistent domain name, for example one from a software vendor.",
+  "nde_compat_persistent_explanation_unresolved": "Some of this dataset’s sampled URIs do not resolve to a landing page.",
+  "nde_compat_persistent_explanation_pending": "This dataset’s URIs have not been checked for persistence yet.",
+  "nde_compat_persistent_count_unresolved": [
+    {
+      "declarations": [
+        "input count",
+        "input display",
+        "input unresolved",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{unresolved} of {display} sampled URIs does not resolve.",
+        "countPlural=other": "{unresolved} of {display} sampled URIs do not resolve."
+      }
+    }
+  ],
+  "nde_compat_persistent_issued_by": "Issued by {publisher}.",
   "nde_compat_linked_data_heading_conforms": "Provides linked data conforming to the NDE Application Profile",
   "nde_compat_linked_data_heading_not_conforms": "Provides linked data",
   "nde_compat_linked_data_heading_pending": "Linked data not yet assessed",

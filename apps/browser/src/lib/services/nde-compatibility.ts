@@ -35,11 +35,37 @@ export const SCHEMA_AP_NDE_CONFORMANCE_METRIC =
 export const QUADS_VALIDATED_METRIC =
   'https://def.nde.nl/metric#quads-validated';
 
+// DQV metric IRIs for the persistent-URI (subject-URI resolution) measurements
+// recorded by the Dataset Knowledge Graph on the dataset’s self-minted subject
+// namespace. `subject-uris-sampled` is the denominator (how many subject URIs
+// were sampled), `subject-uris-resolved` the numerator (how many of those
+// resolved to an HTML landing page).
+export const SUBJECT_URIS_SAMPLED_METRIC =
+  'https://def.nde.nl/metric#subject-uris-sampled';
+export const SUBJECT_URIS_RESOLVED_METRIC =
+  'https://def.nde.nl/metric#subject-uris-resolved';
+
+// Boolean DQV metric flagging the subject namespace as non-durable: emitted with
+// value `false` when the namespace is on the Dataset Knowledge Graph’s disallow
+// list of known non-persistent vendor namespaces. Absent for an unflagged
+// namespace. The register reads it to demote an otherwise-green namespace that
+// resolves to a 🟠 warning. Proposed contract — see the dataset-knowledge-graph
+// issue; the orange tier stays dormant until the DKG emits this.
+export const SUBJECT_URIS_PERSISTENT_METRIC =
+  'https://def.nde.nl/metric#subject-uris-persistent';
+
+// Namespace of the recognised persistent-identifier schemes the Knowledge Graph
+// attaches to a subject namespace via `dcterms:conformsTo` (e.g.
+// `https://def.nde.nl/pid-scheme#ark`). Its presence is the green/orange
+// discriminator for the persistent criterion.
+export const PID_SCHEME_BASE_URI = 'https://def.nde.nl/pid-scheme#';
+
 // The registration criterion leads — every registered dataset has it, so it
-// anchors the section regardless of analysis. The linked-data and terms criteria
-// follow, then iiif, matching the order in NDE communication.
+// anchors the section regardless of analysis. Persistent identifiers follow, then
+// linked data and terms, then iiif, matching the order in NDE communication.
 export type CompatibilityCriterionKey =
   | 'registration'
+  | 'persistent'
   | 'linked-data'
   | 'terms'
   | 'iiif';
@@ -50,7 +76,7 @@ export type CompatibilityCriterionKey =
 // any dataset, are always shown, and so keep the section visible even for a
 // dataset that has not been analyzed.
 const ANALYSIS_DEPENDENT_CRITERIA: ReadonlySet<CompatibilityCriterionKey> =
-  new Set(['terms', 'iiif']);
+  new Set(['persistent', 'terms', 'iiif']);
 
 // The four assessment tiers a criterion can take. Not every criterion uses all
 // of them (IIIF, for instance, has no 'warning'):
@@ -100,6 +126,41 @@ export interface IiifManifests {
   declared: number;
   sampled: number | null;
   validated: number | null;
+}
+
+// The recognised persistent-identifier schemes the Knowledge Graph detects on a
+// subject namespace. A recognised scheme is not what makes a namespace persistent
+// — a self-minted HTTP namespace that resolves is persistent too — but it is a
+// positive signal worth surfacing (the indirection survives a domain move).
+export type PidScheme = 'ark' | 'handle';
+
+// Persistent-URI figures from the Knowledge Graph for the dataset’s most common
+// self-minted subject namespace. The DKG samples subject URIs from that namespace
+// and dereferences them. Persistence is judged by resolution: every sampled URI
+// reaching an HTML landing page is the bar. A recognised PID scheme and its
+// issuing organisation are surfaced as positive embellishments, not as a gate.
+// 'uriSpace'      — the namespace that was assessed, or null when the DKG found no
+//                   self-minted namespace to sample (nothing to assess yet).
+// 'scheme'        — the recognised PID scheme (ARK or Handle), or null. Shown as a
+//                   bonus on an otherwise-green row; it does not change the state.
+// 'publisher'     — the issuing organisation, resolved from the PID registry (ARK
+//                   only); null for Handle or when the lookup found none.
+// 'sampled'       — how many subject URIs were sampled (the denominator), or null
+//                   when no resolution measurement has been recorded yet.
+// 'resolved'      — how many of the sampled URIs resolved to an HTML landing page
+//                   (the numerator); null when no measurement exists.
+// 'onDisallowList' — whether the namespace is on the DKG’s disallow list of known
+//                   non-durable vendor namespaces: it resolves today but is not a
+//                   durable home for the identifiers, so it warns rather than
+//                   passing. False until the DKG emits the marker (see
+//                   dataset-knowledge-graph): the orange tier is dormant until then.
+export interface PersistentUris {
+  uriSpace: string | null;
+  scheme: PidScheme | null;
+  publisher: string | null;
+  sampled: number | null;
+  resolved: number | null;
+  onDisallowList: boolean;
 }
 
 // SCHEMA-AP-NDE sample-conformance figures from the Knowledge Graph plus whether
@@ -173,6 +234,7 @@ export interface CompatibilityInput {
   // dataset or many), so only the state is shown, not a per-dataset count.
   // Optional: absent is treated as no warnings.
   registrationHasWarnings?: boolean;
+  persistent: PersistentUris;
   linkedData: LinkedData;
   terms: TermLinks | null;
   iiif: IiifManifests;
@@ -275,6 +337,30 @@ export function iiifState(manifests: IiifManifests): CompatibilityState {
   return 'met';
 }
 
+// Derives the persistent-URI state from the subject-URI resolution measurement.
+// Persistence is judged by resolution, not by the identifier scheme: a self-minted
+// HTTP namespace that resolves to an HTML landing page is just as persistent as an
+// ARK or Handle, so it is `met` (🟢). If any sampled URI fails to resolve
+// (`resolved` < `sampled`), the criterion is `failed` (🔴). A namespace that fully
+// resolves but is on the DKG’s disallow list of known non-durable vendor
+// namespaces is a `warning` (🟠): it works today but is not a durable home for the
+// identifiers. With no measurement yet — the resolution step has not run, or the
+// DKG found no self-minted namespace to sample — the criterion is neutral
+// pending (⚪): a grey row signalling “this will still be checked”, unlike terms
+// it keeps its place rather than being omitted.
+export function persistentUrisState(
+  persistent: PersistentUris,
+): CompatibilityState {
+  if (persistent.sampled === null || persistent.sampled <= 0) {
+    return 'unmet';
+  }
+  const resolved = persistent.resolved ?? 0;
+  if (resolved < persistent.sampled) {
+    return 'failed';
+  }
+  return persistent.onDisallowList ? 'warning' : 'met';
+}
+
 // Derives the term-usage state, or `null` when the criterion cannot be assessed
 // and so must be omitted (it has no neutral grey state). The Dataset Knowledge
 // Graph emits no positive “terms analysis ran” measurement, so assessability is
@@ -300,12 +386,12 @@ export function termsState(terms: TermLinks | null): CompatibilityState | null {
 }
 
 // Builds the list of NDE criteria for a dataset. The registration row leads — it
-// applies to any dataset, so it anchors the section; the linked-data row follows,
-// then terms, then IIIF, matching the order in NDE communication. Registration
-// and linked data are foundational and always shown; the terms row is omitted
-// when it cannot be assessed, and the analysis-dependent rows (terms, IIIF) are
-// dropped when the dataset has not been analyzed. The detail page shows the
-// section whenever any criterion remains.
+// applies to any dataset, so it anchors the section; the persistent-identifier
+// row follows, then linked data, then terms, then IIIF, matching the order in NDE
+// communication. Registration and linked data are foundational and always shown;
+// the terms row is omitted when it cannot be assessed, and the analysis-dependent
+// rows (persistent, terms, IIIF) are dropped when the dataset has not been
+// analyzed. The detail page shows the section whenever any criterion remains.
 export function compatibilityCriteria(
   input: CompatibilityInput,
 ): CompatibilityCriterion[] {
@@ -323,6 +409,13 @@ export function compatibilityCriteria(
       // carries no per-dataset count — the warning state is shown on its own.
       count: 0,
       reason: registration.reason,
+    },
+    {
+      key: 'persistent',
+      state: persistentUrisState(input.persistent),
+      // The persistent criterion shows the resolution figures (resolved of
+      // sampled) from the prop, not a single count.
+      count: input.persistent.sampled ?? 0,
     },
     {
       key: 'linked-data',

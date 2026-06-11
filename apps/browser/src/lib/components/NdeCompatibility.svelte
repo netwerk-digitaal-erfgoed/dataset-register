@@ -11,6 +11,7 @@
     type CompatibilityCriterion,
     type IiifManifests,
     type LinkedData,
+    type PersistentUris,
     type RegistrationFailureReason,
     type TermLinks,
   } from '$lib/services/nde-compatibility';
@@ -19,6 +20,7 @@
     isAnalyzed,
     registrationStatus,
     registrationHasWarnings,
+    persistentUris,
     terms,
     iiifManifests,
     linkedData,
@@ -26,6 +28,7 @@
     isAnalyzed: boolean;
     registrationStatus: RegistrationFailureReason | null;
     registrationHasWarnings: boolean;
+    persistentUris: PersistentUris;
     terms: TermLinks | null;
     iiifManifests: IiifManifests;
     linkedData: LinkedData;
@@ -36,6 +39,7 @@
       isAnalyzed,
       registration: registrationStatus,
       registrationHasWarnings,
+      persistent: persistentUris,
       linkedData,
       terms,
       iiif: iiifManifests,
@@ -58,6 +62,18 @@
             return m.nde_compat_registration_heading_invalid();
           default:
             return m.nde_compat_registration_heading_registered();
+        }
+      case 'persistent':
+        switch (criterion.state) {
+          case 'met':
+            return m.nde_compat_persistent_heading_persistent();
+          case 'warning':
+            return m.nde_compat_persistent_heading_resolves();
+          case 'failed':
+            return m.nde_compat_persistent_heading_unresolved();
+          // Neutral: analyzed, but resolution has not been measured yet.
+          default:
+            return m.nde_compat_persistent_heading_pending();
         }
       case 'linked-data':
         switch (criterion.state) {
@@ -105,6 +121,17 @@
           default:
             return m.nde_compat_registration_explanation_registered();
         }
+      case 'persistent':
+        switch (criterion.state) {
+          case 'met':
+            return m.nde_compat_persistent_explanation_persistent();
+          case 'warning':
+            return m.nde_compat_persistent_explanation_resolves();
+          case 'failed':
+            return m.nde_compat_persistent_explanation_unresolved();
+          default:
+            return m.nde_compat_persistent_explanation_pending();
+        }
       case 'linked-data':
         switch (criterion.state) {
           case 'met':
@@ -147,6 +174,31 @@
         // only the warning state and a link to the registration’s details
         // (rendered separately); it carries no count line.
         return null;
+      case 'persistent':
+        // When some sampled URIs failed to resolve, report the ratio as
+        // evidence; when persistent and issued by a known organisation (ARK),
+        // name it. Other states carry no count line.
+        switch (criterion.state) {
+          case 'failed': {
+            const sampled = persistentUris.sampled ?? 0;
+            // Report the failures directly, matching the red state: how many of
+            // the sampled URIs did not resolve. Plurals key on this count.
+            const unresolved = sampled - (persistentUris.resolved ?? 0);
+            return m.nde_compat_persistent_count_unresolved({
+              count: unresolved,
+              unresolved: unresolved.toLocaleString(getLocale()),
+              display: sampled.toLocaleString(getLocale()),
+            });
+          }
+          case 'met':
+            return persistentUris.publisher
+              ? m.nde_compat_persistent_issued_by({
+                  publisher: persistentUris.publisher,
+                })
+              : null;
+          default:
+            return null;
+        }
       case 'linked-data':
         // The fact count (void:triples) is shown only when the dataset actually
         // has linked data with a known triple count.

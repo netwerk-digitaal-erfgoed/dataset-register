@@ -3,10 +3,12 @@ import {
   compatibilityCriteria,
   iiifState,
   linkedDataState,
+  persistentUrisState,
   registrationState,
   schemaApNdeState,
   termsState,
   type LinkedData,
+  type PersistentUris,
 } from './nde-compatibility';
 
 // A neutral linked-data fixture for tests that focus on another criterion: no
@@ -18,6 +20,17 @@ const noLinkedData: LinkedData = {
   conformant: null,
   quadsValidated: null,
   triples: null,
+};
+
+// A pending persistent-URI fixture for tests that focus on another criterion:
+// analyzed, but no subject-URI resolution measurement recorded yet.
+const pendingPersistent: PersistentUris = {
+  uriSpace: null,
+  scheme: null,
+  publisher: null,
+  sampled: null,
+  resolved: null,
+  onDisallowList: false,
 };
 
 describe('iiifState', () => {
@@ -42,6 +55,110 @@ describe('iiifState', () => {
       'met',
     );
     expect(iiifState({ declared: 5, sampled: 0, validated: 0 })).toBe('met');
+  });
+});
+
+describe('persistentUrisState', () => {
+  it('is met when all sampled URIs resolve, for a recognised PID scheme', () => {
+    expect(
+      persistentUrisState({
+        uriSpace: 'https://n2t.net/ark:/22921/',
+        scheme: 'ark',
+        publisher: 'Gemeentemuseum Het Hannemahuis',
+        sampled: 10,
+        resolved: 10,
+        onDisallowList: false,
+      }),
+    ).toBe('met');
+  });
+
+  it('is met when all sampled URIs resolve from a self-minted HTTP namespace (no PID scheme required)', () => {
+    expect(
+      persistentUrisState({
+        uriSpace: 'http://data.beeldengeluid.nl/id/program/',
+        scheme: null,
+        publisher: null,
+        sampled: 10,
+        resolved: 10,
+        onDisallowList: false,
+      }),
+    ).toBe('met');
+  });
+
+  it('is a warning when all sampled URIs resolve but the namespace is on the disallow list', () => {
+    expect(
+      persistentUrisState({
+        uriSpace: 'https://vendor.example/cms/',
+        scheme: null,
+        publisher: null,
+        sampled: 10,
+        resolved: 10,
+        onDisallowList: true,
+      }),
+    ).toBe('warning');
+  });
+
+  it('is failed when at least one sampled URI does not resolve, even for a recognised scheme', () => {
+    expect(
+      persistentUrisState({
+        uriSpace: 'https://n2t.net/ark:/53016/',
+        scheme: 'ark',
+        publisher: 'Stichting Erfgoedpark Batavialand',
+        sampled: 10,
+        resolved: 0,
+        onDisallowList: false,
+      }),
+    ).toBe('failed');
+    expect(
+      persistentUrisState({
+        uriSpace: 'https://n2t.net/ark:/32154/',
+        scheme: 'ark',
+        publisher: 'Hunebedcentrum',
+        sampled: 10,
+        resolved: 2,
+        onDisallowList: false,
+      }),
+    ).toBe('failed');
+  });
+
+  it('prefers the failed state over the disallow-list warning when resolution also fails', () => {
+    expect(
+      persistentUrisState({
+        uriSpace: 'https://vendor.example/cms/',
+        scheme: null,
+        publisher: null,
+        sampled: 10,
+        resolved: 3,
+        onDisallowList: true,
+      }),
+    ).toBe('failed');
+  });
+
+  it('is unmet (pending) when no resolution measurement has been recorded yet', () => {
+    expect(persistentUrisState(pendingPersistent)).toBe('unmet');
+    expect(
+      persistentUrisState({
+        uriSpace: 'https://example.org/id/',
+        scheme: null,
+        publisher: null,
+        sampled: 0,
+        resolved: 0,
+        onDisallowList: false,
+      }),
+    ).toBe('unmet');
+  });
+
+  it('treats a missing resolved measurement as zero resolved (failed)', () => {
+    expect(
+      persistentUrisState({
+        uriSpace: 'https://example.org/id/',
+        scheme: null,
+        publisher: null,
+        sampled: 10,
+        resolved: null,
+        onDisallowList: false,
+      }),
+    ).toBe('failed');
   });
 });
 
@@ -296,22 +413,23 @@ describe('termsState', () => {
 
 describe('compatibilityCriteria', () => {
   it('exposes the declared count and computed state for IIIF', () => {
-    const [, , iiif] = compatibilityCriteria({
+    const iiif = compatibilityCriteria({
       isAnalyzed: true,
       registration: null,
+      persistent: pendingPersistent,
       linkedData: noLinkedData,
       terms: null,
       iiif: { declared: 4152, sampled: 10, validated: 0 },
-    });
-    expect(iiif.key).toBe('iiif');
-    expect(iiif.state).toBe('failed');
-    expect(iiif.count).toBe(4152);
+    }).find((criterion) => criterion.key === 'iiif');
+    expect(iiif?.state).toBe('failed');
+    expect(iiif?.count).toBe(4152);
   });
 
   it('leads with the registration criterion', () => {
     const [registration] = compatibilityCriteria({
       isAnalyzed: true,
       registration: 'gone',
+      persistent: pendingPersistent,
       linkedData: noLinkedData,
       terms: null,
       iiif: { declared: 0, sampled: null, validated: null },
@@ -321,11 +439,32 @@ describe('compatibilityCriteria', () => {
     expect(registration.reason).toBe('gone');
   });
 
+  it('places the persistent criterion second and exposes its state', () => {
+    const [, persistent] = compatibilityCriteria({
+      isAnalyzed: true,
+      registration: null,
+      persistent: {
+        uriSpace: 'https://n2t.net/ark:/22921/',
+        scheme: 'ark',
+        publisher: 'Gemeentemuseum Het Hannemahuis',
+        sampled: 10,
+        resolved: 10,
+        onDisallowList: false,
+      },
+      linkedData: noLinkedData,
+      terms: null,
+      iiif: { declared: 0, sampled: null, validated: null },
+    });
+    expect(persistent.key).toBe('persistent');
+    expect(persistent.state).toBe('met');
+  });
+
   it('surfaces the registration warning tier without a count', () => {
     const [registration] = compatibilityCriteria({
       isAnalyzed: true,
       registration: null,
       registrationHasWarnings: true,
+      persistent: pendingPersistent,
       linkedData: noLinkedData,
       terms: null,
       iiif: { declared: 0, sampled: null, validated: null },
@@ -337,10 +476,11 @@ describe('compatibilityCriteria', () => {
     expect(registration.count).toBe(0);
   });
 
-  it('exposes the linked-data state and fact count on the second criterion', () => {
-    const [, linkedData] = compatibilityCriteria({
+  it('exposes the linked-data state and fact count', () => {
+    const linkedData = compatibilityCriteria({
       isAnalyzed: true,
       registration: null,
+      persistent: pendingPersistent,
       linkedData: {
         declared: true,
         hasVoidDataset: true,
@@ -351,16 +491,16 @@ describe('compatibilityCriteria', () => {
       },
       terms: null,
       iiif: { declared: 0, sampled: null, validated: null },
-    });
-    expect(linkedData.key).toBe('linked-data');
-    expect(linkedData.state).toBe('met');
-    expect(linkedData.count).toBe(1234);
+    }).find((criterion) => criterion.key === 'linked-data');
+    expect(linkedData?.state).toBe('met');
+    expect(linkedData?.count).toBe(1234);
   });
 
-  it('carries the linked-data failure reason on the second criterion', () => {
-    const [, linkedData] = compatibilityCriteria({
+  it('carries the linked-data failure reason', () => {
+    const linkedData = compatibilityCriteria({
       isAnalyzed: true,
       registration: null,
+      persistent: pendingPersistent,
       linkedData: {
         declared: true,
         hasVoidDataset: true,
@@ -371,39 +511,47 @@ describe('compatibilityCriteria', () => {
       },
       terms: null,
       iiif: { declared: 0, sampled: null, validated: null },
-    });
-    expect(linkedData.key).toBe('linked-data');
-    expect(linkedData.state).toBe('failed');
-    expect(linkedData.reason).toBe('empty');
+    }).find((criterion) => criterion.key === 'linked-data');
+    expect(linkedData?.state).toBe('failed');
+    expect(linkedData?.reason).toBe('empty');
   });
 
-  it('renders all three criteria regardless of state for an analyzed dataset', () => {
+  it('renders registration, persistent, linked data and iiif for an analyzed dataset', () => {
     expect(
       compatibilityCriteria({
         isAnalyzed: true,
         registration: null,
+        persistent: pendingPersistent,
         linkedData: noLinkedData,
         terms: null,
         iiif: { declared: 0, sampled: null, validated: null },
-      }),
-    ).toHaveLength(3);
+      }).map((criterion) => criterion.key),
+    ).toEqual(['registration', 'persistent', 'linked-data', 'iiif']);
   });
 
-  it('places the terms criterion after linked-data and before iiif when present', () => {
+  it('orders the criteria registration, persistent, linked-data, terms, iiif when all present', () => {
     const keys = compatibilityCriteria({
       isAnalyzed: true,
       registration: null,
+      persistent: pendingPersistent,
       linkedData: noLinkedData,
       terms: { links: 42, distinctObjectsUri: 1000 },
       iiif: { declared: 0, sampled: null, validated: null },
     }).map((criterion) => criterion.key);
-    expect(keys).toEqual(['registration', 'linked-data', 'terms', 'iiif']);
+    expect(keys).toEqual([
+      'registration',
+      'persistent',
+      'linked-data',
+      'terms',
+      'iiif',
+    ]);
   });
 
   it('exposes the links count and met state for the terms criterion', () => {
     const terms = compatibilityCriteria({
       isAnalyzed: true,
       registration: null,
+      persistent: pendingPersistent,
       linkedData: noLinkedData,
       terms: { links: 42, distinctObjectsUri: 1000 },
       iiif: { declared: 0, sampled: null, validated: null },
@@ -416,6 +564,7 @@ describe('compatibilityCriteria', () => {
     const terms = compatibilityCriteria({
       isAnalyzed: true,
       registration: null,
+      persistent: pendingPersistent,
       linkedData: noLinkedData,
       terms: { links: 0, distinctObjectsUri: 500 },
       iiif: { declared: 0, sampled: null, validated: null },
@@ -427,6 +576,7 @@ describe('compatibilityCriteria', () => {
     const keys = compatibilityCriteria({
       isAnalyzed: true,
       registration: null,
+      persistent: pendingPersistent,
       linkedData: noLinkedData,
       terms: { links: 0, distinctObjectsUri: 0 },
       iiif: { declared: 0, sampled: null, validated: null },
@@ -435,13 +585,20 @@ describe('compatibilityCriteria', () => {
   });
 
   it('keeps the foundational criteria when the dataset is not analyzed', () => {
-    // The analysis-dependent criteria (terms, IIIF) are dropped, but registration
-    // and linked data are foundational, so they remain and keep the section
-    // visible.
+    // The analysis-dependent criteria (persistent, terms, IIIF) are dropped, but
+    // registration and linked data are foundational, so they remain and keep the
+    // section visible.
     expect(
       compatibilityCriteria({
         isAnalyzed: false,
         registration: null,
+        persistent: {
+          uriSpace: 'https://n2t.net/ark:/22921/',
+          scheme: 'ark',
+          publisher: 'Gemeentemuseum Het Hannemahuis',
+          sampled: 10,
+          resolved: 10,
+        },
         linkedData: {
           declared: true,
           hasVoidDataset: false,
