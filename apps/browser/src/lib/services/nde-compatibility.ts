@@ -47,12 +47,12 @@ export const SUBJECT_URIS_RESOLVED_METRIC =
 
 // Boolean DQV metric flagging the subject namespace as non-durable: emitted with
 // value `false` when the namespace is on the Dataset Knowledge Graph’s disallow
-// list of known non-persistent vendor namespaces. Absent for an unflagged
+// list of known non-durable vendor namespaces. Absent for an unflagged
 // namespace. The register reads it to demote an otherwise-green namespace that
-// resolves to a 🟠 warning. Proposed contract — see the dataset-knowledge-graph
-// issue; the orange tier stays dormant until the DKG emits this.
-export const SUBJECT_URIS_PERSISTENT_METRIC =
-  'https://def.nde.nl/metric#subject-uris-persistent';
+// resolves to a 🟠 warning. It is namespace-scoped (a verdict on the namespace as
+// a durable home), orthogonal to the per-URI `subject-uris-*` resolution axis.
+export const SUBJECT_NAMESPACE_DURABLE_METRIC =
+  'https://def.nde.nl/metric#subject-namespace-durable';
 
 // Namespace of the recognised persistent-identifier schemes the Knowledge Graph
 // attaches to a subject namespace via `dcterms:conformsTo` (e.g.

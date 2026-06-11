@@ -489,7 +489,7 @@ async function fetchIiifManifests(datasetUri: string): Promise<IiifManifests> {
 // measurements (`subject-uris-sampled`/`subject-uris-resolved`) on a `void:subset`
 // scoped to that namespace, plus a recognised PID scheme (`dcterms:conformsTo`)
 // and its issuing `dcterms:publisher` (ARK) as positive embellishments, and a
-// `subject-uris-persistent` boolean flag (`false`) when the namespace is on the
+// `subject-namespace-durable` boolean flag (`false`) when the namespace is on the
 // disallow list. The sampled measurement keys the join, so the right subset is
 // selected even when the dataset has other subsets (e.g. IIIF). Every field is
 // null/false when no such subset has been recorded yet.
@@ -509,7 +509,7 @@ async function fetchPersistentUris(
     PREFIX dct: <http://purl.org/dc/terms/>
     PREFIX dqv: <http://www.w3.org/ns/dqv#>
     PREFIX nde: <https://def.nde.nl/metric#>
-    SELECT ?uriSpace ?scheme ?publisher ?sampled ?resolved ?persistent WHERE {
+    SELECT ?uriSpace ?scheme ?publisher ?sampled ?resolved ?durable WHERE {
       <${datasetUri}> void:subset ?ns .
       ?ns void:uriSpace ?uriSpace ;
         dqv:hasQualityMeasurement [
@@ -524,8 +524,8 @@ async function fetchPersistentUris(
       }
       OPTIONAL {
         ?ns dqv:hasQualityMeasurement [
-          dqv:isMeasurementOf nde:subject-uris-persistent ;
-          dqv:value ?persistent
+          dqv:isMeasurementOf nde:subject-namespace-durable ;
+          dqv:value ?durable
         ]
       }
       OPTIONAL {
@@ -548,7 +548,7 @@ async function fetchPersistentUris(
         publisher?: { value: string };
         sampled?: { value: string };
         resolved?: { value: string };
-        persistent?: { value: string };
+        durable?: { value: string };
       };
       return {
         uriSpace: binding.uriSpace?.value ?? null,
@@ -560,10 +560,10 @@ async function fetchPersistentUris(
         resolved: binding.resolved?.value
           ? parseInt(binding.resolved.value, 10)
           : null,
-        // The DKG emits the persistent flag as `false` only for a namespace on
+        // The DKG emits the durability flag as `false` only for a namespace on
         // its disallow list; absence means unflagged. Dormant until the DKG ships
         // the measurement (see dataset-knowledge-graph).
-        onDisallowList: binding.persistent?.value === 'false',
+        onDisallowList: binding.durable?.value === 'false',
       };
     }
   } catch (e: unknown) {
