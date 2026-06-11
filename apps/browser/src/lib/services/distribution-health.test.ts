@@ -44,7 +44,7 @@ describe('distributionAvailability', () => {
     expect(distributionAvailability(health, now)).toBe('unavailable');
   });
 
-  it('stays reachable for content-type outcomes regardless of age', () => {
+  it('is unavailable for a persistent content-type failure (wrong or missing format)', () => {
     for (const outcome of ['ContentTypeMismatch', 'ContentTypeMissing']) {
       const health: DistributionHealth = {
         lastOutcome: `https://def.nde.nl/probe#${outcome}`,
@@ -53,8 +53,19 @@ describe('distributionAvailability', () => {
         firstFailureAt: new Date('2026-01-01T12:00:00Z'), // months old
         consecutiveFailures: 99,
       };
-      expect(distributionAvailability(health, now)).toBe('reachable');
+      expect(distributionAvailability(health, now)).toBe('unavailable');
     }
+  });
+
+  it('stays reachable for a content-type failure within the threshold window', () => {
+    const health: DistributionHealth = {
+      lastOutcome: 'https://def.nde.nl/probe#ContentTypeMismatch',
+      lastProbedAt: now,
+      lastSuccessAt: null,
+      firstFailureAt: new Date('2026-06-08T12:00:00Z'), // 2 days before now
+      consecutiveFailures: 3,
+    };
+    expect(distributionAvailability(health, now)).toBe('reachable');
   });
 
   it('is reachable when the last probe succeeded (no outcome)', () => {

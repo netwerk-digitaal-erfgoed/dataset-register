@@ -16,29 +16,53 @@ export interface RankableDistribution {
   conformsTo?: readonly string[];
 }
 
-function isGzip(distribution: RankableDistribution): boolean {
-  return (
-    (distribution.mediaType?.includes('+gzip') ?? false) ||
-    distribution.accessURL.endsWith('.gz')
-  );
+// The label suffix that marks a compressed download, or an empty string when the
+// distribution is not compressed. gzip (`+gzip` media type or a .gz/.tgz URL) and
+// zip (`application/zip` or a .zip URL) are recognised; both are smaller to
+// transfer and so sort to the top. The suffix is reused as the human-facing label
+// so a compressed variant is no longer indistinguishable from its plain sibling.
+export function compressionSuffix(
+  distribution: RankableDistribution,
+): '' | ' (gzip)' | ' (zip)' {
+  const mediaType = distribution.mediaType?.toLowerCase() ?? '';
+  const url = distribution.accessURL.toLowerCase();
+  if (mediaType.includes('gzip') || /\.(gz|gzip|tgz)$/.test(url)) {
+    return ' (gzip)';
+  }
+  if (mediaType.includes('zip') || url.endsWith('.zip')) {
+    return ' (zip)';
+  }
+  return '';
 }
 
-// The established download type priority: gzipped N-Triples first (smallest to
-// transfer, fastest to parse), then any gzipped RDF, then Turtle, then JSON-LD,
-// then any other RDF, falling back to the first candidate.
-function pickByTypePriority<T extends RankableDistribution>(
-  candidates: readonly T[],
-): T | undefined {
-  return (
-    candidates.find(
-      (d) => d.mediaType === 'application/n-triples' && isGzip(d),
-    ) ??
-    candidates.find((d) => isRdfDistribution(d) && isGzip(d)) ??
-    candidates.find((d) => d.mediaType === 'text/turtle') ??
-    candidates.find((d) => d.mediaType === 'application/ld+json') ??
-    candidates.find(isRdfDistribution) ??
-    candidates[0]
-  );
+function isCompressed(distribution: RankableDistribution): boolean {
+  return compressionSuffix(distribution) !== '';
+}
+
+// Media type without a `+gzip` suffix, lower-cased, so a compressed variant ranks
+// by its underlying RDF serialization (e.g. `application/n-triples+gzip` ranks as
+// N-Triples).
+function baseMediaType(distribution: RankableDistribution): string {
+  return (distribution.mediaType ?? '').toLowerCase().replace(/\+gzip$/, '');
+}
+
+// Preference among RDF serializations, smallest/fastest first: N-Triples and
+// N-Quads (line-based, stream-parseable), then Turtle, then JSON-LD, then any
+// other RDF, then non-RDF. Used to order variants within an availability and
+// compression group so the list is deterministic and the best format leads.
+function formatPriority(distribution: RankableDistribution): number {
+  switch (baseMediaType(distribution)) {
+    case 'application/n-triples':
+      return 0;
+    case 'application/n-quads':
+      return 1;
+    case 'text/turtle':
+      return 2;
+    case 'application/ld+json':
+      return 3;
+    default:
+      return isRdfDistribution(distribution) ? 4 : 5;
+  }
 }
 
 function availabilityOf(
@@ -52,21 +76,20 @@ function availabilityOf(
   );
 }
 
-// Select the distribution the default Download action should point at. Reachable
-// (or not-yet-probed) distributions are preferred so the default download always
-// works; among those the existing type priority decides. Returns undefined when
-// every distribution is unavailable, which drives the disabled download state.
+// Select the distribution the default Download action should point at: the first
+// reachable (or not-yet-probed) entry in the same order the dropdown renders, so
+// the primary button always matches the topmost working option and the visitor
+// never has to open the dropdown to find it. Returns undefined when every
+// distribution is unavailable, which drives the disabled download state.
 export function selectPreferredDownload<T extends RankableDistribution>(
   distributions: readonly T[],
   healthByUrl: ReadonlyMap<string, DistributionHealth>,
   now: Date,
 ): T | undefined {
-  const selectable = distributions.filter(
+  return sortDistributionsByAvailability(distributions, healthByUrl, now).find(
     (distribution) =>
       availabilityOf(distribution, healthByUrl, now) !== 'unavailable',
   );
-  if (selectable.length === 0) return undefined;
-  return pickByTypePriority(selectable);
 }
 
 // Coarse type priority used for ordering the full distribution list:
@@ -79,9 +102,11 @@ function typePriority(distribution: RankableDistribution): number {
 
 // Order distributions availability-first: reachable (and not-yet-probed)
 // distributions come before unavailable ones, so a visitor finds a working
-// access point first. Within an availability group the existing type priority
-// (SPARQL > RDF > other) decides. Distributions with no health record group with
-// the reachable ones. Returns a new array; the input is not mutated.
+// access point first. Within an availability group: type priority (SPARQL > RDF >
+// other), then compressed variants first (smaller to transfer, so they make the
+// best default download), then the format preference, then a stable tie-break on
+// the URL. Distributions with no health record group with the reachable ones.
+// Returns a new array; the input is not mutated.
 export function sortDistributionsByAvailability<T extends RankableDistribution>(
   distributions: readonly T[],
   healthByUrl: ReadonlyMap<string, DistributionHealth>,
@@ -93,6 +118,9 @@ export function sortDistributionsByAvailability<T extends RankableDistribution>(
   return [...distributions].sort(
     (a, b) =>
       unavailableRank(a) - unavailableRank(b) ||
-      typePriority(b) - typePriority(a),
+      typePriority(b) - typePriority(a) ||
+      Number(isCompressed(b)) - Number(isCompressed(a)) ||
+      formatPriority(a) - formatPriority(b) ||
+      a.accessURL.localeCompare(b.accessURL),
   );
 }
