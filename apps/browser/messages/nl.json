@@ -272,6 +272,30 @@
   "nde_compat_registration_heading_warning": "Geregistreerd met waarschuwingen",
   "nde_compat_registration_explanation_warning": "De beschrijving van deze dataset is geregistreerd en geldig, maar bij de validatie zijn waarschuwingen gegeven: aan sommige aanbevelingen voor datasets wordt nog niet voldaan.",
   "nde_compat_registration_view_details": "Bekijk registratiegegevens",
+  "nde_compat_persistent_heading_persistent": "Gebruikt persistente URI’s",
+  "nde_compat_persistent_heading_resolves": "Gebruikt een niet-persistente domeinnaam",
+  "nde_compat_persistent_heading_unresolved": "Sommige URI’s zijn niet bereikbaar",
+  "nde_compat_persistent_heading_pending": "Persistente URI’s nog niet beoordeeld",
+  "nde_compat_persistent_explanation_persistent": "De persistente URI’s van deze dataset leiden naar een landingspagina.",
+  "nde_compat_persistent_explanation_resolves": "De URI’s van deze dataset gebruiken een niet-persistente domeinnaam, bijvoorbeeld die van een software-leverancier.",
+  "nde_compat_persistent_explanation_unresolved": "Sommige van de getoetste URI’s van deze dataset leiden niet naar een landingspagina.",
+  "nde_compat_persistent_explanation_pending": "De URI’s van deze dataset zijn nog niet op persistentie gecontroleerd.",
+  "nde_compat_persistent_count_unresolved": [
+    {
+      "declarations": [
+        "input count",
+        "input display",
+        "input unresolved",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{unresolved} van {display} getoetste URI’s leidt niet naar een landingspagina.",
+        "countPlural=other": "{unresolved} van {display} getoetste URI’s leiden niet naar een landingspagina."
+      }
+    }
+  ],
+  "nde_compat_persistent_issued_by": "Uitgegeven door {publisher}.",
   "nde_compat_linked_data_heading_conforms": "Biedt linked data volgens het NDE-applicatieprofiel",
   "nde_compat_linked_data_heading_not_conforms": "Biedt linked data",
   "nde_compat_linked_data_heading_pending": "Linked data nog niet beoordeeld",

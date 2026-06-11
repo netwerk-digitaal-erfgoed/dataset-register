@@ -15,8 +15,11 @@ import { shortenUri } from '$lib/utils/prefix';
 import { isUri, lookupTermLabels } from './network-of-terms.js';
 import {
   IIIF_PRESENTATION_API,
+  PID_SCHEME_BASE_URI,
   type IiifManifests,
   type LinkedData,
+  type PersistentUris,
+  type PidScheme,
   type TermLinks,
 } from './nde-compatibility.js';
 import { offersLinkedData } from '$lib/utils/distribution';
@@ -401,6 +404,7 @@ export interface DatasetDetailResult {
   linksets: Linkset[];
   temporalCoverages: TemporalCoverage[];
   iiifManifests: IiifManifests;
+  persistentUris: PersistentUris;
   linkedData: LinkedData;
   terms: TermLinks | null;
   resolvedTerms: Promise<Record<string, string>>;
@@ -478,6 +482,110 @@ async function fetchIiifManifests(datasetUri: string): Promise<IiifManifests> {
     );
   }
   return none;
+}
+
+// Reads the persistent-URI figures from the Knowledge Graph for the dataset’s
+// most common self-minted subject namespace. The DKG records the resolution
+// measurements (`subject-uris-sampled`/`subject-uris-resolved`) on a `void:subset`
+// scoped to that namespace, plus a recognised PID scheme (`dcterms:conformsTo`)
+// and its issuing `dcterms:publisher` (ARK) as positive embellishments, and a
+// `subject-uris-persistent` boolean flag (`false`) when the namespace is on the
+// disallow list. The sampled measurement keys the join, so the right subset is
+// selected even when the dataset has other subsets (e.g. IIIF). Every field is
+// null/false when no such subset has been recorded yet.
+async function fetchPersistentUris(
+  datasetUri: string,
+): Promise<PersistentUris> {
+  const none: PersistentUris = {
+    uriSpace: null,
+    scheme: null,
+    publisher: null,
+    sampled: null,
+    resolved: null,
+    onDisallowList: false,
+  };
+  const query = `
+    PREFIX void: <http://rdfs.org/ns/void#>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    PREFIX dqv: <http://www.w3.org/ns/dqv#>
+    PREFIX nde: <https://def.nde.nl/metric#>
+    SELECT ?uriSpace ?scheme ?publisher ?sampled ?resolved ?persistent WHERE {
+      <${datasetUri}> void:subset ?ns .
+      ?ns void:uriSpace ?uriSpace ;
+        dqv:hasQualityMeasurement [
+          dqv:isMeasurementOf nde:subject-uris-sampled ;
+          dqv:value ?sampled
+        ] .
+      OPTIONAL {
+        ?ns dqv:hasQualityMeasurement [
+          dqv:isMeasurementOf nde:subject-uris-resolved ;
+          dqv:value ?resolved
+        ]
+      }
+      OPTIONAL {
+        ?ns dqv:hasQualityMeasurement [
+          dqv:isMeasurementOf nde:subject-uris-persistent ;
+          dqv:value ?persistent
+        ]
+      }
+      OPTIONAL {
+        ?ns dct:conformsTo ?scheme .
+        FILTER(STRSTARTS(STR(?scheme), "${PID_SCHEME_BASE_URI}"))
+      }
+      OPTIONAL { ?ns dct:publisher ?publisher }
+    }
+    LIMIT 1
+  `;
+  try {
+    const bindingsStream = await fetcher.fetchBindings(
+      PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+      query,
+    );
+    for await (const raw of bindingsStream) {
+      const binding = raw as unknown as {
+        uriSpace?: { value: string };
+        scheme?: { value: string };
+        publisher?: { value: string };
+        sampled?: { value: string };
+        resolved?: { value: string };
+        persistent?: { value: string };
+      };
+      return {
+        uriSpace: binding.uriSpace?.value ?? null,
+        scheme: parsePidScheme(binding.scheme?.value),
+        publisher: binding.publisher?.value ?? null,
+        sampled: binding.sampled?.value
+          ? parseInt(binding.sampled.value, 10)
+          : null,
+        resolved: binding.resolved?.value
+          ? parseInt(binding.resolved.value, 10)
+          : null,
+        // The DKG emits the persistent flag as `false` only for a namespace on
+        // its disallow list; absence means unflagged. Dormant until the DKG ships
+        // the measurement (see dataset-knowledge-graph).
+        onDisallowList: binding.persistent?.value === 'false',
+      };
+    }
+  } catch (e: unknown) {
+    console.error(
+      'Persistent URIs query failed:',
+      e instanceof Error ? e.message : e,
+    );
+  }
+  return none;
+}
+
+// Maps a `https://def.nde.nl/pid-scheme#…` IRI to its recognised scheme, or null
+// when there is no scheme or it is one we do not recognise.
+function parsePidScheme(schemeIri: string | undefined): PidScheme | null {
+  switch (schemeIri) {
+    case `${PID_SCHEME_BASE_URI}ark`:
+      return 'ark';
+    case `${PID_SCHEME_BASE_URI}handle`:
+      return 'handle';
+    default:
+      return null;
+  }
 }
 
 // Reads the SCHEMA-AP-NDE sample conformance for a dataset from the Knowledge
@@ -848,6 +956,7 @@ export async function fetchDatasetDetail(
     summaryGeneratedAt,
     temporalCoverages,
     iiifManifests,
+    persistentUris,
     schemaApNdeConformance,
   ] = await Promise.all([
     detailLens.query(datasetQuery),
@@ -877,6 +986,7 @@ export async function fetchDatasetDetail(
     fetchSummaryGeneratedAt(datasetUri),
     fetchTemporalCoverage(datasetUri),
     fetchIiifManifests(datasetUri),
+    fetchPersistentUris(datasetUri),
     fetchSchemaApNdeConformance(datasetUri),
   ]);
 
@@ -951,6 +1061,7 @@ export async function fetchDatasetDetail(
     linksets: linksets ?? [],
     temporalCoverages,
     iiifManifests,
+    persistentUris,
     linkedData,
     terms,
     resolvedTerms,
