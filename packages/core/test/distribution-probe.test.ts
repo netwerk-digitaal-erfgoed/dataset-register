@@ -9,6 +9,7 @@ import {
   DataDumpProbeResult,
 } from '@lde/distribution-probe';
 import { classify, probeOutcomes } from '../src/distribution-probe/outcomes.js';
+import { REACHABILITY_FAILURE_OUTCOMES } from '../src/constants.js';
 import {
   DistributionProbeStage,
   readProbeSeverities,
@@ -1205,3 +1206,35 @@ class InMemoryHealthStore implements DistributionHealthStore {
     this.records.delete(url.toString());
   }
 }
+
+describe('REACHABILITY_FAILURE_OUTCOMES', () => {
+  it('lists only real probe outcome IRIs', () => {
+    const known = new Set(
+      Object.values(probeOutcomes).map((outcome) => outcome.value),
+    );
+    for (const outcome of REACHABILITY_FAILURE_OUTCOMES) {
+      expect(known.has(outcome)).toBe(true);
+    }
+  });
+
+  it('excludes the content-type outcomes, which never affect reachability', () => {
+    expect(REACHABILITY_FAILURE_OUTCOMES).not.toContain(
+      probeOutcomes.ContentTypeMismatch.value,
+    );
+    expect(REACHABILITY_FAILURE_OUTCOMES).not.toContain(
+      probeOutcomes.ContentTypeMissing.value,
+    );
+  });
+
+  it('covers every probe outcome except the content-type ones', () => {
+    const reachability = new Set(REACHABILITY_FAILURE_OUTCOMES);
+    const contentType = new Set([
+      probeOutcomes.ContentTypeMismatch.value,
+      probeOutcomes.ContentTypeMissing.value,
+    ]);
+    for (const outcome of Object.values(probeOutcomes)) {
+      const expected = !contentType.has(outcome.value);
+      expect(reachability.has(outcome.value)).toBe(expected);
+    }
+  });
+});

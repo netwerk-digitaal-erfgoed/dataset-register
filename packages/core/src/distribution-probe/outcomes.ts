@@ -6,9 +6,10 @@ import {
   DataDumpProbeResult,
   type ProbeResultType,
 } from '@lde/distribution-probe';
+import { PROBE_OUTCOME_BASE_URI } from '../constants.ts';
 
 export const ndeProbe = (property: string): NamedNode =>
-  factory.namedNode(`https://def.nde.nl/probe#${property}`);
+  factory.namedNode(`${PROBE_OUTCOME_BASE_URI}${property}`);
 
 export const probeOutcomes = {
   NetworkError: ndeProbe('NetworkError'),

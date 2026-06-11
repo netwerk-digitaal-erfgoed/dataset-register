@@ -17,3 +17,25 @@ export const ALLOWED_DOMAIN_NAME_PREDICATE =
   'https://data.netwerkdigitaalerfgoed.nl/allowed_domain_names/def/domain_name';
 
 export const COULD_NOT_FETCH_URL_PREFIX = 'Could not fetch URL';
+
+// Base IRI for the distribution-probe outcome vocabulary (nde-probe:). The probe
+// records one of these IRIs as a distribution's last outcome; the NamedNode
+// forms in distribution-probe/outcomes.ts derive from this same base.
+export const PROBE_OUTCOME_BASE_URI = 'https://def.nde.nl/probe#';
+
+// The probe outcomes that mean a distribution is currently unreachable, as
+// opposed to a content-type quality issue (ContentTypeMismatch /
+// ContentTypeMissing), which never affects reachability. The Dataset Register
+// Browser reads this list to classify distribution availability, so the register
+// stays the single source of truth for the vocabulary. Keep in sync with
+// classify() in distribution-probe.
+export const REACHABILITY_FAILURE_OUTCOMES: readonly string[] = [
+  'NetworkError',
+  'NotFound',
+  'ServerError',
+  'AuthRequired',
+  'RateLimited',
+  'EmptyBody',
+  'SparqlProbeFailed',
+  'RdfParseFailed',
+].map((name) => `${PROBE_OUTCOME_BASE_URI}${name}`);

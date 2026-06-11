@@ -11,6 +11,15 @@
     isSparqlDistribution,
   } from '$lib/utils/distribution';
   import {
+    distributionAvailability,
+    type DistributionAvailability,
+    type DistributionHealth,
+  } from '$lib/services/distribution-health';
+  import {
+    selectPreferredDownload,
+    sortDistributionsByAvailability,
+  } from '$lib/utils/distribution-ranking';
+  import {
     getLocalizedValue,
     getLocalizedArray,
     localizeHref,
@@ -21,7 +30,6 @@
   import { datasetDetailHref } from '$lib/url';
   import { encodeUrlParam } from '$lib/utils/url-param.js';
   import LanguageBadge from '$lib/components/LanguageBadge.svelte';
-  import { SvelteSet } from 'svelte/reactivity';
   import {
     Alert,
     Clipboard,
@@ -70,13 +78,6 @@
     `${page.url.origin}${localizeHref(datasetPath, { locale: 'en' })}`,
   );
 
-  function isGzipDistribution(distribution: DistributionDetail) {
-    return (
-      distribution.mediaType?.includes('+gzip') ||
-      distribution.accessURL.endsWith('.gz')
-    );
-  }
-
   function formatByteSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -85,36 +86,39 @@
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
   }
 
-  // Create a Set of verified URLs from both dataDumps and sparqlEndpoint
-  const verifiedUrls = $derived.by(() => {
-    const urls = new SvelteSet<string>();
-    if (summary?.dataDump) {
-      for (const dump of summary.dataDump) {
-        urls.add(dump);
-      }
-    }
-    if (summary?.sparqlEndpoint) {
-      urls.add(summary.sparqlEndpoint);
-    }
-    return urls;
+  // Per-distribution health from the register's own probe, streamed in parallel
+  // with the page (see DatasetDetailResult.distributionHealth). It starts empty —
+  // so every distribution classifies as “unknown” (no badge, nothing disabled)
+  // during the brief load window — and updates reactively once the query
+  // resolves.
+  let healthByUrl = $state(new Map<string, DistributionHealth>());
+  $effect(() => {
+    let cancelled = false;
+    data.distributionHealth.then((health) => {
+      if (!cancelled) healthByUrl = health;
+    });
+    return () => {
+      cancelled = true;
+    };
   });
 
-  // Sort distributions: SPARQL first, then RDF (verified first), then others
-  const sortedDistributions = $derived(
-    [...distributions].sort((a, b) => {
-      // Priority: SPARQL (2) > RDF (1) > other (0), then verified first
-      const priority = (d: typeof a) => {
-        if (isSparqlDistribution(d)) return 2;
-        if (isRdfDistribution(d)) return 1;
-        return 0;
-      };
-      const isVerified = (d: typeof a) => verifiedUrls.has(d.accessURL);
+  // A single render-time “now” drives the staleness threshold; a few milliseconds
+  // of drift between server and client render cannot change a 7-day classification.
+  const now = new Date();
 
-      return (
-        priority(b) - priority(a) ||
-        Number(isVerified(b)) - Number(isVerified(a))
-      );
-    }),
+  function availabilityFor(
+    distribution: DistributionDetail,
+  ): DistributionAvailability {
+    return distributionAvailability(
+      healthByUrl.get(distribution.accessURL) ?? null,
+      now,
+    );
+  }
+
+  // Sort distributions availability-first (reachable before unavailable), then by
+  // the type priority SPARQL > RDF > other.
+  const sortedDistributions = $derived(
+    sortDistributionsByAvailability(distributions, healthByUrl, now),
   );
 
   const sparqlDistributions = $derived(
@@ -134,35 +138,12 @@
     return `https://yasgui.org/#query=SELECT+*+WHERE+%7B%0A++%3Fsub+%3Fpred+%3Fobj+.%0A%7D+%0ALIMIT+10&endpoint=${encodeURIComponent(endpoint)}`;
   }
 
-  // Select preferred download distribution by priority
-  const preferredDownload = $derived.by(() => {
-    if (downloadDistributions.length === 0) return undefined;
-
-    // Verified first, then unverified, same priority order
-    for (const checkVerified of [true, false]) {
-      const candidates = downloadDistributions.filter(
-        (d) => verifiedUrls.has(d.accessURL) === checkVerified,
-      );
-      const ntGzip = candidates.find(
-        (d) => d.mediaType === 'application/n-triples' && isGzipDistribution(d),
-      );
-      if (ntGzip) return ntGzip;
-      const anyRdfGzip = candidates.find(
-        (d) => isRdfDistribution(d) && isGzipDistribution(d),
-      );
-      if (anyRdfGzip) return anyRdfGzip;
-      const turtle = candidates.find((d) => d.mediaType === 'text/turtle');
-      if (turtle) return turtle;
-      const jsonLd = candidates.find(
-        (d) => d.mediaType === 'application/ld+json',
-      );
-      if (jsonLd) return jsonLd;
-      const anyRdf = candidates.find(isRdfDistribution);
-      if (anyRdf) return anyRdf;
-    }
-
-    return downloadDistributions[0];
-  });
+  // The default download points at a reachable (or not-yet-probed) distribution
+  // so it always works; undefined when every download is unavailable, which
+  // disables the primary action.
+  const preferredDownload = $derived(
+    selectPreferredDownload(downloadDistributions, healthByUrl, now),
+  );
 
   // Extract keywords and subject matter for current locale. dcat:theme is the
   // canonical target for subject/material classification; dct:type is kept for
@@ -257,8 +238,71 @@
 
   const splitBtnMainClass =
     'inline-flex items-center rounded-s-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:z-10 focus:ring-2 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800';
+  // Disabled primary action shown when no download is reachable. gray-700 on
+  // gray-200 keeps the label well above WCAG AA contrast even though disabled
+  // controls are exempt.
+  const splitBtnMainDisabledClass =
+    'inline-flex items-center rounded-s-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 cursor-not-allowed dark:bg-gray-700 dark:text-gray-300';
   const splitBtnChevronClass =
     'inline-flex cursor-pointer items-center rounded-e-lg border-s border-blue-800 bg-blue-700 px-2 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:z-10 focus:ring-2 focus:ring-blue-300 dark:border-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800';
+
+  function formatHealthDate(date: Date): string {
+    return date.toLocaleDateString(getLocale());
+  }
+
+  // A localized sentence describing why a distribution is unavailable, keyed on
+  // the nde-probe outcome's local name.
+  function probeReason(outcome: string | null): string {
+    switch (outcome?.split('#').pop()) {
+      case 'NetworkError':
+        return m.detail_probe_network_error();
+      case 'NotFound':
+        return m.detail_probe_not_found();
+      case 'ServerError':
+        return m.detail_probe_server_error();
+      case 'AuthRequired':
+        return m.detail_probe_auth_required();
+      case 'RateLimited':
+        return m.detail_probe_rate_limited();
+      case 'EmptyBody':
+        return m.detail_probe_empty_body();
+      case 'SparqlProbeFailed':
+        return m.detail_probe_sparql_failed();
+      case 'RdfParseFailed':
+        return m.detail_probe_rdf_parse_failed();
+      default:
+        return m.detail_probe_unavailable_generic();
+    }
+  }
+
+  // Tooltip text for a distribution's status: the current state, the typed reason
+  // and “unavailable since” when failing, and when the register last checked it.
+  function statusTooltip(
+    availability: DistributionAvailability,
+    health: DistributionHealth | null,
+  ): string {
+    const parts: string[] = [];
+    if (availability === 'unavailable') {
+      parts.push(probeReason(health?.lastOutcome ?? null));
+      if (health?.firstFailureAt) {
+        parts.push(
+          m.detail_distribution_unavailable_since({
+            date: formatHealthDate(health.firstFailureAt),
+          }),
+        );
+      }
+    } else {
+      parts.push(m.detail_distribution_reachable_tooltip());
+    }
+    if (health?.lastProbedAt) {
+      parts.push(
+        m.detail_distribution_last_checked({
+          date: formatHealthDate(health.lastProbedAt),
+        }),
+      );
+    }
+    return parts.join(' ');
+  }
 </script>
 
 <svelte:head>
@@ -272,15 +316,25 @@
   <link rel="alternate" hreflang="x-default" href={canonicalUrl} />
 </svelte:head>
 
-{#snippet verifiedBadge(tooltipId: string)}
-  <span
-    id={tooltipId}
-    class="inline-flex cursor-help items-center gap-1 rounded-full bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400"
-  >
-    <CheckOutline class="h-3 w-3" />
-    {m.detail_verified()}
-  </span>
-  <Tooltip triggeredBy="#{tooltipId}">{m.detail_verified_tooltip()}</Tooltip>
+{#snippet statusBadge(distribution: DistributionDetail, tooltipId: string)}
+  {@const availability = availabilityFor(distribution)}
+  {#if availability !== 'unknown'}
+    {@const health = healthByUrl.get(distribution.accessURL) ?? null}
+    <span id={tooltipId} class="inline-flex cursor-help items-center">
+      {#if availability === 'reachable'}
+        <CheckOutline class="h-4 w-4 text-green-600 dark:text-green-400" />
+        <span class="sr-only">{m.detail_distribution_reachable()}</span>
+      {:else}
+        <ExclamationCircleOutline
+          class="h-4 w-4 text-amber-600 dark:text-amber-500"
+        />
+        <span class="sr-only">{m.detail_distribution_unavailable()}</span>
+      {/if}
+    </span>
+    <Tooltip triggeredBy="#{tooltipId}"
+      >{statusTooltip(availability, health)}</Tooltip
+    >
+  {/if}
 {/snippet}
 
 {#snippet copyButton(url: string)}
@@ -301,7 +355,6 @@
   tooltipPrefix: string,
   distIndex: number,
 )}
-  {@const isVerified = verifiedUrls.has(distribution.accessURL)}
   <DropdownItem
     classes={{ item: 'flex flex-col items-start gap-1 !whitespace-normal' }}
   >
@@ -319,11 +372,10 @@
           {formatByteSize(distribution.byteSize)}
         </span>
       {/if}
-      {#if isVerified}
-        {@render verifiedBadge(
-          `tooltip-${tooltipPrefix}-verified-${distIndex}`,
-        )}
-      {/if}
+      {@render statusBadge(
+        distribution,
+        `tooltip-${tooltipPrefix}-status-${distIndex}`,
+      )}
       {@render copyButton(distribution.accessURL)}
     </div>
     <a
@@ -1171,7 +1223,6 @@
             class="w-96 max-h-96 overflow-y-auto border border-gray-200 shadow-lg dark:border-gray-600"
           >
             {#each sparqlDistributions as distribution, distIndex (distribution.$id)}
-              {@const isVerified = verifiedUrls.has(distribution.accessURL)}
               <DropdownItem
                 classes={{
                   item: 'flex flex-col items-start gap-1 !whitespace-normal',
@@ -1183,11 +1234,10 @@
                   >
                     SPARQL
                   </span>
-                  {#if isVerified}
-                    {@render verifiedBadge(
-                      `tooltip-sparql-verified-${distIndex}`,
-                    )}
-                  {/if}
+                  {@render statusBadge(
+                    distribution,
+                    `tooltip-sparql-status-${distIndex}`,
+                  )}
                   {@render copyButton(distribution.accessURL)}
                 </div>
                 <a
@@ -1211,18 +1261,32 @@
         {/if}
 
         <!-- Download dataset split button -->
-        {#if downloadDistributions.length > 0 && preferredDownload}
+        {#if downloadDistributions.length > 0}
           <div class="inline-flex rounded-lg shadow-sm" role="group">
-            <a
-              href={preferredDownload.accessURL}
-              target="_blank"
-              rel="noopener noreferrer"
-              class={splitBtnMainClass}
-            >
-              <DownloadOutline class="me-2 h-4 w-4" />
-              {m.detail_download_dataset()}
-              <span class="sr-only"> ({m.opens_in_new_tab()})</span>
-            </a>
+            {#if preferredDownload}
+              <a
+                href={preferredDownload.accessURL}
+                target="_blank"
+                rel="noopener noreferrer"
+                class={splitBtnMainClass}
+              >
+                <DownloadOutline class="me-2 h-4 w-4" />
+                {m.detail_download_dataset()}
+                <span class="sr-only"> ({m.opens_in_new_tab()})</span>
+              </a>
+            {:else}
+              <span
+                id="download-none-available"
+                class={splitBtnMainDisabledClass}
+                aria-disabled="true"
+              >
+                <DownloadOutline class="me-2 h-4 w-4" />
+                {m.detail_download_none_available()}
+              </span>
+              <Tooltip triggeredBy="#download-none-available"
+                >{m.detail_download_none_available_tooltip()}</Tooltip
+              >
+            {/if}
             <button
               type="button"
               id="btn-download-dropdown"
@@ -1235,7 +1299,7 @@
           <Dropdown
             simple
             triggeredBy="#btn-download-dropdown"
-            class="w-96 max-h-96 overflow-y-auto border border-gray-200 shadow-lg dark:border-gray-600"
+            class="w-[28rem] max-h-96 overflow-y-auto border border-gray-200 shadow-lg dark:border-gray-600"
           >
             {#each rdfDownloads as distribution, distIndex (distribution.$id)}
               {@render downloadDropdownItem(distribution, 'rdf', distIndex)}

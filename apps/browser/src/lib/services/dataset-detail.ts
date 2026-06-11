@@ -20,6 +20,7 @@ import {
   type TermLinks,
 } from './nde-compatibility.js';
 import { offersLinkedData } from '$lib/utils/distribution';
+import type { DistributionHealth } from './distribution-health.js';
 import { normalizeMediaType } from '$lib/utils/sparql';
 import { getLocale } from '$lib/paraglide/runtime';
 import {
@@ -403,6 +404,11 @@ export interface DatasetDetailResult {
   linkedData: LinkedData;
   terms: TermLinks | null;
   resolvedTerms: Promise<Record<string, string>>;
+  // Per-distribution health from the register's own probe, keyed by access URL.
+  // An unawaited promise so SvelteKit streams it: the page renders immediately
+  // and the distribution status and download links update reactively once it
+  // resolves. Decoupled from the main distribution query.
+  distributionHealth: Promise<Map<string, DistributionHealth>>;
   // Per-dataset SHACL warning count, feeding the registration criterion's
   // warning tier. 0 when the description validated cleanly or predates the count.
   warningCount: number;
@@ -562,6 +568,72 @@ async function fetchSummaryGeneratedAt(
   return null;
 }
 
+// Reads the register's own per-distribution health records for every
+// distribution of a dataset, keyed by access URL. Records live in their own
+// named graph (nde-probe:DistributionHealthRecord); the type triple is unique to
+// that graph, so matching on it keeps the query portable across environments
+// without hard-coding the graph IRI. Distributions the probe has never recorded
+// simply have no record and are absent from the map (classified as “unknown”).
+// On failure it returns an empty map, so the page degrades to “unknown” status
+// rather than wrongly disabling downloads.
+async function fetchDistributionHealth(
+  datasetUri: string,
+): Promise<Map<string, DistributionHealth>> {
+  const query = `
+    PREFIX dcat: <http://www.w3.org/ns/dcat#>
+    PREFIX nde-probe: <https://def.nde.nl/probe#>
+    SELECT ?accessURL ?lastProbedAt ?lastOutcome ?lastSuccessAt ?firstFailureAt ?consecutiveFailures
+    WHERE {
+      GRAPH ?datasetGraph {
+        <${datasetUri}> dcat:distribution ?distribution .
+        ?distribution dcat:accessURL ?accessURL .
+      }
+      GRAPH ?healthGraph {
+        ?accessURL a nde-probe:DistributionHealthRecord ;
+            nde-probe:lastProbedAt ?lastProbedAt ;
+            nde-probe:consecutiveFailures ?consecutiveFailures .
+        OPTIONAL { ?accessURL nde-probe:lastOutcome ?lastOutcome }
+        OPTIONAL { ?accessURL nde-probe:lastSuccessAt ?lastSuccessAt }
+        OPTIONAL { ?accessURL nde-probe:firstFailureAt ?firstFailureAt }
+      }
+    }
+  `;
+  const byUrl = new Map<string, DistributionHealth>();
+  try {
+    const bindingsStream = await fetcher.fetchBindings(
+      PUBLIC_SPARQL_ENDPOINT,
+      query,
+    );
+    for await (const raw of bindingsStream) {
+      const binding = raw as unknown as {
+        accessURL: { value: string };
+        lastProbedAt: { value: string };
+        lastOutcome?: { value: string };
+        lastSuccessAt?: { value: string };
+        firstFailureAt?: { value: string };
+        consecutiveFailures: { value: string };
+      };
+      byUrl.set(binding.accessURL.value, {
+        lastOutcome: binding.lastOutcome?.value ?? null,
+        lastProbedAt: new Date(binding.lastProbedAt.value),
+        lastSuccessAt: binding.lastSuccessAt?.value
+          ? new Date(binding.lastSuccessAt.value)
+          : null,
+        firstFailureAt: binding.firstFailureAt?.value
+          ? new Date(binding.firstFailureAt.value)
+          : null,
+        consecutiveFailures: parseInt(binding.consecutiveFailures.value, 10),
+      });
+    }
+  } catch (e: unknown) {
+    console.error(
+      'Distribution health query failed:',
+      e instanceof Error ? e.message : e,
+    );
+  }
+  return byUrl;
+}
+
 async function fetchDistributionCount(query: string): Promise<number> {
   const bindingsStream = await fetcher.fetchBindings(
     PUBLIC_SPARQL_ENDPOINT,
@@ -638,6 +710,12 @@ export async function fetchDatasetDetail(
   // which breaks the streaming RDF parser and causes 10x slower performance
   // (~22s vs ~2.3s) on large SPARQL responses. Node's native fetch streams properly.
   // SSR still works: content is rendered server-side with native fetch.
+
+  // Fire the distribution-health query eagerly, in parallel with the page load
+  // and decoupled from the main distribution query. It is returned unawaited so
+  // the page renders without waiting on it; the status and download links update
+  // reactively once it resolves.
+  const distributionHealth = fetchDistributionHealth(datasetUri);
 
   const detailLens = createLens(DatasetDetailSchema, {
     sources: [PUBLIC_SPARQL_ENDPOINT],
@@ -876,6 +954,7 @@ export async function fetchDatasetDetail(
     linkedData,
     terms,
     resolvedTerms,
+    distributionHealth,
     // The registration's warning count (from its last crawl); 0 when the
     // registration recorded none or predates warning storage.
     warningCount: dataset.subjectOf?.warningCount ?? 0,
