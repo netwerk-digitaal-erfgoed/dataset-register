@@ -1,3 +1,5 @@
+import { REACHABILITY_FAILURE_OUTCOMES } from '@dataset-register/core/constants';
+
 // A distribution's current availability, derived from the register's own
 // distribution health probe rather than the Dataset Knowledge Graph's
 // (potentially stale) void:dataDump.
@@ -14,25 +16,13 @@ export interface DistributionHealth {
   consecutiveFailures: number;
 }
 
-// Derive a distribution's availability from its health record. A missing record
-// means the probe has never recorded an outcome for this URL.
-const ndeProbe = (outcome: string): string =>
-  `https://def.nde.nl/probe#${outcome}`;
-
 // The reachability outcomes that, once persistent, flip a distribution to
-// unavailable. Content-type outcomes (ContentTypeMismatch, ContentTypeMissing)
-// are deliberately excluded: they are a separate quality concern and never
-// affect availability.
-const REACHABILITY_FAILURES: ReadonlySet<string> = new Set([
-  ndeProbe('NetworkError'),
-  ndeProbe('NotFound'),
-  ndeProbe('ServerError'),
-  ndeProbe('AuthRequired'),
-  ndeProbe('RateLimited'),
-  ndeProbe('EmptyBody'),
-  ndeProbe('SparqlProbeFailed'),
-  ndeProbe('RdfParseFailed'),
-]);
+// unavailable, sourced from the register so the vocabulary stays in one place.
+// Content-type outcomes (ContentTypeMismatch, ContentTypeMissing) are excluded
+// upstream: they are a separate quality concern and never affect availability.
+const REACHABILITY_FAILURES: ReadonlySet<string> = new Set(
+  REACHABILITY_FAILURE_OUTCOMES,
+);
 
 // Mirrors the crawler's failure-streak suppression window so the badge stays
 // consistent with the per-registration warning tier (same data, same threshold).
