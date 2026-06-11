@@ -1,8 +1,10 @@
 <script lang="ts">
   import {
     type DatasetDetailResult,
+    type DatasetSummary,
     type DistributionDetail,
   } from '$lib/services/dataset-detail';
+  import { SvelteMap } from 'svelte/reactivity';
   import * as m from '$lib/paraglide/messages';
   import { getLocale } from '$lib/paraglide/runtime';
   import { page } from '$app/state';
@@ -189,13 +191,78 @@
     return (m as any)[key]?.() ?? code;
   }
 
+  type ClassPartition = NonNullable<DatasetSummary['classPartition']>[number];
+  type PropertyPartition = NonNullable<
+    ClassPartition['propertyPartition']
+  >[number];
+
+  // Combine property partitions that describe the same property, summing their
+  // entity counts and concatenating their nested partitions (downstream views
+  // re-aggregate those by key, so concatenation is safe).
+  function mergePropertyPartitions(
+    base: PropertyPartition[],
+    addition: PropertyPartition[],
+  ): PropertyPartition[] {
+    const byProperty = new SvelteMap<string, PropertyPartition>();
+    for (const partition of [...base, ...addition]) {
+      const existing = byProperty.get(partition.property);
+      if (!existing) {
+        byProperty.set(partition.property, { ...partition });
+        continue;
+      }
+      existing.entities = (existing.entities || 0) + (partition.entities || 0);
+      existing.distinctObjects =
+        (existing.distinctObjects || 0) + (partition.distinctObjects || 0);
+      existing.datatypePartition = [
+        ...(existing.datatypePartition ?? []),
+        ...(partition.datatypePartition ?? []),
+      ];
+      existing.objectClassPartition = [
+        ...(existing.objectClassPartition ?? []),
+        ...(partition.objectClassPartition ?? []),
+      ];
+      existing.languagePartition = [
+        ...(existing.languagePartition ?? []),
+        ...(partition.languagePartition ?? []),
+      ];
+    }
+    return [...byProperty.values()];
+  }
+
+  // The Knowledge Graph can emit more than one void:classPartition for the same
+  // class (e.g. when that class’s instances are counted over separate subsets).
+  // Collapse them into a single partition per class — summing entities and
+  // merging their property partitions — so each class renders once. Without
+  // this, the keyed {#each} over classes hits a duplicate key and blanks the page.
+  function mergeClassPartitions(
+    partitions: ClassPartition[],
+  ): ClassPartition[] {
+    const byClass = new SvelteMap<string, ClassPartition>();
+    for (const partition of partitions) {
+      const existing = byClass.get(partition.class);
+      if (!existing) {
+        byClass.set(partition.class, {
+          ...partition,
+          propertyPartition: [...(partition.propertyPartition ?? [])],
+        });
+        continue;
+      }
+      existing.entities = (existing.entities || 0) + (partition.entities || 0);
+      existing.propertyPartition = mergePropertyPartitions(
+        existing.propertyPartition ?? [],
+        partition.propertyPartition ?? [],
+      );
+    }
+    return [...byClass.values()];
+  }
+
   // Table data for all class partitions with nested property partitions
   const classPartitionTable = $derived.by(() => {
     if (!summary?.classPartition?.length) return undefined;
 
-    const sorted = summary.classPartition
-      .slice()
-      .sort((a, b) => (b.entities || 0) - (a.entities || 0));
+    const sorted = mergeClassPartitions(summary.classPartition).sort(
+      (a, b) => (b.entities || 0) - (a.entities || 0),
+    );
 
     const total = sorted.reduce((sum, p) => sum + (p.entities || 0), 0);
 
