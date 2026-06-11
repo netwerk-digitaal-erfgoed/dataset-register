@@ -1408,6 +1408,9 @@
     {terms}
     {iiifManifests}
     {linkedData}
+    validateHref={dataset.subjectOf?.$id
+      ? localizeHref(`/validate?url=${encodeUrlParam(dataset.subjectOf.$id)}`)
+      : null}
   />
 
   <!-- VoID Summary Section -->
@@ -1415,7 +1418,7 @@
     <div class="mb-8">
       <h2
         id="linked-data-summary"
-        class="mb-4 flex scroll-mt-4 flex-wrap items-center gap-2 text-xl font-semibold text-gray-900 dark:text-white"
+        class="mb-4 flex scroll-mt-20 flex-wrap items-center gap-2 text-xl font-semibold text-gray-900 lg:scroll-mt-24 dark:text-white"
       >
         {m.detail_linked_data_summary()}
         <span id="tooltip-linked-data-summary" class="cursor-pointer">
@@ -1649,7 +1652,7 @@
 
       <!-- Terminology Sources Section -->
       {#if linksets.length > 0}
-        <div id="terminology-sources" class="mt-6">
+        <div id="terminology-sources" class="mt-6 scroll-mt-20 lg:scroll-mt-24">
           <h3
             class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
           >
@@ -1697,7 +1700,7 @@
   <div class="mb-8">
     <h2
       id="registration"
-      class="mb-4 scroll-mt-4 text-xl font-semibold text-gray-900 dark:text-white"
+      class="mb-4 scroll-mt-20 text-xl font-semibold text-gray-900 lg:scroll-mt-24 dark:text-white"
     >
       {m.detail_registration()}
     </h2>

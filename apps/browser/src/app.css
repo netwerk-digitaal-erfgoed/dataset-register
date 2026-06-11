@@ -6,6 +6,15 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Animate in-page anchor jumps (e.g. the compatibility section linking down to
+   the Linked Data Summary or Terminology Sources) so the transition is clearer.
+   Gated on prefers-reduced-motion to respect users who opt out of motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 @source "../../../node_modules/flowbite-svelte/dist";
 @source "../../../node_modules/flowbite-svelte-icons/dist";
 @source "../../../node_modules/@flowbite-svelte-plugins/chart/dist";

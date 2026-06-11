@@ -268,19 +268,20 @@
   "nde_compat_registration_heading_registered": "Geregistreerd in het Datasetregister",
   "nde_compat_registration_heading_gone": "Registratie niet meer toegankelijk",
   "nde_compat_registration_heading_invalid": "Registratie niet meer geldig",
-  "nde_compat_registration_explanation_registered": "De beschrijving van deze dataset is geregistreerd in het Datasetregister, zodat de dataset vindbaar en herbruikbaar is.",
+  "nde_compat_registration_explanation_registered": "Anderen kunnen de dataset nu vinden en hergebruiken.",
   "nde_compat_registration_explanation_gone": "De registratie-URL is niet meer toegankelijk, dus de beschrijving kan niet meer worden opgehaald.",
   "nde_compat_registration_explanation_invalid": "De beschrijving voldoet niet meer aan de eisen voor datasets.",
   "nde_compat_registration_heading_warning": "Geregistreerd met waarschuwingen",
-  "nde_compat_registration_explanation_warning": "De beschrijving van deze dataset is geregistreerd en geldig, maar bij de validatie zijn waarschuwingen gegeven: aan sommige aanbevelingen voor datasets wordt nog niet voldaan.",
-  "nde_compat_registration_view_details": "Bekijk registratiegegevens",
+  "nde_compat_registration_explanation_warning": "Deze dataset is geregistreerd en geldig, maar geeft waarschuwingen.",
+  "nde_compat_registration_view_details": "Bekijk registratie",
   "nde_compat_persistent_heading_persistent": "Gebruikt persistente URI’s",
   "nde_compat_persistent_heading_resolves": "Gebruikt een niet-persistente domeinnaam",
   "nde_compat_persistent_heading_unresolved": "Sommige URI’s zijn niet bereikbaar",
-  "nde_compat_persistent_heading_pending": "Persistente URI’s nog niet beoordeeld",
+  "nde_compat_persistent_heading_pending": "Persistente URI’s nog niet gecontroleerd",
+  "nde_compat_state_legend_label": "Wat de kleuren betekenen",
   "nde_compat_persistent_explanation_persistent": "De persistente URI’s van deze dataset leiden naar een landingspagina.",
-  "nde_compat_persistent_explanation_resolves": "De URI’s van deze dataset gebruiken een niet-persistente domeinnaam, bijvoorbeeld die van een software-leverancier.",
-  "nde_compat_persistent_explanation_unresolved": "Sommige van de getoetste URI’s van deze dataset leiden niet naar een landingspagina.",
+  "nde_compat_persistent_explanation_resolves": "De URI’s werken nu, maar gebruiken een domein dat kan veranderen, bijvoorbeeld dat van een software-leverancier.",
+  "nde_compat_persistent_explanation_unresolved": "Sommige URI’s uit de steekproef leiden niet naar een landingspagina.",
   "nde_compat_persistent_explanation_pending": "De URI’s van deze dataset zijn nog niet op persistentie gecontroleerd.",
   "nde_compat_persistent_count_unresolved": [
     {
@@ -292,12 +293,14 @@
       ],
       "selectors": ["countPlural"],
       "match": {
-        "countPlural=one": "{unresolved} van {display} getoetste URI’s leidt niet naar een landingspagina.",
-        "countPlural=other": "{unresolved} van {display} getoetste URI’s leiden niet naar een landingspagina."
+        "countPlural=one": "{unresolved} van {display} URI’s uit de steekproef leidt niet naar een landingspagina.",
+        "countPlural=other": "{unresolved} van {display} URI’s uit de steekproef leiden niet naar een landingspagina."
       }
     }
   ],
   "nde_compat_persistent_issued_by": "Uitgegeven door {publisher}.",
+  "nde_compat_persistent_uses_scheme": "Gebruikt {scheme}-identifiers.",
+  "nde_compat_persistent_scheme_issued_by": "{scheme}, uitgegeven door {publisher}.",
   "nde_compat_linked_data_heading_conforms": "Biedt linked data volgens het NDE-applicatieprofiel",
   "nde_compat_linked_data_heading_not_conforms": "Biedt linked data",
   "nde_compat_linked_data_heading_pending": "Linked data nog niet beoordeeld",
@@ -317,15 +320,19 @@
       ],
       "selectors": ["countPlural"],
       "match": {
-        "countPlural=one": "{display} feit gevonden.",
-        "countPlural=other": "{display} feiten gevonden."
+        "countPlural=one": "{display} feit gevonden",
+        "countPlural=other": "{display} feiten gevonden"
       }
     }
   ],
   "nde_compat_iiif_heading_provided": "Biedt IIIF-media",
   "nde_compat_iiif_heading_not_provided": "Biedt geen IIIF-media",
   "nde_compat_iiif_heading_unavailable": "IIIF-media niet beschikbaar",
-  "nde_compat_iiif_explanation": "Met IIIF zijn de afbeeldingen in een dataset in elke IIIF-viewer te bekijken.",
+  "nde_compat_iiif_explanation_before": "Met ",
+  "nde_compat_iiif_explanation_after": " zijn de afbeeldingen in de dataset flexibel te bekijken in andere websites en diensten.",
+  "nde_compat_iiif_explanation_unavailable": "Deze dataset geeft IIIF-media op, maar de manifesten uit de steekproef zijn ongeldig.",
+  "nde_compat_iiif_explanation_not_provided": "Deze dataset biedt geen IIIF-media, waardoor de afbeeldingen niet flexibel te bekijken zijn in andere websites en diensten.",
+  "iiif": "IIIF",
   "nde_compat_iiif_count": [
     {
       "declarations": [
@@ -335,8 +342,8 @@
       ],
       "selectors": ["countPlural"],
       "match": {
-        "countPlural=one": "{display} manifest gevonden.",
-        "countPlural=other": "{display} manifesten gevonden."
+        "countPlural=one": "{display} manifest gevonden",
+        "countPlural=other": "{display} manifesten gevonden"
       }
     }
   ],
@@ -349,15 +356,17 @@
       ],
       "selectors": ["countPlural"],
       "match": {
-        "countPlural=one": "{display} manifest opgegeven, maar deze kon niet worden gevalideerd.",
-        "countPlural=other": "{display} manifesten opgegeven, maar geen van de gecontroleerde manifesten kon worden gevalideerd."
+        "countPlural=one": "{display} IIIF-manifest opgegeven, maar deze kon niet worden gevalideerd.",
+        "countPlural=other": "{display} IIIF-manifesten opgegeven, maar geen daarvan kon worden gevalideerd."
       }
     }
   ],
   "nde_compat_terms_heading_uses": "Gebruikt termen uit het Termennetwerk",
   "nde_compat_terms_heading_not_uses": "Gebruikt geen termen uit het Termennetwerk",
-  "nde_compat_terms_explanation_before": "Objecten in deze dataset linken naar gedeelde termen uit terminologiebronnen in het ",
-  "nde_compat_terms_explanation_after": ", waardoor de data interoperabel en beter vindbaar wordt.",
+  "nde_compat_terms_explanation_not_before": "Objecten in deze dataset linken niet naar gedeelde termen uit het ",
+  "nde_compat_terms_explanation_not_after": ", waardoor ze moeilijker te koppelen zijn aan andere datasets.",
+  "nde_compat_terms_explanation_before": "Objecten in deze dataset linken naar gedeelde termen uit het ",
+  "nde_compat_terms_explanation_after": ", waardoor ze eenvoudiger te koppelen zijn aan andere datasets.",
   "network_of_terms": "Termennetwerk",
   "nde_compat_terms_count": [
     {
@@ -368,8 +377,8 @@
       ],
       "selectors": ["countPlural"],
       "match": {
-        "countPlural=one": "bevat {display} link naar termen",
-        "countPlural=other": "bevat {display} links naar termen"
+        "countPlural=one": "{display} link naar termen gevonden",
+        "countPlural=other": "{display} links naar termen gevonden"
       }
     }
   ],
