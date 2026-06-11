@@ -598,6 +598,7 @@ describe('compatibilityCriteria', () => {
           publisher: 'Gemeentemuseum Het Hannemahuis',
           sampled: 10,
           resolved: 10,
+          onDisallowList: false,
         },
         linkedData: {
           declared: true,
