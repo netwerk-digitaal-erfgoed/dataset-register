@@ -197,9 +197,12 @@ describe('Validator', () => {
     expect(report.state).toEqual('no-dataset');
   });
 
-  it('rejects a dataset that has no IRI', async () => {
+  it('reports a dataset that is a blank node (no IRI) as invalid', async () => {
+    // A blank-node dataset reaches SHACL and fails the nodeKind/pattern
+    // constraints, surfacing a clear web-URI message rather than the misleading
+    // `no-dataset` state.
     const report = await validate('dataset-invalid-no-iri.jsonld');
-    expect(report.state).toEqual('no-dataset');
+    expect(report.state).toEqual('invalid');
   });
 
   it('rejects a dataset that has no HTTP IRI', async () => {
@@ -733,6 +736,24 @@ describe('Validator', () => {
       ...report.errors.match(null, shacl('resultPath'), foafName),
     ];
     expect(foafNameResults).toHaveLength(0);
+  });
+
+  it('rejects a dcat:Dataset that is a blank node instead of an http(s) IRI', async () => {
+    // The dcat:DatasetShape requires a web IRI as the dataset identifier, just
+    // like the schema.org DatasetShape — a blank-node dataset has no stable,
+    // dereferenceable identifier the register can index.
+    const report = (await validate(
+      'dataset-dcat-blank-node.jsonld',
+    )) as InvalidDataset;
+    expect(report.state).toEqual('invalid');
+    const nodeKindViolations = [
+      ...report.errors.match(
+        null,
+        shacl('sourceConstraintComponent'),
+        shacl('NodeKindConstraintComponent'),
+      ),
+    ];
+    expect(nodeKindViolations).toHaveLength(1);
   });
 });
 
