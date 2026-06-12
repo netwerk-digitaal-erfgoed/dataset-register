@@ -301,8 +301,8 @@
   "nde_compat_persistent_issued_by": "Issued by {publisher}.",
   "nde_compat_persistent_uses_scheme": "Uses {scheme} identifiers.",
   "nde_compat_persistent_scheme_issued_by": "{scheme}, issued by {publisher}.",
-  "nde_compat_persistent_heading_no_self_reference": "Pages do not reference their persistent identifier",
-  "nde_compat_persistent_explanation_no_self_reference": "The sampled pages resolve, but do not advertise their own persistent URI, so it cannot be discovered from the page itself.",
+  "nde_compat_persistent_heading_no_self_reference": "Landing pages do not reference their persistent URI",
+  "nde_compat_persistent_explanation_no_self_reference": "The sampled pages resolve to a landing page, but do not mention their persistent URI, so it cannot be found on the page itself.",
   "nde_compat_persistent_count_no_self_reference": [
     {
       "declarations": [
@@ -313,8 +313,8 @@
       ],
       "selectors": ["countPlural"],
       "match": {
-        "countPlural=one": "{unreferenced} of {display} sampled pages does not reference its persistent identifier.",
-        "countPlural=other": "{unreferenced} of {display} sampled pages do not reference their persistent identifier."
+        "countPlural=one": "{unreferenced} of {display} sampled pages does not reference its persistent URI.",
+        "countPlural=other": "{unreferenced} of {display} sampled pages do not reference their persistent URI."
       }
     }
   ],
