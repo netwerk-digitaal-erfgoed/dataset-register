@@ -585,11 +585,12 @@
               {/if}
               <!-- The specific sampled URIs that did not resolve, each with its
                    typed reason, so providers can see exactly which pages failed
-                   and act. Shown for the red “did not resolve” state and the
-                   orange “does not reference its PID” state; the reason is text,
-                   not colour, for accessibility. Only the persistent criterion
-                   carries failures, so the key check is enough. -->
-              {#if criterion.key === 'persistent' && persistentUris.failures.length > 0}
+                   and act. Gated on the failure reasons so it only renders for
+                   the red “did not resolve” and orange “does not reference its
+                   PID” states — never under a green/neutral row should the
+                   independently-fetched failures and the resolution figures ever
+                   disagree. The reason is text, not colour, for accessibility. -->
+              {#if criterion.key === 'persistent' && (criterion.reason === 'unresolved' || criterion.reason === 'no-self-reference') && persistentUris.failures.length > 0}
                 <div class="mt-2 text-sm text-gray-600 dark:text-gray-400">
                   <p class="font-medium text-gray-700 dark:text-gray-300">
                     {m.nde_compat_persistent_failures_label()}
