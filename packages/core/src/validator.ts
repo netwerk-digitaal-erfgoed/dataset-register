@@ -33,9 +33,11 @@ export class ShaclEngineValidator implements Validator {
 
   public async validate(input: DatasetCore): Promise<ValidationResult> {
     const dataset = standardizeSchemaOrgPrefix(input);
+    // Detect dataset subjects regardless of node kind: blank-node datasets must
+    // reach SHACL so the shapes can reject them with a clear web-URI message,
+    // rather than being silently dropped as no-dataset.
     const datasetIris = dataset.filter(
       (quad) =>
-        quad.subject.termType === 'NamedNode' && // Prevent blank nodes
         quad.predicate.value ===
           'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' &&
         (quad.object.value === 'https://schema.org/Dataset' ||

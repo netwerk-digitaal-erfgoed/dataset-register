@@ -1188,6 +1188,9 @@ nde-dataset:AccessRightsProperty a sh:PropertyShape ;
 
 dcat:DatasetShape
     a sh:NodeShape ;
+    sh:nodeKind sh:IRI ;
+    sh:pattern "^https?://" ;
+    sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
     sh:property [
         sh:minCount 1 ;
         sh:path dc:title ;
