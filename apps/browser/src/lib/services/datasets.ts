@@ -3,7 +3,10 @@ import { dcterms, foaf, ldkit, xsd } from 'ldkit/namespaces';
 import { createLens, type SchemaInterface } from 'ldkit';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
 import { facetConfigs, type Facets, fetchFacets } from '$lib/services/facets';
-import { PUBLIC_SPARQL_ENDPOINT } from '$env/static/public';
+import {
+  PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+  PUBLIC_SPARQL_ENDPOINT,
+} from '$env/static/public';
 import { schemaNs as schema, voidNs } from '../rdf.js';
 import { getLocale } from '$lib/paraglide/runtime';
 import { normalizeMediaType } from '$lib/utils/sparql';
@@ -355,7 +358,7 @@ export function datasetCardsQuery(
     # via SPARQL Federation. The IIIF subset is itself optional: not every
     # dataset exposes IIIF Presentation manifests.
     OPTIONAL {
-      SERVICE <https://triplestore.netwerkdigitaalerfgoed.nl/repositories/dataset-knowledge-graph> {
+      SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
         ?dataset a void:Dataset ;
           void:triples ?size .
         OPTIONAL {
@@ -524,7 +527,7 @@ function filterClauses(searchFilters: SearchRequest, skipDefaults = false) {
     // When filtering by size, require datasets to have size data (not OPTIONAL).
     // This ensures only datasets with known sizes are returned in filtered results.
     filterClausesArray.push(`
-      SERVICE <https://triplestore.netwerkdigitaalerfgoed.nl/repositories/dataset-knowledge-graph> {
+      SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
         ?dataset a void:Dataset ;
           void:triples ?datasetSize .
       }
