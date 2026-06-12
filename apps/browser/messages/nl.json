@@ -301,6 +301,29 @@
   "nde_compat_persistent_issued_by": "Uitgegeven door {publisher}.",
   "nde_compat_persistent_uses_scheme": "Gebruikt {scheme}-identifiers.",
   "nde_compat_persistent_scheme_issued_by": "{scheme}, uitgegeven door {publisher}.",
+  "nde_compat_persistent_heading_no_self_reference": "Landingspagina’s verwijzen niet naar hun persistente URI",
+  "nde_compat_persistent_explanation_no_self_reference": "De pagina’s uit de steekproef leiden naar een landingspagina, maar vermelden hun persistente URI niet, waardoor die niet vanaf de pagina zelf te vinden is.",
+  "nde_compat_persistent_count_no_self_reference": [
+    {
+      "declarations": [
+        "input count",
+        "input display",
+        "input unreferenced",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{unreferenced} van {display} pagina’s uit de steekproef verwijst niet naar zijn persistente URI.",
+        "countPlural=other": "{unreferenced} van {display} pagina’s uit de steekproef verwijzen niet naar hun persistente URI."
+      }
+    }
+  ],
+  "nde_compat_persistent_failures_label": "Betrokken URI’s:",
+  "nde_compat_persistent_reason_no_self_reference": "geen zelfverwijzing",
+  "nde_compat_persistent_reason_http_error": "HTTP-fout",
+  "nde_compat_persistent_reason_timeout": "time-out",
+  "nde_compat_persistent_reason_network_error": "netwerkfout",
+  "nde_compat_persistent_reason_wrong_content_type": "onjuist content-type",
   "nde_compat_linked_data_heading_conforms": "Biedt linked data volgens het NDE-applicatieprofiel",
   "nde_compat_linked_data_heading_not_conforms": "Biedt linked data",
   "nde_compat_linked_data_heading_pending": "Linked data nog niet beoordeeld",
