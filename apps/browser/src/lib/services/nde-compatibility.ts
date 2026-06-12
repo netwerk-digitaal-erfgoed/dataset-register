@@ -64,6 +64,13 @@ export const SUBJECT_NAMESPACE_DURABLE_METRIC =
 // discriminator for the persistent criterion.
 export const PID_SCHEME_BASE_URI = 'https://def.nde.nl/pid-scheme#';
 
+// Namespace of the typed subject-resolution failure reasons the Knowledge Graph
+// records per failed sample URI (e.g.
+// `https://def.nde.nl/subject-resolution-failure#no-self-reference`). The local
+// name maps to a `PersistentUriFailureReason`.
+export const SUBJECT_RESOLUTION_FAILURE_BASE_URI =
+  'https://def.nde.nl/subject-resolution-failure#';
+
 // The registration criterion leads — every registered dataset has it, so it
 // anchors the section regardless of analysis. Persistent identifiers follow, then
 // linked data and terms, then iiif, matching the order in NDE communication.
@@ -115,12 +122,28 @@ export type LinkedDataFailureReason = 'no-linked-data' | 'empty';
 //                        the profile’s classes.
 export type SchemaApNdeFailureReason = 'violations' | 'declared-but-empty';
 
-// Why a criterion is in the `failed` state. The registration reasons ('gone',
+// Why the persistent-URI criterion is in a non-green state:
+// 'unresolved'        — 🔴 at least one sampled URI did not (properly) resolve
+//                       (a hard failure), or per-URI reasons are not available
+//                       yet so the failure cannot be classified as soft.
+// 'no-self-reference' — 🟠 every failed URI resolves but does not advertise its
+//                       own persistent URI: the pages work, they just do not
+//                       reference their PID.
+// 'non-durable'       — 🟠 the URIs resolve, but on a namespace the DKG flags as
+//                       a non-durable home (its disallow list).
+export type PersistentFailureReason =
+  | 'unresolved'
+  | 'no-self-reference'
+  | 'non-durable';
+
+// Why a criterion is in a non-green state. The registration reasons ('gone',
 // 'invalid') carry the dataset’s status; the linked-data reasons say why no
-// linked data could be assessed.
+// linked data could be assessed; the persistent reasons split a soft “resolves
+// but no PID reference” from a hard “did not resolve”.
 export type CompatibilityFailureReason =
   | LinkedDataFailureReason
-  | RegistrationFailureReason;
+  | RegistrationFailureReason
+  | PersistentFailureReason;
 
 // IIIF manifest figures from the Knowledge Graph: how many manifests the dataset
 // declares (void:entities), and — once the pipeline has sampled them — how many
@@ -137,6 +160,32 @@ export interface IiifManifests {
 // — a self-minted HTTP namespace that resolves is persistent too — but it is a
 // positive signal worth surfacing (the indirection survives a domain move).
 export type PidScheme = 'ark' | 'handle';
+
+// Why a single sampled subject URI failed, mirroring the Knowledge Graph’s
+// `subject-resolution-failure` concept scheme:
+// 'no-self-reference'  — the page resolves (a 200, text/html response), but its
+//                        body does not advertise the original URI. A soft gap:
+//                        the identifier dereferences, it just is not referenced.
+// 'http-error'         — a non-2xx HTTP response.
+// 'timeout'            — the request did not complete within the budget.
+// 'network-error'      — the request failed to connect (DNS, TLS, reset, …).
+// 'wrong-content-type' — a 200, but not an HTML landing page.
+// All but 'no-self-reference' are hard failures: the page did not (properly)
+// resolve at all.
+export type PersistentUriFailureReason =
+  | 'no-self-reference'
+  | 'http-error'
+  | 'timeout'
+  | 'network-error'
+  | 'wrong-content-type';
+
+// A single sampled subject URI that did not resolve, paired with its typed
+// reason. Surfaced on the detail page so providers can see exactly which pages
+// failed and why.
+export interface PersistentUriFailure {
+  uri: string;
+  reason: PersistentUriFailureReason;
+}
 
 // Persistent-URI figures from the Knowledge Graph for the dataset’s most common
 // self-minted subject namespace. The DKG samples subject URIs from that namespace
@@ -158,6 +207,12 @@ export type PidScheme = 'ark' | 'handle';
 //                   durable home for the identifiers, so it warns rather than
 //                   passing. False until the DKG emits the marker (see
 //                   dataset-knowledge-graph): the orange tier is dormant until then.
+// 'failures'      — the sampled URIs that did not resolve, each with its typed
+//                   reason. Drives the soft/hard split: when every failure is
+//                   `no-self-reference` the page resolves but does not reference
+//                   its PID (🟠), otherwise at least one page did not resolve
+//                   (🔴). Empty until the DKG ships the per-URI data, so the
+//                   split falls back to the hard red state — matching today.
 export interface PersistentUris {
   uriSpace: string | null;
   scheme: PidScheme | null;
@@ -165,6 +220,7 @@ export interface PersistentUris {
   sampled: number | null;
   resolved: number | null;
   onDisallowList: boolean;
+  failures: PersistentUriFailure[];
 }
 
 // SCHEMA-AP-NDE sample-conformance figures from the Knowledge Graph plus whether
@@ -344,25 +400,44 @@ export function iiifState(manifests: IiifManifests): CompatibilityState {
 // Derives the persistent-URI state from the subject-URI resolution measurement.
 // Persistence is judged by resolution, not by the identifier scheme: a self-minted
 // HTTP namespace that resolves to an HTML landing page is just as persistent as an
-// ARK or Handle, so it is `met` (🟢). If any sampled URI fails to resolve
-// (`resolved` < `sampled`), the criterion is `failed` (🔴). A namespace that fully
-// resolves but is on the DKG’s disallow list of known non-durable vendor
-// namespaces is a `warning` (🟠): it works today but is not a durable home for the
-// identifiers. With no measurement yet — the resolution step has not run, or the
-// DKG found no self-minted namespace to sample — the criterion is neutral
-// pending (⚪): a grey row signalling “this will still be checked”, unlike terms
-// it keeps its place rather than being omitted.
-export function persistentUrisState(
-  persistent: PersistentUris,
-): CompatibilityState {
+// ARK or Handle, so it is `met` (🟢).
+//
+// When some sampled URIs did not resolve (`resolved` < `sampled`), the typed
+// per-URI failures split the outcome: if every failure is `no-self-reference`
+// the pages resolve but do not advertise their own PID — a soft `warning` (🟠,
+// 'no-self-reference'); otherwise at least one page did not (properly) resolve,
+// a hard `failed` (🔴, 'unresolved'). With no per-URI reasons yet (old DKG data),
+// the failure cannot be classified as soft, so it falls back to the hard red
+// state — exactly today’s behaviour.
+//
+// A namespace that fully resolves but is on the DKG’s disallow list of known
+// non-durable vendor namespaces is a `warning` (🟠, 'non-durable'): it works
+// today but is not a durable home for the identifiers. With no measurement yet —
+// the resolution step has not run, or the DKG found no self-minted namespace to
+// sample — the criterion is neutral pending (⚪): a grey row signalling “this
+// will still be checked”, unlike terms it keeps its place rather than being
+// omitted.
+export function persistentUrisState(persistent: PersistentUris): {
+  state: CompatibilityState;
+  reason?: PersistentFailureReason;
+} {
   if (persistent.sampled === null || persistent.sampled <= 0) {
-    return 'unmet';
+    return { state: 'unmet' };
   }
   const resolved = persistent.resolved ?? 0;
   if (resolved < persistent.sampled) {
-    return 'failed';
+    const onlyNoSelfReference =
+      persistent.failures.length > 0 &&
+      persistent.failures.every(
+        (failure) => failure.reason === 'no-self-reference',
+      );
+    return onlyNoSelfReference
+      ? { state: 'warning', reason: 'no-self-reference' }
+      : { state: 'failed', reason: 'unresolved' };
   }
-  return persistent.onDisallowList ? 'warning' : 'met';
+  return persistent.onDisallowList
+    ? { state: 'warning', reason: 'non-durable' }
+    : { state: 'met' };
 }
 
 // Derives the term-usage state, or `null` when the criterion cannot be assessed
@@ -403,6 +478,7 @@ export function compatibilityCriteria(
     input.registration,
     input.registrationHasWarnings,
   );
+  const persistent = persistentUrisState(input.persistent);
   const linkedData = linkedDataState(input.linkedData);
   const terms = termsState(input.terms);
   const criteria: CompatibilityCriterion[] = [
@@ -416,10 +492,11 @@ export function compatibilityCriteria(
     },
     {
       key: 'persistent',
-      state: persistentUrisState(input.persistent),
+      state: persistent.state,
       // The persistent criterion shows the resolution figures (resolved of
       // sampled) from the prop, not a single count.
       count: input.persistent.sampled ?? 0,
+      reason: persistent.reason,
     },
     {
       key: 'linked-data',

@@ -17,6 +17,7 @@
     type CompatibilityState,
     type IiifManifests,
     type LinkedData,
+    type PersistentUriFailureReason,
     type PersistentUris,
     type RegistrationFailureReason,
     type TermLinks,
@@ -80,7 +81,11 @@
           case 'met':
             return m.nde_compat_persistent_heading_persistent();
           case 'warning':
-            return m.nde_compat_persistent_heading_resolves();
+            // Two orange reasons: pages that resolve but do not reference their
+            // PID, versus a namespace that resolves but is non-durable.
+            return criterion.reason === 'no-self-reference'
+              ? m.nde_compat_persistent_heading_no_self_reference()
+              : m.nde_compat_persistent_heading_resolves();
           case 'failed':
             return m.nde_compat_persistent_heading_unresolved();
           // Neutral: analyzed, but resolution has not been measured yet.
@@ -138,7 +143,9 @@
           case 'met':
             return m.nde_compat_persistent_explanation_persistent();
           case 'warning':
-            return m.nde_compat_persistent_explanation_resolves();
+            return criterion.reason === 'no-self-reference'
+              ? m.nde_compat_persistent_explanation_no_self_reference()
+              : m.nde_compat_persistent_explanation_resolves();
           case 'failed':
             return m.nde_compat_persistent_explanation_unresolved();
           default:
@@ -235,8 +242,9 @@
       case 'persistent':
         return [
           entry('met'),
-          entry('warning'),
-          entry('failed'),
+          entry('warning', 'non-durable'),
+          entry('warning', 'no-self-reference'),
+          entry('failed', 'unresolved'),
           ...(criterion.state === 'unmet' ? [entry('unmet')] : []),
         ];
       case 'linked-data':
@@ -281,6 +289,21 @@
             return m.nde_compat_persistent_count_unresolved({
               count: unresolved,
               unresolved: unresolved.toLocaleString(getLocale()),
+              display: sampled.toLocaleString(getLocale()),
+            });
+          }
+          case 'warning': {
+            // The non-durable warning carries no count line; the no-self-reference
+            // warning reports how many sampled pages resolve but do not reference
+            // their PID, mirroring the failing-URI list below.
+            if (criterion.reason !== 'no-self-reference') {
+              return null;
+            }
+            const sampled = persistentUris.sampled ?? 0;
+            const unreferenced = persistentUris.failures.length;
+            return m.nde_compat_persistent_count_no_self_reference({
+              count: unreferenced,
+              unreferenced: unreferenced.toLocaleString(getLocale()),
               display: sampled.toLocaleString(getLocale()),
             });
           }
@@ -338,6 +361,23 @@
           default:
             return null;
         }
+    }
+  }
+
+  // The provider-facing label for a single failing URI’s reason, listed beside
+  // the URI so the cause is conveyed as text (not by colour alone).
+  function failureReasonLabel(reason: PersistentUriFailureReason): string {
+    switch (reason) {
+      case 'no-self-reference':
+        return m.nde_compat_persistent_reason_no_self_reference();
+      case 'http-error':
+        return m.nde_compat_persistent_reason_http_error();
+      case 'timeout':
+        return m.nde_compat_persistent_reason_timeout();
+      case 'network-error':
+        return m.nde_compat_persistent_reason_network_error();
+      case 'wrong-content-type':
+        return m.nde_compat_persistent_reason_wrong_content_type();
     }
   }
 
@@ -542,6 +582,40 @@
                     {detailText}
                   {/if}
                 </p>
+              {/if}
+              <!-- The specific sampled URIs that did not resolve, each with its
+                   typed reason, so providers can see exactly which pages failed
+                   and act. Shown for the red “did not resolve” state and the
+                   orange “does not reference its PID” state; the reason is text,
+                   not colour, for accessibility. Only the persistent criterion
+                   carries failures, so the key check is enough. -->
+              {#if criterion.key === 'persistent' && persistentUris.failures.length > 0}
+                <div class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                  <p class="font-medium text-gray-700 dark:text-gray-300">
+                    {m.nde_compat_persistent_failures_label()}
+                  </p>
+                  <ul class="mt-1 space-y-1">
+                    {#each persistentUris.failures as failure (failure.uri)}
+                      <li class="flex flex-wrap items-baseline gap-x-1">
+                        <a
+                          href={failure.uri}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="break-all text-blue-600 hover:underline dark:text-blue-400"
+                          >{failure.uri}<ArrowUpRightFromSquareOutline
+                            class="ms-0.5 inline-block h-3 w-3 align-[-0.1em]"
+                            aria-hidden="true"
+                          /><span class="sr-only">
+                            ({m.opens_in_new_tab()})</span
+                          ></a
+                        >
+                        <span class="text-gray-500 dark:text-gray-400"
+                          >– {failureReasonLabel(failure.reason)}</span
+                        >
+                      </li>
+                    {/each}
+                  </ul>
+                </div>
               {/if}
             </div>
           </li>

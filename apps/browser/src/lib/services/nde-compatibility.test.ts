@@ -31,6 +31,7 @@ const pendingPersistent: PersistentUris = {
   sampled: null,
   resolved: null,
   onDisallowList: false,
+  failures: [],
 };
 
 describe('iiifState', () => {
@@ -68,8 +69,9 @@ describe('persistentUrisState', () => {
         sampled: 10,
         resolved: 10,
         onDisallowList: false,
+        failures: [],
       }),
-    ).toBe('met');
+    ).toEqual({ state: 'met' });
   });
 
   it('is met when all sampled URIs resolve from a self-minted HTTP namespace (no PID scheme required)', () => {
@@ -81,11 +83,12 @@ describe('persistentUrisState', () => {
         sampled: 10,
         resolved: 10,
         onDisallowList: false,
+        failures: [],
       }),
-    ).toBe('met');
+    ).toEqual({ state: 'met' });
   });
 
-  it('is a warning when all sampled URIs resolve but the namespace is on the disallow list', () => {
+  it('is a warning (non-durable) when all sampled URIs resolve but the namespace is on the disallow list', () => {
     expect(
       persistentUrisState({
         uriSpace: 'https://vendor.example/cms/',
@@ -94,11 +97,12 @@ describe('persistentUrisState', () => {
         sampled: 10,
         resolved: 10,
         onDisallowList: true,
+        failures: [],
       }),
-    ).toBe('warning');
+    ).toEqual({ state: 'warning', reason: 'non-durable' });
   });
 
-  it('is failed when at least one sampled URI does not resolve, even for a recognised scheme', () => {
+  it('is failed/unresolved when at least one sampled URI hits a hard failure, even for a recognised scheme', () => {
     expect(
       persistentUrisState({
         uriSpace: 'https://n2t.net/ark:/53016/',
@@ -107,8 +111,11 @@ describe('persistentUrisState', () => {
         sampled: 10,
         resolved: 0,
         onDisallowList: false,
+        failures: [
+          { uri: 'https://n2t.net/ark:/53016/1', reason: 'http-error' },
+        ],
       }),
-    ).toBe('failed');
+    ).toEqual({ state: 'failed', reason: 'unresolved' });
     expect(
       persistentUrisState({
         uriSpace: 'https://n2t.net/ark:/32154/',
@@ -117,8 +124,59 @@ describe('persistentUrisState', () => {
         sampled: 10,
         resolved: 2,
         onDisallowList: false,
+        failures: [{ uri: 'https://n2t.net/ark:/32154/1', reason: 'timeout' }],
       }),
-    ).toBe('failed');
+    ).toEqual({ state: 'failed', reason: 'unresolved' });
+  });
+
+  it('is a warning (no-self-reference) when every failure is a page that resolves but does not reference its PID', () => {
+    expect(
+      persistentUrisState({
+        uriSpace: 'https://example.org/id/',
+        scheme: null,
+        publisher: null,
+        sampled: 10,
+        resolved: 8,
+        onDisallowList: false,
+        failures: [
+          { uri: 'https://example.org/id/1', reason: 'no-self-reference' },
+          { uri: 'https://example.org/id/2', reason: 'no-self-reference' },
+        ],
+      }),
+    ).toEqual({ state: 'warning', reason: 'no-self-reference' });
+  });
+
+  it('is failed/unresolved when failures mix no-self-reference with a hard failure', () => {
+    expect(
+      persistentUrisState({
+        uriSpace: 'https://example.org/id/',
+        scheme: null,
+        publisher: null,
+        sampled: 10,
+        resolved: 8,
+        onDisallowList: false,
+        failures: [
+          { uri: 'https://example.org/id/1', reason: 'no-self-reference' },
+          { uri: 'https://example.org/id/2', reason: 'network-error' },
+        ],
+      }),
+    ).toEqual({ state: 'failed', reason: 'unresolved' });
+  });
+
+  it('falls back to failed/unresolved when resolution fell short but no per-URI reasons are available yet', () => {
+    // Old DKG data: resolved < sampled with no failure list, so the soft
+    // no-self-reference state cannot be inferred — stays the hard red state.
+    expect(
+      persistentUrisState({
+        uriSpace: 'https://example.org/id/',
+        scheme: null,
+        publisher: null,
+        sampled: 10,
+        resolved: 2,
+        onDisallowList: false,
+        failures: [],
+      }),
+    ).toEqual({ state: 'failed', reason: 'unresolved' });
   });
 
   it('prefers the failed state over the disallow-list warning when resolution also fails', () => {
@@ -130,12 +188,15 @@ describe('persistentUrisState', () => {
         sampled: 10,
         resolved: 3,
         onDisallowList: true,
+        failures: [
+          { uri: 'https://vendor.example/cms/1', reason: 'http-error' },
+        ],
       }),
-    ).toBe('failed');
+    ).toEqual({ state: 'failed', reason: 'unresolved' });
   });
 
   it('is unmet (pending) when no resolution measurement has been recorded yet', () => {
-    expect(persistentUrisState(pendingPersistent)).toBe('unmet');
+    expect(persistentUrisState(pendingPersistent)).toEqual({ state: 'unmet' });
     expect(
       persistentUrisState({
         uriSpace: 'https://example.org/id/',
@@ -144,11 +205,12 @@ describe('persistentUrisState', () => {
         sampled: 0,
         resolved: 0,
         onDisallowList: false,
+        failures: [],
       }),
-    ).toBe('unmet');
+    ).toEqual({ state: 'unmet' });
   });
 
-  it('treats a missing resolved measurement as zero resolved (failed)', () => {
+  it('treats a missing resolved measurement as zero resolved (failed/unresolved)', () => {
     expect(
       persistentUrisState({
         uriSpace: 'https://example.org/id/',
@@ -157,8 +219,9 @@ describe('persistentUrisState', () => {
         sampled: 10,
         resolved: null,
         onDisallowList: false,
+        failures: [],
       }),
-    ).toBe('failed');
+    ).toEqual({ state: 'failed', reason: 'unresolved' });
   });
 });
 
@@ -450,6 +513,7 @@ describe('compatibilityCriteria', () => {
         sampled: 10,
         resolved: 10,
         onDisallowList: false,
+        failures: [],
       },
       linkedData: noLinkedData,
       terms: null,
@@ -457,6 +521,32 @@ describe('compatibilityCriteria', () => {
     });
     expect(persistent.key).toBe('persistent');
     expect(persistent.state).toBe('met');
+  });
+
+  it('carries the persistent no-self-reference warning reason and sample count', () => {
+    const [, persistent] = compatibilityCriteria({
+      isAnalyzed: true,
+      registration: null,
+      persistent: {
+        uriSpace: 'https://example.org/id/',
+        scheme: null,
+        publisher: null,
+        sampled: 10,
+        resolved: 8,
+        onDisallowList: false,
+        failures: [
+          { uri: 'https://example.org/id/1', reason: 'no-self-reference' },
+          { uri: 'https://example.org/id/2', reason: 'no-self-reference' },
+        ],
+      },
+      linkedData: noLinkedData,
+      terms: null,
+      iiif: { declared: 0, sampled: null, validated: null },
+    });
+    expect(persistent.key).toBe('persistent');
+    expect(persistent.state).toBe('warning');
+    expect(persistent.reason).toBe('no-self-reference');
+    expect(persistent.count).toBe(10);
   });
 
   it('surfaces the registration warning tier without a count', () => {
@@ -599,6 +689,7 @@ describe('compatibilityCriteria', () => {
           sampled: 10,
           resolved: 10,
           onDisallowList: false,
+          failures: [],
         },
         linkedData: {
           declared: true,

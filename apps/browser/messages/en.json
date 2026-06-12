@@ -301,6 +301,29 @@
   "nde_compat_persistent_issued_by": "Issued by {publisher}.",
   "nde_compat_persistent_uses_scheme": "Uses {scheme} identifiers.",
   "nde_compat_persistent_scheme_issued_by": "{scheme}, issued by {publisher}.",
+  "nde_compat_persistent_heading_no_self_reference": "Pages do not reference their persistent identifier",
+  "nde_compat_persistent_explanation_no_self_reference": "The sampled pages resolve, but do not advertise their own persistent URI, so it cannot be discovered from the page itself.",
+  "nde_compat_persistent_count_no_self_reference": [
+    {
+      "declarations": [
+        "input count",
+        "input display",
+        "input unreferenced",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{unreferenced} of {display} sampled pages does not reference its persistent identifier.",
+        "countPlural=other": "{unreferenced} of {display} sampled pages do not reference their persistent identifier."
+      }
+    }
+  ],
+  "nde_compat_persistent_failures_label": "Affected URIs:",
+  "nde_compat_persistent_reason_no_self_reference": "no self-reference",
+  "nde_compat_persistent_reason_http_error": "HTTP error",
+  "nde_compat_persistent_reason_timeout": "timeout",
+  "nde_compat_persistent_reason_network_error": "network error",
+  "nde_compat_persistent_reason_wrong_content_type": "wrong content type",
   "nde_compat_linked_data_heading_conforms": "Provides linked data conforming to the NDE Application Profile",
   "nde_compat_linked_data_heading_not_conforms": "Provides linked data",
   "nde_compat_linked_data_heading_pending": "Linked data not yet assessed",
