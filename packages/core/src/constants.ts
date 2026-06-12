@@ -56,3 +56,31 @@ export const UNAVAILABILITY_OUTCOMES: readonly string[] = [
   ...REACHABILITY_FAILURE_OUTCOMES,
   ...CONTENT_TYPE_FAILURE_OUTCOMES,
 ];
+
+// Deterministic failures: outcomes whose verdict cannot change by waiting. An
+// empty body, an unparseable graph, or a Content-Type that does not match the
+// declared media type is the same defect on the next crawl as it is today, so
+// both the crawler grace window and the browser badge surface these within one
+// probe cycle instead of holding them back for the transient failure-streak
+// window. The remaining unavailability outcomes – NetworkError, NotFound,
+// ServerError, AuthRequired, RateLimited, SparqlProbeFailed – are transient
+// reachability failures that can self-heal between crawls, so they keep riding
+// out the grace window.
+export const DETERMINISTIC_FAILURE_OUTCOMES: readonly string[] = [
+  'EmptyBody',
+  'RdfParseFailed',
+  'ContentTypeMismatch',
+  'ContentTypeMissing',
+].map((name) => `${PROBE_OUTCOME_BASE_URI}${name}`);
+
+const DETERMINISTIC_FAILURE_OUTCOME_SET: ReadonlySet<string> = new Set(
+  DETERMINISTIC_FAILURE_OUTCOMES,
+);
+
+// Whether a probe outcome IRI denotes a deterministic content defect, i.e. one
+// whose verdict cannot change by waiting. Both the crawler’s failure-streak
+// grace window and the browser availability badge call this to surface such
+// defects immediately, keeping the two consistent from a single classification.
+export function isDeterministicFailure(outcome: string | null): boolean {
+  return outcome !== null && DETERMINISTIC_FAILURE_OUTCOME_SET.has(outcome);
+}

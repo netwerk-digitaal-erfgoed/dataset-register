@@ -10,6 +10,7 @@ import { Distribution } from '@lde/dataset';
 import { probe as probeDistribution } from '@lde/distribution-probe';
 import type { ProbeResultType } from '@lde/distribution-probe';
 import { dcat, dct, rdf, xsd } from '../query.ts';
+import { isDeterministicFailure } from '../constants.ts';
 import { shacl } from '../validator.ts';
 import { classify, ndeProbe, probeOutcomes } from './outcomes.ts';
 import type { ProbeVerdict } from './outcomes.ts';
@@ -263,6 +264,13 @@ export class DistributionProbeStage {
     record: DistributionHealthRecord,
   ): ProbeVerdict {
     if (verdict.success) return verdict;
+
+    // Deterministic content defects (empty body, unparseable graph, wrong or
+    // missing Content-Type) cannot change by waiting, so surface them within one
+    // probe cycle. Only transient reachability failures ride out the grace window.
+    // A failure verdict always carries an outcome (classify never returns null on
+    // failure), so the assertion is safe.
+    if (isDeterministicFailure(verdict.outcome!.value)) return verdict;
 
     const streakAgeMs =
       record.firstFailureAt === null

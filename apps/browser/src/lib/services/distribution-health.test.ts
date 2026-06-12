@@ -57,15 +57,37 @@ describe('distributionAvailability', () => {
     }
   });
 
-  it('stays reachable for a content-type failure within the threshold window', () => {
+  it('is unavailable for a deterministic content defect within the threshold window', () => {
+    // Empty/unparseable bodies and Content-Type defects cannot self-heal, so the
+    // badge flips on the first probe instead of riding out the grace window.
+    for (const outcome of [
+      'EmptyBody',
+      'RdfParseFailed',
+      'ContentTypeMismatch',
+      'ContentTypeMissing',
+    ]) {
+      const health: DistributionHealth = {
+        lastOutcome: `https://def.nde.nl/probe#${outcome}`,
+        lastProbedAt: now,
+        lastSuccessAt: null,
+        firstFailureAt: new Date('2026-06-12T11:59:00Z'), // 1 minute before now
+        consecutiveFailures: 1,
+      };
+      expect(distributionAvailability(health, now)).toBe('unavailable');
+    }
+  });
+
+  it('is unavailable for a deterministic content defect with no first-failure timestamp', () => {
+    // Deterministic defects bypass the grace window entirely, so a missing
+    // firstFailureAt does not keep the badge reachable.
     const health: DistributionHealth = {
-      lastOutcome: 'https://def.nde.nl/probe#ContentTypeMismatch',
+      lastOutcome: 'https://def.nde.nl/probe#EmptyBody',
       lastProbedAt: now,
       lastSuccessAt: null,
-      firstFailureAt: new Date('2026-06-08T12:00:00Z'), // 2 days before now
-      consecutiveFailures: 3,
+      firstFailureAt: null,
+      consecutiveFailures: 1,
     };
-    expect(distributionAvailability(health, now)).toBe('reachable');
+    expect(distributionAvailability(health, now)).toBe('unavailable');
   });
 
   it('is reachable when the last probe succeeded (no outcome)', () => {
@@ -79,9 +101,9 @@ describe('distributionAvailability', () => {
     expect(distributionAvailability(health, now)).toBe('reachable');
   });
 
-  it('stays reachable for a failure outcome with no first-failure timestamp', () => {
+  it('stays reachable for a transient failure outcome with no first-failure timestamp', () => {
     const health: DistributionHealth = {
-      lastOutcome: 'https://def.nde.nl/probe#EmptyBody',
+      lastOutcome: 'https://def.nde.nl/probe#NetworkError',
       lastProbedAt: now,
       lastSuccessAt: null,
       firstFailureAt: null,

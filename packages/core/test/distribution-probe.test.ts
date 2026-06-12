@@ -9,7 +9,10 @@ import {
   DataDumpProbeResult,
 } from '@lde/distribution-probe';
 import { classify, probeOutcomes } from '../src/distribution-probe/outcomes.js';
-import { REACHABILITY_FAILURE_OUTCOMES } from '../src/constants.js';
+import {
+  REACHABILITY_FAILURE_OUTCOMES,
+  isDeterministicFailure,
+} from '../src/constants.js';
 import {
   DistributionProbeStage,
   readProbeSeverities,
@@ -451,6 +454,56 @@ describe('DistributionProbeStage', () => {
     expect(violation).toBeDefined();
     const stored = await healthStore.get(new URL(url.value));
     expect(stored?.consecutiveFailures).toBe(2);
+  });
+
+  it('surfaces a deterministic content defect (empty body) on the first probe, bypassing the grace window', async () => {
+    // HEAD reports an unknown size, so the probe issues a GET; the GET body is
+    // empty, which the probe classifies as EmptyBody — a deterministic defect
+    // that cannot change by waiting, so it must not be suppressed by the streak.
+    nock('https://example.org')
+      .head('/empty')
+      .reply(200, '', { 'Content-Type': 'text/turtle' });
+    nock('https://example.org')
+      .get('/empty')
+      .reply(200, '', { 'Content-Type': 'text/turtle' });
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-empty');
+    const distributionNode = factory.blankNode();
+    const url = factory.namedNode('https://example.org/empty');
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    dataset.add(factory.quad(distributionNode, dcat('accessURL'), url));
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('mediaType'),
+        factory.literal('text/turtle'),
+      ),
+    );
+
+    const healthStore = new InMemoryHealthStore();
+    const stage = new DistributionProbeStage({
+      healthStore,
+      failureStreakMaxAgeMs: 7 * 24 * 60 * 60 * 1000, // long grace window
+    });
+
+    const quads = await stage.run(dataset);
+
+    const outcome = quads.find((quad) =>
+      quad.predicate.equals(factory.namedNode(`${ndeProbePrefix}probeOutcome`)),
+    );
+    expect(outcome?.object.equals(probeOutcomes.EmptyBody)).toBe(true);
+    const violation = quads.find(
+      (quad) =>
+        quad.predicate.equals(shacl('resultSeverity')) &&
+        quad.object.equals(shacl('Violation')),
+    );
+    expect(violation).toBeDefined();
+    // The streak is brand new (one failure), yet the defect is surfaced at once.
+    const stored = await healthStore.get(new URL(url.value));
+    expect(stored?.consecutiveFailures).toBe(1);
   });
 
   it('clears health state after a successful probe', async () => {
@@ -1236,5 +1289,35 @@ describe('REACHABILITY_FAILURE_OUTCOMES', () => {
       const expected = !contentType.has(outcome.value);
       expect(reachability.has(outcome.value)).toBe(expected);
     }
+  });
+});
+
+describe('isDeterministicFailure', () => {
+  it('is true for content defects that cannot change by waiting', () => {
+    for (const outcome of [
+      probeOutcomes.EmptyBody,
+      probeOutcomes.RdfParseFailed,
+      probeOutcomes.ContentTypeMismatch,
+      probeOutcomes.ContentTypeMissing,
+    ]) {
+      expect(isDeterministicFailure(outcome.value)).toBe(true);
+    }
+  });
+
+  it('is false for transient reachability failures that can self-heal', () => {
+    for (const outcome of [
+      probeOutcomes.NetworkError,
+      probeOutcomes.NotFound,
+      probeOutcomes.ServerError,
+      probeOutcomes.AuthRequired,
+      probeOutcomes.RateLimited,
+      probeOutcomes.SparqlProbeFailed,
+    ]) {
+      expect(isDeterministicFailure(outcome.value)).toBe(false);
+    }
+  });
+
+  it('is false when there is no outcome', () => {
+    expect(isDeterministicFailure(null)).toBe(false);
   });
 });
