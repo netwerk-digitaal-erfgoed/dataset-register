@@ -132,6 +132,31 @@ describe('buildDocument', () => {
     expect(document.date_read).toBeUndefined();
   });
 
+  it('emits DKG facets and derives class_group from the merged IR (#2085)', () => {
+    const document = buildDocument(
+      raw({
+        titles: [{ value: 'X', lang: '' }],
+        classes: ['http://schema.org/Person'],
+        terminologySources: ['https://vocab.getty.edu/aat/'],
+        size: 1234,
+      }),
+    );
+    expect(document.class).toEqual(['http://schema.org/Person']);
+    expect(document.class_group).toEqual(['group:person']);
+    expect(document.terminology_source).toEqual([
+      'https://vocab.getty.edu/aat/',
+    ]);
+    expect(document.size).toBe(1234);
+  });
+
+  it('omits DKG facets when enrichment is absent', () => {
+    const document = buildDocument(raw({ titles: [{ value: 'X', lang: '' }] }));
+    expect(document.class).toBeUndefined();
+    expect(document.class_group).toBeUndefined();
+    expect(document.terminology_source).toBeUndefined();
+    expect(document.size).toBeUndefined();
+  });
+
   it('omits absent optional fields', () => {
     const document = buildDocument(
       raw({ titles: [{ value: 'Only', lang: '' }] }),

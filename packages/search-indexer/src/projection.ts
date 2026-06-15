@@ -1,5 +1,8 @@
 import { fold } from '@lde/text-normalization';
-import { REGISTRATION_STATUS_BASE_URI } from '@dataset-register/core';
+import {
+  deriveClassGroups,
+  REGISTRATION_STATUS_BASE_URI,
+} from '@dataset-register/core';
 import type { TypesenseDocument } from '@lde/typesense';
 import {
   IANA_MEDIA_TYPE_PREFIX,
@@ -35,6 +38,10 @@ export interface RawDataset {
   readonly dateReadIso?: string;
   readonly datePostedIso?: string;
   readonly validUntilIso?: string;
+  /** DKG enrichment merged into the IR (substrate-B); absent when no DKG join. */
+  readonly classes?: readonly string[];
+  readonly terminologySources?: readonly string[];
+  readonly size?: number;
 }
 
 export type DatasetStatus = 'valid' | 'archived' | 'invalid' | 'gone';
@@ -106,6 +113,19 @@ export function buildDocument(raw: RawDataset): TypesenseDocument {
 
   // Sort keys.
   setIfPresent(document, 'date_posted', unixTime(raw.datePostedIso));
+
+  // DKG enrichment (substrate-B), merged into the IR before projection. The
+  // class_group facet is derived index-time from the granular classes so the
+  // browser groups without its own mapping.
+  if (raw.classes !== undefined) {
+    const classes = dedupe(raw.classes);
+    setIfArray(document, 'class', classes);
+    setIfArray(document, 'class_group', deriveClassGroups(classes));
+  }
+  if (raw.terminologySources !== undefined) {
+    setIfArray(document, 'terminology_source', dedupe(raw.terminologySources));
+  }
+  setIfPresent(document, 'size', raw.size);
 
   return document;
 }
