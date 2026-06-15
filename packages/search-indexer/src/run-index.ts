@@ -5,7 +5,7 @@ import {
   type TypesenseConnection,
   type TypesenseDocument,
 } from '@lde/search-typesense';
-import { frameByType, projectDocument } from '@lde/search';
+import { projectGraph } from '@lde/search';
 import {
   SEARCH_COLLECTION_ALIAS,
   SEARCH_SYNONYM_SET,
@@ -16,15 +16,12 @@ import type { Quad } from '@rdfjs/types';
 import { buildCollectionSchema } from './collection-schema.js';
 import { RegisterSource } from './register-source.js';
 import { DkgSource } from './dkg-source.js';
-import { DATASET_FIELDS, DATASET_DERIVATIONS } from './projection.js';
+import { DATASET_PROJECTION } from './projection.js';
 import { RebuildLock } from './rebuild-lock.js';
 import { runSingleFlight } from './single-flight.js';
 
 const DEFAULT_REGISTRATIONS_GRAPH =
   'https://demo.netwerkdigitaalerfgoed.nl/registry/registrations';
-
-/** The IR root type the register + DKG CONSTRUCT graphs are framed by. */
-const DCAT_DATASET = 'http://www.w3.org/ns/dcat#Dataset';
 
 export interface RunIndexOptions {
   readonly sparqlUrl: string;
@@ -118,14 +115,14 @@ export async function runIndexSingleFlight(
 }
 
 /**
- * Frame the merged register + DKG quads into one JSON-LD IR node per dataset and
- * project each into a Typesense document. Streamed (one frame at a time) so
+ * Frame the merged register + DKG quads and project each node into a Typesense
+ * document, driven by the dataset projection. Streamed (one frame at a time) so
  * memory stays flat — whole-graph framing is ~O(N²).
  */
 async function projectDatasets(quads: Quad[]): Promise<TypesenseDocument[]> {
   const documents: TypesenseDocument[] = [];
-  for await (const node of frameByType(quads, DCAT_DATASET)) {
-    documents.push(projectDocument(node, DATASET_FIELDS, DATASET_DERIVATIONS));
+  for await (const document of projectGraph(quads, [DATASET_PROJECTION])) {
+    documents.push(document);
   }
   return documents;
 }

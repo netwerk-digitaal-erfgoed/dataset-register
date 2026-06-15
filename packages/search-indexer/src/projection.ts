@@ -4,6 +4,7 @@ import {
   literalsOf,
   type Derivation,
   type FieldSpec,
+  type Projection,
 } from '@lde/search';
 import {
   deriveClassGroups,
@@ -22,14 +23,22 @@ const SCHEMA = 'https://schema.org/';
 const DR = 'urn:dr:';
 
 /**
- * The declarative mapping from the framed register + DKG IR to the dataset
- * search document. The conventions (per-locale split, folding, facet arrays,
- * numeric coercion) are applied by `@lde/search`’s `projectDocument`; only the
- * field-to-predicate mapping and the kinds live here. Mirrors `SEARCH_FIELDS`
- * (the output contract used by the collection schema + browser query path); the
- * eventual SHACL pipeline would generate this from the shapes.
+ * The complete projection for `dcat:Dataset` — the runtime form of one SHACL
+ * NodeShape: the root `type` to frame by (`sh:targetClass`), the `fields`
+ * (property shapes), and the `derivations` (computed fields). `@lde/search`’s
+ * `projectGraph`/`projectDocument` apply the conventions (per-locale split,
+ * folding, facet arrays, coercion); only the field-to-predicate mapping lives
+ * here. Mirrors `SEARCH_FIELDS` (the output contract used by the collection
+ * schema + browser query path); the eventual SHACL pipeline generates this.
  */
-export const DATASET_FIELDS: readonly FieldSpec[] = [
+export const DATASET_PROJECTION: Projection = {
+  type: 'http://www.w3.org/ns/dcat#Dataset',
+  fields: datasetFields(),
+  derivations: datasetDerivations(),
+};
+
+function datasetFields(): readonly FieldSpec[] {
+  return [
   {
     name: 'title',
     path: `${DCT}title`,
@@ -55,7 +64,11 @@ export const DATASET_FIELDS: readonly FieldSpec[] = [
     path: `${DCAT}keyword`,
     kind: { type: 'facet', search: true },
   },
-  { name: 'publisher', path: `${DCT}publisher`, kind: { type: 'facet', iri: true } },
+  {
+    name: 'publisher',
+    path: `${DCT}publisher`,
+    kind: { type: 'facet', iri: true },
+  },
   {
     name: 'format',
     path: `${DR}format`,
@@ -73,13 +86,15 @@ export const DATASET_FIELDS: readonly FieldSpec[] = [
     path: `${DR}datePosted`,
     kind: { type: 'number', date: true },
   },
-  { name: 'size', path: `${DR}size`, kind: { type: 'number' } },
-];
+    { name: 'size', path: `${DR}size`, kind: { type: 'number' } },
+  ];
+}
 
 /** Computed fields that aren’t a direct projection of a single predicate. */
-export const DATASET_DERIVATIONS: readonly Derivation[] = [
-  // Registration status + its sort rank, from the promoted registration facts.
-  (document, node) => {
+function datasetDerivations(): readonly Derivation[] {
+  return [
+    // Registration status + its sort rank, from the promoted registration facts.
+    (document, node) => {
     const status = deriveStatus(
       irisOf(node, `${SCHEMA}additionalType`),
       firstLiteralOf(node, `${DR}validUntil`),
@@ -97,16 +112,17 @@ export const DATASET_DERIVATIONS: readonly Derivation[] = [
       document.format_group = groups;
     }
   },
-  // Grouped class facet derived index-time from the granular DKG classes.
-  (document) => {
-    const groups = deriveClassGroups(
-      (document.class as string[] | undefined) ?? [],
-    );
-    if (groups.length > 0) {
-      document.class_group = groups;
-    }
-  },
-];
+    // Grouped class facet derived index-time from the granular DKG classes.
+    (document) => {
+      const groups = deriveClassGroups(
+        (document.class as string[] | undefined) ?? [],
+      );
+      if (groups.length > 0) {
+        document.class_group = groups;
+      }
+    },
+  ];
+}
 
 export type DatasetStatus = 'valid' | 'archived' | 'invalid' | 'gone';
 

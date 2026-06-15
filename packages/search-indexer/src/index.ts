@@ -3,8 +3,7 @@ export type { RunIndexOptions, RunIndexResult } from './run-index.js';
 export { RebuildLock } from './rebuild-lock.js';
 export { runSingleFlight, type CoalescingLock } from './single-flight.js';
 export {
-  DATASET_FIELDS,
-  DATASET_DERIVATIONS,
+  DATASET_PROJECTION,
   deriveStatus,
   normalizeMediaType,
 } from './projection.js';

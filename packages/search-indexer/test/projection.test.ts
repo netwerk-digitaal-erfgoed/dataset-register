@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { projectDocument, type FramedSubject } from '@lde/search';
 import { SEARCH_FIELDS } from '@dataset-register/core';
 import {
-  DATASET_FIELDS,
-  DATASET_DERIVATIONS,
+  DATASET_PROJECTION,
   deriveStatus,
   normalizeMediaType,
 } from '../src/projection.ts';
@@ -17,9 +16,9 @@ const XSD = 'http://www.w3.org/2001/XMLSchema#';
 const IANA = 'https://www.iana.org/assignments/media-types/';
 const STATUS_BASE = 'https://data.netwerkdigitaalerfgoed.nl/registry/';
 
-/** Project a framed IR node through the register field spec + derivations. */
+/** Project a framed IR node through the register projection. */
 function project(node: FramedSubject): Record<string, unknown> {
-  return projectDocument(node, DATASET_FIELDS, DATASET_DERIVATIONS);
+  return projectDocument(node, DATASET_PROJECTION);
 }
 
 const titled = (extra: FramedSubject = {}): FramedSubject => ({
@@ -56,7 +55,9 @@ describe('dataset projection', () => {
     expect(project(titled()).status).toBe('valid');
     expect(project(titled()).status_rank).toBe(0);
     const invalid = project(
-      titled({ [`${SCHEMA}additionalType`]: { '@id': `${STATUS_BASE}invalid` } }),
+      titled({
+        [`${SCHEMA}additionalType`]: { '@id': `${STATUS_BASE}invalid` },
+      }),
     );
     expect(invalid.status).toBe('invalid');
     expect(invalid.status_rank).toBe(2);
