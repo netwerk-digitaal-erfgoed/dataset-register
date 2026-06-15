@@ -318,7 +318,6 @@
       }
     }
   ],
-  "nde_compat_persistent_failures_label": "Betrokken URI’s:",
   "nde_compat_persistent_reason_no_self_reference": "geen zelfverwijzing",
   "nde_compat_persistent_reason_http_error": "HTTP-fout",
   "nde_compat_persistent_reason_timeout": "time-out",

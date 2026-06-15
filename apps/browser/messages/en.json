@@ -318,7 +318,6 @@
       }
     }
   ],
-  "nde_compat_persistent_failures_label": "Affected URIs:",
   "nde_compat_persistent_reason_no_self_reference": "no self-reference",
   "nde_compat_persistent_reason_http_error": "HTTP error",
   "nde_compat_persistent_reason_timeout": "timeout",
