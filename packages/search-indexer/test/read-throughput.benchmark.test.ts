@@ -25,6 +25,7 @@ const REGISTRATIONS_GRAPH = 'https://example.org/registry/registrations';
 const STATUS_BASE = 'https://data.netwerkdigitaalerfgoed.nl/registry/';
 const IANA = 'https://www.iana.org/assignments/media-types/';
 const SPARQL_PROTOCOL = 'https://www.w3.org/TR/sparql11-protocol/';
+const VOID = 'http://rdfs.org/ns/void#';
 const DATASET_COUNT = Number(process.env.BENCH_N ?? 2500);
 const LOAD_BATCH = 250;
 /** Per-dataset frames timed before extrapolating to the full corpus. */
@@ -118,6 +119,44 @@ function flatConstruct(valuesClause = ''): string {
   }`;
 }
 
+const DKG_CLASSES = [
+  'http://schema.org/Person',
+  'http://schema.org/Place',
+  'http://schema.org/CreativeWork',
+  'http://schema.org/Organization',
+];
+const AAT = 'https://vocab.getty.edu/aat/';
+
+/** void enrichment for one dataset, keyed by the same dataset IRI as the
+ *  register side, so the unified frame joins them. Default graph (no GRAPH). */
+function dkgVoidTriples(index: number): string {
+  const iri = dataset(index);
+  const classA = DKG_CLASSES[index % DKG_CLASSES.length];
+  const classB = DKG_CLASSES[(index + 1) % DKG_CLASSES.length];
+  return `
+    <${iri}> a <${VOID}Dataset> ;
+      <${VOID}triples> ${1000 + index} ;
+      <${VOID}classPartition> <${iri}/vp/0>, <${iri}/vp/1> .
+    <${iri}/vp/0> <${VOID}class> <${classA}> .
+    <${iri}/vp/1> <${VOID}class> <${classB}> .
+    <${iri}/linkset> a <${VOID}Linkset> ;
+      <${VOID}subjectsTarget> <${iri}> ;
+      <${VOID}objectsTarget> <${AAT}> .`;
+}
+
+/** DKG CONSTRUCT mirroring the register's nested shape: dataset-keyed enrichment
+ *  triples that frame into the same dataset node as the register data. */
+const DKG_CONSTRUCT_NESTED = `
+  PREFIX void: <${VOID}>
+  PREFIX dr: <urn:dr:>
+  CONSTRUCT {
+    ?dataset dr:class ?class ; dr:terminologySource ?terminologySource ; dr:size ?size .
+  } WHERE {
+    { ?dataset void:classPartition/void:class ?class }
+    UNION { [] a void:Linkset ; void:subjectsTarget ?dataset ; void:objectsTarget ?terminologySource }
+    UNION { ?dataset void:triples ?size }
+  }`;
+
 /** Canonical, nested CONSTRUCT (publisher/creator/distribution as their own
  *  nodes) — the shape jsonld.frame() must walk, used only for the framing cost. */
 const CONSTRUCT_NESTED = `
@@ -156,6 +195,7 @@ const FRAME = {
     dcat: 'http://www.w3.org/ns/dcat#',
     dct: 'http://purl.org/dc/terms/',
     foaf: 'http://xmlns.com/foaf/0.1/',
+    dr: 'urn:dr:',
   },
   '@type': 'dcat:Dataset',
 };
@@ -230,7 +270,9 @@ async function constructOverHttp(
     body: query,
   });
   if (!response.ok) {
-    throw new Error(`CONSTRUCT failed: ${response.status} ${await response.text()}`);
+    throw new Error(
+      `CONSTRUCT failed: ${response.status} ${await response.text()}`,
+    );
   }
   return await response.text();
 }
@@ -256,8 +298,22 @@ describe.runIf(BENCH)('read throughput: SELECT vs CONSTRUCT', () => {
       }
       await sparql.update(`INSERT DATA {${triples.join('\n')}}`);
     }
+    // DKG void enrichment for the same datasets, in the default graph (the DKG
+    // is a separate store; co-locating it here lets the unified pipeline merge
+    // DR + DKG by dataset IRI without a second container).
+    for (let offset = 0; offset < DATASET_COUNT; offset += LOAD_BATCH) {
+      const triples: string[] = [];
+      for (
+        let index = offset;
+        index < Math.min(offset + LOAD_BATCH, DATASET_COUNT);
+        index++
+      ) {
+        triples.push(dkgVoidTriples(index));
+      }
+      await sparql.update(`INSERT DATA {${triples.join('\n')}}`);
+    }
     log(
-      `loaded ${DATASET_COUNT} datasets in ${seconds(performance.now() - loadStart)}`,
+      `loaded ${DATASET_COUNT} datasets (+DKG) in ${seconds(performance.now() - loadStart)}`,
     );
   }, 600_000);
 
@@ -298,9 +354,12 @@ describe.runIf(BENCH)('read throughput: SELECT vs CONSTRUCT', () => {
     const sample = Math.min(SAMPLE, subgraphs.length);
     const startSample = performance.now();
     for (let index = 0; index < sample; index++) {
-      const expanded = await jsonld.fromRDF(await writeNTriples(subgraphs[index]!), {
-        format: 'application/n-quads',
-      });
+      const expanded = await jsonld.fromRDF(
+        await writeNTriples(subgraphs[index]!),
+        {
+          format: 'application/n-quads',
+        },
+      );
       await jsonld.frame(expanded, FRAME);
     }
     const samplePerDataset = (performance.now() - startSample) / sample;
@@ -315,13 +374,17 @@ describe.runIf(BENCH)('read throughput: SELECT vs CONSTRUCT', () => {
       REGISTRATIONS_GRAPH,
     );
     const irisD = await sourceD.enumerateDatasetIris();
-    const documentsD = await mapWithConcurrency(irisD, CONCURRENCY, async (iri) => {
-      const ntriplesForDataset = await constructOverHttp(
-        endpoint,
-        perDatasetConstruct(iri),
-      );
-      return projectFromFlatTriples(ntriplesForDataset)[0];
-    });
+    const documentsD = await mapWithConcurrency(
+      irisD,
+      CONCURRENCY,
+      async (iri) => {
+        const ntriplesForDataset = await constructOverHttp(
+          endpoint,
+          perDatasetConstruct(iri),
+        );
+        return projectFromFlatTriples(ntriplesForDataset)[0];
+      },
+    );
     const elapsedD = performance.now() - startD;
 
     // --- Path E: batched CONSTRUCT (iterator-executor yielding URI chunks) ---
@@ -339,11 +402,48 @@ describe.runIf(BENCH)('read throughput: SELECT vs CONSTRUCT', () => {
     for (let offset = 0; offset < irisE.length; offset += CONSTRUCT_BATCH) {
       const batch = irisE.slice(offset, offset + CONSTRUCT_BATCH);
       const values = `VALUES ?dataset { ${batch.map((iri) => `<${iri}>`).join(' ')} }`;
-      const batchTriples = await constructOverHttp(endpoint, flatConstruct(values));
+      const batchTriples = await constructOverHttp(
+        endpoint,
+        flatConstruct(values),
+      );
       documentsE.push(...projectFromFlatTriples(batchTriples));
       batchesE++;
     }
     const elapsedE = performance.now() - startE;
+
+    // --- Path U: STANDARDISED pipeline — CONSTRUCT (DR + DKG) → merge by IRI →
+    // per-dataset JSON-LD IR → (doc). Both sources flow through one shape; the
+    // IR→doc step is trivial object mapping, so framing dominates and is timed. ---
+    const startU = performance.now();
+    const dkgNested = await constructOverHttp(endpoint, DKG_CONSTRUCT_NESTED);
+    const afterFetchU = performance.now();
+    const uSubgraphs = groupBySubject(`${nestedTriples}\n${dkgNested}`);
+    const afterGroupU = performance.now();
+    const uSample = Math.min(SAMPLE, uSubgraphs.length);
+    let enrichedInSample = 0;
+    const startUSample = performance.now();
+    for (let index = 0; index < uSample; index++) {
+      const expanded = await jsonld.fromRDF(await writeNTriples(uSubgraphs[index]!), {
+        format: 'application/n-quads',
+      });
+      const framed = (await jsonld.frame(expanded, FRAME)) as Record<
+        string,
+        unknown
+      > & { '@graph'?: Array<Record<string, unknown>> };
+      // jsonld may inline a single matched node instead of wrapping in @graph.
+      const node = framed['@graph']?.[0] ?? framed;
+      if (node['dr:class'] !== undefined) {
+        enrichedInSample++;
+      }
+    }
+    const uPerDataset = (performance.now() - startUSample) / uSample;
+    // End-to-end unified read+IR: DR CONSTRUCT (from Path C) + DKG CONSTRUCT +
+    // merge + per-dataset frame over the whole corpus.
+    const unifiedTotal =
+      afterFetchC -
+      startC +
+      (afterGroupU - startU) +
+      uPerDataset * uSubgraphs.length;
 
     log('');
     log(`results for ${DATASET_COUNT} datasets`);
@@ -367,6 +467,11 @@ describe.runIf(BENCH)('read throughput: SELECT vs CONSTRUCT', () => {
       `E CONSTRUCT batched       ${seconds(elapsedE)}  docs=${documentsE.length}  http=${batchesE + 1}  (batch ${CONSTRUCT_BATCH}, bounded payload/memory)`,
     );
     log('───────────────────────────────────────────────');
+    log(
+      `U UNIFIED DR+DKG→IR→doc   ${seconds(unifiedTotal)} projected  http=2` +
+        `  (DR fetch ${seconds(afterFetchC - startC)}, DKG fetch ${seconds(afterFetchU - startU)}, merge ${seconds(afterGroupU - afterFetchU)}, frame ${uPerDataset.toFixed(2)}ms/dataset, enriched ${enrichedInSample}/${uSample})`,
+    );
+    log('───────────────────────────────────────────────');
 
     // The CONSTRUCT paths must read the same datasets as the SELECT path.
     expect(documentsA.length).toBe(DATASET_COUNT);
@@ -383,6 +488,9 @@ describe.runIf(BENCH)('read throughput: SELECT vs CONSTRUCT', () => {
       .map((document) => document.id)
       .sort();
     expect(idsE).toEqual(idsA);
+    // The unified pipeline must merge DKG enrichment into the dataset's IR.
+    expect(uSubgraphs.length).toBe(DATASET_COUNT);
+    expect(enrichedInSample).toBe(uSample);
   }, 600_000);
 });
 
@@ -452,7 +560,9 @@ const DCAT_DATASET = 'http://www.w3.org/ns/dcat#Dataset';
  *  (cheap references); serialization happens one at a time during framing to
  *  bound memory. */
 function groupBySubject(ntriples: string): Quad[][] {
-  const quads = new Parser({ format: 'N-Triples' }).parse(ntriples);
+  // Auto-detect (Turtle-family) rather than strict N-Triples: QLever serialises
+  // the DKG's xsd:integer void:triples as a bare Turtle integer.
+  const quads = new Parser().parse(ntriples);
   const bySubject = new Map<string, Quad[]>();
   const datasetIris = new Set<string>();
   // QLever does not dedupe CONSTRUCT output, so dedupe S/P/O/lang here.
@@ -465,7 +575,10 @@ function groupBySubject(ntriples: string): Quad[][] {
     seen.add(key);
     const subject = quad.subject.value;
     (bySubject.get(subject) ?? setGet(bySubject, subject)).push(quad);
-    if (quad.predicate.value === RDF_TYPE && quad.object.value === DCAT_DATASET) {
+    if (
+      quad.predicate.value === RDF_TYPE &&
+      quad.object.value === DCAT_DATASET
+    ) {
       datasetIris.add(subject);
     }
   }
