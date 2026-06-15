@@ -16,6 +16,9 @@
   "references": [
     {
       "path": "../../packages/core/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/search-indexer/tsconfig.lib.json"
     }
   ]
 }

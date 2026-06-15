@@ -13,6 +13,17 @@ services:
         echo "" | qlever-index --index-basename local -s /config/index.settings.json -F nt -f -
         qlever-server --index-basename local --port 7001 --persist-updates --access-token $SPARQL_ACCESS_TOKEN
 
+  typesense:
+    image: typesense/typesense:30.0
+    volumes:
+      - typesense-data:/data
+    ports:
+      - '8108:8108'
+    command:
+      - '--data-dir=/data'
+      - '--api-key=${TYPESENSE_API_KEY:-dev-typesense-key}'
+      - '--enable-cors'
+
   qlever-ui:
     image: adfreiburg/qlever-ui:latest
     volumes:
@@ -28,3 +39,4 @@ services:
 
 volumes:
   qlever-data:
+  typesense-data:

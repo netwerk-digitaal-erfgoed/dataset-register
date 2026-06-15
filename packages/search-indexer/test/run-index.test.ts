@@ -1,0 +1,384 @@
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { Client } from 'typesense';
+import type { SearchParams } from 'typesense/lib/Typesense/Documents.js';
+import { fold } from '@lde/text-normalization';
+import {
+  queryBy,
+  queryByWeights,
+  SEARCH_COLLECTION_ALIAS,
+  SparqlClient,
+} from '@dataset-register/core';
+import {
+  createTypesenseClient,
+  type TypesenseConnection,
+} from '@lde/typesense';
+import { runIndex } from '../src/run-index.ts';
+import { QLeverContainer } from './qlever-container.ts';
+import { TypesenseContainer } from './typesense-container.ts';
+
+const REGISTRATIONS_GRAPH = 'https://example.org/registry/registrations';
+const STATUS_BASE = 'https://data.netwerkdigitaalerfgoed.nl/registry/';
+const TURTLE = 'https://www.iana.org/assignments/media-types/text/turtle';
+const SPARQL_PROTOCOL = 'https://www.w3.org/TR/sparql11-protocol/';
+const base = (slug: string) => `https://example.org/dataset/${slug}`;
+
+interface Seed {
+  slug: string;
+  titleNl: string;
+  descriptionNl?: string;
+  publisherIri?: string;
+  publisherName?: string;
+  mediaType?: string;
+  conformsTo?: string;
+  status?: 'invalid' | 'gone';
+}
+
+const SEEDS: readonly Seed[] = [
+  {
+    slug: 'mohlmann',
+    titleNl: 'Møhlmann',
+    publisherIri: 'https://example.org/org/kb',
+    publisherName: 'Koninklijke Bibliotheek',
+    mediaType: TURTLE,
+    conformsTo: SPARQL_PROTOCOL,
+  },
+  {
+    slug: 'verhaal-utrecht',
+    titleNl: 'Verhaal van Utrecht',
+    descriptionNl: 'Een platform met veel informatie over de stad Utrecht',
+  },
+  { slug: 'persoon', titleNl: 'Persoon en plaats' },
+  { slug: 'fietsen-title', titleNl: 'Fietsen in Nederland' },
+  {
+    slug: 'fietsen-desc',
+    titleNl: 'Wegen en paden',
+    descriptionNl: 'Allerlei informatie over fietsen',
+  },
+  {
+    slug: 'gone-fietsen',
+    titleNl: 'Verdwenen fietsen dataset',
+    status: 'gone',
+  },
+];
+
+function insertQuery(seed: Seed): string {
+  const iri = base(seed.slug);
+  const datasetTriples = [`<${iri}> a <http://www.w3.org/ns/dcat#Dataset> ;`];
+  const parts = [`  <http://purl.org/dc/terms/title> "${seed.titleNl}"@nl`];
+  if (seed.descriptionNl) {
+    parts.push(
+      `  <http://purl.org/dc/terms/description> "${seed.descriptionNl}"@nl`,
+    );
+  }
+  if (seed.publisherIri) {
+    parts.push(`  <http://purl.org/dc/terms/publisher> <${seed.publisherIri}>`);
+  }
+  if (seed.mediaType || seed.conformsTo) {
+    parts.push(`  <http://www.w3.org/ns/dcat#distribution> <${iri}/dist>`);
+  }
+  datasetTriples.push(parts.join(' ;\n') + ' .');
+  if (seed.publisherIri) {
+    datasetTriples.push(
+      `<${seed.publisherIri}> <http://xmlns.com/foaf/0.1/name> "${seed.publisherName}" .`,
+    );
+  }
+  if (seed.mediaType || seed.conformsTo) {
+    const distTriples = [
+      `<${iri}/dist> a <http://www.w3.org/ns/dcat#Distribution>`,
+    ];
+    if (seed.mediaType) {
+      distTriples.push(
+        `  <http://www.w3.org/ns/dcat#mediaType> <${seed.mediaType}>`,
+      );
+    }
+    if (seed.conformsTo) {
+      distTriples.push(
+        `  <http://purl.org/dc/terms/conformsTo> <${seed.conformsTo}>`,
+      );
+    }
+    datasetTriples.push(distTriples.join(' ;\n') + ' .');
+  }
+
+  const registration = [
+    `<${iri}/registration> a <https://schema.org/EntryPoint> ;`,
+    `  <https://schema.org/about> <${iri}> ;`,
+    `  <https://schema.org/datePosted> "2024-01-01T00:00:00.000Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;`,
+    `  <https://schema.org/dateRead> "2024-02-01T00:00:00.000Z"^^<http://www.w3.org/2001/XMLSchema#dateTime>`,
+  ];
+  if (seed.status) {
+    registration.push(
+      `  ; <https://schema.org/additionalType> <${STATUS_BASE}${seed.status}>`,
+    );
+  }
+  registration.push(' .');
+
+  return `
+    INSERT DATA {
+      GRAPH <${iri}> {
+        ${datasetTriples.join('\n')}
+      }
+      GRAPH <${REGISTRATIONS_GRAPH}> {
+        ${registration.join('\n')}
+      }
+    }`;
+}
+
+const PERSON_CLASS = 'http://schema.org/Person';
+const AAT = 'https://vocab.getty.edu/aat/';
+
+/** Seed the DKG store with void enrichment for a dataset, keyed by its IRI. */
+function dkgInsertQuery(slug: string, classes: readonly string[]): string {
+  const iri = base(slug);
+  const partitions = classes
+    .map(
+      (classIri, index) => `
+      <${iri}> <http://rdfs.org/ns/void#classPartition> <${iri}/partition/${index}> .
+      <${iri}/partition/${index}> <http://rdfs.org/ns/void#class> <${classIri}> .`,
+    )
+    .join('\n');
+  return `INSERT DATA {${partitions}\n}`;
+}
+
+describe('runIndex acceptance (QLever + Typesense)', () => {
+  const qlever = new QLeverContainer();
+  const dkg = new QLeverContainer();
+  const typesense = new TypesenseContainer();
+  let client: Client;
+  let connection: TypesenseConnection;
+  let sparqlUrl: string;
+  let knowledgeGraphUrl: string;
+
+  beforeAll(async () => {
+    sparqlUrl = await qlever.start();
+    knowledgeGraphUrl = await dkg.start();
+    connection = await typesense.start();
+    client = createTypesenseClient(connection);
+
+    const sparql = new SparqlClient(sparqlUrl, qlever.accessToken);
+    for (const seed of SEEDS) {
+      await sparql.update(insertQuery(seed));
+    }
+
+    const dkgSparql = new SparqlClient(knowledgeGraphUrl, dkg.accessToken);
+    await dkgSparql.update(dkgInsertQuery('mohlmann', [PERSON_CLASS]));
+    await dkgSparql.update(
+      dkgInsertQuery('fietsen-title', ['http://example.org/UngroupedThing']),
+    );
+    await dkgSparql.update(`INSERT DATA {
+      <${base('mohlmann')}> a <http://rdfs.org/ns/void#Dataset> ;
+        <http://rdfs.org/ns/void#triples> 12345 .
+      <${base('mohlmann')}/linkset/aat> a <http://rdfs.org/ns/void#Linkset> ;
+        <http://rdfs.org/ns/void#subjectsTarget> <${base('mohlmann')}> ;
+        <http://rdfs.org/ns/void#objectsTarget> <${AAT}> .
+    }`);
+
+    await runIndex({
+      sparqlUrl,
+      sparqlAccessToken: qlever.accessToken,
+      registrationsGraphIri: REGISTRATIONS_GRAPH,
+      knowledgeGraphEndpoint: knowledgeGraphUrl,
+      typesense: connection,
+    });
+  }, 240_000);
+
+  afterAll(async () => {
+    await Promise.all([qlever.stop(), dkg.stop(), typesense.stop()]);
+  });
+
+  async function search(
+    text: string,
+    extra: Partial<SearchParams<object>> = {},
+  ): Promise<string[]> {
+    const params: SearchParams<object> = {
+      q: fold(text),
+      query_by: queryBy(),
+      query_by_weights: queryByWeights(),
+      per_page: 50,
+      ...extra,
+    };
+    const response = await client
+      .collections(SEARCH_COLLECTION_ALIAS)
+      .documents()
+      .search(params);
+    return (response.hits ?? []).map(
+      (hit) => (hit.document as { id: string }).id,
+    );
+  }
+
+  it('indexed every registered dataset', async () => {
+    const collection = await client
+      .collections(SEARCH_COLLECTION_ALIAS)
+      .retrieve();
+    expect(collection.num_documents).toBe(SEEDS.length);
+  });
+
+  it('finds Møhlmann when searching “Mohlmann” and vice versa (#1661)', async () => {
+    expect(await search('Mohlmann')).toContain(base('mohlmann'));
+    expect(await search('Møhlmann')).toContain(base('mohlmann'));
+  });
+
+  it('tolerates a typo (#1684 fuzzy)', async () => {
+    expect(await search('mohlman')).toContain(base('mohlmann'));
+  });
+
+  it('matches non-adjacent multi-word queries across title and description (#2071)', async () => {
+    expect(await search('verhaal utrecht')).toContain(base('verhaal-utrecht'));
+    expect(await search('platform utrecht')).toContain(base('verhaal-utrecht'));
+  });
+
+  it('matches Dutch inflections via stemming (#2071)', async () => {
+    expect(await search('verhalen')).toContain(base('verhaal-utrecht'));
+  });
+
+  it('treats persoon/person as synonyms (#1684)', async () => {
+    expect(await search('person')).toContain(base('persoon'));
+  });
+
+  it('ranks a title match above a description match (#1684 weighting)', async () => {
+    const ids = await search('fietsen', { filter_by: 'status:=valid' });
+    const titleRank = ids.indexOf(base('fietsen-title'));
+    const descriptionRank = ids.indexOf(base('fietsen-desc'));
+    expect(titleRank).toBeGreaterThanOrEqual(0);
+    expect(descriptionRank).toBeGreaterThan(titleRank);
+  });
+
+  it('supports the default valid-status filter', async () => {
+    expect(await search('fietsen')).toContain(base('gone-fietsen'));
+    expect(
+      await search('fietsen', { filter_by: 'status:=valid' }),
+    ).not.toContain(base('gone-fietsen'));
+  });
+
+  it('projects DCAT distribution formats and publisher facets', async () => {
+    const document = (await client
+      .collections(SEARCH_COLLECTION_ALIAS)
+      .documents(base('mohlmann'))
+      .retrieve()) as Record<string, unknown>;
+    expect(document.format).toEqual(['text/turtle']);
+    expect(document.format_group).toEqual(
+      expect.arrayContaining(['group:rdf', 'group:sparql']),
+    );
+    expect(document.publisher).toEqual(['https://example.org/org/kb']);
+    expect(document.status).toBe('valid');
+  });
+
+  it('returns native facet counts', async () => {
+    const response = await client
+      .collections(SEARCH_COLLECTION_ALIAS)
+      .documents()
+      .search({
+        q: '*',
+        query_by: queryBy(),
+        facet_by: 'status',
+        per_page: 0,
+      });
+    const statusFacet = response.facet_counts?.find(
+      (facet) => facet.field_name === 'status',
+    );
+    const valid = statusFacet?.counts.find((count) => count.value === 'valid');
+    expect(valid?.count).toBe(SEEDS.length - 1);
+  });
+
+  it('enriches a document with the DKG class facet, joined by dataset IRI', async () => {
+    const document = (await client
+      .collections(SEARCH_COLLECTION_ALIAS)
+      .documents(base('mohlmann'))
+      .retrieve()) as Record<string, unknown>;
+    expect(document.class).toEqual([PERSON_CLASS]);
+  });
+
+  it('derives the class_group facet from DKG classes at index time', async () => {
+    const document = (await client
+      .collections(SEARCH_COLLECTION_ALIAS)
+      .documents(base('mohlmann'))
+      .retrieve()) as Record<string, unknown>;
+    expect(document.class_group).toEqual(['group:person']);
+  });
+
+  it('enriches a document with DKG terminology sources (void:Linkset)', async () => {
+    const document = (await client
+      .collections(SEARCH_COLLECTION_ALIAS)
+      .documents(base('mohlmann'))
+      .retrieve()) as Record<string, unknown>;
+    expect(document.terminology_source).toEqual([AAT]);
+  });
+
+  it('enriches a document with the DKG size (void:triples)', async () => {
+    const document = (await client
+      .collections(SEARCH_COLLECTION_ALIAS)
+      .documents(base('mohlmann'))
+      .retrieve()) as Record<string, unknown>;
+    expect(document.size).toBe(12345);
+  });
+
+  it('sets the granular class but no class_group for an ungrouped class', async () => {
+    const document = (await client
+      .collections(SEARCH_COLLECTION_ALIAS)
+      .documents(base('fietsen-title'))
+      .retrieve()) as Record<string, unknown>;
+    expect(document.class).toEqual(['http://example.org/UngroupedThing']);
+    expect(document.class_group).toBeUndefined();
+  });
+
+  // Runs before the final rebuild: a failed DKG read must not abort the rebuild.
+  it('rebuilds register data even when the DKG endpoint is unreachable', async () => {
+    const result = await runIndex({
+      sparqlUrl,
+      sparqlAccessToken: qlever.accessToken,
+      registrationsGraphIri: REGISTRATIONS_GRAPH,
+      knowledgeGraphEndpoint: 'http://127.0.0.1:1/',
+      typesense: connection,
+    });
+
+    // Register correctness lands; DKG facets are simply absent this run.
+    expect(result.mode).toBe('rebuild');
+    expect(await search('Mohlmann')).toContain(base('mohlmann'));
+    const document = (await client
+      .collections(SEARCH_COLLECTION_ALIAS)
+      .documents(base('mohlmann'))
+      .retrieve()) as Record<string, unknown>;
+    expect(document.class).toBeUndefined();
+  });
+
+  // Runs last: it mutates the store, then a full rebuild re-derives the index.
+  it('reflects added and removed datasets after a full rebuild', async () => {
+    const sparql = new SparqlClient(sparqlUrl, qlever.accessToken);
+
+    // Add a brand-new dataset.
+    await sparql.update(`
+      INSERT DATA {
+        GRAPH <${base('rebuild-new')}> {
+          <${base('rebuild-new')}> a <http://www.w3.org/ns/dcat#Dataset> ;
+            <http://purl.org/dc/terms/title> "Nieuwe toevoeging"@nl .
+        }
+        GRAPH <${REGISTRATIONS_GRAPH}> {
+          <${base('rebuild-new')}/registration> a <https://schema.org/EntryPoint> ;
+            <https://schema.org/about> <${base('rebuild-new')}> ;
+            <https://schema.org/datePosted> "2024-05-01T00:00:00.000Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+            <https://schema.org/dateRead> "2024-05-01T00:00:00.000Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> .
+        }
+      }`);
+
+    // Remove an existing dataset’s registration so it is no longer enumerated.
+    await sparql.update(`
+      DELETE WHERE {
+        GRAPH <${REGISTRATIONS_GRAPH}> {
+          <${base('persoon')}/registration> ?p ?o .
+        }
+      }`);
+
+    const result = await runIndex({
+      sparqlUrl,
+      sparqlAccessToken: qlever.accessToken,
+      registrationsGraphIri: REGISTRATIONS_GRAPH,
+      typesense: connection,
+    });
+
+    // A blue/green rebuild re-derives the whole collection from canonical RDF:
+    // the new dataset is present and the removed one is simply not projected —
+    // a hard delete needs no special-case handling.
+    expect(result.mode).toBe('rebuild');
+    expect(await search('Nieuwe')).toContain(base('rebuild-new'));
+    expect(await search('persoon')).not.toContain(base('persoon'));
+  });
+});
