@@ -18,6 +18,10 @@
     type ContentType,
   } from './detect-content-type.js';
   import { formatRdf } from './format-rdf.js';
+  import {
+    summarizeDescription,
+    type DescriptionSummary,
+  } from './description-summary.js';
 
   interface Props {
     initialUrl?: string;
@@ -78,8 +82,24 @@
   let fetchedText = $state<string | null>(null);
   let fetchedLanguage = $state<'json' | 'xml' | 'turtle' | 'plain'>('plain');
   let fetchedContentType = $state<ContentType | null>(null);
+  let descriptionSummary = $state<DescriptionSummary | null>(null);
   let fetchController: AbortController | null = null;
   let innerGoToLine = $state<((line: number) => void) | undefined>(undefined);
+
+  // Acknowledge what was actually fetched: a single dataset description, several,
+  // or a whole data catalog. Falls back to the generic title when the source
+  // could not be parsed or held no datasets.
+  const sourceTitle = $derived.by(() => {
+    const summary = descriptionSummary;
+    if (!summary) return m.validate_url_source_title();
+    if (summary.isCatalog) {
+      return m.validate_url_source_title_catalog({
+        count: summary.datasetCount,
+      });
+    }
+    if (summary.datasetCount === 0) return m.validate_url_source_title();
+    return m.validate_url_source_title_dataset({ count: summary.datasetCount });
+  });
 
   // Expose a wrapped goToLine: auto-open the accordion and wait for the
   // grid-template-rows transition (~200ms) so CodeMirror has measurable
@@ -167,6 +187,7 @@
     fetchController = controller;
     fetchedText = null;
     fetchedContentType = null;
+    descriptionSummary = null;
     try {
       const response = await fetch(
         `/proxy/dereference?url=${encodeURIComponent(targetUrl)}`,
@@ -184,6 +205,8 @@
       if (guessed) {
         const formatted = await formatRdf(body, guessed);
         fetchedText = formatted.kind === 'ok' ? formatted.text : body;
+        const summary = await summarizeDescription(body, guessed);
+        if (!controller.signal.aborted) descriptionSummary = summary;
       } else {
         fetchedText = body;
       }
@@ -289,7 +312,7 @@
         aria-expanded={sourceOpen}
         class="sticky top-0 z-10 flex w-full cursor-pointer items-center justify-between gap-2 rounded-t-lg bg-gray-50 px-4 py-3 text-left text-sm font-medium text-gray-900 shadow-sm hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
       >
-        <span>{m.validate_url_source_title()}</span>
+        <span>{sourceTitle}</span>
         <ChevronDownOutline
           class="h-4 w-4 shrink-0 transition-transform duration-200 {sourceOpen
             ? 'rotate-180'
