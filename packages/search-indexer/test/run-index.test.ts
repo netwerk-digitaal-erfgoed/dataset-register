@@ -12,7 +12,7 @@ import {
   createTypesenseClient,
   type TypesenseConnection,
 } from '@lde/typesense';
-import { runIndex } from '../src/run-index.ts';
+import { runIndex, runIndexSingleFlight } from '../src/run-index.ts';
 import { QLeverContainer } from './qlever-container.ts';
 import { TypesenseContainer } from './typesense-container.ts';
 
@@ -318,6 +318,25 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
       .retrieve()) as Record<string, unknown>;
     expect(document.class).toEqual(['http://example.org/UngroupedThing']);
     expect(document.class_group).toBeUndefined();
+  });
+
+  it('runs a guarded rebuild under the lock and releases it for the next run', async () => {
+    const options = {
+      sparqlUrl,
+      sparqlAccessToken: qlever.accessToken,
+      registrationsGraphIri: REGISTRATIONS_GRAPH,
+      knowledgeGraphEndpoint: knowledgeGraphUrl,
+      typesense: connection,
+    };
+    await runIndexSingleFlight(options);
+    // A second guarded run proves the lock was released (no deadlock/skip).
+    await runIndexSingleFlight(options);
+
+    const collection = await client
+      .collections(SEARCH_COLLECTION_ALIAS)
+      .retrieve();
+    expect(collection.num_documents).toBe(SEEDS.length);
+    expect(await search('Mohlmann')).toContain(base('mohlmann'));
   });
 
   // Runs before the final rebuild: a failed DKG read must not abort the rebuild.

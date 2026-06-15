@@ -15,6 +15,8 @@ import type { TypesenseDocument } from '@lde/typesense';
 import { buildCollectionSchema } from './collection-schema.js';
 import { RegisterSource } from './register-source.js';
 import { DkgSource, type DkgEnrichment } from './dkg-source.js';
+import { RebuildLock } from './rebuild-lock.js';
+import { runSingleFlight } from './single-flight.js';
 
 const DEFAULT_REGISTRATIONS_GRAPH =
   'https://demo.netwerkdigitaalerfgoed.nl/registry/registrations';
@@ -90,6 +92,21 @@ export async function runIndex(
     upserted: documents.length,
     deleted: 0,
   };
+}
+
+/**
+ * Run a rebuild under the cross-pod single-flight lock. The crawler and every
+ * API pod call this so only one rebuild runs at a time across all replicas, and
+ * a trigger arriving mid-rebuild coalesces into one follow-up. Returns nothing:
+ * triggers are fire-and-forget and a coalesced or skipped call has no result.
+ */
+export async function runIndexSingleFlight(
+  options: RunIndexOptions,
+): Promise<void> {
+  const lock = new RebuildLock(createTypesenseClient(options.typesense));
+  await runSingleFlight(lock, async () => {
+    await runIndex(options);
+  });
 }
 
 /**
