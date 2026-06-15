@@ -1,23 +1,22 @@
 import { Client } from 'typesense';
 import {
   createTypesenseClient,
-  frameByType,
   TypesenseAdapter,
   type TypesenseConnection,
+  type TypesenseDocument,
 } from '@lde/search-typesense';
+import { frameByType, projectDocument } from '@lde/search';
 import {
   SEARCH_COLLECTION_ALIAS,
   SEARCH_SYNONYM_SET,
   SEARCH_SYNONYMS,
   SparqlClient,
 } from '@dataset-register/core';
-import type { TypesenseDocument } from '@lde/search-typesense';
 import type { Quad } from '@rdfjs/types';
 import { buildCollectionSchema } from './collection-schema.js';
 import { RegisterSource } from './register-source.js';
 import { DkgSource } from './dkg-source.js';
-import { framedDatasetToRaw } from './framed.js';
-import { buildDocument } from './projection.js';
+import { DATASET_FIELDS, DATASET_DERIVATIONS } from './projection.js';
 import { RebuildLock } from './rebuild-lock.js';
 import { runSingleFlight } from './single-flight.js';
 
@@ -126,7 +125,7 @@ export async function runIndexSingleFlight(
 async function projectDatasets(quads: Quad[]): Promise<TypesenseDocument[]> {
   const documents: TypesenseDocument[] = [];
   for await (const node of frameByType(quads, DCAT_DATASET)) {
-    documents.push(buildDocument(framedDatasetToRaw(node)));
+    documents.push(projectDocument(node, DATASET_FIELDS, DATASET_DERIVATIONS));
   }
   return documents;
 }

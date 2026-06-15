@@ -1,48 +1,112 @@
-import { fold } from '@lde/text-normalization';
+import {
+  irisOf,
+  firstLiteralOf,
+  literalsOf,
+  type Derivation,
+  type FieldSpec,
+} from '@lde/search';
 import {
   deriveClassGroups,
   REGISTRATION_STATUS_BASE_URI,
 } from '@dataset-register/core';
-import type { TypesenseDocument } from '@lde/search-typesense';
 import {
   IANA_MEDIA_TYPE_PREFIX,
   RDF_MEDIA_TYPES,
   SPARQL_PROTOCOL_URI,
 } from './constants.js';
 
-/** A literal value with its (possibly empty) language tag. */
-export interface LangValue {
-  readonly value: string;
-  readonly lang: string;
-}
+const DCT = 'http://purl.org/dc/terms/';
+const DCAT = 'http://www.w3.org/ns/dcat#';
+const SCHEMA = 'https://schema.org/';
+/** Register-internal IR predicates: promoted registration facts + DKG facets. */
+const DR = 'urn:dr:';
 
 /**
- * The raw, multi-valued projection input collected from the register store for
- * one dataset — before folding, grouping and status derivation. Kept as a plain
- * data bag so {@link buildDocument} is a pure function, unit-testable without
- * SPARQL or Typesense.
+ * The declarative mapping from the framed register + DKG IR to the dataset
+ * search document. The conventions (per-locale split, folding, facet arrays,
+ * numeric coercion) are applied by `@lde/search`’s `projectDocument`; only the
+ * field-to-predicate mapping and the kinds live here. Mirrors `SEARCH_FIELDS`
+ * (the output contract used by the collection schema + browser query path); the
+ * eventual SHACL pipeline would generate this from the shapes.
  */
-export interface RawDataset {
-  readonly iri: string;
-  readonly titles: readonly LangValue[];
-  readonly descriptions: readonly LangValue[];
-  readonly publisherNames: readonly LangValue[];
-  readonly creatorNames: readonly LangValue[];
-  readonly keywords: readonly LangValue[];
-  readonly languages: readonly string[];
-  readonly publisherIris: readonly string[];
-  readonly mediaTypes: readonly string[];
-  readonly conformsTo: readonly string[];
-  /** `schema:additionalType` IRIs on the registration (status markers). */
-  readonly additionalTypes: readonly string[];
-  readonly dateReadIso?: string;
-  readonly datePostedIso?: string;
-  readonly validUntilIso?: string;
-  /** DKG enrichment merged into the IR (substrate-B); absent when no DKG join. */
-  readonly classes?: readonly string[];
-  readonly terminologySources?: readonly string[];
-  readonly size?: number;
-}
+export const DATASET_FIELDS: readonly FieldSpec[] = [
+  {
+    name: 'title',
+    path: `${DCT}title`,
+    kind: { type: 'langText', locales: ['nl', 'en'], search: true, sort: true },
+  },
+  {
+    name: 'description',
+    path: `${DCT}description`,
+    kind: { type: 'langText', locales: ['nl', 'en'], search: true },
+  },
+  {
+    name: 'publisher',
+    path: `${DR}publisherName`,
+    kind: { type: 'langText', search: true, display: true },
+  },
+  {
+    name: 'creator',
+    path: `${DR}creatorName`,
+    kind: { type: 'langText', search: true },
+  },
+  {
+    name: 'keyword',
+    path: `${DCAT}keyword`,
+    kind: { type: 'facet', search: true },
+  },
+  { name: 'publisher', path: `${DCT}publisher`, kind: { type: 'facet', iri: true } },
+  {
+    name: 'format',
+    path: `${DR}format`,
+    kind: { type: 'facet', transform: normalizeMediaType },
+  },
+  { name: 'language', path: `${DCT}language`, kind: { type: 'facet' } },
+  { name: 'class', path: `${DR}class`, kind: { type: 'facet', iri: true } },
+  {
+    name: 'terminology_source',
+    path: `${DR}terminologySource`,
+    kind: { type: 'facet', iri: true },
+  },
+  {
+    name: 'date_posted',
+    path: `${DR}datePosted`,
+    kind: { type: 'number', date: true },
+  },
+  { name: 'size', path: `${DR}size`, kind: { type: 'number' } },
+];
+
+/** Computed fields that aren’t a direct projection of a single predicate. */
+export const DATASET_DERIVATIONS: readonly Derivation[] = [
+  // Registration status + its sort rank, from the promoted registration facts.
+  (document, node) => {
+    const status = deriveStatus(
+      irisOf(node, `${SCHEMA}additionalType`),
+      firstLiteralOf(node, `${DR}validUntil`),
+    );
+    document.status = status;
+    document.status_rank = STATUS_RANK[status];
+  },
+  // Grouped format facet (group:sparql / group:rdf) alongside the granular ones.
+  (document, node) => {
+    const groups = formatGroups(
+      (document.format as string[] | undefined) ?? [],
+      literalsOf(node, `${DR}conformsTo`),
+    );
+    if (groups.length > 0) {
+      document.format_group = groups;
+    }
+  },
+  // Grouped class facet derived index-time from the granular DKG classes.
+  (document) => {
+    const groups = deriveClassGroups(
+      (document.class as string[] | undefined) ?? [],
+    );
+    if (groups.length > 0) {
+      document.class_group = groups;
+    }
+  },
+];
 
 export type DatasetStatus = 'valid' | 'archived' | 'invalid' | 'gone';
 
@@ -61,83 +125,18 @@ const STATUS_IRI: Readonly<Record<Exclude<DatasetStatus, 'archived'>, string>> =
     gone: `${REGISTRATION_STATUS_BASE_URI}gone`,
   };
 
-/** Display-language preference: UI locale handled at query time; at index time
- *  we store nl/en explicitly and a single best-effort display name. */
-const DISPLAY_FALLBACK_ORDER = ['nl', 'en', ''] as const;
-
-/**
- * Project one dataset’s raw register data into a flat Typesense document per the
- * shared field registry. Searchable fields are folded (identically to the query
- * path) and carry all language values; display fields are per-locale; facet and
- * sort fields are precomputed.
- */
-export function buildDocument(raw: RawDataset): TypesenseDocument {
-  const status = deriveStatus(raw);
-  const formats = normalizeMediaTypes(raw.mediaTypes);
-  const document: TypesenseDocument = {
-    id: raw.iri,
-
-    // Searchable, folded, all languages per concept.
-    title_search: foldAll(raw.titles),
-    status,
-    status_rank: STATUS_RANK[status],
-    title_sort: fold(localized(raw.titles) ?? ''),
-  };
-
-  setIfPresent(document, 'description_search', foldAll(raw.descriptions));
-  setIfPresent(document, 'publisher_search', foldAll(raw.publisherNames));
-  setIfPresent(document, 'creator_search', foldAll(raw.creatorNames));
-  setIfArray(
-    document,
-    'keyword_search',
-    dedupe(raw.keywords.map((keyword) => fold(keyword.value))),
-  );
-
-  // Per-locale display fields (accents preserved; folding is retrieval-only).
-  setIfPresent(document, 'title_nl', byLang(raw.titles, 'nl'));
-  setIfPresent(document, 'title_en', byLang(raw.titles, 'en'));
-  setIfPresent(document, 'description_nl', byLang(raw.descriptions, 'nl'));
-  setIfPresent(document, 'description_en', byLang(raw.descriptions, 'en'));
-  setIfPresent(document, 'publisher_name', localized(raw.publisherNames));
-
-  // Facets.
-  setIfArray(document, 'publisher', dedupe(raw.publisherIris));
-  setIfArray(
-    document,
-    'keyword',
-    dedupe(raw.keywords.map((keyword) => keyword.value)),
-  );
-  setIfArray(document, 'format', formats);
-  setIfArray(document, 'format_group', formatGroups(formats, raw.conformsTo));
-  setIfArray(document, 'language', dedupe(raw.languages));
-
-  // Sort keys.
-  setIfPresent(document, 'date_posted', unixTime(raw.datePostedIso));
-
-  // DKG enrichment (substrate-B), merged into the IR before projection. The
-  // class_group facet is derived index-time from the granular classes so the
-  // browser groups without its own mapping.
-  if (raw.classes !== undefined) {
-    const classes = dedupe(raw.classes);
-    setIfArray(document, 'class', classes);
-    setIfArray(document, 'class_group', deriveClassGroups(classes));
-  }
-  if (raw.terminologySources !== undefined) {
-    setIfArray(document, 'terminology_source', dedupe(raw.terminologySources));
-  }
-  setIfPresent(document, 'size', raw.size);
-
-  return document;
-}
-
-export function deriveStatus(raw: RawDataset): DatasetStatus {
-  if (raw.additionalTypes.includes(STATUS_IRI.gone)) {
+/** `gone` and `invalid` status markers win over an archival `validUntil`. */
+export function deriveStatus(
+  additionalTypes: readonly string[],
+  validUntilIso: string | undefined,
+): DatasetStatus {
+  if (additionalTypes.includes(STATUS_IRI.gone)) {
     return 'gone';
   }
-  if (raw.additionalTypes.includes(STATUS_IRI.invalid)) {
+  if (additionalTypes.includes(STATUS_IRI.invalid)) {
     return 'invalid';
   }
-  if (raw.validUntilIso !== undefined) {
+  if (validUntilIso !== undefined) {
     return 'archived';
   }
   return 'valid';
@@ -149,10 +148,6 @@ export function normalizeMediaType(mediaType: string): string {
   return mediaType.startsWith(IANA_MEDIA_TYPE_PREFIX)
     ? mediaType.slice(IANA_MEDIA_TYPE_PREFIX.length)
     : mediaType;
-}
-
-function normalizeMediaTypes(mediaTypes: readonly string[]): string[] {
-  return dedupe(mediaTypes.map(normalizeMediaType));
 }
 
 const RDF_MEDIA_TYPE_SET: ReadonlySet<string> = new Set(RDF_MEDIA_TYPES);
@@ -171,60 +166,4 @@ function formatGroups(
     groups.push('group:rdf');
   }
   return groups;
-}
-
-/** Fold and join all language values of a concept into one searchable string. */
-function foldAll(values: readonly LangValue[]): string {
-  return fold(values.map((value) => value.value).join(' ')).trim();
-}
-
-function byLang(
-  values: readonly LangValue[],
-  lang: string,
-): string | undefined {
-  return values.find((value) => value.lang === lang)?.value;
-}
-
-/** Best display value: UI locale is applied at query time, so pick nl → en →
- *  untagged → first available for the stored display fields. */
-function localized(values: readonly LangValue[]): string | undefined {
-  for (const lang of DISPLAY_FALLBACK_ORDER) {
-    const match = byLang(values, lang);
-    if (match !== undefined) {
-      return match;
-    }
-  }
-  return values[0]?.value;
-}
-
-function unixTime(iso: string | undefined): number | undefined {
-  if (iso === undefined) {
-    return undefined;
-  }
-  const millis = new Date(iso).getTime();
-  return Number.isNaN(millis) ? undefined : Math.trunc(millis / 1000);
-}
-
-function dedupe(values: readonly string[]): string[] {
-  return Array.from(new Set(values));
-}
-
-function setIfPresent(
-  document: TypesenseDocument,
-  field: string,
-  value: string | number | undefined,
-): void {
-  if (value !== undefined && value !== '') {
-    document[field] = value;
-  }
-}
-
-function setIfArray(
-  document: TypesenseDocument,
-  field: string,
-  values: readonly string[],
-): void {
-  if (values.length > 0) {
-    document[field] = values;
-  }
 }

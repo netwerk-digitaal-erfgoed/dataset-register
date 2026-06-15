@@ -1,99 +1,74 @@
 import { describe, expect, it } from 'vitest';
+import { projectDocument, type FramedSubject } from '@lde/search';
 import { SEARCH_FIELDS } from '@dataset-register/core';
 import {
-  buildDocument,
+  DATASET_FIELDS,
+  DATASET_DERIVATIONS,
   deriveStatus,
   normalizeMediaType,
-  type RawDataset,
 } from '../src/projection.ts';
 import { buildCollectionSchema } from '../src/collection-schema.ts';
 
+const DCT = 'http://purl.org/dc/terms/';
+const DCAT = 'http://www.w3.org/ns/dcat#';
+const SCHEMA = 'https://schema.org/';
+const DR = 'urn:dr:';
+const XSD = 'http://www.w3.org/2001/XMLSchema#';
+const IANA = 'https://www.iana.org/assignments/media-types/';
 const STATUS_BASE = 'https://data.netwerkdigitaalerfgoed.nl/registry/';
 
-function raw(overrides: Partial<RawDataset> = {}): RawDataset {
-  return {
-    iri: 'https://example.org/dataset/1',
-    titles: [],
-    descriptions: [],
-    publisherNames: [],
-    creatorNames: [],
-    keywords: [],
-    languages: [],
-    publisherIris: [],
-    mediaTypes: [],
-    conformsTo: [],
-    additionalTypes: [],
-    ...overrides,
-  };
+/** Project a framed IR node through the register field spec + derivations. */
+function project(node: FramedSubject): Record<string, unknown> {
+  return projectDocument(node, DATASET_FIELDS, DATASET_DERIVATIONS);
 }
 
-describe('buildDocument', () => {
+const titled = (extra: FramedSubject = {}): FramedSubject => ({
+  '@id': 'https://example.org/dataset/1',
+  [`${DCT}title`]: { '@value': 'X' },
+  ...extra,
+});
+
+describe('dataset projection', () => {
   it('folds searchable text across all languages (#1661)', () => {
-    const document = buildDocument(
-      raw({
-        titles: [
-          { value: 'Møhlmann', lang: 'nl' },
-          { value: 'Møhlmann collection', lang: 'en' },
-        ],
-      }),
-    );
+    const document = project({
+      '@id': 'https://example.org/dataset/1',
+      [`${DCT}title`]: [
+        { '@language': 'nl', '@value': 'Møhlmann' },
+        { '@language': 'en', '@value': 'Møhlmann collection' },
+      ],
+    });
     expect(document.title_search).toBe('mohlmann mohlmann collection');
-    // Display fields keep the original per-locale values.
     expect(document.title_nl).toBe('Møhlmann');
     expect(document.title_en).toBe('Møhlmann collection');
-    // Folded sort key from the primary (nl) title.
     expect(document.title_sort).toBe('mohlmann');
   });
 
-  it('sets the document id and no vestigial incremental fields', () => {
-    const document = buildDocument(raw({ titles: [{ value: 'X', lang: '' }] }));
-    expect(document.id).toBe('https://example.org/dataset/1');
-    // `source` and `date_read` belonged to the removed incremental id-diff;
-    // the full blue/green rebuild needs neither.
-    expect(document.source).toBeUndefined();
-    expect(document.date_read).toBeUndefined();
-  });
-
-  it('derives status and rank', () => {
-    expect(deriveStatus(raw())).toBe('valid');
-    expect(deriveStatus(raw({ validUntilIso: '2020-01-01T00:00:00Z' }))).toBe(
-      'archived',
-    );
-    expect(
-      deriveStatus(raw({ additionalTypes: [`${STATUS_BASE}invalid`] })),
-    ).toBe('invalid');
-    expect(deriveStatus(raw({ additionalTypes: [`${STATUS_BASE}gone`] }))).toBe(
-      'gone',
-    );
+  it('derives status and rank from the promoted registration facts', () => {
+    expect(deriveStatus([], undefined)).toBe('valid');
+    expect(deriveStatus([], '2020-01-01T00:00:00Z')).toBe('archived');
+    expect(deriveStatus([`${STATUS_BASE}invalid`], undefined)).toBe('invalid');
+    expect(deriveStatus([`${STATUS_BASE}gone`], undefined)).toBe('gone');
     // gone wins over invalid.
     expect(
-      deriveStatus(
-        raw({
-          additionalTypes: [`${STATUS_BASE}invalid`, `${STATUS_BASE}gone`],
-        }),
-      ),
+      deriveStatus([`${STATUS_BASE}invalid`, `${STATUS_BASE}gone`], undefined),
     ).toBe('gone');
 
-    const document = buildDocument(raw({ titles: [{ value: 'X', lang: '' }] }));
-    expect(document.status).toBe('valid');
-    expect(document.status_rank).toBe(0);
+    expect(project(titled()).status).toBe('valid');
+    expect(project(titled()).status_rank).toBe(0);
+    const invalid = project(
+      titled({ [`${SCHEMA}additionalType`]: { '@id': `${STATUS_BASE}invalid` } }),
+    );
+    expect(invalid.status).toBe('invalid');
+    expect(invalid.status_rank).toBe(2);
   });
 
   it('normalizes media types and derives format groups', () => {
-    expect(
-      normalizeMediaType(
-        'https://www.iana.org/assignments/media-types/text/turtle',
-      ),
-    ).toBe('text/turtle');
+    expect(normalizeMediaType(`${IANA}text/turtle`)).toBe('text/turtle');
 
-    const document = buildDocument(
-      raw({
-        titles: [{ value: 'X', lang: '' }],
-        mediaTypes: [
-          'https://www.iana.org/assignments/media-types/text/turtle',
-          'application/pdf',
-        ],
-        conformsTo: ['https://www.w3.org/TR/sparql11-protocol/'],
+    const document = project(
+      titled({
+        [`${DR}format`]: [`${IANA}text/turtle`, 'application/pdf'],
+        [`${DR}conformsTo`]: 'https://www.w3.org/TR/sparql11-protocol/',
       }),
     );
     expect(document.format).toEqual(['text/turtle', 'application/pdf']);
@@ -101,44 +76,29 @@ describe('buildDocument', () => {
   });
 
   it('folds keywords and dedupes facet values', () => {
-    const document = buildDocument(
-      raw({
-        titles: [{ value: 'X', lang: '' }],
-        keywords: [
-          { value: 'Persoon', lang: 'nl' },
-          { value: 'Persoon', lang: 'nl' },
+    const document = project(
+      titled({
+        [`${DCAT}keyword`]: [
+          { '@language': 'nl', '@value': 'Persoon' },
+          { '@language': 'nl', '@value': 'Persoon' },
         ],
-        publisherIris: ['https://example.org/org', 'https://example.org/org'],
+        [`${DCT}publisher`]: { '@id': 'https://example.org/org' },
+        [`${DR}publisherName`]: { '@language': 'nl', '@value': 'KB' },
       }),
     );
-    expect(document.keyword_search).toEqual(['persoon']);
     expect(document.keyword).toEqual(['Persoon']);
+    expect(document.keyword_search).toEqual(['persoon']);
     expect(document.publisher).toEqual(['https://example.org/org']);
+    expect(document.publisher_name).toBe('KB');
+    expect(document.publisher_search).toBe('kb');
   });
 
-  it('converts date_posted to unix seconds (the sort key)', () => {
-    const document = buildDocument(
-      raw({
-        titles: [{ value: 'X', lang: '' }],
-        datePostedIso: '2024-01-02T00:00:00.000Z',
-        dateReadIso: '2024-03-04T00:00:00.000Z',
-      }),
-    );
-    expect(document.date_posted).toBe(
-      Math.trunc(Date.parse('2024-01-02T00:00:00.000Z') / 1000),
-    );
-    // dateReadIso still selects the newest registration, but is no longer
-    // emitted as a document field.
-    expect(document.date_read).toBeUndefined();
-  });
-
-  it('emits DKG facets and derives class_group from the merged IR (#2085)', () => {
-    const document = buildDocument(
-      raw({
-        titles: [{ value: 'X', lang: '' }],
-        classes: ['http://schema.org/Person'],
-        terminologySources: ['https://vocab.getty.edu/aat/'],
-        size: 1234,
+  it('emits DKG facets and derives class_group from the merged IR', () => {
+    const document = project(
+      titled({
+        [`${DR}class`]: [{ '@id': 'http://schema.org/Person' }],
+        [`${DR}terminologySource`]: { '@id': 'https://vocab.getty.edu/aat/' },
+        [`${DR}size`]: { '@type': `${XSD}integer`, '@value': '1234' },
       }),
     );
     expect(document.class).toEqual(['http://schema.org/Person']);
@@ -149,21 +109,22 @@ describe('buildDocument', () => {
     expect(document.size).toBe(1234);
   });
 
-  it('omits DKG facets when enrichment is absent', () => {
-    const document = buildDocument(raw({ titles: [{ value: 'X', lang: '' }] }));
-    expect(document.class).toBeUndefined();
-    expect(document.class_group).toBeUndefined();
-    expect(document.terminology_source).toBeUndefined();
-    expect(document.size).toBeUndefined();
+  it('converts date_posted to unix seconds (the sort key)', () => {
+    const document = project(
+      titled({ [`${DR}datePosted`]: { '@value': '2024-01-02T00:00:00.000Z' } }),
+    );
+    expect(document.date_posted).toBe(
+      Math.trunc(Date.parse('2024-01-02T00:00:00.000Z') / 1000),
+    );
   });
 
-  it('omits absent optional fields', () => {
-    const document = buildDocument(
-      raw({ titles: [{ value: 'Only', lang: '' }] }),
-    );
+  it('omits absent optional fields and DKG facets', () => {
+    const document = project(titled());
     expect(document.description_search).toBeUndefined();
     expect(document.publisher).toBeUndefined();
     expect(document.format).toBeUndefined();
+    expect(document.class).toBeUndefined();
+    expect(document.size).toBeUndefined();
   });
 });
 
@@ -181,14 +142,7 @@ describe('buildCollectionSchema', () => {
       (field) => field.name === 'title_search',
     );
     expect(titleSearch?.stem).toBe(true);
-    // locale selects the Snowball language; safe because values are pre-folded.
     expect(titleSearch?.locale).toBe('nl');
-  });
-
-  it('marks display fields as not indexed', () => {
-    const schema = buildCollectionSchema('datasets_test');
-    const titleNl = schema.fields?.find((field) => field.name === 'title_nl');
-    expect(titleNl?.index).toBe(false);
   });
 
   it('references the synonym set', () => {

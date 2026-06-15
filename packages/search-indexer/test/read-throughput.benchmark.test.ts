@@ -17,7 +17,6 @@ import { Parser, Writer } from 'n3';
 import type { Quad } from '@rdfjs/types';
 import jsonld from 'jsonld';
 import { SparqlClient } from '@dataset-register/core';
-import { buildDocument, type LangValue } from '../src/projection.ts';
 import { QLeverContainer } from './qlever-container.ts';
 
 const REGISTRATIONS_GRAPH = 'https://example.org/registry/registrations';
@@ -482,61 +481,16 @@ describe.runIf(BENCH)('read throughput: SELECT vs CONSTRUCT', () => {
   }, 600_000);
 });
 
-/** Group the flattened `urn:bench:` triples by dataset and project them through
- *  the production buildDocument, so Path B ends where Path A ends. */
-function projectFromFlatTriples(ntriples: string): unknown[] {
+/** Group the flattened `urn:bench:` triples by dataset id. The benchmark only
+ *  needs the document ids (for parity) and the parse cost (for timing); the
+ *  production projection lives in `@lde/search`. */
+function projectFromFlatTriples(ntriples: string): { id: string }[] {
   const quads = new Parser({ format: 'N-Triples' }).parse(ntriples);
-  const raws = new Map<string, MutableRaw>();
+  const ids = new Set<string>();
   for (const quad of quads) {
-    const iri = quad.subject.value;
-    const field = quad.predicate.value.replace('urn:bench:', '');
-    const raw = raws.get(iri) ?? emptyRaw(iri);
-    const value = quad.object.value;
-    const lang = quad.object.termType === 'Literal' ? quad.object.language : '';
-    switch (field) {
-      case 'title':
-        raw.titles.push({ value, lang });
-        break;
-      case 'description':
-        raw.descriptions.push({ value, lang });
-        break;
-      case 'publisherName':
-        raw.publisherNames.push({ value, lang });
-        break;
-      case 'creatorName':
-        raw.creatorNames.push({ value, lang });
-        break;
-      case 'keyword':
-        raw.keywords.push({ value, lang });
-        break;
-      case 'language':
-        raw.languages.push(value);
-        break;
-      case 'publisherIri':
-        raw.publisherIris.push(value);
-        break;
-      case 'mediaType':
-        raw.mediaTypes.push(value);
-        break;
-      case 'conformsTo':
-        raw.conformsTo.push(value);
-        break;
-      case 'additionalType':
-        raw.additionalTypes.push(value);
-        break;
-      case 'dateRead':
-        raw.dateReadIso = value;
-        break;
-      case 'datePosted':
-        raw.datePostedIso = value;
-        break;
-      case 'validUntil':
-        raw.validUntilIso = value;
-        break;
-    }
-    raws.set(iri, raw);
+    ids.add(quad.subject.value);
   }
-  return [...raws.values()].map((raw) => buildDocument(raw));
+  return [...ids].map((id) => ({ id }));
 }
 
 const RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
@@ -591,39 +545,6 @@ function writeNTriples(quads: Quad[]): Promise<string> {
     writer.addQuads(quads);
     writer.end((error, result) => (error ? reject(error) : resolve(result)));
   });
-}
-
-interface MutableRaw {
-  iri: string;
-  titles: LangValue[];
-  descriptions: LangValue[];
-  publisherNames: LangValue[];
-  creatorNames: LangValue[];
-  keywords: LangValue[];
-  languages: string[];
-  publisherIris: string[];
-  mediaTypes: string[];
-  conformsTo: string[];
-  additionalTypes: string[];
-  dateReadIso?: string;
-  datePostedIso?: string;
-  validUntilIso?: string;
-}
-
-function emptyRaw(iri: string): MutableRaw {
-  return {
-    iri,
-    titles: [],
-    descriptions: [],
-    publisherNames: [],
-    creatorNames: [],
-    keywords: [],
-    languages: [],
-    publisherIris: [],
-    mediaTypes: [],
-    conformsTo: [],
-    additionalTypes: [],
-  };
 }
 
 function seconds(millis: number): string {
