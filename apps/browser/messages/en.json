@@ -416,6 +416,26 @@
   "validate_url_placeholder": "https://example.org/dataset",
   "validate_url_submit": "Validate URL",
   "validate_url_source_title": "Fetched description",
+  "validate_url_source_title_dataset": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Fetched dataset description",
+        "countPlural=other": "Fetched {count} dataset descriptions"
+      }
+    }
+  ],
+  "validate_url_source_title_catalog": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Fetched data catalog with 1 dataset description",
+        "countPlural=other": "Fetched data catalog with {count} dataset descriptions"
+      }
+    }
+  ],
   "validate_inline_editor_label": "Dataset description",
   "validate_inline_placeholder": "Paste JSON-LD, Turtle, N-Triples…",
   "validate_inline_content_type": "Content type",

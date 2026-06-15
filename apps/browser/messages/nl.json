@@ -416,6 +416,26 @@
   "validate_url_placeholder": "https://example.org/dataset",
   "validate_url_submit": "URL valideren",
   "validate_url_source_title": "Opgehaalde beschrijving",
+  "validate_url_source_title_dataset": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Opgehaalde datasetbeschrijving",
+        "countPlural=other": "{count} opgehaalde datasetbeschrijvingen"
+      }
+    }
+  ],
+  "validate_url_source_title_catalog": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Opgehaalde datacatalogus met 1 datasetbeschrijving",
+        "countPlural=other": "Opgehaalde datacatalogus met {count} datasetbeschrijvingen"
+      }
+    }
+  ],
   "validate_inline_editor_label": "Datasetbeschrijving",
   "validate_inline_placeholder": "Plak JSON-LD, Turtle, N-Triples…",
   "validate_inline_content_type": "Inhoudstype",
