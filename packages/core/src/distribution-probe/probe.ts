@@ -95,7 +95,7 @@ const DEFAULT_FAILURE_STREAK_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const DEFAULT_PROBE_CONCURRENCY = 20;
 const DEFAULT_MAX_PROBES = 100;
 
-interface DistributionCandidate {
+export interface DistributionCandidate {
   distributionNode: NamedNode | BlankNode;
   urlNode: NamedNode;
   path: NamedNode;
@@ -389,7 +389,9 @@ function canonicalProbeUrl(accessUrl: URL): URL {
  * and "collects a large catalogue in roughly linear time" fails if `match()` ever loses its
  * index. Do not replace these `match()` calls with manual iteration over `input`.
  */
-function collectDistributions(input: DatasetCore): DistributionCandidate[] {
+export function collectDistributions(
+  input: DatasetCore,
+): DistributionCandidate[] {
   const candidates: DistributionCandidate[] = [];
   for (const profile of ['dcat', 'schema'] as const) {
     const distributionPath =
@@ -417,6 +419,15 @@ function candidatesFor(
     literalValue(input, distributionNode, dcat('mediaType')) ??
     literalValue(input, distributionNode, dct('format')) ??
     literalValue(input, distributionNode, schema('encodingFormat'));
+  // The compression format the register split off the declared media type on
+  // ingest (e.g. `application/n-quads+gzip` becomes media type
+  // `application/n-quads` plus this gzip compress format). The probe needs it so
+  // the content-type check accepts a server that serves the compressed form.
+  const compressFormat = literalValue(
+    input,
+    distributionNode,
+    dcat('compressFormat'),
+  );
   const conformsTo =
     iriValue(input, distributionNode, dct('conformsTo')) ??
     iriValue(input, distributionNode, schema('usageInfo'));
@@ -433,7 +444,12 @@ function candidatesFor(
         distributionNode,
         urlNode: urlTerm,
         path,
-        distribution: toDistribution(urlTerm.value, mediaType, conformsTo),
+        distribution: toDistribution(
+          urlTerm.value,
+          mediaType,
+          conformsTo,
+          compressFormat,
+        ),
       });
     }
   }
@@ -495,6 +511,7 @@ function toDistribution(
   accessUrl: string,
   mediaType: string | undefined,
   conformsTo: URL | undefined,
+  compressFormat: string | undefined,
 ): Distribution | null {
   let url: URL;
   try {
@@ -507,7 +524,11 @@ function toDistribution(
     (mediaType !== undefined && /sparql/i.test(mediaType)
       ? new URL(SPARQL_PROTOCOL_URL)
       : undefined);
-  return new Distribution(url, mediaType, resolvedConformsTo);
+  const distribution = new Distribution(url, mediaType, resolvedConformsTo);
+  if (compressFormat !== undefined) {
+    distribution.compressFormat = compressFormat;
+  }
+  return distribution;
 }
 
 /**
