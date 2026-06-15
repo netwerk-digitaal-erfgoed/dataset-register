@@ -219,6 +219,7 @@ export interface SearchRequest {
   format: string[];
   class: string[];
   terminologySource: string[];
+  catalog: string[];
   size: {
     min?: number;
     max?: number;
@@ -474,6 +475,7 @@ function filterClauses(searchFilters: SearchRequest, skipDefaults = false) {
     format,
     class: classFilter,
     terminologySource,
+    catalog,
     size,
     status,
   } = searchFilters;
@@ -512,6 +514,10 @@ function filterClauses(searchFilters: SearchRequest, skipDefaults = false) {
     filterClausesArray.push(
       facetConfigs.terminologySource.filterClause(terminologySource),
     );
+  }
+
+  if (catalog.length > 0) {
+    filterClausesArray.push(facetConfigs.catalog.filterClause(catalog));
   }
 
   // Handle status filter with defaultClause support

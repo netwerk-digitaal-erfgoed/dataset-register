@@ -47,6 +47,7 @@
     format: decodeDiscreteParam('format'),
     class: decodeDiscreteParam('class'),
     terminologySource: decodeDiscreteParam('terminologySource'),
+    catalog: decodeDiscreteParam('catalog'),
     size: decodeRangeParam('size'),
     status: decodeDiscreteParam('status'),
   });
@@ -67,6 +68,7 @@
       format: decodeDiscreteParam('format'),
       class: decodeDiscreteParam('class'),
       terminologySource: decodeDiscreteParam('terminologySource'),
+      catalog: decodeDiscreteParam('catalog'),
       size: decodeRangeParam('size'),
       status: decodeDiscreteParam('status'),
     });
@@ -115,6 +117,7 @@
     format: SelectedFacetValue[];
     class: SelectedFacetValue[];
     terminologySource: SelectedFacetValue[];
+    catalog: SelectedFacetValue[];
     size: { min?: number; max?: number };
   } = $derived({
     publisher: searchRequest.publisher.map((value) => {
@@ -158,6 +161,9 @@
         label: facet?.label || { '': value },
       };
     }),
+    // Catalogs have no facet counts (filter-only) and no titles, so the chip
+    // falls back to the shortened catalog IRI.
+    catalog: searchRequest.catalog.map((value) => ({ value })),
     size: {
       min: searchRequest.size.min,
       max: searchRequest.size.max,
@@ -276,6 +282,12 @@
       );
     } else {
       url.searchParams.delete('terminologySource');
+    }
+
+    if (params.catalog && params.catalog.length > 0) {
+      url.searchParams.set('catalog', params.catalog.join(','));
+    } else {
+      url.searchParams.delete('catalog');
     }
 
     if (params.status && params.status.length > 0) {
@@ -458,6 +470,9 @@
             (s) => s !== value,
           );
           updateURL(searchRequest, { terminologySource: newSources });
+        } else if (type === 'catalog') {
+          const newCatalogs = searchRequest.catalog.filter((c) => c !== value);
+          updateURL(searchRequest, { catalog: newCatalogs });
         } else if (type === 'size') {
           updateURL(searchRequest, {
             size: { min: undefined, max: undefined },
@@ -684,6 +699,7 @@
           format: [],
           class: [],
           terminologySource: [],
+          catalog: [],
           size: { min: undefined, max: undefined },
           status: [],
         });

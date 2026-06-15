@@ -347,6 +347,26 @@ export const facetConfigs: Record<string, FacetConfig> = {
       }`;
     },
   },
+  // The data catalog a dataset belongs to (dct:isPartOf). This facet is not
+  // shown in the sidebar (catalogs carry no title, so they would read as bare
+  // IRIs) and is excluded from count fetching in fetchFacets(); it exists only
+  // as an active filter, reached from the “Browse catalog” link on the dataset
+  // detail page. Only IRI-valued catalogs are matched — some dct:isPartOf
+  // values are plain literals, which the detail-page link never produces.
+  catalog: {
+    where: `?dataset dct:isPartOf ?value .
+      FILTER(isURI(?value))`,
+    filterClause: (values) => {
+      if (values.length === 0) {
+        return '';
+      }
+
+      const catalogValues = values.map((c) => `<${c}>`).join(', ');
+
+      return `?dataset dct:isPartOf ?catalog .
+        FILTER(?catalog IN (${catalogValues}))`;
+    },
+  },
 };
 
 export type FacetKey = keyof typeof facetConfigs | 'size';
@@ -387,7 +407,11 @@ export const facetQuery = (facet: string, searchFiltersQuery: string) => `
 export async function fetchFacets(
   searchFilters: SearchRequest,
 ): Promise<Facets> {
-  const facetKeys = Object.keys(facetConfigs) as Array<FacetKey>;
+  // Exclude `catalog`: it is a filter-only facet (no sidebar entry), so its
+  // value counts are never displayed and need not be queried.
+  const facetKeys = (Object.keys(facetConfigs) as Array<FacetKey>).filter(
+    (key) => key !== 'catalog',
+  );
 
   // Fetch all facets in parallel and build the result object in one pass
   const [facetEntries, sizeRange, sizeHistogram] = await Promise.all([
