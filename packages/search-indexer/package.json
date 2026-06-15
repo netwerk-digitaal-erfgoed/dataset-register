@@ -19,12 +19,14 @@
     "@lde/text-normalization": "^0.1.0",
     "@lde/typesense": "^0.1.0",
     "env-schema": "^7.0.0",
+    "jsonld": "^9.0.0",
     "pino": "^10.2.0",
     "tslib": "^2.3.0",
     "typesense": "^3.0.6"
   },
   "devDependencies": {
     "@rdfjs/types": "^2.0.1",
+    "@types/jsonld": "^1.5.15",
     "n3": "^2.0.3",
     "rdf-ext": "^2.6.0",
     "testcontainers": "^12.0.1"
