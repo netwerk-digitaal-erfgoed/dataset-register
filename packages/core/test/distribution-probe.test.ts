@@ -14,6 +14,7 @@ import {
   isDeterministicFailure,
 } from '../src/constants.js';
 import {
+  collectDistributions,
   DistributionProbeStage,
   readProbeSeverities,
 } from '../src/distribution-probe/probe.js';
@@ -1319,5 +1320,70 @@ describe('isDeterministicFailure', () => {
 
   it('is false when there is no outcome', () => {
     expect(isDeterministicFailure(null)).toBe(false);
+  });
+});
+
+describe('collectDistributions', () => {
+  const iana = (type: string) =>
+    `https://www.iana.org/assignments/media-types/${type}`;
+
+  // The register splits a declared `application/n-quads+gzip` into a base
+  // dcat:mediaType plus a dcat:compressFormat on ingest. The probe must carry
+  // that compress format onto the Distribution so the content-type check can
+  // accept a server that serves the compressed form (e.g. `application/n-quads+gzip`).
+  it('carries dcat:compressFormat onto the built Distribution', () => {
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/ds-gzip');
+    const distributionNode = factory.blankNode();
+    const url = factory.namedNode('https://example.org/data.nq.gz');
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    dataset.add(factory.quad(distributionNode, dcat('downloadURL'), url));
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('mediaType'),
+        factory.namedNode(iana('application/n-quads')),
+      ),
+    );
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('compressFormat'),
+        factory.namedNode(iana('application/gzip')),
+      ),
+    );
+
+    const candidates = collectDistributions(dataset);
+
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0].distribution?.mimeType).toBe('application/n-quads');
+    expect(candidates[0].distribution?.compressFormat).toBe(
+      iana('application/gzip'),
+    );
+  });
+
+  it('leaves compressFormat unset for an uncompressed distribution', () => {
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/ds-plain');
+    const distributionNode = factory.blankNode();
+    const url = factory.namedNode('https://example.org/data.nq');
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    dataset.add(factory.quad(distributionNode, dcat('downloadURL'), url));
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('mediaType'),
+        factory.namedNode(iana('application/n-quads')),
+      ),
+    );
+
+    const candidates = collectDistributions(dataset);
+
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0].distribution?.compressFormat).toBeUndefined();
   });
 });
