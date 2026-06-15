@@ -3,7 +3,7 @@ import {
   deriveClassGroups,
   REGISTRATION_STATUS_BASE_URI,
 } from '@dataset-register/core';
-import type { TypesenseDocument } from '@lde/typesense';
+import type { TypesenseDocument } from '@lde/search-typesense';
 import {
   IANA_MEDIA_TYPE_PREFIX,
   RDF_MEDIA_TYPES,

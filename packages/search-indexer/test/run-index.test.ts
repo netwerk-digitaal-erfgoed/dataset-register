@@ -11,7 +11,7 @@ import {
 import {
   createTypesenseClient,
   type TypesenseConnection,
-} from '@lde/typesense';
+} from '@lde/search-typesense';
 import { runIndex, runIndexSingleFlight } from '../src/run-index.ts';
 import { QLeverContainer } from './qlever-container.ts';
 import { TypesenseContainer } from './typesense-container.ts';

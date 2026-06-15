@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { Client } from 'typesense';
-import { createTypesenseClient } from '@lde/typesense';
+import { createTypesenseClient } from '@lde/search-typesense';
 import { RebuildLock } from '../src/rebuild-lock.ts';
 import { TypesenseContainer } from './typesense-container.ts';
 

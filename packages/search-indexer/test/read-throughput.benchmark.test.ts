@@ -324,8 +324,9 @@ describe.runIf(BENCH)('read throughput: SELECT vs CONSTRUCT', () => {
     // The corpus was generated with known IRIs, so the read paths are compared
     // against this set directly (the production SELECT baseline was removed when
     // the unified CONSTRUCT pipeline landed; its numbers are in the git history).
-    const expectedIds = Array.from({ length: DATASET_COUNT }, (_unused, index) =>
-      dataset(index),
+    const expectedIds = Array.from(
+      { length: DATASET_COUNT },
+      (_unused, index) => dataset(index),
     ).sort();
     const knownIris = Array.from({ length: DATASET_COUNT }, (_unused, index) =>
       dataset(index),

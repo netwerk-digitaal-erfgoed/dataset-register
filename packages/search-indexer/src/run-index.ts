@@ -1,21 +1,21 @@
 import { Client } from 'typesense';
 import {
   createTypesenseClient,
+  frameByType,
   TypesenseAdapter,
   type TypesenseConnection,
-} from '@lde/typesense';
+} from '@lde/search-typesense';
 import {
   SEARCH_COLLECTION_ALIAS,
   SEARCH_SYNONYM_SET,
   SEARCH_SYNONYMS,
   SparqlClient,
 } from '@dataset-register/core';
-import type { TypesenseDocument } from '@lde/typesense';
+import type { TypesenseDocument } from '@lde/search-typesense';
 import type { Quad } from '@rdfjs/types';
 import { buildCollectionSchema } from './collection-schema.js';
 import { RegisterSource } from './register-source.js';
 import { DkgSource } from './dkg-source.js';
-import { frameDatasets } from './frame.js';
 import { framedDatasetToRaw } from './framed.js';
 import { buildDocument } from './projection.js';
 import { RebuildLock } from './rebuild-lock.js';
@@ -23,6 +23,9 @@ import { runSingleFlight } from './single-flight.js';
 
 const DEFAULT_REGISTRATIONS_GRAPH =
   'https://demo.netwerkdigitaalerfgoed.nl/registry/registrations';
+
+/** The IR root type the register + DKG CONSTRUCT graphs are framed by. */
+const DCAT_DATASET = 'http://www.w3.org/ns/dcat#Dataset';
 
 export interface RunIndexOptions {
   readonly sparqlUrl: string;
@@ -122,7 +125,7 @@ export async function runIndexSingleFlight(
  */
 async function projectDatasets(quads: Quad[]): Promise<TypesenseDocument[]> {
   const documents: TypesenseDocument[] = [];
-  for await (const node of frameDatasets(quads)) {
+  for await (const node of frameByType(quads, DCAT_DATASET)) {
     documents.push(buildDocument(framedDatasetToRaw(node)));
   }
   return documents;
