@@ -48,7 +48,9 @@ describe('frameDatasets', () => {
       '@id': 'https://ex/o/1',
       [`${FOAF}name`]: { '@language': 'nl', '@value': 'Org' },
     });
-    expect((byId['https://ex/d/2'] as Record<string, unknown>)[`${DCT}title`]).toEqual({
+    expect(
+      (byId['https://ex/d/2'] as Record<string, unknown>)[`${DCT}title`],
+    ).toEqual({
       '@language': 'nl',
       '@value': 'Andere',
     });
@@ -68,7 +70,10 @@ describe('frameDatasets', () => {
 
     expect(nodes).toHaveLength(1);
     // The duplicated title collapses to a single value, not an array of two.
-    expect(nodes[0]![`${DCT}title`]).toEqual({ '@language': 'nl', '@value': 'Titel' });
+    expect(nodes[0]![`${DCT}title`]).toEqual({
+      '@language': 'nl',
+      '@value': 'Titel',
+    });
   });
 
   it('yields nothing when there are no dataset nodes', async () => {

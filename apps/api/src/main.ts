@@ -31,9 +31,7 @@ function buildSearchIndexTrigger(): (() => void) | undefined {
       knowledgeGraphEndpoint: config.KNOWLEDGE_GRAPH_URL,
       typesense,
       log: (message) => console.log(message),
-    }).catch((error) =>
-      console.error('Search index update failed', error),
-    );
+    }).catch((error) => console.error('Search index update failed', error));
   };
 }
 

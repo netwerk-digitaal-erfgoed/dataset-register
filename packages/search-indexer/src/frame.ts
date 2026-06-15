@@ -52,7 +52,10 @@ function groupByDataset(quads: readonly Quad[]): Quad[][] {
     } else {
       owned.push(quad);
     }
-    if (quad.predicate.value === RDF_TYPE && quad.object.value === DCAT_DATASET) {
+    if (
+      quad.predicate.value === RDF_TYPE &&
+      quad.object.value === DCAT_DATASET
+    ) {
       datasetIris.add(subject);
     }
   }

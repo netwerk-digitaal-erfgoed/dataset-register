@@ -5,16 +5,19 @@ import {
   type TypesenseConnection,
 } from '@lde/typesense';
 import {
-  deriveClassGroups,
   SEARCH_COLLECTION_ALIAS,
   SEARCH_SYNONYM_SET,
   SEARCH_SYNONYMS,
   SparqlClient,
 } from '@dataset-register/core';
 import type { TypesenseDocument } from '@lde/typesense';
+import type { Quad } from '@rdfjs/types';
 import { buildCollectionSchema } from './collection-schema.js';
 import { RegisterSource } from './register-source.js';
-import { DkgSource, type DkgEnrichment } from './dkg-source.js';
+import { DkgSource } from './dkg-source.js';
+import { frameDatasets } from './frame.js';
+import { framedDatasetToRaw } from './framed.js';
+import { buildDocument } from './projection.js';
 import { RebuildLock } from './rebuild-lock.js';
 import { runSingleFlight } from './single-flight.js';
 
@@ -74,9 +77,12 @@ export async function runIndex(
   log(`Rebuilding search index into ${desired}`);
   await adapter.createCollection(buildCollectionSchema(desired));
 
-  const iris = await source.enumerateDatasetIris();
-  const documents = await source.project(iris);
-  await enrichFromKnowledgeGraph(documents, options, log);
+  // Unified read: one CONSTRUCT for the register, one for the DKG, merged by
+  // dataset IRI into a single RDF graph, then framed per dataset into the
+  // JSON-LD IR and projected. DKG quads are optional (see below).
+  const registerQuads = await source.readQuads();
+  const dkgQuads = await readKnowledgeGraphQuads(options, log);
+  const documents = await projectDatasets([...registerQuads, ...dkgQuads]);
   await adapter.bulkUpsert(desired, documents);
   await adapter.swapAlias(alias, desired);
   log(`Indexed ${documents.length} datasets; alias ${alias} → ${desired}`);
@@ -110,53 +116,43 @@ export async function runIndexSingleFlight(
 }
 
 /**
- * Merge DKG facet enrichment into the projected documents in memory, joined by
- * dataset IRI. Skipped entirely when no DKG endpoint is configured.
+ * Frame the merged register + DKG quads into one JSON-LD IR node per dataset and
+ * project each into a Typesense document. Streamed (one frame at a time) so
+ * memory stays flat — whole-graph framing is ~O(N²).
  */
-async function enrichFromKnowledgeGraph(
-  documents: readonly TypesenseDocument[],
+async function projectDatasets(quads: Quad[]): Promise<TypesenseDocument[]> {
+  const documents: TypesenseDocument[] = [];
+  for await (const node of frameDatasets(quads)) {
+    documents.push(buildDocument(framedDatasetToRaw(node)));
+  }
+  return documents;
+}
+
+/**
+ * CONSTRUCT the DKG enrichment quads (joined later by dataset IRI during
+ * framing). DKG-optional: register correctness is the user-facing contract and
+ * must always land, so a failed or absent DKG read degrades to register-only
+ * data (DKG facets briefly absent, self-healing on the next successful run)
+ * rather than aborting the rebuild.
+ */
+async function readKnowledgeGraphQuads(
   options: RunIndexOptions,
   log: (message: string) => void,
-): Promise<void> {
+): Promise<Quad[]> {
   if (options.knowledgeGraphEndpoint === undefined) {
-    return;
+    return [];
   }
   const dkg = new DkgSource(
     new SparqlClient(options.knowledgeGraphEndpoint, options.sparqlAccessToken),
   );
-
-  // DKG-optional: register correctness is the user-facing contract and must
-  // always land, so a failed enrichment read degrades to register-only data
-  // (DKG facets briefly absent, self-healing on the next successful run) rather
-  // than aborting the rebuild.
-  let enrichment: Map<string, DkgEnrichment>;
   try {
-    enrichment = await dkg.read();
+    const quads = await dkg.readQuads();
+    log(`Read ${quads.length} Knowledge Graph enrichment quads`);
+    return quads;
   } catch (error) {
     log(`Knowledge Graph enrichment skipped: ${(error as Error).message}`);
-    return;
+    return [];
   }
-
-  for (const document of documents) {
-    const entry = enrichment.get(document.id);
-    if (entry === undefined) {
-      continue;
-    }
-    if (entry.classes.length > 0) {
-      document.class = entry.classes;
-      const groups = deriveClassGroups(entry.classes);
-      if (groups.length > 0) {
-        document.class_group = groups;
-      }
-    }
-    if (entry.terminologySources.length > 0) {
-      document.terminology_source = entry.terminologySources;
-    }
-    if (entry.size !== undefined) {
-      document.size = entry.size;
-    }
-  }
-  log(`Enriched ${enrichment.size} datasets from the Knowledge Graph`);
 }
 
 /**

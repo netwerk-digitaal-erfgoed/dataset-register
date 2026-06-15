@@ -18,7 +18,6 @@ import type { Quad } from '@rdfjs/types';
 import jsonld from 'jsonld';
 import { SparqlClient } from '@dataset-register/core';
 import { buildDocument, type LangValue } from '../src/projection.ts';
-import { RegisterSource } from '../src/register-source.ts';
 import { QLeverContainer } from './qlever-container.ts';
 
 const REGISTRATIONS_GRAPH = 'https://example.org/registry/registrations';
@@ -321,18 +320,16 @@ describe.runIf(BENCH)('read throughput: SELECT vs CONSTRUCT', () => {
     await qlever.stop();
   });
 
-  it('measures both read paths', async () => {
-    // --- Path A: current batched-SELECT reader (via comunica) ---
-    const requestsA = countEndpointRequests(endpoint);
-    const startA = performance.now();
-    const source = new RegisterSource(
-      new SparqlClient(endpoint, qlever.accessToken),
-      REGISTRATIONS_GRAPH,
+  it('measures the read paths', async () => {
+    // The corpus was generated with known IRIs, so the read paths are compared
+    // against this set directly (the production SELECT baseline was removed when
+    // the unified CONSTRUCT pipeline landed; its numbers are in the git history).
+    const expectedIds = Array.from({ length: DATASET_COUNT }, (_unused, index) =>
+      dataset(index),
+    ).sort();
+    const knownIris = Array.from({ length: DATASET_COUNT }, (_unused, index) =>
+      dataset(index),
     );
-    const irisA = await source.enumerateDatasetIris();
-    const documentsA = await source.project(irisA);
-    const elapsedA = performance.now() - startA;
-    const httpA = requestsA.stop();
 
     // --- Path B: single CONSTRUCT over HTTP, n3 parse, same projection ---
     const startB = performance.now();
@@ -369,11 +366,7 @@ describe.runIf(BENCH)('read throughput: SELECT vs CONSTRUCT', () => {
     // Bounds payload + memory per request and scales past a single in-memory
     // graph, at the cost of N+1 round trips (amortised by concurrency).
     const startD = performance.now();
-    const sourceD = new RegisterSource(
-      new SparqlClient(endpoint, qlever.accessToken),
-      REGISTRATIONS_GRAPH,
-    );
-    const irisD = await sourceD.enumerateDatasetIris();
+    const irisD = knownIris;
     const documentsD = await mapWithConcurrency(
       irisD,
       CONCURRENCY,
@@ -392,11 +385,7 @@ describe.runIf(BENCH)('read throughput: SELECT vs CONSTRUCT', () => {
     // VALUES. Bounds payload/memory per request like Path D, but only ⌈N/batch⌉
     // round trips like the current SELECT.
     const startE = performance.now();
-    const sourceE = new RegisterSource(
-      new SparqlClient(endpoint, qlever.accessToken),
-      REGISTRATIONS_GRAPH,
-    );
-    const irisE = await sourceE.enumerateDatasetIris();
+    const irisE = knownIris;
     const documentsE: unknown[] = [];
     let batchesE = 0;
     for (let offset = 0; offset < irisE.length; offset += CONSTRUCT_BATCH) {
@@ -423,9 +412,12 @@ describe.runIf(BENCH)('read throughput: SELECT vs CONSTRUCT', () => {
     let enrichedInSample = 0;
     const startUSample = performance.now();
     for (let index = 0; index < uSample; index++) {
-      const expanded = await jsonld.fromRDF(await writeNTriples(uSubgraphs[index]!), {
-        format: 'application/n-quads',
-      });
+      const expanded = await jsonld.fromRDF(
+        await writeNTriples(uSubgraphs[index]!),
+        {
+          format: 'application/n-quads',
+        },
+      );
       const framed = (await jsonld.frame(expanded, FRAME)) as Record<
         string,
         unknown
@@ -449,9 +441,6 @@ describe.runIf(BENCH)('read throughput: SELECT vs CONSTRUCT', () => {
     log(`results for ${DATASET_COUNT} datasets`);
     log('───────────────────────────────────────────────');
     log(
-      `A SELECT (current)        ${seconds(elapsedA)}  docs=${documentsA.length}  http=${httpA}`,
-    );
-    log(
       `B CONSTRUCT+project       ${seconds(elapsedB)}  docs=${documentsB.length}  http=1` +
         `  (fetch ${seconds(afterFetchB - startB)}, parse+project ${seconds(elapsedB - (afterFetchB - startB))}, ${Math.round(ntriples.length / 1024)} KiB)`,
     );
@@ -473,21 +462,19 @@ describe.runIf(BENCH)('read throughput: SELECT vs CONSTRUCT', () => {
     );
     log('───────────────────────────────────────────────');
 
-    // The CONSTRUCT paths must read the same datasets as the SELECT path.
-    expect(documentsA.length).toBe(DATASET_COUNT);
-    const idsA = documentsA.map((document) => document.id).sort();
+    // Every CONSTRUCT path must read the same datasets as the known corpus.
     const idsB = (documentsB as { id: string }[])
       .map((document) => document.id)
       .sort();
-    expect(idsB).toEqual(idsA);
+    expect(idsB).toEqual(expectedIds);
     const idsD = (documentsD as { id: string }[])
       .map((document) => document.id)
       .sort();
-    expect(idsD).toEqual(idsA);
+    expect(idsD).toEqual(expectedIds);
     const idsE = (documentsE as { id: string }[])
       .map((document) => document.id)
       .sort();
-    expect(idsE).toEqual(idsA);
+    expect(idsE).toEqual(expectedIds);
     // The unified pipeline must merge DKG enrichment into the dataset's IR.
     expect(uSubgraphs.length).toBe(DATASET_COUNT);
     expect(enrichedInSample).toBe(uSample);
@@ -635,26 +622,6 @@ function emptyRaw(iri: string): MutableRaw {
     mediaTypes: [],
     conformsTo: [],
     additionalTypes: [],
-  };
-}
-
-/** Count HTTP requests to the SPARQL endpoint by wrapping global fetch, so the
- *  real round-trip count of the comunica path is observed, not assumed. */
-function countEndpointRequests(endpoint: string): { stop: () => number } {
-  const original = globalThis.fetch;
-  let count = 0;
-  globalThis.fetch = ((input: string | URL | Request, init?: RequestInit) => {
-    const url = typeof input === 'string' ? input : input.toString();
-    if (url.startsWith(endpoint)) {
-      count++;
-    }
-    return original(input, init);
-  }) as typeof globalThis.fetch;
-  return {
-    stop: () => {
-      globalThis.fetch = original;
-      return count;
-    },
   };
 }
 

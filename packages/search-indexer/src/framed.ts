@@ -11,7 +11,6 @@ import type { LangValue, RawDataset } from './projection.js';
  */
 const DCT = 'http://purl.org/dc/terms/';
 const DCAT = 'http://www.w3.org/ns/dcat#';
-const FOAF = 'http://xmlns.com/foaf/0.1/';
 const SCHEMA = 'https://schema.org/';
 /** Register-internal IR predicates: promoted registration facts + DKG facets. */
 const DR = 'urn:dr:';
@@ -29,10 +28,12 @@ export function framedDatasetToRaw(node: JsonLdNode): RawDataset {
     keywords: langValues(node, `${DCAT}keyword`),
     languages: plainLiterals(node, `${DCT}language`),
     publisherIris: iris(node, `${DCT}publisher`),
-    publisherNames: nestedLangValues(node, `${DCT}publisher`, `${FOAF}name`),
-    creatorNames: nestedLangValues(node, `${DCT}creator`, `${FOAF}name`),
-    mediaTypes: nestedIris(node, `${DCAT}distribution`, `${DCAT}mediaType`),
-    conformsTo: nestedIris(node, `${DCAT}distribution`, `${DCT}conformsTo`),
+    // Names and distribution facets are promoted flat onto the dataset by the
+    // register CONSTRUCT (see RegisterSource.readQuads), not nested.
+    publisherNames: langValues(node, `${DR}publisherName`),
+    creatorNames: langValues(node, `${DR}creatorName`),
+    mediaTypes: plainLiterals(node, `${DR}format`),
+    conformsTo: plainLiterals(node, `${DR}conformsTo`),
     additionalTypes: iris(node, `${SCHEMA}additionalType`),
     dateReadIso: firstLiteral(node, `${DR}dateRead`),
     datePostedIso: firstLiteral(node, `${DR}datePosted`),
@@ -60,16 +61,6 @@ function langValues(node: JsonLdNode, predicate: string): LangValue[] {
     .filter((value): value is LangValue => value !== undefined);
 }
 
-function nestedLangValues(
-  node: JsonLdNode,
-  predicate: string,
-  subPredicate: string,
-): LangValue[] {
-  return values(node, predicate).flatMap((child) =>
-    isObject(child) ? langValues(child, subPredicate) : [],
-  );
-}
-
 function plainLiterals(node: JsonLdNode, predicate: string): string[] {
   return values(node, predicate)
     .map(literalString)
@@ -84,16 +75,6 @@ function iris(node: JsonLdNode, predicate: string): string[] {
   return values(node, predicate)
     .map(iriString)
     .filter((value): value is string => value !== undefined);
-}
-
-function nestedIris(
-  node: JsonLdNode,
-  predicate: string,
-  subPredicate: string,
-): string[] {
-  return values(node, predicate).flatMap((child) =>
-    isObject(child) ? iris(child, subPredicate) : [],
-  );
 }
 
 function toLangValue(value: unknown): LangValue | undefined {

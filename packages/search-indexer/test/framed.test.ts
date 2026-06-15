@@ -14,34 +14,24 @@ const node = {
     { '@language': 'nl', '@value': 'Titel' },
     { '@language': 'en', '@value': 'Title' },
   ],
-  'http://purl.org/dc/terms/description': { '@language': 'nl', '@value': 'Besch' },
-  'http://www.w3.org/ns/dcat#keyword': [{ '@language': 'nl', '@value': 'erfgoed' }],
-  'http://purl.org/dc/terms/language': ['nl', 'en'],
-  'http://purl.org/dc/terms/publisher': {
-    '@id': 'https://ex.org/org/1',
-    'http://xmlns.com/foaf/0.1/name': { '@language': 'nl', '@value': 'Erfgoed' },
+  'http://purl.org/dc/terms/description': {
+    '@language': 'nl',
+    '@value': 'Besch',
   },
-  'http://purl.org/dc/terms/creator': {
-    '@id': 'https://ex.org/d/1/creator',
-    'http://xmlns.com/foaf/0.1/name': { '@value': 'Maker' },
-  },
-  'http://www.w3.org/ns/dcat#distribution': [
-    {
-      '@id': 'https://ex.org/d/1/dist/1',
-      'http://www.w3.org/ns/dcat#mediaType': {
-        '@id': 'https://www.iana.org/assignments/media-types/text/turtle',
-      },
-      'http://purl.org/dc/terms/conformsTo': {
-        '@id': 'https://www.w3.org/TR/sparql11-protocol/',
-      },
-    },
-    {
-      '@id': 'https://ex.org/d/1/dist/2',
-      'http://www.w3.org/ns/dcat#mediaType': {
-        '@id': 'https://www.iana.org/assignments/media-types/application/ld+json',
-      },
-    },
+  'http://www.w3.org/ns/dcat#keyword': [
+    { '@language': 'nl', '@value': 'erfgoed' },
   ],
+  'http://purl.org/dc/terms/language': ['nl', 'en'],
+  // Publisher IRI stays a reference; names + distribution facets are promoted
+  // flat onto the dataset node (urn:dr:*) by the register CONSTRUCT.
+  'http://purl.org/dc/terms/publisher': { '@id': 'https://ex.org/org/1' },
+  'urn:dr:publisherName': { '@language': 'nl', '@value': 'Erfgoed' },
+  'urn:dr:creatorName': { '@value': 'Maker' },
+  'urn:dr:format': [
+    'https://www.iana.org/assignments/media-types/text/turtle',
+    'https://www.iana.org/assignments/media-types/application/ld+json',
+  ],
+  'urn:dr:conformsTo': 'https://www.w3.org/TR/sparql11-protocol/',
   'https://schema.org/additionalType': {
     '@id': 'https://data.netwerkdigitaalerfgoed.nl/registry/invalid',
   },
@@ -76,7 +66,9 @@ describe('framedDatasetToRaw', () => {
       'https://www.iana.org/assignments/media-types/text/turtle',
       'https://www.iana.org/assignments/media-types/application/ld+json',
     ]);
-    expect(raw.conformsTo).toEqual(['https://www.w3.org/TR/sparql11-protocol/']);
+    expect(raw.conformsTo).toEqual([
+      'https://www.w3.org/TR/sparql11-protocol/',
+    ]);
     expect(raw.additionalTypes).toEqual([
       'https://data.netwerkdigitaalerfgoed.nl/registry/invalid',
     ]);

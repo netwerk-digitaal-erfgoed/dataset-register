@@ -1,7 +1,7 @@
 import { DatasetStore, extractIri } from './dataset.js';
 import { QueryEngine } from '@comunica/query-sparql';
 import type { BindingsStream } from '@comunica/types';
-import { Writer } from 'n3';
+import { Parser, Writer } from 'n3';
 import {
   AllowedRegistrationDomainStore,
   Registration,
@@ -344,6 +344,31 @@ export class SparqlClient {
 
   async query(query: string): Promise<BindingsStream> {
     return await queryEngine.queryBindings(query, { sources: this.sources });
+  }
+
+  /**
+   * Run a CONSTRUCT and collect the resulting quads. Sent directly over the
+   * SPARQL protocol (not via the federating engine, which mis-projects
+   * multi-pattern CONSTRUCT templates) and parsed from N-Triples/Turtle.
+   */
+  async constructQuads(query: string): Promise<Quad[]> {
+    const doFetch = this.accessToken
+      ? authenticatedFetch(this.accessToken)
+      : globalThis.fetch;
+    const response = await doFetch(this.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/sparql-query',
+        Accept: 'application/n-triples',
+      },
+      body: query,
+    });
+    if (!response.ok) {
+      throw new Error(
+        `CONSTRUCT failed: ${response.status} ${await response.text()}`,
+      );
+    }
+    return new Parser().parse(await response.text());
   }
 
   async queryBoolean(query: string) {
