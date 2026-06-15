@@ -6,8 +6,36 @@ import {
   startInstrumentation,
   stores,
 } from '@dataset-register/core';
+import { runIndexSingleFlight } from '@dataset-register/search-indexer';
 import { server } from './server.js';
 import { config } from './config.js';
+
+// Build the fire-and-forget search-index trigger handed to the server. Returns
+// undefined when no Typesense target is configured, so the API runs unchanged
+// without a search deployment. The rebuild runs under the indexer's cross-pod
+// single-flight lock, shared with the crawler and the other API replica.
+function buildSearchIndexTrigger(): (() => void) | undefined {
+  if (!config.TYPESENSE_HOST || !config.TYPESENSE_API_KEY) {
+    return undefined;
+  }
+  const typesense = {
+    host: config.TYPESENSE_HOST,
+    port: config.TYPESENSE_PORT,
+    protocol: config.TYPESENSE_PROTOCOL,
+    apiKey: config.TYPESENSE_API_KEY,
+  };
+  return () => {
+    void runIndexSingleFlight({
+      sparqlUrl: config.SPARQL_URL,
+      sparqlAccessToken: config.SPARQL_ACCESS_TOKEN,
+      knowledgeGraphEndpoint: config.KNOWLEDGE_GRAPH_URL,
+      typesense,
+      log: (message) => console.log(message),
+    }).catch((error) =>
+      console.error('Search index update failed', error),
+    );
+  };
+}
 
 await (async () => {
   const {
@@ -51,6 +79,7 @@ await (async () => {
       },
       ratingStore,
       config.API_ACCESS_TOKEN,
+      buildSearchIndexTrigger(),
     );
     await httpServer.listen({ port: 3000, host: '0.0.0.0' });
   } catch (err) {

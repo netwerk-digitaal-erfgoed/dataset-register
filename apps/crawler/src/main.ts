@@ -9,7 +9,7 @@ import {
   stores,
 } from '@dataset-register/core';
 import pino from 'pino';
-import { runIndex } from '@dataset-register/search-indexer';
+import { runIndexSingleFlight } from '@dataset-register/search-indexer';
 import { config } from './config.js';
 
 const {
@@ -49,15 +49,17 @@ const crawler = new Crawler(
 // Update the Typesense search index after a crawl. Decoupled from the crawl
 // write path (it re-reads the store), error-isolated, and skipped entirely when
 // no Typesense target is configured — a slow or failed index run must never
-// block or crash the crawler (D7).
+// block or crash the crawler (D7). Runs under the cross-pod single-flight lock
+// so the crawler and the API pods never rebuild concurrently.
 async function updateSearchIndex(): Promise<void> {
   if (!config.TYPESENSE_HOST || !config.TYPESENSE_API_KEY) {
     return;
   }
   try {
-    const result = await runIndex({
+    await runIndexSingleFlight({
       sparqlUrl: config.SPARQL_URL,
       sparqlAccessToken: config.SPARQL_ACCESS_TOKEN,
+      knowledgeGraphEndpoint: config.KNOWLEDGE_GRAPH_URL,
       typesense: {
         host: config.TYPESENSE_HOST,
         port: config.TYPESENSE_PORT,
@@ -66,7 +68,7 @@ async function updateSearchIndex(): Promise<void> {
       },
       log: (message) => logger.info(message),
     });
-    logger.info(result, 'Search index updated');
+    logger.info('Search index update finished');
   } catch (error) {
     logger.error({ error }, 'Search index update failed');
   }

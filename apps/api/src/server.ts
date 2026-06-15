@@ -43,6 +43,13 @@ export async function server(
   options?: FastifyServerOptions,
   ratingStore?: RatingStore,
   apiAccessToken?: string,
+  /**
+   * Called fire-and-forget after a delete removes a registration, so the search
+   * index can be rebuilt. Injected (rather than calling the indexer directly) so
+   * the HTTP layer stays free of any Typesense dependency and the trigger is
+   * unit-testable. `main.ts` wires it to the single-flight rebuild.
+   */
+  onDatasetsChanged?: () => void,
 ): Promise<FastifyInstance<Server>> {
   const server = fastify(options);
 
@@ -347,6 +354,11 @@ export async function server(
         request.log.info(
           `Deleted registration ${url.toString()} with ${registration.datasets.length} datasets`,
         );
+
+        // Rebuild the search index so the deleted datasets disappear from search.
+        // Fire-and-forget under the indexer's cross-pod lock: a slow or failed
+        // rebuild must not delay or fail the delete response.
+        onDatasetsChanged?.();
 
         return reply.code(204).send();
       });

@@ -238,20 +238,6 @@ export const SEARCH_FIELDS: readonly SearchFieldSpec[] = [
     optional: true,
     source: 'register',
   },
-  {
-    name: 'date_read',
-    type: 'int64',
-    role: 'meta',
-    sort: true,
-    source: 'register',
-  },
-  {
-    name: 'source',
-    type: 'string',
-    role: 'meta',
-    facet: true,
-    source: 'register',
-  },
 
   // --- DKG enrichment (declared now, populated by the substrate-B pipeline) ---
   {
@@ -299,13 +285,6 @@ export const SEARCH_COLLECTION_ALIAS = 'datasets';
  *  Each versioned collection references it by name; its items are synced live
  *  each indexer run, so changing synonyms needs no reindex. */
 export const SEARCH_SYNONYM_SET = 'dataset-register-synonyms';
-
-/** Field name carrying the producing pipeline; scopes the deletion id-diff so a
- *  sibling source’s documents are never reaped. */
-export const SOURCE_FIELD = 'source';
-/** Register high-water-mark field (`max(date_read)` drives incremental upsert). */
-export const HIGH_WATER_MARK_FIELD = 'date_read';
-export const REGISTER_SOURCE = 'register';
 
 /** A searchable field is one carrying a `query_by` weight. */
 type WeightedField = SearchFieldSpec & { weight: number };

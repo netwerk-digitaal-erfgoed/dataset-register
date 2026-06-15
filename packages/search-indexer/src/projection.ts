@@ -4,7 +4,6 @@ import type { TypesenseDocument } from '@lde/typesense';
 import {
   IANA_MEDIA_TYPE_PREFIX,
   RDF_MEDIA_TYPES,
-  REGISTER_SOURCE,
   SPARQL_PROTOCOL_URI,
 } from './constants.js';
 
@@ -63,8 +62,7 @@ const DISPLAY_FALLBACK_ORDER = ['nl', 'en', ''] as const;
  * Project one dataset’s raw register data into a flat Typesense document per the
  * shared field registry. Searchable fields are folded (identically to the query
  * path) and carry all language values; display fields are per-locale; facet and
- * sort fields are precomputed. `source` scopes the deletion id-diff so a sibling
- * source’s documents are never reaped.
+ * sort fields are precomputed.
  */
 export function buildDocument(raw: RawDataset): TypesenseDocument {
   const status = deriveStatus(raw);
@@ -77,7 +75,6 @@ export function buildDocument(raw: RawDataset): TypesenseDocument {
     status,
     status_rank: STATUS_RANK[status],
     title_sort: fold(localized(raw.titles) ?? ''),
-    source: REGISTER_SOURCE,
   };
 
   setIfPresent(document, 'description_search', foldAll(raw.descriptions));
@@ -109,7 +106,6 @@ export function buildDocument(raw: RawDataset): TypesenseDocument {
 
   // Sort keys.
   setIfPresent(document, 'date_posted', unixTime(raw.datePostedIso));
-  setIfPresent(document, 'date_read', unixTime(raw.dateReadIso));
 
   return document;
 }

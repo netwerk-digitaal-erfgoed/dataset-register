@@ -31,7 +31,7 @@ describe('search field registry', () => {
     }
   });
 
-  it('exposes the seven listing facets plus source', () => {
+  it('exposes the listing facets', () => {
     expect(facetFields()).toEqual(
       expect.arrayContaining([
         'publisher',
@@ -42,9 +42,12 @@ describe('search field registry', () => {
         'class',
         'terminology_source',
         'size',
-        'source',
       ]),
     );
+  });
+
+  it('does not expose the vestigial incremental source facet', () => {
+    expect(facetFields()).not.toContain('source');
   });
 
   it('has a sortable numeric default sorting field', () => {

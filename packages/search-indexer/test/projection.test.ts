@@ -45,10 +45,13 @@ describe('buildDocument', () => {
     expect(document.title_sort).toBe('mohlmann');
   });
 
-  it('sets the source (scopes the deletion id-diff) and id', () => {
+  it('sets the document id and no vestigial incremental fields', () => {
     const document = buildDocument(raw({ titles: [{ value: 'X', lang: '' }] }));
-    expect(document.source).toBe('register');
     expect(document.id).toBe('https://example.org/dataset/1');
+    // `source` and `date_read` belonged to the removed incremental id-diff;
+    // the full blue/green rebuild needs neither.
+    expect(document.source).toBeUndefined();
+    expect(document.date_read).toBeUndefined();
   });
 
   it('derives status and rank', () => {
@@ -113,7 +116,7 @@ describe('buildDocument', () => {
     expect(document.publisher).toEqual(['https://example.org/org']);
   });
 
-  it('converts dates to unix seconds', () => {
+  it('converts date_posted to unix seconds (the sort key)', () => {
     const document = buildDocument(
       raw({
         titles: [{ value: 'X', lang: '' }],
@@ -124,9 +127,9 @@ describe('buildDocument', () => {
     expect(document.date_posted).toBe(
       Math.trunc(Date.parse('2024-01-02T00:00:00.000Z') / 1000),
     );
-    expect(document.date_read).toBe(
-      Math.trunc(Date.parse('2024-03-04T00:00:00.000Z') / 1000),
-    );
+    // dateReadIso still selects the newest registration, but is no longer
+    // emitted as a document field.
+    expect(document.date_read).toBeUndefined();
   });
 
   it('omits absent optional fields', () => {

@@ -14,6 +14,10 @@ interface Env {
   TYPESENSE_PORT: number;
   TYPESENSE_PROTOCOL: string;
   TYPESENSE_API_KEY?: string;
+  // Optional Dataset Knowledge Graph SPARQL endpoint. When set, each rebuild
+  // enriches the index with DKG facets (class, terminology_source, size); absent
+  // → register-only index, no enrichment.
+  KNOWLEDGE_GRAPH_URL?: string;
 }
 
 const schema: JSONSchemaType<Env> = {
@@ -61,6 +65,10 @@ const schema: JSONSchemaType<Env> = {
       default: 'http',
     },
     TYPESENSE_API_KEY: {
+      type: 'string',
+      nullable: true,
+    },
+    KNOWLEDGE_GRAPH_URL: {
       type: 'string',
       nullable: true,
     },

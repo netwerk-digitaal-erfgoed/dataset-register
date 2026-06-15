@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  runSingleFlight,
-  type CoalescingLock,
-} from '../src/single-flight.ts';
+import { runSingleFlight, type CoalescingLock } from '../src/single-flight.ts';
 
 /** In-memory lock double so the coalescing logic is tested deterministically. */
 function fakeLock(overrides: Partial<CoalescingLock> = {}): {

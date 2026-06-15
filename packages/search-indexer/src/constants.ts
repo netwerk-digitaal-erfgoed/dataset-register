@@ -1,7 +1,3 @@
-// Re-export from the shared search config so the indexer and the (future)
-// browser query path agree on the source name that scopes the sweep.
-export { REGISTER_SOURCE } from '@dataset-register/core';
-
 /**
  * RDF media types, mirrored from the browser’s format-facet grouping. A
  * distribution serving any of these contributes the `group:rdf` facet value.
