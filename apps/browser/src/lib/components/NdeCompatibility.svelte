@@ -4,6 +4,7 @@
   import { Tooltip } from 'flowbite-svelte';
   import ArrowUpRightFromSquareOutline from 'flowbite-svelte-icons/ArrowUpRightFromSquareOutline.svelte';
   import CheckOutline from 'flowbite-svelte-icons/CheckOutline.svelte';
+  import ChevronRightOutline from 'flowbite-svelte-icons/ChevronRightOutline.svelte';
   import CloseOutline from 'flowbite-svelte-icons/CloseOutline.svelte';
   import ExclamationCircleOutline from 'flowbite-svelte-icons/ExclamationCircleOutline.svelte';
   import InfoCircleSolid from 'flowbite-svelte-icons/InfoCircleSolid.svelte';
@@ -568,55 +569,71 @@
                 {/if}
               </p>
               {#if detailText}
-                <p
-                  class="mt-1 text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  {#if sectionHref}
-                    <a
-                      href={sectionHref}
-                      class="text-blue-600 hover:underline dark:text-blue-400"
+                <!-- For the persistent criterion’s failing states (the red “did
+                     not resolve” and orange “does not reference its PID” rows),
+                     the count sentence doubles as the summary of a fold-out that
+                     reveals exactly which sampled URIs failed, each with its
+                     reason. This keeps the row compact until a provider wants the
+                     detail. Gated on the failure reasons so the
+                     independently-fetched failures only surface alongside the
+                     matching figures, never under a green/neutral row. The reason
+                     is text, not colour, for accessibility. -->
+                {#if criterion.key === 'persistent' && (criterion.reason === 'unresolved' || criterion.reason === 'no-self-reference') && persistentUris.failures.length > 0}
+                  <details class="group mt-1 text-sm">
+                    <summary
+                      class="flex cursor-pointer list-none items-center gap-1 font-medium text-gray-700 [&::-webkit-details-marker]:hidden dark:text-gray-300"
                     >
+                      <ChevronRightOutline
+                        class="h-3.5 w-3.5 flex-shrink-0 transition-transform group-open:rotate-90"
+                        aria-hidden="true"
+                      />
                       {detailText}
-                    </a>
-                  {:else}
-                    {detailText}
-                  {/if}
-                </p>
-              {/if}
-              <!-- The specific sampled URIs that did not resolve, each with its
-                   typed reason, so providers can see exactly which pages failed
-                   and act. Gated on the failure reasons so it only renders for
-                   the red “did not resolve” and orange “does not reference its
-                   PID” states — never under a green/neutral row should the
-                   independently-fetched failures and the resolution figures ever
-                   disagree. The reason is text, not colour, for accessibility. -->
-              {#if criterion.key === 'persistent' && (criterion.reason === 'unresolved' || criterion.reason === 'no-self-reference') && persistentUris.failures.length > 0}
-                <div class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                  <p class="font-medium text-gray-700 dark:text-gray-300">
-                    {m.nde_compat_persistent_failures_label()}
+                    </summary>
+                    <!-- Indent the list to line up with the summary text,
+                         clearing the disclosure chevron (its width plus the
+                         summary's gap), so the failures read as nested under the
+                         count sentence. Each URI carries its own reason as text
+                         (not colour) for accessibility. -->
+                    <ul
+                      class="mt-2 space-y-1 ps-[1.125rem] text-gray-600 dark:text-gray-400"
+                    >
+                      {#each persistentUris.failures as failure (failure.uri)}
+                        <li class="flex flex-wrap items-baseline">
+                          <a
+                            href={failure.uri}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="break-all text-blue-600 hover:underline dark:text-blue-400"
+                            >{failure.uri}<ArrowUpRightFromSquareOutline
+                              class="ms-0.5 inline-block h-3 w-3 align-[-0.1em]"
+                              aria-hidden="true"
+                            /><span class="sr-only">
+                              ({m.opens_in_new_tab()})</span
+                            ></a
+                          >
+                          <span class="text-gray-500 dark:text-gray-400"
+                            >: {failureReasonLabel(failure.reason)}</span
+                          >
+                        </li>
+                      {/each}
+                    </ul>
+                  </details>
+                {:else}
+                  <p
+                    class="mt-1 text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {#if sectionHref}
+                      <a
+                        href={sectionHref}
+                        class="text-blue-600 hover:underline dark:text-blue-400"
+                      >
+                        {detailText}
+                      </a>
+                    {:else}
+                      {detailText}
+                    {/if}
                   </p>
-                  <ul class="mt-1 space-y-1">
-                    {#each persistentUris.failures as failure (failure.uri)}
-                      <li class="flex flex-wrap items-baseline gap-x-1">
-                        <a
-                          href={failure.uri}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="break-all text-blue-600 hover:underline dark:text-blue-400"
-                          >{failure.uri}<ArrowUpRightFromSquareOutline
-                            class="ms-0.5 inline-block h-3 w-3 align-[-0.1em]"
-                            aria-hidden="true"
-                          /><span class="sr-only">
-                            ({m.opens_in_new_tab()})</span
-                          ></a
-                        >
-                        <span class="text-gray-500 dark:text-gray-400"
-                          >– {failureReasonLabel(failure.reason)}</span
-                        >
-                      </li>
-                    {/each}
-                  </ul>
-                </div>
+                {/if}
               {/if}
             </div>
           </li>
