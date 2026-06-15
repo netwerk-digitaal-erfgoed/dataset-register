@@ -822,13 +822,12 @@
                     <span class="sr-only"> ({m.opens_in_new_tab()})</span>
                   </a>
                   <a
-                    href={`https://datasetregister.netwerkdigitaalerfgoed.nl/catalog.php?lang=${getLocale()}&uri=${encodeURIComponent(dataset.isPartOf)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href={localizeHref(
+                      `/datasets?catalog=${encodeURIComponent(dataset.isPartOf)}`,
+                    )}
                     class="inline-flex items-center gap-1 rounded-full border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
                   >
                     {m.detail_browse_catalog()}
-                    <span class="sr-only"> ({m.opens_in_new_tab()})</span>
                   </a>
                 {:else}
                   {dataset.isPartOf}
