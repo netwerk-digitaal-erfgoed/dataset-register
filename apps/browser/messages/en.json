@@ -207,6 +207,7 @@
   "detail_valid": "Valid",
   "detail_invalid": "Invalid",
   "detail_gone": "Gone",
+  "detail_registration_status_description": "This status applies to the validation of the registered URL as a whole. When the registration is a data catalog, it covers all its dataset descriptions, not just this one.",
   "detail_distributions_tooltip": "Distributions provide access to the data.",
   "detail_distributions_showing": "Showing {shown} of {total} distributions.",
   "lang_badge_also_in": "Also in {lang}:",

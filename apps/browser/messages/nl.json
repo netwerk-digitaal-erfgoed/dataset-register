@@ -207,6 +207,7 @@
   "detail_valid": "Geldig",
   "detail_invalid": "Ongeldig",
   "detail_gone": "Verdwenen",
+  "detail_registration_status_description": "Deze status geldt voor de validatie van de geregistreerde URL als geheel. Als de registratie een datacatalogus is, geldt deze voor alle datasetbeschrijvingen, niet alleen voor deze.",
   "detail_distributions_tooltip": "Distributies geven toegang tot de data.",
   "detail_distributions_showing": "{shown} van {total} distributies getoond.",
   "lang_badge_also_in": "Ook in het {lang}:",
