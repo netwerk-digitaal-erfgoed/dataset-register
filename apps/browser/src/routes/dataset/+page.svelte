@@ -1736,6 +1736,7 @@
                   <span class="sr-only"> ({m.opens_in_new_tab()})</span>
                 </a>
                 <a
+                  id="tooltip-registration-status"
                   href={localizeHref(
                     `/validate?url=${encodeUrlParam(dataset.subjectOf.$id)}`,
                   )}
@@ -1765,6 +1766,9 @@
                   {/if}
                   <span class="sr-only"> ({m.opens_in_new_tab()})</span>
                 </a>
+                <Tooltip triggeredBy="#tooltip-registration-status"
+                  >{m.detail_registration_status_description()}</Tooltip
+                >
               </div>
             </dd>
           </div>
