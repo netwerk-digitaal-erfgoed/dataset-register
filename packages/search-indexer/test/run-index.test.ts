@@ -183,6 +183,8 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
       <${base('mohlmann')}/linkset/aat> a <http://rdfs.org/ns/void#Linkset> ;
         <http://rdfs.org/ns/void#subjectsTarget> <${base('mohlmann')}> ;
         <http://rdfs.org/ns/void#objectsTarget> <${AAT}> .
+      <${AAT}> <http://purl.org/dc/terms/title> "Art & Architecture Thesaurus" .
+      <${PERSON_CLASS}> <http://www.w3.org/2000/01/rdf-schema#label> "Person"@en .
     }`);
 
     await runIndex({
@@ -295,6 +297,23 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
       .documents('https://example.org/org/na')
       .retrieve()) as Record<string, unknown>;
     expect(creator.label).toBe('Nationaal Archief');
+  });
+
+  it('labels DKG terminology sources and classes in the sidecar collection', async () => {
+    const terminologySource = (await client
+      .collections(LABELS_COLLECTION_ALIAS)
+      .documents(AAT)
+      .retrieve()) as Record<string, unknown>;
+    expect(terminologySource.label).toBe('Art & Architecture Thesaurus');
+    expect(terminologySource.type).toBe('terminology_source');
+
+    const personClass = (await client
+      .collections(LABELS_COLLECTION_ALIAS)
+      .documents(PERSON_CLASS)
+      .retrieve()) as Record<string, unknown>;
+    expect(personClass.label).toBe('Person');
+    expect(personClass.label_en).toBe('Person');
+    expect(personClass.type).toBe('class');
   });
 
   it('returns native facet counts', async () => {

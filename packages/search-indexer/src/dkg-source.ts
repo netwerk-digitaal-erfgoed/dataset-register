@@ -32,4 +32,34 @@ export class DkgSource {
         UNION { ?dataset void:triples ?size }
       }`);
   }
+
+  /**
+   * CONSTRUCT `?terminologySource dct:title ?label` for every terminology source
+   * a linkset points at, feeding the sidecar `labels` collection (mirrors the
+   * browser’s `dct:title` label on the terminology-source facet).
+   */
+  async readTerminologyLabelQuads(): Promise<Quad[]> {
+    return this.client.constructQuads(`
+      PREFIX void: <${VOID}>
+      PREFIX dct: <http://purl.org/dc/terms/>
+      CONSTRUCT { ?source dct:title ?label } WHERE {
+        [] a void:Linkset ; void:objectsTarget ?source .
+        ?source dct:title ?label .
+      }`);
+  }
+
+  /**
+   * CONSTRUCT `?class rdfs:label ?label` for every class used in a partition that
+   * carries a label, feeding the sidecar `labels` collection so the class facet
+   * can show a real name rather than only a shortened IRI.
+   */
+  async readClassLabelQuads(): Promise<Quad[]> {
+    return this.client.constructQuads(`
+      PREFIX void: <${VOID}>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      CONSTRUCT { ?class rdfs:label ?label } WHERE {
+        [] void:class ?class .
+        ?class rdfs:label ?label .
+      }`);
+  }
 }

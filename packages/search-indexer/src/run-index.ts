@@ -16,7 +16,11 @@ import {
 } from '@dataset-register/core';
 import type { Quad } from '@rdfjs/types';
 import { buildCollectionSchema } from './collection-schema.js';
-import { buildLabelCollectionSchema, toLabelDocuments } from './labels.js';
+import {
+  buildLabelCollectionSchema,
+  toLabelDocuments,
+  type LabelDocument,
+} from './labels.js';
 import { RegisterSource } from './register-source.js';
 import { DkgSource } from './dkg-source.js';
 import { DATASET_PROJECTION } from './projection.js';
@@ -101,7 +105,7 @@ export async function runIndex(
   // user-facing dataset index (which is already live by now), so it degrades to
   // the previous labels and self-heals next run.
   const labelsAlias = options.labelsAlias ?? LABELS_COLLECTION_ALIAS;
-  await rebuildLabels(adapter, source, labelsAlias, timestamp, log);
+  await rebuildLabels(adapter, source, options, labelsAlias, timestamp, log);
 
   return {
     mode: 'rebuild',
@@ -133,14 +137,17 @@ async function blueGreenSwap(
 }
 
 /**
- * Build the sidecar `labels` collection (organization IRIs → `foaf:name`) and
- * blue/green-swap its alias. Defensive: a failure here is logged and swallowed
- * so it never fails an otherwise-good dataset rebuild — labels are display-only
- * and the browser falls back to a shortened IRI when one is missing.
+ * Build the sidecar `labels` collection — organization IRIs (`foaf:name`) from
+ * the register plus terminology-source (`dct:title`) and class (`rdfs:label`)
+ * labels from the DKG — and blue/green-swap its alias. Defensive: a failure here
+ * is logged and swallowed so it never fails an otherwise-good dataset rebuild;
+ * labels are display-only and the browser falls back to a shortened IRI when one
+ * is missing. The DKG labels are independently optional (see below).
  */
 async function rebuildLabels(
   adapter: TypesenseAdapter,
   source: RegisterSource,
+  options: RunIndexOptions,
   alias: string,
   timestamp: number,
   log: (message: string) => void,
@@ -150,6 +157,7 @@ async function rebuildLabels(
       await source.readOrganizationLabelQuads(),
       'organization',
     );
+    documents.push(...(await readKnowledgeGraphLabels(options, log)));
     const desired = `${alias}_${timestamp}`;
     await blueGreenSwap(
       adapter,
@@ -160,6 +168,37 @@ async function rebuildLabels(
     log(`Indexed ${documents.length} labels; alias ${alias} → ${desired}`);
   } catch (error) {
     log(`Label index skipped: ${(error as Error).message}`);
+  }
+}
+
+/**
+ * Read the DKG-sourced facet labels (terminology sources, classes) as label
+ * documents. DKG-optional, exactly like the dataset enrichment: an absent
+ * endpoint or a failed read degrades to register-only (organization) labels
+ * rather than losing the whole labels collection.
+ */
+async function readKnowledgeGraphLabels(
+  options: RunIndexOptions,
+  log: (message: string) => void,
+): Promise<LabelDocument[]> {
+  if (options.knowledgeGraphEndpoint === undefined) {
+    return [];
+  }
+  const dkg = new DkgSource(
+    new SparqlClient(options.knowledgeGraphEndpoint, options.sparqlAccessToken),
+  );
+  try {
+    const [terminology, classes] = await Promise.all([
+      dkg.readTerminologyLabelQuads(),
+      dkg.readClassLabelQuads(),
+    ]);
+    return [
+      ...toLabelDocuments(terminology, 'terminology_source'),
+      ...toLabelDocuments(classes, 'class'),
+    ];
+  } catch (error) {
+    log(`Knowledge Graph labels skipped: ${(error as Error).message}`);
+    return [];
   }
 }
 
