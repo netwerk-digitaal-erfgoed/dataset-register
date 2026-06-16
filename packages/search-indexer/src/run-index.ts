@@ -1,4 +1,5 @@
 import { Client } from 'typesense';
+import type { CollectionCreateSchema } from 'typesense';
 import {
   createTypesenseClient,
   TypesenseAdapter,
@@ -7,6 +8,7 @@ import {
 } from '@lde/search-typesense';
 import { projectGraph } from '@lde/search';
 import {
+  LABELS_COLLECTION_ALIAS,
   SEARCH_COLLECTION_ALIAS,
   SEARCH_SYNONYM_SET,
   SEARCH_SYNONYMS,
@@ -14,6 +16,7 @@ import {
 } from '@dataset-register/core';
 import type { Quad } from '@rdfjs/types';
 import { buildCollectionSchema } from './collection-schema.js';
+import { buildLabelCollectionSchema, toLabelDocuments } from './labels.js';
 import { RegisterSource } from './register-source.js';
 import { DkgSource } from './dkg-source.js';
 import { DATASET_PROJECTION } from './projection.js';
@@ -31,6 +34,8 @@ export interface RunIndexOptions {
   readonly knowledgeGraphEndpoint?: string;
   readonly typesense: TypesenseConnection;
   readonly collectionAlias?: string;
+  /** Override the sidecar label-collection alias (test isolation). */
+  readonly labelsAlias?: string;
   /** Optional sink for progress lines; defaults to silent. */
   readonly log?: (message: string) => void;
 }
@@ -70,11 +75,12 @@ export async function runIndex(
   // re-runs each indexer run with no reindex.
   await syncSynonyms(client, log);
 
-  const desired = `${alias}_${Date.now()}`;
-  const previous = await adapter.aliasTarget(alias);
+  // One timestamp for every collection built this run, so the `datasets_<ts>`
+  // and `labels_<ts>` siblings share a suffix and are easy to correlate.
+  const timestamp = Date.now();
+  const desired = `${alias}_${timestamp}`;
 
   log(`Rebuilding search index into ${desired}`);
-  await adapter.createCollection(buildCollectionSchema(desired));
 
   // Unified read: one CONSTRUCT for the register, one for the DKG, merged by
   // dataset IRI into a single RDF graph, then framed per dataset into the
@@ -82,14 +88,20 @@ export async function runIndex(
   const registerQuads = await source.readQuads();
   const dkgQuads = await readKnowledgeGraphQuads(options, log);
   const documents = await projectDatasets([...registerQuads, ...dkgQuads]);
-  await adapter.bulkUpsert(desired, documents);
-  await adapter.swapAlias(alias, desired);
+  await blueGreenSwap(
+    adapter,
+    alias,
+    buildCollectionSchema(desired),
+    documents,
+  );
   log(`Indexed ${documents.length} datasets; alias ${alias} → ${desired}`);
 
-  // Drop the superseded collection once the alias safely points elsewhere.
-  if (previous !== undefined && previous !== desired) {
-    await adapter.deleteCollection(previous).catch(() => undefined);
-  }
+  // Sidecar IRI → label collection for facet-bucket display, rebuilt the same
+  // blue/green way. Non-critical: a label failure must never abort the
+  // user-facing dataset index (which is already live by now), so it degrades to
+  // the previous labels and self-heals next run.
+  const labelsAlias = options.labelsAlias ?? LABELS_COLLECTION_ALIAS;
+  await rebuildLabels(adapter, source, labelsAlias, timestamp, log);
 
   return {
     mode: 'rebuild',
@@ -97,6 +109,58 @@ export async function runIndex(
     upserted: documents.length,
     deleted: 0,
   };
+}
+
+/**
+ * Blue/green-publish a freshly built collection: create it, bulk-upsert the
+ * documents, atomically repoint `alias` to it, then drop whatever the alias
+ * superseded. On failure nothing is swapped, so the live alias is never
+ * corrupted by a partial build.
+ */
+async function blueGreenSwap(
+  adapter: TypesenseAdapter,
+  alias: string,
+  schema: CollectionCreateSchema,
+  documents: readonly TypesenseDocument[],
+): Promise<void> {
+  const previous = await adapter.aliasTarget(alias);
+  await adapter.createCollection(schema);
+  await adapter.bulkUpsert(schema.name, documents);
+  await adapter.swapAlias(alias, schema.name);
+  if (previous !== undefined && previous !== schema.name) {
+    await adapter.deleteCollection(previous).catch(() => undefined);
+  }
+}
+
+/**
+ * Build the sidecar `labels` collection (organization IRIs → `foaf:name`) and
+ * blue/green-swap its alias. Defensive: a failure here is logged and swallowed
+ * so it never fails an otherwise-good dataset rebuild — labels are display-only
+ * and the browser falls back to a shortened IRI when one is missing.
+ */
+async function rebuildLabels(
+  adapter: TypesenseAdapter,
+  source: RegisterSource,
+  alias: string,
+  timestamp: number,
+  log: (message: string) => void,
+): Promise<void> {
+  try {
+    const documents = toLabelDocuments(
+      await source.readOrganizationLabelQuads(),
+      'organization',
+    );
+    const desired = `${alias}_${timestamp}`;
+    await blueGreenSwap(
+      adapter,
+      alias,
+      buildLabelCollectionSchema(desired),
+      documents,
+    );
+    log(`Indexed ${documents.length} labels; alias ${alias} → ${desired}`);
+  } catch (error) {
+    log(`Label index skipped: ${(error as Error).message}`);
+  }
 }
 
 /**

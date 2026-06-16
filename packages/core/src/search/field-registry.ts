@@ -281,6 +281,14 @@ export const DEFAULT_SORTING_FIELD = 'status_rank';
 /** Stable alias the browser queries; the live collection is versioned behind it. */
 export const SEARCH_COLLECTION_ALIAS = 'datasets';
 
+/**
+ * Stable alias for the sidecar IRI → label collection (organizations, classes,
+ * terminology sources). The browser resolves facet-bucket labels against it by
+ * IRI; the live collection is versioned behind the alias and rebuilt blue/green
+ * alongside {@link SEARCH_COLLECTION_ALIAS}.
+ */
+export const LABELS_COLLECTION_ALIAS = 'labels';
+
 /** Stable, collection-independent synonym set (Typesense v30+ Synonym Sets API).
  *  Each versioned collection references it by name; its items are synced live
  *  each indexer run, so changing synonyms needs no reindex. */

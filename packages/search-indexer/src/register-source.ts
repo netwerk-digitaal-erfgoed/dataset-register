@@ -78,4 +78,27 @@ export class RegisterSource {
           UNION { GRAPH ?dataset { ?dataset dcat:distribution ?distribution . ?distribution dct:conformsTo ?conformsToValue } BIND(STR(?conformsToValue) AS ?conformsTo) }
       }`);
   }
+
+  /**
+   * CONSTRUCT one `?organization foaf:name ?label` triple per organization that
+   * appears as a publisher or creator IRI, feeding the sidecar `labels`
+   * collection. The dataset projection facets on the organization IRI; this
+   * read supplies the human-readable label the browser shows for each facet
+   * bucket (Typesense cannot facet on a joined field, so the label is stored
+   * separately and resolved by IRI at query time).
+   */
+  async readOrganizationLabelQuads(): Promise<Quad[]> {
+    const graph = `<${this.registrationsGraphIri}>`;
+    return this.client.constructQuads(`
+      ${PREFIXES}
+      CONSTRUCT { ?organization foaf:name ?label } WHERE {
+        GRAPH ${graph} { ?registration schema:about ?dataset . }
+        {
+          GRAPH ?dataset { ?dataset dct:publisher ?organization . ?organization foaf:name ?label }
+        } UNION {
+          GRAPH ?dataset { ?dataset dct:creator ?organization . ?organization foaf:name ?label }
+        }
+        FILTER(isIRI(?organization))
+      }`);
+  }
 }

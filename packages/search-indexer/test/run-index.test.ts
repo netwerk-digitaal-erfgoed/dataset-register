@@ -3,6 +3,7 @@ import { Client } from 'typesense';
 import type { SearchParams } from 'typesense/lib/Typesense/Documents.js';
 import { fold } from '@lde/text-normalization';
 import {
+  LABELS_COLLECTION_ALIAS,
   queryBy,
   queryByWeights,
   SEARCH_COLLECTION_ALIAS,
@@ -29,6 +30,7 @@ interface Seed {
   publisherIri?: string;
   publisherName?: string;
   creatorIri?: string;
+  creatorName?: string;
   mediaType?: string;
   conformsTo?: string;
   status?: 'invalid' | 'gone';
@@ -41,6 +43,7 @@ const SEEDS: readonly Seed[] = [
     publisherIri: 'https://example.org/org/kb',
     publisherName: 'Koninklijke Bibliotheek',
     creatorIri: 'https://example.org/org/na',
+    creatorName: 'Nationaal Archief',
     mediaType: TURTLE,
     conformsTo: SPARQL_PROTOCOL,
   },
@@ -85,6 +88,11 @@ function insertQuery(seed: Seed): string {
   if (seed.publisherIri) {
     datasetTriples.push(
       `<${seed.publisherIri}> <http://xmlns.com/foaf/0.1/name> "${seed.publisherName}" .`,
+    );
+  }
+  if (seed.creatorIri && seed.creatorName) {
+    datasetTriples.push(
+      `<${seed.creatorIri}> <http://xmlns.com/foaf/0.1/name> "${seed.creatorName}" .`,
     );
   }
   if (seed.mediaType || seed.conformsTo) {
@@ -271,6 +279,22 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
       ]),
     );
     expect(document.status).toBe('valid');
+  });
+
+  it('builds the sidecar labels collection from publisher and creator org names', async () => {
+    const publisher = (await client
+      .collections(LABELS_COLLECTION_ALIAS)
+      .documents('https://example.org/org/kb')
+      .retrieve()) as Record<string, unknown>;
+    expect(publisher.label).toBe('Koninklijke Bibliotheek');
+    expect(publisher.type).toBe('organization');
+
+    // Creator organizations are labelled too, not just publishers.
+    const creator = (await client
+      .collections(LABELS_COLLECTION_ALIAS)
+      .documents('https://example.org/org/na')
+      .retrieve()) as Record<string, unknown>;
+    expect(creator.label).toBe('Nationaal Archief');
   });
 
   it('returns native facet counts', async () => {
