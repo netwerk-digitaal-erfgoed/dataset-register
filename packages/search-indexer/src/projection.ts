@@ -39,53 +39,58 @@ export const DATASET_PROJECTION: Projection = {
 
 function datasetFields(): readonly FieldSpec[] {
   return [
-  {
-    name: 'title',
-    path: `${DCT}title`,
-    kind: { type: 'langText', locales: ['nl', 'en'], search: true, sort: true },
-  },
-  {
-    name: 'description',
-    path: `${DCT}description`,
-    kind: { type: 'langText', locales: ['nl', 'en'], search: true },
-  },
-  {
-    name: 'publisher',
-    path: `${DR}publisherName`,
-    kind: { type: 'langText', search: true, display: true },
-  },
-  {
-    name: 'creator',
-    path: `${DR}creatorName`,
-    kind: { type: 'langText', search: true },
-  },
-  {
-    name: 'keyword',
-    path: `${DCAT}keyword`,
-    kind: { type: 'facet', search: true },
-  },
-  {
-    name: 'publisher',
-    path: `${DCT}publisher`,
-    kind: { type: 'facet', iri: true },
-  },
-  {
-    name: 'format',
-    path: `${DR}format`,
-    kind: { type: 'facet', transform: normalizeMediaType },
-  },
-  { name: 'language', path: `${DCT}language`, kind: { type: 'facet' } },
-  { name: 'class', path: `${DR}class`, kind: { type: 'facet', iri: true } },
-  {
-    name: 'terminology_source',
-    path: `${DR}terminologySource`,
-    kind: { type: 'facet', iri: true },
-  },
-  {
-    name: 'date_posted',
-    path: `${DR}datePosted`,
-    kind: { type: 'number', date: true },
-  },
+    {
+      name: 'title',
+      path: `${DCT}title`,
+      kind: {
+        type: 'langText',
+        locales: ['nl', 'en'],
+        search: true,
+        sort: true,
+      },
+    },
+    {
+      name: 'description',
+      path: `${DCT}description`,
+      kind: { type: 'langText', locales: ['nl', 'en'], search: true },
+    },
+    {
+      name: 'publisher',
+      path: `${DR}publisherName`,
+      kind: { type: 'langText', search: true, display: true },
+    },
+    {
+      name: 'creator',
+      path: `${DR}creatorName`,
+      kind: { type: 'langText', search: true },
+    },
+    {
+      name: 'keyword',
+      path: `${DCAT}keyword`,
+      kind: { type: 'facet', search: true },
+    },
+    {
+      name: 'publisher',
+      path: `${DR}organization`,
+      kind: { type: 'facet', iri: true },
+    },
+    {
+      name: 'format',
+      path: `${DR}format`,
+      kind: { type: 'facet', transform: normalizeMediaType },
+    },
+    { name: 'language', path: `${DCT}language`, kind: { type: 'facet' } },
+    { name: 'class', path: `${DR}class`, kind: { type: 'facet', iri: true } },
+    {
+      name: 'terminology_source',
+      path: `${DR}terminologySource`,
+      kind: { type: 'facet', iri: true },
+    },
+    {
+      name: 'date_posted',
+      path: `${DR}datePosted`,
+      kind: { type: 'number', date: true },
+    },
     { name: 'size', path: `${DR}size`, kind: { type: 'number' } },
   ];
 }
@@ -95,23 +100,23 @@ function datasetDerivations(): readonly Derivation[] {
   return [
     // Registration status + its sort rank, from the promoted registration facts.
     (document, node) => {
-    const status = deriveStatus(
-      irisOf(node, `${SCHEMA}additionalType`),
-      firstLiteralOf(node, `${DR}validUntil`),
-    );
-    document.status = status;
-    document.status_rank = STATUS_RANK[status];
-  },
-  // Grouped format facet (group:sparql / group:rdf) alongside the granular ones.
-  (document, node) => {
-    const groups = formatGroups(
-      (document.format as string[] | undefined) ?? [],
-      literalsOf(node, `${DR}conformsTo`),
-    );
-    if (groups.length > 0) {
-      document.format_group = groups;
-    }
-  },
+      const status = deriveStatus(
+        irisOf(node, `${SCHEMA}additionalType`),
+        firstLiteralOf(node, `${DR}validUntil`),
+      );
+      document.status = status;
+      document.status_rank = STATUS_RANK[status];
+    },
+    // Grouped format facet (group:sparql / group:rdf) alongside the granular ones.
+    (document, node) => {
+      const groups = formatGroups(
+        (document.format as string[] | undefined) ?? [],
+        literalsOf(node, `${DR}conformsTo`),
+      );
+      if (groups.length > 0) {
+        document.format_group = groups;
+      }
+    },
     // Grouped class facet derived index-time from the granular DKG classes.
     (document) => {
       const groups = deriveClassGroups(

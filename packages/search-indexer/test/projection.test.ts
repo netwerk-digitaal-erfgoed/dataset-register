@@ -76,20 +76,28 @@ describe('dataset projection', () => {
     expect(document.format_group).toEqual(['group:sparql', 'group:rdf']);
   });
 
-  it('folds keywords and dedupes facet values', () => {
+  it('folds keywords and combines publisher + creator orgs in one facet', () => {
     const document = project(
       titled({
         [`${DCAT}keyword`]: [
           { '@language': 'nl', '@value': 'Persoon' },
           { '@language': 'nl', '@value': 'Persoon' },
         ],
-        [`${DCT}publisher`]: { '@id': 'https://example.org/org' },
+        // The register pre-merges dct:publisher and dct:creator IRIs into the
+        // single dr:organization facet, mirroring the browser’s combined facet.
+        [`${DR}organization`]: [
+          { '@id': 'https://example.org/org' },
+          { '@id': 'https://example.org/creator' },
+        ],
         [`${DR}publisherName`]: { '@language': 'nl', '@value': 'KB' },
       }),
     );
     expect(document.keyword).toEqual(['Persoon']);
     expect(document.keyword_search).toEqual(['persoon']);
-    expect(document.publisher).toEqual(['https://example.org/org']);
+    expect(document.publisher).toEqual([
+      'https://example.org/org',
+      'https://example.org/creator',
+    ]);
     expect(document.publisher_name).toBe('KB');
     expect(document.publisher_search).toBe('kb');
   });

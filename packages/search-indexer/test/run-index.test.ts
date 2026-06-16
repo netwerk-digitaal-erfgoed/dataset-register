@@ -28,6 +28,7 @@ interface Seed {
   descriptionNl?: string;
   publisherIri?: string;
   publisherName?: string;
+  creatorIri?: string;
   mediaType?: string;
   conformsTo?: string;
   status?: 'invalid' | 'gone';
@@ -39,6 +40,7 @@ const SEEDS: readonly Seed[] = [
     titleNl: 'Møhlmann',
     publisherIri: 'https://example.org/org/kb',
     publisherName: 'Koninklijke Bibliotheek',
+    creatorIri: 'https://example.org/org/na',
     mediaType: TURTLE,
     conformsTo: SPARQL_PROTOCOL,
   },
@@ -72,6 +74,9 @@ function insertQuery(seed: Seed): string {
   }
   if (seed.publisherIri) {
     parts.push(`  <http://purl.org/dc/terms/publisher> <${seed.publisherIri}>`);
+  }
+  if (seed.creatorIri) {
+    parts.push(`  <http://purl.org/dc/terms/creator> <${seed.creatorIri}>`);
   }
   if (seed.mediaType || seed.conformsTo) {
     parts.push(`  <http://www.w3.org/ns/dcat#distribution> <${iri}/dist>`);
@@ -249,7 +254,7 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
     ).not.toContain(base('gone-fietsen'));
   });
 
-  it('projects DCAT distribution formats and publisher facets', async () => {
+  it('projects DCAT distribution formats and the combined publisher facet', async () => {
     const document = (await client
       .collections(SEARCH_COLLECTION_ALIAS)
       .documents(base('mohlmann'))
@@ -258,7 +263,13 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
     expect(document.format_group).toEqual(
       expect.arrayContaining(['group:rdf', 'group:sparql']),
     );
-    expect(document.publisher).toEqual(['https://example.org/org/kb']);
+    // The publisher facet merges dct:publisher and dct:creator organizations.
+    expect(document.publisher).toEqual(
+      expect.arrayContaining([
+        'https://example.org/org/kb',
+        'https://example.org/org/na',
+      ]),
+    );
     expect(document.status).toBe('valid');
   });
 
