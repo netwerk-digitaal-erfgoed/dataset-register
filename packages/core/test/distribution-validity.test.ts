@@ -76,9 +76,9 @@ describe('distributionValidityQuads', () => {
       'Unexpected "}" on line 3',
     );
     // The usage is reached forward from the measurement's activity.
-    expect(quads.some((quad) => quad.predicate.equals(prov('qualifiedUsage')))).toBe(
-      true,
-    );
+    expect(
+      quads.some((quad) => quad.predicate.equals(prov('qualifiedUsage'))),
+    ).toBe(true);
   });
 
   it('maps an empty verdict to the empty reason without a message', () => {
@@ -98,9 +98,9 @@ describe('distributionValidityQuads', () => {
     expect(objectOf(quads, failure('reason'))).toBe(
       'https://def.nde.nl/distribution-validity-failure#empty',
     );
-    expect(quads.some((quad) => quad.predicate.equals(failure('message')))).toBe(
-      false,
-    );
+    expect(
+      quads.some((quad) => quad.predicate.equals(failure('message'))),
+    ).toBe(false);
   });
 
   it('omits the fingerprint when none was established', () => {

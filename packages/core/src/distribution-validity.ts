@@ -113,7 +113,11 @@ export function distributionValidityQuads(
     );
     if (verdict.message !== undefined) {
       quads.push(
-        factory.quad(usage, failure('message'), factory.literal(verdict.message)),
+        factory.quad(
+          usage,
+          failure('message'),
+          factory.literal(verdict.message),
+        ),
       );
     }
   }

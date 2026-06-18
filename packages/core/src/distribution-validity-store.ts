@@ -19,9 +19,7 @@ export interface DistributionValidityStore {
  * a verdict that flips (e.g. invalid → valid once a publisher fixes a dump)
  * leaves no stale `failure:reason` behind.
  */
-export class SparqlDistributionValidityStore
-  implements DistributionValidityStore
-{
+export class SparqlDistributionValidityStore implements DistributionValidityStore {
   public constructor(
     private readonly client: SparqlClient,
     private readonly graphIri: string,

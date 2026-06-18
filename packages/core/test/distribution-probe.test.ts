@@ -501,11 +501,7 @@ describe('DistributionProbeStage', () => {
       ),
     );
     dataset.add(
-      factory.quad(
-        distributionNode,
-        dcat('byteSize'),
-        factory.literal('2048'),
-      ),
+      factory.quad(distributionNode, dcat('byteSize'), factory.literal('2048')),
     );
 
     const healthStore = new InMemoryHealthStore();
@@ -527,7 +523,9 @@ describe('DistributionProbeStage', () => {
     // The validity rail recorded an invalid (empty) measurement.
     const validityQuads = validityStore.quadsByUrl.get(url.value) ?? [];
     const value = validityQuads.find((quad) =>
-      quad.predicate.equals(factory.namedNode('http://www.w3.org/ns/dqv#value')),
+      quad.predicate.equals(
+        factory.namedNode('http://www.w3.org/ns/dqv#value'),
+      ),
     );
     expect(value?.object.value).toBe('false');
     const reason = validityQuads.find((quad) =>

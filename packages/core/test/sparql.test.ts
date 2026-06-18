@@ -649,7 +649,11 @@ describe('SPARQL', () => {
             validatedFingerprint: 'fp-1',
             depth: 'shallow',
           },
-          { distributionUrl: url.toString(), generatedAt, producer: 'urn:test' },
+          {
+            distributionUrl: url.toString(),
+            generatedAt,
+            producer: 'urn:test',
+          },
         ),
       );
       expect(await askMeasurementValue('false')).toBe(true);
@@ -660,7 +664,11 @@ describe('SPARQL', () => {
         url,
         distributionValidityQuads(
           { valid: true, validatedFingerprint: 'fp-2', depth: 'shallow' },
-          { distributionUrl: url.toString(), generatedAt, producer: 'urn:test' },
+          {
+            distributionUrl: url.toString(),
+            generatedAt,
+            producer: 'urn:test',
+          },
         ),
       );
       expect(await askMeasurementValue('true')).toBe(true);
@@ -679,7 +687,11 @@ describe('SPARQL', () => {
         url,
         distributionValidityQuads(
           { valid: true, validatedFingerprint: 'fp-1', depth: 'shallow' },
-          { distributionUrl: url.toString(), generatedAt, producer: 'urn:test' },
+          {
+            distributionUrl: url.toString(),
+            generatedAt,
+            producer: 'urn:test',
+          },
         ),
       );
       expect(await countTriples()).toBeGreaterThan(0);
