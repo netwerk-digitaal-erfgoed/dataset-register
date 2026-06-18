@@ -31,6 +31,7 @@ interface Seed {
   publisherName?: string;
   creatorIri?: string;
   creatorName?: string;
+  catalogIri?: string;
   mediaType?: string;
   conformsTo?: string;
   status?: 'invalid' | 'gone';
@@ -44,6 +45,7 @@ const SEEDS: readonly Seed[] = [
     publisherName: 'Koninklijke Bibliotheek',
     creatorIri: 'https://example.org/org/na',
     creatorName: 'Nationaal Archief',
+    catalogIri: 'https://example.org/catalog/kb',
     mediaType: TURTLE,
     conformsTo: SPARQL_PROTOCOL,
   },
@@ -80,6 +82,9 @@ function insertQuery(seed: Seed): string {
   }
   if (seed.creatorIri) {
     parts.push(`  <http://purl.org/dc/terms/creator> <${seed.creatorIri}>`);
+  }
+  if (seed.catalogIri) {
+    parts.push(`  <http://purl.org/dc/terms/isPartOf> <${seed.catalogIri}>`);
   }
   if (seed.mediaType || seed.conformsTo) {
     parts.push(`  <http://www.w3.org/ns/dcat#distribution> <${iri}/dist>`);
@@ -323,6 +328,8 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
         'https://example.org/org/na',
       ]),
     );
+    // The catalog facet carries the dct:isPartOf catalog membership IRIs.
+    expect(document.catalog).toEqual(['https://example.org/catalog/kb']);
     expect(document.status).toBe('valid');
   });
 

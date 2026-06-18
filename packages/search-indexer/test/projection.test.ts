@@ -155,6 +155,10 @@ describe('dataset projection', () => {
           { '@id': 'https://example.org/creator' },
         ],
         [`${DR}publisherName`]: { '@language': 'nl', '@value': 'KB' },
+        [`${DR}catalog`]: [
+          { '@id': 'https://example.org/catalog/a' },
+          { '@id': 'https://example.org/catalog/b' },
+        ],
       }),
     );
     expect(document.keyword).toEqual(['Persoon']);
@@ -163,6 +167,13 @@ describe('dataset projection', () => {
       expect.arrayContaining([
         'https://example.org/org',
         'https://example.org/creator',
+      ]),
+    );
+    // Catalog membership (dct:isPartOf) projects as a multi-valued IRI facet.
+    expect(document.catalog).toEqual(
+      expect.arrayContaining([
+        'https://example.org/catalog/a',
+        'https://example.org/catalog/b',
       ]),
     );
     // Publisher is search-only: no display field is emitted (the card resolves
@@ -294,6 +305,7 @@ describe('dataset projection', () => {
     const document = await project(titled());
     expect(document.description_search_nl).toBeUndefined();
     expect(document.publisher).toBeUndefined();
+    expect(document.catalog).toBeUndefined();
     expect(document.format).toBeUndefined();
     expect(document.class).toBeUndefined();
     expect(document.size).toBeUndefined();

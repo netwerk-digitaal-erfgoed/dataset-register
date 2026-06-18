@@ -49,7 +49,7 @@ export class RegisterSource {
       CONSTRUCT {
         ?dataset a dcat:Dataset ;
           dct:title ?title ; dct:description ?description ; dcat:keyword ?keyword ;
-          dct:language ?language ; dr:organization ?organization ; schema:additionalType ?additionalType ;
+          dct:language ?language ; dr:organization ?organization ; dr:catalog ?catalog ; schema:additionalType ?additionalType ;
           dr:publisherName ?publisherName ; dr:creatorName ?creatorName ;
           dr:format ?format ; dr:conformsTo ?conformsTo ;
           dr:dateRead ?dateRead ; dr:datePosted ?datePosted ; dr:validUntil ?validUntil .
@@ -72,6 +72,7 @@ export class RegisterSource {
           UNION { GRAPH ?dataset { ?dataset dct:language ?languageValue } BIND(STR(?languageValue) AS ?language) }
           UNION { GRAPH ?dataset { ?dataset dct:publisher ?organization } FILTER(isIRI(?organization)) }
           UNION { GRAPH ?dataset { ?dataset dct:creator ?organization } FILTER(isIRI(?organization)) }
+          UNION { GRAPH ?dataset { ?dataset dct:isPartOf ?catalog } FILTER(isIRI(?catalog)) }
           UNION { GRAPH ?dataset { ?dataset dct:publisher ?publisherNode . ?publisherNode foaf:name ?publisherName } }
           UNION { GRAPH ?dataset { ?dataset dct:creator ?creatorNode . ?creatorNode foaf:name ?creatorName } }
           UNION { GRAPH ?dataset { ?dataset dcat:distribution ?dist . ?dist dcat:mediaType ?mediaType } BIND(STR(?mediaType) AS ?format) }

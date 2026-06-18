@@ -79,6 +79,7 @@ function datasetFields(): readonly FieldSpec[] {
     },
     { name: 'keyword', path: `${DCAT}keyword`, type: 'facet', search: true },
     { name: 'publisher', path: `${DR}organization`, type: 'facet', iri: true },
+    { name: 'catalog', path: `${DR}catalog`, type: 'facet', iri: true },
     {
       name: 'format',
       path: `${DR}format`,

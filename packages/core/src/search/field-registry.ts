@@ -167,6 +167,14 @@ export const SEARCH_FIELDS: readonly SearchFieldSpec[] = [
     source: 'register',
   },
   {
+    name: 'catalog',
+    type: 'string[]',
+    role: 'facet',
+    facet: true,
+    optional: true,
+    source: 'register',
+  },
+  {
     name: 'keyword',
     type: 'string[]',
     role: 'facet',
