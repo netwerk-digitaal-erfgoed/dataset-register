@@ -46,7 +46,7 @@
     "@eslint/compat": "^2.1.0",
     "@eslint/js": "^10.0.1",
     "@flowbite-svelte-plugins/chart": "^0.2.4",
-    "@inlang/paraglide-js": "^2.18.2",
+    "@inlang/paraglide-js": "^2.19.0",
     "@playwright/test": "^1.60.0",
     "@sveltejs/adapter-node": "^5.5.4",
     "@sveltejs/kit": "^2.64.0",
