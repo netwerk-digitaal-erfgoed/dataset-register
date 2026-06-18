@@ -8,8 +8,10 @@ import type { Quad } from '@rdfjs/types';
  * IRI is the Typesense document `id`, so the browser resolves the labels for the
  * facet buckets currently on screen with a single `filter_by: id:[…]` lookup —
  * or pulls the whole (bounded) collection once and caches it. Faceting stays on
- * the IRI in the dataset document; this collection only supplies display text,
- * because Typesense cannot facet on a joined field.
+ * the IRI in the dataset document; this collection only supplies display text.
+ * Typesense v30 can facet on a joined reference field, but we resolve labels
+ * client-side instead: join faceting with `facet_return_parent` is still buggy
+ * (typesense#2760, #2863) and locale selection happens client-side anyway.
  */
 export interface LabelDocument extends SearchDocument {
   readonly id: string;
