@@ -1,12 +1,6 @@
 import { Client } from 'typesense';
-import type { CollectionCreateSchema } from 'typesense';
-import {
-  createTypesenseClient,
-  TypesenseAdapter,
-  type TypesenseConnection,
-  type TypesenseDocument,
-} from '@lde/search-typesense';
-import { projectGraph } from '@lde/search';
+import { rebuild } from '@lde/search-typesense';
+import { projectGraph, type SearchDocument } from '@lde/search';
 import {
   LABELS_COLLECTION_ALIAS,
   SEARCH_COLLECTION_ALIAS,
@@ -24,8 +18,10 @@ import {
 import { RegisterSource } from './register-source.js';
 import { DkgSource } from './dkg-source.js';
 import { DATASET_PROJECTION } from './projection.js';
-import { RebuildLock } from './rebuild-lock.js';
-import { runSingleFlight } from './single-flight.js';
+import {
+  createTypesenseClient,
+  type TypesenseConnection,
+} from './typesense-client.js';
 
 const DEFAULT_REGISTRATIONS_GRAPH =
   'https://demo.netwerkdigitaalerfgoed.nl/registry/registrations';
@@ -44,22 +40,30 @@ export interface RunIndexOptions {
   readonly log?: (message: string) => void;
 }
 
-export interface RunIndexResult {
-  readonly mode: 'rebuild';
-  readonly collection: string;
-  readonly upserted: number;
-  readonly deleted: number;
-}
+export type RunIndexResult =
+  | {
+      readonly mode: 'rebuild';
+      readonly collection: string;
+      readonly upserted: number;
+    }
+  /** Another rebuild for this index was already in flight, so this run was a no-op. */
+  | { readonly mode: 'skipped' };
 
 /**
  * Rebuild the Typesense `datasets` index from the register store.
  *
- * Every run is a full blue/green rebuild: project every registered dataset into
- * a fresh `${alias}_${timestamp}` collection, atomically swap the `datasets`
- * alias to it, then drop the previous collection. Correct by construction — a
- * hard delete needs no special handling (an absent dataset is simply not
- * projected), there is no high-water mark and no incremental reconciliation. On
- * failure nothing is swapped, so a register blip never corrupts the live index.
+ * Every run is a full blue/green rebuild, delegated to `@lde/search-typesense`’s
+ * {@link rebuild}: it projects every registered dataset into a fresh
+ * `${alias}_${timestamp}` collection, atomically swaps the `datasets` alias to
+ * it, then drops the previous collection. Correct by construction — a hard
+ * delete needs no special handling (an absent dataset is simply not projected),
+ * there is no high-water mark and no incremental reconciliation. On failure
+ * nothing is swapped, so a register blip never corrupts the live index.
+ *
+ * {@link rebuild} is single-flight per index (it holds a cross-pod lock in
+ * Typesense), so the crawler and every API pod can trigger this concurrently and
+ * only one rebuild runs at a time; a trigger arriving mid-rebuild is skipped
+ * rather than queued, and `mode: 'skipped'` is returned.
  */
 export async function runIndex(
   options: RunIndexOptions,
@@ -68,7 +72,6 @@ export async function runIndex(
   const alias = options.collectionAlias ?? SEARCH_COLLECTION_ALIAS;
 
   const client = createTypesenseClient(options.typesense);
-  const adapter = new TypesenseAdapter(client);
   const source = new RegisterSource(
     new SparqlClient(options.sparqlUrl, options.sparqlAccessToken),
     options.registrationsGraphIri ?? DEFAULT_REGISTRATIONS_GRAPH,
@@ -79,77 +82,57 @@ export async function runIndex(
   // re-runs each indexer run with no reindex.
   await syncSynonyms(client, log);
 
-  // One timestamp for every collection built this run, so the `datasets_<ts>`
-  // and `labels_<ts>` siblings share a suffix and are easy to correlate.
-  const timestamp = Date.now();
-  const desired = `${alias}_${timestamp}`;
-
-  log(`Rebuilding search index into ${desired}`);
+  log(`Rebuilding search index ${alias}`);
 
   // Unified read: one CONSTRUCT for the register, one for the DKG, merged by
   // dataset IRI into a single RDF graph, then framed per dataset into the
-  // JSON-LD IR and projected. DKG quads are optional (see below).
+  // JSON-LD IR and projected — streamed straight into the rebuild so only one
+  // document is held at a time. DKG quads are optional (see below). The
+  // versioned collection name, alias swap and cross-pod lock are managed by
+  // {@link rebuild}; the caller supplies only the logical alias.
   const registerQuads = await source.readQuads();
   const dkgQuads = await readKnowledgeGraphQuads(options, log);
-  const documents = await projectDatasets([...registerQuads, ...dkgQuads]);
-  await blueGreenSwap(
-    adapter,
-    alias,
-    buildCollectionSchema(desired),
-    documents,
+  const result = await rebuild(
+    client,
+    buildCollectionSchema(alias),
+    projectGraph([...registerQuads, ...dkgQuads], [DATASET_PROJECTION]),
   );
-  log(`Indexed ${documents.length} datasets; alias ${alias} → ${desired}`);
+  if (result === null) {
+    log(`Rebuild of ${alias} skipped: another rebuild is already running`);
+    return { mode: 'skipped' };
+  }
+  log(
+    `Indexed ${result.imported} datasets; alias ${alias} → ${result.collection}`,
+  );
 
   // Sidecar IRI → label collection for facet-bucket display, rebuilt the same
   // blue/green way. Non-critical: a label failure must never abort the
   // user-facing dataset index (which is already live by now), so it degrades to
   // the previous labels and self-heals next run.
   const labelsAlias = options.labelsAlias ?? LABELS_COLLECTION_ALIAS;
-  await rebuildLabels(adapter, source, options, labelsAlias, timestamp, log);
+  await rebuildLabels(client, source, options, labelsAlias, log);
 
   return {
     mode: 'rebuild',
-    collection: desired,
-    upserted: documents.length,
-    deleted: 0,
+    collection: result.collection,
+    upserted: result.imported,
   };
-}
-
-/**
- * Blue/green-publish a freshly built collection: create it, bulk-upsert the
- * documents, atomically repoint `alias` to it, then drop whatever the alias
- * superseded. On failure nothing is swapped, so the live alias is never
- * corrupted by a partial build.
- */
-async function blueGreenSwap(
-  adapter: TypesenseAdapter,
-  alias: string,
-  schema: CollectionCreateSchema,
-  documents: readonly TypesenseDocument[],
-): Promise<void> {
-  const previous = await adapter.aliasTarget(alias);
-  await adapter.createCollection(schema);
-  await adapter.bulkUpsert(schema.name, documents);
-  await adapter.swapAlias(alias, schema.name);
-  if (previous !== undefined && previous !== schema.name) {
-    await adapter.deleteCollection(previous).catch(() => undefined);
-  }
 }
 
 /**
  * Build the sidecar `labels` collection — organization IRIs (`foaf:name`) from
  * the register plus terminology-source (`dct:title`) and class (`rdfs:label`)
- * labels from the DKG — and blue/green-swap its alias. Defensive: a failure here
- * is logged and swallowed so it never fails an otherwise-good dataset rebuild;
- * labels are display-only and the browser falls back to a shortened IRI when one
- * is missing. The DKG labels are independently optional (see below).
+ * labels from the DKG — and blue/green-swap its alias via {@link rebuild}.
+ * Defensive: a failure here is logged and swallowed so it never fails an
+ * otherwise-good dataset rebuild; labels are display-only and the browser falls
+ * back to a shortened IRI when one is missing. The DKG labels are independently
+ * optional (see below).
  */
 async function rebuildLabels(
-  adapter: TypesenseAdapter,
+  client: Client,
   source: RegisterSource,
   options: RunIndexOptions,
   alias: string,
-  timestamp: number,
   log: (message: string) => void,
 ): Promise<void> {
   try {
@@ -158,14 +141,18 @@ async function rebuildLabels(
       'organization',
     );
     documents.push(...(await readKnowledgeGraphLabels(options, log)));
-    const desired = `${alias}_${timestamp}`;
-    await blueGreenSwap(
-      adapter,
-      alias,
-      buildLabelCollectionSchema(desired),
-      documents,
+    const result = await rebuild(
+      client,
+      buildLabelCollectionSchema(alias),
+      iterate(documents),
     );
-    log(`Indexed ${documents.length} labels; alias ${alias} → ${desired}`);
+    if (result === null) {
+      log('Label index skipped: another rebuild is already running');
+      return;
+    }
+    log(
+      `Indexed ${result.imported} labels; alias ${alias} → ${result.collection}`,
+    );
   } catch (error) {
     log(`Label index skipped: ${(error as Error).message}`);
   }
@@ -200,34 +187,6 @@ async function readKnowledgeGraphLabels(
     log(`Knowledge Graph labels skipped: ${(error as Error).message}`);
     return [];
   }
-}
-
-/**
- * Run a rebuild under the cross-pod single-flight lock. The crawler and every
- * API pod call this so only one rebuild runs at a time across all replicas, and
- * a trigger arriving mid-rebuild coalesces into one follow-up. Returns nothing:
- * triggers are fire-and-forget and a coalesced or skipped call has no result.
- */
-export async function runIndexSingleFlight(
-  options: RunIndexOptions,
-): Promise<void> {
-  const lock = new RebuildLock(createTypesenseClient(options.typesense));
-  await runSingleFlight(lock, async () => {
-    await runIndex(options);
-  });
-}
-
-/**
- * Frame the merged register + DKG quads and project each node into a Typesense
- * document, driven by the dataset projection. Streamed (one frame at a time) so
- * memory stays flat — whole-graph framing is ~O(N²).
- */
-async function projectDatasets(quads: Quad[]): Promise<TypesenseDocument[]> {
-  const documents: TypesenseDocument[] = [];
-  for await (const document of projectGraph(quads, [DATASET_PROJECTION])) {
-    documents.push(document);
-  }
-  return documents;
 }
 
 /**
@@ -277,5 +236,14 @@ async function syncSynonyms(
     });
   } catch (error) {
     log(`Synonym sync skipped: ${(error as Error).message}`);
+  }
+}
+
+/** Adapt a materialized document array to the async iterable {@link rebuild} consumes. */
+async function* iterate(
+  documents: readonly SearchDocument[],
+): AsyncIterable<SearchDocument> {
+  for (const document of documents) {
+    yield document;
   }
 }

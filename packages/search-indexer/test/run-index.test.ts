@@ -12,8 +12,8 @@ import {
 import {
   createTypesenseClient,
   type TypesenseConnection,
-} from '@lde/search-typesense';
-import { runIndex, runIndexSingleFlight } from '../src/run-index.ts';
+} from '../src/typesense-client.ts';
+import { runIndex } from '../src/run-index.ts';
 import { QLeverContainer } from './qlever-container.ts';
 import { TypesenseContainer } from './typesense-container.ts';
 
@@ -374,7 +374,7 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
     expect(document.class_group).toBeUndefined();
   });
 
-  it('runs a guarded rebuild under the lock and releases it for the next run', async () => {
+  it('releases the per-index rebuild lock so a back-to-back run succeeds', async () => {
     const options = {
       sparqlUrl,
       sparqlAccessToken: qlever.accessToken,
@@ -382,9 +382,9 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
       knowledgeGraphEndpoint: knowledgeGraphUrl,
       typesense: connection,
     };
-    await runIndexSingleFlight(options);
-    // A second guarded run proves the lock was released (no deadlock/skip).
-    await runIndexSingleFlight(options);
+    expect((await runIndex(options)).mode).toBe('rebuild');
+    // A second sequential run proves the indexer’s lock was released (no deadlock).
+    expect((await runIndex(options)).mode).toBe('rebuild');
 
     const collection = await client
       .collections(SEARCH_COLLECTION_ALIAS)

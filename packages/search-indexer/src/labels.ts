@@ -1,5 +1,5 @@
 import type { CollectionCreateSchema } from 'typesense';
-import type { TypesenseDocument } from '@lde/search-typesense';
+import type { SearchDocument } from '@lde/search';
 import type { Quad } from '@rdfjs/types';
 
 /**
@@ -11,7 +11,7 @@ import type { Quad } from '@rdfjs/types';
  * the IRI in the dataset document; this collection only supplies display text,
  * because Typesense cannot facet on a joined field.
  */
-export interface LabelDocument extends TypesenseDocument {
+export interface LabelDocument extends SearchDocument {
   readonly id: string;
   readonly label: string;
   readonly label_nl?: string;

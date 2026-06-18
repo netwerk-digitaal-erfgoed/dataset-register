@@ -3,7 +3,7 @@ import {
   Wait,
   type StartedTestContainer,
 } from 'testcontainers';
-import type { TypesenseConnection } from '@lde/search-typesense';
+import type { TypesenseConnection } from '../src/typesense-client.ts';
 
 /**
  * Single-node Typesense server. Pinned to v30: Dutch Snowball stemming (v28 only

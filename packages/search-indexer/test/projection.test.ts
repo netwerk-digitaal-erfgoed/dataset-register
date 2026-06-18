@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { projectDocument, type FramedSubject } from '@lde/search';
+import { DataFactory } from 'n3';
+import type { Quad } from '@rdfjs/types';
+import { projectGraph } from '@lde/search';
 import { SEARCH_FIELDS } from '@dataset-register/core';
 import {
   DATASET_PROJECTION,
@@ -8,28 +10,87 @@ import {
 } from '../src/projection.ts';
 import { buildCollectionSchema } from '../src/collection-schema.ts';
 
+const { namedNode, literal, quad } = DataFactory;
+
 const DCT = 'http://purl.org/dc/terms/';
 const DCAT = 'http://www.w3.org/ns/dcat#';
 const SCHEMA = 'https://schema.org/';
 const DR = 'urn:dr:';
 const XSD = 'http://www.w3.org/2001/XMLSchema#';
 const IANA = 'https://www.iana.org/assignments/media-types/';
+const RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
 const STATUS_BASE = 'https://data.netwerkdigitaalerfgoed.nl/registry/';
 
-/** Project a framed IR node through the register projection. */
-function project(node: FramedSubject): Record<string, unknown> {
-  return projectDocument(node, DATASET_PROJECTION);
+/** A framed-IR value: an IRI reference, a (possibly typed/tagged) literal, or a bare string. */
+type FramedValue =
+  | { readonly '@id': string }
+  | {
+      readonly '@value': string;
+      readonly '@language'?: string;
+      readonly '@type'?: string;
+    }
+  | string;
+type FramedFields = Record<string, FramedValue | readonly FramedValue[]>;
+type FramedNode = { readonly '@id': string } & FramedFields;
+
+/** Build the RDF object term for one framed value (the inverse of framing). */
+function toObject(value: FramedValue) {
+  if (typeof value === 'string') {
+    return literal(value);
+  }
+  if ('@id' in value) {
+    return namedNode(value['@id']);
+  }
+  if (value['@language'] !== undefined) {
+    return literal(value['@value'], value['@language']);
+  }
+  if (value['@type'] !== undefined) {
+    return literal(value['@value'], namedNode(value['@type']));
+  }
+  return literal(value['@value']);
 }
 
-const titled = (extra: FramedSubject = {}): FramedSubject => ({
+/**
+ * Turn a framed-IR fixture node back into CONSTRUCT-shaped quads so the test
+ * drives the same public `projectGraph` (frame + project) path the indexer uses,
+ * rather than the no-longer-exported `projectDocument`.
+ */
+function toQuads(node: FramedNode): Quad[] {
+  const subject = namedNode(node['@id']);
+  const quads: Quad[] = [
+    quad(subject, namedNode(RDF_TYPE), namedNode(DATASET_PROJECTION.type)),
+  ];
+  for (const [predicate, raw] of Object.entries(node)) {
+    if (predicate === '@id') {
+      continue;
+    }
+    const values = Array.isArray(raw) ? raw : [raw as FramedValue];
+    for (const value of values) {
+      quads.push(quad(subject, namedNode(predicate), toObject(value)));
+    }
+  }
+  return quads;
+}
+
+/** Project a framed-IR fixture node through the register projection. */
+async function project(node: FramedNode): Promise<Record<string, unknown>> {
+  for await (const document of projectGraph(toQuads(node), [
+    DATASET_PROJECTION,
+  ])) {
+    return document;
+  }
+  return {};
+}
+
+const titled = (extra: FramedFields = {}): FramedNode => ({
   '@id': 'https://example.org/dataset/1',
   [`${DCT}title`]: { '@value': 'X' },
   ...extra,
 });
 
 describe('dataset projection', () => {
-  it('folds searchable text per locale, stemmed in each language (#1661)', () => {
-    const document = project({
+  it('folds searchable text per locale, stemmed in each language (#1661)', async () => {
+    const document = await project({
       '@id': 'https://example.org/dataset/1',
       [`${DCT}title`]: [
         { '@language': 'nl', '@value': 'Møhlmann' },
@@ -44,7 +105,7 @@ describe('dataset projection', () => {
     expect(document.title_sort_en).toBe('mohlmann collection');
   });
 
-  it('derives status and rank from the promoted registration facts', () => {
+  it('derives status and rank from the promoted registration facts', async () => {
     expect(deriveStatus([], undefined)).toBe('valid');
     expect(deriveStatus([], '2020-01-01T00:00:00Z')).toBe('archived');
     expect(deriveStatus([`${STATUS_BASE}invalid`], undefined)).toBe('invalid');
@@ -54,9 +115,9 @@ describe('dataset projection', () => {
       deriveStatus([`${STATUS_BASE}invalid`, `${STATUS_BASE}gone`], undefined),
     ).toBe('gone');
 
-    expect(project(titled()).status).toBe('valid');
-    expect(project(titled()).status_rank).toBe(0);
-    const invalid = project(
+    expect((await project(titled())).status).toBe('valid');
+    expect((await project(titled())).status_rank).toBe(0);
+    const invalid = await project(
       titled({
         [`${SCHEMA}additionalType`]: { '@id': `${STATUS_BASE}invalid` },
       }),
@@ -65,21 +126,23 @@ describe('dataset projection', () => {
     expect(invalid.status_rank).toBe(2);
   });
 
-  it('normalizes media types and derives format groups', () => {
+  it('normalizes media types and derives format groups', async () => {
     expect(normalizeMediaType(`${IANA}text/turtle`)).toBe('text/turtle');
 
-    const document = project(
+    const document = await project(
       titled({
         [`${DR}format`]: [`${IANA}text/turtle`, 'application/pdf'],
         [`${DR}conformsTo`]: 'https://www.w3.org/TR/sparql11-protocol/',
       }),
     );
-    expect(document.format).toEqual(['text/turtle', 'application/pdf']);
+    expect(document.format).toEqual(
+      expect.arrayContaining(['text/turtle', 'application/pdf']),
+    );
     expect(document.format_group).toEqual(['group:sparql', 'group:rdf']);
   });
 
-  it('folds keywords and combines publisher + creator orgs in one facet', () => {
-    const document = project(
+  it('folds keywords and combines publisher + creator orgs in one facet', async () => {
+    const document = await project(
       titled({
         [`${DCAT}keyword`]: [
           { '@language': 'nl', '@value': 'Persoon' },
@@ -96,18 +159,20 @@ describe('dataset projection', () => {
     );
     expect(document.keyword).toEqual(['Persoon']);
     expect(document.keyword_search).toEqual(['persoon']);
-    expect(document.publisher).toEqual([
-      'https://example.org/org',
-      'https://example.org/creator',
-    ]);
+    expect(document.publisher).toEqual(
+      expect.arrayContaining([
+        'https://example.org/org',
+        'https://example.org/creator',
+      ]),
+    );
     // Publisher is search-only: no display field is emitted (the card resolves
     // the publisher IRI to a label via the labels collection).
     expect(document.publisher_search_nl).toBe('kb');
     expect(document.publisher_name).toBeUndefined();
   });
 
-  it('emits DKG facets and derives class_group from the merged IR', () => {
-    const document = project(
+  it('emits DKG facets and derives class_group from the merged IR', async () => {
+    const document = await project(
       titled({
         [`${DR}class`]: [{ '@id': 'http://schema.org/Person' }],
         [`${DR}terminologySource`]: { '@id': 'https://vocab.getty.edu/aat/' },
@@ -122,8 +187,8 @@ describe('dataset projection', () => {
     expect(document.size).toBe(1234);
   });
 
-  it('converts date_posted to unix seconds (the sort key)', () => {
-    const document = project(
+  it('converts date_posted to unix seconds (the sort key)', async () => {
+    const document = await project(
       titled({ [`${DR}datePosted`]: { '@value': '2024-01-02T00:00:00.000Z' } }),
     );
     expect(document.date_posted).toBe(
@@ -131,8 +196,8 @@ describe('dataset projection', () => {
     );
   });
 
-  it('omits absent optional fields and DKG facets', () => {
-    const document = project(titled());
+  it('omits absent optional fields and DKG facets', async () => {
+    const document = await project(titled());
     expect(document.description_search_nl).toBeUndefined();
     expect(document.publisher).toBeUndefined();
     expect(document.format).toBeUndefined();

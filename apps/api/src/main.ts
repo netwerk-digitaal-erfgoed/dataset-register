@@ -6,14 +6,14 @@ import {
   startInstrumentation,
   stores,
 } from '@dataset-register/core';
-import { runIndexSingleFlight } from '@dataset-register/search-indexer';
+import { runIndex } from '@dataset-register/search-indexer';
 import { server } from './server.js';
 import { config } from './config.js';
 
 // Build the fire-and-forget search-index trigger handed to the server. Returns
 // undefined when no Typesense target is configured, so the API runs unchanged
-// without a search deployment. The rebuild runs under the indexer's cross-pod
-// single-flight lock, shared with the crawler and the other API replica.
+// without a search deployment. The rebuild is single-flight per index inside the
+// indexer, shared with the crawler and the other API replica.
 function buildSearchIndexTrigger(): (() => void) | undefined {
   if (!config.TYPESENSE_HOST || !config.TYPESENSE_API_KEY) {
     return undefined;
@@ -25,7 +25,7 @@ function buildSearchIndexTrigger(): (() => void) | undefined {
     apiKey: config.TYPESENSE_API_KEY,
   };
   return () => {
-    void runIndexSingleFlight({
+    void runIndex({
       sparqlUrl: config.SPARQL_URL,
       sparqlAccessToken: config.SPARQL_ACCESS_TOKEN,
       knowledgeGraphEndpoint: config.KNOWLEDGE_GRAPH_URL,

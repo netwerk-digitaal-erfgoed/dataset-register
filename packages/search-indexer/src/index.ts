@@ -1,7 +1,9 @@
-export { runIndex, runIndexSingleFlight } from './run-index.js';
+export { runIndex } from './run-index.js';
 export type { RunIndexOptions, RunIndexResult } from './run-index.js';
-export { RebuildLock } from './rebuild-lock.js';
-export { runSingleFlight, type CoalescingLock } from './single-flight.js';
+export {
+  createTypesenseClient,
+  type TypesenseConnection,
+} from './typesense-client.js';
 export {
   DATASET_PROJECTION,
   deriveStatus,
