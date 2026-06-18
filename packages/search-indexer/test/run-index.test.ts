@@ -152,6 +152,41 @@ function dkgInsertQuery(slug: string, classes: readonly string[]): string {
   return `INSERT DATA {${partitions}\n}`;
 }
 
+const VOID = 'http://rdfs.org/ns/void#';
+const DCT = 'http://purl.org/dc/terms/';
+const DQV = 'http://www.w3.org/ns/dqv#';
+const METRIC = 'https://def.nde.nl/metric#';
+const IIIF_PRESENTATION_API = 'http://iiif.io/api/presentation/';
+const XSD_BOOLEAN = 'http://www.w3.org/2001/XMLSchema#boolean';
+
+/** A `dqv:hasQualityMeasurement` of a metric carrying a typed value, keyed to a
+ *  fresh measurement node so several metrics coexist on one dataset. */
+function measurement(slug: string, metric: string, value: string): string {
+  const measurementNode = `${base(slug)}/measurement/${metric}`;
+  return `
+    <${base(slug)}> <${DQV}hasQualityMeasurement> <${measurementNode}> .
+    <${measurementNode}> <${DQV}isMeasurementOf> <${METRIC}${metric}> ;
+      <${DQV}value> ${value} .`;
+}
+
+/** Seed the DKG store with the NDE compatibility DQV measurements (and the IIIF
+ *  subset) so every “vinkje” boolean is exercised for one dataset. */
+function dqvInsertQuery(slug: string): string {
+  const iri = base(slug);
+  const iiifSubset = `${iri}/subset/iiif`;
+  return `INSERT DATA {
+    <${iri}> <${VOID}subset> <${iiifSubset}> .
+    <${iiifSubset}> <${DCT}conformsTo> <${IIIF_PRESENTATION_API}> ;
+      <${VOID}entities> 5 .
+    ${measurement(slug, 'manifests-sampled', '3')}
+    ${measurement(slug, 'manifests-validated', '2')}
+    ${measurement(slug, 'quads-validated', '42')}
+    ${measurement(slug, 'schema-ap-nde-sample-conformance', `"true"^^<${XSD_BOOLEAN}>`)}
+    ${measurement(slug, 'subject-uris-sampled', '10')}
+    ${measurement(slug, 'subject-uris-resolved', '10')}
+  }`;
+}
+
 describe('runIndex acceptance (QLever + Typesense)', () => {
   const qlever = new QLeverContainer();
   const dkg = new QLeverContainer();
@@ -186,6 +221,14 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
       <${AAT}> <http://purl.org/dc/terms/title> "Art & Architecture Thesaurus" .
       <${PERSON_CLASS}> <http://www.w3.org/2000/01/rdf-schema#label> "Person"@en .
     }`);
+
+    // NDE compatibility (“vinkjes”) DQV measurements for mohlmann: every
+    // criterion met. IIIF subset declares manifests and a sampled one validated;
+    // SCHEMA-AP-NDE validated quads and conformed (drives nde_schema_ap and,
+    // together with void:triples above, linked_data); the terminology-source
+    // linkset above drives terms; all sampled subject URIs resolved with no
+    // non-durable flag, driving persistent_uris.
+    await dkgSparql.update(dqvInsertQuery('mohlmann'));
 
     await runIndex({
       sparqlUrl,
@@ -363,6 +406,46 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
       .documents(base('mohlmann'))
       .retrieve()) as Record<string, unknown>;
     expect(document.size).toBe(12345);
+  });
+
+  it('derives the NDE compatibility booleans from DKG DQV measurements', async () => {
+    const met = (await client
+      .collections(SEARCH_COLLECTION_ALIAS)
+      .documents(base('mohlmann'))
+      .retrieve()) as Record<string, unknown>;
+    expect(met.iiif).toBe(true);
+    expect(met.nde_schema_ap).toBe(true);
+    expect(met.linked_data).toBe(true);
+    expect(met.terms).toBe(true);
+    expect(met.persistent_uris).toBe(true);
+
+    // A dataset without DQV measurements has no compatibility booleans set.
+    const unmet = (await client
+      .collections(SEARCH_COLLECTION_ALIAS)
+      .documents(base('fietsen-title'))
+      .retrieve()) as Record<string, unknown>;
+    expect(unmet.iiif).toBeUndefined();
+    expect(unmet.nde_schema_ap).toBeUndefined();
+    expect(unmet.linked_data).toBeUndefined();
+    expect(unmet.terms).toBeUndefined();
+    expect(unmet.persistent_uris).toBeUndefined();
+  });
+
+  it('counts compliant datasets via a native boolean facet', async () => {
+    const response = await client
+      .collections(SEARCH_COLLECTION_ALIAS)
+      .documents()
+      .search({
+        q: '*',
+        query_by: queryBy(),
+        facet_by: 'iiif',
+        per_page: 0,
+      });
+    const iiifFacet = response.facet_counts?.find(
+      (facet) => facet.field_name === 'iiif',
+    );
+    const compliant = iiifFacet?.counts.find((count) => count.value === 'true');
+    expect(compliant?.count).toBe(1);
   });
 
   it('sets the granular class but no class_group for an ungrouped class', async () => {

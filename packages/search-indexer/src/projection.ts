@@ -8,6 +8,11 @@ import {
 } from '@lde/search';
 import {
   deriveClassGroups,
+  isIiifMet,
+  isLinkedDataMet,
+  isPersistentUrisMet,
+  isSchemaApNdeMet,
+  isTermsMet,
   REGISTRATION_STATUS_BASE_URI,
 } from '@dataset-register/core';
 import {
@@ -124,7 +129,96 @@ function datasetDerivations(): readonly Derivation[] {
         document.class_group = groups;
       }
     },
+    // NDE compatibility (“vinkjes”) booleans, derived from the merged DKG DQV
+    // measurements via the shared core predicates. Each field is set only when
+    // its criterion is met, keeping the document lean (the field is optional, so
+    // absent reads as not-met) and a faceted `field:=true` count meaningful.
+    (document, node) => {
+      const iiifEntities = sumNumbers(literalsOf(node, `${DR}iiifEntities`));
+      if (
+        isIiifMet({
+          declared: iiifEntities,
+          sampled: parseNumber(firstLiteralOf(node, `${DR}manifestsSampled`)),
+          validated: parseNumber(
+            firstLiteralOf(node, `${DR}manifestsValidated`),
+          ),
+        })
+      ) {
+        document.iiif = true;
+      }
+
+      const quadsValidated = parseNumber(
+        firstLiteralOf(node, `${DR}quadsValidated`),
+      );
+      const schemaApNdeConformant = parseBoolean(
+        firstLiteralOf(node, `${DR}schemaApNdeConformant`),
+      );
+      if (
+        isSchemaApNdeMet({ quadsValidated, conformant: schemaApNdeConformant })
+      ) {
+        document.nde_schema_ap = true;
+      }
+
+      if (
+        isLinkedDataMet({
+          // dr:size is void:triples — the strongest DKG content signal.
+          triples: (document.size as number | undefined) ?? null,
+          quadsValidated,
+          conformant: schemaApNdeConformant,
+        })
+      ) {
+        document.linked_data = true;
+      }
+
+      if (
+        isTermsMet(
+          (document.terminology_source as string[] | undefined)?.length ?? 0,
+        )
+      ) {
+        document.terms = true;
+      }
+
+      // Durable polarity: the DKG emits the boolean with value `false` only when
+      // the namespace is on its non-durable disallow list; an absent measurement
+      // (or any non-false value) means the namespace is durable.
+      const namespaceFlag = parseBoolean(
+        firstLiteralOf(node, `${DR}subjectNamespaceDurable`),
+      );
+      if (
+        isPersistentUrisMet({
+          sampled: parseNumber(firstLiteralOf(node, `${DR}subjectUrisSampled`)),
+          resolved: parseNumber(
+            firstLiteralOf(node, `${DR}subjectUrisResolved`),
+          ),
+          durable: namespaceFlag !== false,
+        })
+      ) {
+        document.persistent_uris = true;
+      }
+    },
   ];
+}
+
+/** Parse a numeric literal string to a number, or null when absent/unparseable. */
+function parseNumber(value: string | undefined): number | null {
+  if (value === undefined) {
+    return null;
+  }
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+/** Sum numeric literal strings (e.g. void:entities across several IIIF subsets). */
+function sumNumbers(values: readonly string[]): number {
+  return values.reduce((total, value) => total + (parseNumber(value) ?? 0), 0);
+}
+
+/** Parse an `xsd:boolean` literal (`true`/`false`/`1`/`0`), or null when absent. */
+function parseBoolean(value: string | undefined): boolean | null {
+  if (value === undefined) {
+    return null;
+  }
+  return value === 'true' || value === '1';
 }
 
 export type DatasetStatus = 'valid' | 'archived' | 'invalid' | 'gone';

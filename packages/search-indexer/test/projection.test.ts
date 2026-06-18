@@ -187,6 +187,100 @@ describe('dataset projection', () => {
     expect(document.size).toBe(1234);
   });
 
+  it('derives the NDE compatibility booleans from DKG DQV measurements', async () => {
+    const document = await project(
+      titled({
+        // IIIF: declared entities + a validated manifest => met.
+        [`${DR}iiifEntities`]: { '@type': `${XSD}integer`, '@value': '5' },
+        [`${DR}manifestsSampled`]: { '@type': `${XSD}integer`, '@value': '3' },
+        [`${DR}manifestsValidated`]: {
+          '@type': `${XSD}integer`,
+          '@value': '2',
+        },
+        // SCHEMA-AP-NDE: quads validated + conformant => met.
+        [`${DR}quadsValidated`]: { '@type': `${XSD}integer`, '@value': '42' },
+        [`${DR}schemaApNdeConformant`]: {
+          '@type': `${XSD}boolean`,
+          '@value': 'true',
+        },
+        // Linked data reuses dr:size (void:triples) + the schema-ap inputs.
+        [`${DR}size`]: { '@type': `${XSD}integer`, '@value': '100' },
+        // Terms: at least one terminology source => met.
+        [`${DR}terminologySource`]: { '@id': 'https://vocab.getty.edu/aat/' },
+        // Persistent URIs: all sampled resolved, no non-durable flag => met.
+        [`${DR}subjectUrisSampled`]: {
+          '@type': `${XSD}integer`,
+          '@value': '10',
+        },
+        [`${DR}subjectUrisResolved`]: {
+          '@type': `${XSD}integer`,
+          '@value': '10',
+        },
+      }),
+    );
+    expect(document.iiif).toBe(true);
+    expect(document.nde_schema_ap).toBe(true);
+    expect(document.linked_data).toBe(true);
+    expect(document.terms).toBe(true);
+    expect(document.persistent_uris).toBe(true);
+  });
+
+  it('omits each compatibility boolean when its criterion is not met', async () => {
+    const document = await project(
+      titled({
+        // IIIF declared but sampled-with-zero-validated => not met.
+        [`${DR}iiifEntities`]: { '@type': `${XSD}integer`, '@value': '5' },
+        [`${DR}manifestsSampled`]: { '@type': `${XSD}integer`, '@value': '3' },
+        [`${DR}manifestsValidated`]: {
+          '@type': `${XSD}integer`,
+          '@value': '0',
+        },
+        // SCHEMA-AP-NDE: conformant claim over zero validated quads is vacuous.
+        [`${DR}quadsValidated`]: { '@type': `${XSD}integer`, '@value': '0' },
+        [`${DR}schemaApNdeConformant`]: {
+          '@type': `${XSD}boolean`,
+          '@value': 'true',
+        },
+        [`${DR}size`]: { '@type': `${XSD}integer`, '@value': '100' },
+        // Persistent URIs: not all sampled resolved.
+        [`${DR}subjectUrisSampled`]: {
+          '@type': `${XSD}integer`,
+          '@value': '10',
+        },
+        [`${DR}subjectUrisResolved`]: {
+          '@type': `${XSD}integer`,
+          '@value': '7',
+        },
+      }),
+    );
+    expect(document.iiif).toBeUndefined();
+    expect(document.nde_schema_ap).toBeUndefined();
+    expect(document.linked_data).toBeUndefined();
+    expect(document.terms).toBeUndefined();
+    expect(document.persistent_uris).toBeUndefined();
+  });
+
+  it('treats a non-durable subject namespace as not met for persistent URIs', async () => {
+    const document = await project(
+      titled({
+        [`${DR}subjectUrisSampled`]: {
+          '@type': `${XSD}integer`,
+          '@value': '4',
+        },
+        [`${DR}subjectUrisResolved`]: {
+          '@type': `${XSD}integer`,
+          '@value': '4',
+        },
+        // The DKG flags a non-durable namespace with value false.
+        [`${DR}subjectNamespaceDurable`]: {
+          '@type': `${XSD}boolean`,
+          '@value': 'false',
+        },
+      }),
+    );
+    expect(document.persistent_uris).toBeUndefined();
+  });
+
   it('converts date_posted to unix seconds (the sort key)', async () => {
     const document = await project(
       titled({ [`${DR}datePosted`]: { '@value': '2024-01-02T00:00:00.000Z' } }),

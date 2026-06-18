@@ -275,6 +275,52 @@ export const SEARCH_FIELDS: readonly SearchFieldSpec[] = [
     optional: true,
     source: 'dkg',
   },
+
+  // --- NDE compatibility (“vinkjes”) booleans, computed at index time from DKG
+  //     DQV quality measurements. Facet-ready (so the listing can offer them as
+  //     filters) but not yet rendered as UI facets. A field is set to true only
+  //     when the criterion is met (see compatibility.ts); omitted otherwise, so
+  //     a faceted `field:=true` count is the number of compliant datasets. ---
+  {
+    name: 'iiif',
+    type: 'bool',
+    role: 'facet',
+    facet: true,
+    optional: true,
+    source: 'dkg',
+  },
+  {
+    name: 'nde_schema_ap',
+    type: 'bool',
+    role: 'facet',
+    facet: true,
+    optional: true,
+    source: 'dkg',
+  },
+  {
+    name: 'linked_data',
+    type: 'bool',
+    role: 'facet',
+    facet: true,
+    optional: true,
+    source: 'dkg',
+  },
+  {
+    name: 'terms',
+    type: 'bool',
+    role: 'facet',
+    facet: true,
+    optional: true,
+    source: 'dkg',
+  },
+  {
+    name: 'persistent_uris',
+    type: 'bool',
+    role: 'facet',
+    facet: true,
+    optional: true,
+    source: 'dkg',
+  },
 ];
 
 /** The field Typesense sorts by when no text query orders the results. */
