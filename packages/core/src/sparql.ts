@@ -1,7 +1,8 @@
 import { DatasetStore, extractIri } from './dataset.js';
 import { QueryEngine } from '@comunica/query-sparql';
 import type { BindingsStream } from '@comunica/types';
-import { Parser, Writer } from 'n3';
+import { Parser } from 'n3';
+import { quadsToNTriples } from './rdf-serialize.js';
 import {
   AllowedRegistrationDomainStore,
   Registration,
@@ -10,6 +11,7 @@ import {
 } from './registration.js';
 import { Rating, RatingStore } from './rate.js';
 import { SparqlDistributionHealthStore } from './distribution-health-store.js';
+import { SparqlDistributionValidityStore } from './distribution-validity-store.js';
 import {
   ValidationReportStore,
   validationReportGraphIri,
@@ -27,6 +29,7 @@ export function stores(
   allowedRegistrationDomainsGraphIri = 'https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names',
   ratingGraphIri = 'https://data.netwerkdigitaalerfgoed.nl/registry/ratings',
   distributionHealthGraphIri = 'https://datasetregister.netwerkdigitaalerfgoed.nl/sparql/distribution-health',
+  distributionValidityGraphIri = 'https://datasetregister.netwerkdigitaalerfgoed.nl/sparql/distribution-validity',
 ) {
   const client = new SparqlClient(url, accessToken);
 
@@ -44,6 +47,10 @@ export function stores(
     distributionHealthStore: new SparqlDistributionHealthStore(
       client,
       distributionHealthGraphIri,
+    ),
+    distributionValidityStore: new SparqlDistributionValidityStore(
+      client,
+      distributionValidityGraphIri,
     ),
     validationReportStore: new SparqlValidationReportStore(client),
   };
@@ -80,7 +87,7 @@ export class SparqlDatasetStore implements DatasetStore {
 
   async store(dataset: DatasetCore): Promise<void> {
     const graph = extractIri(dataset);
-    const triples = await quadsToSparql([...dataset]);
+    const triples = await quadsToNTriples([...dataset]);
 
     const sparqlUpdate = `
       CLEAR GRAPH <${graph}>;
@@ -109,7 +116,7 @@ export class SparqlValidationReportStore implements ValidationReportStore {
 
   async store(registrationUrl: URL, report: DatasetCore): Promise<void> {
     const graph = validationReportGraphIri(registrationUrl).toString();
-    const triples = await quadsToSparql([...report]);
+    const triples = await quadsToNTriples([...report]);
 
     await this.client.update(`
       CLEAR GRAPH <${graph}>;
@@ -220,7 +227,7 @@ export class SparqlRegistrationStore implements RegistrationStore {
 
   async store(registration: Registration): Promise<void> {
     const quads = toRdf(registration);
-    const triples = await quadsToSparql(quads);
+    const triples = await quadsToNTriples(quads);
 
     // Delete all triples related to this registration (registration itself and referenced datasets)
     // Need to delete both the registration and any dataset relationships it created
@@ -427,18 +434,4 @@ export function authenticatedFetch(
       headers,
     });
   };
-}
-
-function quadsToSparql(quads: Quad[]): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const writer = new Writer({ format: 'N-Triples' });
-    writer.addQuads(quads);
-    writer.end((error, result) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(result);
-      }
-    });
-  });
 }

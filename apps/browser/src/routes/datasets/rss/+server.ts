@@ -31,6 +31,7 @@ export async function GET({ url }: RequestEvent) {
       'terminologySource',
       url.searchParams,
     ),
+    catalog: decodeDiscreteParam('catalog', url.searchParams),
     size: decodeRangeParam('size', url.searchParams),
     status: decodeDiscreteParam('status', url.searchParams),
   };

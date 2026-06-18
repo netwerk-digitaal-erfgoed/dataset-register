@@ -18,6 +18,7 @@
       format: SelectedFacetValue[];
       class: SelectedFacetValue[];
       terminologySource: SelectedFacetValue[];
+      catalog: SelectedFacetValue[];
       size: {
         min?: number;
         max?: number;
@@ -64,6 +65,10 @@
     })),
     ...selectedValues.terminologySource.map((facet: SelectedFacetValue) => ({
       type: 'terminologySource' as FacetKey,
+      facet,
+    })),
+    ...selectedValues.catalog.map((facet: SelectedFacetValue) => ({
+      type: 'catalog' as FacetKey,
       facet,
     })),
     ...(getSizeDisplay()

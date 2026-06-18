@@ -8,7 +8,11 @@ import type {
 } from '@rdfjs/types';
 import { Distribution } from '@lde/dataset';
 import { probe as probeDistribution } from '@lde/distribution-probe';
+import { DataDumpProbeResult } from '@lde/distribution-probe';
 import type { ProbeResultType } from '@lde/distribution-probe';
+import { probeResultToVerdict } from '@lde/distribution-health';
+import type { ValidityVerdict } from '@lde/distribution-health';
+import { sourceFingerprint } from '@lde/pipeline';
 import { dcat, dct, rdf, xsd } from '../query.ts';
 import { isDeterministicFailure } from '../constants.ts';
 import { shacl } from '../validator.ts';
@@ -18,6 +22,8 @@ import type {
   DistributionHealthRecord,
   DistributionHealthStore,
 } from '../distribution-health-store.ts';
+import type { DistributionValidityStore } from '../distribution-validity-store.ts';
+import { distributionValidityQuads } from '../distribution-validity.ts';
 
 const schema = (property: string): NamedNode =>
   factory.namedNode(`https://schema.org/${property}`);
@@ -89,13 +95,28 @@ export interface DistributionProbeStageOptions {
    * distribution invalidates the dataset.
    */
   severities?: ProbeSeverities;
+  /**
+   * When set, the shallow RDF-validity verdict derived from each data-dump probe is recorded
+   * as a DQV/PROV quality measurement in this store (the validity rail, PRD #2103). Both valid
+   * and invalid verdicts are recorded, per distribution attempted, independent of the dataset's
+   * overall outcome. When null (the registration API path), no measurement is persisted; instead
+   * an invalid verdict surfaces as a sh:Violation in the returned report so registration rejects.
+   */
+  validityStore?: DistributionValidityStore | null;
+  /**
+   * IRI of the software credited as the producer (prov:wasAssociatedWith) of the validity
+   * verdicts this stage records. Defaults to the Dataset Register crawler.
+   */
+  producerAgent?: string;
 }
 
 const DEFAULT_FAILURE_STREAK_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const DEFAULT_PROBE_CONCURRENCY = 20;
 const DEFAULT_MAX_PROBES = 100;
+const DEFAULT_PRODUCER_AGENT =
+  'https://datasetregister.netwerkdigitaalerfgoed.nl/#crawler';
 
-interface DistributionCandidate {
+export interface DistributionCandidate {
   distributionNode: NamedNode | BlankNode;
   urlNode: NamedNode;
   path: NamedNode;
@@ -113,6 +134,8 @@ interface DistributionCandidate {
  */
 export class DistributionProbeStage {
   private readonly healthStore: DistributionHealthStore | null;
+  private readonly validityStore: DistributionValidityStore | null;
+  private readonly producerAgent: string;
   private readonly timeoutMs: number;
   private readonly failureStreakMaxAgeMs: number;
   private readonly probeConcurrency: number;
@@ -122,6 +145,8 @@ export class DistributionProbeStage {
 
   public constructor(options: DistributionProbeStageOptions = {}) {
     this.healthStore = options.healthStore ?? null;
+    this.validityStore = options.validityStore ?? null;
+    this.producerAgent = options.producerAgent ?? DEFAULT_PRODUCER_AGENT;
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.failureStreakMaxAgeMs =
       options.failureStreakMaxAgeMs ?? DEFAULT_FAILURE_STREAK_MAX_AGE_MS;
@@ -168,7 +193,7 @@ export class DistributionProbeStage {
     for (let index = 0; index < probed.length; index++) {
       const settled = probed[index];
       const { members } = groups[index];
-      const { verdict, record } =
+      const { verdict, record, validityVerdict } =
         settled.status === 'rejected'
           ? {
               verdict: {
@@ -177,14 +202,29 @@ export class DistributionProbeStage {
                 detail: String(settled.reason),
               } satisfies ProbeVerdict,
               record: null,
+              validityVerdict: null,
             }
           : settled.value;
-      if (verdict.success) continue;
 
       for (const member of members) {
-        quads.push(
-          ...emitProbeResult(member, verdict, record, this.severities),
-        );
+        if (!verdict.success) {
+          quads.push(
+            ...emitProbeResult(member, verdict, record, this.severities),
+          );
+        }
+        // When validity is not being persisted (the registration path), an
+        // invalid shallow verdict surfaces as a sh:Violation so registration
+        // rejects the distribution with the parse reason. When a validity store
+        // is configured (the crawler path) the verdict is recorded as a DQV
+        // measurement instead (see probeCandidate). Keying on validityStore —
+        // not healthStore — keeps "record vs reject" a single, coherent choice.
+        if (
+          this.validityStore === null &&
+          validityVerdict !== null &&
+          !validityVerdict.valid
+        ) {
+          quads.push(...emitValidityViolation(member, validityVerdict));
+        }
       }
     }
 
@@ -194,6 +234,7 @@ export class DistributionProbeStage {
   private async probeCandidate(candidate: DistributionCandidate): Promise<{
     verdict: ProbeVerdict;
     record: DistributionHealthRecord | null;
+    validityVerdict: ValidityVerdict | null;
   }> {
     const { distribution } = candidate;
     if (distribution === null) {
@@ -204,6 +245,7 @@ export class DistributionProbeStage {
           detail: `Distribution access URL is not a valid URL: ${candidate.urlNode.value}`,
         },
         record: null,
+        validityVerdict: null,
       };
     }
 
@@ -212,25 +254,80 @@ export class DistributionProbeStage {
     });
     const verdict = classify(result);
 
-    if (this.healthStore === null) {
-      return { verdict, record: null };
-    }
+    // The source-change fingerprint is the shared key across both rails: it is
+    // recorded on the reachability health record and on the validity
+    // measurement, so the staleness gate can match them by value.
+    const fingerprint = sourceFingerprint(distribution, result);
+    const validityVerdict = probeResultToVerdict(result, fingerprint);
 
-    const record = await this.updateHealth(
-      canonicalProbeUrl(distribution.accessUrl),
-      verdict,
+    const probeUrl = canonicalProbeUrl(distribution.accessUrl);
+
+    // The reachability rail is authoritative and updated first; the validity
+    // rail is best-effort enrichment recorded afterwards. recordValidity
+    // isolates its own failures so a validity-store outage can never reject the
+    // probe and corrupt the reachability verdict (which would surface as a
+    // spurious NetworkError).
+    const healthStore = this.healthStore;
+    const record =
+      healthStore === null
+        ? null
+        : await this.updateHealth(healthStore, probeUrl, verdict, fingerprint);
+    await this.recordValidity(
+      probeUrl,
+      validityVerdict,
+      result instanceof DataDumpProbeResult,
     );
-    return { verdict: this.applyPromotion(verdict, record), record };
+
+    return {
+      verdict: record === null ? verdict : this.applyPromotion(verdict, record),
+      record,
+      validityVerdict,
+    };
+  }
+
+  /**
+   * Persist a shallow validity verdict as a DQV/PROV measurement (both valid and
+   * invalid, per distribution attempted). No-op when no validity store is
+   * configured (the registration API path, which instead emits a sh:Violation).
+   * When the probe carried no validity signal (probeResultToVerdict returned
+   * null) the measurement is cleared for a data dump — so a verdict that
+   * disappears (e.g. a dump that grew past the parse limit or changed content
+   * type) does not leave a stale measurement behind — and skipped for anything
+   * else (a SPARQL endpoint or network failure never has a measurement).
+   * Best-effort: a store failure is logged, never thrown, so the reachability
+   * rail is unaffected.
+   */
+  private async recordValidity(
+    probeUrl: URL,
+    validityVerdict: ValidityVerdict | null,
+    isDataDump: boolean,
+  ): Promise<void> {
+    const store = this.validityStore;
+    if (store === null) return;
+    try {
+      if (validityVerdict === null) {
+        if (isDataDump) await store.delete(probeUrl);
+        return;
+      }
+      const quads = distributionValidityQuads(validityVerdict, {
+        distributionUrl: probeUrl.toString(),
+        generatedAt: new Date(),
+        producer: this.producerAgent,
+      });
+      await store.store(probeUrl, quads);
+    } catch (error) {
+      this.logger?.warn(
+        `Failed to record distribution validity for ${probeUrl.toString()}: ${String(error)}`,
+      );
+    }
   }
 
   private async updateHealth(
+    store: DistributionHealthStore,
     probeUrl: URL,
     verdict: ProbeVerdict,
+    fingerprint: string | null,
   ): Promise<DistributionHealthRecord> {
-    const store = this.healthStore;
-    if (store === null) {
-      throw new Error('healthStore is required');
-    }
     const now = new Date();
     const existing = await store.get(probeUrl);
 
@@ -242,6 +339,7 @@ export class DistributionProbeStage {
         lastSuccessAt: now,
         firstFailureAt: null,
         consecutiveFailures: 0,
+        sourceFingerprint: fingerprint,
       };
       await store.store(record);
       return record;
@@ -254,6 +352,7 @@ export class DistributionProbeStage {
       lastSuccessAt: existing?.lastSuccessAt ?? null,
       firstFailureAt: existing?.firstFailureAt ?? now,
       consecutiveFailures: (existing?.consecutiveFailures ?? 0) + 1,
+      sourceFingerprint: fingerprint,
     };
     await store.store(record);
     return record;
@@ -389,7 +488,9 @@ function canonicalProbeUrl(accessUrl: URL): URL {
  * and "collects a large catalogue in roughly linear time" fails if `match()` ever loses its
  * index. Do not replace these `match()` calls with manual iteration over `input`.
  */
-function collectDistributions(input: DatasetCore): DistributionCandidate[] {
+export function collectDistributions(
+  input: DatasetCore,
+): DistributionCandidate[] {
   const candidates: DistributionCandidate[] = [];
   for (const profile of ['dcat', 'schema'] as const) {
     const distributionPath =
@@ -417,9 +518,27 @@ function candidatesFor(
     literalValue(input, distributionNode, dcat('mediaType')) ??
     literalValue(input, distributionNode, dct('format')) ??
     literalValue(input, distributionNode, schema('encodingFormat'));
+  // The compression format the register split off the declared media type on
+  // ingest (e.g. `application/n-quads+gzip` becomes media type
+  // `application/n-quads` plus this gzip compress format). The probe needs it so
+  // the content-type check accepts a server that serves the compressed form.
+  const compressFormat = literalValue(
+    input,
+    distributionNode,
+    dcat('compressFormat'),
+  );
   const conformsTo =
     iriValue(input, distributionNode, dct('conformsTo')) ??
     iriValue(input, distributionNode, schema('usageInfo'));
+  // The register's declared change signals, fed into the source fingerprint so a
+  // verdict can be matched against the currently-observed source even before the
+  // probe's HTTP Last-Modified / Content-Length are known.
+  const modified =
+    literalValue(input, distributionNode, dct('modified')) ??
+    literalValue(input, distributionNode, schema('dateModified'));
+  const byteSize =
+    literalValue(input, distributionNode, dcat('byteSize')) ??
+    literalValue(input, distributionNode, schema('contentSize'));
 
   const urlPaths: NamedNode[] =
     profile === 'dcat'
@@ -433,7 +552,14 @@ function candidatesFor(
         distributionNode,
         urlNode: urlTerm,
         path,
-        distribution: toDistribution(urlTerm.value, mediaType, conformsTo),
+        distribution: toDistribution(
+          urlTerm.value,
+          mediaType,
+          conformsTo,
+          compressFormat,
+          modified,
+          byteSize,
+        ),
       });
     }
   }
@@ -495,6 +621,9 @@ function toDistribution(
   accessUrl: string,
   mediaType: string | undefined,
   conformsTo: URL | undefined,
+  compressFormat: string | undefined,
+  modified: string | undefined,
+  byteSize: string | undefined,
 ): Distribution | null {
   let url: URL;
   try {
@@ -507,7 +636,25 @@ function toDistribution(
     (mediaType !== undefined && /sparql/i.test(mediaType)
       ? new URL(SPARQL_PROTOCOL_URL)
       : undefined);
-  return new Distribution(url, mediaType, resolvedConformsTo);
+  const distribution = new Distribution(url, mediaType, resolvedConformsTo);
+  if (compressFormat !== undefined) {
+    distribution.compressFormat = compressFormat;
+  }
+  // A malformed declared value must not become a fingerprint component.
+  // sourceFingerprint already drops an Invalid Date, so lastModified is passed
+  // through as-is; but its NaN guard only covers the probe's Content-Length, not
+  // the declared byteSize fallback, so a non-numeric dcat:byteSize would yield a
+  // "<date>|NaN" fingerprint. Guard it here: a non-finite size is left unset.
+  if (modified !== undefined) {
+    distribution.lastModified = new Date(modified);
+  }
+  if (byteSize !== undefined) {
+    const parsedByteSize = Number(byteSize);
+    if (Number.isFinite(parsedByteSize)) {
+      distribution.byteSize = parsedByteSize;
+    }
+  }
+  return distribution;
 }
 
 /**
@@ -589,6 +736,55 @@ function emitProbeResult(
   }
 
   return quads;
+}
+
+// The SHACL constraint component reported for an invalid-RDF validity violation.
+// It sits alongside the reachability and format-match markers under nde-probe so
+// the register's SHACL validation report keeps a single vocabulary, even though
+// the validity verdict itself is recorded under the metric:/failure: validity
+// vocabulary on the crawler rail (the two are separate concerns: how the register
+// validates, versus what it records).
+const distributionValidConstraintComponent = ndeProbe(
+  'DistributionValidConstraintComponent',
+);
+
+/**
+ * A sh:Violation describing an invalid-RDF shallow validity verdict. Emitted only
+ * on the registration path (no health/validity store configured) so a distribution
+ * whose body does not parse invalidates the dataset, with the reason and – where
+ * the parser provided one – the parser message. The crawler path records the same
+ * verdict as a DQV quality measurement instead of emitting this.
+ */
+function emitValidityViolation(
+  candidate: DistributionCandidate,
+  verdict: ValidityVerdict,
+): Quad[] {
+  const resultNode = factory.blankNode();
+  return [
+    factory.quad(resultNode, rdf('type'), shacl('ValidationResult')),
+    factory.quad(resultNode, shacl('focusNode'), candidate.distributionNode),
+    factory.quad(resultNode, shacl('resultPath'), candidate.path),
+    factory.quad(resultNode, shacl('value'), candidate.urlNode),
+    factory.quad(resultNode, shacl('resultSeverity'), shacl('Violation')),
+    factory.quad(
+      resultNode,
+      shacl('sourceConstraintComponent'),
+      distributionValidConstraintComponent,
+    ),
+    factory.quad(
+      resultNode,
+      shacl('resultMessage'),
+      factory.literal(validityViolationMessage(verdict), 'en'),
+    ),
+  ];
+}
+
+function validityViolationMessage(verdict: ValidityVerdict): string {
+  const base =
+    verdict.reason === 'empty'
+      ? 'This distribution is empty: it contains no RDF triples.'
+      : 'This distribution could not be parsed as RDF.';
+  return verdict.message !== undefined ? `${base} ${verdict.message}` : base;
 }
 
 /**

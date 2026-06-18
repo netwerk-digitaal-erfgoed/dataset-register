@@ -114,9 +114,15 @@
   "detail_classes": "Classes",
   "detail_vocabularies": "Vocabularies",
   "detail_terminology_sources": "Terminology Sources",
-  "detail_distribution_reachable": "Reachable",
-  "detail_distribution_unavailable": "Unavailable",
-  "detail_distribution_reachable_tooltip": "Currently reachable, according to the register’s most recent check.",
+  "detail_usability_usable": "Usable",
+  "detail_usability_unusable": "Unusable",
+  "detail_usability_reachable": "Reachable",
+  "detail_usability_usable_tooltip": "Reachable and valid RDF, according to the register’s most recent check.",
+  "detail_usability_reachable_tooltip": "Reachable, according to the register’s most recent check; its RDF has not been validated.",
+  "detail_usability_shallow_note": "Validated on a sample only; not yet deeply confirmed.",
+  "detail_validity_parse_error": "This distribution’s content could not be parsed as RDF.",
+  "detail_validity_empty": "This distribution is empty: it contains no RDF triples.",
+  "detail_validity_invalid_generic": "This distribution’s content is not valid RDF.",
   "detail_distribution_last_checked": "Last checked on {date}.",
   "detail_distribution_unavailable_since": "Unavailable since {date}.",
   "detail_probe_network_error": "This distribution could not be reached.",
@@ -124,9 +130,7 @@
   "detail_probe_server_error": "This distribution returned a server error.",
   "detail_probe_auth_required": "This distribution requires authentication.",
   "detail_probe_rate_limited": "This distribution is temporarily rate limited.",
-  "detail_probe_empty_body": "This download currently returns no data.",
   "detail_probe_sparql_failed": "This SPARQL endpoint did not answer a test query.",
-  "detail_probe_rdf_parse_failed": "This distribution returned data that could not be parsed.",
   "detail_probe_content_type_mismatch": "This distribution serves a different format than it declares.",
   "detail_probe_content_type_missing": "This distribution did not declare the format it serves.",
   "detail_probe_unavailable_generic": "This distribution is currently unavailable.",
@@ -207,6 +211,7 @@
   "detail_valid": "Valid",
   "detail_invalid": "Invalid",
   "detail_gone": "Gone",
+  "detail_registration_status_description": "This status applies to the validation of the registered URL as a whole. When the registration is a data catalog, it covers all its dataset descriptions, not just this one.",
   "detail_distributions_tooltip": "Distributions provide access to the data.",
   "detail_distributions_showing": "Showing {shown} of {total} distributions.",
   "lang_badge_also_in": "Also in {lang}:",
@@ -318,7 +323,6 @@
       }
     }
   ],
-  "nde_compat_persistent_failures_label": "Affected URIs:",
   "nde_compat_persistent_reason_no_self_reference": "no self-reference",
   "nde_compat_persistent_reason_http_error": "HTTP error",
   "nde_compat_persistent_reason_timeout": "timeout",
@@ -417,6 +421,26 @@
   "validate_url_placeholder": "https://example.org/dataset",
   "validate_url_submit": "Validate URL",
   "validate_url_source_title": "Fetched description",
+  "validate_url_source_title_dataset": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Fetched dataset description",
+        "countPlural=other": "Fetched {count} dataset descriptions"
+      }
+    }
+  ],
+  "validate_url_source_title_catalog": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Fetched data catalog with 1 dataset description",
+        "countPlural=other": "Fetched data catalog with {count} dataset descriptions"
+      }
+    }
+  ],
   "validate_inline_editor_label": "Dataset description",
   "validate_inline_placeholder": "Paste JSON-LD, Turtle, N-Triples…",
   "validate_inline_content_type": "Content type",

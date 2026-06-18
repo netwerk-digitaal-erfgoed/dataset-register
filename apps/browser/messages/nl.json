@@ -114,9 +114,15 @@
   "detail_classes": "Typen",
   "detail_vocabularies": "Vocabulaires",
   "detail_terminology_sources": "Terminologiebronnen",
-  "detail_distribution_reachable": "Bereikbaar",
-  "detail_distribution_unavailable": "Niet beschikbaar",
-  "detail_distribution_reachable_tooltip": "Op dit moment bereikbaar, volgens de meest recente controle van het register.",
+  "detail_usability_usable": "Bruikbaar",
+  "detail_usability_unusable": "Niet bruikbaar",
+  "detail_usability_reachable": "Bereikbaar",
+  "detail_usability_usable_tooltip": "Bereikbaar en geldige RDF, volgens de meest recente controle van het register.",
+  "detail_usability_reachable_tooltip": "Bereikbaar, volgens de meest recente controle van het register; de RDF is niet gevalideerd.",
+  "detail_usability_shallow_note": "Alleen op een steekproef gecontroleerd; nog niet diepgaand bevestigd.",
+  "detail_validity_parse_error": "De inhoud van deze distributie kon niet als RDF worden verwerkt.",
+  "detail_validity_empty": "Deze distributie is leeg: ze bevat geen RDF-triples.",
+  "detail_validity_invalid_generic": "De inhoud van deze distributie is geen geldige RDF.",
   "detail_distribution_last_checked": "Laatst gecontroleerd op {date}.",
   "detail_distribution_unavailable_since": "Niet beschikbaar sinds {date}.",
   "detail_probe_network_error": "Deze distributie kon niet worden bereikt.",
@@ -124,9 +130,7 @@
   "detail_probe_server_error": "Deze distributie gaf een serverfout.",
   "detail_probe_auth_required": "Deze distributie vereist authenticatie.",
   "detail_probe_rate_limited": "Deze distributie is tijdelijk beperkt (rate limited).",
-  "detail_probe_empty_body": "Deze download geeft op dit moment geen gegevens terug.",
   "detail_probe_sparql_failed": "Dit SPARQL-endpoint beantwoordde een testquery niet.",
-  "detail_probe_rdf_parse_failed": "Deze distributie gaf gegevens terug die niet konden worden verwerkt.",
   "detail_probe_content_type_mismatch": "Deze distributie levert een ander formaat dan opgegeven.",
   "detail_probe_content_type_missing": "Deze distributie geeft geen formaat op.",
   "detail_probe_unavailable_generic": "Deze distributie is op dit moment niet beschikbaar.",
@@ -207,6 +211,7 @@
   "detail_valid": "Geldig",
   "detail_invalid": "Ongeldig",
   "detail_gone": "Verdwenen",
+  "detail_registration_status_description": "Deze status geldt voor de validatie van de geregistreerde URL als geheel. Als de registratie een datacatalogus is, geldt deze voor alle datasetbeschrijvingen, niet alleen voor deze.",
   "detail_distributions_tooltip": "Distributies geven toegang tot de data.",
   "detail_distributions_showing": "{shown} van {total} distributies getoond.",
   "lang_badge_also_in": "Ook in het {lang}:",
@@ -318,7 +323,6 @@
       }
     }
   ],
-  "nde_compat_persistent_failures_label": "Betrokken URI’s:",
   "nde_compat_persistent_reason_no_self_reference": "geen zelfverwijzing",
   "nde_compat_persistent_reason_http_error": "HTTP-fout",
   "nde_compat_persistent_reason_timeout": "time-out",
@@ -417,6 +421,26 @@
   "validate_url_placeholder": "https://example.org/dataset",
   "validate_url_submit": "URL valideren",
   "validate_url_source_title": "Opgehaalde beschrijving",
+  "validate_url_source_title_dataset": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Opgehaalde datasetbeschrijving",
+        "countPlural=other": "{count} opgehaalde datasetbeschrijvingen"
+      }
+    }
+  ],
+  "validate_url_source_title_catalog": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "Opgehaalde datacatalogus met 1 datasetbeschrijving",
+        "countPlural=other": "Opgehaalde datacatalogus met {count} datasetbeschrijvingen"
+      }
+    }
+  ],
   "validate_inline_editor_label": "Datasetbeschrijving",
   "validate_inline_placeholder": "Plak JSON-LD, Turtle, N-Triples…",
   "validate_inline_content_type": "Inhoudstype",

@@ -10,11 +10,12 @@ const now = new Date('2026-06-10T12:00:00Z');
 
 // A reachability failure older than the 7-day threshold → unavailable.
 const staleFailure: DistributionHealth = {
-  lastOutcome: 'https://def.nde.nl/probe#EmptyBody',
+  lastOutcome: 'https://def.nde.nl/probe#NetworkError',
   lastProbedAt: now,
   lastSuccessAt: null,
   firstFailureAt: new Date('2026-05-01T12:00:00Z'),
   consecutiveFailures: 12,
+  sourceFingerprint: null,
 };
 
 const healthy: DistributionHealth = {
@@ -23,6 +24,7 @@ const healthy: DistributionHealth = {
   lastSuccessAt: now,
   firstFailureAt: null,
   consecutiveFailures: 0,
+  sourceFingerprint: null,
 };
 
 describe('selectPreferredDownload', () => {
@@ -41,6 +43,32 @@ describe('selectPreferredDownload', () => {
     ]);
     expect(selectPreferredDownload([unavailable, reachable], health, now)).toBe(
       reachable,
+    );
+  });
+
+  it('prefers a valid distribution over a reachable-but-invalid one, but still offers the invalid bytes as a last resort', () => {
+    const invalid = {
+      accessURL: 'https://example.org/broken.ttl',
+      mediaType: 'text/turtle',
+    };
+    const valid = {
+      accessURL: 'https://example.org/good.ttl',
+      mediaType: 'text/turtle',
+    };
+    const health = new Map([
+      [invalid.accessURL, healthy],
+      [valid.accessURL, healthy],
+    ]);
+    const invalidUrls = new Set([invalid.accessURL]);
+
+    // A valid distribution wins even though both are reachable.
+    expect(
+      selectPreferredDownload([invalid, valid], health, now, invalidUrls),
+    ).toBe(valid);
+    // When the invalid one is the only reachable option, its bytes are still
+    // offered rather than disabling the download.
+    expect(selectPreferredDownload([invalid], health, now, invalidUrls)).toBe(
+      invalid,
     );
   });
 

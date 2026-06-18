@@ -79,16 +79,30 @@ function availabilityOf(
 // Select the distribution the default Download action should point at: the first
 // reachable (or not-yet-probed) entry in the same order the dropdown renders, so
 // the primary button always matches the topmost working option and the visitor
-// never has to open the dropdown to find it. Returns undefined when every
-// distribution is unavailable, which drives the disabled download state.
+// never has to open the dropdown to find it. A distribution that is reachable but
+// serves invalid RDF (in `invalidUrls`) is only offered as a last resort — a
+// valid one is always preferred — but its bytes are still downloadable when it is
+// the sole option. Returns undefined when every distribution is unavailable,
+// which drives the disabled download state.
 export function selectPreferredDownload<T extends RankableDistribution>(
   distributions: readonly T[],
   healthByUrl: ReadonlyMap<string, DistributionHealth>,
   now: Date,
+  invalidUrls: ReadonlySet<string> = new Set(),
 ): T | undefined {
-  return sortDistributionsByAvailability(distributions, healthByUrl, now).find(
+  const reachable = sortDistributionsByAvailability(
+    distributions,
+    healthByUrl,
+    now,
+    invalidUrls,
+  ).filter(
     (distribution) =>
       availabilityOf(distribution, healthByUrl, now) !== 'unavailable',
+  );
+  return (
+    reachable.find(
+      (distribution) => !invalidUrls.has(distribution.accessURL),
+    ) ?? reachable[0]
   );
 }
 
@@ -102,22 +116,29 @@ function typePriority(distribution: RankableDistribution): number {
 
 // Order distributions availability-first: reachable (and not-yet-probed)
 // distributions come before unavailable ones, so a visitor finds a working
-// access point first. Within an availability group: type priority (SPARQL > RDF >
-// other), then compressed variants first (smaller to transfer, so they make the
-// best default download), then the format preference, then a stable tie-break on
-// the URL. Distributions with no health record group with the reachable ones.
-// Returns a new array; the input is not mutated.
+// access point first. A reachable-but-invalid distribution (in `invalidUrls`)
+// sorts after valid/unknown reachable ones but ahead of unavailable ones, so a
+// usable download leads while the invalid bytes remain accessible lower down.
+// Within a group: type priority (SPARQL > RDF > other), then compressed variants
+// first (smaller to transfer, so they make the best default download), then the
+// format preference, then a stable tie-break on the URL. Distributions with no
+// health record group with the reachable ones. Returns a new array; the input is
+// not mutated.
 export function sortDistributionsByAvailability<T extends RankableDistribution>(
   distributions: readonly T[],
   healthByUrl: ReadonlyMap<string, DistributionHealth>,
   now: Date,
+  invalidUrls: ReadonlySet<string> = new Set(),
 ): T[] {
   const unavailableRank = (distribution: T): number =>
     availabilityOf(distribution, healthByUrl, now) === 'unavailable' ? 1 : 0;
+  const invalidRank = (distribution: T): number =>
+    invalidUrls.has(distribution.accessURL) ? 1 : 0;
 
   return [...distributions].sort(
     (a, b) =>
       unavailableRank(a) - unavailableRank(b) ||
+      invalidRank(a) - invalidRank(b) ||
       typePriority(b) - typePriority(a) ||
       Number(isCompressed(b)) - Number(isCompressed(a)) ||
       formatPriority(a) - formatPriority(b) ||

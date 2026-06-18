@@ -9,6 +9,14 @@ export interface DistributionHealthRecord {
   lastSuccessAt: Date | null;
   firstFailureAt: Date | null;
   consecutiveFailures: number;
+  /**
+   * The opaque source-change fingerprint observed on this probe (probe:sourceFingerprint),
+   * or null when none could be derived (a SPARQL endpoint, or a dump exposing neither a
+   * usable date nor a byte size). Recorded on the reachability rail so the validity rail
+   * can compare against it by value: a validity verdict applies only while the fingerprint
+   * it was judged against still equals this one (the staleness gate, PRD #2103).
+   */
+  sourceFingerprint: string | null;
 }
 
 export interface DistributionHealthStore {
@@ -32,7 +40,7 @@ export class SparqlDistributionHealthStore implements DistributionHealthStore {
       PREFIX nde-probe: <https://def.nde.nl/probe#>
       PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-      SELECT ?lastProbedAt ?lastOutcome ?lastSuccessAt ?firstFailureAt ?consecutiveFailures
+      SELECT ?lastProbedAt ?lastOutcome ?lastSuccessAt ?firstFailureAt ?consecutiveFailures ?sourceFingerprint
       FROM <${this.graphIri}>
       WHERE {
         <${url.toString()}> a nde-probe:DistributionHealthRecord ;
@@ -41,6 +49,7 @@ export class SparqlDistributionHealthStore implements DistributionHealthStore {
         OPTIONAL { <${url.toString()}> nde-probe:lastOutcome ?lastOutcome }
         OPTIONAL { <${url.toString()}> nde-probe:lastSuccessAt ?lastSuccessAt }
         OPTIONAL { <${url.toString()}> nde-probe:firstFailureAt ?firstFailureAt }
+        OPTIONAL { <${url.toString()}> nde-probe:sourceFingerprint ?sourceFingerprint }
       }
       LIMIT 1`);
 
@@ -55,6 +64,7 @@ export class SparqlDistributionHealthStore implements DistributionHealthStore {
       lastSuccessAt: dateOrNull(row.get('lastSuccessAt')),
       firstFailureAt: dateOrNull(row.get('firstFailureAt')),
       consecutiveFailures: parseInt(row.get('consecutiveFailures')!.value),
+      sourceFingerprint: row.get('sourceFingerprint')?.value ?? null,
     };
   }
 
@@ -78,6 +88,11 @@ export class SparqlDistributionHealthStore implements DistributionHealthStore {
     if (record.firstFailureAt !== null) {
       triples.push(
         `<${iri}> nde-probe:firstFailureAt "${record.firstFailureAt.toISOString()}"^^xsd:dateTime .`,
+      );
+    }
+    if (record.sourceFingerprint !== null) {
+      triples.push(
+        `<${iri}> nde-probe:sourceFingerprint ${JSON.stringify(record.sourceFingerprint)} .`,
       );
     }
 
