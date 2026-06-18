@@ -631,12 +631,10 @@ describe('DistributionProbeStage', () => {
     // and recordValidity attempts to store it. The store throws, but the failure
     // must be swallowed (logged) — the probe still succeeds and the health
     // record is written, never a spurious NetworkError.
-    nock('https://example.org')
-      .head('/good')
-      .reply(200, '', {
-        'Content-Type': 'text/turtle',
-        'Content-Length': '20',
-      });
+    nock('https://example.org').head('/good').reply(200, '', {
+      'Content-Type': 'text/turtle',
+      'Content-Length': '20',
+    });
     nock('https://example.org')
       .get('/good')
       .reply(200, '<a> <b> <c> .', { 'Content-Type': 'text/turtle' });
