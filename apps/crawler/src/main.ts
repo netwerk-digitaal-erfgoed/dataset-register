@@ -16,6 +16,7 @@ const {
   registrationStore,
   ratingStore,
   distributionHealthStore,
+  distributionValidityStore,
   validationReportStore,
 } = stores(config.SPARQL_URL, config.SPARQL_ACCESS_TOKEN);
 
@@ -29,6 +30,7 @@ const validator = new CompositeValidator(
   new ShaclEngineValidator(shacl),
   new DistributionProbeStage({
     healthStore: distributionHealthStore,
+    validityStore: distributionValidityStore,
     maxProbes: config.CRAWLER_MAX_DISTRIBUTION_PROBES,
     severities: readProbeSeverities(shacl),
     logger,

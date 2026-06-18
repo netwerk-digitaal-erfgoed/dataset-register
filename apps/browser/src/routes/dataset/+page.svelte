@@ -13,9 +13,10 @@
     isSparqlDistribution,
   } from '$lib/utils/distribution';
   import {
-    distributionAvailability,
-    type DistributionAvailability,
+    usabilityFor,
     type DistributionHealth,
+    type Usability,
+    type ValidityVerdict,
   } from '$lib/services/distribution-health';
   import {
     compressionSuffix,
@@ -106,15 +107,31 @@
     };
   });
 
+  // Per-distribution validity verdicts (the validity rail), streamed in parallel
+  // like the health records. Combined with health into the usability verdict.
+  let validityByUrl = $state(new Map<string, ValidityVerdict[]>());
+  $effect(() => {
+    let cancelled = false;
+    data.distributionValidity.then((validity) => {
+      if (!cancelled) validityByUrl = validity;
+    });
+    return () => {
+      cancelled = true;
+    };
+  });
+
   // A single render-time “now” drives the staleness threshold; a few milliseconds
   // of drift between server and client render cannot change a 7-day classification.
   const now = new Date();
 
-  function availabilityFor(
+  // The single derived usability verdict (usable / unusable / unknown, with its
+  // cause) the badge surfaces, rolling up reachability and validity.
+  function usabilityForDistribution(
     distribution: DistributionDetail,
-  ): DistributionAvailability {
-    return distributionAvailability(
+  ): Usability {
+    return usabilityFor(
       healthByUrl.get(distribution.accessURL) ?? null,
+      validityByUrl.get(distribution.accessURL) ?? [],
       now,
     );
   }
@@ -319,8 +336,9 @@
     return date.toLocaleDateString(getLocale());
   }
 
-  // A localized sentence describing why a distribution is unavailable, keyed on
-  // the nde-probe outcome's local name.
+  // A localized sentence describing why a distribution is unreachable, keyed on
+  // the nde-probe outcome's local name. (EmptyBody and RdfParseFailed migrated to
+  // the validity rail, so they are no longer reachability outcomes here.)
   function probeReason(outcome: string | null): string {
     switch (outcome?.split('#').pop()) {
       case 'NetworkError':
@@ -333,12 +351,8 @@
         return m.detail_probe_auth_required();
       case 'RateLimited':
         return m.detail_probe_rate_limited();
-      case 'EmptyBody':
-        return m.detail_probe_empty_body();
       case 'SparqlProbeFailed':
         return m.detail_probe_sparql_failed();
-      case 'RdfParseFailed':
-        return m.detail_probe_rdf_parse_failed();
       case 'ContentTypeMismatch':
         return m.detail_probe_content_type_mismatch();
       case 'ContentTypeMissing':
@@ -348,14 +362,34 @@
     }
   }
 
-  // Tooltip text for a distribution's status: the current state, the typed reason
-  // and “unavailable since” when failing, and when the register last checked it.
-  function statusTooltip(
-    availability: DistributionAvailability,
+  // A localized sentence describing why a distribution's RDF is invalid, plus the
+  // parser message where one is available. Reads the deepest applicable verdict,
+  // matching the usability rollup's depth preference.
+  function validityReason(verdicts: readonly ValidityVerdict[]): string {
+    const invalid =
+      verdicts.find((verdict) => verdict.depth === 'deep' && !verdict.valid) ??
+      verdicts.find((verdict) => !verdict.valid);
+    const base =
+      invalid?.reason === 'empty'
+        ? m.detail_validity_empty()
+        : invalid?.reason === 'parse-error'
+          ? m.detail_validity_parse_error()
+          : m.detail_validity_invalid_generic();
+    return invalid?.message ? `${base} ${invalid.message}` : base;
+  }
+
+  // Tooltip text for a distribution's usability: the cause (unreachable vs invalid
+  // RDF) with its typed reason, a note when the verdict is only shallow, and when
+  // the register last checked it.
+  function usabilityTooltip(
+    usability: Usability,
     health: DistributionHealth | null,
+    verdicts: readonly ValidityVerdict[],
   ): string {
     const parts: string[] = [];
-    if (availability === 'unavailable') {
+    if (usability.state === 'unusable' && usability.cause === 'invalid') {
+      parts.push(validityReason(verdicts));
+    } else if (usability.state === 'unusable') {
       parts.push(probeReason(health?.lastOutcome ?? null));
       if (health?.firstFailureAt) {
         parts.push(
@@ -365,7 +399,10 @@
         );
       }
     } else {
-      parts.push(m.detail_distribution_reachable_tooltip());
+      parts.push(m.detail_usability_usable_tooltip());
+      if (usability.shallow) {
+        parts.push(m.detail_usability_shallow_note());
+      }
     }
     if (health?.lastProbedAt) {
       parts.push(
@@ -390,22 +427,23 @@
 </svelte:head>
 
 {#snippet statusBadge(distribution: DistributionDetail, tooltipId: string)}
-  {@const availability = availabilityFor(distribution)}
-  {#if availability !== 'unknown'}
+  {@const usability = usabilityForDistribution(distribution)}
+  {#if usability.state !== 'unknown'}
     {@const health = healthByUrl.get(distribution.accessURL) ?? null}
+    {@const verdicts = validityByUrl.get(distribution.accessURL) ?? []}
     <span id={tooltipId} class="inline-flex cursor-help items-center">
-      {#if availability === 'reachable'}
+      {#if usability.state === 'usable'}
         <CheckOutline class="h-4 w-4 text-green-600 dark:text-green-400" />
-        <span class="sr-only">{m.detail_distribution_reachable()}</span>
+        <span class="sr-only">{m.detail_usability_usable()}</span>
       {:else}
         <ExclamationCircleOutline
           class="h-4 w-4 text-amber-600 dark:text-amber-500"
         />
-        <span class="sr-only">{m.detail_distribution_unavailable()}</span>
+        <span class="sr-only">{m.detail_usability_unusable()}</span>
       {/if}
     </span>
     <Tooltip triggeredBy="#{tooltipId}"
-      >{statusTooltip(availability, health)}</Tooltip
+      >{usabilityTooltip(usability, health, verdicts)}</Tooltip
     >
   {/if}
 {/snippet}

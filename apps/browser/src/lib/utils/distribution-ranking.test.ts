@@ -10,11 +10,12 @@ const now = new Date('2026-06-10T12:00:00Z');
 
 // A reachability failure older than the 7-day threshold → unavailable.
 const staleFailure: DistributionHealth = {
-  lastOutcome: 'https://def.nde.nl/probe#EmptyBody',
+  lastOutcome: 'https://def.nde.nl/probe#NetworkError',
   lastProbedAt: now,
   lastSuccessAt: null,
   firstFailureAt: new Date('2026-05-01T12:00:00Z'),
   consecutiveFailures: 12,
+  sourceFingerprint: null,
 };
 
 const healthy: DistributionHealth = {
@@ -23,6 +24,7 @@ const healthy: DistributionHealth = {
   lastSuccessAt: now,
   firstFailureAt: null,
   consecutiveFailures: 0,
+  sourceFingerprint: null,
 };
 
 describe('selectPreferredDownload', () => {

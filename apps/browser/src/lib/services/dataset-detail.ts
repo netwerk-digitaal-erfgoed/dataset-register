@@ -26,7 +26,10 @@ import {
   type TermLinks,
 } from './nde-compatibility.js';
 import { offersLinkedData } from '$lib/utils/distribution';
-import type { DistributionHealth } from './distribution-health.js';
+import type {
+  DistributionHealth,
+  ValidityVerdict,
+} from './distribution-health.js';
 import { normalizeMediaType } from '$lib/utils/sparql';
 import { getLocale } from '$lib/paraglide/runtime';
 import {
@@ -416,6 +419,12 @@ export interface DatasetDetailResult {
   // and the distribution status and download links update reactively once it
   // resolves. Decoupled from the main distribution query.
   distributionHealth: Promise<Map<string, DistributionHealth>>;
+  // Per-distribution RDF-validity verdicts (the validity rail), keyed by access
+  // URL. Each access URL may carry more than one verdict – a shallow one from the
+  // register and a deep one from the Dataset Knowledge Graph – which the usability
+  // rollup reconciles (deep beats shallow, stale decays to unknown). An unawaited
+  // promise, streamed alongside distributionHealth.
+  distributionValidity: Promise<Map<string, ValidityVerdict[]>>;
   // Per-dataset SHACL warning count, feeding the registration criterion's
   // warning tier. 0 when the description validated cleanly or predates the count.
   warningCount: number;
@@ -778,7 +787,7 @@ async function fetchDistributionHealth(
   const query = `
     PREFIX dcat: <http://www.w3.org/ns/dcat#>
     PREFIX nde-probe: <https://def.nde.nl/probe#>
-    SELECT ?accessURL ?lastProbedAt ?lastOutcome ?lastSuccessAt ?firstFailureAt ?consecutiveFailures
+    SELECT ?accessURL ?lastProbedAt ?lastOutcome ?lastSuccessAt ?firstFailureAt ?consecutiveFailures ?sourceFingerprint
     WHERE {
       GRAPH ?datasetGraph {
         <${datasetUri}> dcat:distribution ?distribution .
@@ -791,6 +800,7 @@ async function fetchDistributionHealth(
         OPTIONAL { ?accessURL nde-probe:lastOutcome ?lastOutcome }
         OPTIONAL { ?accessURL nde-probe:lastSuccessAt ?lastSuccessAt }
         OPTIONAL { ?accessURL nde-probe:firstFailureAt ?firstFailureAt }
+        OPTIONAL { ?accessURL nde-probe:sourceFingerprint ?sourceFingerprint }
       }
     }
   `;
@@ -808,6 +818,7 @@ async function fetchDistributionHealth(
         lastSuccessAt?: { value: string };
         firstFailureAt?: { value: string };
         consecutiveFailures: { value: string };
+        sourceFingerprint?: { value: string };
       };
       byUrl.set(binding.accessURL.value, {
         lastOutcome: binding.lastOutcome?.value ?? null,
@@ -819,6 +830,7 @@ async function fetchDistributionHealth(
           ? new Date(binding.firstFailureAt.value)
           : null,
         consecutiveFailures: parseInt(binding.consecutiveFailures.value, 10),
+        sourceFingerprint: binding.sourceFingerprint?.value ?? null,
       });
     }
   } catch (e: unknown) {
@@ -828,6 +840,113 @@ async function fetchDistributionHealth(
     );
   }
   return byUrl;
+}
+
+// Reads the per-distribution RDF-validity verdicts (the validity rail) for every
+// distribution of a dataset, keyed by access URL. Federates two producers: the
+// register's own shallow measurements (PUBLIC_SPARQL_ENDPOINT) and the Dataset
+// Knowledge Graph's deep ones (PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT). Both write the
+// same DQV/PROV shape under def.nde.nl; depth is read from which endpoint served
+// the measurement, not from the RDF. Each source is queried independently and
+// failures degrade to "no verdict" (the usability rollup then yields "unknown")
+// rather than breaking the page.
+async function fetchDistributionValidity(
+  datasetUri: string,
+): Promise<Map<string, ValidityVerdict[]>> {
+  const byUrl = new Map<string, ValidityVerdict[]>();
+  const [shallow, deep] = await Promise.all([
+    fetchValidityVerdicts(datasetUri, PUBLIC_SPARQL_ENDPOINT, 'shallow'),
+    fetchValidityVerdicts(datasetUri, PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT, 'deep'),
+  ]);
+  for (const [url, verdicts] of [...shallow, ...deep]) {
+    byUrl.set(url, [...(byUrl.get(url) ?? []), ...verdicts]);
+  }
+  return byUrl;
+}
+
+async function fetchValidityVerdicts(
+  datasetUri: string,
+  endpoint: string,
+  depth: ValidityVerdict['depth'],
+): Promise<Map<string, ValidityVerdict[]>> {
+  const query = `
+    PREFIX dcat: <http://www.w3.org/ns/dcat#>
+    PREFIX dqv: <http://www.w3.org/ns/dqv#>
+    PREFIX prov: <http://www.w3.org/ns/prov#>
+    PREFIX failure: <https://def.nde.nl/failure#>
+    PREFIX probe: <https://def.nde.nl/probe#>
+    PREFIX metric: <https://def.nde.nl/metric#>
+    SELECT ?accessURL ?value ?fingerprint ?reason ?message
+    WHERE {
+      <${datasetUri}> dcat:distribution ?distribution .
+      ?distribution dcat:accessURL ?accessURL .
+      ?measurement dqv:computedOn ?accessURL ;
+          dqv:isMeasurementOf metric:distribution-rdf-valid ;
+          dqv:value ?value .
+      OPTIONAL { ?measurement probe:sourceFingerprint ?fingerprint }
+      OPTIONAL {
+        ?measurement prov:wasGeneratedBy ?activity .
+        ?activity prov:qualifiedUsage ?usage .
+        ?usage failure:reason ?reason .
+        OPTIONAL { ?usage failure:message ?message }
+      }
+    }
+  `;
+  const byUrl = new Map<string, ValidityVerdict[]>();
+  try {
+    const bindingsStream = await fetcher.fetchBindings(endpoint, query);
+    for await (const raw of bindingsStream) {
+      const binding = raw as unknown as {
+        accessURL: { value: string };
+        value: { value: string };
+        fingerprint?: { value: string };
+        reason?: { value: string };
+        message?: { value: string };
+      };
+      const verdict = toValidityVerdict(binding, depth);
+      if (verdict === null) continue;
+      byUrl.set(binding.accessURL.value, [
+        ...(byUrl.get(binding.accessURL.value) ?? []),
+        verdict,
+      ]);
+    }
+  } catch (e: unknown) {
+    console.error(
+      `Distribution validity query (${depth}) failed:`,
+      e instanceof Error ? e.message : e,
+    );
+  }
+  return byUrl;
+}
+
+// Reconstruct a ValidityVerdict from a DQV-measurement binding. The reason's
+// local name (after the scheme's #) is the verdict reason, matching the
+// distribution-validity-failure scheme the producers write.
+function toValidityVerdict(
+  binding: {
+    value: { value: string };
+    fingerprint?: { value: string };
+    reason?: { value: string };
+    message?: { value: string };
+  },
+  depth: ValidityVerdict['depth'],
+): ValidityVerdict | null {
+  const valid = binding.value.value === 'true';
+  const verdict: ValidityVerdict = {
+    valid,
+    validatedFingerprint: binding.fingerprint?.value ?? null,
+    depth,
+  };
+  if (!valid) {
+    const reason = binding.reason?.value.split('#').pop();
+    if (reason === 'parse-error' || reason === 'empty') {
+      verdict.reason = reason;
+    }
+    if (binding.message?.value !== undefined) {
+      verdict.message = binding.message.value;
+    }
+  }
+  return verdict;
 }
 
 async function fetchDistributionCount(query: string): Promise<number> {
@@ -912,6 +1031,9 @@ export async function fetchDatasetDetail(
   // the page renders without waiting on it; the status and download links update
   // reactively once it resolves.
   const distributionHealth = fetchDistributionHealth(datasetUri);
+  // Likewise stream the validity rail; the usability rollup combines it with the
+  // health (reachability) signal once both resolve.
+  const distributionValidity = fetchDistributionValidity(datasetUri);
 
   const detailLens = createLens(DatasetDetailSchema, {
     sources: [PUBLIC_SPARQL_ENDPOINT],
@@ -1164,6 +1286,7 @@ export async function fetchDatasetDetail(
     terms,
     resolvedTerms,
     distributionHealth,
+    distributionValidity,
     // The registration's warning count (from its last crawl); 0 when the
     // registration recorded none or predates warning storage.
     warningCount: dataset.subjectOf?.warningCount ?? 0,

@@ -28,6 +28,7 @@
     "@codemirror/view": "^6.43.1",
     "@dataset-register/core": "*",
     "@lde/dataset-registry-client": "^0.8.3",
+    "@lde/distribution-health": "^0.1.4",
     "@zazuko/prefixes": "^2.6.1",
     "codemirror": "^6.0.2",
     "feed": "^5.2.1",

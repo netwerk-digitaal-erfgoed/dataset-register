@@ -24,6 +24,7 @@ import type {
   DistributionHealthRecord,
   DistributionHealthStore,
 } from '../src/distribution-health-store.js';
+import type { DistributionValidityStore } from '../src/distribution-validity-store.js';
 
 /**
  * Wraps a dataset to count how it is read: every `match()` (the indexed lookup we rely on)
@@ -251,7 +252,10 @@ describe('probe outcome classifier', () => {
     );
   });
 
-  it('maps an "empty" failureReason to EmptyBody', () => {
+  it('treats an empty data-dump body as reachable (validity rail records it)', () => {
+    // EmptyBody migrated off the reachability rail (PRD #2103): a body that was
+    // fetched but came back empty is still reachable; its emptiness is a validity
+    // signal recorded as a DQV measurement, not a reachability outcome.
     const result = new DataDumpProbeResult(
       'https://example.org/x',
       mockResponse({
@@ -263,10 +267,13 @@ describe('probe outcome classifier', () => {
     (result as { failureReason: string }).failureReason =
       'Distribution contains no RDF triples (empty)';
     const verdict = classify(result);
-    expect(verdict.outcome?.equals(probeOutcomes.EmptyBody)).toBe(true);
+    expect(verdict.success).toBe(true);
+    expect(verdict.outcome).toBeNull();
   });
 
-  it('maps non-empty failureReason on data dump to RdfParseFailed', () => {
+  it('treats an unparseable data-dump body as reachable (validity rail records it)', () => {
+    // RdfParseFailed likewise migrated off the reachability rail: a fetched body
+    // that fails to parse is reachable-but-invalid, recorded on the validity rail.
     const result = new DataDumpProbeResult(
       'https://example.org/x',
       mockResponse({
@@ -278,7 +285,8 @@ describe('probe outcome classifier', () => {
     (result as { failureReason: string }).failureReason =
       'Unexpected "foo" on line 1';
     const verdict = classify(result);
-    expect(verdict.outcome?.equals(probeOutcomes.RdfParseFailed)).toBe(true);
+    expect(verdict.success).toBe(true);
+    expect(verdict.outcome).toBeNull();
   });
 });
 
@@ -457,10 +465,11 @@ describe('DistributionProbeStage', () => {
     expect(stored?.consecutiveFailures).toBe(2);
   });
 
-  it('surfaces a deterministic content defect (empty body) on the first probe, bypassing the grace window', async () => {
+  it('records an empty data-dump body as an invalid validity measurement, not a reachability failure', async () => {
     // HEAD reports an unknown size, so the probe issues a GET; the GET body is
-    // empty, which the probe classifies as EmptyBody — a deterministic defect
-    // that cannot change by waiting, so it must not be suppressed by the streak.
+    // empty. EmptyBody migrated off the reachability rail (PRD #2103): the
+    // distribution is reachable, and its emptiness is recorded as an invalid
+    // (empty) DQV validity measurement instead of a reachability violation.
     nock('https://example.org')
       .head('/empty')
       .reply(200, '', { 'Content-Type': 'text/turtle' });
@@ -483,28 +492,102 @@ describe('DistributionProbeStage', () => {
         factory.literal('text/turtle'),
       ),
     );
+    // Declared change signals feed the source fingerprint recorded on both rails.
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dct('modified'),
+        factory.literal('2026-06-01T00:00:00.000Z'),
+      ),
+    );
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('byteSize'),
+        factory.literal('2048'),
+      ),
+    );
 
     const healthStore = new InMemoryHealthStore();
-    const stage = new DistributionProbeStage({
-      healthStore,
-      failureStreakMaxAgeMs: 7 * 24 * 60 * 60 * 1000, // long grace window
-    });
+    const validityStore = new InMemoryValidityStore();
+    const stage = new DistributionProbeStage({ healthStore, validityStore });
 
     const quads = await stage.run(dataset);
 
-    const outcome = quads.find((quad) =>
-      quad.predicate.equals(factory.namedNode(`${ndeProbePrefix}probeOutcome`)),
+    // No reachability violation: an empty body is reachable.
+    expect(quads).toHaveLength(0);
+    const stored = await healthStore.get(new URL(url.value));
+    expect(stored?.lastOutcome).toBeNull();
+    expect(stored?.consecutiveFailures).toBe(0);
+    // The observed fingerprint is recorded on the reachability rail, derived from
+    // the declared dct:modified (the byte size half may be the probe's measured
+    // Content-Length rather than the declared dcat:byteSize).
+    expect(stored?.sourceFingerprint).toContain('2026-06-01T00:00:00.000Z');
+
+    // The validity rail recorded an invalid (empty) measurement.
+    const validityQuads = validityStore.quadsByUrl.get(url.value) ?? [];
+    const value = validityQuads.find((quad) =>
+      quad.predicate.equals(factory.namedNode('http://www.w3.org/ns/dqv#value')),
     );
-    expect(outcome?.object.equals(probeOutcomes.EmptyBody)).toBe(true);
+    expect(value?.object.value).toBe('false');
+    const reason = validityQuads.find((quad) =>
+      quad.predicate.equals(
+        factory.namedNode('https://def.nde.nl/failure#reason'),
+      ),
+    );
+    expect(reason?.object.value).toBe(
+      'https://def.nde.nl/distribution-validity-failure#empty',
+    );
+  });
+
+  it('emits a sh:Violation for an unparseable body on the registration path (no health store)', async () => {
+    // Strict mode (no health/validity store, as the registration API runs):
+    // an invalid-RDF shallow verdict surfaces as a sh:Violation so registration
+    // rejects the distribution, carrying the parse reason in the message.
+    nock('https://example.org')
+      .head('/invalid')
+      .reply(200, '', { 'Content-Type': 'text/turtle' });
+    nock('https://example.org')
+      .get('/invalid')
+      .reply(200, 'this is <not> valid turtle @@@', {
+        'Content-Type': 'text/turtle',
+      });
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-invalid');
+    const distributionNode = factory.blankNode();
+    const url = factory.namedNode('https://example.org/invalid');
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    dataset.add(factory.quad(distributionNode, dcat('accessURL'), url));
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('mediaType'),
+        factory.literal('text/turtle'),
+      ),
+    );
+
+    const stage = new DistributionProbeStage();
+    const quads = await stage.run(dataset);
+
     const violation = quads.find(
       (quad) =>
         quad.predicate.equals(shacl('resultSeverity')) &&
         quad.object.equals(shacl('Violation')),
     );
     expect(violation).toBeDefined();
-    // The streak is brand new (one failure), yet the defect is surfaced at once.
-    const stored = await healthStore.get(new URL(url.value));
-    expect(stored?.consecutiveFailures).toBe(1);
+    const constraint = quads.find((quad) =>
+      quad.predicate.equals(shacl('sourceConstraintComponent')),
+    );
+    expect(constraint?.object.value).toBe(
+      `${ndeProbePrefix}DistributionValidConstraintComponent`,
+    );
+    const message = quads.find((quad) =>
+      quad.predicate.equals(shacl('resultMessage')),
+    );
+    expect(message?.object.value).toContain('could not be parsed as RDF');
   });
 
   it('clears health state after a successful probe', async () => {
@@ -1264,6 +1347,18 @@ class InMemoryHealthStore implements DistributionHealthStore {
   }
 }
 
+class InMemoryValidityStore implements DistributionValidityStore {
+  public readonly quadsByUrl = new Map<string, Quad[]>();
+
+  public async store(accessUrl: URL, quads: Quad[]): Promise<void> {
+    this.quadsByUrl.set(accessUrl.toString(), quads);
+  }
+
+  public async delete(accessUrl: URL): Promise<void> {
+    this.quadsByUrl.delete(accessUrl.toString());
+  }
+}
+
 describe('REACHABILITY_FAILURE_OUTCOMES', () => {
   it('lists only real probe outcome IRIs', () => {
     const known = new Set(
@@ -1298,9 +1393,9 @@ describe('REACHABILITY_FAILURE_OUTCOMES', () => {
 
 describe('isDeterministicFailure', () => {
   it('is true for content defects that cannot change by waiting', () => {
+    // EmptyBody and RdfParseFailed migrated to the validity rail (PRD #2103), so
+    // the deterministic reachability defects are now only the content-type ones.
     for (const outcome of [
-      probeOutcomes.EmptyBody,
-      probeOutcomes.RdfParseFailed,
       probeOutcomes.ContentTypeMismatch,
       probeOutcomes.ContentTypeMissing,
     ]) {
