@@ -508,14 +508,6 @@ describe('DistributionProbeStage', () => {
   });
 
   it('clears health state after a successful probe', async () => {
-    nock('https://example.org').head('/recovering').replyWithError('ENOTFOUND');
-    // Use a large Content-Length so the probe treats the HEAD as authoritative and does
-    // not fall back to a GET (which would require a second mock).
-    nock('https://example.org').head('/recovering').reply(200, '', {
-      'Content-Type': 'text/turtle',
-      'Content-Length': '100000',
-    });
-
     const dataset = factory.dataset();
     const datasetNode = factory.namedNode('https://example.org/d4');
     const distributionNode = factory.blankNode();
@@ -535,7 +527,18 @@ describe('DistributionProbeStage', () => {
     const healthStore = new InMemoryHealthStore();
     const stage = new DistributionProbeStage({ healthStore });
 
+    // First probe: a genuine outage. The probe retries transport errors before
+    // reporting the endpoint as unavailable, so every attempt must fail – register
+    // the recovery mock only afterwards, lest a retry consume it prematurely.
+    nock('https://example.org').head('/recovering').replyWithError('ENOTFOUND');
     await stage.run(dataset); // failure
+
+    // Second probe: the endpoint has recovered. A large Content-Length makes the
+    // probe treat the HEAD as authoritative and skip the GET fallback.
+    nock('https://example.org').head('/recovering').reply(200, '', {
+      'Content-Type': 'text/turtle',
+      'Content-Length': '100000',
+    });
     await stage.run(dataset); // success
 
     const stored = await healthStore.get(new URL(url.value));
