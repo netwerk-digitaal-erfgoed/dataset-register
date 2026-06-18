@@ -32,9 +32,7 @@ export const REACHABILITY_FAILURE_OUTCOMES: readonly string[] = [
   'ServerError',
   'AuthRequired',
   'RateLimited',
-  'EmptyBody',
   'SparqlProbeFailed',
-  'RdfParseFailed',
 ].map((name) => `${PROBE_OUTCOME_BASE_URI}${name}`);
 
 // The probe outcomes that mean a distribution serves the wrong format: it
@@ -57,18 +55,17 @@ export const UNAVAILABILITY_OUTCOMES: readonly string[] = [
   ...CONTENT_TYPE_FAILURE_OUTCOMES,
 ];
 
-// Deterministic failures: outcomes whose verdict cannot change by waiting. An
-// empty body, an unparseable graph, or a Content-Type that does not match the
-// declared media type is the same defect on the next crawl as it is today, so
-// both the crawler grace window and the browser badge surface these within one
-// probe cycle instead of holding them back for the transient failure-streak
-// window. The remaining unavailability outcomes – NetworkError, NotFound,
-// ServerError, AuthRequired, RateLimited, SparqlProbeFailed – are transient
-// reachability failures that can self-heal between crawls, so they keep riding
-// out the grace window.
+// Deterministic failures: outcomes whose verdict cannot change by waiting. A
+// Content-Type that does not match the declared media type, or none declared at
+// all, is the same defect on the next crawl as it is today, so both the crawler
+// grace window and the browser badge surface these within one probe cycle
+// instead of holding them back for the transient failure-streak window. The
+// remaining unavailability outcomes – NetworkError, NotFound, ServerError,
+// AuthRequired, RateLimited, SparqlProbeFailed – are transient reachability
+// failures that can self-heal between crawls, so they keep riding out the grace
+// window. (Empty bodies and unparseable graphs are no longer reachability
+// outcomes at all: they migrated to the validity rail – see PRD #2103.)
 export const DETERMINISTIC_FAILURE_OUTCOMES: readonly string[] = [
-  'EmptyBody',
-  'RdfParseFailed',
   'ContentTypeMismatch',
   'ContentTypeMissing',
 ].map((name) => `${PROBE_OUTCOME_BASE_URI}${name}`);

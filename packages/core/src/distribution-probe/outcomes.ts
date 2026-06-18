@@ -19,9 +19,7 @@ export const probeOutcomes = {
   RateLimited: ndeProbe('RateLimited'),
   ContentTypeMismatch: ndeProbe('ContentTypeMismatch'),
   ContentTypeMissing: ndeProbe('ContentTypeMissing'),
-  EmptyBody: ndeProbe('EmptyBody'),
   SparqlProbeFailed: ndeProbe('SparqlProbeFailed'),
-  RdfParseFailed: ndeProbe('RdfParseFailed'),
 } as const;
 
 export type ProbeOutcomeIri =
@@ -76,15 +74,20 @@ function classifyHttpFailure(
   result: SparqlProbeResult | DataDumpProbeResult,
 ): ProbeVerdict {
   if (result.failureReason !== null) {
-    const outcome =
-      result instanceof SparqlProbeResult
-        ? probeOutcomes.SparqlProbeFailed
-        : probeResultToRdfOrEmptyOutcome(result);
-    return {
-      success: false,
-      outcome,
-      detail: result.failureReason,
-    };
+    if (result instanceof SparqlProbeResult) {
+      return {
+        success: false,
+        outcome: probeOutcomes.SparqlProbeFailed,
+        detail: result.failureReason,
+      };
+    }
+    // A data-dump body that was fetched but failed to parse (or came back
+    // empty) is still reachable: that defect is a validity signal, recorded on
+    // the validity rail (metric:distribution-rdf-valid) by probeResultToVerdict,
+    // not a reachability outcome. RdfParseFailed and EmptyBody migrated off
+    // nde-probe for exactly this reason (PRD #2103), so the reachability verdict
+    // here is success and the body never produces a reachability violation.
+    return { success: true, outcome: null, detail: null };
   }
 
   const status = result.statusCode;
@@ -143,14 +146,6 @@ function sparqlContentTypeMismatchDetail(mediaType: string): string {
     return `${base} The URL likely points to a web page, such as a SPARQL query editor, rather than the SPARQL protocol endpoint.`;
   }
   return base;
-}
-
-function probeResultToRdfOrEmptyOutcome(
-  result: DataDumpProbeResult,
-): ProbeOutcomeIri {
-  const reason = result.failureReason ?? '';
-  if (/empty/i.test(reason)) return probeOutcomes.EmptyBody;
-  return probeOutcomes.RdfParseFailed;
 }
 
 function contentTypeMismatchWarning(warnings: string[]): string | null {
