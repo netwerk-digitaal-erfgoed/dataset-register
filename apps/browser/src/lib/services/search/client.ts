@@ -19,7 +19,7 @@ let client: Client | undefined;
 let resolver: LabelResolver | undefined;
 
 /** Typesense client built from the public search-only key. */
-function searchClient(): Client {
+export function searchClient(): Client {
   client ??= new Client({
     nodes: [
       {
