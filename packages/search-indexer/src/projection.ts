@@ -45,6 +45,7 @@ function datasetFields(): readonly FieldSpec[] {
       kind: {
         type: 'langText',
         locales: ['nl', 'en'],
+        display: true,
         search: true,
         sort: true,
       },
@@ -52,17 +53,24 @@ function datasetFields(): readonly FieldSpec[] {
     {
       name: 'description',
       path: `${DCT}description`,
-      kind: { type: 'langText', locales: ['nl', 'en'], search: true },
+      kind: {
+        type: 'langText',
+        locales: ['nl', 'en'],
+        display: true,
+        search: true,
+      },
     },
     {
+      // Search-only: the card resolves the publisher IRI to a label via the
+      // `labels` collection, so no per-locale display fields are emitted here.
       name: 'publisher',
       path: `${DR}publisherName`,
-      kind: { type: 'langText', search: true, display: true },
+      kind: { type: 'langText', locales: ['nl', 'en'], search: true },
     },
     {
       name: 'creator',
       path: `${DR}creatorName`,
-      kind: { type: 'langText', search: true },
+      kind: { type: 'langText', locales: ['nl', 'en'], search: true },
     },
     {
       name: 'keyword',

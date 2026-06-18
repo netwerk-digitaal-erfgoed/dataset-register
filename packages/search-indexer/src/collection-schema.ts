@@ -13,9 +13,11 @@ import {
  * drift. Field types are written in Typesense’s vocabulary in the registry, so
  * this is a near-direct mapping.
  *
- * Per D21, Dutch stemming (`stem`) is enabled on the folded `*_search` fields
- * and `locale` is deliberately left unset: values are pre-folded by us, so a
- * non-default locale (which would preserve diacritics) must not be applied.
+ * Stemming (`stem`) is enabled per locale on the folded `*_search_${locale}`
+ * fields with that field’s `locale` (nl→Dutch, en→English Snowball): a field has
+ * one `locale` hence one stemmer, so per-locale fields stem both languages
+ * correctly. Pre-folding makes the non-default locale’s diacritic preservation
+ * moot, so the values stay diacritic-insensitive.
  */
 export function buildCollectionSchema(name: string): CollectionCreateSchema {
   return {

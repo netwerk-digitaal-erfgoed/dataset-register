@@ -66,6 +66,31 @@ export interface SearchFieldSpec {
   readonly source: SearchFieldSource;
 }
 
+/** The locales projected per `langText` concept (display, search, sort). */
+export const SEARCH_LOCALES = ['nl', 'en'] as const;
+
+/**
+ * A folded, stemmed search field per locale (`${base}_search_nl/_en`), each
+ * stemmed in its own language. `@lde/search` emits these from one `locales`
+ * list; the schema sets `stem` + `locale` per field so nl and en stem correctly.
+ */
+function perLocaleSearch(
+  base: string,
+  weight: number,
+  options: { readonly optional?: boolean } = {},
+): readonly SearchFieldSpec[] {
+  return SEARCH_LOCALES.map((locale) => ({
+    name: `${base}_search_${locale}`,
+    type: 'string',
+    role: 'searchable',
+    weight,
+    stem: true,
+    locale,
+    optional: options.optional ?? false,
+    source: 'register',
+  }));
+}
+
 /**
  * The register (substrate-A) fields plus the DKG (substrate-B) fields. DKG
  * fields are declared from day one (so the collection schema is stable across
@@ -73,46 +98,16 @@ export interface SearchFieldSpec {
  * enrichment pipeline, not the register projector.
  */
 export const SEARCH_FIELDS: readonly SearchFieldSpec[] = [
-  // --- Searchable, folded, Dutch-stemmed (all language values per concept) ---
-  {
-    name: 'title_search',
-    type: 'string',
-    role: 'searchable',
-    weight: 5,
-    stem: true,
-    locale: 'nl',
-    source: 'register',
-  },
-  {
-    name: 'publisher_search',
-    type: 'string',
-    role: 'searchable',
-    weight: 3,
-    stem: true,
-    locale: 'nl',
-    optional: true,
-    source: 'register',
-  },
-  {
-    name: 'description_search',
-    type: 'string',
-    role: 'searchable',
-    weight: 2,
-    stem: true,
-    locale: 'nl',
-    optional: true,
-    source: 'register',
-  },
-  {
-    name: 'creator_search',
-    type: 'string',
-    role: 'searchable',
-    weight: 2,
-    stem: true,
-    locale: 'nl',
-    optional: true,
-    source: 'register',
-  },
+  // --- Searchable: folded, per-locale, stemmed in that locale. One field per
+  //     language so nl and en are each stemmed correctly (one field has one
+  //     `locale` hence one Snowball stemmer); the browser query_bys all of them
+  //     and weights the active locale higher. ---
+  ...perLocaleSearch('title', 5),
+  ...perLocaleSearch('publisher', 3, { optional: true }),
+  ...perLocaleSearch('description', 2, { optional: true }),
+  ...perLocaleSearch('creator', 2, { optional: true }),
+  // Keyword is a faceted tag list, not language-tagged prose: one folded,
+  // Dutch-stemmed search field (the facet’s `_search` array), not per-locale.
   {
     name: 'keyword_search',
     type: 'string[]',
@@ -124,7 +119,9 @@ export const SEARCH_FIELDS: readonly SearchFieldSpec[] = [
     source: 'register',
   },
 
-  // --- Per-locale display fields (locale drives display, not retrieval) ---
+  // --- Per-locale display fields (title and description shown by locale).
+  //     Publisher has no display field: the card resolves the publisher IRI to
+  //     a label via the `labels` collection, exactly like a facet bucket. ---
   {
     name: 'title_nl',
     type: 'string',
@@ -151,14 +148,6 @@ export const SEARCH_FIELDS: readonly SearchFieldSpec[] = [
   },
   {
     name: 'description_en',
-    type: 'string',
-    role: 'display',
-    index: false,
-    optional: true,
-    source: 'register',
-  },
-  {
-    name: 'publisher_name',
     type: 'string',
     role: 'display',
     index: false,
@@ -223,11 +212,22 @@ export const SEARCH_FIELDS: readonly SearchFieldSpec[] = [
     sort: true,
     source: 'register',
   },
+  // Per-locale sort keys (folded), so browse-mode sorting follows the active
+  // language instead of being frozen to one.
   {
-    name: 'title_sort',
+    name: 'title_sort_nl',
     type: 'string',
     role: 'sort',
     sort: true,
+    optional: true,
+    source: 'register',
+  },
+  {
+    name: 'title_sort_en',
+    type: 'string',
+    role: 'sort',
+    sort: true,
+    optional: true,
     source: 'register',
   },
   {

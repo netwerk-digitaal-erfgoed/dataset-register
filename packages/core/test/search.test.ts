@@ -18,11 +18,11 @@ describe('search field registry', () => {
   });
 
   it('orders query_by by descending weight, title first', () => {
-    expect(searchableFields()[0].name).toBe('title_search');
+    expect(searchableFields()[0].name).toBe('title_search_nl');
     expect(queryBy()).toBe(
-      'title_search,publisher_search,description_search,creator_search,keyword_search',
+      'title_search_nl,title_search_en,publisher_search_nl,publisher_search_en,description_search_nl,description_search_en,creator_search_nl,creator_search_en,keyword_search',
     );
-    expect(queryByWeights()).toBe('5,3,2,2,1');
+    expect(queryByWeights()).toBe('5,5,3,3,2,2,2,2,1');
   });
 
   it('only marks weighted fields as searchable', () => {
@@ -58,10 +58,10 @@ describe('search field registry', () => {
     expect(field?.type).toMatch(/^int/);
   });
 
-  it('enables Dutch stemming only on folded searchable fields', () => {
+  it('enables per-locale stemming only on folded searchable fields', () => {
     for (const field of SEARCH_FIELDS) {
       if (field.stem) {
-        expect(field.name).toMatch(/_search$/);
+        expect(field.name).toMatch(/_search(_[a-z]{2})?$/);
         expect(field.weight).toBeGreaterThan(0);
       }
     }

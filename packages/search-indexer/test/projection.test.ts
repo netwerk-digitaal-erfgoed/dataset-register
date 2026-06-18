@@ -28,7 +28,7 @@ const titled = (extra: FramedSubject = {}): FramedSubject => ({
 });
 
 describe('dataset projection', () => {
-  it('folds searchable text across all languages (#1661)', () => {
+  it('folds searchable text per locale, stemmed in each language (#1661)', () => {
     const document = project({
       '@id': 'https://example.org/dataset/1',
       [`${DCT}title`]: [
@@ -36,10 +36,12 @@ describe('dataset projection', () => {
         { '@language': 'en', '@value': 'Møhlmann collection' },
       ],
     });
-    expect(document.title_search).toBe('mohlmann mohlmann collection');
+    expect(document.title_search_nl).toBe('mohlmann');
+    expect(document.title_search_en).toBe('mohlmann collection');
     expect(document.title_nl).toBe('Møhlmann');
     expect(document.title_en).toBe('Møhlmann collection');
-    expect(document.title_sort).toBe('mohlmann');
+    expect(document.title_sort_nl).toBe('mohlmann');
+    expect(document.title_sort_en).toBe('mohlmann collection');
   });
 
   it('derives status and rank from the promoted registration facts', () => {
@@ -98,8 +100,10 @@ describe('dataset projection', () => {
       'https://example.org/org',
       'https://example.org/creator',
     ]);
-    expect(document.publisher_name).toBe('KB');
-    expect(document.publisher_search).toBe('kb');
+    // Publisher is search-only: no display field is emitted (the card resolves
+    // the publisher IRI to a label via the labels collection).
+    expect(document.publisher_search_nl).toBe('kb');
+    expect(document.publisher_name).toBeUndefined();
   });
 
   it('emits DKG facets and derives class_group from the merged IR', () => {
@@ -129,7 +133,7 @@ describe('dataset projection', () => {
 
   it('omits absent optional fields and DKG facets', () => {
     const document = project(titled());
-    expect(document.description_search).toBeUndefined();
+    expect(document.description_search_nl).toBeUndefined();
     expect(document.publisher).toBeUndefined();
     expect(document.format).toBeUndefined();
     expect(document.class).toBeUndefined();
@@ -145,13 +149,14 @@ describe('buildCollectionSchema', () => {
     expect(schema.default_sorting_field).toBe('status_rank');
   });
 
-  it('enables Dutch stemming on searchable fields', () => {
+  it('enables per-locale stemming on searchable fields', () => {
     const schema = buildCollectionSchema('datasets_test');
-    const titleSearch = schema.fields?.find(
-      (field) => field.name === 'title_search',
-    );
-    expect(titleSearch?.stem).toBe(true);
-    expect(titleSearch?.locale).toBe('nl');
+    const nl = schema.fields?.find((field) => field.name === 'title_search_nl');
+    const en = schema.fields?.find((field) => field.name === 'title_search_en');
+    expect(nl?.stem).toBe(true);
+    expect(nl?.locale).toBe('nl');
+    expect(en?.stem).toBe(true);
+    expect(en?.locale).toBe('en');
   });
 
   it('references the synonym set', () => {
