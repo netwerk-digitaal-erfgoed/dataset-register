@@ -46,6 +46,32 @@ describe('selectPreferredDownload', () => {
     );
   });
 
+  it('prefers a valid distribution over a reachable-but-invalid one, but still offers the invalid bytes as a last resort', () => {
+    const invalid = {
+      accessURL: 'https://example.org/broken.ttl',
+      mediaType: 'text/turtle',
+    };
+    const valid = {
+      accessURL: 'https://example.org/good.ttl',
+      mediaType: 'text/turtle',
+    };
+    const health = new Map([
+      [invalid.accessURL, healthy],
+      [valid.accessURL, healthy],
+    ]);
+    const invalidUrls = new Set([invalid.accessURL]);
+
+    // A valid distribution wins even though both are reachable.
+    expect(
+      selectPreferredDownload([invalid, valid], health, now, invalidUrls),
+    ).toBe(valid);
+    // When the invalid one is the only reachable option, its bytes are still
+    // offered rather than disabling the download.
+    expect(selectPreferredDownload([invalid], health, now, invalidUrls)).toBe(
+      invalid,
+    );
+  });
+
   it('applies type priority among reachable distributions (gzipped N-Triples wins over Turtle, Turtle over JSON-LD)', () => {
     const jsonLd = {
       accessURL: 'https://example.org/data.jsonld',

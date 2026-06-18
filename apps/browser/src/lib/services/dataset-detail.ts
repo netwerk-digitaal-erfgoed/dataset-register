@@ -859,9 +859,18 @@ async function fetchDistributionValidity(
     fetchValidityVerdicts(datasetUri, PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT, 'deep'),
   ]);
   for (const [url, verdicts] of [...shallow, ...deep]) {
-    byUrl.set(url, [...(byUrl.get(url) ?? []), ...verdicts]);
+    for (const verdict of verdicts) appendVerdict(byUrl, url, verdict);
   }
   return byUrl;
+}
+
+// One row of the validity measurement query.
+interface ValidityBinding {
+  accessURL: { value: string };
+  value: { value: string };
+  fingerprint?: { value: string };
+  reason?: { value: string };
+  message?: { value: string };
 }
 
 async function fetchValidityVerdicts(
@@ -869,17 +878,15 @@ async function fetchValidityVerdicts(
   endpoint: string,
   depth: ValidityVerdict['depth'],
 ): Promise<Map<string, ValidityVerdict[]>> {
-  const query = `
-    PREFIX dcat: <http://www.w3.org/ns/dcat#>
-    PREFIX dqv: <http://www.w3.org/ns/dqv#>
-    PREFIX prov: <http://www.w3.org/ns/prov#>
-    PREFIX failure: <https://def.nde.nl/failure#>
-    PREFIX probe: <https://def.nde.nl/probe#>
-    PREFIX metric: <https://def.nde.nl/metric#>
-    SELECT ?accessURL ?value ?fingerprint ?reason ?message
-    WHERE {
+  // The register (shallow) stores datasets and validity measurements in named
+  // graphs, so the query must name them — exactly as fetchDistributionHealth
+  // does. The Knowledge Graph (deep) serves the default graph, so its query is
+  // unscoped, matching the other DKG queries in this file. Using GRAPH blocks on
+  // the register endpoint is what makes the shallow rail resolve at all.
+  const datasetPattern = `
       <${datasetUri}> dcat:distribution ?distribution .
-      ?distribution dcat:accessURL ?accessURL .
+      ?distribution dcat:accessURL ?accessURL .`;
+  const measurementPattern = `
       ?measurement dqv:computedOn ?accessURL ;
           dqv:isMeasurementOf metric:distribution-rdf-valid ;
           dqv:value ?value .
@@ -889,49 +896,68 @@ async function fetchValidityVerdicts(
         ?activity prov:qualifiedUsage ?usage .
         ?usage failure:reason ?reason .
         OPTIONAL { ?usage failure:message ?message }
+      }`;
+  const where =
+    depth === 'shallow'
+      ? `GRAPH ?datasetGraph {${datasetPattern}
       }
+      GRAPH ?validityGraph {${measurementPattern}
+      }`
+      : `${datasetPattern}${measurementPattern}`;
+  const query = `
+    PREFIX dcat: <http://www.w3.org/ns/dcat#>
+    PREFIX dqv: <http://www.w3.org/ns/dqv#>
+    PREFIX prov: <http://www.w3.org/ns/prov#>
+    PREFIX failure: <https://def.nde.nl/failure#>
+    PREFIX probe: <https://def.nde.nl/probe#>
+    PREFIX metric: <https://def.nde.nl/metric#>
+    SELECT DISTINCT ?accessURL ?value ?fingerprint ?reason ?message
+    WHERE {
+      ${where}
     }
   `;
   const byUrl = new Map<string, ValidityVerdict[]>();
   try {
     const bindingsStream = await fetcher.fetchBindings(endpoint, query);
     for await (const raw of bindingsStream) {
-      const binding = raw as unknown as {
-        accessURL: { value: string };
-        value: { value: string };
-        fingerprint?: { value: string };
-        reason?: { value: string };
-        message?: { value: string };
-      };
+      const binding = raw as unknown as ValidityBinding;
       const verdict = toValidityVerdict(binding, depth);
       if (verdict === null) continue;
-      byUrl.set(binding.accessURL.value, [
-        ...(byUrl.get(binding.accessURL.value) ?? []),
-        verdict,
-      ]);
+      appendVerdict(byUrl, binding.accessURL.value, verdict);
     }
-  } catch (e: unknown) {
+  } catch (error: unknown) {
     console.error(
       `Distribution validity query (${depth}) failed:`,
-      e instanceof Error ? e.message : e,
+      error instanceof Error ? error.message : error,
     );
   }
   return byUrl;
+}
+
+// Append a verdict to the multimap of verdicts-by-access-URL, creating the entry
+// on first use.
+function appendVerdict(
+  byUrl: Map<string, ValidityVerdict[]>,
+  url: string,
+  verdict: ValidityVerdict,
+): void {
+  const verdicts = byUrl.get(url);
+  if (verdicts === undefined) {
+    byUrl.set(url, [verdict]);
+  } else {
+    verdicts.push(verdict);
+  }
 }
 
 // Reconstruct a ValidityVerdict from a DQV-measurement binding. The reason's
 // local name (after the scheme's #) is the verdict reason, matching the
 // distribution-validity-failure scheme the producers write.
 function toValidityVerdict(
-  binding: {
-    value: { value: string };
-    fingerprint?: { value: string };
-    reason?: { value: string };
-    message?: { value: string };
-  },
+  binding: ValidityBinding,
   depth: ValidityVerdict['depth'],
 ): ValidityVerdict | null {
-  const valid = binding.value.value === 'true';
+  // xsd:boolean has two lexical forms per endpoint; accept both 'true' and '1'.
+  const valid = binding.value.value === 'true' || binding.value.value === '1';
   const verdict: ValidityVerdict = {
     valid,
     validatedFingerprint: binding.fingerprint?.value ?? null,

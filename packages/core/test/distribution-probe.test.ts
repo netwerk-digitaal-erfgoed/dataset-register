@@ -588,6 +588,120 @@ describe('DistributionProbeStage', () => {
     expect(message?.object.value).toContain('could not be parsed as RDF');
   });
 
+  it('clears a stale validity measurement when a data dump yields no verdict', async () => {
+    // A reachable dump whose content type the probe does not parse-validate
+    // (here application/octet-stream) yields no validity verdict. Any prior
+    // measurement for the URL must be cleared so an old verdict cannot linger.
+    nock('https://example.org')
+      .head('/opaque')
+      .reply(200, '', { 'Content-Type': 'application/octet-stream' });
+    nock('https://example.org')
+      .get('/opaque')
+      .reply(200, 'opaque', { 'Content-Type': 'application/octet-stream' });
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-opaque');
+    const distributionNode = factory.blankNode();
+    const url = factory.namedNode('https://example.org/opaque');
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    dataset.add(factory.quad(distributionNode, dcat('accessURL'), url));
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('mediaType'),
+        factory.literal('application/octet-stream'),
+      ),
+    );
+
+    const healthStore = new InMemoryHealthStore();
+    const validityStore = new InMemoryValidityStore();
+    // A measurement recorded on an earlier crawl, when the dump was parseable.
+    await validityStore.store(new URL(url.value), []);
+
+    const stage = new DistributionProbeStage({ healthStore, validityStore });
+    await stage.run(dataset);
+
+    expect(validityStore.quadsByUrl.has(url.value)).toBe(false);
+  });
+
+  it('isolates a validity-store failure so the reachability rail is unaffected', async () => {
+    // A small valid Turtle dump: the probe parses it, so a verdict is produced
+    // and recordValidity attempts to store it. The store throws, but the failure
+    // must be swallowed (logged) — the probe still succeeds and the health
+    // record is written, never a spurious NetworkError.
+    nock('https://example.org')
+      .head('/good')
+      .reply(200, '', {
+        'Content-Type': 'text/turtle',
+        'Content-Length': '20',
+      });
+    nock('https://example.org')
+      .get('/good')
+      .reply(200, '<a> <b> <c> .', { 'Content-Type': 'text/turtle' });
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-good');
+    const distributionNode = factory.blankNode();
+    const url = factory.namedNode('https://example.org/good');
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    dataset.add(factory.quad(distributionNode, dcat('accessURL'), url));
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('mediaType'),
+        factory.literal('text/turtle'),
+      ),
+    );
+
+    const healthStore = new InMemoryHealthStore();
+    const throwingValidityStore: DistributionValidityStore = {
+      store: () => Promise.reject(new Error('validity store down')),
+      delete: () => Promise.resolve(),
+    };
+
+    const stage = new DistributionProbeStage({
+      healthStore,
+      validityStore: throwingValidityStore,
+    });
+    const quads = await stage.run(dataset);
+
+    // No reachability violation despite the validity-store failure.
+    expect(quads).toHaveLength(0);
+    const stored = await healthStore.get(new URL(url.value));
+    expect(stored?.lastOutcome).toBeNull();
+    expect(stored?.consecutiveFailures).toBe(0);
+  });
+
+  it('ignores a non-numeric declared byteSize when building the probe distribution', () => {
+    // Guards the source fingerprint against a "<date>|NaN" component: a malformed
+    // dcat:byteSize must leave the distribution's byteSize unset, not NaN.
+    const dataset = factory.dataset();
+    const distributionNode = factory.blankNode();
+    const url = factory.namedNode('https://example.org/sized.ttl');
+    dataset.add(
+      factory.quad(
+        factory.namedNode('https://example.org/d-sized'),
+        dcat('distribution'),
+        distributionNode,
+      ),
+    );
+    dataset.add(factory.quad(distributionNode, dcat('accessURL'), url));
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('byteSize'),
+        factory.literal('not-a-number'),
+      ),
+    );
+
+    const [candidate] = collectDistributions(dataset);
+    expect(candidate!.distribution?.byteSize).toBeUndefined();
+  });
+
   it('clears health state after a successful probe', async () => {
     const dataset = factory.dataset();
     const datasetNode = factory.namedNode('https://example.org/d4');

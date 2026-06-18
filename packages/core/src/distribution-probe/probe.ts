@@ -8,6 +8,7 @@ import type {
 } from '@rdfjs/types';
 import { Distribution } from '@lde/dataset';
 import { probe as probeDistribution } from '@lde/distribution-probe';
+import { DataDumpProbeResult } from '@lde/distribution-probe';
 import type { ProbeResultType } from '@lde/distribution-probe';
 import { probeResultToVerdict } from '@lde/distribution-health';
 import type { ValidityVerdict } from '@lde/distribution-health';
@@ -211,12 +212,14 @@ export class DistributionProbeStage {
             ...emitProbeResult(member, verdict, record, this.severities),
           );
         }
-        // Registration path (no health store): an invalid shallow validity
-        // verdict surfaces as a sh:Violation so registration rejects the
-        // distribution with the parse reason. In the crawler path the verdict
-        // is recorded as a DQV measurement instead (see probeCandidate).
+        // When validity is not being persisted (the registration path), an
+        // invalid shallow verdict surfaces as a sh:Violation so registration
+        // rejects the distribution with the parse reason. When a validity store
+        // is configured (the crawler path) the verdict is recorded as a DQV
+        // measurement instead (see probeCandidate). Keying on validityStore —
+        // not healthStore — keeps "record vs reject" a single, coherent choice.
         if (
-          this.healthStore === null &&
+          this.validityStore === null &&
           validityVerdict !== null &&
           !validityVerdict.valid
         ) {
@@ -258,15 +261,25 @@ export class DistributionProbeStage {
     const validityVerdict = probeResultToVerdict(result, fingerprint);
 
     const probeUrl = canonicalProbeUrl(distribution.accessUrl);
-    await this.recordValidity(probeUrl, validityVerdict);
 
-    if (this.healthStore === null) {
-      return { verdict, record: null, validityVerdict };
-    }
+    // The reachability rail is authoritative and updated first; the validity
+    // rail is best-effort enrichment recorded afterwards. recordValidity
+    // isolates its own failures so a validity-store outage can never reject the
+    // probe and corrupt the reachability verdict (which would surface as a
+    // spurious NetworkError).
+    const healthStore = this.healthStore;
+    const record =
+      healthStore === null
+        ? null
+        : await this.updateHealth(healthStore, probeUrl, verdict, fingerprint);
+    await this.recordValidity(
+      probeUrl,
+      validityVerdict,
+      result instanceof DataDumpProbeResult,
+    );
 
-    const record = await this.updateHealth(probeUrl, verdict, fingerprint);
     return {
-      verdict: this.applyPromotion(verdict, record),
+      verdict: record === null ? verdict : this.applyPromotion(verdict, record),
       record,
       validityVerdict,
     };
@@ -275,33 +288,46 @@ export class DistributionProbeStage {
   /**
    * Persist a shallow validity verdict as a DQV/PROV measurement (both valid and
    * invalid, per distribution attempted). No-op when no validity store is
-   * configured (the registration API path, which instead emits a sh:Violation)
-   * or when the probe carried no validity signal (probeResultToVerdict returned
-   * null: a SPARQL endpoint, a network/HTTP failure, or a body the probe did not
-   * parse).
+   * configured (the registration API path, which instead emits a sh:Violation).
+   * When the probe carried no validity signal (probeResultToVerdict returned
+   * null) the measurement is cleared for a data dump — so a verdict that
+   * disappears (e.g. a dump that grew past the parse limit or changed content
+   * type) does not leave a stale measurement behind — and skipped for anything
+   * else (a SPARQL endpoint or network failure never has a measurement).
+   * Best-effort: a store failure is logged, never thrown, so the reachability
+   * rail is unaffected.
    */
   private async recordValidity(
     probeUrl: URL,
     validityVerdict: ValidityVerdict | null,
+    isDataDump: boolean,
   ): Promise<void> {
-    if (this.validityStore === null || validityVerdict === null) return;
-    const quads = distributionValidityQuads(validityVerdict, {
-      distributionUrl: probeUrl.toString(),
-      generatedAt: new Date(),
-      producer: this.producerAgent,
-    });
-    await this.validityStore.store(probeUrl, quads);
+    const store = this.validityStore;
+    if (store === null) return;
+    try {
+      if (validityVerdict === null) {
+        if (isDataDump) await store.delete(probeUrl);
+        return;
+      }
+      const quads = distributionValidityQuads(validityVerdict, {
+        distributionUrl: probeUrl.toString(),
+        generatedAt: new Date(),
+        producer: this.producerAgent,
+      });
+      await store.store(probeUrl, quads);
+    } catch (error) {
+      this.logger?.warn(
+        `Failed to record distribution validity for ${probeUrl.toString()}: ${String(error)}`,
+      );
+    }
   }
 
   private async updateHealth(
+    store: DistributionHealthStore,
     probeUrl: URL,
     verdict: ProbeVerdict,
     fingerprint: string | null,
   ): Promise<DistributionHealthRecord> {
-    const store = this.healthStore;
-    if (store === null) {
-      throw new Error('healthStore is required');
-    }
     const now = new Date();
     const existing = await store.get(probeUrl);
 
@@ -614,13 +640,19 @@ function toDistribution(
   if (compressFormat !== undefined) {
     distribution.compressFormat = compressFormat;
   }
-  // sourceFingerprint treats an Invalid Date or NaN as absent, so a malformed
-  // declared value cannot produce an unstable fingerprint; pass them through.
+  // A malformed declared value must not become a fingerprint component.
+  // sourceFingerprint already drops an Invalid Date, so lastModified is passed
+  // through as-is; but its NaN guard only covers the probe's Content-Length, not
+  // the declared byteSize fallback, so a non-numeric dcat:byteSize would yield a
+  // "<date>|NaN" fingerprint. Guard it here: a non-finite size is left unset.
   if (modified !== undefined) {
     distribution.lastModified = new Date(modified);
   }
   if (byteSize !== undefined) {
-    distribution.byteSize = Number(byteSize);
+    const parsedByteSize = Number(byteSize);
+    if (Number.isFinite(parsedByteSize)) {
+      distribution.byteSize = parsedByteSize;
+    }
   }
   return distribution;
 }

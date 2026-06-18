@@ -28,7 +28,7 @@ export class SparqlDistributionValidityStore implements DistributionValidityStor
   public async store(accessUrl: URL, quads: Quad[]): Promise<void> {
     const triples = await quadsToNTriples(quads);
     await this.client.update(`
-      ${DELETE_MEASUREMENT_FOR(accessUrl, this.graphIri)}
+      ${deleteMeasurementFor(accessUrl, this.graphIri)}
 
       INSERT DATA {
         GRAPH <${this.graphIri}> {
@@ -38,7 +38,7 @@ export class SparqlDistributionValidityStore implements DistributionValidityStor
   }
 
   public async delete(accessUrl: URL): Promise<void> {
-    await this.client.update(DELETE_MEASUREMENT_FOR(accessUrl, this.graphIri));
+    await this.client.update(deleteMeasurementFor(accessUrl, this.graphIri));
   }
 }
 
@@ -47,29 +47,32 @@ export class SparqlDistributionValidityStore implements DistributionValidityStor
 // activity and usage nodes are removed with it. Anchored on dqv:computedOn +
 // the validity metric so a graph shared with other measurements stays
 // untouched.
-function DELETE_MEASUREMENT_FOR(accessUrl: URL, graphIri: string): string {
+function deleteMeasurementFor(accessUrl: URL, graphIri: string): string {
   const iri = accessUrl.toString();
+  // One UNION branch per structural node so each binds ?subject/?p/?o on its
+  // own. OPTIONAL with three independent ?p/?o triples would instead form a
+  // Cartesian product of the measurement's, activity's, and usage's triples.
   return `
       PREFIX dqv: <http://www.w3.org/ns/dqv#>
       PREFIX prov: <http://www.w3.org/ns/prov#>
 
       WITH <${graphIri}>
       DELETE {
-        ?measurement ?measurementP ?measurementO .
-        ?activity ?activityP ?activityO .
-        ?usage ?usageP ?usageO .
+        ?subject ?p ?o .
       }
       WHERE {
         ?measurement dqv:computedOn <${iri}> ;
-          dqv:isMeasurementOf <https://def.nde.nl/metric#distribution-rdf-valid> ;
-          ?measurementP ?measurementO .
-        OPTIONAL {
+          dqv:isMeasurementOf <https://def.nde.nl/metric#distribution-rdf-valid> .
+        {
+          ?measurement ?p ?o .
+          BIND(?measurement AS ?subject)
+        } UNION {
+          ?measurement prov:wasGeneratedBy ?subject .
+          ?subject ?p ?o .
+        } UNION {
           ?measurement prov:wasGeneratedBy ?activity .
-          ?activity ?activityP ?activityO .
-          OPTIONAL {
-            ?activity prov:qualifiedUsage ?usage .
-            ?usage ?usageP ?usageO .
-          }
+          ?activity prov:qualifiedUsage ?subject .
+          ?subject ?p ?o .
         }
       };`;
 }

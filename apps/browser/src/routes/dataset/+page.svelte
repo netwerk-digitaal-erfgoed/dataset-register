@@ -13,6 +13,7 @@
     isSparqlDistribution,
   } from '$lib/utils/distribution';
   import {
+    distributionAvailability,
     usabilityFor,
     type DistributionHealth,
     type Usability,
@@ -136,10 +137,48 @@
     );
   }
 
-  // Sort distributions availability-first (reachable before unavailable), then by
-  // the type priority SPARQL > RDF > other.
+  // What the status badge shows: a green check when usable, or when reachable
+  // with validity not yet known (no applicable verdict — e.g. a SPARQL endpoint
+  // or a large dump); an amber warning when unusable; nothing when the register
+  // has never probed the distribution. Falling back to reachability for the
+  // 'unknown' case preserves the positive signal a reachable distribution had
+  // before validity was modelled.
+  type BadgeKind = 'usable' | 'reachable' | 'unusable' | 'none';
+  function badgeKindFor(distribution: DistributionDetail): BadgeKind {
+    const usability = usabilityForDistribution(distribution);
+    if (usability.state === 'usable') return 'usable';
+    if (usability.state === 'unusable') return 'unusable';
+    const health = healthByUrl.get(distribution.accessURL) ?? null;
+    return health !== null &&
+      distributionAvailability(health, now) === 'reachable'
+      ? 'reachable'
+      : 'none';
+  }
+
+  // Access URLs of distributions that are reachable but serve invalid RDF, so the
+  // ranking can keep them downloadable yet behind any usable distribution.
+  const invalidUrls = $derived(
+    new Set(
+      distributions
+        .filter((distribution) => {
+          const usability = usabilityForDistribution(distribution);
+          return (
+            usability.state === 'unusable' && usability.cause === 'invalid'
+          );
+        })
+        .map((distribution) => distribution.accessURL),
+    ),
+  );
+
+  // Sort distributions availability-first (reachable before unavailable), with
+  // reachable-but-invalid ones behind valid ones, then by type priority.
   const sortedDistributions = $derived(
-    sortDistributionsByAvailability(distributions, healthByUrl, now),
+    sortDistributionsByAvailability(
+      distributions,
+      healthByUrl,
+      now,
+      invalidUrls,
+    ),
   );
 
   const sparqlDistributions = $derived(
@@ -163,7 +202,12 @@
   // so it always works; undefined when every download is unavailable, which
   // disables the primary action.
   const preferredDownload = $derived(
-    selectPreferredDownload(downloadDistributions, healthByUrl, now),
+    selectPreferredDownload(
+      downloadDistributions,
+      healthByUrl,
+      now,
+      invalidUrls,
+    ),
   );
 
   // Extract keywords and subject matter for current locale. dcat:theme is the
@@ -378,18 +422,20 @@
     return invalid?.message ? `${base} ${invalid.message}` : base;
   }
 
-  // Tooltip text for a distribution's usability: the cause (unreachable vs invalid
-  // RDF) with its typed reason, a note when the verdict is only shallow, and when
-  // the register last checked it.
+  // Tooltip text for a distribution's status badge: the cause (unreachable vs
+  // invalid RDF) with its typed reason when unusable, a note when the verdict is
+  // only shallow, a plain "reachable" line when validity is not yet known, and
+  // when the register last checked it.
   function usabilityTooltip(
+    kind: BadgeKind,
     usability: Usability,
     health: DistributionHealth | null,
     verdicts: readonly ValidityVerdict[],
   ): string {
     const parts: string[] = [];
-    if (usability.state === 'unusable' && usability.cause === 'invalid') {
+    if (kind === 'unusable' && usability.cause === 'invalid') {
       parts.push(validityReason(verdicts));
-    } else if (usability.state === 'unusable') {
+    } else if (kind === 'unusable') {
       parts.push(probeReason(health?.lastOutcome ?? null));
       if (health?.firstFailureAt) {
         parts.push(
@@ -398,11 +444,14 @@
           }),
         );
       }
-    } else {
+    } else if (kind === 'usable') {
       parts.push(m.detail_usability_usable_tooltip());
       if (usability.shallow) {
         parts.push(m.detail_usability_shallow_note());
       }
+    } else {
+      // reachable, validity not yet known
+      parts.push(m.detail_usability_reachable_tooltip());
     }
     if (health?.lastProbedAt) {
       parts.push(
@@ -427,23 +476,28 @@
 </svelte:head>
 
 {#snippet statusBadge(distribution: DistributionDetail, tooltipId: string)}
-  {@const usability = usabilityForDistribution(distribution)}
-  {#if usability.state !== 'unknown'}
+  {@const kind = badgeKindFor(distribution)}
+  {#if kind !== 'none'}
+    {@const usability = usabilityForDistribution(distribution)}
     {@const health = healthByUrl.get(distribution.accessURL) ?? null}
     {@const verdicts = validityByUrl.get(distribution.accessURL) ?? []}
     <span id={tooltipId} class="inline-flex cursor-help items-center">
-      {#if usability.state === 'usable'}
-        <CheckOutline class="h-4 w-4 text-green-600 dark:text-green-400" />
-        <span class="sr-only">{m.detail_usability_usable()}</span>
-      {:else}
+      {#if kind === 'unusable'}
         <ExclamationCircleOutline
           class="h-4 w-4 text-amber-600 dark:text-amber-500"
         />
         <span class="sr-only">{m.detail_usability_unusable()}</span>
+      {:else}
+        <CheckOutline class="h-4 w-4 text-green-600 dark:text-green-400" />
+        <span class="sr-only"
+          >{kind === 'usable'
+            ? m.detail_usability_usable()
+            : m.detail_usability_reachable()}</span
+        >
       {/if}
     </span>
     <Tooltip triggeredBy="#{tooltipId}"
-      >{usabilityTooltip(usability, health, verdicts)}</Tooltip
+      >{usabilityTooltip(kind, usability, health, verdicts)}</Tooltip
     >
   {/if}
 {/snippet}
