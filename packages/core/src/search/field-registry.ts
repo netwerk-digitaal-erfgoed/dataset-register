@@ -102,7 +102,9 @@ export const SEARCH_FIELDS: readonly SearchFieldSpec[] = [
   //     language so nl and en are each stemmed correctly (one field has one
   //     `locale` hence one Snowball stemmer); the browser query_bys all of them
   //     and weights the active locale higher. ---
-  ...perLocaleSearch('title', 5),
+  // Optional like every per-locale field: a dataset titled in one language has
+  // no `_search_` field for the other, so neither locale’s field can be required.
+  ...perLocaleSearch('title', 5, { optional: true }),
   ...perLocaleSearch('publisher', 3, { optional: true }),
   ...perLocaleSearch('description', 2, { optional: true }),
   ...perLocaleSearch('creator', 2, { optional: true }),
