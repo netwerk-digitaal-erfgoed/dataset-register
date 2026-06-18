@@ -4,7 +4,6 @@
   import {
     type DatasetCard,
     conformsToSchemaApNde,
-    iiifManifestCount,
     providesWorkingIiif,
   } from '$lib/services/datasets';
   import BadgeCheckOutline from 'flowbite-svelte-icons/BadgeCheckOutline.svelte';
@@ -50,12 +49,9 @@
   // Application Profile in the sampled resources.
   const conformsToProfile = $derived(conformsToSchemaApNde(dataset));
 
-  // Show the icon only for working IIIF; the tooltip reports the declared count.
+  // Show the icon only for working IIIF; the index records this as a boolean, so
+  // the badge carries no manifest count.
   const hasWorkingIiif = $derived(providesWorkingIiif(dataset));
-  const iiifManifests = $derived(iiifManifestCount(dataset));
-  const iiifManifestsDisplay = $derived(
-    formatNumber(iiifManifests, getLocale()),
-  );
 </script>
 
 <a
@@ -246,15 +242,12 @@
       {/if}
 
       {#if hasWorkingIiif}
-        <!-- The manifest count lives in the tooltip. -->
+        <!-- IIIF presence only — no manifest count is shown. -->
         <div class="group relative flex items-center gap-1.5">
           <div
             class="invisible absolute bottom-full left-1/2 mb-2 -translate-x-1/2 transform rounded bg-gray-800 px-2 py-1 text-xs whitespace-nowrap text-white opacity-0 transition-opacity duration-200 group-hover:visible group-hover:opacity-100"
           >
-            {m.dataset_iiif_manifests({
-              count: iiifManifests,
-              display: iiifManifestsDisplay,
-            })}
+            {m.dataset_iiif_manifests()}
             <div
               class="absolute top-full left-1/2 h-0 w-0 -translate-x-1/2 border-t-4 border-r-4 border-l-4 border-t-gray-800 border-r-transparent border-l-transparent"
             ></div>
@@ -264,10 +257,7 @@
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
-            aria-label={m.dataset_iiif_manifests({
-              count: iiifManifests,
-              display: iiifManifestsDisplay,
-            })}
+            aria-label={m.dataset_iiif_manifests()}
           >
             <!-- Image icon: IIIF exposes the dataset’s images. -->
             <path
@@ -277,9 +267,7 @@
               d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
             />
           </svg>
-          <span class="text-gray-700 dark:text-gray-300"
-            >{iiifManifestsDisplay} IIIF</span
-          >
+          <span class="text-gray-700 dark:text-gray-300">IIIF</span>
         </div>
       {/if}
     </div>

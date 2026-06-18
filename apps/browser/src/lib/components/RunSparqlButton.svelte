@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { SearchRequest } from '$lib/services/datasets';
-  import { datasetCardsQuery } from '$lib/services/datasets';
+  import { datasetListingQuery } from '$lib/services/datasets';
   import { cleanSparqlQuery } from '$lib/utils/sparql';
   import * as m from '$lib/paraglide/messages';
   import { getLocale } from '$lib/paraglide/runtime';
@@ -15,7 +15,7 @@
 
   // Generate SPARQL query from search request
   const query = $derived(
-    datasetCardsQuery(searchRequest, ITEMS_PER_PAGE, 0, 'title', getLocale()),
+    datasetListingQuery(searchRequest, ITEMS_PER_PAGE, getLocale()),
   );
 
   // Clean and URL encode the query (preserving formatting)

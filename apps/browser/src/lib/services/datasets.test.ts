@@ -1,106 +1,132 @@
 import { describe, expect, it } from 'vitest';
 import {
+  cardFromDocument,
   conformsToSchemaApNde,
-  iiifManifestCount,
   providesWorkingIiif,
   type DatasetCard,
 } from './datasets';
-import { IIIF_PRESENTATION_API } from './nde-compatibility';
+import type { SearchHitDocument } from './search/datasets';
 
-// The helpers only read the IIIF fields, so a minimal cast keeps the fixtures
-// focused on the behaviour under test.
-function card(fields: Record<string, unknown>): DatasetCard {
-  return fields as unknown as DatasetCard;
+// The boolean helpers only read the compatibility flags, so a minimal cast keeps
+// the fixtures focused on the behaviour under test.
+function card(fields: Partial<DatasetCard>): DatasetCard {
+  return fields as DatasetCard;
 }
 
-function iiifSubset(entities: number) {
-  return { $id: '_:iiif', conformsTo: IIIF_PRESENTATION_API, entities };
-}
-
-describe('iiifManifestCount', () => {
-  it('returns the declared entity count of the IIIF subset', () => {
-    expect(iiifManifestCount(card({ iiifSubset: iiifSubset(42) }))).toBe(42);
-  });
-
-  it('returns 0 when there is no IIIF subset', () => {
-    expect(iiifManifestCount(card({ iiifSubset: null }))).toBe(0);
-  });
-
-  it('ignores a subset with a different conformsTo discriminator', () => {
-    expect(
-      iiifManifestCount(
-        card({
-          iiifSubset: {
-            $id: '_:other',
-            conformsTo: 'http://example.org/other',
-            entities: 7,
-          },
-        }),
-      ),
-    ).toBe(0);
-  });
-});
+const noLabels = {
+  nl: new Map<string, string>(),
+  en: new Map<string, string>(),
+};
 
 describe('providesWorkingIiif', () => {
-  it('is true when sampled manifests validated', () => {
-    expect(
-      providesWorkingIiif(
-        card({
-          iiifSubset: iiifSubset(100),
-          iiifManifestsSampled: 10,
-          iiifManifestsValidated: 8,
-        }),
-      ),
-    ).toBe(true);
+  it('is true when the index flags working IIIF', () => {
+    expect(providesWorkingIiif(card({ iiif: true }))).toBe(true);
   });
 
-  it('is false when manifests are declared but none validated', () => {
-    expect(
-      providesWorkingIiif(
-        card({
-          iiifSubset: iiifSubset(4152),
-          iiifManifestsSampled: 10,
-          iiifManifestsValidated: 0,
-        }),
-      ),
-    ).toBe(false);
-  });
-
-  it('is true when declared but not yet validated (no evidence of failure)', () => {
-    expect(providesWorkingIiif(card({ iiifSubset: iiifSubset(5) }))).toBe(true);
-  });
-
-  it('is false when no IIIF subset is declared', () => {
-    expect(providesWorkingIiif(card({ iiifSubset: null }))).toBe(false);
+  it('is false when the flag is absent', () => {
+    expect(providesWorkingIiif(card({ iiif: false }))).toBe(false);
   });
 });
 
 describe('conformsToSchemaApNde', () => {
-  it('is true when the validated sample conforms', () => {
+  it('is true when the index flags conformance', () => {
+    expect(conformsToSchemaApNde(card({ nde_schema_ap: true }))).toBe(true);
+  });
+
+  it('is false when the flag is absent', () => {
+    expect(conformsToSchemaApNde(card({ nde_schema_ap: false }))).toBe(false);
+  });
+});
+
+describe('cardFromDocument', () => {
+  it('maps title/description with same-locale value', () => {
+    const document: SearchHitDocument = {
+      id: 'https://example.org/dataset/1',
+      title_nl: 'Titel',
+      title_en: 'Title',
+      description_nl: 'Beschrijving',
+    };
+    const result = cardFromDocument(document, 'nl', noLabels);
+    expect(result.$id).toBe('https://example.org/dataset/1');
+    expect(result.title).toEqual({ nl: 'Titel', en: 'Title' });
+    expect(result.description).toEqual({ nl: 'Beschrijving' });
+  });
+
+  it('falls back to the other locale when the active one is missing', () => {
+    const document: SearchHitDocument = {
+      id: 'https://example.org/dataset/2',
+      title_en: 'English only',
+    };
+    const result = cardFromDocument(document, 'nl', noLabels);
+    expect(result.title).toEqual({ en: 'English only' });
+    expect(result.description).toBeUndefined();
+  });
+
+  it('converts the unix date_posted to a Date', () => {
+    const document: SearchHitDocument = {
+      id: 'https://example.org/dataset/3',
+      date_posted: 1700000000,
+    };
+    const result = cardFromDocument(document, 'nl', noLabels);
+    expect(result.datePosted).toEqual(new Date(1700000000 * 1000));
+  });
+
+  it('resolves the publisher IRI to a localized label', () => {
+    const document: SearchHitDocument = {
+      id: 'https://example.org/dataset/4',
+      publisher: ['https://example.org/org/1'],
+    };
+    const labels = {
+      nl: new Map([['https://example.org/org/1', 'Organisatie']]),
+      en: new Map([['https://example.org/org/1', 'Organization']]),
+    };
+    const result = cardFromDocument(document, 'nl', labels);
+    expect(result.publisher?.name).toEqual({
+      nl: 'Organisatie',
+      en: 'Organization',
+    });
+  });
+
+  it('falls back to the publisher IRI when no label exists', () => {
+    const document: SearchHitDocument = {
+      id: 'https://example.org/dataset/5',
+      publisher: ['https://example.org/org/2'],
+    };
+    const result = cardFromDocument(document, 'nl', noLabels);
+    expect(result.publisher?.name).toEqual({
+      '': 'https://example.org/org/2',
+    });
+  });
+
+  it('reconstructs distribution badges from format and format_group', () => {
+    const document: SearchHitDocument = {
+      id: 'https://example.org/dataset/6',
+      format: ['text/turtle', 'text/csv'],
+      format_group: ['group:sparql', 'group:rdf'],
+    };
+    const result = cardFromDocument(document, 'nl', noLabels);
     expect(
-      conformsToSchemaApNde(
-        card({ schemaApNdeQuadsValidated: 200, schemaApNdeConformant: true }),
+      result.distribution.some((distribution) =>
+        distribution.conformsTo.includes(
+          'https://www.w3.org/TR/sparql11-protocol/',
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      result.distribution.some(
+        (distribution) => distribution.mediaType === 'text/turtle',
       ),
     ).toBe(true);
   });
 
-  it('is false when the validated sample does not conform', () => {
-    expect(
-      conformsToSchemaApNde(
-        card({ schemaApNdeQuadsValidated: 200, schemaApNdeConformant: false }),
-      ),
-    ).toBe(false);
-  });
-
-  it('is false when zero quads were validated (profile does not apply)', () => {
-    expect(
-      conformsToSchemaApNde(
-        card({ schemaApNdeQuadsValidated: 0, schemaApNdeConformant: false }),
-      ),
-    ).toBe(false);
-  });
-
-  it('is false when no conformance measurement exists', () => {
-    expect(conformsToSchemaApNde(card({}))).toBe(false);
+  it('carries the compatibility booleans through', () => {
+    const document: SearchHitDocument = {
+      id: 'https://example.org/dataset/7',
+      iiif: true,
+      nde_schema_ap: true,
+    };
+    const result = cardFromDocument(document, 'nl', noLabels);
+    expect(result.iiif).toBe(true);
+    expect(result.nde_schema_ap).toBe(true);
   });
 });

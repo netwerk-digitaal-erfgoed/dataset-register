@@ -1,31 +1,24 @@
 import { dcat } from '@lde/dataset-registry-client';
-import { dcterms, foaf, ldkit, xsd } from 'ldkit/namespaces';
-import { createLens, type SchemaInterface } from 'ldkit';
-import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
-import { facetConfigs, type Facets, fetchFacets } from '$lib/services/facets';
-import {
-  PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
-  PUBLIC_SPARQL_ENDPOINT,
-} from '$env/static/public';
-import { schemaNs as schema, voidNs } from '../rdf.js';
+import { dcterms, foaf } from 'ldkit/namespaces';
+import { PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT } from '$env/static/public';
+import { schemaNs as schema } from '../rdf.js';
 import { getLocale } from '$lib/paraglide/runtime';
-import { normalizeMediaType } from '$lib/utils/sparql';
+import { normalizeMediaType, inLiterals } from '$lib/utils/sparql';
+import { RDF_MEDIA_TYPES } from '$lib/constants.js';
+import { REGISTRATION_STATUS_BASE_URI } from '@dataset-register/core/constants';
+import { type Facets, fetchFacets } from '$lib/services/facets';
 import {
-  IIIF_PRESENTATION_API,
-  MANIFESTS_SAMPLED_METRIC,
-  MANIFESTS_VALIDATED_METRIC,
-  QUADS_VALIDATED_METRIC,
-  SCHEMA_AP_NDE_CONFORMANCE_METRIC,
-  iiifState,
-  schemaApNdeState,
-  type IiifManifests,
-  type SchemaApNdeConformance,
-} from '$lib/services/nde-compatibility';
+  isSearchConfigured,
+  labelResolver,
+} from '$lib/services/search/client.js';
+import {
+  searchDatasets,
+  type SearchHitDocument,
+  type SearchLocale,
+} from '$lib/services/search/datasets.js';
 
-export const SPARQL_ENDPOINT = PUBLIC_SPARQL_ENDPOINT;
-const fetcher = new SparqlEndpointFetcher();
-
-// Base distribution schema with common fields
+// Base distribution schema with common fields. Retained for the dataset detail
+// page (dataset-detail.ts), which still reads distributions over SPARQL.
 export const BaseDistributionSchema = {
   '@type': dcat.Distribution,
   mediaType: {
@@ -39,7 +32,8 @@ export const BaseDistributionSchema = {
   },
 } as const;
 
-// Base dataset schema with fields shared between card and detail views
+// Base dataset schema with fields shared between card and detail views. Retained
+// for the dataset detail page (dataset-detail.ts), which extends it over SPARQL.
 export const BaseDatasetSchema = {
   '@type': dcat.Dataset,
   title: {
@@ -87,130 +81,7 @@ export const BaseDatasetSchema = {
   },
 } as const;
 
-export const DatasetCardSchema = {
-  ...BaseDatasetSchema,
-  distribution: {
-    '@id': dcat.distribution,
-    '@optional': true,
-    '@array': true,
-    '@schema': BaseDistributionSchema,
-  },
-  size: {
-    '@id': voidNs.triples,
-    '@type': xsd.integer,
-    '@optional': true,
-  },
-  // The number of IIIF Presentation manifests detected in the dataset, recorded
-  // in the Knowledge Graph as a void:subset keyed on dcterms:conformsTo. The
-  // card query only ever projects the IIIF subset (see datasetCardsQuery), so a
-  // single optional value suffices.
-  iiifSubset: {
-    '@id': voidNs.subset,
-    '@optional': true,
-    '@schema': {
-      conformsTo: {
-        '@id': dcterms.conformsTo,
-      },
-      entities: {
-        '@id': voidNs.entities,
-        '@type': xsd.integer,
-      },
-    },
-  },
-  // IIIF manifest validation measurements, projected onto the dataset by the
-  // card query so the icon can be limited to datasets with working IIIF.
-  iiifManifestsSampled: {
-    '@id': MANIFESTS_SAMPLED_METRIC,
-    '@type': xsd.integer,
-    '@optional': true,
-  },
-  iiifManifestsValidated: {
-    '@id': MANIFESTS_VALIDATED_METRIC,
-    '@type': xsd.integer,
-    '@optional': true,
-  },
-  // SCHEMA-AP-NDE sample-conformance measurements, projected onto the dataset by
-  // the card query so the badge can be limited to conforming datasets.
-  schemaApNdeQuadsValidated: {
-    '@id': QUADS_VALIDATED_METRIC,
-    '@type': xsd.integer,
-    '@optional': true,
-  },
-  schemaApNdeConformant: {
-    '@id': SCHEMA_AP_NDE_CONFORMANCE_METRIC,
-    '@type': xsd.boolean,
-    '@optional': true,
-  },
-  datePosted: {
-    '@id': schema.datePosted,
-    '@type': xsd.dateTime,
-    '@optional': true,
-  },
-} as const;
-
-export type DatasetCard = SchemaInterface<typeof DatasetCardSchema>;
-
-// The IIIF manifest figures for a card: declared count plus the validation
-// measurements (null when the dataset declares no IIIF or has no measurement).
-function cardIiifManifests(dataset: DatasetCard): IiifManifests {
-  const subset = dataset.iiifSubset;
-  const declared =
-    subset && subset.conformsTo === IIIF_PRESENTATION_API
-      ? (subset.entities ?? 0)
-      : 0;
-  return {
-    declared,
-    sampled: dataset.iiifManifestsSampled ?? null,
-    validated: dataset.iiifManifestsValidated ?? null,
-  };
-}
-
-// The number of IIIF Presentation manifests the dataset declares, for the card
-// tooltip.
-export function iiifManifestCount(dataset: DatasetCard): number {
-  return cardIiifManifests(dataset).declared;
-}
-
-// Whether the dataset provides working IIIF media. The card icon is shown only
-// in this case — not when manifests are declared but failed validation, and not
-// when none are declared.
-export function providesWorkingIiif(dataset: DatasetCard): boolean {
-  return iiifState(cardIiifManifests(dataset)) === 'met';
-}
-
-// The SCHEMA-AP-NDE conformance figures for a card. The card only ever shows the
-// badge in the `met` state, which never depends on the `dct:conformsTo` claim
-// (that claim only splits the `failed`/`unmet` branch), so the card leaves it
-// false rather than fetching it.
-function cardSchemaApNde(dataset: DatasetCard): SchemaApNdeConformance {
-  return {
-    quadsValidated: dataset.schemaApNdeQuadsValidated ?? null,
-    conformant: dataset.schemaApNdeConformant ?? null,
-    declaresProfile: false,
-  };
-}
-
-// Whether the dataset conforms to the NDE Schema.org Application Profile in the
-// sampled resources. The card badge is shown only in this case.
-export function conformsToSchemaApNde(dataset: DatasetCard): boolean {
-  return schemaApNdeState(cardSchemaApNde(dataset)).state === 'met';
-}
-
-const datasetCards = createLens(DatasetCardSchema, {
-  sources: [SPARQL_ENDPOINT],
-});
-
-export const prefixes = `
-PREFIX dcat: <http://www.w3.org/ns/dcat#>
-PREFIX dct: <http://purl.org/dc/terms/>
-PREFIX dqv: <http://www.w3.org/ns/dqv#>
-PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-PREFIX nde: <https://def.nde.nl/metric#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX schema: <https://schema.org/>
-PREFIX void: <http://rdfs.org/ns/void#>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-`;
+export type OrderBy = 'title' | 'datePosted';
 
 export interface SearchRequest {
   query?: string;
@@ -227,73 +98,301 @@ export interface SearchRequest {
   status: string[];
 }
 
-async function countDatasets(filters: SearchRequest) {
-  const query = `
-  ${prefixes}
-
-  SELECT (COUNT(DISTINCT ?dataset) as ?count) WHERE {
-    ${filterDatasets(filters)}
-  }`;
-
-  try {
-    const bindings = await fetcher.fetchBindings(SPARQL_ENDPOINT, query);
-
-    // COUNT query returns exactly one binding
-    for await (const binding of bindings) {
-      const typedBinding = binding as unknown as {
-        count: { value: string };
-      };
-      return parseInt(typedBinding.count.value);
-    }
-  } catch (error) {
-    console.error('Count datasets query failed:', error, '\nQuery:', query);
-  }
-  return 0;
+/**
+ * A single distribution badge on a card: its bare media type (or null) and the
+ * `dct:conformsTo` IRIs. Derived from the search document’s `format` and
+ * `format_group` fields, mirroring the previous SPARQL-backed shape so the card
+ * keeps detecting SPARQL/RDF distributions identically.
+ */
+export interface CardDistribution {
+  mediaType: string | null;
+  conformsTo: string[];
 }
 
-export type OrderBy = 'title' | 'datePosted';
+/**
+ * The card view-model, mapped from one Typesense {@link SearchHitDocument}.
+ * Multilingual fields are `{nl, en}` records so the card’s `getLocalizedValue`
+ * keeps working unchanged.
+ */
+export interface DatasetCard {
+  $id: string;
+  title: Record<string, string>;
+  description?: Record<string, string>;
+  language: string[];
+  publisher?: { $id: string; name: Record<string, string> };
+  status?: string;
+  size?: number;
+  datePosted?: Date;
+  distribution: CardDistribution[];
+  iiif: boolean;
+  nde_schema_ap: boolean;
+}
 
-export function datasetCardsQuery(
-  filters: SearchRequest,
+const SPARQL_PROTOCOL_URI = 'https://www.w3.org/TR/sparql11-protocol/';
+const FORMAT_GROUP_SPARQL = 'group:sparql';
+const FORMAT_GROUP_RDF = 'group:rdf';
+
+// Whether the dataset provides working IIIF media. Indexed as a boolean
+// (`iiif === true`) computed at index time from the DKG measurements; the card
+// shows the badge in that case with no count.
+export function providesWorkingIiif(dataset: DatasetCard): boolean {
+  return dataset.iiif === true;
+}
+
+// Whether the dataset conforms to the NDE Schema.org Application Profile in the
+// sampled resources. Indexed as a boolean (`nde_schema_ap === true`).
+export function conformsToSchemaApNde(dataset: DatasetCard): boolean {
+  return dataset.nde_schema_ap === true;
+}
+
+export interface SearchResults {
+  datasets: DatasetCard[];
+  facets: Facets;
+  total: number;
+  time: number;
+}
+
+/**
+ * Map a Typesense document to the {@link DatasetCard} view-model. Title and
+ * description fall back to the other locale when the active one is missing;
+ * publisher IRIs are resolved to labels (both supplied separately because the
+ * resolver is async); the distribution badges are reconstructed from the
+ * `format`/`format_group` facet fields.
+ */
+export function cardFromDocument(
+  document: SearchHitDocument,
+  locale: SearchLocale,
+  publisherLabels: { nl: Map<string, string>; en: Map<string, string> },
+): DatasetCard {
+  const otherLocale: SearchLocale = locale === 'nl' ? 'en' : 'nl';
+
+  // Title is required on the card; a document with neither locale’s title (rare —
+  // the index requires a title) degrades to an empty record rather than crashing.
+  const title = localizedField(document, 'title', locale, otherLocale) ?? {};
+  const description = localizedField(
+    document,
+    'description',
+    locale,
+    otherLocale,
+  );
+
+  const publisherIris = stringArray(document.publisher);
+  const publisher = publisherLabel(publisherIris, publisherLabels);
+
+  return {
+    $id: document.id,
+    title,
+    description,
+    language: stringArray(document.language),
+    publisher,
+    status: typeof document.status === 'string' ? document.status : undefined,
+    size: typeof document.size === 'number' ? document.size : undefined,
+    datePosted:
+      typeof document.date_posted === 'number'
+        ? new Date(document.date_posted * 1000)
+        : undefined,
+    distribution: cardDistributions(document),
+    iiif: document.iiif === true,
+    nde_schema_ap: document.nde_schema_ap === true,
+  };
+}
+
+// A multilingual field reconstructed from the per-locale display fields, keyed by
+// the locale codes `getLocalizedValue` expects. Returns undefined when neither
+// locale carries a value (so optional fields like description stay absent).
+function localizedField(
+  document: SearchHitDocument,
+  base: string,
+  locale: SearchLocale,
+  otherLocale: SearchLocale,
+): Record<string, string> | undefined {
+  const value: Record<string, string> = {};
+  const primary = document[`${base}_${locale}`];
+  const fallback = document[`${base}_${otherLocale}`];
+  if (typeof primary === 'string' && primary.length > 0) {
+    value[locale] = primary;
+  }
+  if (typeof fallback === 'string' && fallback.length > 0) {
+    value[otherLocale] = fallback;
+  }
+  return Object.keys(value).length > 0 ? value : undefined;
+}
+
+// Resolve the dataset’s (single, in practice) publisher IRI to a `{nl, en}`
+// label record so the card’s getLocalizedValue renders the right language.
+// Falls back to the bare IRI when the labels collection has no entry.
+function publisherLabel(
+  iris: string[],
+  labels: { nl: Map<string, string>; en: Map<string, string> },
+): { $id: string; name: Record<string, string> } | undefined {
+  const iri = iris[0];
+  if (iri === undefined) {
+    return undefined;
+  }
+  const name: Record<string, string> = {};
+  const nl = labels.nl.get(iri);
+  const en = labels.en.get(iri);
+  if (nl !== undefined) name.nl = nl;
+  if (en !== undefined) name.en = en;
+  if (Object.keys(name).length === 0) {
+    name[''] = iri;
+  }
+  return { $id: iri, name };
+}
+
+// Rebuild the card’s distribution badges from the search document’s facet
+// fields: each granular `format` value becomes a media-type badge, and the
+// `group:sparql`/`group:rdf` tokens in `format_group` re-create the conformsTo /
+// RDF media-type signals the card looks for.
+function cardDistributions(document: SearchHitDocument): CardDistribution[] {
+  const distributions: CardDistribution[] = stringArray(document.format).map(
+    (mediaType) => ({ mediaType, conformsTo: [] }),
+  );
+
+  const groups = stringArray(document.format_group);
+  if (groups.includes(FORMAT_GROUP_SPARQL)) {
+    distributions.push({
+      mediaType: null,
+      conformsTo: [SPARQL_PROTOCOL_URI],
+    });
+  }
+  if (
+    groups.includes(FORMAT_GROUP_RDF) &&
+    !distributions.some(
+      (distribution) =>
+        distribution.mediaType !== null &&
+        (RDF_MEDIA_TYPES as readonly string[]).includes(distribution.mediaType),
+    )
+  ) {
+    // Ensure an RDF media-type badge exists even if the granular `format` value
+    // is absent, so the card’s RDF detection matches the grouped facet.
+    distributions.push({ mediaType: RDF_MEDIA_TYPES[0], conformsTo: [] });
+  }
+
+  return distributions;
+}
+
+function stringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string');
+  }
+  return typeof value === 'string' ? [value] : [];
+}
+
+/**
+ * Run a dataset listing search against Typesense, mapping the hits to cards and
+ * computing the facet sidebar. Returns empty results (and logs) when no search
+ * backend is configured — the SPARQL listing fallback is intentionally gone.
+ */
+export async function fetchDatasets(
+  searchFilters: SearchRequest,
   limit: number,
   offset = 0,
   orderBy: OrderBy = 'title',
-  locale: string,
-) {
-  const orderByClause =
-    orderBy === 'datePosted' ? 'DESC(?datePosted)' : `?status ?titleForSort`;
+): Promise<SearchResults> {
+  const startTime = performance.now();
+  const locale = getLocale() as SearchLocale;
 
+  if (!isSearchConfigured()) {
+    console.error(
+      'Search backend not configured: set PUBLIC_TYPESENSE_HOST and ' +
+        'PUBLIC_TYPESENSE_SEARCH_ONLY_API_KEY to enable the dataset listing.',
+    );
+    return {
+      datasets: [],
+      facets: await fetchFacets(searchFilters),
+      total: 0,
+      time: performance.now() - startTime,
+    };
+  }
+
+  const [searchResponse, facets] = await Promise.all([
+    searchDatasets(searchFilters, { limit, offset, orderBy, locale }),
+    fetchFacets(searchFilters),
+  ]);
+
+  // Resolve the page’s publisher IRIs to labels once, for both locales (cheap:
+  // the labels collection is cached in memory).
+  const publisherIris = searchResponse.documents.flatMap((document) =>
+    stringArray(document.publisher),
+  );
+  const resolver = labelResolver();
+  const [publisherNl, publisherEn] = await Promise.all([
+    resolver.resolve(publisherIris, 'nl'),
+    resolver.resolve(publisherIris, 'en'),
+  ]);
+
+  const datasets = searchResponse.documents.map((document) =>
+    cardFromDocument(document, locale, { nl: publisherNl, en: publisherEn }),
+  );
+
+  return {
+    datasets,
+    facets,
+    total: searchResponse.total,
+    time: performance.now() - startTime,
+  };
+}
+
+// --- SPARQL query builders for the “Run SPARQL” button ----------------------
+//
+// The dataset listing now runs against Typesense, but the “Run SPARQL” button on
+// /datasets still offers the user the equivalent query as SPARQL (so they can run
+// it themselves against the public endpoint). These builders reproduce the
+// listing’s filters as a SPARQL CONSTRUCT; they are the only SPARQL the listing
+// page retains. Everything else (detail page, validation, RSS, sitemap, proxy)
+// keeps its own SPARQL elsewhere.
+
+export const prefixes = `
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX dqv: <http://www.w3.org/ns/dqv#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX nde: <https://def.nde.nl/metric#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX schema: <https://schema.org/>
+PREFIX void: <http://rdfs.org/ns/void#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+`;
+
+const SPARQL_PROTOCOL_FILTER_URI = `<${SPARQL_PROTOCOL_URI}>`;
+
+export const filterDatasets = (filters: SearchRequest, skipDefaults = false) =>
+  `?dataset a dcat:Dataset ;
+    schema:subjectOf ?registrationUrl .
+  filter(isuri(?dataset))
+
+  ${filterClauses(filters, skipDefaults)}
+`;
+
+/**
+ * Build the SPARQL CONSTRUCT the “Run SPARQL” button hands to the user: a listing
+ * query equivalent to the current filters, ordered by title, projecting the
+ * fields a card shows. Mirrors the previous `datasetCardsQuery` for `orderBy:
+ * 'title'`, the only mode the button uses.
+ */
+export function datasetListingQuery(
+  filters: SearchRequest,
+  limit: number,
+  locale: string,
+): string {
   return `
   ${prefixes}
 
   CONSTRUCT {
-    ?dataset a dcat:Dataset, <${ldkit.Resource}> ;
+    ?dataset a dcat:Dataset ;
       dct:title ?title ;
       dct:description ?description ;
       dct:language ?language ;
       dct:publisher ?publisher ;
       dct:license ?license ;
-      dcat:distribution ?distribution ;
-      void:triples ?size ;
-      void:subset ?iiifSubset ;
-      nde:manifests-sampled ?iiifSampled ;
-      nde:manifests-validated ?iiifValidated ;
-      nde:quads-validated ?schemaApNdeQuadsValidated ;
-      nde:schema-ap-nde-sample-conformance ?schemaApNdeConformant ;
-      schema:status ?status ;
-      schema:datePosted ?datePosted .
+      schema:status ?status .
     ?publisher a foaf:Agent ;
       foaf:name ?publisherName .
-    ?distribution a dcat:Distribution ;
-      dcat:mediaType ?mediaType ;
-      dct:conformsTo ?conformsTo .
-    ?iiifSubset dct:conformsTo <${IIIF_PRESENTATION_API}> ;
-      void:entities ?iiifManifests .
   }
   WHERE {
-    # Inside the default graph, which contains the registry's metadata.
     {
-      SELECT ?dataset ${orderBy === 'title' ? '(SAMPLE(?title_) AS ?titleForSort)' : '(SAMPLE(?datePosted_) AS ?datePosted)'} WHERE {
+      SELECT ?dataset (SAMPLE(?title_) AS ?titleForSort) WHERE {
         ${filterDatasets(filters)}
 
         OPTIONAL {
@@ -301,9 +400,6 @@ export function datasetCardsQuery(
           BIND("archived" as ?status)
         }
 
-        ${
-          orderBy === 'title'
-            ? `
         # Order by title to get a deterministic slice from the results.
         # Prefer title in user's locale.
         OPTIONAL {
@@ -314,151 +410,34 @@ export function datasetCardsQuery(
         # Fall back to any title.
         OPTIONAL { ?dataset dct:title ?titleAny }
         BIND(COALESCE(?titleInLocale, ?titleAny) AS ?title_)
-        `
-            : `
-        OPTIONAL { ?registrationUrl schema:datePosted ?datePosted_ }
-        `
-        }
       }
       GROUP BY ?dataset
-      ORDER BY ${orderByClause}
+      ORDER BY ?status ?titleForSort
       LIMIT ${limit}
-      OFFSET ${offset}
     }
 
     ?dataset a dcat:Dataset ;
       schema:subjectOf ?registrationUrl .
 
-    ${orderBy === 'datePosted' ? 'OPTIONAL { ?registrationUrl schema:datePosted ?datePosted }' : ''}
-
-    OPTIONAL { 
-      ?registrationUrl schema:validUntil ?validUntil . 
-      BIND("archived" as ?status)  
+    OPTIONAL {
+      ?registrationUrl schema:validUntil ?validUntil .
+      BIND("archived" as ?status)
     }
-  
+
     # Inside the dataset named graph.
     GRAPH ?g {
       ?dataset dct:title ?title ;
         dct:publisher ?publisher .
-        
+
       ?publisher foaf:name ?publisherName .
-      
+
       OPTIONAL { ?dataset dct:description ?description }
       OPTIONAL { ?dataset dct:language ?language }
       OPTIONAL { ?dataset dct:license ?license }
-                 
-      OPTIONAL {
-        ?dataset dcat:distribution ?distribution .
-        ?distribution dcat:mediaType ?rawMediaType .
-        ${normalizeMediaType('?rawMediaType', '?mediaType')}
-        OPTIONAL { ?distribution dct:conformsTo ?conformsTo }
-      }
-    }
-
-    # Fetch dataset size and IIIF manifest count from the Dataset Knowledge Graph
-    # via SPARQL Federation. The IIIF subset is itself optional: not every
-    # dataset exposes IIIF Presentation manifests.
-    OPTIONAL {
-      SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
-        ?dataset a void:Dataset ;
-          void:triples ?size .
-        OPTIONAL {
-          ?dataset void:subset ?iiifSubset .
-          ?iiifSubset dct:conformsTo <${IIIF_PRESENTATION_API}> ;
-            void:entities ?iiifManifests .
-          OPTIONAL {
-            ?dataset dqv:hasQualityMeasurement [
-              dqv:isMeasurementOf nde:manifests-sampled ;
-              dqv:value ?iiifSampled
-            ] .
-          }
-          OPTIONAL {
-            ?dataset dqv:hasQualityMeasurement [
-              dqv:isMeasurementOf nde:manifests-validated ;
-              dqv:value ?iiifValidated
-            ] .
-          }
-        }
-        # SCHEMA-AP-NDE sample conformance. Anchored on quads-validated with the
-        # conformance boolean co-required in the same OPTIONAL: the two are
-        # co-emitted, so this single left-join boundary keeps one row per dataset
-        # (no UNION, no nested OPTIONAL) and does not multiply the multi-valued
-        # patterns outside the SERVICE block.
-        OPTIONAL {
-          ?dataset dqv:hasQualityMeasurement [
-            dqv:isMeasurementOf nde:quads-validated ;
-            dqv:value ?schemaApNdeQuadsValidated
-          ] , [
-            dqv:isMeasurementOf nde:schema-ap-nde-sample-conformance ;
-            dqv:value ?schemaApNdeConformant
-          ] .
-        }
-      }
     }
   }
-  ORDER BY ${orderByClause}
+  ORDER BY ?status ?titleForSort
 `;
-}
-
-export const filterDatasets = (filters: SearchRequest, skipDefaults = false) =>
-  `?dataset a dcat:Dataset ;
-    schema:subjectOf ?registrationUrl .
-  filter(isuri(?dataset))
-
-  ${filterClauses(filters, skipDefaults)}
-`;
-
-export interface SearchResults {
-  datasets: DatasetCard[];
-  facets: Facets;
-  total: number;
-  time: number;
-}
-
-async function fetchDatasetCards(
-  searchFilters: SearchRequest,
-  limit: number,
-  offset: number,
-  orderBy: OrderBy,
-  locale: string,
-): Promise<DatasetCard[]> {
-  const query = datasetCardsQuery(
-    searchFilters,
-    limit,
-    offset,
-    orderBy,
-    locale,
-  );
-  try {
-    return await datasetCards.query(query);
-  } catch (error) {
-    console.error('Dataset cards query failed:', error, '\nQuery:', query);
-    return [];
-  }
-}
-
-export async function fetchDatasets(
-  searchFilters: SearchRequest,
-  limit: number,
-  offset = 0,
-  orderBy: OrderBy = 'title',
-): Promise<SearchResults> {
-  const startTime = performance.now();
-  const locale = getLocale();
-
-  // Start all queries in parallel using Promise.all
-  const [total, datasets, facets] = await Promise.all([
-    countDatasets(searchFilters),
-    fetchDatasetCards(searchFilters, limit, offset, orderBy, locale),
-    fetchFacets(searchFilters),
-  ]);
-
-  return {
-    datasets,
-    facets,
-    total,
-    time: performance.now() - startTime,
-  };
 }
 
 function filterClauses(searchFilters: SearchRequest, skipDefaults = false) {
@@ -495,43 +474,40 @@ function filterClauses(searchFilters: SearchRequest, skipDefaults = false) {
   }
 
   if (publisher.length > 0) {
-    filterClausesArray.push(facetConfigs.publisher.filterClause(publisher));
+    filterClausesArray.push(publisherFilterClause(publisher));
   }
 
   if (keyword.length > 0) {
-    filterClausesArray.push(facetConfigs.keyword.filterClause(keyword));
+    filterClausesArray.push(keywordFilterClause(keyword));
   }
 
   if (format.length > 0) {
-    filterClausesArray.push(facetConfigs.format.filterClause(format));
+    filterClausesArray.push(formatFilterClause(format));
   }
 
   if (classFilter.length > 0) {
-    filterClausesArray.push(facetConfigs.class.filterClause(classFilter));
+    filterClausesArray.push(classFilterClause(classFilter));
   }
 
   if (terminologySource.length > 0) {
-    filterClausesArray.push(
-      facetConfigs.terminologySource.filterClause(terminologySource),
-    );
+    filterClausesArray.push(terminologySourceFilterClause(terminologySource));
   }
 
   if (catalog.length > 0) {
-    filterClausesArray.push(facetConfigs.catalog.filterClause(catalog));
+    filterClausesArray.push(catalogFilterClause(catalog));
   }
 
-  // Handle status filter with defaultClause support
   if (status.length > 0) {
-    filterClausesArray.push(facetConfigs.status.filterClause(status));
-  } else if (!skipDefaults && facetConfigs.status.defaultClause) {
-    filterClausesArray.push(facetConfigs.status.defaultClause);
+    filterClausesArray.push(statusFilterClause(status));
+  } else if (!skipDefaults) {
+    filterClausesArray.push(
+      `?registrationUrl schema:additionalType <${REGISTRATION_STATUS_BASE_URI}valid> .`,
+    );
   }
 
   if (size.min !== undefined || size.max !== undefined) {
     const sizeFilters: string[] = [];
 
-    // When filtering by size, require datasets to have size data (not OPTIONAL).
-    // This ensures only datasets with known sizes are returned in filtered results.
     filterClausesArray.push(`
       SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
         ?dataset a void:Dataset ;
@@ -552,4 +528,89 @@ function filterClauses(searchFilters: SearchRequest, skipDefaults = false) {
   }
 
   return filterClausesArray.join('\n  ');
+}
+
+function publisherFilterClause(values: string[]): string {
+  const organizationValues = values.map((value) => `<${value}>`).join(', ');
+  return `{
+      ?dataset dct:publisher ?organization .
+      FILTER(?organization IN (${organizationValues}))
+    } UNION {
+      ?dataset dct:creator ?organization .
+      FILTER(?organization IN (${organizationValues}))
+    }`;
+}
+
+function keywordFilterClause(values: string[]): string {
+  return `?dataset dcat:keyword ?keyword .
+    FILTER(STR(?keyword) IN (${inLiterals(values)}))`;
+}
+
+function formatFilterClause(values: string[]): string {
+  const selectedGroups = values.filter((value) => value.startsWith('group:'));
+  const selectedMediaTypes = values.filter(
+    (value) => !value.startsWith('group:'),
+  );
+
+  const selectClauses = ['?dataset dcat:distribution ?distribution'];
+  const filterParts: string[] = [];
+
+  if (selectedGroups.includes(FORMAT_GROUP_SPARQL)) {
+    selectClauses.push('OPTIONAL { ?distribution dct:conformsTo ?conformsTo }');
+    filterParts.push(`?conformsTo = ${SPARQL_PROTOCOL_FILTER_URI}`);
+  }
+
+  if (selectedGroups.includes(FORMAT_GROUP_RDF)) {
+    selectedMediaTypes.push(...RDF_MEDIA_TYPES);
+  }
+
+  if (selectedMediaTypes.length > 0) {
+    selectClauses.push(`?distribution dcat:mediaType ?rawMediaType .
+      ${normalizeMediaType('?rawMediaType', '?mediaType')}`);
+    const selectedMediaTypesQuoted = selectedMediaTypes
+      .map((type) => `"${type}"`)
+      .join(', ');
+    filterParts.push(`?mediaType IN (${selectedMediaTypesQuoted})`);
+  }
+
+  return `${selectClauses.join('. ')}
+    FILTER(${filterParts.join('||')})`;
+}
+
+function classFilterClause(values: string[]): string {
+  const classValues = values
+    .filter((value) => !value.startsWith('group:'))
+    .map((value) => `<${value}>`);
+  if (classValues.length === 0) {
+    return '';
+  }
+  return `SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
+      ?dataset void:classPartition ?partition .
+      ?partition void:class ?class .
+      FILTER(?class IN (${classValues.join(', ')}))
+    }`;
+}
+
+function terminologySourceFilterClause(values: string[]): string {
+  const sourceValues = values.map((value) => `<${value}>`).join(', ');
+  return `SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
+      [] a void:Linkset ;
+        void:subjectsTarget ?dataset ;
+        void:objectsTarget ?terminologySource .
+      FILTER(?terminologySource IN (${sourceValues}))
+    }`;
+}
+
+function catalogFilterClause(values: string[]): string {
+  const catalogValues = values.map((value) => `<${value}>`).join(', ');
+  return `?dataset dct:isPartOf ?catalog .
+    FILTER(?catalog IN (${catalogValues}))`;
+}
+
+function statusFilterClause(values: string[]): string {
+  const statusUris = values
+    .map((value) => `<${REGISTRATION_STATUS_BASE_URI}${value}>`)
+    .join(', ');
+  return `?registrationUrl schema:additionalType ?statusType .
+    FILTER(?statusType IN (${statusUris}))`;
 }
