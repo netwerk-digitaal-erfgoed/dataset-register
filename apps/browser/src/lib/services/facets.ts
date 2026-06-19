@@ -1,4 +1,7 @@
-import type { SearchParams } from 'typesense/lib/Typesense/Documents.js';
+import type {
+  SearchParams,
+  SearchResponse,
+} from 'typesense/lib/Typesense/Documents.js';
 import { getLocalizedValue } from '$lib/utils/i18n';
 import { shortenUri } from '$lib/utils/prefix';
 import * as m from '$lib/paraglide/messages';
@@ -11,7 +14,7 @@ import {
 import {
   isSearchConfigured,
   labelResolver,
-  searchCollection,
+  multiSearch,
 } from './search/client.js';
 import type { SearchRequest } from './datasets.js';
 import { SEARCH_COLLECTION_ALIAS } from '@dataset-register/core/search';
@@ -152,10 +155,11 @@ const SIZE_BIN_COUNT = 10;
 
 /**
  * Compute every sidebar facet (and the size histogram) from Typesense, returning
- * the same {@link Facets} shape the SPARQL path produced. Each facet runs its own
- * search faceted on its field(s) with its own selection removed from the filter,
- * so a selected multi-select facet still lists its other options. All requests
- * run in parallel.
+ * the same {@link Facets} shape the SPARQL path produced. Each facet is faceted on
+ * its field(s) with its own selection removed from the filter, so a selected
+ * multi-select facet still lists its other options. All of these per-facet
+ * searches (plus the size histogram) are dispatched in a single `multi_search`
+ * round-trip; their results are then mapped back to each facet individually.
  */
 export async function fetchFacets(
   searchFilters: SearchRequest,
@@ -169,31 +173,53 @@ export async function fetchFacets(
     Exclude<FacetKey, 'size' | 'catalog'>
   >;
 
-  const [facetEntries, size] = await Promise.all([
-    Promise.all(
-      facetKeys.map(
-        async (key) =>
-          [key, await fetchSidebarFacet(key, searchFilters, locale)] as const,
-      ),
+  // Build one ordered batch of searches — a search per sidebar facet, then the
+  // size histogram — so the whole sidebar is computed in one HTTP request. The
+  // result array mirrors this order: index `i` is `facetKeys[i]`, the final
+  // entry is the size histogram.
+  const searches = [
+    ...facetKeys.map((key) => ({
+      collection: SEARCH_COLLECTION_ALIAS,
+      params: sidebarFacetParams(key, searchFilters, locale),
+    })),
+    {
+      collection: SEARCH_COLLECTION_ALIAS,
+      params: sizeHistogramParams(searchFilters, locale),
+    },
+  ];
+
+  let results: Array<SearchResponse<SearchHitDocument> | { error: string }>;
+  try {
+    results = await multiSearch<SearchHitDocument>(searches);
+  } catch (error) {
+    // A failed multi_search degrades to empty facets rather than throwing and
+    // taking down the listing.
+    console.error('Facet multi_search failed:', error);
+    return emptyFacets();
+  }
+
+  const sizeResult = results[facetKeys.length];
+  const facetEntries = await Promise.all(
+    facetKeys.map(
+      async (key, index) =>
+        [key, await parseSidebarFacet(key, results[index])] as const,
     ),
-    fetchSizeHistogram(searchFilters),
-  ]);
+  );
 
   return {
     ...(Object.fromEntries(facetEntries) as Omit<Facets, 'size'>),
-    size,
+    size: parseSizeHistogram(sizeResult),
   };
 }
 
-// One sidebar facet’s buckets. Runs a per_page:0 search faceted on the facet’s
-// field(s), filtered by the active filters minus this facet’s own selection, then
-// merges multi-field buckets (format/class group companions) and resolves IRI
-// labels for both locales (cheap: the labels collection is cached).
-async function fetchSidebarFacet(
+// The Typesense search params for one sidebar facet: a per_page:0 search faceted
+// on the facet’s field(s), filtered by the active filters minus this facet’s own
+// selection (so a multi-select facet still lists its other options).
+function sidebarFacetParams(
   key: Exclude<FacetKey, 'size' | 'catalog'>,
   searchFilters: SearchRequest,
   locale: SearchLocale,
-): Promise<CountedFacetValue[]> {
+): Record<string, unknown> {
   const spec = SIDEBAR_FACETS[key];
   const filtersExcludingFacet = {
     ...searchFilters,
@@ -215,44 +241,50 @@ async function fetchSidebarFacet(
     facet_by: spec.fields.join(','),
     max_facet_values: MAX_FACET_VALUES,
   };
+  return parameters as Record<string, unknown>;
+}
 
-  try {
-    const response = await searchCollection<SearchHitDocument>(
-      SEARCH_COLLECTION_ALIAS,
-      parameters as Record<string, unknown>,
+// Parse one sidebar facet’s buckets out of its multi_search result: merge
+// multi-field buckets (format/class group companions), drop the status facet’s
+// non-selectable default, resolve IRI labels for both locales (cheap: the labels
+// collection is cached), and sort. A per-search error degrades to an empty facet.
+async function parseSidebarFacet(
+  key: Exclude<FacetKey, 'size' | 'catalog'>,
+  result: SearchResponse<SearchHitDocument> | { error: string } | undefined,
+): Promise<CountedFacetValue[]> {
+  if (result === undefined || 'error' in result) {
+    console.error(
+      `Facet query failed for "${key}":`,
+      (result as { error?: string } | undefined)?.error,
     );
-
-    const buckets = (response.facet_counts ?? [])
-      .filter((facet) => spec.fields.includes(facet.field_name as string))
-      .flatMap((facet) => facet.counts);
-
-    // Merge buckets that share a value (e.g. a granular field and its group
-    // companion never collide, but keep the merge robust) by summing counts.
-    const byValue = new Map<string, number>();
-    for (const bucket of buckets) {
-      byValue.set(
-        bucket.value,
-        (byValue.get(bucket.value) ?? 0) + bucket.count,
-      );
-    }
-
-    const values: CountedFacetValue[] = [...byValue.entries()]
-      // The status facet lists only the non-default states (invalid, gone);
-      // `valid` is the implicit default and is never a toggle.
-      .filter(([value]) => key !== 'status' || SELECTABLE_STATUSES.has(value))
-      .map(([value, count]) => ({ value, count }));
-
-    if (spec.iri) {
-      await attachIriLabels(values);
-    }
-
-    // Highest count first, then by value, matching the SPARQL ORDER BY.
-    values.sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
-    return values;
-  } catch (error) {
-    console.error(`Facet query failed for "${key}":`, error);
     return [];
   }
+
+  const spec = SIDEBAR_FACETS[key];
+  const buckets = (result.facet_counts ?? [])
+    .filter((facet) => spec.fields.includes(facet.field_name as string))
+    .flatMap((facet) => facet.counts);
+
+  // Merge buckets that share a value (e.g. a granular field and its group
+  // companion never collide, but keep the merge robust) by summing counts.
+  const byValue = new Map<string, number>();
+  for (const bucket of buckets) {
+    byValue.set(bucket.value, (byValue.get(bucket.value) ?? 0) + bucket.count);
+  }
+
+  const values: CountedFacetValue[] = [...byValue.entries()]
+    // The status facet lists only the non-default states (invalid, gone);
+    // `valid` is the implicit default and is never a toggle.
+    .filter(([value]) => key !== 'status' || SELECTABLE_STATUSES.has(value))
+    .map(([value, count]) => ({ value, count }));
+
+  if (spec.iri) {
+    await attachIriLabels(values);
+  }
+
+  // Highest count first, then by value, matching the SPARQL ORDER BY.
+  values.sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+  return values;
 }
 
 // Resolve the IRI buckets’ labels for both locales over the cached labels
@@ -277,21 +309,21 @@ async function attachIriLabels(values: CountedFacetValue[]): Promise<void> {
   }
 }
 
-/**
- * The size histogram: the global {min, max} of the `size` field plus the
- * per-bin counts, in one faceted search. Typesense reports a numeric facet’s
- * stats (min/max) alongside the labelled range buckets, so a single request
- * yields both. Applies the current filters but excludes the size filter, so the
- * histogram shows the full distribution of otherwise-matching datasets.
- */
-async function fetchSizeHistogram(
-  searchFilters: SearchRequest,
-): Promise<Histogram> {
-  const fallback: Histogram = { range: { min: 1, max: 1000000000 }, bins: [] };
-  if (!isSearchConfigured()) {
-    return fallback;
-  }
+// The fallback size range when stats are unavailable or the search failed.
+const SIZE_RANGE_FALLBACK: FacetValueRange = { min: 1, max: 1000000000 };
 
+/**
+ * The Typesense search params for the size histogram: a per_page:0 search faceted
+ * on the logarithmic `size` ranges. Typesense reports the numeric facet’s stats
+ * (min/max) alongside the labelled range buckets, so one search yields both the
+ * bins and the global range. Applies the current filters but excludes the size
+ * filter, so the histogram shows the full distribution of otherwise-matching
+ * datasets.
+ */
+function sizeHistogramParams(
+  searchFilters: SearchRequest,
+  locale: SearchLocale,
+): Record<string, unknown> {
   const filtersWithoutSize = {
     ...searchFilters,
     size: { min: undefined, max: undefined },
@@ -302,44 +334,49 @@ async function fetchSizeHistogram(
       limit: 1,
       offset: 0,
       orderBy: 'title',
-      locale: getLocale() as SearchLocale,
+      locale,
     }),
     per_page: 0,
     facet_by: sizeFacetBy(),
     max_facet_values: SIZE_BIN_COUNT,
   };
+  return parameters as Record<string, unknown>;
+}
 
-  try {
-    const response = await searchCollection<SearchHitDocument>(
-      SEARCH_COLLECTION_ALIAS,
-      parameters as Record<string, unknown>,
+// Parse the size histogram (bins + range) out of its multi_search result. A
+// per-search error degrades to the fallback range with no bins.
+function parseSizeHistogram(
+  result: SearchResponse<SearchHitDocument> | { error: string } | undefined,
+): Histogram {
+  if (result === undefined || 'error' in result) {
+    console.error(
+      'Size histogram query failed:',
+      (result as { error?: string } | undefined)?.error,
     );
-
-    const sizeFacet = (response.facet_counts ?? []).find(
-      (facet) => (facet.field_name as string) === 'size',
-    );
-
-    const bins: HistogramBin[] = (sizeFacet?.counts ?? [])
-      .map((bucket) => ({
-        bin: parseInt(bucket.value, 10),
-        count: bucket.count,
-      }))
-      .filter((bin) => !Number.isNaN(bin.bin) && bin.count > 0)
-      .sort((a, b) => a.bin - b.bin);
-
-    // Typesense reports min/max in the numeric facet’s stats.
-    const stats = (sizeFacet as { stats?: { min?: number; max?: number } })
-      ?.stats;
-    const range: FacetValueRange =
-      stats?.min !== undefined && stats?.max !== undefined
-        ? { min: Math.round(stats.min), max: Math.round(stats.max) }
-        : fallback.range;
-
-    return { range, bins };
-  } catch (error) {
-    console.error('Size histogram query failed:', error);
-    return fallback;
+    return { range: SIZE_RANGE_FALLBACK, bins: [] };
   }
+
+  const sizeFacet = (result.facet_counts ?? []).find(
+    (facet) => (facet.field_name as string) === 'size',
+  );
+
+  const bins: HistogramBin[] = (sizeFacet?.counts ?? [])
+    .map((bucket) => ({
+      bin: parseInt(bucket.value, 10),
+      count: bucket.count,
+    }))
+    .filter((bin) => !Number.isNaN(bin.bin) && bin.count > 0)
+    .sort((a, b) => a.bin - b.bin);
+
+  // Typesense reports min/max in the numeric facet’s stats.
+  const stats = (sizeFacet as { stats?: { min?: number; max?: number } })
+    ?.stats;
+  const range: FacetValueRange =
+    stats?.min !== undefined && stats?.max !== undefined
+      ? { min: Math.round(stats.min), max: Math.round(stats.max) }
+      : SIZE_RANGE_FALLBACK;
+
+  return { range, bins };
 }
 
 // The `facet_by` range definition that bins `size` into the UI’s logarithmic

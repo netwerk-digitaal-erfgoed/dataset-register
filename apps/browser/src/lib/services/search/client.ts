@@ -52,6 +52,49 @@ export async function searchCollection<T extends DocumentSchema>(
 }
 
 /**
+ * Run several searches in a single `multi_search` request over the HTTP API.
+ *
+ * Each entry pairs a collection with its search params; the body is
+ * `{ searches: [{ collection, ...params }, …] }` and the returned array of
+ * per-search results preserves the input order. Individual results may be an
+ * error object (`{ error }`) when that single search failed but the request as a
+ * whole succeeded. Uses `fetch` for the same bundle reason as
+ * {@link searchCollection}.
+ */
+export async function multiSearch<T extends DocumentSchema>(
+  searches: ReadonlyArray<{
+    collection: string;
+    params: Record<string, unknown>;
+  }>,
+): Promise<Array<SearchResponse<T> | { error: string }>> {
+  const body = {
+    searches: searches.map(({ collection, params }) => {
+      const search: Record<string, unknown> = { collection };
+      for (const [key, value] of Object.entries(params)) {
+        if (value !== undefined) {
+          search[key] = value;
+        }
+      }
+      return search;
+    }),
+  };
+  const response = await fetch(`${baseUrl()}/multi_search`, {
+    method: 'POST',
+    headers: { ...apiKeyHeader(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw new Error(
+      `Typesense multi_search failed (${response.status}): ${await response.text()}`,
+    );
+  }
+  const result = (await response.json()) as {
+    results: Array<SearchResponse<T> | { error: string }>;
+  };
+  return result.results;
+}
+
+/**
  * Export every document of a Typesense collection as JSONL over the HTTP API.
  * Used to pull the (bounded) `labels` collection in one request.
  */

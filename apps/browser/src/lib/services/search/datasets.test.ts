@@ -1,10 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { SearchResponse } from 'typesense/lib/Typesense/Documents.js';
-import {
-  facetFields,
-  queryBy,
-  queryByWeights,
-} from '@dataset-register/core/search';
+import { queryBy, queryByWeights } from '@dataset-register/core/search';
 import type { SearchRequest } from '../datasets';
 import {
   buildSearchParams,
@@ -70,12 +66,6 @@ describe('buildSearchParams', () => {
 
     expect(params.per_page).toBe(20);
     expect(params.page).toBe(3);
-  });
-
-  it('facets by every faceted index field', () => {
-    const params = buildSearchParams(emptyRequest(), DEFAULT_OPTIONS);
-
-    expect(params.facet_by).toBe(facetFields().join(','));
   });
 
   it('defaults to valid-only when no status is requested', () => {
@@ -302,7 +292,6 @@ describe('searchDatasets', () => {
     expect(searchSpy).toHaveBeenCalledTimes(1);
     const [, params] = searchSpy.mock.calls[0];
     expect(params.q).toBe('kunst');
-    expect(params.facet_by).toBe(facetFields().join(','));
   });
 
   it('returns empty facet counts when the response carries none', async () => {

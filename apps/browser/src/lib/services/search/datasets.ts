@@ -5,7 +5,6 @@ import type {
 import {
   DEFAULT_SORTING_FIELD,
   SEARCH_COLLECTION_ALIAS,
-  facetFields,
   queryBy,
   queryByWeights,
 } from '@dataset-register/core/search';
@@ -78,7 +77,8 @@ export async function searchDatasets(
 /**
  * Build the Typesense {@link SearchParams} for a request. Pure (no client, no
  * env), so the query mapping — `q` folding, `query_by`/weights, `filter_by`
- * clauses, `sort_by`, `facet_by` — is asserted directly in tests.
+ * clauses, `sort_by` — is asserted directly in tests. The listing does not
+ * request facets (`fetchFacets` runs its own faceted searches), so no `facet_by`.
  */
 export function buildSearchParams(
   request: SearchRequest,
@@ -97,7 +97,6 @@ export function buildSearchParams(
     query_by_weights: queryByWeights(locale),
     per_page: limit,
     page: Math.floor(offset / limit) + 1,
-    facet_by: facetFields().join(','),
     filter_by: buildFilterBy(request, options.includeDefaultStatus ?? true),
     sort_by: buildSortBy(orderBy, locale, foldedQuery !== undefined),
   };
