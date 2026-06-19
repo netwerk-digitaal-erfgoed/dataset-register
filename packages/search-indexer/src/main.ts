@@ -14,6 +14,7 @@ async function main(): Promise<void> {
   const result = await runIndex({
     sparqlUrl: config.SPARQL_URL,
     registrationsGraphIri: config.REGISTRATIONS_GRAPH,
+    knowledgeGraphEndpoint: config.KNOWLEDGE_GRAPH_URL,
     typesense: {
       host: config.TYPESENSE_HOST,
       port: config.TYPESENSE_PORT,
