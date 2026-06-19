@@ -5,6 +5,7 @@
     type DatasetCard,
     conformsToSchemaApNde,
     iiifManifestCount,
+    providesWorkingIiif,
   } from '$lib/services/datasets';
   import BadgeCheckOutline from 'flowbite-svelte-icons/BadgeCheckOutline.svelte';
   import { getLocalizedValue, localizeHref } from '$lib/utils/i18n';
@@ -49,9 +50,10 @@
   // Application Profile in the sampled resources.
   const conformsToProfile = $derived(conformsToSchemaApNde(dataset));
 
-  // Show the icon and the declared manifest count when the dataset declares IIIF.
+  // Show the icon only when the DKG validated the dataset’s IIIF manifests; the
+  // declared manifest count is shown alongside it in the label and tooltip.
+  const hasIiif = $derived(providesWorkingIiif(dataset));
   const iiifManifests = $derived(iiifManifestCount(dataset));
-  const hasIiif = $derived(iiifManifests > 0);
   const iiifManifestsDisplay = $derived(
     formatNumber(iiifManifests, getLocale()),
   );

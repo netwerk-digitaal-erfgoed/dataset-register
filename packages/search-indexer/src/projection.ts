@@ -8,6 +8,7 @@ import {
 } from '@lde/search';
 import {
   deriveClassGroups,
+  isIiifMet,
   isLinkedDataMet,
   isPersistentUrisMet,
   isSchemaApNdeMet,
@@ -141,6 +142,19 @@ function datasetDerivations(): readonly Derivation[] {
       );
       if (iiifManifestCount > 0) {
         document.iiif_manifest_count = iiifManifestCount;
+      }
+      // Working-IIIF gate: the card shows the icon (with the declared count) only
+      // when the DKG validated the sampled manifests (or none were sampled yet).
+      if (
+        isIiifMet({
+          declared: iiifManifestCount,
+          sampled: parseNumber(firstLiteralOf(node, `${DR}manifestsSampled`)),
+          validated: parseNumber(
+            firstLiteralOf(node, `${DR}manifestsValidated`),
+          ),
+        })
+      ) {
+        document.iiif = true;
       }
 
       const quadsValidated = parseNumber(

@@ -183,6 +183,8 @@ function dqvInsertQuery(slug: string): string {
     <${iri}> <${VOID}subset> <${iiifSubset}> .
     <${iiifSubset}> <${DCT}conformsTo> <${IIIF_PRESENTATION_API}> ;
       <${VOID}entities> 5 .
+    ${measurement(slug, 'manifests-sampled', '5')}
+    ${measurement(slug, 'manifests-validated', '5')}
     ${measurement(slug, 'quads-validated', '42')}
     ${measurement(slug, 'schema-ap-nde-sample-conformance', `"true"^^<${XSD_BOOLEAN}>`)}
     ${measurement(slug, 'subject-uris-sampled', '10')}
@@ -226,7 +228,8 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
     }`);
 
     // NDE compatibility (“vinkjes”) DQV measurements for mohlmann: every
-    // criterion met. The IIIF subset declares manifests (the count the card shows);
+    // criterion met. The IIIF subset declares manifests (the count the card shows)
+    // and every sampled manifest validated (driving the working-IIIF boolean);
     // SCHEMA-AP-NDE validated quads and conformed (drives nde_schema_ap and,
     // together with void:triples above, linked_data); the terminology-source
     // linkset above drives terms; all sampled subject URIs resolved with no
@@ -417,6 +420,7 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
       .collections(SEARCH_COLLECTION_ALIAS)
       .documents(base('mohlmann'))
       .retrieve()) as Record<string, unknown>;
+    expect(met.iiif).toBe(true);
     expect(met.iiif_manifest_count).toBe(5);
     expect(met.nde_schema_ap).toBe(true);
     expect(met.linked_data).toBe(true);
@@ -428,6 +432,7 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
       .collections(SEARCH_COLLECTION_ALIAS)
       .documents(base('fietsen-title'))
       .retrieve()) as Record<string, unknown>;
+    expect(unmet.iiif).toBeUndefined();
     expect(unmet.iiif_manifest_count).toBeUndefined();
     expect(unmet.nde_schema_ap).toBeUndefined();
     expect(unmet.linked_data).toBeUndefined();

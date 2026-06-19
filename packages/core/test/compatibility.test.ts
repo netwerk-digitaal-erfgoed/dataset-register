@@ -1,10 +1,33 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isIiifMet,
   isLinkedDataMet,
   isPersistentUrisMet,
   isSchemaApNdeMet,
   isTermsMet,
 } from '../src/search/index.ts';
+
+describe('isIiifMet', () => {
+  it('is not met when no manifests are declared', () => {
+    expect(isIiifMet({ declared: 0, sampled: null, validated: null })).toBe(
+      false,
+    );
+  });
+
+  it('is met when a sampled manifest validated', () => {
+    expect(isIiifMet({ declared: 3, sampled: 3, validated: 2 })).toBe(true);
+  });
+
+  it('is met when declared but not yet sampled', () => {
+    expect(isIiifMet({ declared: 3, sampled: null, validated: null })).toBe(
+      true,
+    );
+  });
+
+  it('is not met when sampled but none validated', () => {
+    expect(isIiifMet({ declared: 3, sampled: 3, validated: 0 })).toBe(false);
+  });
+});
 
 describe('isSchemaApNdeMet', () => {
   it('is met when quads validated and the sample conformed', () => {

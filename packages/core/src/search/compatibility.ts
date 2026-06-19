@@ -12,6 +12,28 @@
  */
 
 /**
+ * IIIF criterion is met when the dataset declares IIIF Presentation manifests
+ * (`void:entities` > 0 on the IIIF `void:subset`) and either at least one
+ * sampled manifest validated, or the manifests have not been sampled yet.
+ * Declared-but-not-yet-sampled counts as met (no evidence of failure);
+ * sampled-but-zero-validated is not met. Mirrors `iiifState` returning 'met'.
+ */
+export function isIiifMet(manifests: {
+  declared: number;
+  sampled: number | null;
+  validated: number | null;
+}): boolean {
+  if (manifests.declared <= 0) {
+    return false;
+  }
+  if ((manifests.validated ?? 0) > 0) {
+    return true;
+  }
+  // Declared but not yet sampled: no evidence of failure, so treat as provided.
+  return (manifests.sampled ?? 0) <= 0;
+}
+
+/**
  * SCHEMA-AP-NDE criterion is met when the conformance sample actually validated
  * quads against the profile (`quadsValidated` > 0) and the sample conformed.
  * A `conformant: true` over zero validated quads is vacuous, so it is not met.

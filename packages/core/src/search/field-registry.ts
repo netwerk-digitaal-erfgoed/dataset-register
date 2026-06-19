@@ -315,6 +315,16 @@ export const SEARCH_FIELDS: readonly SearchFieldSpec[] = [
     source: 'dkg',
   },
   {
+    // Working-IIIF gate: true only when the DKG validated the declared manifests
+    // (or none were sampled yet). Facet-ready; the card shows the icon on this.
+    name: 'iiif',
+    type: 'bool',
+    role: 'facet',
+    facet: true,
+    optional: true,
+    source: 'dkg',
+  },
+  {
     name: 'nde_schema_ap',
     type: 'bool',
     role: 'facet',

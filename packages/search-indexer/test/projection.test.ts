@@ -201,7 +201,8 @@ describe('dataset projection', () => {
   it('derives the NDE compatibility booleans from DKG DQV measurements', async () => {
     const document = await project(
       titled({
-        // IIIF: declared entities => the card shows the count.
+        // IIIF: declared entities, not yet sampled => met (and the card shows
+        // the declared count).
         [`${DR}iiifEntities`]: { '@type': `${XSD}integer`, '@value': '5' },
         // SCHEMA-AP-NDE: quads validated + conformant => met.
         [`${DR}quadsValidated`]: { '@type': `${XSD}integer`, '@value': '42' },
@@ -224,11 +225,29 @@ describe('dataset projection', () => {
         },
       }),
     );
+    expect(document.iiif).toBe(true);
     expect(document.iiif_manifest_count).toBe(5);
     expect(document.nde_schema_ap).toBe(true);
     expect(document.linked_data).toBe(true);
     expect(document.terms).toBe(true);
     expect(document.persistent_uris).toBe(true);
+  });
+
+  it('shows the declared IIIF count but gates the icon off when no manifest validated', async () => {
+    const document = await project(
+      titled({
+        // Declared manifests, but the sample validated none => not met (icon
+        // off) while the declared count is still shown on the card.
+        [`${DR}iiifEntities`]: { '@type': `${XSD}integer`, '@value': '5' },
+        [`${DR}manifestsSampled`]: { '@type': `${XSD}integer`, '@value': '5' },
+        [`${DR}manifestsValidated`]: {
+          '@type': `${XSD}integer`,
+          '@value': '0',
+        },
+      }),
+    );
+    expect(document.iiif_manifest_count).toBe(5);
+    expect(document.iiif).toBeUndefined();
   });
 
   it('omits each compatibility boolean when its criterion is not met', async () => {
@@ -253,6 +272,7 @@ describe('dataset projection', () => {
         },
       }),
     );
+    expect(document.iiif).toBeUndefined();
     expect(document.iiif_manifest_count).toBeUndefined();
     expect(document.nde_schema_ap).toBeUndefined();
     expect(document.linked_data).toBeUndefined();
