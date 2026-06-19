@@ -21,37 +21,53 @@ export class RegisterSource {
   ) {}
 
   /**
-   * CONSTRUCT one flat, frameable subgraph per dataset: its DCAT/DC content plus
-   * the **newest** registration’s facts, every value hanging directly off the
-   * dataset node (`dr:publisherName`, `dr:format`, …) rather than nested — a
-   * deliberately flat IR, because a CONSTRUCT template that spans two subjects
+   * Read each dataset as a flat, frameable subgraph: its newest registration’s
+   * facts plus its DCAT/DC content, every value hanging directly off the dataset
+   * node (`dr:publisherName`, `dr:format`, …) rather than nested — a deliberately
+   * flat IR, because a CONSTRUCT template spanning two subjects
    * (`?dataset dcat:distribution ?dist . ?dist dcat:mediaType ?x`) drops the
    * `?dataset → ?dist` link on QLever; single-subject templates are reliable.
    *
-   * Structure matters for QLever too: registration facts are single-valued
-   * OPTIONALs inside the registration block, and the UNION contains **only**
-   * dataset-graph branches. Mixing registration-graph and dataset-graph branches
-   * in one UNION makes QLever silently drop some branches from the CONSTRUCT
-   * output. Keeping each multi-valued dataset property in its own UNION branch
-   * still avoids the cross-product that would multiply languages × keywords ×
-   * media types.
+   * Split into **two** CONSTRUCTs, merged by dataset IRI, to avoid a
+   * cross-product. The registration facts are single-valued but a dataset’s
+   * properties are multi-valued, so emitting both in one query multiplied the
+   * facts (and the `a dcat:Dataset` constant) by every keyword × format × …,
+   * inflating the result ~4× on the full register. Keeping them apart also keeps
+   * each query to a single graph: a UNION that mixes registration-graph and
+   * dataset-graph branches makes QLever silently drop branches.
    *
-   * The inner aggregate picks the newest registration per dataset (lexicographic
-   * max of the ISO `schema:dateRead`), preserving the “most recently read
-   * registration wins” status semantics. The engine emits the constant
-   * `a dcat:Dataset`/`dr:dateRead` per row, which the framer dedupes (QLever does
-   * not dedupe CONSTRUCT output).
+   * - {@link facts} (registration graph): asserts `a dcat:Dataset` + the newest
+   *   registration’s status/dates, for registered datasets that have a title.
+   *   This is what makes a dataset a framing root, so titleless husks (e.g. a
+   *   `gone` registration whose description is no longer retrievable) are
+   *   excluded, matching the listing’s “has content” expectation.
+   * - {@link properties} (dataset graphs): each multi-valued property in its own
+   *   UNION branch (no inter-property cross-product). Properties of unregistered
+   *   datasets are harmless — without the `a dcat:Dataset` from `facts` they are
+   *   never framed.
+   *
+   * Within `facts`, the inner aggregate takes the newest `schema:dateRead` per
+   * dataset and the outer `FILTER NOT EXISTS` keeps a single registration when
+   * several share that timestamp (lexicographically greatest IRI), so the
+   * “most recently read registration wins” status is one deterministic value
+   * even for the datasets with duplicate registrations.
    */
   async readQuads(): Promise<Quad[]> {
+    const [facts, properties] = await Promise.all([
+      this.client.constructQuads(this.factsQuery()),
+      this.client.constructQuads(this.propertiesQuery()),
+    ]);
+    return [...facts, ...properties];
+  }
+
+  /** Registration-graph CONSTRUCT: type + newest-registration facts per dataset. */
+  private factsQuery(): string {
     const graph = `<${this.registrationsGraphIri}>`;
-    return this.client.constructQuads(`
+    return `
       ${PREFIXES}
       CONSTRUCT {
         ?dataset a dcat:Dataset ;
-          dct:title ?title ; dct:description ?description ; dcat:keyword ?keyword ;
-          dct:language ?language ; dr:organization ?organization ; dr:catalog ?catalog ; schema:additionalType ?additionalType ;
-          dr:publisherName ?publisherName ; dr:creatorName ?creatorName ;
-          dr:format ?format ; dr:conformsTo ?conformsTo ;
+          schema:additionalType ?additionalType ;
           dr:dateRead ?dateRead ; dr:datePosted ?datePosted ; dr:validUntil ?validUntil .
       } WHERE {
         {
@@ -59,12 +75,28 @@ export class RegisterSource {
             GRAPH ${graph} { ?anyRegistration schema:about ?dataset ; schema:dateRead ?read . }
           } GROUP BY ?dataset
         }
-        GRAPH ${graph} {
-          ?registration schema:about ?dataset ; schema:dateRead ?dateRead .
-          OPTIONAL { ?registration schema:datePosted ?datePosted }
-          OPTIONAL { ?registration schema:validUntil ?validUntil }
-          OPTIONAL { ?registration schema:additionalType ?additionalType }
+        GRAPH ${graph} { ?registration schema:about ?dataset ; schema:dateRead ?dateRead . }
+        FILTER NOT EXISTS {
+          GRAPH ${graph} { ?other schema:about ?dataset ; schema:dateRead ?dateRead . }
+          FILTER(STR(?other) > STR(?registration))
         }
+        FILTER EXISTS { GRAPH ?dataset { ?dataset dct:title ?anyTitle } }
+        OPTIONAL { GRAPH ${graph} { ?registration schema:datePosted ?datePosted } }
+        OPTIONAL { GRAPH ${graph} { ?registration schema:validUntil ?validUntil } }
+        OPTIONAL { GRAPH ${graph} { ?registration schema:additionalType ?additionalType } }
+      }`;
+  }
+
+  /** Dataset-graph CONSTRUCT: one UNION branch per multi-valued property. */
+  private propertiesQuery(): string {
+    return `
+      ${PREFIXES}
+      CONSTRUCT {
+        ?dataset dct:title ?title ; dct:description ?description ; dcat:keyword ?keyword ;
+          dct:language ?language ; dr:organization ?organization ; dr:catalog ?catalog ;
+          dr:publisherName ?publisherName ; dr:creatorName ?creatorName ;
+          dr:format ?format ; dr:conformsTo ?conformsTo .
+      } WHERE {
         {
           GRAPH ?dataset { ?dataset dct:title ?title }
         } UNION { GRAPH ?dataset { ?dataset dct:description ?description } }
@@ -77,7 +109,7 @@ export class RegisterSource {
           UNION { GRAPH ?dataset { ?dataset dct:creator ?creatorNode . ?creatorNode foaf:name ?creatorName } }
           UNION { GRAPH ?dataset { ?dataset dcat:distribution ?dist . ?dist dcat:mediaType ?mediaType } BIND(STR(?mediaType) AS ?format) }
           UNION { GRAPH ?dataset { ?dataset dcat:distribution ?distribution . ?distribution dct:conformsTo ?conformsToValue } BIND(STR(?conformsToValue) AS ?conformsTo) }
-      }`);
+      }`;
   }
 
   /**
