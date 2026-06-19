@@ -11,10 +11,10 @@ import {
 import {
   isSearchConfigured,
   labelResolver,
-  searchClient,
+  searchCollection,
 } from './search/client.js';
 import type { SearchRequest } from './datasets.js';
-import { SEARCH_COLLECTION_ALIAS } from '@dataset-register/core';
+import { SEARCH_COLLECTION_ALIAS } from '@dataset-register/core/search';
 
 /**
  * A facet value selected by the user.
@@ -206,10 +206,10 @@ async function fetchSidebarFacet(
   };
 
   try {
-    const response = await searchClient()
-      .collections<SearchHitDocument>(SEARCH_COLLECTION_ALIAS)
-      .documents()
-      .search(parameters, {});
+    const response = await searchCollection<SearchHitDocument>(
+      SEARCH_COLLECTION_ALIAS,
+      parameters as Record<string, unknown>,
+    );
 
     const buckets = (response.facet_counts ?? [])
       .filter((facet) => spec.fields.includes(facet.field_name as string))
@@ -297,10 +297,10 @@ async function fetchSizeHistogram(
   };
 
   try {
-    const response = await searchClient()
-      .collections<SearchHitDocument>(SEARCH_COLLECTION_ALIAS)
-      .documents()
-      .search(parameters, {});
+    const response = await searchCollection<SearchHitDocument>(
+      SEARCH_COLLECTION_ALIAS,
+      parameters as Record<string, unknown>,
+    );
 
     const sizeFacet = (response.facet_counts ?? []).find(
       (facet) => (facet.field_name as string) === 'size',

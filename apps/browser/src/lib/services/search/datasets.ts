@@ -1,4 +1,3 @@
-import type { Client } from 'typesense';
 import type {
   SearchParams,
   SearchResponse,
@@ -9,10 +8,10 @@ import {
   facetFields,
   queryBy,
   queryByWeights,
-} from '@dataset-register/core';
+} from '@dataset-register/core/search';
 import { fold } from '@lde/text-normalization';
 import type { OrderBy, SearchRequest } from '../datasets.js';
-import { searchClient } from './client.js';
+import { searchCollection } from './client.js';
 
 /** The active UI locale, the locales the index carries per-locale fields for. */
 export type SearchLocale = 'nl' | 'en';
@@ -48,21 +47,25 @@ export interface SearchOptions {
 
 /**
  * Run a dataset search against the Typesense `datasets` collection and parse the
- * response into a UI-agnostic shape. The Typesense client is injected so the
- * function is unit-testable against a mock; it defaults to the shared
- * search-only client. This is the seam a later GraphQL-backed implementation
- * slots into without touching the UI.
+ * response into a UI-agnostic shape. The searcher is injected so the function is
+ * unit-testable against a mock; it defaults to the direct `fetch`-based
+ * {@link searchCollection}. This is the seam a later GraphQL-backed
+ * implementation slots into without touching the UI.
  */
 export async function searchDatasets(
   request: SearchRequest,
   options: SearchOptions,
-  client: Client = searchClient(),
+  search: (
+    collection: string,
+    params: Record<string, unknown>,
+  ) => Promise<SearchResponse<SearchHitDocument>> = searchCollection,
 ): Promise<DatasetSearchResponse> {
-  const parameters = buildSearchParams(request, options);
-  const response = await client
-    .collections<SearchHitDocument>(SEARCH_COLLECTION_ALIAS)
-    .documents()
-    .search(parameters, {});
+  const response = await search(
+    SEARCH_COLLECTION_ALIAS,
+    // Typesense `SearchParams` is a well-known-property object with no index
+    // signature, so widen it to the searcher’s `Record<string, unknown>`.
+    buildSearchParams(request, options) as Record<string, unknown>,
+  );
   return parseSearchResponse(response);
 }
 

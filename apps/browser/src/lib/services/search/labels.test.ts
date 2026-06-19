@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { Client } from 'typesense';
 import { createLabelResolver } from './labels';
 
 interface LabelDocument {
@@ -30,24 +29,21 @@ const DOCUMENTS: LabelDocument[] = [
 ];
 
 /**
- * A Typesense client double whose `documents().export()` returns the labels as
- * newline-delimited JSON, counting calls so the cache can be asserted.
+ * An exporter double that returns the labels as newline-delimited JSON, counting
+ * calls so the cache can be asserted.
  */
-function mockClient(documents: LabelDocument[] = DOCUMENTS) {
+function mockExporter(documents: LabelDocument[] = DOCUMENTS) {
   const exported = documents
     .map((document) => JSON.stringify(document))
     .join('\n');
   const exportSpy = vi.fn(async () => exported);
-  const client = {
-    collections: () => ({ documents: () => ({ export: exportSpy }) }),
-  } as unknown as Client;
-  return { client, exportSpy };
+  return { exportSpy };
 }
 
 describe('createLabelResolver', () => {
   it('resolves IRIs to the requested locale’s label', async () => {
-    const { client } = mockClient();
-    const resolver = createLabelResolver(client);
+    const { exportSpy } = mockExporter();
+    const resolver = createLabelResolver(exportSpy);
 
     const labels = await resolver.resolve([ORG, AAT], 'nl');
 
@@ -56,8 +52,8 @@ describe('createLabelResolver', () => {
   });
 
   it('falls back to the default label when the locale variant is absent', async () => {
-    const { client } = mockClient();
-    const resolver = createLabelResolver(client);
+    const { exportSpy } = mockExporter();
+    const resolver = createLabelResolver(exportSpy);
 
     // The organization has no English variant, so the default (Dutch) label wins.
     const labels = await resolver.resolve([ORG], 'en');
@@ -66,8 +62,8 @@ describe('createLabelResolver', () => {
   });
 
   it('omits IRIs that are not in the collection', async () => {
-    const { client } = mockClient();
-    const resolver = createLabelResolver(client);
+    const { exportSpy } = mockExporter();
+    const resolver = createLabelResolver(exportSpy);
 
     const labels = await resolver.resolve(
       [ORG, 'https://example.org/unknown'],
@@ -79,8 +75,8 @@ describe('createLabelResolver', () => {
   });
 
   it('caches the collection across calls (one export within the TTL)', async () => {
-    const { client, exportSpy } = mockClient();
-    const resolver = createLabelResolver(client);
+    const { exportSpy } = mockExporter();
+    const resolver = createLabelResolver(exportSpy);
 
     await resolver.resolve([ORG], 'nl');
     await resolver.resolve([AAT], 'en');
@@ -89,8 +85,8 @@ describe('createLabelResolver', () => {
   });
 
   it('shares a single export across concurrent first loads (single-flight)', async () => {
-    const { client, exportSpy } = mockClient();
-    const resolver = createLabelResolver(client);
+    const { exportSpy } = mockExporter();
+    const resolver = createLabelResolver(exportSpy);
 
     await Promise.all([
       resolver.resolve([ORG], 'nl'),
@@ -101,8 +97,8 @@ describe('createLabelResolver', () => {
   });
 
   it('refetches after the cache is cleared', async () => {
-    const { client, exportSpy } = mockClient();
-    const resolver = createLabelResolver(client);
+    const { exportSpy } = mockExporter();
+    const resolver = createLabelResolver(exportSpy);
 
     await resolver.resolve([ORG], 'nl');
     resolver.clear();
@@ -114,8 +110,8 @@ describe('createLabelResolver', () => {
   it('refetches once the TTL has elapsed', async () => {
     vi.useFakeTimers();
     try {
-      const { client, exportSpy } = mockClient();
-      const resolver = createLabelResolver(client, { ttlMs: 1000 });
+      const { exportSpy } = mockExporter();
+      const resolver = createLabelResolver(exportSpy, { ttlMs: 1000 });
 
       await resolver.resolve([ORG], 'nl');
       vi.advanceTimersByTime(1001);

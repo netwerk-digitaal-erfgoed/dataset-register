@@ -14,6 +14,11 @@
       "import": "./src/constants.ts",
       "default": "./src/constants.ts"
     },
+    "./search": {
+      "types": "./src/search/index.ts",
+      "import": "./src/search/index.ts",
+      "default": "./src/search/index.ts"
+    },
     "./test-utils": {
       "types": "./src/test-utils.ts",
       "import": "./src/test-utils.ts",

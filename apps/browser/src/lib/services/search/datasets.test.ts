@@ -1,8 +1,22 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { Client } from 'typesense';
-import { facetFields, queryBy, queryByWeights } from '@dataset-register/core';
+import type { SearchResponse } from 'typesense/lib/Typesense/Documents.js';
+import {
+  facetFields,
+  queryBy,
+  queryByWeights,
+} from '@dataset-register/core/search';
 import type { SearchRequest } from '../datasets';
-import { buildSearchParams, searchDatasets } from './datasets';
+import {
+  buildSearchParams,
+  searchDatasets,
+  type SearchHitDocument,
+} from './datasets';
+
+/** A searcher double standing in for the `fetch`-based `searchCollection`. */
+type Searcher = (
+  collection: string,
+  params: Record<string, unknown>,
+) => Promise<SearchResponse<SearchHitDocument>>;
 
 /** An empty request: every multi-valued filter absent, no query, no size. */
 function emptyRequest(): SearchRequest {
@@ -215,14 +229,11 @@ describe('searchDatasets', () => {
         },
       ],
     }));
-    const client = {
-      collections: () => ({ documents: () => ({ search: searchSpy }) }),
-    } as unknown as Client;
 
     const result = await searchDatasets(
       emptyRequest(),
       DEFAULT_OPTIONS,
-      client,
+      searchSpy as unknown as Searcher,
     );
 
     expect(result.total).toBe(42);
@@ -236,39 +247,37 @@ describe('searchDatasets', () => {
     ]);
   });
 
-  it('passes the built params to the collection’s search call', async () => {
+  it('passes the built params to the search call', async () => {
     const searchSpy = vi.fn(
-      async (params: { q?: string; facet_by?: string | string[] }) => {
+      async (
+        collection: string,
+        params: { q?: string; facet_by?: string | string[] },
+      ) => {
+        void collection;
         void params;
         return { found: 0, hits: [] };
       },
     );
-    const client = {
-      collections: () => ({ documents: () => ({ search: searchSpy }) }),
-    } as unknown as Client;
 
     await searchDatasets(
       { ...emptyRequest(), query: 'kunst' },
       DEFAULT_OPTIONS,
-      client,
+      searchSpy as unknown as Searcher,
     );
 
     expect(searchSpy).toHaveBeenCalledTimes(1);
-    const [params] = searchSpy.mock.calls[0];
+    const [, params] = searchSpy.mock.calls[0];
     expect(params.q).toBe('kunst');
     expect(params.facet_by).toBe(facetFields().join(','));
   });
 
   it('returns empty facet counts when the response carries none', async () => {
     const searchSpy = vi.fn(async () => ({ found: 0, hits: [] }));
-    const client = {
-      collections: () => ({ documents: () => ({ search: searchSpy }) }),
-    } as unknown as Client;
 
     const result = await searchDatasets(
       emptyRequest(),
       DEFAULT_OPTIONS,
-      client,
+      searchSpy as unknown as Searcher,
     );
 
     expect(result.facetCounts).toEqual({});

@@ -1,6 +1,3 @@
-import type { Client } from 'typesense';
-import { LABELS_COLLECTION_ALIAS } from '@dataset-register/core';
-
 /** The locales the `labels` collection carries per-locale variants for. */
 export type LabelLocale = 'nl' | 'en';
 
@@ -39,17 +36,18 @@ export interface LabelResolver {
 const DEFAULT_TTL_MS = 5 * 60 * 1000;
 
 /**
- * Build a {@link LabelResolver} over a Typesense {@link Client}.
+ * Build a {@link LabelResolver} over a function that exports the `labels`
+ * collection as JSONL.
  *
  * The whole (bounded) `labels` collection is pulled once and cached in memory
  * with a TTL, so resolving the facet buckets on a page is an in-memory lookup
  * with no per-request Typesense call; a blue/green rebuild is picked up when the
  * TTL lapses. A burst of concurrent first-loads shares a single export
- * (single-flight). The client is injected so the resolver is unit-testable
+ * (single-flight). The exporter is injected so the resolver is unit-testable
  * against a mock.
  */
 export function createLabelResolver(
-  client: Client,
+  exportDocuments: () => Promise<string>,
   options: { readonly ttlMs?: number } = {},
 ): LabelResolver {
   const ttlMs = options.ttlMs ?? DEFAULT_TTL_MS;
@@ -59,10 +57,7 @@ export function createLabelResolver(
   let inFlight: Promise<Map<string, LabelDocument>> | undefined;
 
   async function fetchAll(): Promise<Map<string, LabelDocument>> {
-    const exported = await client
-      .collections(LABELS_COLLECTION_ALIAS)
-      .documents()
-      .export();
+    const exported = await exportDocuments();
     const byIri = new Map<string, LabelDocument>();
     for (const line of exported.split('\n')) {
       if (line.length === 0) {
