@@ -142,7 +142,7 @@ If any outdated registration URLs are found, they are fetched and updated in the
 
 ### Search index
 
-The browser’s faceted search is served by a [Typesense](https://typesense.org) index — the `datasets` collection —
+The browser’s faceted search is served by a [Typesense](https://typesense.org) index (a `datasets` collection)
 rather than by SPARQL `CONTAINS`, for better recall (typo tolerance, stemming, diacritics and synonyms). The
 `search-indexer` projects every registered dataset from the SPARQL store, enriched with facets from the Dataset
 Knowledge Graph ([`KNOWLEDGE_GRAPH_URL`](#configuration)), into a flat search document and rebuilds the index
@@ -151,24 +151,24 @@ sidecar `labels` collection maps facet-value IRIs (organizations, classes, termi
 rebuild is single-flight per index (a cross-pod lock held in Typesense), so the crawler and API replicas never rebuild
 concurrently.
 
-`docker compose up` starts Typesense (alongside QLever) on `localhost:8108`. The [crawler](#crawler) rebuilds the index
-in-process after each crawl when [`TYPESENSE_HOST` and `TYPESENSE_API_KEY`](#configuration) are set, reading the whole
-store each time — so a local index is built simply by running the crawler with those variables set:
+`docker compose up` starts Typesense (alongside QLever) on `localhost:8108`, and the committed `.env` files already
+point the crawler and the browser at it, so local search works out of the box. The [crawler](#crawler) rebuilds the
+index in-process after each crawl, reading the whole store each time, so a local index is built simply by running the
+crawler:
 
 ```
-TYPESENSE_HOST=localhost TYPESENSE_PORT=8108 TYPESENSE_PROTOCOL=http \
-  TYPESENSE_API_KEY=dev-typesense-key \
-  npx nx serve crawler
+npx nx serve crawler
 ```
 
-Without a `CRAWLER_SCHEDULE` this performs a single crawl and one full rebuild from the current store; add
-`KNOWLEDGE_GRAPH_URL` to enrich the index with Knowledge Graph facets.
+Without a `CRAWLER_SCHEDULE` this performs a single crawl and one full rebuild from the current store. Set
+[`KNOWLEDGE_GRAPH_URL`](#configuration) to enrich the index with Knowledge Graph facets, and the
+[`TYPESENSE_*` variables](#configuration) to point at a non-local Typesense.
 
 The browser queries Typesense directly with a **search-only** key, configured through its own public environment
-variables: `PUBLIC_TYPESENSE_HOST`, `PUBLIC_TYPESENSE_PORT`, `PUBLIC_TYPESENSE_PROTOCOL` and
-`PUBLIC_TYPESENSE_SEARCH_ONLY_API_KEY`. Locally you can reuse the admin key (`dev-typesense-key`); in production,
-generate a scoped [search-only API key](https://typesense.org/docs/latest/api/api-keys.html) so the write key never
-reaches the browser.
+variables (`PUBLIC_TYPESENSE_HOST`, `PUBLIC_TYPESENSE_PORT`, `PUBLIC_TYPESENSE_PROTOCOL` and
+`PUBLIC_TYPESENSE_SEARCH_ONLY_API_KEY`), preset for local use in `apps/browser/.env`. Locally the admin key doubles as
+the search key; in production, generate a scoped
+[search-only API key](https://typesense.org/docs/latest/api/api-keys.html) so the write key never reaches the browser.
 
 ## Data model
 
