@@ -16,7 +16,7 @@
   "dependencies": {
     "@comunica/types": "^5.2.3",
     "@dataset-register/core": "*",
-    "@lde/search": "^0.1.0",
+    "@lde/search": "^0.1.1",
     "@lde/search-typesense": "^0.1.0",
     "@lde/text-normalization": "^0.1.0",
     "env-schema": "^7.0.0",
