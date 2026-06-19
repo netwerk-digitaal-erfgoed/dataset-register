@@ -167,10 +167,15 @@ export const SEARCH_FIELDS: readonly SearchFieldSpec[] = [
     source: 'register',
   },
   {
+    // Filter-only: the browser filters datasets by catalog but never shows
+    // catalog bucket counts, so it stays out of facets (`facet: false`). It is
+    // still filterable — every indexed field is — but as a non-facet field it is
+    // tokenized, so the catalog filter must use Typesense’s exact `:=` operator
+    // (an IRI would otherwise partial-match on shared path segments).
     name: 'catalog',
     type: 'string[]',
     role: 'facet',
-    facet: true,
+    facet: false,
     optional: true,
     source: 'register',
   },

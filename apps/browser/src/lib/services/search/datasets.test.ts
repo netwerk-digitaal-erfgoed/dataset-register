@@ -150,13 +150,16 @@ describe('buildSearchParams', () => {
     expect(maxOnly.filter_by).toContain('size:<=1000');
   });
 
-  it('ignores the catalog filter (no index field yet)', () => {
+  it('filters the catalog with the exact operator (non-facet, tokenized field)', () => {
     const params = buildSearchParams(
       { ...emptyRequest(), catalog: ['https://example.org/catalog/1'] },
       DEFAULT_OPTIONS,
     );
 
-    expect(params.filter_by).not.toContain('catalog');
+    // Exact `:=` so the tokenized IRI does not partial-match on path segments.
+    expect(params.filter_by).toContain(
+      'catalog:=[`https://example.org/catalog/1`]',
+    );
   });
 
   it('AND-joins multiple filter clauses', () => {

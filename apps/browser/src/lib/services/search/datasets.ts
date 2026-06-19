@@ -134,9 +134,14 @@ function buildFilterBy(request: SearchRequest): string {
     clauses.push(sizeClause);
   }
 
-  // TODO: `catalog` (dct:isPartOf) has no field in the search index yet, so the
-  // filter is a no-op. Indexing it (or deciding the detail-page “Browse catalog”
-  // link keeps using the SPARQL path) is deferred — see the #2085 plan.
+  // `catalog` is a filter-only, non-facet (so tokenized) field, so it must use
+  // the exact `:=` operator — a non-exact `catalog:[…]` would partial-match IRIs
+  // on shared path segments.
+  if (request.catalog.length > 0) {
+    clauses.push(
+      `catalog:=[${request.catalog.map(escapeFilterValue).join(',')}]`,
+    );
+  }
 
   return clauses.join(' && ');
 }
