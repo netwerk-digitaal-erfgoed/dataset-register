@@ -50,7 +50,9 @@ describe('buildSearchParams', () => {
     expect(params.q).toBe('mohlmann');
     expect(params.q).not.toBe('Möhlmann');
     expect(params.query_by).toBe(queryBy());
-    expect(params.query_by_weights).toBe(queryByWeights(DEFAULT_OPTIONS.locale));
+    expect(params.query_by_weights).toBe(
+      queryByWeights(DEFAULT_OPTIONS.locale),
+    );
   });
 
   it('uses the match-all query when no text is given', () => {
