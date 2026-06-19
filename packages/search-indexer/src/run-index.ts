@@ -2,6 +2,7 @@ import { Client } from 'typesense';
 import { rebuild } from '@lde/search-typesense';
 import { projectGraph, type SearchDocument } from '@lde/search';
 import {
+  DEFAULT_REGISTRATIONS_GRAPH,
   LABELS_COLLECTION_ALIAS,
   SEARCH_COLLECTION_ALIAS,
   SEARCH_SYNONYM_SET,
@@ -23,12 +24,8 @@ import {
   type TypesenseConnection,
 } from './typesense-client.js';
 
-const DEFAULT_REGISTRATIONS_GRAPH =
-  'https://demo.netwerkdigitaalerfgoed.nl/registry/registrations';
-
 export interface RunIndexOptions {
   readonly sparqlUrl: string;
-  readonly sparqlAccessToken?: string;
   readonly registrationsGraphIri?: string;
   /** Dataset Knowledge Graph SPARQL endpoint; when absent, no DKG enrichment. */
   readonly knowledgeGraphEndpoint?: string;
@@ -73,7 +70,7 @@ export async function runIndex(
 
   const client = createTypesenseClient(options.typesense);
   const source = new RegisterSource(
-    new SparqlClient(options.sparqlUrl, options.sparqlAccessToken),
+    new SparqlClient(options.sparqlUrl),
     options.registrationsGraphIri ?? DEFAULT_REGISTRATIONS_GRAPH,
   );
 
@@ -120,9 +117,9 @@ export async function runIndex(
 }
 
 /**
- * Build the sidecar `labels` collection — organization IRIs (`foaf:name`) from
- * the register plus terminology-source (`dct:title`) and class (`rdfs:label`)
- * labels from the DKG — and blue/green-swap its alias via {@link rebuild}.
+ * Build the sidecar `labels` collection:  organization IRIs (`foaf:name`) from
+ * the register plus term IRIs and labels (`dct:title`) and class (`rdfs:label`)
+ * from the DKG. Blue/green-swap its alias via {@link rebuild}.
  * Defensive: a failure here is logged and swallowed so it never fails an
  * otherwise-good dataset rebuild; labels are display-only and the browser falls
  * back to a shortened IRI when one is missing. The DKG labels are independently
@@ -159,61 +156,79 @@ async function rebuildLabels(
 }
 
 /**
- * Read the DKG-sourced facet labels (terminology sources, classes) as label
- * documents. DKG-optional, exactly like the dataset enrichment: an absent
- * endpoint or a failed read degrades to register-only (organization) labels
- * rather than losing the whole labels collection.
+ * Read from the Dataset Knowledge Graph, degrading to `fallback` when no DKG
+ * endpoint is configured or the read fails — register correctness must never
+ * depend on DKG availability, so a DKG gap self-heals on the next successful
+ * run. The indexer only reads, and both the register and the DKG are public, so
+ * no access token is used (and the register and the DKG are distinct endpoints
+ * that would not share one anyway).
  */
-async function readKnowledgeGraphLabels(
+async function fromKnowledgeGraph<T>(
   options: RunIndexOptions,
   log: (message: string) => void,
-): Promise<LabelDocument[]> {
+  subject: string,
+  fallback: T,
+  read: (dkg: DkgSource) => Promise<T>,
+): Promise<T> {
   if (options.knowledgeGraphEndpoint === undefined) {
-    return [];
+    return fallback;
   }
-  const dkg = new DkgSource(
-    new SparqlClient(options.knowledgeGraphEndpoint, options.sparqlAccessToken),
-  );
+  const dkg = new DkgSource(new SparqlClient(options.knowledgeGraphEndpoint));
   try {
-    const [terminology, classes] = await Promise.all([
-      dkg.readTerminologyLabelQuads(),
-      dkg.readClassLabelQuads(),
-    ]);
-    return [
-      ...toLabelDocuments(terminology, 'terminology_source'),
-      ...toLabelDocuments(classes, 'class'),
-    ];
+    return await read(dkg);
   } catch (error) {
-    log(`Knowledge Graph labels skipped: ${(error as Error).message}`);
-    return [];
+    log(`Knowledge Graph ${subject} skipped: ${(error as Error).message}`);
+    return fallback;
   }
 }
 
 /**
- * CONSTRUCT the DKG enrichment quads (joined later by dataset IRI during
- * framing). DKG-optional: register correctness is the user-facing contract and
- * must always land, so a failed or absent DKG read degrades to register-only
- * data (DKG facets briefly absent, self-healing on the next successful run)
- * rather than aborting the rebuild.
+ * Read the DKG-sourced facet labels (terminology sources, classes) as label
+ * documents; degrades to register-only (organization) labels when the DKG is
+ * absent or fails.
  */
-async function readKnowledgeGraphQuads(
+function readKnowledgeGraphLabels(
+  options: RunIndexOptions,
+  log: (message: string) => void,
+): Promise<LabelDocument[]> {
+  return fromKnowledgeGraph<LabelDocument[]>(
+    options,
+    log,
+    'labels',
+    [],
+    async (dkg) => {
+      const [terminology, classes] = await Promise.all([
+        dkg.readTerminologyLabelQuads(),
+        dkg.readClassLabelQuads(),
+      ]);
+      return [
+        ...toLabelDocuments(terminology, 'terminology_source'),
+        ...toLabelDocuments(classes, 'class'),
+      ];
+    },
+  );
+}
+
+/**
+ * CONSTRUCT the DKG enrichment quads (joined later by dataset IRI during
+ * framing); degrades to register-only data when the DKG is absent or fails, so a
+ * rebuild never depends on DKG availability.
+ */
+function readKnowledgeGraphQuads(
   options: RunIndexOptions,
   log: (message: string) => void,
 ): Promise<Quad[]> {
-  if (options.knowledgeGraphEndpoint === undefined) {
-    return [];
-  }
-  const dkg = new DkgSource(
-    new SparqlClient(options.knowledgeGraphEndpoint, options.sparqlAccessToken),
+  return fromKnowledgeGraph<Quad[]>(
+    options,
+    log,
+    'enrichment',
+    [],
+    async (dkg) => {
+      const quads = await dkg.readQuads();
+      log(`Read ${quads.length} Knowledge Graph enrichment quads`);
+      return quads;
+    },
   );
-  try {
-    const quads = await dkg.readQuads();
-    log(`Read ${quads.length} Knowledge Graph enrichment quads`);
-    return quads;
-  } catch (error) {
-    log(`Knowledge Graph enrichment skipped: ${(error as Error).message}`);
-    return [];
-  }
 }
 
 /**

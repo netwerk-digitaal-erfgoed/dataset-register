@@ -16,7 +16,10 @@ import {
   ValidationReportStore,
   validationReportGraphIri,
 } from './validation-report.js';
-import { ALLOWED_DOMAIN_NAME_PREDICATE } from './constants.js';
+import {
+  ALLOWED_DOMAIN_NAME_PREDICATE,
+  DEFAULT_REGISTRATIONS_GRAPH,
+} from './constants.js';
 import type { DatasetCore, Quad } from '@rdfjs/types';
 import { URL } from 'node:url';
 
@@ -25,7 +28,7 @@ const queryEngine = new QueryEngine();
 export function stores(
   url: string,
   accessToken?: string,
-  registrationsGraphIri = 'https://demo.netwerkdigitaalerfgoed.nl/registry/registrations',
+  registrationsGraphIri = DEFAULT_REGISTRATIONS_GRAPH,
   allowedRegistrationDomainsGraphIri = 'https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names',
   ratingGraphIri = 'https://data.netwerkdigitaalerfgoed.nl/registry/ratings',
   distributionHealthGraphIri = 'https://datasetregister.netwerkdigitaalerfgoed.nl/sparql/distribution-health',

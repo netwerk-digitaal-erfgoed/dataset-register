@@ -27,7 +27,6 @@ function buildSearchIndexTrigger(): (() => void) | undefined {
   return () => {
     void runIndex({
       sparqlUrl: config.SPARQL_URL,
-      sparqlAccessToken: config.SPARQL_ACCESS_TOKEN,
       knowledgeGraphEndpoint: config.KNOWLEDGE_GRAPH_URL,
       typesense,
       log: (message) => console.log(message),

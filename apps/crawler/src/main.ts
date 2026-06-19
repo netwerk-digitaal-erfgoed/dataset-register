@@ -60,7 +60,6 @@ async function updateSearchIndex(): Promise<void> {
   try {
     await runIndex({
       sparqlUrl: config.SPARQL_URL,
-      sparqlAccessToken: config.SPARQL_ACCESS_TOKEN,
       knowledgeGraphEndpoint: config.KNOWLEDGE_GRAPH_URL,
       typesense: {
         host: config.TYPESENSE_HOST,

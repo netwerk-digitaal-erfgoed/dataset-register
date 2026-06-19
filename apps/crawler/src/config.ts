@@ -71,7 +71,8 @@ const schema: JSONSchemaType<Env> = {
     },
     KNOWLEDGE_GRAPH_URL: {
       type: 'string',
-      default: 'https://sparql.netwerkdigitaalerfgoed.nl/dataset-knowledge-graph',
+      default:
+        'https://sparql.netwerkdigitaalerfgoed.nl/dataset-knowledge-graph',
     },
   },
 };

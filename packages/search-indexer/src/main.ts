@@ -13,7 +13,6 @@ async function main(): Promise<void> {
 
   const result = await runIndex({
     sparqlUrl: config.SPARQL_URL,
-    sparqlAccessToken: config.SPARQL_ACCESS_TOKEN,
     registrationsGraphIri: config.REGISTRATIONS_GRAPH,
     typesense: {
       host: config.TYPESENSE_HOST,

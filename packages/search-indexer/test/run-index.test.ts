@@ -237,7 +237,6 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
 
     await runIndex({
       sparqlUrl,
-      sparqlAccessToken: qlever.accessToken,
       registrationsGraphIri: REGISTRATIONS_GRAPH,
       knowledgeGraphEndpoint: knowledgeGraphUrl,
       typesense: connection,
@@ -467,7 +466,6 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
   it('releases the per-index rebuild lock so a back-to-back run succeeds', async () => {
     const options = {
       sparqlUrl,
-      sparqlAccessToken: qlever.accessToken,
       registrationsGraphIri: REGISTRATIONS_GRAPH,
       knowledgeGraphEndpoint: knowledgeGraphUrl,
       typesense: connection,
@@ -487,7 +485,6 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
   it('rebuilds register data even when the DKG endpoint is unreachable', async () => {
     const result = await runIndex({
       sparqlUrl,
-      sparqlAccessToken: qlever.accessToken,
       registrationsGraphIri: REGISTRATIONS_GRAPH,
       knowledgeGraphEndpoint: 'http://127.0.0.1:1/',
       typesense: connection,
@@ -532,7 +529,6 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
 
     const result = await runIndex({
       sparqlUrl,
-      sparqlAccessToken: qlever.accessToken,
       registrationsGraphIri: REGISTRATIONS_GRAPH,
       typesense: connection,
     });
