@@ -9,7 +9,9 @@
   import { getLocale } from '$lib/paraglide/runtime';
   import { page } from '$app/state';
   import {
+    getProtocolLabel,
     isRdfDistribution,
+    isServiceDistribution,
     isSparqlDistribution,
   } from '$lib/utils/distribution';
   import {
@@ -21,6 +23,7 @@
   } from '$lib/services/distribution-health';
   import {
     compressionSuffix,
+    selectPreferredAccess,
     selectPreferredDownload,
     sortDistributionsByAvailability,
   } from '$lib/utils/distribution-ranking';
@@ -181,11 +184,13 @@
     ),
   );
 
-  const sparqlDistributions = $derived(
-    sortedDistributions.filter(isSparqlDistribution),
+  // Live access endpoints (SPARQL plus other APIs) are accessed in place, so they
+  // are split from file downloads. Within downloads, RDF leads the rest.
+  const accessDistributions = $derived(
+    sortedDistributions.filter(isServiceDistribution),
   );
   const downloadDistributions = $derived(
-    sortedDistributions.filter((d) => !isSparqlDistribution(d)),
+    sortedDistributions.filter((d) => !isServiceDistribution(d)),
   );
   const rdfDownloads = $derived(
     downloadDistributions.filter(isRdfDistribution),
@@ -197,6 +202,22 @@
   function yasguiUrl(endpoint: string): string {
     return `https://yasgui.org/#query=SELECT+*+WHERE+%7B%0A++%3Fsub+%3Fpred+%3Fobj+.%0A%7D+%0ALIMIT+10&endpoint=${encodeURIComponent(endpoint)}`;
   }
+
+  // The action for a single access endpoint: open a SPARQL endpoint in the query
+  // editor (YASGUI), or link straight to any other API endpoint.
+  function accessUrl(distribution: DistributionDetail): string {
+    return isSparqlDistribution(distribution)
+      ? yasguiUrl(distribution.accessURL)
+      : distribution.accessURL;
+  }
+
+  // The primary “Access this dataset” action points at the best access endpoint —
+  // a reachable one in dropdown order (SPARQL first), falling back to the first
+  // listed when all are unavailable so the link still resolves.
+  const accessPrimary = $derived(
+    selectPreferredAccess(accessDistributions, healthByUrl, now, invalidUrls) ??
+      accessDistributions[0],
+  );
 
   // The default download points at a reachable (or not-yet-probed) distribution
   // so it always works; undefined when every download is unavailable, which
@@ -591,6 +612,59 @@
           >
         {/if}
       </div>
+    {/if}
+  </DropdownItem>
+{/snippet}
+
+{#snippet accessDropdownItem(
+  distribution: DistributionDetail,
+  tooltipPrefix: string,
+  distIndex: number,
+)}
+  {@const isSparql = isSparqlDistribution(distribution)}
+  <DropdownItem
+    classes={{ item: 'flex flex-col items-start gap-1 !whitespace-normal' }}
+  >
+    <div class="flex w-full items-center gap-2">
+      <span
+        class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium {isSparql
+          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'}"
+      >
+        {getProtocolLabel(distribution)}
+      </span>
+      {@render statusBadge(
+        distribution,
+        `tooltip-${tooltipPrefix}-status-${distIndex}`,
+      )}
+      {@render copyButton(distribution.accessURL)}
+    </div>
+    <a
+      href={accessUrl(distribution)}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="block max-w-full truncate text-xs text-blue-600 hover:underline dark:text-blue-400"
+      title={distribution.accessURL}
+    >
+      {distribution.accessURL}
+      <span class="sr-only"> ({m.opens_in_new_tab()})</span>
+    </a>
+    {#if distribution.documentation}
+      <a
+        href={distribution.documentation}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="block max-w-full truncate text-xs text-blue-600 hover:underline dark:text-blue-400"
+        title={distribution.documentation}
+      >
+        {m.detail_distribution_documentation()}: {distribution.documentation}
+        <span class="sr-only"> ({m.opens_in_new_tab()})</span>
+      </a>
+    {/if}
+    {#if distribution.description}
+      <span class="text-xs text-gray-500 dark:text-gray-400">
+        {getLocalizedValue(distribution.description)}
+      </span>
     {/if}
   </DropdownItem>
 {/snippet}
@@ -1361,23 +1435,23 @@
         >
       </h2>
       <div class="flex flex-wrap gap-3">
-        <!-- Query dataset split button -->
-        {#if sparqlDistributions.length > 0}
+        <!-- Access dataset split button (SPARQL endpoints and other APIs) -->
+        {#if accessDistributions.length > 0 && accessPrimary}
           <div class="inline-flex rounded-lg shadow-sm" role="group">
             <a
-              href={yasguiUrl(sparqlDistributions[0].accessURL)}
+              href={accessUrl(accessPrimary)}
               target="_blank"
               rel="noopener noreferrer"
               class={splitBtnMainClass}
             >
               <SearchOutline class="me-2 h-4 w-4" />
-              {m.detail_query_dataset()}
+              {m.detail_access_dataset()}
               <span class="sr-only"> ({m.opens_in_new_tab()})</span>
             </a>
             <button
               type="button"
-              id="btn-query-dropdown"
-              aria-label={m.detail_show_query_endpoints()}
+              id="btn-access-dropdown"
+              aria-label={m.detail_show_access_endpoints()}
               class={splitBtnChevronClass}
             >
               <ChevronDownOutline class="h-4 w-4" />
@@ -1385,43 +1459,11 @@
           </div>
           <Dropdown
             simple
-            triggeredBy="#btn-query-dropdown"
+            triggeredBy="#btn-access-dropdown"
             class="max-h-96 w-max min-w-72 max-w-[28rem] overflow-y-auto overflow-x-hidden border border-gray-200 shadow-lg dark:border-gray-600"
           >
-            {#each sparqlDistributions as distribution, distIndex (distribution.$id)}
-              <DropdownItem
-                classes={{
-                  item: 'flex flex-col items-start gap-1 !whitespace-normal',
-                }}
-              >
-                <div class="flex w-full items-center gap-2">
-                  <span
-                    class="inline-flex items-center rounded bg-purple-100 px-1.5 py-0.5 text-xs font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
-                  >
-                    SPARQL
-                  </span>
-                  {@render statusBadge(
-                    distribution,
-                    `tooltip-sparql-status-${distIndex}`,
-                  )}
-                  {@render copyButton(distribution.accessURL)}
-                </div>
-                <a
-                  href={yasguiUrl(distribution.accessURL)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="block max-w-full truncate text-xs text-blue-600 hover:underline dark:text-blue-400"
-                  title={distribution.accessURL}
-                >
-                  {distribution.accessURL}
-                  <span class="sr-only"> ({m.opens_in_new_tab()})</span>
-                </a>
-                {#if distribution.description}
-                  <span class="text-xs text-gray-500 dark:text-gray-400">
-                    {getLocalizedValue(distribution.description)}
-                  </span>
-                {/if}
-              </DropdownItem>
+            {#each accessDistributions as distribution, distIndex (distribution.$id)}
+              {@render accessDropdownItem(distribution, 'access', distIndex)}
             {/each}
           </Dropdown>
         {/if}

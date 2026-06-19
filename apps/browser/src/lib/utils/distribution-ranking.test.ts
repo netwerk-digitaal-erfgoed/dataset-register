@@ -129,7 +129,7 @@ describe('sortDistributionsByAvailability', () => {
     ).toEqual([reachable, unavailable]);
   });
 
-  it('uses type priority (SPARQL > RDF > other) as the secondary key', () => {
+  it('uses type priority (SPARQL > API > RDF > other) as the secondary key', () => {
     const other = {
       accessURL: 'https://example.org/data.csv',
       mediaType: 'text/csv',
@@ -138,6 +138,10 @@ describe('sortDistributionsByAvailability', () => {
       accessURL: 'https://example.org/data.ttl',
       mediaType: 'text/turtle',
     };
+    const api = {
+      accessURL: 'https://example.org/openapi.json',
+      conformsTo: ['https://spec.openapis.org/oas/v3.2.0.html'],
+    };
     const sparql = {
       accessURL: 'https://example.org/sparql',
       conformsTo: [SPARQL_PROTOCOL],
@@ -145,8 +149,8 @@ describe('sortDistributionsByAvailability', () => {
     // All reachable (no health records), so only type priority orders them.
     const health = new Map<string, DistributionHealth>();
     expect(
-      sortDistributionsByAvailability([other, rdf, sparql], health, now),
-    ).toEqual([sparql, rdf, other]);
+      sortDistributionsByAvailability([other, rdf, api, sparql], health, now),
+    ).toEqual([sparql, api, rdf, other]);
   });
 
   it('groups distributions with no health record with the reachable ones', () => {

@@ -3,6 +3,7 @@ import {
   type DistributionHealth,
 } from '$lib/services/distribution-health';
 import {
+  isApiDistribution,
   isRdfDistribution,
   isSparqlDistribution,
 } from '$lib/utils/distribution';
@@ -106,10 +107,27 @@ export function selectPreferredDownload<T extends RankableDistribution>(
   );
 }
 
-// Coarse type priority used for ordering the full distribution list:
-// SPARQL endpoints first, then RDF downloads, then everything else.
+// Select the access endpoint the primary “Access this dataset” action points at:
+// the first reachable (or not-yet-probed) endpoint in dropdown order, so SPARQL —
+// opened in a query editor — is the default when present. Shares the download
+// selector’s ranking (a reachable-but-invalid endpoint is only a last resort), so
+// the primary action always matches the topmost dropdown entry. Undefined when
+// every endpoint is unavailable.
+export function selectPreferredAccess<T extends RankableDistribution>(
+  distributions: readonly T[],
+  healthByUrl: ReadonlyMap<string, DistributionHealth>,
+  now: Date,
+  invalidUrls: ReadonlySet<string> = new Set(),
+): T | undefined {
+  return selectPreferredDownload(distributions, healthByUrl, now, invalidUrls);
+}
+
+// Coarse type priority used for ordering the full distribution list: SPARQL
+// endpoints first (so the query editor is the default access action), then other
+// API endpoints, then RDF downloads, then everything else.
 function typePriority(distribution: RankableDistribution): number {
-  if (isSparqlDistribution(distribution)) return 2;
+  if (isSparqlDistribution(distribution)) return 3;
+  if (isApiDistribution(distribution)) return 2;
   if (isRdfDistribution(distribution)) return 1;
   return 0;
 }
