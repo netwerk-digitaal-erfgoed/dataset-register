@@ -21,7 +21,7 @@
   } from '$lib/services/distribution-health';
   import {
     compressionSuffix,
-    selectPreferredDownload,
+    selectPreferredDistribution,
     sortDistributionsByAvailability,
   } from '$lib/utils/distribution-ranking';
   import {
@@ -202,8 +202,21 @@
   // so it always works; undefined when every download is unavailable, which
   // disables the primary action.
   const preferredDownload = $derived(
-    selectPreferredDownload(
+    selectPreferredDistribution(
       downloadDistributions,
+      healthByUrl,
+      now,
+      invalidUrls,
+    ),
+  );
+
+  // Likewise for the Query action: point it at the first reachable SPARQL
+  // endpoint; undefined when every endpoint is unavailable, which greys out the
+  // primary action. The dropdown still lists each endpoint URL so an unavailable
+  // endpoint can be inspected or copied.
+  const preferredEndpoint = $derived(
+    selectPreferredDistribution(
+      sparqlDistributions,
       healthByUrl,
       now,
       invalidUrls,
@@ -1364,16 +1377,30 @@
         <!-- Query dataset split button -->
         {#if sparqlDistributions.length > 0}
           <div class="inline-flex rounded-lg shadow-sm" role="group">
-            <a
-              href={yasguiUrl(sparqlDistributions[0].accessURL)}
-              target="_blank"
-              rel="noopener noreferrer"
-              class={splitBtnMainClass}
-            >
-              <SearchOutline class="me-2 h-4 w-4" />
-              {m.detail_query_dataset()}
-              <span class="sr-only"> ({m.opens_in_new_tab()})</span>
-            </a>
+            {#if preferredEndpoint}
+              <a
+                href={yasguiUrl(preferredEndpoint.accessURL)}
+                target="_blank"
+                rel="noopener noreferrer"
+                class={splitBtnMainClass}
+              >
+                <SearchOutline class="me-2 h-4 w-4" />
+                {m.detail_query_dataset()}
+                <span class="sr-only"> ({m.opens_in_new_tab()})</span>
+              </a>
+            {:else}
+              <span
+                id="query-none-available"
+                class={splitBtnMainDisabledClass}
+                aria-disabled="true"
+              >
+                <SearchOutline class="me-2 h-4 w-4" />
+                {m.detail_query_none_available()}
+              </span>
+              <Tooltip triggeredBy="#query-none-available"
+                >{m.detail_query_none_available_tooltip()}</Tooltip
+              >
+            {/if}
             <button
               type="button"
               id="btn-query-dropdown"
