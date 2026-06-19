@@ -87,8 +87,12 @@ export async function runIndex(
   // document is held at a time. DKG quads are optional (see below). The
   // versioned collection name, alias swap and cross-pod lock are managed by
   // {@link rebuild}; the caller supplies only the logical alias.
-  const registerQuads = await source.readQuads();
-  const dkgQuads = await readKnowledgeGraphQuads(options, log);
+  // The register and DKG reads are independent (different endpoints), so run
+  // them concurrently.
+  const [registerQuads, dkgQuads] = await Promise.all([
+    source.readQuads(),
+    readKnowledgeGraphQuads(options, log),
+  ]);
   const result = await rebuild(
     client,
     buildCollectionSchema(alias),

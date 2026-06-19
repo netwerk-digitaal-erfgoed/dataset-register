@@ -60,6 +60,12 @@ export interface SearchFieldSpec {
    * are already diacritic-free, so the locale has no diacritics to preserve.
    */
   readonly locale?: string;
+  /**
+   * Member of a per-locale family (`${base}_search_nl/_en`), eligible for
+   * active-locale query-weight boosting — unlike a single-locale searchable
+   * field such as the multilingual `keyword_search`.
+   */
+  readonly perLocale?: boolean;
   /** Do not index for search (display-only fields), saving memory. */
   readonly index?: boolean;
   /** The pipeline that writes this field. */
@@ -89,6 +95,7 @@ function perLocaleSearch(
     weight,
     stem: true,
     locale,
+    perLocale: true,
     optional: options.optional ?? false,
     source: 'register',
   }));
@@ -392,16 +399,14 @@ export function queryByWeights(activeLocale?: SearchLocale): string {
     .join(',');
 }
 
-/** A field is split per locale when its name carries its own locale suffix
- *  (`title_search_nl`), unlike the single mixed `keyword_search`. */
+/** Per-locale fields (flagged {@link SearchFieldSpec.perLocale}) get the active
+ *  locale's full weight and the other locale's weight − 1 (floored at 1);
+ *  every other field keeps its weight. */
 function weightForLocale(
   field: WeightedField,
   activeLocale: SearchLocale | undefined,
 ): number {
-  const isPerLocale =
-    field.locale !== undefined &&
-    field.name.endsWith(`_search_${field.locale}`);
-  if (activeLocale === undefined || !isPerLocale) {
+  if (activeLocale === undefined || field.perLocale !== true) {
     return field.weight;
   }
   return field.locale === activeLocale
