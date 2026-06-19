@@ -135,9 +135,10 @@ describe('buildSearchParams', () => {
       DEFAULT_OPTIONS,
     );
 
-    expect(params.filter_by).toContain('format:[`application/ld+json`]');
+    // A granular value and group tokens in the same facet UNION (OR), not
+    // intersect: a dataset matching either the media type or a group qualifies.
     expect(params.filter_by).toContain(
-      'format_group:[`group:sparql`,`group:rdf`]',
+      '(format:[`application/ld+json`] || format_group:[`group:sparql`,`group:rdf`])',
     );
   });
 
@@ -150,8 +151,9 @@ describe('buildSearchParams', () => {
       DEFAULT_OPTIONS,
     );
 
-    expect(params.filter_by).toContain('class:[`https://schema.org/Person`]');
-    expect(params.filter_by).toContain('class_group:[`group:place`]');
+    expect(params.filter_by).toContain(
+      '(class:[`https://schema.org/Person`] || class_group:[`group:place`])',
+    );
   });
 
   it('builds a closed size range when both bounds are set', () => {

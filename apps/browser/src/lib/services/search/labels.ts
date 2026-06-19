@@ -88,7 +88,17 @@ export function createLabelResolver(
 
   return {
     async resolve(iris, locale) {
-      const byIri = await collection();
+      let byIri: Map<string, LabelDocument>;
+      try {
+        byIri = await collection();
+      } catch (error) {
+        // Labels are display-only: if the collection can’t be loaded (a
+        // transient Typesense error, or a search-only key lacking
+        // `documents:export`), degrade to no labels so every caller falls back
+        // to a shortened IRI — never failing the whole facet or dataset listing.
+        console.error('Label resolution failed; falling back to bare IRIs:', error);
+        return new Map();
+      }
       const labels = new Map<string, string>();
       for (const iri of iris) {
         const document = byIri.get(iri);

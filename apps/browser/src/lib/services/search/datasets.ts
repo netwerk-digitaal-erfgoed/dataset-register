@@ -130,19 +130,13 @@ function buildFilterBy(
   pushInClause(clauses, 'keyword', request.keyword);
   pushInClause(clauses, 'terminology_source', request.terminologySource);
 
-  // Split format and class values: group tokens filter the `_group` companion
-  // field, the rest filter the granular field.
-  const { groups: formatGroups, values: formats } = splitGroupValues(
-    request.format,
-  );
-  pushInClause(clauses, 'format', formats);
-  pushInClause(clauses, 'format_group', formatGroups);
-
-  const { groups: classGroups, values: classes } = splitGroupValues(
-    request.class,
-  );
-  pushInClause(clauses, 'class', classes);
-  pushInClause(clauses, 'class_group', classGroups);
+  // Format and class each mix granular values with `group:*` tokens (a coarser
+  // view of the same field, e.g. group:rdf covers the RDF media types). Within
+  // one facet the selections must UNION, so OR the granular field with its
+  // `_group` companion rather than AND-ing two separate clauses — otherwise
+  // ticking a value and a group in the same facet intersects to (near) nothing.
+  pushGroupedClause(clauses, 'format', 'format_group', request.format);
+  pushGroupedClause(clauses, 'class', 'class_group', request.class);
 
   const sizeClause = buildSizeClause(request.size);
   if (sizeClause !== undefined) {
@@ -182,6 +176,33 @@ function pushInClause(
 ): void {
   if (values.length > 0) {
     clauses.push(`${field}:[${values.map(escapeFilterValue).join(',')}]`);
+  }
+}
+
+/**
+ * Append a facet clause that ORs the granular field with its `_group` companion
+ * — `(format:[…] || format_group:[…])` — so selecting a value and a group token
+ * within one facet unions instead of intersecting. Emits a single unparenthesized
+ * clause when only one side is present, and nothing when the facet is empty.
+ */
+function pushGroupedClause(
+  clauses: string[],
+  field: string,
+  groupField: string,
+  values: readonly string[],
+): void {
+  const { groups, values: granular } = splitGroupValues(values);
+  const parts: string[] = [];
+  if (granular.length > 0) {
+    parts.push(`${field}:[${granular.map(escapeFilterValue).join(',')}]`);
+  }
+  if (groups.length > 0) {
+    parts.push(`${groupField}:[${groups.map(escapeFilterValue).join(',')}]`);
+  }
+  if (parts.length === 1) {
+    clauses.push(parts[0]!);
+  } else if (parts.length === 2) {
+    clauses.push(`(${parts.join(' || ')})`);
   }
 }
 
