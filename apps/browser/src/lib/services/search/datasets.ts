@@ -94,7 +94,7 @@ export function buildSearchParams(
   return {
     q: foldedQuery ?? '*',
     query_by: queryBy(),
-    query_by_weights: queryByWeights(),
+    query_by_weights: queryByWeights(locale),
     per_page: limit,
     page: Math.floor(offset / limit) + 1,
     facet_by: facetFields().join(','),

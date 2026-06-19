@@ -25,6 +25,14 @@ describe('search field registry', () => {
     expect(queryByWeights()).toBe('5,5,3,3,2,2,2,2,1');
   });
 
+  it('gently boosts the active locale’s fields, leaving keyword untouched', () => {
+    // Per-locale fields keep full weight for the active locale and are demoted
+    // by one (floored at 1) for the other; the single multilingual
+    // `keyword_search` (last weight) is unaffected.
+    expect(queryByWeights('nl')).toBe('5,4,3,2,2,1,2,1,1');
+    expect(queryByWeights('en')).toBe('4,5,2,3,1,2,1,2,1');
+  });
+
   it('only marks weighted fields as searchable', () => {
     for (const field of searchableFields()) {
       expect(field.weight).toBeGreaterThan(0);

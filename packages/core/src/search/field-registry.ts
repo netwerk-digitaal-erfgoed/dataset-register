@@ -69,6 +69,9 @@ export interface SearchFieldSpec {
 /** The locales projected per `langText` concept (display, search, sort). */
 export const SEARCH_LOCALES = ['nl', 'en'] as const;
 
+/** One of the projected search locales. */
+export type SearchLocale = (typeof SEARCH_LOCALES)[number];
+
 /**
  * A folded, stemmed search field per locale (`${base}_search_nl/_en`), each
  * stemmed in its own language. `@lde/search` emits these from one `locales`
@@ -374,11 +377,36 @@ export function queryBy(): string {
     .join(',');
 }
 
-/** Comma-separated `query_by_weights`, aligned with {@link queryBy}. */
-export function queryByWeights(): string {
+/**
+ * Comma-separated `query_by_weights`, aligned with {@link queryBy}. Given an
+ * `activeLocale`, each per-locale search field (`*_search_<locale>`) keeps its
+ * full weight for that locale and is gently demoted (−1, floored at 1) for the
+ * other, so a match in the user’s language ranks higher while cross-language
+ * matches still surface. Fields that are not split per locale — notably the
+ * multilingual `keyword_search`, one mixed field rather than one per language —
+ * keep their weight. Without an `activeLocale`, every field keeps its weight.
+ */
+export function queryByWeights(activeLocale?: SearchLocale): string {
   return searchableFields()
-    .map((field) => String(field.weight))
+    .map((field) => String(weightForLocale(field, activeLocale)))
     .join(',');
+}
+
+/** A field is split per locale when its name carries its own locale suffix
+ *  (`title_search_nl`), unlike the single mixed `keyword_search`. */
+function weightForLocale(
+  field: WeightedField,
+  activeLocale: SearchLocale | undefined,
+): number {
+  const isPerLocale =
+    field.locale !== undefined &&
+    field.name.endsWith(`_search_${field.locale}`);
+  if (activeLocale === undefined || !isPerLocale) {
+    return field.weight;
+  }
+  return field.locale === activeLocale
+    ? field.weight
+    : Math.max(1, field.weight - 1);
 }
 
 /** Facet field names. */
