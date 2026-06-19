@@ -124,7 +124,7 @@ export interface DatasetCard {
   size?: number;
   datePosted?: Date;
   distribution: CardDistribution[];
-  iiif: boolean;
+  iiif_manifest_count?: number;
   nde_schema_ap: boolean;
 }
 
@@ -132,11 +132,10 @@ const SPARQL_PROTOCOL_URI = 'https://www.w3.org/TR/sparql11-protocol/';
 const FORMAT_GROUP_SPARQL = 'group:sparql';
 const FORMAT_GROUP_RDF = 'group:rdf';
 
-// Whether the dataset provides working IIIF media. Indexed as a boolean
-// (`iiif === true`) computed at index time from the DKG measurements; the card
-// shows the badge in that case with no count.
-export function providesWorkingIiif(dataset: DatasetCard): boolean {
-  return dataset.iiif === true;
+// The declared IIIF manifest count, indexed as `iiif_manifest_count` (sum of the
+// IIIF `void:subset` `void:entities`). The card shows the count when positive.
+export function iiifManifestCount(dataset: DatasetCard): number {
+  return dataset.iiif_manifest_count ?? 0;
 }
 
 // Whether the dataset conforms to the NDE Schema.org Application Profile in the
@@ -192,7 +191,10 @@ export function cardFromDocument(
         ? new Date(document.date_posted * 1000)
         : undefined,
     distribution: cardDistributions(document),
-    iiif: document.iiif === true,
+    iiif_manifest_count:
+      typeof document.iiif_manifest_count === 'number'
+        ? document.iiif_manifest_count
+        : undefined,
     nde_schema_ap: document.nde_schema_ap === true,
   };
 }

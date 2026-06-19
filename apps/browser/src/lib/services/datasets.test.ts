@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   cardFromDocument,
   conformsToSchemaApNde,
-  providesWorkingIiif,
+  iiifManifestCount,
   type DatasetCard,
 } from './datasets';
 import type { SearchHitDocument } from './search/datasets';
@@ -18,13 +18,13 @@ const noLabels = {
   en: new Map<string, string>(),
 };
 
-describe('providesWorkingIiif', () => {
-  it('is true when the index flags working IIIF', () => {
-    expect(providesWorkingIiif(card({ iiif: true }))).toBe(true);
+describe('iiifManifestCount', () => {
+  it('returns the declared manifest count', () => {
+    expect(iiifManifestCount(card({ iiif_manifest_count: 5 }))).toBe(5);
   });
 
-  it('is false when the flag is absent', () => {
-    expect(providesWorkingIiif(card({ iiif: false }))).toBe(false);
+  it('returns 0 when the count is absent', () => {
+    expect(iiifManifestCount(card({}))).toBe(0);
   });
 });
 
@@ -119,14 +119,14 @@ describe('cardFromDocument', () => {
     ).toBe(true);
   });
 
-  it('carries the compatibility booleans through', () => {
+  it('carries the IIIF manifest count and compatibility boolean through', () => {
     const document: SearchHitDocument = {
       id: 'https://example.org/dataset/7',
-      iiif: true,
+      iiif_manifest_count: 5,
       nde_schema_ap: true,
     };
     const result = cardFromDocument(document, 'nl', noLabels);
-    expect(result.iiif).toBe(true);
+    expect(result.iiif_manifest_count).toBe(5);
     expect(result.nde_schema_ap).toBe(true);
   });
 });

@@ -8,7 +8,6 @@ import {
 } from '@lde/search';
 import {
   deriveClassGroups,
-  isIiifMet,
   isLinkedDataMet,
   isPersistentUrisMet,
   isSchemaApNdeMet,
@@ -135,17 +134,13 @@ function datasetDerivations(): readonly Derivation[] {
     // its criterion is met, keeping the document lean (the field is optional, so
     // absent reads as not-met) and a faceted `field:=true` count meaningful.
     (document, node) => {
-      const iiifEntities = sumNumbers(literalsOf(node, `${DR}iiifEntities`));
-      if (
-        isIiifMet({
-          declared: iiifEntities,
-          sampled: parseNumber(firstLiteralOf(node, `${DR}manifestsSampled`)),
-          validated: parseNumber(
-            firstLiteralOf(node, `${DR}manifestsValidated`),
-          ),
-        })
-      ) {
-        document.iiif = true;
+      // Declared IIIF manifest count = sum of the IIIF `void:subset`
+      // `void:entities`; shown on the card when positive.
+      const iiifManifestCount = sumNumbers(
+        literalsOf(node, `${DR}iiifEntities`),
+      );
+      if (iiifManifestCount > 0) {
+        document.iiif_manifest_count = iiifManifestCount;
       }
 
       const quadsValidated = parseNumber(

@@ -295,10 +295,12 @@ export const SEARCH_FIELDS: readonly SearchFieldSpec[] = [
   //     when the criterion is met (see compatibility.ts); omitted otherwise, so
   //     a faceted `field:=true` count is the number of compliant datasets. ---
   {
-    name: 'iiif',
-    type: 'bool',
+    // Display/count field (the declared IIIF manifest count), not a facet — like
+    // `catalog`, it stays out of `facetFields()`; the card shows the number.
+    name: 'iiif_manifest_count',
+    type: 'int32',
     role: 'facet',
-    facet: true,
+    facet: false,
     optional: true,
     source: 'dkg',
   },

@@ -253,7 +253,20 @@
   "detail_classes_for_value_type": "Classes for {valueTypeName}",
   "detail_properties_for_value_type": "Properties for {valueTypeName}",
   "opens_in_new_tab": "opens in new tab",
-  "dataset_iiif_manifests": "Provides IIIF manifests",
+  "dataset_iiif_manifests": [
+    {
+      "declarations": [
+        "input count",
+        "input display",
+        "local countPlural = count: plural"
+      ],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{display} IIIF manifest",
+        "countPlural=other": "{display} IIIF manifests"
+      }
+    }
+  ],
   "dataset_schema_ap_nde": "Conforms to the NDE Schema.org Application Profile (sampled)",
   "nde_compatibility": "Automated checks",
   "nde_compatibility_description": "These checks run automatically against the current NDE criteria. They give an up-to-date picture and help you improve the findability and reusability of your dataset.",

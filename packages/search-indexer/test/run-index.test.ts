@@ -183,8 +183,6 @@ function dqvInsertQuery(slug: string): string {
     <${iri}> <${VOID}subset> <${iiifSubset}> .
     <${iiifSubset}> <${DCT}conformsTo> <${IIIF_PRESENTATION_API}> ;
       <${VOID}entities> 5 .
-    ${measurement(slug, 'manifests-sampled', '3')}
-    ${measurement(slug, 'manifests-validated', '2')}
     ${measurement(slug, 'quads-validated', '42')}
     ${measurement(slug, 'schema-ap-nde-sample-conformance', `"true"^^<${XSD_BOOLEAN}>`)}
     ${measurement(slug, 'subject-uris-sampled', '10')}
@@ -228,7 +226,7 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
     }`);
 
     // NDE compatibility (“vinkjes”) DQV measurements for mohlmann: every
-    // criterion met. IIIF subset declares manifests and a sampled one validated;
+    // criterion met. The IIIF subset declares manifests (the count the card shows);
     // SCHEMA-AP-NDE validated quads and conformed (drives nde_schema_ap and,
     // together with void:triples above, linked_data); the terminology-source
     // linkset above drives terms; all sampled subject URIs resolved with no
@@ -419,7 +417,7 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
       .collections(SEARCH_COLLECTION_ALIAS)
       .documents(base('mohlmann'))
       .retrieve()) as Record<string, unknown>;
-    expect(met.iiif).toBe(true);
+    expect(met.iiif_manifest_count).toBe(5);
     expect(met.nde_schema_ap).toBe(true);
     expect(met.linked_data).toBe(true);
     expect(met.terms).toBe(true);
@@ -430,28 +428,11 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
       .collections(SEARCH_COLLECTION_ALIAS)
       .documents(base('fietsen-title'))
       .retrieve()) as Record<string, unknown>;
-    expect(unmet.iiif).toBeUndefined();
+    expect(unmet.iiif_manifest_count).toBeUndefined();
     expect(unmet.nde_schema_ap).toBeUndefined();
     expect(unmet.linked_data).toBeUndefined();
     expect(unmet.terms).toBeUndefined();
     expect(unmet.persistent_uris).toBeUndefined();
-  });
-
-  it('counts compliant datasets via a native boolean facet', async () => {
-    const response = await client
-      .collections(SEARCH_COLLECTION_ALIAS)
-      .documents()
-      .search({
-        q: '*',
-        query_by: queryBy(),
-        facet_by: 'iiif',
-        per_page: 0,
-      });
-    const iiifFacet = response.facet_counts?.find(
-      (facet) => facet.field_name === 'iiif',
-    );
-    const compliant = iiifFacet?.counts.find((count) => count.value === 'true');
-    expect(compliant?.count).toBe(1);
   });
 
   it('sets the granular class but no class_group for an ungrouped class', async () => {

@@ -201,13 +201,8 @@ describe('dataset projection', () => {
   it('derives the NDE compatibility booleans from DKG DQV measurements', async () => {
     const document = await project(
       titled({
-        // IIIF: declared entities + a validated manifest => met.
+        // IIIF: declared entities => the card shows the count.
         [`${DR}iiifEntities`]: { '@type': `${XSD}integer`, '@value': '5' },
-        [`${DR}manifestsSampled`]: { '@type': `${XSD}integer`, '@value': '3' },
-        [`${DR}manifestsValidated`]: {
-          '@type': `${XSD}integer`,
-          '@value': '2',
-        },
         // SCHEMA-AP-NDE: quads validated + conformant => met.
         [`${DR}quadsValidated`]: { '@type': `${XSD}integer`, '@value': '42' },
         [`${DR}schemaApNdeConformant`]: {
@@ -229,7 +224,7 @@ describe('dataset projection', () => {
         },
       }),
     );
-    expect(document.iiif).toBe(true);
+    expect(document.iiif_manifest_count).toBe(5);
     expect(document.nde_schema_ap).toBe(true);
     expect(document.linked_data).toBe(true);
     expect(document.terms).toBe(true);
@@ -239,13 +234,7 @@ describe('dataset projection', () => {
   it('omits each compatibility boolean when its criterion is not met', async () => {
     const document = await project(
       titled({
-        // IIIF declared but sampled-with-zero-validated => not met.
-        [`${DR}iiifEntities`]: { '@type': `${XSD}integer`, '@value': '5' },
-        [`${DR}manifestsSampled`]: { '@type': `${XSD}integer`, '@value': '3' },
-        [`${DR}manifestsValidated`]: {
-          '@type': `${XSD}integer`,
-          '@value': '0',
-        },
+        // No IIIF subset declared => no manifest count.
         // SCHEMA-AP-NDE: conformant claim over zero validated quads is vacuous.
         [`${DR}quadsValidated`]: { '@type': `${XSD}integer`, '@value': '0' },
         [`${DR}schemaApNdeConformant`]: {
@@ -264,7 +253,7 @@ describe('dataset projection', () => {
         },
       }),
     );
-    expect(document.iiif).toBeUndefined();
+    expect(document.iiif_manifest_count).toBeUndefined();
     expect(document.nde_schema_ap).toBeUndefined();
     expect(document.linked_data).toBeUndefined();
     expect(document.terms).toBeUndefined();
