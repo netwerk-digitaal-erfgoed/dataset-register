@@ -220,6 +220,25 @@ describe('buildSearchParams', () => {
     expect(dutch.sort_by).toBe('title_sort_nl:asc,status_rank:asc');
     expect(english.sort_by).toBe('title_sort_en:asc,status_rank:asc');
   });
+
+  it('ranks by relevance for a text query instead of alphabetically', () => {
+    const params = buildSearchParams(
+      { ...emptyRequest(), query: 'fietsen' },
+      DEFAULT_OPTIONS,
+    );
+
+    // _text_match (driven by query_by_weights) ranks; status rank breaks ties.
+    expect(params.sort_by).toBe('_text_match:desc,status_rank:asc');
+  });
+
+  it('keeps an explicit date order even with a text query', () => {
+    const params = buildSearchParams(
+      { ...emptyRequest(), query: 'fietsen' },
+      { ...DEFAULT_OPTIONS, orderBy: 'datePosted' },
+    );
+
+    expect(params.sort_by).toBe('date_posted:desc');
+  });
 });
 
 describe('searchDatasets', () => {

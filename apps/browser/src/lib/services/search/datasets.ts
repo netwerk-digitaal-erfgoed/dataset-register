@@ -85,18 +85,21 @@ export function buildSearchParams(
   options: SearchOptions,
 ): SearchParams<SearchHitDocument> {
   const { limit, offset, orderBy, locale } = options;
+  // Folded query text, or undefined when browsing (no query). Drives both the
+  // `q` match-all sentinel and the relevance-vs-alphabetical sort choice.
+  const foldedQuery =
+    request.query !== undefined && request.query.length > 0
+      ? fold(request.query)
+      : undefined;
   return {
-    q:
-      request.query !== undefined && request.query.length > 0
-        ? fold(request.query)
-        : '*',
+    q: foldedQuery ?? '*',
     query_by: queryBy(),
     query_by_weights: queryByWeights(),
     per_page: limit,
     page: Math.floor(offset / limit) + 1,
     facet_by: facetFields().join(','),
     filter_by: buildFilterBy(request, options.includeDefaultStatus ?? true),
-    sort_by: buildSortBy(orderBy, locale),
+    sort_by: buildSortBy(orderBy, locale, foldedQuery !== undefined),
   };
 }
 
@@ -202,13 +205,24 @@ function buildSizeClause(size: SearchRequest['size']): string | undefined {
 }
 
 /**
- * The `sort_by` for an order: newest-first by post date, or — for title order —
- * the active-locale folded title sort key, with status rank as the tie-breaker.
- * Falls back to the default sort field when neither applies.
+ * The `sort_by` for a request. An explicit date order always wins (newest
+ * first), so date sorting is honoured even while searching. A text query then
+ * ranks by Typesense relevance (`_text_match`, fed by the per-field
+ * `query_by_weights`) with status rank as the tie-breaker — without an explicit
+ * `_text_match` sort those weights would not affect result order at all. Browse
+ * mode (no query) sorts by the active-locale folded title key, falling back to
+ * the default sort field.
  */
-function buildSortBy(orderBy: OrderBy, locale: SearchLocale): string {
+function buildSortBy(
+  orderBy: OrderBy,
+  locale: SearchLocale,
+  hasQuery: boolean,
+): string {
   if (orderBy === 'datePosted') {
     return 'date_posted:desc';
+  }
+  if (hasQuery) {
+    return `_text_match:desc,status_rank:asc`;
   }
   if (orderBy === 'title') {
     return `title_sort_${locale}:asc,status_rank:asc`;
