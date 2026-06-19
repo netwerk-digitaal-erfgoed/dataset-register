@@ -283,11 +283,13 @@
   "nde_compat_persistent_heading_resolves": "Gebruikt een niet-persistente domeinnaam",
   "nde_compat_persistent_heading_unresolved": "Sommige URI’s zijn niet bereikbaar",
   "nde_compat_persistent_heading_pending": "Persistente URI’s nog niet gecontroleerd",
+  "nde_compat_persistent_heading_sampling_failed": "Persistente URI’s konden niet worden gecontroleerd",
   "nde_compat_state_legend_label": "Wat de kleuren betekenen",
   "nde_compat_persistent_explanation_persistent": "De persistente URI’s van deze dataset leiden naar een landingspagina.",
   "nde_compat_persistent_explanation_resolves": "De URI’s werken nu, maar gebruiken een domein dat kan veranderen, bijvoorbeeld dat van een software-leverancier.",
   "nde_compat_persistent_explanation_unresolved": "Sommige URI’s uit de steekproef leiden niet naar een landingspagina.",
   "nde_compat_persistent_explanation_pending": "De URI’s van deze dataset zijn nog niet op persistentie gecontroleerd.",
+  "nde_compat_persistent_explanation_sampling_failed": "We hebben geprobeerd de URI’s van deze dataset te bemonsteren, maar de bron kon deze keer niet worden bevraagd, waardoor de persistentie niet kon worden beoordeeld. De controle wordt automatisch opnieuw uitgevoerd bij de volgende analyse.",
   "nde_compat_persistent_count_unresolved": [
     {
       "declarations": [

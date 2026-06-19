@@ -82,11 +82,17 @@
           case 'met':
             return m.nde_compat_persistent_heading_persistent();
           case 'warning':
-            // Two orange reasons: pages that resolve but do not reference their
-            // PID, versus a namespace that resolves but is non-durable.
-            return criterion.reason === 'no-self-reference'
-              ? m.nde_compat_persistent_heading_no_self_reference()
-              : m.nde_compat_persistent_heading_resolves();
+            // Three orange reasons: pages that resolve but do not reference their
+            // PID, a sample that errored, versus a namespace that resolves but is
+            // non-durable.
+            switch (criterion.reason) {
+              case 'no-self-reference':
+                return m.nde_compat_persistent_heading_no_self_reference();
+              case 'sampling-failed':
+                return m.nde_compat_persistent_heading_sampling_failed();
+              default:
+                return m.nde_compat_persistent_heading_resolves();
+            }
           case 'failed':
             return m.nde_compat_persistent_heading_unresolved();
           // Neutral: analyzed, but resolution has not been measured yet.
@@ -144,9 +150,14 @@
           case 'met':
             return m.nde_compat_persistent_explanation_persistent();
           case 'warning':
-            return criterion.reason === 'no-self-reference'
-              ? m.nde_compat_persistent_explanation_no_self_reference()
-              : m.nde_compat_persistent_explanation_resolves();
+            switch (criterion.reason) {
+              case 'no-self-reference':
+                return m.nde_compat_persistent_explanation_no_self_reference();
+              case 'sampling-failed':
+                return m.nde_compat_persistent_explanation_sampling_failed();
+              default:
+                return m.nde_compat_persistent_explanation_resolves();
+            }
           case 'failed':
             return m.nde_compat_persistent_explanation_unresolved();
           default:
@@ -245,6 +256,11 @@
           entry('met'),
           entry('warning', 'non-durable'),
           entry('warning', 'no-self-reference'),
+          // Errored sampling is a transient condition, so list it only while the
+          // criterion is actually in it, like the neutral pending tier below.
+          ...(criterion.reason === 'sampling-failed'
+            ? [entry('warning', 'sampling-failed')]
+            : []),
           entry('failed', 'unresolved'),
           ...(criterion.state === 'unmet' ? [entry('unmet')] : []),
         ];

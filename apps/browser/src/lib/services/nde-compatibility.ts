@@ -49,6 +49,15 @@ export const SUBJECT_URIS_SAMPLED_METRIC =
 export const SUBJECT_URIS_RESOLVED_METRIC =
   'https://def.nde.nl/metric#subject-uris-resolved';
 
+// Boolean DQV metric the Dataset Knowledge Graph records (`true`) when the
+// subject-URI sample query failed on every attempt — the namespace was selected
+// and sampling was attempted, but the endpoint could not serve the sample this
+// run. It lets the register tell an errored sample (🟠) apart from a namespace
+// that was never sampled (⚪): both otherwise lack a `subject-uris-sampled`
+// ratio. Absent when sampling succeeded or was never attempted.
+export const SUBJECT_URIS_SAMPLING_FAILED_METRIC =
+  'https://def.nde.nl/metric#subject-uris-sampling-failed';
+
 // Boolean DQV metric flagging the subject namespace as non-durable: emitted with
 // value `false` when the namespace is on the Dataset Knowledge Graph’s disallow
 // list of known non-durable vendor namespaces. Absent for an unflagged
@@ -131,10 +140,16 @@ export type SchemaApNdeFailureReason = 'violations' | 'declared-but-empty';
 //                       reference their PID.
 // 'non-durable'       — 🟠 the URIs resolve, but on a namespace the DKG flags as
 //                       a non-durable home (its disallow list).
+// 'sampling-failed'   — 🟠 the namespace was selected and sampling was attempted,
+//                       but the sample query failed every attempt this run (the
+//                       DKG recorded a `subject-uris-sampling-failed` marker), so
+//                       the criterion could not be assessed — an error to fix,
+//                       not the neutral “not yet checked” of a never-sampled one.
 export type PersistentFailureReason =
   | 'unresolved'
   | 'no-self-reference'
-  | 'non-durable';
+  | 'non-durable'
+  | 'sampling-failed';
 
 // Why a criterion is in a non-green state. The registration reasons ('gone',
 // 'invalid') carry the dataset’s status; the linked-data reasons say why no
@@ -213,6 +228,13 @@ export interface PersistentUriFailure {
 //                   its PID (🟠), otherwise at least one page did not resolve
 //                   (🔴). Empty until the DKG ships the per-URI data, so the
 //                   split falls back to the hard red state — matching today.
+// 'samplingFailed' — whether the DKG recorded a `subject-uris-sampling-failed`
+//                   marker: the namespace was selected and sampling was attempted
+//                   but failed every attempt this run. Distinguishes an errored
+//                   sample (🟠) from a namespace that was never sampled (⚪, where
+//                   `sampled` is also null). Optional: absent (the common case,
+//                   and all data before the DKG shipped the marker) reads as not
+//                   failed.
 export interface PersistentUris {
   uriSpace: string | null;
   scheme: PidScheme | null;
@@ -221,6 +243,7 @@ export interface PersistentUris {
   resolved: number | null;
   onDisallowList: boolean;
   failures: PersistentUriFailure[];
+  samplingFailed?: boolean;
 }
 
 // SCHEMA-AP-NDE sample-conformance figures from the Knowledge Graph plus whether
@@ -412,17 +435,21 @@ export function iiifState(manifests: IiifManifests): CompatibilityState {
 //
 // A namespace that fully resolves but is on the DKG’s disallow list of known
 // non-durable vendor namespaces is a `warning` (🟠, 'non-durable'): it works
-// today but is not a durable home for the identifiers. With no measurement yet —
-// the resolution step has not run, or the DKG found no self-minted namespace to
-// sample — the criterion is neutral pending (⚪): a grey row signalling “this
-// will still be checked”, unlike terms it keeps its place rather than being
-// omitted.
+// today but is not a durable home for the identifiers. With no ratio, the
+// sampling-failed marker splits the two no-measurement cases: a sample that was
+// attempted and failed this run is a `warning` (🟠, 'sampling-failed') — an error
+// to surface — whereas no marker means the resolution step has not run, or the
+// DKG found no self-minted namespace to sample, so the criterion is neutral
+// pending (⚪): a grey row signalling “this will still be checked”, unlike terms
+// it keeps its place rather than being omitted.
 export function persistentUrisState(persistent: PersistentUris): {
   state: CompatibilityState;
   reason?: PersistentFailureReason;
 } {
   if (persistent.sampled === null || persistent.sampled <= 0) {
-    return { state: 'unmet' };
+    return persistent.samplingFailed
+      ? { state: 'warning', reason: 'sampling-failed' }
+      : { state: 'unmet' };
   }
   const resolved = persistent.resolved ?? 0;
   if (resolved < persistent.sampled) {

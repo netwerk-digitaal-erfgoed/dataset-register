@@ -283,11 +283,13 @@
   "nde_compat_persistent_heading_resolves": "Uses a non-persistent domain name",
   "nde_compat_persistent_heading_unresolved": "Some URIs are not reachable",
   "nde_compat_persistent_heading_pending": "Persistent URIs not yet checked",
+  "nde_compat_persistent_heading_sampling_failed": "Persistent URIs could not be checked",
   "nde_compat_state_legend_label": "What the colours mean",
   "nde_compat_persistent_explanation_persistent": "This dataset’s URIs resolve to a landing page.",
   "nde_compat_persistent_explanation_resolves": "The URIs resolve, but on a domain that may change, such as a software vendor’s.",
   "nde_compat_persistent_explanation_unresolved": "Some of this dataset’s sampled URIs do not resolve to a landing page.",
   "nde_compat_persistent_explanation_pending": "This dataset’s URIs have not been checked for persistence yet.",
+  "nde_compat_persistent_explanation_sampling_failed": "We tried to sample this dataset’s URIs, but its source could not be queried this time, so persistence could not be assessed. The check runs again automatically on the next analysis.",
   "nde_compat_persistent_count_unresolved": [
     {
       "declarations": [
