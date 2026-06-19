@@ -59,6 +59,13 @@ export interface HistogramBin {
 const VALUE_INVALID = 'invalid';
 const VALUE_GONE = 'gone';
 
+// The status facet offers only the non-default states as toggles: `valid` is the
+// implicit default (no selection), so it is never shown as a togglable value.
+const SELECTABLE_STATUSES: ReadonlySet<string> = new Set([
+  VALUE_INVALID,
+  VALUE_GONE,
+]);
+
 const GROUP_RDF = 'group:rdf';
 const GROUP_SPARQL = 'group:sparql';
 
@@ -199,6 +206,10 @@ async function fetchSidebarFacet(
       offset: 0,
       orderBy: 'title',
       locale,
+      // The status facet counts across all statuses (so it can offer the
+      // invalid/gone toggles); every other facet still counts within the
+      // default valid set.
+      includeDefaultStatus: key !== 'status',
     }),
     per_page: 0,
     facet_by: spec.fields.join(','),
@@ -225,9 +236,11 @@ async function fetchSidebarFacet(
       );
     }
 
-    const values: CountedFacetValue[] = [...byValue.entries()].map(
-      ([value, count]) => ({ value, count }),
-    );
+    const values: CountedFacetValue[] = [...byValue.entries()]
+      // The status facet lists only the non-default states (invalid, gone);
+      // `valid` is the implicit default and is never a toggle.
+      .filter(([value]) => key !== 'status' || SELECTABLE_STATUSES.has(value))
+      .map(([value, count]) => ({ value, count }));
 
     if (spec.iri) {
       await attachIriLabels(values);

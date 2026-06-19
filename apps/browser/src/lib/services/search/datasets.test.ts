@@ -83,6 +83,17 @@ describe('buildSearchParams', () => {
     expect(params.filter_by).not.toContain('status:[');
   });
 
+  it('omits the status clause entirely when includeDefaultStatus is false', () => {
+    // Used to compute the status facet itself, which must count across all
+    // statuses rather than being constrained to the default valid.
+    const params = buildSearchParams(emptyRequest(), {
+      ...DEFAULT_OPTIONS,
+      includeDefaultStatus: false,
+    });
+
+    expect(params.filter_by).not.toContain('status');
+  });
+
   it('filters by the requested statuses instead of the default', () => {
     const params = buildSearchParams(
       { ...emptyRequest(), status: ['invalid', 'gone'] },

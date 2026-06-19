@@ -43,6 +43,12 @@ export interface SearchOptions {
   readonly offset: number;
   readonly orderBy: OrderBy;
   readonly locale: SearchLocale;
+  /**
+   * Apply the default `status:=valid` filter when no status is selected
+   * (default true). Set false when computing the status facet itself, so it
+   * counts across all statuses instead of only the valid ones.
+   */
+  readonly includeDefaultStatus?: boolean;
 }
 
 /**
@@ -89,7 +95,7 @@ export function buildSearchParams(
     per_page: limit,
     page: Math.floor(offset / limit) + 1,
     facet_by: facetFields().join(','),
-    filter_by: buildFilterBy(request),
+    filter_by: buildFilterBy(request, options.includeDefaultStatus ?? true),
     sort_by: buildSortBy(orderBy, locale),
   };
 }
@@ -105,12 +111,15 @@ const GROUP_PREFIX = 'group:';
  * Status defaults to valid-only when the request carries no explicit status, so
  * archived/invalid/gone registrations stay out of the listing unless asked for.
  */
-function buildFilterBy(request: SearchRequest): string {
+function buildFilterBy(
+  request: SearchRequest,
+  includeDefaultStatus: boolean,
+): string {
   const clauses: string[] = [];
 
   if (request.status.length > 0) {
     clauses.push(`status:[${request.status.map(escapeFilterValue).join(',')}]`);
-  } else {
+  } else if (includeDefaultStatus) {
     clauses.push('status:=valid');
   }
 
