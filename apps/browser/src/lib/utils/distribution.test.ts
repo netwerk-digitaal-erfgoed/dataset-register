@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  getProtocolLabel,
+  isApiDistribution,
   isRdfDistribution,
+  isServiceDistribution,
   isSparqlDistribution,
   offersLinkedData,
   SPARQL_PROTOCOL,
@@ -20,11 +23,81 @@ describe('isSparqlDistribution', () => {
     ).toBe(true);
   });
 
+  it('is true for the SPARQL query-language URI on its own', () => {
+    // Some endpoints declare only the older query-language spec; it is a SPARQL
+    // signal too, so it opens in the query editor rather than as a download.
+    expect(
+      isSparqlDistribution({
+        conformsTo: ['https://www.w3.org/TR/rdf-sparql-query/'],
+      }),
+    ).toBe(true);
+  });
+
   it('is false without the protocol or without conformsTo', () => {
     expect(isSparqlDistribution({ conformsTo: ['http://example.org/x'] })).toBe(
       false,
     );
     expect(isSparqlDistribution({})).toBe(false);
+  });
+});
+
+describe('isServiceDistribution / isApiDistribution', () => {
+  it('treats SPARQL endpoints as services but not as APIs', () => {
+    const sparql = { conformsTo: [SPARQL_PROTOCOL] };
+    expect(isServiceDistribution(sparql)).toBe(true);
+    expect(isApiDistribution(sparql)).toBe(false);
+  });
+
+  it('treats other recognised protocols as both services and APIs', () => {
+    const openApi = {
+      conformsTo: ['https://spec.openapis.org/oas/v3.2.0.html'],
+    };
+    expect(isServiceDistribution(openApi)).toBe(true);
+    expect(isApiDistribution(openApi)).toBe(true);
+    expect(
+      isServiceDistribution({
+        conformsTo: ['https://iiif.io/api/discovery/1.0/'],
+      }),
+    ).toBe(true);
+  });
+
+  it('does not treat data-model or serialization conformance as a service', () => {
+    // EDM (a data model) and N-Triples (a serialization) occur in conformsTo on
+    // plain RDF dumps; those are downloads, not endpoints.
+    expect(
+      isServiceDistribution({
+        conformsTo: ['http://www.europeana.eu/schemas/edm/'],
+        mediaType: 'application/rdf+xml',
+      }),
+    ).toBe(false);
+    expect(
+      isServiceDistribution({
+        conformsTo: ['https://www.w3.org/TR/rdf12-n-triples/'],
+        mediaType: 'application/n-triples',
+      }),
+    ).toBe(false);
+    expect(isServiceDistribution({ mediaType: 'text/turtle' })).toBe(false);
+  });
+});
+
+describe('getProtocolLabel', () => {
+  it('returns the technical label for a recognised protocol', () => {
+    expect(getProtocolLabel({ conformsTo: [SPARQL_PROTOCOL] })).toBe('SPARQL');
+    expect(
+      getProtocolLabel({
+        conformsTo: ['https://spec.openapis.org/oas/v3.2.0.html'],
+      }),
+    ).toBe('REST API');
+    expect(
+      getProtocolLabel({ conformsTo: ['https://iiif.io/api/discovery/1.0/'] }),
+    ).toBe('IIIF');
+  });
+
+  it('is undefined for an unrecognised or absent conformsTo', () => {
+    expect(getProtocolLabel({ conformsTo: ['http://example.org/x'] })).toBe(
+      undefined,
+    );
+    expect(getProtocolLabel({ mediaType: 'text/turtle' })).toBe(undefined);
   });
 });
 
