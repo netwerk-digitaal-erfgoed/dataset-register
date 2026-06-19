@@ -114,7 +114,7 @@ You can configure the application through environment variables:
   is the admin key used to write the index (the bundled `docker compose` Typesense defaults to `dev-typesense-key`).
 - `KNOWLEDGE_GRAPH_URL`: SPARQL endpoint of the Dataset Knowledge Graph used to enrich the
   [search index](#search-index) (facets such as class, terminology source and size, and the NDE-compatibility flags).
-  Optional — without it the index is built from the register alone.
+  Defaults to the public NDE endpoint; a failed or unreachable read degrades to a register-only index.
 
 ## Run the tests
 

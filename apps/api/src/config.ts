@@ -14,9 +14,10 @@ interface Env {
   TYPESENSE_PORT: number;
   TYPESENSE_PROTOCOL: string;
   TYPESENSE_API_KEY?: string;
-  // Optional Dataset Knowledge Graph SPARQL endpoint enriching the rebuild with
-  // DKG facets; absent → register-only index, no enrichment.
-  KNOWLEDGE_GRAPH_URL?: string;
+  // Dataset Knowledge Graph SPARQL endpoint enriching the rebuild with DKG
+  // facets. Defaults to the public NDE endpoint; a failed read degrades to a
+  // register-only index.
+  KNOWLEDGE_GRAPH_URL: string;
 }
 
 const schema: JSONSchemaType<Env> = {
@@ -63,7 +64,7 @@ const schema: JSONSchemaType<Env> = {
     },
     KNOWLEDGE_GRAPH_URL: {
       type: 'string',
-      nullable: true,
+      default: 'https://sparql.netwerkdigitaalerfgoed.nl/dataset-knowledge-graph',
     },
   },
 };
