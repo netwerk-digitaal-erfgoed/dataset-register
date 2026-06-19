@@ -58,15 +58,17 @@
   class="group/card relative block border border-gray-300 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-800 transition-all hover:shadow-xl hover:border-gray-500 dark:hover:border-gray-500 cursor-pointer no-underline overflow-visible"
   href={detailUrl}
 >
-  {#if dataset.status}
+  {#if dataset.status === 'gone' || dataset.status === 'invalid'}
     <div
       class="absolute top-0 right-0 overflow-hidden w-32 h-32 pointer-events-none"
     >
       <div
         class="absolute top-7 -right-10 w-48 py-2 flex items-center justify-center text-white text-xs font-bold uppercase tracking-wider transform rotate-45 bg-red-600 dark:bg-red-700 shadow-lg"
       >
-        {#if dataset.status === 'archived'}
-          {m.dataset_status_archived()}
+        {#if dataset.status === 'invalid'}
+          {m.detail_invalid()}
+        {:else}
+          {m.detail_gone()}
         {/if}
       </div>
     </div>
