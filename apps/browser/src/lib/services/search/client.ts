@@ -9,9 +9,12 @@ import { createLabelResolver, type LabelResolver } from './labels.js';
 /**
  * Whether a Typesense search backend is configured. The browser queries
  * Typesense directly with a search-only (read) key – scoped to search and safe
- * to expose – so this is a public-env feature flag; when unset, the app falls
- * back to its SPARQL path. A later iteration swaps this direct path for a
- * GraphQL API that runs the Typesense queries, behind the same service seam.
+ * to expose – so this is a public-env feature flag. When unset, the dataset
+ * listing returns empty and logs an error: the Typesense migration removed the
+ * SPARQL listing path, so the listing now requires Typesense. (The dataset
+ * detail pages read over SPARQL independently and are unaffected.) A later
+ * iteration swaps this direct path for a GraphQL API that runs the Typesense
+ * queries, behind the same service seam.
  */
 export function isSearchConfigured(): boolean {
   return Boolean(
