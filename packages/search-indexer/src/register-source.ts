@@ -23,7 +23,7 @@ export class RegisterSource {
   /**
    * Read each dataset as a flat, frameable subgraph: its newest registration’s
    * facts plus its DCAT/DC content, every value hanging directly off the dataset
-   * node (`dr:publisherName`, `dr:format`, …) rather than nested — a deliberately
+   * node (`dr:publisherName`, `dr:format`, …) rather than nested – a deliberately
    * flat IR, because a CONSTRUCT template spanning two subjects
    * (`?dataset dcat:distribution ?dist . ?dist dcat:mediaType ?x`) drops the
    * `?dataset → ?dist` link on QLever; single-subject templates are reliable.
@@ -43,7 +43,7 @@ export class RegisterSource {
    *   excluded, matching the listing’s “has content” expectation.
    * - {@link properties} (dataset graphs): each multi-valued property in its own
    *   UNION branch (no inter-property cross-product). Properties of unregistered
-   *   datasets are harmless — without the `a dcat:Dataset` from `facts` they are
+   *   datasets are harmless – without the `a dcat:Dataset` from `facts` they are
    *   never framed.
    *
    * Within `facts`, the inner aggregate takes the newest `schema:dateRead` per

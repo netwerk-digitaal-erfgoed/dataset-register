@@ -175,7 +175,7 @@ export function cardFromDocument(
 ): DatasetCard {
   const otherLocale: SearchLocale = locale === 'nl' ? 'en' : 'nl';
 
-  // Title is required on the card; a document with neither locale’s title (rare —
+  // Title is required on the card; a document with neither locale’s title (rare –
   // the index requires a title) degrades to an empty record rather than crashing.
   const title = localizedField(document, 'title', locale, otherLocale) ?? {};
   const description = localizedField(
@@ -295,7 +295,7 @@ function stringArray(value: unknown): string[] {
 /**
  * Run a dataset listing search against Typesense, mapping the hits to cards and
  * computing the facet sidebar. Returns empty results (and logs) when no search
- * backend is configured — the SPARQL listing fallback is intentionally gone.
+ * backend is configured – the SPARQL listing fallback is intentionally gone.
  */
 export async function fetchDatasets(
   searchFilters: SearchRequest,

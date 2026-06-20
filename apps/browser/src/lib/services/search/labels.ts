@@ -95,7 +95,7 @@ export function createLabelResolver(
         // Labels are display-only: if the collection can’t be loaded (a
         // transient Typesense error, or a search-only key lacking
         // `documents:export`), degrade to no labels so every caller falls back
-        // to a shortened IRI — never failing the whole facet or dataset listing.
+        // to a shortened IRI – never failing the whole facet or dataset listing.
         console.error(
           'Label resolution failed; falling back to bare IRIs:',
           error,

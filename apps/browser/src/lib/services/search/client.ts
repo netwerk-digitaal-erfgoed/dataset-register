@@ -8,8 +8,8 @@ import { createLabelResolver, type LabelResolver } from './labels.js';
 
 /**
  * Whether a Typesense search backend is configured. The browser queries
- * Typesense directly with a search-only (read) key — scoped to search and safe
- * to expose — so this is a public-env feature flag; when unset, the app falls
+ * Typesense directly with a search-only (read) key – scoped to search and safe
+ * to expose – so this is a public-env feature flag; when unset, the app falls
  * back to its SPARQL path. A later iteration swaps this direct path for a
  * GraphQL API that runs the Typesense queries, behind the same service seam.
  */

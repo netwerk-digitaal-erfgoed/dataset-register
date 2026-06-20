@@ -6,7 +6,7 @@
  * projection can call it directly and the browser logic and the index cannot
  * drift. Framework-agnostic and pure: no RDF, no Typesense, no UI.
  *
- * Only the `met` (🟢) outcome matters here — the index stores one boolean per
+ * Only the `met` (🟢) outcome matters here – the index stores one boolean per
  * criterion (true = met). The browser’s warning/failed/unmet tiers and their
  * per-URI failure reasons are display nuance and deliberately not modelled.
  */

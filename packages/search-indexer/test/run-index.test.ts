@@ -520,7 +520,7 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
     });
 
     // A blue/green rebuild re-derives the whole collection from canonical RDF:
-    // the new dataset is present and the removed one is simply not projected —
+    // the new dataset is present and the removed one is simply not projected –
     // a hard delete needs no special-case handling.
     expect(result.mode).toBe('rebuild');
     expect(await search('Nieuwe')).toContain(base('rebuild-new'));

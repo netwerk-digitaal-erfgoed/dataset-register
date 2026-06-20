@@ -6,7 +6,7 @@
  * builder + projector) and the browser query path (which fields to `query_by`
  * and with what weights), so the two cannot drift. Field types are written in
  * Typesense’s own vocabulary (`string`, `int32`, …) so the schema builder is a
- * direct mapping, yet this module stays free of any Typesense import — the
+ * direct mapping, yet this module stays free of any Typesense import – the
  * browser imports it at query time without pulling in the indexer’s engine deps.
  *
  * Folding (diacritic/case normalization of the `*_search` fields) is applied by
@@ -56,13 +56,13 @@ export interface SearchFieldSpec {
   /**
    * Typesense tokenizer/stemmer locale. Set to `nl` on the stemmed searchable
    * fields: the Snowball language is selected by locale, so Dutch stemming
-   * (verhalen → verhaal) needs it. Safe alongside our pre-folding — the values
+   * (verhalen → verhaal) needs it. Safe alongside our pre-folding – the values
    * are already diacritic-free, so the locale has no diacritics to preserve.
    */
   readonly locale?: string;
   /**
    * Member of a per-locale family (`${base}_search_nl/_en`), eligible for
-   * active-locale query-weight boosting — unlike a single-locale searchable
+   * active-locale query-weight boosting – unlike a single-locale searchable
    * field such as the multilingual `keyword_search`.
    */
   readonly perLocale?: boolean;
@@ -179,7 +179,7 @@ export const SEARCH_FIELDS: readonly SearchFieldSpec[] = [
   {
     // Filter-only: the browser filters datasets by catalog but never shows
     // catalog bucket counts, so it stays out of facets (`facet: false`). It is
-    // still filterable — every indexed field is — but as a non-facet field it is
+    // still filterable – every indexed field is – but as a non-facet field it is
     // tokenized, so the catalog filter must use Typesense’s exact `:=` operator
     // (an IRI would otherwise partial-match on shared path segments).
     name: 'catalog',
@@ -305,7 +305,7 @@ export const SEARCH_FIELDS: readonly SearchFieldSpec[] = [
   //     when the criterion is met (see compatibility.ts); omitted otherwise, so
   //     a faceted `field:=true` count is the number of compliant datasets. ---
   {
-    // Display/count field (the declared IIIF manifest count), not a facet — like
+    // Display/count field (the declared IIIF manifest count), not a facet – like
     // `catalog`, it stays out of `facetFields()`; the card shows the number.
     name: 'iiif_manifest_count',
     type: 'int32',
@@ -399,8 +399,8 @@ export function queryBy(): string {
  * `activeLocale`, each per-locale search field (`*_search_<locale>`) keeps its
  * full weight for that locale and is gently demoted (−1, floored at 1) for the
  * other, so a match in the user’s language ranks higher while cross-language
- * matches still surface. Fields that are not split per locale — notably the
- * multilingual `keyword_search`, one mixed field rather than one per language —
+ * matches still surface. Fields that are not split per locale – notably the
+ * multilingual `keyword_search`, one mixed field rather than one per language –
  * keep their weight. Without an `activeLocale`, every field keeps its weight.
  */
 export function queryByWeights(activeLocale?: SearchLocale): string {

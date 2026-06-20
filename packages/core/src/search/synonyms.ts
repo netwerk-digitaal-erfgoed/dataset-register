@@ -5,7 +5,7 @@ import { fold } from '@lde/text-normalization';
  * finds English-described datasets and vice versa. Each inner array is one
  * equivalence group (Typesense multi-way synonyms): any term matches any other.
  *
- * Stored FOLDED — the same {@link fold} applied to documents and queries — so
+ * Stored FOLDED – the same {@link fold} applied to documents and queries – so
  * synonym matching survives diacritics and case exactly as the index does.
  * Synonyms are query-time: changing this list needs no reindex, only a re-sync
  * of the Typesense synonyms on the next indexer run.

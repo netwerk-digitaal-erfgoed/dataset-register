@@ -20,7 +20,7 @@ export class DkgSource {
   /**
    * CONSTRUCT the DKG enrichment as dataset-keyed `urn:dr:` triples (facets plus
    * the NDE compatibility DQV measurements) so it merges, by dataset IRI, into
-   * the same per-dataset subgraph the register CONSTRUCT produces — one unified
+   * the same per-dataset subgraph the register CONSTRUCT produces – one unified
    * frame, no separate post-processing. Each multi-valued property is its own
    * UNION branch to avoid a cross-product; the single-valued DQV measurements and
    * IIIF entity count each get their own branch too, since a dataset that lacks a

@@ -28,7 +28,7 @@ const SCHEMA = 'https://schema.org/';
 const DR = 'urn:dr:';
 
 /**
- * The complete projection for `dcat:Dataset` — the runtime form of one SHACL
+ * The complete projection for `dcat:Dataset` – the runtime form of one SHACL
  * NodeShape: the root `type` to frame by (`sh:targetClass`), the `fields`
  * (property shapes), and the `derivations` (computed fields). `@lde/search`’s
  * `projectGraph`/`projectDocument` apply the conventions (per-locale split,
@@ -171,7 +171,7 @@ function datasetDerivations(): readonly Derivation[] {
 
       if (
         isLinkedDataMet({
-          // dr:size is void:triples — the strongest DKG content signal.
+          // dr:size is void:triples – the strongest DKG content signal.
           triples: (document.size as number | undefined) ?? null,
           quadsValidated,
           conformant: schemaApNdeConformant,

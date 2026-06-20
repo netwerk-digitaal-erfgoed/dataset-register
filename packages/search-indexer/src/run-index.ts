@@ -52,7 +52,7 @@ export type RunIndexResult =
  * Every run is a full blue/green rebuild, delegated to `@lde/search-typesense`’s
  * {@link rebuild}: it projects every registered dataset into a fresh
  * `${alias}_${timestamp}` collection, atomically swaps the `datasets` alias to
- * it, then drops the previous collection. Correct by construction — a hard
+ * it, then drops the previous collection. Correct by construction – a hard
  * delete needs no special handling (an absent dataset is simply not projected),
  * there is no high-water mark and no incremental reconciliation. On failure
  * nothing is swapped, so a register blip never corrupts the live index.
@@ -74,7 +74,7 @@ export async function runIndex(
     options.registrationsGraphIri ?? DEFAULT_REGISTRATIONS_GRAPH,
   );
 
-  // Sync the global synonym set before any collection is created — the
+  // Sync the global synonym set before any collection is created – the
   // collection schema references it by name. Idempotent and query-time, so it
   // re-runs each indexer run with no reindex.
   await syncSynonyms(client, log);
@@ -83,7 +83,7 @@ export async function runIndex(
 
   // Unified read: one CONSTRUCT for the register, one for the DKG, merged by
   // dataset IRI into a single RDF graph, then framed per dataset into the
-  // JSON-LD IR and projected — streamed straight into the rebuild so only one
+  // JSON-LD IR and projected – streamed straight into the rebuild so only one
   // document is held at a time. DKG quads are optional (see below). The
   // versioned collection name, alias swap and cross-pod lock are managed by
   // {@link rebuild}; the caller supplies only the logical alias.
@@ -161,7 +161,7 @@ async function rebuildLabels(
 
 /**
  * Read from the Dataset Knowledge Graph, degrading to `fallback` when no DKG
- * endpoint is configured or the read fails — register correctness must never
+ * endpoint is configured or the read fails – register correctness must never
  * depend on DKG availability, so a DKG gap self-heals on the next successful
  * run. The indexer only reads, and both the register and the DKG are public, so
  * no access token is used (and the register and the DKG are distinct endpoints

@@ -132,7 +132,7 @@ const SIDEBAR_FACETS: Record<
 
 // The active filter for each sidebar facet, used to build `filter_by` with that
 // facet’s own selection removed (so a multi-select facet still lists its other
-// options — mirroring the previous skip-own-filter behaviour).
+// options – mirroring the previous skip-own-filter behaviour).
 const FACET_REQUEST_KEY: Record<
   Exclude<FacetKey, 'size' | 'catalog'>,
   keyof SearchRequest
@@ -174,8 +174,8 @@ export async function fetchFacets(
     Exclude<FacetKey, 'size' | 'catalog'>
   >;
 
-  // Build one ordered batch of searches — a search per sidebar facet, then the
-  // size histogram — so the whole sidebar is computed in one HTTP request. The
+  // Build one ordered batch of searches – a search per sidebar facet, then the
+  // size histogram – so the whole sidebar is computed in one HTTP request. The
   // result array mirrors this order: index `i` is `facetKeys[i]`, the final
   // entry is the size histogram.
   const searches = [

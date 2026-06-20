@@ -6,7 +6,7 @@ import type { Quad } from '@rdfjs/types';
  * One entry in the `labels` collection: a human-readable label for an IRI that
  * appears as a facet value (organizations, classes, terminology sources). The
  * IRI is the Typesense document `id`, so the browser resolves the labels for the
- * facet buckets currently on screen with a single `filter_by: id:[…]` lookup —
+ * facet buckets currently on screen with a single `filter_by: id:[…]` lookup –
  * or pulls the whole (bounded) collection once and caches it. Faceting stays on
  * the IRI in the dataset document; this collection only supplies display text.
  * Typesense v30 can facet on a joined reference field, but we resolve labels
@@ -27,7 +27,7 @@ const DISPLAY_LOCALES = ['nl', 'en'] as const;
 /**
  * Group label quads (`?iri <labelPredicate> ?literal`) into one document per
  * IRI, splitting language-tagged values into `label_${locale}` and choosing a
- * default `label` (Dutch first, then English, then any value) — the same
+ * default `label` (Dutch first, then English, then any value) – the same
  * locale-fallback the browser applies when rendering a facet value.
  */
 export function toLabelDocuments(
@@ -35,7 +35,7 @@ export function toLabelDocuments(
   type: string,
 ): LabelDocument[] {
   // Per IRI: the label of each language seen, plus the very first value as the
-  // last-resort fallback — tracked explicitly so the default label is always
+  // last-resort fallback – tracked explicitly so the default label is always
   // present (no untyped `undefined` from an empty map to guard against).
   const byIri = new Map<
     string,

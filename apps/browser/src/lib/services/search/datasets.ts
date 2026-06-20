@@ -77,8 +77,8 @@ export async function searchDatasets(
 
 /**
  * Build the Typesense {@link SearchParams} for a request. Pure (no client, no
- * env), so the query mapping — `q` folding, `query_by`/weights, `filter_by`
- * clauses, `sort_by` — is asserted directly in tests. The listing does not
+ * env), so the query mapping – `q` folding, `query_by`/weights, `filter_by`
+ * clauses, `sort_by` – is asserted directly in tests. The listing does not
  * request facets (`fetchFacets` runs its own faceted searches), so no `facet_by`.
  */
 export function buildSearchParams(
@@ -132,7 +132,7 @@ function buildFilterBy(
   // Format and class each mix granular values with `group:*` tokens (a coarser
   // view of the same field, e.g. group:rdf covers the RDF media types). Within
   // one facet the selections must UNION, so OR the granular field with its
-  // `_group` companion rather than AND-ing two separate clauses — otherwise
+  // `_group` companion rather than AND-ing two separate clauses – otherwise
   // ticking a value and a group in the same facet intersects to (near) nothing.
   pushGroupedClause(clauses, 'format', 'format_group', request.format);
   pushGroupedClause(clauses, 'class', 'class_group', request.class);
@@ -143,7 +143,7 @@ function buildFilterBy(
   }
 
   // `catalog` is a filter-only, non-facet (so tokenized) field, so it must use
-  // the exact `:=` operator — a non-exact `catalog:[…]` would partial-match IRIs
+  // the exact `:=` operator – a non-exact `catalog:[…]` would partial-match IRIs
   // on shared path segments.
   if (request.catalog.length > 0) {
     clauses.push(
@@ -180,7 +180,7 @@ function pushInClause(
 
 /**
  * Append a facet clause that ORs the granular field with its `_group` companion
- * — `(format:[…] || format_group:[…])` — so selecting a value and a group token
+ * – `(format:[…] || format_group:[…])` – so selecting a value and a group token
  * within one facet unions instead of intersecting. Emits a single unparenthesized
  * clause when only one side is present, and nothing when the facet is empty.
  */
@@ -228,7 +228,7 @@ function buildSizeClause(size: SearchRequest['size']): string | undefined {
  * The `sort_by` for a request. An explicit date order always wins (newest
  * first), so date sorting is honoured even while searching. A text query then
  * ranks by Typesense relevance (`_text_match`, fed by the per-field
- * `query_by_weights`) with status rank as the tie-breaker — without an explicit
+ * `query_by_weights`) with status rank as the tie-breaker – without an explicit
  * `_text_match` sort those weights would not affect result order at all. Browse
  * mode (no query) sorts by the active-locale folded title key, falling back to
  * the default sort field.
