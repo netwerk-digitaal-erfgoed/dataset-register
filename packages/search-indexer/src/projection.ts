@@ -8,18 +8,18 @@ import {
 } from '@lde/search';
 import {
   deriveClassGroups,
+  FORMAT_GROUP_RDF,
+  FORMAT_GROUP_SPARQL,
   isIiifMet,
   isLinkedDataMet,
   isPersistentUrisMet,
   isSchemaApNdeMet,
   isTermsMet,
-  REGISTRATION_STATUS_BASE_URI,
-} from '@dataset-register/core';
-import {
-  IANA_MEDIA_TYPE_PREFIX,
   RDF_MEDIA_TYPES,
+  REGISTRATION_STATUS_BASE_URI,
   SPARQL_PROTOCOL_URI,
-} from './constants.js';
+  stripIanaPrefix,
+} from '@dataset-register/core';
 
 const DCT = 'http://purl.org/dc/terms/';
 const DCAT = 'http://www.w3.org/ns/dcat#';
@@ -268,9 +268,7 @@ export function deriveStatus(
 /** Strip the IANA media-types prefix to the bare `type/subtype`, mirroring the
  *  browser’s facet normalization. */
 export function normalizeMediaType(mediaType: string): string {
-  return mediaType.startsWith(IANA_MEDIA_TYPE_PREFIX)
-    ? mediaType.slice(IANA_MEDIA_TYPE_PREFIX.length)
-    : mediaType;
+  return stripIanaPrefix(mediaType);
 }
 
 const RDF_MEDIA_TYPE_SET: ReadonlySet<string> = new Set(RDF_MEDIA_TYPES);
@@ -283,10 +281,10 @@ function formatGroups(
 ): string[] {
   const groups: string[] = [];
   if (conformsTo.includes(SPARQL_PROTOCOL_URI)) {
-    groups.push('group:sparql');
+    groups.push(FORMAT_GROUP_SPARQL);
   }
   if (formats.some((format) => RDF_MEDIA_TYPE_SET.has(format))) {
-    groups.push('group:rdf');
+    groups.push(FORMAT_GROUP_RDF);
   }
   return groups;
 }

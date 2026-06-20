@@ -1,8 +1,11 @@
-import { RDF_MEDIA_TYPES } from '$lib/constants';
+import {
+  RDF_MEDIA_TYPES,
+  SPARQL_PROTOCOL_URI,
+} from '@dataset-register/core/search';
 
 // A SPARQL endpoint declares the SPARQL 1.1 Protocol via dct:conformsTo. The
 // dataset detail page and the Dataset Knowledge Graph selector use the same URI.
-export const SPARQL_PROTOCOL = 'https://www.w3.org/TR/sparql11-protocol/';
+export const SPARQL_PROTOCOL = SPARQL_PROTOCOL_URI;
 
 // The fields shared by the card and detail distribution schemas that determine
 // whether a distribution offers linked data. Kept structural so both the

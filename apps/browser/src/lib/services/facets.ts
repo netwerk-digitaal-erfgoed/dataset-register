@@ -17,7 +17,11 @@ import {
   multiSearch,
 } from './search/client.js';
 import type { SearchRequest } from './datasets.js';
-import { SEARCH_COLLECTION_ALIAS } from '@dataset-register/core/search';
+import {
+  FORMAT_GROUP_RDF,
+  FORMAT_GROUP_SPARQL,
+  SEARCH_COLLECTION_ALIAS,
+} from '@dataset-register/core/search';
 
 /**
  * A facet value selected by the user.
@@ -68,9 +72,6 @@ const SELECTABLE_STATUSES: ReadonlySet<string> = new Set([
   VALUE_INVALID,
   VALUE_GONE,
 ]);
-
-const GROUP_RDF = 'group:rdf';
-const GROUP_SPARQL = 'group:sparql';
 
 // Class groups
 const GROUP_PERSON = 'group:person';
@@ -411,8 +412,8 @@ function emptyFacets(): Facets {
 const valueTranslations = {
   [VALUE_GONE]: m['facets_status_gone'],
   [VALUE_INVALID]: m['facets_status_invalid'],
-  [GROUP_RDF]: m['group:rdf'],
-  [GROUP_SPARQL]: m['group:sparql'],
+  [FORMAT_GROUP_RDF]: m['group:rdf'],
+  [FORMAT_GROUP_SPARQL]: m['group:sparql'],
   [GROUP_PERSON]: m['group:person'],
   [GROUP_ORGANIZATION]: m['group:organization'],
   [GROUP_MEDIA]: m['group:media'],

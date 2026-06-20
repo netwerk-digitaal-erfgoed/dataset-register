@@ -4,6 +4,7 @@ import type {
 } from 'typesense/lib/Typesense/Documents.js';
 import {
   DEFAULT_SORTING_FIELD,
+  GROUP_PREFIX,
   SEARCH_COLLECTION_ALIAS,
   queryBy,
   queryByWeights,
@@ -105,7 +106,6 @@ export function buildSearchParams(
 // Group tokens (`group:rdf`/`group:sparql` for format, `group:*` for class)
 // select against the index’s `_group` companion field rather than the granular
 // field; everything else is a granular value (a media type or a class IRI).
-const GROUP_PREFIX = 'group:';
 
 /**
  * AND-join the request’s filter clauses into a Typesense `filter_by` string.

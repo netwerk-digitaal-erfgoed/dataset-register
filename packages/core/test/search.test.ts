@@ -4,11 +4,13 @@ import {
   DEFAULT_SORTING_FIELD,
   deriveClassGroups,
   facetFields,
+  IANA_MEDIA_TYPE_PREFIX,
   queryBy,
   queryByWeights,
   searchableFields,
   SEARCH_FIELDS,
   SEARCH_SYNONYMS,
+  stripIanaPrefix,
 } from '../src/search/index.ts';
 
 describe('search field registry', () => {
@@ -118,5 +120,17 @@ describe('search synonyms', () => {
     expect(personGroup).toEqual(
       expect.arrayContaining(['persoon', 'person', 'people']),
     );
+  });
+});
+
+describe('media types', () => {
+  it('strips the IANA media-type prefix to the bare type', () => {
+    expect(stripIanaPrefix(`${IANA_MEDIA_TYPE_PREFIX}text/turtle`)).toBe(
+      'text/turtle',
+    );
+  });
+
+  it('passes a value without the IANA prefix through unchanged', () => {
+    expect(stripIanaPrefix('application/ld+json')).toBe('application/ld+json');
   });
 });

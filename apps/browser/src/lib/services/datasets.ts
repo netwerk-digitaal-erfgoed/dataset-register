@@ -4,7 +4,12 @@ import { PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT } from '$env/static/public';
 import { schemaNs as schema } from '../rdf.js';
 import { getLocale } from '$lib/paraglide/runtime';
 import { normalizeMediaType, inLiterals } from '$lib/utils/sparql';
-import { RDF_MEDIA_TYPES } from '$lib/constants.js';
+import {
+  FORMAT_GROUP_RDF,
+  FORMAT_GROUP_SPARQL,
+  RDF_MEDIA_TYPES,
+  SPARQL_PROTOCOL_URI,
+} from '@dataset-register/core/search';
 import { REGISTRATION_STATUS_BASE_URI } from '@dataset-register/core/constants';
 import { type Facets, fetchFacets } from '$lib/services/facets';
 import {
@@ -128,10 +133,6 @@ export interface DatasetCard {
   iiif_manifest_count?: number;
   nde_schema_ap: boolean;
 }
-
-const SPARQL_PROTOCOL_URI = 'https://www.w3.org/TR/sparql11-protocol/';
-const FORMAT_GROUP_SPARQL = 'group:sparql';
-const FORMAT_GROUP_RDF = 'group:rdf';
 
 // Whether the dataset provides working IIIF media: the DKG validated the
 // declared manifests (or none were sampled yet). Indexed as a boolean

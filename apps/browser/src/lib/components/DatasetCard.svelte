@@ -9,7 +9,10 @@
   } from '$lib/services/datasets';
   import BadgeCheckOutline from 'flowbite-svelte-icons/BadgeCheckOutline.svelte';
   import { getLocalizedValue, localizeHref } from '$lib/utils/i18n';
-  import { RDF_MEDIA_TYPES } from '$lib/constants.js';
+  import {
+    RDF_MEDIA_TYPES,
+    SPARQL_PROTOCOL_URI,
+  } from '@dataset-register/core/search';
   import { datasetDetailHref } from '$lib/url';
   import { formatNumber } from '$lib/services/facets';
   import { languageCode } from '$lib/utils/prefix.js';
@@ -30,9 +33,7 @@
 
   const hasSparqlDistribution = $derived(
     dataset.distribution.some((distribution) =>
-      distribution.conformsTo.includes(
-        'https://www.w3.org/TR/sparql11-protocol/',
-      ),
+      distribution.conformsTo.includes(SPARQL_PROTOCOL_URI),
     ),
   );
 
