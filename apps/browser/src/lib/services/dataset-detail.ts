@@ -502,9 +502,11 @@ async function fetchIiifManifests(datasetUri: string): Promise<IiifManifests> {
 // scoped to that namespace, plus a recognised PID scheme (`dcterms:conformsTo`)
 // and its issuing `dcterms:publisher` (ARK) as positive embellishments, and a
 // `subject-namespace-durable` boolean flag (`false`) when the namespace is on the
-// disallow list. The sampled measurement keys the join, so the right subset is
-// selected even when the dataset has other subsets (e.g. IIIF). Every field is
-// null/false when no such subset has been recorded yet.
+// disallow list, and a `subject-uris-sampling-failed` boolean (`true`) when the
+// sample query failed every attempt. A resolution outcome — the sampled ratio or
+// the sampling-failed marker — keys the join, so the right subset is selected
+// even when the dataset has other subsets (e.g. IIIF) and even when sampling
+// produced no ratio. Every field is null/false when no such subset exists yet.
 async function fetchPersistentUris(
   datasetUri: string,
 ): Promise<PersistentUris> {
@@ -518,23 +520,32 @@ async function fetchPersistentUris(
     // The per-URI failures are fetched separately (fetchPersistentUriFailures)
     // and merged in by fetchDatasetDetail; this query does not read them.
     failures: [],
+    samplingFailed: false,
   };
   const query = `
     PREFIX void: <http://rdfs.org/ns/void#>
     PREFIX dct: <http://purl.org/dc/terms/>
     PREFIX dqv: <http://www.w3.org/ns/dqv#>
     PREFIX nde: <https://def.nde.nl/metric#>
-    SELECT ?uriSpace ?scheme ?publisher ?sampled ?resolved ?durable WHERE {
+    SELECT ?uriSpace ?scheme ?publisher ?sampled ?resolved ?durable ?samplingFailed WHERE {
       <${datasetUri}> void:subset ?ns .
-      ?ns void:uriSpace ?uriSpace ;
-        dqv:hasQualityMeasurement [
+      ?ns void:uriSpace ?uriSpace .
+      OPTIONAL {
+        ?ns dqv:hasQualityMeasurement [
           dqv:isMeasurementOf nde:subject-uris-sampled ;
           dqv:value ?sampled
-        ] .
+        ]
+      }
       OPTIONAL {
         ?ns dqv:hasQualityMeasurement [
           dqv:isMeasurementOf nde:subject-uris-resolved ;
           dqv:value ?resolved
+        ]
+      }
+      OPTIONAL {
+        ?ns dqv:hasQualityMeasurement [
+          dqv:isMeasurementOf nde:subject-uris-sampling-failed ;
+          dqv:value ?samplingFailed
         ]
       }
       OPTIONAL {
@@ -548,6 +559,9 @@ async function fetchPersistentUris(
         FILTER(STRSTARTS(STR(?scheme), "${PID_SCHEME_BASE_URI}"))
       }
       OPTIONAL { ?ns dct:publisher ?publisher }
+      # The winner subset is the one carrying a resolution outcome — a sampled
+      # ratio or the sampling-failed marker — not just any uriSpace subset.
+      FILTER(BOUND(?sampled) || BOUND(?samplingFailed))
     }
     LIMIT 1
   `;
@@ -564,6 +578,7 @@ async function fetchPersistentUris(
         sampled?: { value: string };
         resolved?: { value: string };
         durable?: { value: string };
+        samplingFailed?: { value: string };
       };
       return {
         uriSpace: binding.uriSpace?.value ?? null,
@@ -581,6 +596,9 @@ async function fetchPersistentUris(
         onDisallowList: binding.durable?.value === 'false',
         // Merged in by fetchDatasetDetail from fetchPersistentUriFailures.
         failures: [],
+        // The DKG emits this `true` only when the sample query failed every
+        // attempt; absence (or a never-sampled namespace) leaves it false.
+        samplingFailed: binding.samplingFailed?.value === 'true',
       };
     }
   } catch (e: unknown) {

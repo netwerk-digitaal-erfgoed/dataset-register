@@ -210,6 +210,32 @@ describe('persistentUrisState', () => {
     ).toEqual({ state: 'unmet' });
   });
 
+  it('is a warning (sampling-failed) when sampling was attempted but failed, with no ratio', () => {
+    // The DKG recorded a subject-uris-sampling-failed marker: the namespace was
+    // selected and sampled, but the endpoint could not be queried. An error to
+    // surface (🟠), not the neutral pending (⚪) of a never-sampled namespace.
+    expect(
+      persistentUrisState({ ...pendingPersistent, samplingFailed: true }),
+    ).toEqual({ state: 'warning', reason: 'sampling-failed' });
+  });
+
+  it('prefers a real resolution ratio over the sampling-failed marker', () => {
+    // The two are mutually exclusive in DKG output, but the ratio must win
+    // defensively: a measured sample is conclusive, the marker is not.
+    expect(
+      persistentUrisState({
+        uriSpace: 'https://n2t.net/ark:/22921/',
+        scheme: 'ark',
+        publisher: null,
+        sampled: 10,
+        resolved: 10,
+        onDisallowList: false,
+        failures: [],
+        samplingFailed: true,
+      }),
+    ).toEqual({ state: 'met' });
+  });
+
   it('treats a missing resolved measurement as zero resolved (failed/unresolved)', () => {
     expect(
       persistentUrisState({
