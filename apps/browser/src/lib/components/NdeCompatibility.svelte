@@ -23,6 +23,8 @@
     type RegistrationFailureReason,
     type TermLinks,
   } from '$lib/services/nde-compatibility';
+  import { replaceState } from '$app/navigation';
+  import { page } from '$app/state';
 
   let {
     isAnalyzed,
@@ -423,6 +425,34 @@
         return null;
     }
   }
+
+  // Smoothly scroll in-page anchor links (the `#…` evidence links above) to
+  // their target section. Smoothing is applied per click here rather than via a
+  // global `html { scroll-behavior: smooth }`, which would also animate the
+  // scroll-to-top on every navigation. Honours prefers-reduced-motion. Real
+  // (non-anchor) hrefs, e.g. the registration link to the validation page, fall
+  // through to default navigation.
+  function scrollToSection(event: MouseEvent, href: string | null) {
+    if (!href?.startsWith('#')) {
+      return;
+    }
+    const target = document.querySelector(href);
+    if (!target) {
+      return;
+    }
+    event.preventDefault();
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+    target.scrollIntoView({
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      block: 'start',
+    });
+    // Reflect the section in the URL (so it stays copy-pasteable) without a
+    // router navigation. Use SvelteKit’s replaceState, not history.replaceState,
+    // which conflicts with the router.
+    replaceState(href, page.state);
+  }
 </script>
 
 <!-- Mini status indicator for the per-criterion state legend, mirroring each
@@ -578,6 +608,7 @@
                 {#if sectionHref && !detailText}
                   <a
                     href={sectionHref}
+                    onclick={(event) => scrollToSection(event, sectionHref)}
                     class="text-blue-600 hover:underline dark:text-blue-400"
                   >
                     {m.nde_compat_registration_view_details()}
@@ -641,6 +672,7 @@
                     {#if sectionHref}
                       <a
                         href={sectionHref}
+                        onclick={(event) => scrollToSection(event, sectionHref)}
                         class="text-blue-600 hover:underline dark:text-blue-400"
                       >
                         {detailText}
