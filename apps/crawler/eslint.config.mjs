@@ -12,7 +12,16 @@ export default [
             '{projectRoot}/eslint.config.{js,cjs,mjs}',
             '{projectRoot}/vite.config.{js,ts,mjs,mts}',
           ],
-          ignoredDependencies: ['@dataset-register/core'],
+          // Workspace libs and the npm deps esbuild externalizes out of the
+          // bundled @dataset-register/search-indexer: required at runtime but not
+          // imported by this app's own source, so the check must not strip them.
+          ignoredDependencies: [
+            '@dataset-register/core',
+            '@lde/search',
+            '@lde/search-typesense',
+            '@lde/text-normalization',
+            'typesense',
+          ],
         },
       ],
     },
