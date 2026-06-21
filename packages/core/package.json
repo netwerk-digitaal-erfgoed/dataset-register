@@ -5,29 +5,29 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts",
-      "default": "./src/index.ts"
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./constants": {
-      "types": "./src/constants.ts",
-      "import": "./src/constants.ts",
-      "default": "./src/constants.ts"
+      "development": "./src/constants.ts",
+      "types": "./dist/constants.d.ts",
+      "default": "./dist/constants.js"
     },
     "./search": {
-      "types": "./src/search/index.ts",
-      "import": "./src/search/index.ts",
-      "default": "./src/search/index.ts"
+      "development": "./src/search/index.ts",
+      "types": "./dist/search/index.d.ts",
+      "default": "./dist/search/index.js"
     },
     "./test-utils": {
-      "types": "./src/test-utils.ts",
-      "import": "./src/test-utils.ts",
-      "default": "./src/test-utils.ts"
+      "development": "./src/test-utils.ts",
+      "types": "./dist/test-utils.d.ts",
+      "default": "./dist/test-utils.js"
     },
     "./package.json": "./package.json"
   },
-  "main": "./src/index.ts",
-  "types": "./src/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "dependencies": {
     "@comunica/query-sparql": "^5.2.3",
     "@comunica/types": "^5.2.3",
@@ -44,7 +44,6 @@
     "@rdfjs/types": "2.0.1",
     "jsonld-streaming-parser": "^5.0.1",
     "n3": "^2.0.3",
-    "node-fetch": "^3.3.1",
     "rdf-dereference": "^5.0.0",
     "rdf-ext": "^2.6.0",
     "shacl-engine": "^1.0.2",
@@ -55,10 +54,22 @@
     "@types/rdf-ext": "^2.0.1",
     "microdata-rdf-streaming-parser": "^3.0.0",
     "nock": "^14.0.15",
+    "node-fetch": "^3.3.1",
     "rdfa-streaming-parser": "^3.0.1",
     "testcontainers": "^12.0.1"
   },
   "nx": {
-    "projectType": "library"
+    "projectType": "library",
+    "targets": {
+      "build": {
+        "executor": "nx:run-commands",
+        "outputs": [
+          "{projectRoot}/dist"
+        ],
+        "options": {
+          "command": "tsc -b packages/core/tsconfig.lib.json"
+        }
+      }
+    }
   }
 }

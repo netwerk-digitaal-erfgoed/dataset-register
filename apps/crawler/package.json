@@ -5,13 +5,10 @@
   "type": "module",
   "dependencies": {
     "@dataset-register/core": "*",
-    "@lde/search": "^0.1.1",
-    "@lde/search-typesense": "^0.1.0",
-    "@lde/text-normalization": "^0.1.0",
+    "@dataset-register/search-indexer": "*",
     "env-schema": "^7.0.0",
     "node-schedule": "^2.1.1",
-    "pino": "^10.2.0",
-    "typesense": "^3.0.6"
+    "pino": "^10.2.0"
   },
   "devDependencies": {
     "@types/node-schedule": "^2.1.8",
@@ -29,7 +26,7 @@
         "options": {
           "platform": "node",
           "outputPath": "apps/crawler/dist",
-          "bundle": true,
+          "bundle": false,
           "format": [
             "esm"
           ],
@@ -79,7 +76,17 @@
         }
       },
       "copy-workspace-modules": {},
-      "prune-lockfile": {}
+      "prune-lockfile": {},
+      "docker:smoke": {
+        "executor": "nx:run-commands",
+        "dependsOn": [
+          "docker:build"
+        ],
+        "cache": false,
+        "options": {
+          "command": "./apps/docker-smoke.sh apps-crawler 'Crawler scheduled'"
+        }
+      }
     }
   }
 }

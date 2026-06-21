@@ -36,7 +36,11 @@ jobs:
 
       # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
       # - run: npx nx-cloud record -- echo Hello World
-      - run: npx nx affected -t lint test typecheck check build docker:build
+      # docker:smoke runs each freshly built image and asserts it reaches startup,
+      # so a runtime-only failure (e.g. a runtime dep missing from the pruned image,
+      # surfacing as ERR_MODULE_NOT_FOUND at boot) is caught here rather than in
+      # production – docker:build alone only builds, it never runs the image (#2128).
+      - run: npx nx affected -t lint test typecheck check build docker:build docker:smoke
 
       # Only set up Playwright when a project that owns an e2e target is actually
       # affected, so config-only PRs do not pay for (or flake on) a browser download

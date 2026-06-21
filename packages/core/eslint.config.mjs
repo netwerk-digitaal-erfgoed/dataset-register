@@ -11,6 +11,9 @@ export default [
           ignoredFiles: [
             '{projectRoot}/eslint.config.{js,cjs,mjs}',
             '{projectRoot}/vite.config.{js,ts,mjs,mts}',
+            // Test-only helpers (e.g. testcontainers) live here and are not part
+            // of the built library, so they must not require runtime dependencies.
+            '{projectRoot}/test/**',
           ],
         },
       ],

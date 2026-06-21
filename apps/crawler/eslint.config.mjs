@@ -12,15 +12,15 @@ export default [
             '{projectRoot}/eslint.config.{js,cjs,mjs}',
             '{projectRoot}/vite.config.{js,ts,mjs,mts}',
           ],
-          // Workspace libs and the npm deps esbuild externalizes out of the
-          // bundled @dataset-register/search-indexer: required at runtime but not
-          // imported by this app's own source, so the check must not strip them.
+          // The workspace libs are declared with a floating `*` version that the
+          // dependency-checks rule cannot verify, so they are ignored here. Their
+          // own npm deps (typesense, @lde/search*, etc.) no longer need declaring
+          // on the app: with `bundle: false` the libs are copied (not inlined), so
+          // prune-lockfile reads each copied lib's package.json and pulls the
+          // transitives into the image automatically.
           ignoredDependencies: [
             '@dataset-register/core',
-            '@lde/search',
-            '@lde/search-typesense',
-            '@lde/text-normalization',
-            'typesense',
+            '@dataset-register/search-indexer',
           ],
         },
       ],
