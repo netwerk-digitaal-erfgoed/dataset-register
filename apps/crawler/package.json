@@ -5,9 +5,13 @@
   "type": "module",
   "dependencies": {
     "@dataset-register/core": "*",
+    "@lde/search": "^0.1.1",
+    "@lde/search-typesense": "^0.1.0",
+    "@lde/text-normalization": "^0.1.0",
     "env-schema": "^7.0.0",
     "node-schedule": "^2.1.1",
-    "pino": "^10.2.0"
+    "pino": "^10.2.0",
+    "typesense": "^3.0.6"
   },
   "devDependencies": {
     "@types/node-schedule": "^2.1.8",
