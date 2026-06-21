@@ -1,4 +1,5 @@
 import nock from 'nock';
+import type { Mock } from 'vitest';
 import { FastifyInstance } from 'fastify';
 import { Server } from 'http';
 import { server } from '../src/server.js';
@@ -689,5 +690,66 @@ describe('DELETE /datasets', () => {
 
     // Verify registration was deleted
     expect(deleteRegistrationStore.isRegistered(testUrl)).toBe(false);
+  });
+});
+
+describe('DELETE /datasets reindex trigger', () => {
+  let httpServerWithAuth: FastifyInstance<Server>;
+  let triggerStore: MockRegistrationStore;
+  let onDatasetsChanged: Mock<() => void>;
+  const testToken = 'test-api-token';
+  const testUrl = new URL(
+    'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html',
+  );
+
+  beforeAll(async () => {
+    const shacl = await readUrl('../../requirements/shacl.ttl');
+    triggerStore = new MockRegistrationStore();
+    onDatasetsChanged = vi.fn<() => void>();
+    httpServerWithAuth = await server(
+      new MockDatasetStore(),
+      triggerStore,
+      new MockAllowedRegistrationDomainStore(),
+      new ShaclEngineValidator(shacl),
+      shacl,
+      '/',
+      { logger: false },
+      new MockRatingStore(),
+      testToken,
+      onDatasetsChanged,
+    );
+  });
+
+  beforeEach(async () => {
+    onDatasetsChanged.mockClear();
+    await triggerStore.delete(testUrl);
+    const registration = new Registration(testUrl, new Date()).read(
+      [new URL('https://example.com/dataset1')],
+      200,
+      true,
+    );
+    await triggerStore.store(registration);
+  });
+
+  it('fires the reindex trigger after deleting a registration', async () => {
+    const response = await httpServerWithAuth.inject({
+      method: 'DELETE',
+      url: `/datasets?url=${testUrl.toString()}`,
+      headers: { Authorization: `Bearer ${testToken}`, Accept: '*/*' },
+    });
+
+    expect(response.statusCode).toEqual(204);
+    expect(onDatasetsChanged).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not fire the reindex trigger when nothing was deleted', async () => {
+    const response = await httpServerWithAuth.inject({
+      method: 'DELETE',
+      url: '/datasets?url=https://example.com/nonexistent',
+      headers: { Authorization: `Bearer ${testToken}`, Accept: '*/*' },
+    });
+
+    expect(response.statusCode).toEqual(404);
+    expect(onDatasetsChanged).not.toHaveBeenCalled();
   });
 });

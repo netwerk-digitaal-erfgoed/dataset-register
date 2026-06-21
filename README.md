@@ -108,6 +108,13 @@ You can configure the application through environment variables:
 - `CRAWLER_MAX_DISTRIBUTION_PROBES`: the maximum number of distinct distribution endpoints probed per dataset (minimum
   `1`). A single dataset can declare tens of thousands of distributions; probing every endpoint stalls a crawl pass for
   hours. Endpoints beyond the cap are skipped and the skipped count is logged, never silently dropped (default: `100`).
+- `TYPESENSE_HOST`, `TYPESENSE_PORT`, `TYPESENSE_PROTOCOL`, `TYPESENSE_API_KEY`: connection to the
+  [Typesense](https://typesense.org) [search index](#search-index). When `TYPESENSE_HOST` and `TYPESENSE_API_KEY` are
+  both set, the crawler rebuilds the index after each crawl; leave them unset to run without search. `TYPESENSE_API_KEY`
+  is the admin key used to write the index (the bundled `docker compose` Typesense defaults to `dev-typesense-key`).
+- `KNOWLEDGE_GRAPH_URL`: SPARQL endpoint of the Dataset Knowledge Graph used to enrich the
+  [search index](#search-index) (facets such as class, terminology source and size, and the NDE-compatibility flags).
+  Defaults to the public NDE endpoint; a failed or unreachable read degrades to a register-only index.
 
 ## Run the tests
 
@@ -132,6 +139,36 @@ A registration URL is considered outdated if it has been last read longer than
 [`REGISTRATION_URL_TTL`](#configuration) ago (its `schema:dateRead` is older).
 
 If any outdated registration URLs are found, they are fetched and updated in the SPARQL store.
+
+### Search index
+
+The browser’s faceted search is served by a [Typesense](https://typesense.org) index (a `datasets` collection)
+rather than by SPARQL `CONTAINS`, for better recall (typo tolerance, stemming, diacritics and synonyms). The
+`search-indexer` projects every registered dataset from the SPARQL store, enriched with facets from the Dataset
+Knowledge Graph ([`KNOWLEDGE_GRAPH_URL`](#configuration)), into a flat search document and rebuilds the index
+blue/green: it builds a fresh collection, then atomically repoints an alias, so the live index is never partial. A
+sidecar `labels` collection maps facet-value IRIs (organizations, classes, terminology sources) to display labels. The
+rebuild is single-flight per index (a cross-pod lock held in Typesense), so the crawler and API replicas never rebuild
+concurrently.
+
+`docker compose up` starts Typesense (alongside QLever) on `localhost:8108`, and the committed `.env` files already
+point the crawler and the browser at it, so local search works out of the box. The [crawler](#crawler) rebuilds the
+index in-process after each crawl, reading the whole store each time, so a local index is built simply by running the
+crawler:
+
+```
+npx nx serve crawler
+```
+
+Without a `CRAWLER_SCHEDULE` this performs a single crawl and one full rebuild from the current store. Set
+[`KNOWLEDGE_GRAPH_URL`](#configuration) to enrich the index with Knowledge Graph facets, and the
+[`TYPESENSE_*` variables](#configuration) to point at a non-local Typesense.
+
+The browser queries Typesense directly with a **search-only** key, configured through its own public environment
+variables (`PUBLIC_TYPESENSE_HOST`, `PUBLIC_TYPESENSE_PORT`, `PUBLIC_TYPESENSE_PROTOCOL` and
+`PUBLIC_TYPESENSE_SEARCH_ONLY_API_KEY`), preset for local use in `apps/browser/.env`. Locally the admin key doubles as
+the search key; in production, generate a scoped
+[search-only API key](https://typesense.org/docs/latest/api/api-keys.html) so the write key never reaches the browser.
 
 ## Data model
 

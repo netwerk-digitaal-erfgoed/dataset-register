@@ -4,6 +4,7 @@
   import FacetHelper from './FacetHelper.svelte';
   import * as m from '$lib/paraglide/messages';
   import { facetDisplayValue } from '$lib/services/facets';
+  import { GROUP_PREFIX } from '@dataset-register/core/search';
 
   let {
     title,
@@ -40,10 +41,10 @@
 
   // Separate group values from individual values, then filter by search
   const groupValues = $derived(() =>
-    filterBySearch(values.filter((v) => v.value.startsWith('group:'))),
+    filterBySearch(values.filter((v) => v.value.startsWith(GROUP_PREFIX))),
   );
   const individualValues = $derived(() =>
-    filterBySearch(values.filter((v) => !v.value.startsWith('group:'))),
+    filterBySearch(values.filter((v) => !v.value.startsWith(GROUP_PREFIX))),
   );
 
   // Sort individual values: checked items first, then by count

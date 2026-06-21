@@ -13,7 +13,7 @@
       "path": "./packages/core"
     },
     {
-      "path": "./apps/browser"
+      "path": "./packages/search-indexer"
     }
   ]
 }

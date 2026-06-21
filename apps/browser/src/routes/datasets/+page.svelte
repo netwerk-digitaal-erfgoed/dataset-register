@@ -343,17 +343,29 @@
     // Set loading state
     isLoading = true;
 
-    fetchDatasets(request, ITEMS_PER_PAGE, 0).then((results) => {
-      searchResults = results;
-      accumulatedDatasets = [...results.datasets];
-      currentOffset = results.datasets.length;
-      hasMore = currentOffset < results.total;
-      isLoading = false;
+    fetchDatasets(request, ITEMS_PER_PAGE, 0)
+      .then((results) => {
+        searchResults = results;
+        accumulatedDatasets = [...results.datasets];
+        currentOffset = results.datasets.length;
+        hasMore = currentOffset < results.total;
 
-      if (!facetsLoaded) {
-        facetsLoaded = true;
-      }
-    });
+        if (!facetsLoaded) {
+          facetsLoaded = true;
+        }
+      })
+      .catch((error) => {
+        // A search-backend failure must not strand the page on the loading
+        // skeleton: log and fall back to an empty result so the “no datasets”
+        // state renders instead.
+        console.error('Failed to load datasets:', error);
+        accumulatedDatasets = [];
+        currentOffset = 0;
+        hasMore = false;
+      })
+      .finally(() => {
+        isLoading = false;
+      });
   });
 
   // Load more datasets

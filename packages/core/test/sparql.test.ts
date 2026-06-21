@@ -613,6 +613,33 @@ describe('SPARQL', () => {
     });
   });
 
+  describe('SparqlClient.constructQuads', () => {
+    it('runs a CONSTRUCT and returns the resulting quads', async () => {
+      await sparqlClient.update(`
+        INSERT DATA {
+          GRAPH <http://example.org/construct-test> {
+            <http://example.org/s> <http://example.org/p> "object" .
+          }
+        }`);
+
+      const quads = await sparqlClient.constructQuads(`
+        CONSTRUCT { ?s <urn:out> ?o }
+        WHERE { GRAPH <http://example.org/construct-test> { ?s <http://example.org/p> ?o } }`);
+
+      const match = quads.find(
+        (quad) => quad.subject.value === 'http://example.org/s',
+      );
+      expect(match?.predicate.value).toBe('urn:out');
+      expect(match?.object.value).toBe('object');
+    });
+
+    it('throws on a malformed CONSTRUCT', async () => {
+      await expect(
+        sparqlClient.constructQuads('CONSTRUCT WHERE not-sparql'),
+      ).rejects.toThrow(/CONSTRUCT failed/);
+    });
+  });
+
   describe('SparqlDistributionValidityStore', () => {
     const url = new URL('https://example.com/dump.ttl');
     const generatedAt = new Date('2026-06-18T12:00:00.000Z');

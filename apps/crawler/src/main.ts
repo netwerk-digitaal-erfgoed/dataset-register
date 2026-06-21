@@ -9,6 +9,7 @@ import {
   stores,
 } from '@dataset-register/core';
 import pino from 'pino';
+import { runIndex } from '@dataset-register/search-indexer';
 import { config } from './config.js';
 
 const {
@@ -47,13 +48,43 @@ const crawler = new Crawler(
   { httpRequestTimeoutMs: config.HTTP_REQUEST_TIMEOUT * 1000 },
 );
 
+// Update the Typesense search index after a crawl. Decoupled from the crawl
+// write path (it re-reads the store), error-isolated, and skipped entirely when
+// no Typesense target is configured — a slow or failed index run must never
+// block or crash the crawler (D7). The rebuild is single-flight per index inside
+// the indexer, so the crawler and the API pods never rebuild concurrently.
+async function updateSearchIndex(): Promise<void> {
+  if (!config.TYPESENSE_HOST || !config.TYPESENSE_API_KEY) {
+    return;
+  }
+  try {
+    await runIndex({
+      sparqlUrl: config.SPARQL_URL,
+      knowledgeGraphEndpoint: config.KNOWLEDGE_GRAPH_URL,
+      typesense: {
+        host: config.TYPESENSE_HOST,
+        port: config.TYPESENSE_PORT,
+        protocol: config.TYPESENSE_PROTOCOL,
+        apiKey: config.TYPESENSE_API_KEY,
+      },
+      log: (message) => logger.info(message),
+    });
+    logger.info('Search index update finished');
+  } catch (error) {
+    logger.error({ error }, 'Search index update failed');
+  }
+}
+
 // Schedule crawler to check every hour for registrations that have expired their REGISTRATION_URL_TTL.
 const ttl = config.REGISTRATION_URL_TTL * 1000;
 if (config.CRAWLER_SCHEDULE === undefined) {
   await crawler.crawl(new Date(Date.now() - ttl));
+  await updateSearchIndex();
 } else {
   logger.info(`Crawler scheduled at ${config.CRAWLER_SCHEDULE}`);
   scheduleJob(config.CRAWLER_SCHEDULE, async () => {
     await crawler.crawl(new Date(Date.now() - ttl));
+    // Fire-and-forget: do not block the next scheduled crawl on indexing.
+    void updateSearchIndex();
   });
 }

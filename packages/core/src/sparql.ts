@@ -1,6 +1,7 @@
 import { DatasetStore, extractIri } from './dataset.js';
 import { QueryEngine } from '@comunica/query-sparql';
 import type { BindingsStream } from '@comunica/types';
+import { Parser } from 'n3';
 import { quadsToNTriples } from './rdf-serialize.js';
 import {
   AllowedRegistrationDomainStore,
@@ -15,8 +16,11 @@ import {
   ValidationReportStore,
   validationReportGraphIri,
 } from './validation-report.js';
-import { ALLOWED_DOMAIN_NAME_PREDICATE } from './constants.js';
-import type { DatasetCore } from '@rdfjs/types';
+import {
+  ALLOWED_DOMAIN_NAME_PREDICATE,
+  DEFAULT_REGISTRATIONS_GRAPH,
+} from './constants.js';
+import type { DatasetCore, Quad } from '@rdfjs/types';
 import { URL } from 'node:url';
 
 const queryEngine = new QueryEngine();
@@ -24,7 +28,7 @@ const queryEngine = new QueryEngine();
 export function stores(
   url: string,
   accessToken?: string,
-  registrationsGraphIri = 'https://demo.netwerkdigitaalerfgoed.nl/registry/registrations',
+  registrationsGraphIri = DEFAULT_REGISTRATIONS_GRAPH,
   allowedRegistrationDomainsGraphIri = 'https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names',
   ratingGraphIri = 'https://data.netwerkdigitaalerfgoed.nl/registry/ratings',
   distributionHealthGraphIri = 'https://datasetregister.netwerkdigitaalerfgoed.nl/sparql/distribution-health',
@@ -350,6 +354,31 @@ export class SparqlClient {
 
   async query(query: string): Promise<BindingsStream> {
     return await queryEngine.queryBindings(query, { sources: this.sources });
+  }
+
+  /**
+   * Run a CONSTRUCT and collect the resulting quads. Sent directly over the
+   * SPARQL protocol (not via the federating engine, which mis-projects
+   * multi-pattern CONSTRUCT templates) and parsed from N-Triples/Turtle.
+   */
+  async constructQuads(query: string): Promise<Quad[]> {
+    const doFetch = this.accessToken
+      ? authenticatedFetch(this.accessToken)
+      : globalThis.fetch;
+    const response = await doFetch(this.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/sparql-query',
+        Accept: 'application/n-triples',
+      },
+      body: query,
+    });
+    if (!response.ok) {
+      throw new Error(
+        `CONSTRUCT failed: ${response.status} ${await response.text()}`,
+      );
+    }
+    return new Parser().parse(await response.text());
   }
 
   async queryBoolean(query: string) {

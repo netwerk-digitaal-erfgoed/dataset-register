@@ -1,6 +1,12 @@
 export const REGISTRATION_STATUS_BASE_URI =
   'https://data.netwerkdigitaalerfgoed.nl/registry/';
 
+// The default named graph holding dataset registrations. Shared by the register
+// store writer (core) and the search indexer's register reader, so both agree
+// on where registrations live.
+export const DEFAULT_REGISTRATIONS_GRAPH =
+  'https://demo.netwerkdigitaalerfgoed.nl/registry/registrations';
+
 // schema:additionalType IRI that marks a dataset's schema:Rating as the
 // validation-warnings rating (warning count) rather than the completeness
 // rating. Lets the two ratings, both linked by schema:contentRating, be told

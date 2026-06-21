@@ -7,6 +7,18 @@ interface Env {
   CRAWLER_SCHEDULE?: string;
   HTTP_REQUEST_TIMEOUT: number;
   CRAWLER_MAX_DISTRIBUTION_PROBES: number;
+  // Optional Typesense target. When host + API key are set, the crawler triggers
+  // a search-index run after each crawl (fire-and-forget). Absent → no indexing,
+  // so the crawler runs unchanged without a Typesense deployment.
+  TYPESENSE_HOST?: string;
+  TYPESENSE_PORT: number;
+  TYPESENSE_PROTOCOL: string;
+  TYPESENSE_API_KEY?: string;
+  // Dataset Knowledge Graph SPARQL endpoint; each rebuild enriches the index
+  // with DKG facets (class, terminology_source, size and the NDE-compatibility
+  // flags). Defaults to the public NDE endpoint; a failed read degrades to a
+  // register-only index.
+  KNOWLEDGE_GRAPH_URL: string;
 }
 
 const schema: JSONSchemaType<Env> = {
@@ -40,6 +52,27 @@ const schema: JSONSchemaType<Env> = {
       // slice drop endpoints from the end instead of capping.
       minimum: 1,
       default: 100,
+    },
+    TYPESENSE_HOST: {
+      type: 'string',
+      nullable: true,
+    },
+    TYPESENSE_PORT: {
+      type: 'number',
+      default: 8108,
+    },
+    TYPESENSE_PROTOCOL: {
+      type: 'string',
+      default: 'http',
+    },
+    TYPESENSE_API_KEY: {
+      type: 'string',
+      nullable: true,
+    },
+    KNOWLEDGE_GRAPH_URL: {
+      type: 'string',
+      default:
+        'https://sparql.netwerkdigitaalerfgoed.nl/dataset-knowledge-graph',
     },
   },
 };

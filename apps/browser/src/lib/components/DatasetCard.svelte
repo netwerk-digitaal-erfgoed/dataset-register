@@ -9,7 +9,10 @@
   } from '$lib/services/datasets';
   import BadgeCheckOutline from 'flowbite-svelte-icons/BadgeCheckOutline.svelte';
   import { getLocalizedValue, localizeHref } from '$lib/utils/i18n';
-  import { RDF_MEDIA_TYPES } from '$lib/constants.js';
+  import {
+    RDF_MEDIA_TYPES,
+    SPARQL_PROTOCOL_URI,
+  } from '@dataset-register/core/search';
   import { datasetDetailHref } from '$lib/url';
   import { formatNumber } from '$lib/services/facets';
   import { languageCode } from '$lib/utils/prefix.js';
@@ -30,9 +33,7 @@
 
   const hasSparqlDistribution = $derived(
     dataset.distribution.some((distribution) =>
-      distribution.conformsTo.includes(
-        'https://www.w3.org/TR/sparql11-protocol/',
-      ),
+      distribution.conformsTo.includes(SPARQL_PROTOCOL_URI),
     ),
   );
 
@@ -50,8 +51,9 @@
   // Application Profile in the sampled resources.
   const conformsToProfile = $derived(conformsToSchemaApNde(dataset));
 
-  // Show the icon only for working IIIF; the tooltip reports the declared count.
-  const hasWorkingIiif = $derived(providesWorkingIiif(dataset));
+  // Show the icon only when the DKG validated the dataset’s IIIF manifests; the
+  // declared manifest count is shown alongside it in the label and tooltip.
+  const hasIiif = $derived(providesWorkingIiif(dataset));
   const iiifManifests = $derived(iiifManifestCount(dataset));
   const iiifManifestsDisplay = $derived(
     formatNumber(iiifManifests, getLocale()),
@@ -62,15 +64,17 @@
   class="group/card relative block border border-gray-300 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-800 transition-all hover:shadow-xl hover:border-gray-500 dark:hover:border-gray-500 cursor-pointer no-underline overflow-visible"
   href={detailUrl}
 >
-  {#if dataset.status}
+  {#if dataset.status === 'gone' || dataset.status === 'invalid'}
     <div
       class="absolute top-0 right-0 overflow-hidden w-32 h-32 pointer-events-none"
     >
       <div
         class="absolute top-7 -right-10 w-48 py-2 flex items-center justify-center text-white text-xs font-bold uppercase tracking-wider transform rotate-45 bg-red-600 dark:bg-red-700 shadow-lg"
       >
-        {#if dataset.status === 'archived'}
-          {m.dataset_status_archived()}
+        {#if dataset.status === 'invalid'}
+          {m.detail_invalid()}
+        {:else}
+          {m.detail_gone()}
         {/if}
       </div>
     </div>
@@ -136,7 +140,7 @@
     </div>
   {/if}
 
-  {#if conformsToProfile || hasSparqlDistribution || hasRdfDistribution || dataset.size || hasWorkingIiif}
+  {#if conformsToProfile || hasSparqlDistribution || hasRdfDistribution || dataset.size || hasIiif}
     <div class="mt-2.5 text-[0.9375rem] leading-[1.5] flex items-center gap-4">
       {#if conformsToProfile}
         <!-- Leftmost: conforms to the NDE Schema.org Application Profile. The
@@ -245,8 +249,8 @@
         </div>
       {/if}
 
-      {#if hasWorkingIiif}
-        <!-- The manifest count lives in the tooltip. -->
+      {#if hasIiif}
+        <!-- The manifest count lives in the tooltip and the label. -->
         <div class="group relative flex items-center gap-1.5">
           <div
             class="invisible absolute bottom-full left-1/2 mb-2 -translate-x-1/2 transform rounded bg-gray-800 px-2 py-1 text-xs whitespace-nowrap text-white opacity-0 transition-opacity duration-200 group-hover:visible group-hover:opacity-100"

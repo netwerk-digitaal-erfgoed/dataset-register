@@ -1,40 +1,27 @@
-import { createLens, type SchemaInterface } from 'ldkit';
-import { ldkit, rdf, rdfs, xsd } from 'ldkit/namespaces';
-import { filterDatasets, prefixes, type SearchRequest } from './datasets.js';
-import {
-  PUBLIC_SPARQL_ENDPOINT,
-  PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
-} from '$env/static/public';
-import { RDF_MEDIA_TYPES } from '$lib/constants.js';
-import { REGISTRATION_STATUS_BASE_URI } from '@dataset-register/core/constants';
+import type {
+  SearchParams,
+  SearchResponse,
+} from 'typesense/lib/Typesense/Documents.js';
 import { getLocalizedValue } from '$lib/utils/i18n';
 import { shortenUri } from '$lib/utils/prefix';
 import * as m from '$lib/paraglide/messages';
-import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
-import { voidNs } from '../rdf.js';
-import { inLiterals, normalizeMediaType } from '$lib/utils/sparql';
 import { getLocale } from '$lib/paraglide/runtime';
-
-const fetcher = new SparqlEndpointFetcher();
-
-const FacetSchema = {
-  '@type': voidNs.Dataset,
-  value: rdf.value,
-  label: {
-    '@id': rdfs.label,
-    '@multilang': true,
-    '@optional': true,
-  },
-  count: {
-    '@id': voidNs.distinctSubjects,
-    '@type': xsd.integer,
-  },
-} as const;
-
-const facets = createLens(FacetSchema, {
-  sources: [PUBLIC_SPARQL_ENDPOINT],
-  // logQuery: (query: string) => console.log(query),
-});
+import {
+  buildSearchParams,
+  type SearchHitDocument,
+  type SearchLocale,
+} from './search/datasets.js';
+import {
+  isSearchConfigured,
+  labelResolver,
+  multiSearch,
+} from './search/client.js';
+import type { SearchRequest } from './datasets.js';
+import {
+  FORMAT_GROUP_RDF,
+  FORMAT_GROUP_SPARQL,
+  SEARCH_COLLECTION_ALIAS,
+} from '@dataset-register/core/search';
 
 /**
  * A facet value selected by the user.
@@ -49,417 +36,21 @@ export type FacetValueOptions = string[];
 export type SelectedFacetValues = FacetValueOptions | FacetValueRange;
 
 /**
- * A facet with counts for each value based on the current search query, returned by the server.
+ * A facet with counts for each value based on the current search query.
+ *
+ * `label` carries the per-locale display labels (`{nl, en}`) for IRI-valued
+ * facets; keyword/status/group facets leave it unset and rely on the value
+ * itself or {@link facetDisplayValue}’s translation table.
  */
-export type CountedFacetValue = SchemaInterface<typeof FacetSchema>;
+export interface CountedFacetValue {
+  value: string;
+  label?: Record<string, string>;
+  count: number;
+}
 
 export interface Histogram {
   range: FacetValueRange;
   bins: HistogramBin[];
-}
-
-// Build regex pattern for RDF media types
-const rdfMediaTypesPattern = RDF_MEDIA_TYPES.map((type) =>
-  type.replace(/\//g, '\\\\/').replace(/\+/g, '\\\\+'),
-).join('|');
-
-const SPARQL_PROTOCOL_URI = '<https://www.w3.org/TR/sparql11-protocol/>';
-
-const VALUE_INVALID = 'invalid';
-const VALUE_GONE = 'gone';
-
-const GROUP_RDF = 'group:rdf';
-const GROUP_SPARQL = 'group:sparql';
-
-// Class groups
-const GROUP_PERSON = 'group:person';
-const GROUP_ORGANIZATION = 'group:organization';
-const GROUP_MEDIA = 'group:media';
-const GROUP_CONCEPT = 'group:concept';
-const GROUP_CREATIVE_WORK = 'group:creative-work';
-const GROUP_PLACE = 'group:place';
-const GROUP_DATE = 'group:date';
-const GROUP_PROVENANCE = 'group:provenance';
-const GROUP_EVENT = 'group:event';
-
-// Mapping of class URIs to groups (supporting both http and https for schema.org,
-// because the Dataset Knowledge Graph contains class types from external datasets
-// that may use either variant)
-const classGroups = {
-  [GROUP_PERSON]: [
-    'http://schema.org/Person',
-    'https://schema.org/Person',
-    'http://www.cidoc-crm.org/cidoc-crm/E21_Person',
-    'http://www.cidoc-crm.org/cidoc-crm/E39_Actor',
-  ],
-  [GROUP_ORGANIZATION]: [
-    'http://schema.org/Organization',
-    'https://schema.org/Organization',
-    'http://www.cidoc-crm.org/cidoc-crm/E39_Actor',
-  ],
-  [GROUP_MEDIA]: [
-    'http://schema.org/MediaObject',
-    'https://schema.org/MediaObject',
-    'http://schema.org/AudioObject',
-    'https://schema.org/AudioObject',
-    'http://schema.org/ImageObject',
-    'https://schema.org/ImageObject',
-    'http://www.cidoc-crm.org/cidoc-crm/E36_Visual_Item',
-  ],
-  [GROUP_CONCEPT]: ['http://www.w3.org/2004/02/skos/core#Concept'],
-  [GROUP_CREATIVE_WORK]: [
-    'http://schema.org/CreativeWork',
-    'https://schema.org/CreativeWork',
-    'http://schema.org/Article',
-    'https://schema.org/Article',
-    'http://schema.org/Book',
-    'https://schema.org/Book',
-    'http://schema.org/MusicComposition',
-    'https://schema.org/MusicComposition',
-    'http://www.cidoc-crm.org/cidoc-crm/E65_Creation',
-    'http://www.cidoc-crm.org/cidoc-crm/E22_Human-Made_Object',
-    'http://www.cidoc-crm.org/cidoc-crm/E12_Production',
-  ],
-  [GROUP_PLACE]: [
-    'http://schema.org/Place',
-    'https://schema.org/Place',
-    'http://schema.org/Country',
-    'https://schema.org/Country',
-    'http://schema.org/Periodical',
-    'https://schema.org/Periodical',
-    'http://schema.org/PostalAddress',
-    'https://schema.org/PostalAddress',
-    'http://www.cidoc-crm.org/cidoc-crm/E53_Place',
-    'http://www.europeana.eu/schemas/edm/Place',
-  ],
-  [GROUP_DATE]: [
-    'https://www.ica.org/standards/RiC/ontology#DateRange',
-    'https://www.ica.org/standards/RiC/ontology#SingleDate',
-    'http://www.cidoc-crm.org/cidoc-crm/E52_Time-Span',
-    'http://www.europeana.eu/schemas/edm/TimeSpan',
-  ],
-  [GROUP_PROVENANCE]: [
-    'http://www.w3.org/ns/prov#Activity',
-    'http://www.w3.org/ns/prov#Agent',
-    'http://www.w3.org/ns/prov#Entity',
-  ],
-  [GROUP_EVENT]: [
-    'http://www.cidoc-crm.org/cidoc-crm/E65_Creation',
-    'http://www.cidoc-crm.org/cidoc-crm/E8_Acquisition',
-    'http://schema.org/Event',
-    'https://schema.org/Event',
-    'http://schema.org/PublicationEvent',
-    'https://schema.org/PublicationEvent',
-  ],
-};
-
-interface FacetConfig {
-  /**
-   * SPARQL WHERE clause that reads values.
-   */
-  where: string;
-
-  /**
-   * Function that takes selected values and returns a SPARQL FILTER clause.
-   */
-  filterClause: (values: string[]) => string;
-
-  /**
-   * Default SPARQL clause applied when filter is empty (for dataset queries only).
-   * When fetching facet counts, this default is skipped so all values are shown.
-   */
-  defaultClause?: string;
-}
-
-export const facetConfigs: Record<string, FacetConfig> = {
-  publisher: {
-    where: `{
-        ?dataset dct:publisher ?value .
-        ?value foaf:name ?label
-      } UNION {
-        ?dataset dct:creator ?value .
-        ?value foaf:name ?label
-      }`,
-    filterClause: (values) => {
-      const organizationValues = values.map((p) => `<${p}>`).join(', ');
-
-      return `{
-          ?dataset dct:publisher ?organization .
-          FILTER(?organization IN (${organizationValues}))
-        } UNION {
-          ?dataset dct:creator ?organization .
-          FILTER(?organization IN (${organizationValues}))
-        }`;
-    },
-  },
-  // Why does QLever need the repeated { ?dataset dcat:distribution ?distribution } inside the UNION?
-  format: {
-    where: `{
-      ?dataset dcat:distribution ?distribution .
-      {
-        ?dataset dcat:distribution ?distribution .
-        ?distribution dcat:mediaType ?rawMediaType .
-        ${normalizeMediaType('?rawMediaType', '?value')}
-      } UNION {
-        ?dataset dcat:distribution ?distribution .
-        ?distribution dct:conformsTo ?conformsTo .
-        FILTER(?conformsTo = ${SPARQL_PROTOCOL_URI})
-        BIND("${GROUP_SPARQL}" AS ?value)
-       } UNION {
-        ?dataset dcat:distribution ?distribution .
-        ?distribution dcat:mediaType ?rawRdf .
-        ${normalizeMediaType('?rawRdf', '?rdf')}
-        FILTER(REGEX(?rdf, "^(${rdfMediaTypesPattern})$"))
-        BIND("${GROUP_RDF}" AS ?value)
-       }
-    }`,
-    filterClause: (values) => {
-      if (values.length === 0) {
-        return '';
-      }
-
-      const selectedGroups = values.filter((f) => f.startsWith('group:'));
-      const selectedMediaTypes = values.filter((f) => !f.startsWith('group:'));
-
-      const selectClauses = ['?dataset dcat:distribution ?distribution'];
-      const filterClauses = [];
-
-      if (selectedGroups.includes(GROUP_SPARQL)) {
-        selectClauses.push(
-          'OPTIONAL { ?distribution dct:conformsTo ?conformsTo }',
-        );
-        filterClauses.push(`?conformsTo = ${SPARQL_PROTOCOL_URI}`);
-      }
-
-      if (selectedGroups.includes(GROUP_RDF)) {
-        selectedMediaTypes.push(...RDF_MEDIA_TYPES);
-      }
-
-      if (selectedMediaTypes.length > 0) {
-        selectClauses.push(`?distribution dcat:mediaType ?rawMediaType .
-          ${normalizeMediaType('?rawMediaType', '?mediaType')}`);
-
-        const selectedMediaTypesQuoted = selectedMediaTypes
-          .map((type) => `"${type}"`)
-          .join(', ');
-        filterClauses.push(`?mediaType IN (${selectedMediaTypesQuoted})`);
-      }
-
-      return `${selectClauses.join('. ')}
-        FILTER(${filterClauses.join('||')})`;
-    },
-  },
-  keyword: {
-    where: `?dataset dcat:keyword ?value .
-      FILTER(LANG(?value) = "" || LANG(?value) = "${getLocale()}")`,
-    filterClause: (values) => {
-      return `?dataset dcat:keyword ?keyword .
-        FILTER(STR(?keyword) IN (${inLiterals(values)}))`;
-    },
-  },
-  status: {
-    where: `
-      ?registrationUrl schema:additionalType ?statusType .
-      FILTER(?statusType IN (<${REGISTRATION_STATUS_BASE_URI}${VALUE_INVALID}>, <${REGISTRATION_STATUS_BASE_URI}${VALUE_GONE}>))
-      BIND(IF(?statusType = <${REGISTRATION_STATUS_BASE_URI}${VALUE_INVALID}>, "${VALUE_INVALID}", "${VALUE_GONE}") AS ?value)`,
-    filterClause: (values) => {
-      if (values.length === 0) {
-        return ''; // Default handled separately via defaultClause
-      }
-
-      const statusUris = values
-        .map((v) => `<${REGISTRATION_STATUS_BASE_URI}${v}>`)
-        .join(', ');
-
-      return `?registrationUrl schema:additionalType ?statusType .
-        FILTER(?statusType IN (${statusUris}))`;
-    },
-    defaultClause: `?registrationUrl schema:additionalType <${REGISTRATION_STATUS_BASE_URI}valid> .`,
-  },
-  class: {
-    where: `{
-      SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
-        {
-          ?dataset void:classPartition ?partition .
-          ?partition void:class ?value .
-      }${Object.keys(classGroups)
-        .map(
-          (group) => ` UNION {
-        ?dataset void:classPartition ?partition .
-        ?partition void:class ?class .
-        FILTER(?class IN (${classGroups[group as keyof typeof classGroups].map((c) => `<${c}>`).join(', ')}))
-        BIND("${group}" AS ?value)
-      }`,
-        )
-        .join('')}
-    }
-    }`,
-    filterClause: (values) => {
-      if (values.length === 0) {
-        return '';
-      }
-
-      const selectedGroups = values.filter((v) => v.startsWith('group:'));
-      const selectedClasses = values.filter((v) => !v.startsWith('group:'));
-
-      // Expand groups to their member classes
-      for (const group of selectedGroups) {
-        const groupClasses = classGroups[group as keyof typeof classGroups];
-        if (groupClasses) {
-          selectedClasses.push(...groupClasses);
-        }
-      }
-
-      if (selectedClasses.length === 0) {
-        return '';
-      }
-
-      const classValues = selectedClasses.map((c) => `<${c}>`).join(', ');
-
-      return `SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
-        ?dataset void:classPartition ?partition .
-        ?partition void:class ?class .
-        FILTER(?class IN (${classValues}))
-      }`;
-    },
-  },
-  terminologySource: {
-    where: `{
-      SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
-        [] a void:Linkset ;
-          void:subjectsTarget ?dataset ;
-          void:objectsTarget ?value .
-        OPTIONAL { ?value dct:title ?label }
-      }
-    }`,
-    filterClause: (values) => {
-      if (values.length === 0) {
-        return '';
-      }
-
-      const sourceValues = values.map((s) => `<${s}>`).join(', ');
-
-      return `SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
-        [] a void:Linkset ;
-          void:subjectsTarget ?dataset ;
-          void:objectsTarget ?terminologySource .
-        FILTER(?terminologySource IN (${sourceValues}))
-      }`;
-    },
-  },
-  // The data catalog a dataset belongs to (dct:isPartOf). This facet is not
-  // shown in the sidebar (catalogs carry no title, so they would read as bare
-  // IRIs) and is excluded from count fetching in fetchFacets(); it exists only
-  // as an active filter, reached from the “Browse catalog” link on the dataset
-  // detail page. Only IRI-valued catalogs are matched — some dct:isPartOf
-  // values are plain literals, which the detail-page link never produces.
-  catalog: {
-    where: `?dataset dct:isPartOf ?value .
-      FILTER(isURI(?value))`,
-    filterClause: (values) => {
-      if (values.length === 0) {
-        return '';
-      }
-
-      const catalogValues = values.map((c) => `<${c}>`).join(', ');
-
-      return `?dataset dct:isPartOf ?catalog .
-        FILTER(?catalog IN (${catalogValues}))`;
-    },
-  },
-};
-
-export type FacetKey = keyof typeof facetConfigs | 'size';
-
-export type Facets = {
-  publisher: CountedFacetValue[];
-  keyword: CountedFacetValue[];
-  format: CountedFacetValue[];
-  class: CountedFacetValue[];
-  terminologySource: CountedFacetValue[];
-  status: CountedFacetValue[];
-  size: Histogram;
-};
-
-export const facetQuery = (facet: string, searchFiltersQuery: string) => `
-  ${prefixes}
-  PREFIX rdf: <${rdf.$iri}>
-
-  CONSTRUCT {
-    ?valueUri a <${voidNs.Dataset}>, <${ldkit.Resource}> ;
-      rdf:value ?value ;
-      rdfs:label ?label ;
-      void:distinctSubjects ?count .
-  }
-  WHERE {
-    {
-      SELECT ?value ?label (COUNT(DISTINCT ?dataset) AS ?count) WHERE {
-        ${searchFiltersQuery}
-        ${facetConfigs[facet as FacetKey].where}
-      }
-      GROUP BY ?value ?label
-    }
-    BIND(IRI(CONCAT('urn:facet:', ENCODE_FOR_URI(STR(?value)))) AS ?valueUri)
-  }
-  ORDER BY DESC(?count) ?value
-`;
-
-export async function fetchFacets(
-  searchFilters: SearchRequest,
-): Promise<Facets> {
-  // Exclude `catalog`: it is a filter-only facet (no sidebar entry), so its
-  // value counts are never displayed and need not be queried.
-  const facetKeys = (Object.keys(facetConfigs) as Array<FacetKey>).filter(
-    (key) => key !== 'catalog',
-  );
-
-  // Fetch all facets in parallel and build the result object in one pass
-  const [facetEntries, sizeRange, sizeHistogram] = await Promise.all([
-    Promise.all(
-      facetKeys.map(
-        async (key) =>
-          [key, await fetchFacetValues(key, searchFilters)] as const,
-      ),
-    ),
-    fetchSizeRange(),
-    fetchSizeHistogram(searchFilters),
-  ]);
-
-  return {
-    ...Object.fromEntries(facetEntries),
-    size: {
-      range: sizeRange,
-      bins: sizeHistogram,
-    },
-  } as Facets;
-}
-
-export async function fetchFacetValues(
-  facet: FacetKey,
-  searchFilters: SearchRequest,
-): Promise<CountedFacetValue[]> {
-  const searchFiltersExcludingFacet = { ...searchFilters, [facet]: [] };
-
-  // Skip defaultClause for facets that have one (so they can show all values)
-  const facetConfig = facetConfigs[facet as keyof typeof facetConfigs];
-  const skipDefaults = facetConfig?.defaultClause !== undefined;
-  const searchFiltersQuery = filterDatasets(
-    searchFiltersExcludingFacet,
-    skipDefaults,
-  );
-  const query = facetQuery(facet, searchFiltersQuery);
-
-  try {
-    return await facets.query(query);
-  } catch (error) {
-    console.error(
-      `Facet query failed for "${facet}":`,
-      error,
-      '\nQuery:',
-      query,
-    );
-    return [];
-  }
 }
 
 export interface FacetValueRange {
@@ -472,122 +63,357 @@ export interface HistogramBin {
   count: number;
 }
 
+const VALUE_INVALID = 'invalid';
+const VALUE_GONE = 'gone';
+
+// The status facet offers only the non-default states as toggles: `valid` is the
+// implicit default (no selection), so it is never shown as a togglable value.
+const SELECTABLE_STATUSES: ReadonlySet<string> = new Set([
+  VALUE_INVALID,
+  VALUE_GONE,
+]);
+
+// Class groups
+const GROUP_PERSON = 'group:person';
+const GROUP_ORGANIZATION = 'group:organization';
+const GROUP_MEDIA = 'group:media';
+const GROUP_CONCEPT = 'group:concept';
+const GROUP_CREATIVE_WORK = 'group:creative-work';
+const GROUP_PLACE = 'group:place';
+const GROUP_DATE = 'group:date';
+const GROUP_PROVENANCE = 'group:provenance';
+const GROUP_EVENT = 'group:event';
+
 /**
- * Query the Dataset Knowledge Graph for dataset size.
- *
- * We query globally (unfiltered) to get the absolute range for the slider.
+ * The sidebar facet keys, plus the special `size` histogram and the filter-only
+ * `catalog` (never shown in the sidebar). Mirrors the previous SPARQL facet
+ * config keys so the route and components keep the same `FacetKey` contract.
  */
-export async function fetchSizeRange(): Promise<FacetValueRange> {
-  const query = `
-    PREFIX void: <http://rdfs.org/ns/void#>
+export type FacetKey =
+  | 'publisher'
+  | 'keyword'
+  | 'format'
+  | 'class'
+  | 'terminologySource'
+  | 'status'
+  | 'catalog'
+  | 'size';
 
-    SELECT (MIN(?size) as ?minSize) (MAX(?size) as ?maxSize)
-    WHERE {
-      ?dataset a void:Dataset ;
-        void:triples ?size .
-      FILTER(?size > 0)
-    }
-  `;
+export type Facets = {
+  publisher: CountedFacetValue[];
+  keyword: CountedFacetValue[];
+  format: CountedFacetValue[];
+  class: CountedFacetValue[];
+  terminologySource: CountedFacetValue[];
+  status: CountedFacetValue[];
+  size: Histogram;
+};
 
-  try {
-    const bindings = await fetcher.fetchBindings(
-      PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
-      query,
-    );
+// Which Typesense index field(s) back each sidebar facet, and whether its bucket
+// values are IRIs (so their labels are resolved against the `labels` collection).
+// `format` and `class` carry a companion `_group` field whose `group:*` buckets
+// are merged into the same UI facet.
+interface SidebarFacetSpec {
+  readonly fields: readonly string[];
+  readonly iri: boolean;
+}
 
-    for await (const binding of bindings) {
-      const typedBinding = binding as unknown as {
-        minSize: { value: string };
-        maxSize: { value: string };
-      };
-      return {
-        min: parseInt(typedBinding.minSize.value),
-        max: parseInt(typedBinding.maxSize.value),
-      };
-    }
-  } catch (error) {
-    console.warn(
-      'Failed to fetch size range from Dataset Knowledge Graph:',
-      error,
-    );
+const SIDEBAR_FACETS: Record<
+  Exclude<FacetKey, 'size' | 'catalog'>,
+  SidebarFacetSpec
+> = {
+  publisher: { fields: ['publisher'], iri: true },
+  keyword: { fields: ['keyword'], iri: false },
+  format: { fields: ['format', 'format_group'], iri: false },
+  class: { fields: ['class', 'class_group'], iri: true },
+  terminologySource: { fields: ['terminology_source'], iri: true },
+  status: { fields: ['status'], iri: false },
+};
+
+// The active filter for each sidebar facet, used to build `filter_by` with that
+// facet’s own selection removed (so a multi-select facet still lists its other
+// options – mirroring the previous skip-own-filter behaviour).
+const FACET_REQUEST_KEY: Record<
+  Exclude<FacetKey, 'size' | 'catalog'>,
+  keyof SearchRequest
+> = {
+  publisher: 'publisher',
+  keyword: 'keyword',
+  format: 'format',
+  class: 'class',
+  terminologySource: 'terminologySource',
+  status: 'status',
+};
+
+// How many buckets Typesense should return per facet. The previous SPARQL path
+// returned every value; the UI folds long lists behind a search box, so a high
+// ceiling preserves that affordance without unbounded payloads.
+const MAX_FACET_VALUES = 250;
+
+// Logarithmic size bins matching the UI’s `getBinLabel`/slider: bin n covers
+// [10^n, 10^(n+1)), with bin 9 catching everything ≥ 1e9.
+const SIZE_BIN_COUNT = 10;
+
+/**
+ * Compute every sidebar facet (and the size histogram) from Typesense, returning
+ * the same {@link Facets} shape the SPARQL path produced. Each facet is faceted on
+ * its field(s) with its own selection removed from the filter, so a selected
+ * multi-select facet still lists its other options. All of these per-facet
+ * searches (plus the size histogram) are dispatched in a single `multi_search`
+ * round-trip; their results are then mapped back to each facet individually.
+ */
+export async function fetchFacets(
+  searchFilters: SearchRequest,
+): Promise<Facets> {
+  if (!isSearchConfigured()) {
+    return emptyFacets();
   }
 
-  // Fallback to reasonable defaults if query fails
+  const locale = getLocale() as SearchLocale;
+  const facetKeys = Object.keys(SIDEBAR_FACETS) as Array<
+    Exclude<FacetKey, 'size' | 'catalog'>
+  >;
+
+  // Build one ordered batch of searches – a search per sidebar facet, then the
+  // size histogram – so the whole sidebar is computed in one HTTP request. The
+  // result array mirrors this order: index `i` is `facetKeys[i]`, the final
+  // entry is the size histogram.
+  const searches = [
+    ...facetKeys.map((key) => ({
+      collection: SEARCH_COLLECTION_ALIAS,
+      params: sidebarFacetParams(key, searchFilters, locale),
+    })),
+    {
+      collection: SEARCH_COLLECTION_ALIAS,
+      params: sizeHistogramParams(searchFilters, locale),
+    },
+  ];
+
+  let results: Array<SearchResponse<SearchHitDocument> | { error: string }>;
+  try {
+    results = await multiSearch<SearchHitDocument>(searches);
+  } catch (error) {
+    // A failed multi_search degrades to empty facets rather than throwing and
+    // taking down the listing.
+    console.error('Facet multi_search failed:', error);
+    return emptyFacets();
+  }
+
+  const sizeResult = results[facetKeys.length];
+  const facetEntries = await Promise.all(
+    facetKeys.map(
+      async (key, index) =>
+        [key, await parseSidebarFacet(key, results[index])] as const,
+    ),
+  );
+
   return {
-    min: 1,
-    max: 1000000000, // 1B triples as fallback
+    ...(Object.fromEntries(facetEntries) as Omit<Facets, 'size'>),
+    size: parseSizeHistogram(sizeResult),
   };
 }
 
-/**
- * Fetches histogram data showing the distribution of dataset sizes across logarithmic bins.
- * Applies current search filters (publisher, format, search query) but excludes size filters
- * to show the full distribution of matching datasets.
- */
-export async function fetchSizeHistogram(
+// The Typesense search params for one sidebar facet: a per_page:0 search faceted
+// on the facet’s field(s), filtered by the active filters minus this facet’s own
+// selection (so a multi-select facet still lists its other options).
+function sidebarFacetParams(
+  key: Exclude<FacetKey, 'size' | 'catalog'>,
   searchFilters: SearchRequest,
-): Promise<HistogramBin[]> {
-  // Remove size filters for histogram - we want to show full distribution
+  locale: SearchLocale,
+): Record<string, unknown> {
+  const spec = SIDEBAR_FACETS[key];
+  const filtersExcludingFacet = {
+    ...searchFilters,
+    [FACET_REQUEST_KEY[key]]: [],
+  };
+
+  const parameters: SearchParams<SearchHitDocument> = {
+    ...buildSearchParams(filtersExcludingFacet, {
+      limit: 1,
+      offset: 0,
+      orderBy: 'title',
+      locale,
+      // The status facet counts across all statuses (so it can offer the
+      // invalid/gone toggles); every other facet still counts within the
+      // default valid set.
+      includeDefaultStatus: key !== 'status',
+    }),
+    per_page: 0,
+    facet_by: spec.fields.join(','),
+    max_facet_values: MAX_FACET_VALUES,
+  };
+  return parameters as Record<string, unknown>;
+}
+
+// Parse one sidebar facet’s buckets out of its multi_search result: merge
+// multi-field buckets (format/class group companions), drop the status facet’s
+// non-selectable default, resolve IRI labels for both locales (cheap: the labels
+// collection is cached), and sort. A per-search error degrades to an empty facet.
+async function parseSidebarFacet(
+  key: Exclude<FacetKey, 'size' | 'catalog'>,
+  result: SearchResponse<SearchHitDocument> | { error: string } | undefined,
+): Promise<CountedFacetValue[]> {
+  if (result === undefined || 'error' in result) {
+    console.error(
+      `Facet query failed for "${key}":`,
+      (result as { error?: string } | undefined)?.error,
+    );
+    return [];
+  }
+
+  const spec = SIDEBAR_FACETS[key];
+  const buckets = (result.facet_counts ?? [])
+    .filter((facet) => spec.fields.includes(facet.field_name as string))
+    .flatMap((facet) => facet.counts);
+
+  // Merge buckets that share a value (e.g. a granular field and its group
+  // companion never collide, but keep the merge robust) by summing counts.
+  const byValue = new Map<string, number>();
+  for (const bucket of buckets) {
+    byValue.set(bucket.value, (byValue.get(bucket.value) ?? 0) + bucket.count);
+  }
+
+  const values: CountedFacetValue[] = [...byValue.entries()]
+    // The status facet lists only the non-default states (invalid, gone);
+    // `valid` is the implicit default and is never a toggle.
+    .filter(([value]) => key !== 'status' || SELECTABLE_STATUSES.has(value))
+    .map(([value, count]) => ({ value, count }));
+
+  if (spec.iri) {
+    await attachIriLabels(values);
+  }
+
+  // Highest count first, then by value, matching the SPARQL ORDER BY.
+  values.sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+  return values;
+}
+
+// Resolve the IRI buckets’ labels for both locales over the cached labels
+// collection, attaching a `{nl, en}` label to each value that has one.
+async function attachIriLabels(values: CountedFacetValue[]): Promise<void> {
+  const iris = values.map((value) => value.value);
+  const resolver = labelResolver();
+  const [labelsNl, labelsEn] = await Promise.all([
+    resolver.resolve(iris, 'nl'),
+    resolver.resolve(iris, 'en'),
+  ]);
+
+  for (const value of values) {
+    const nl = labelsNl.get(value.value);
+    const en = labelsEn.get(value.value);
+    if (nl !== undefined || en !== undefined) {
+      const label: Record<string, string> = {};
+      if (nl !== undefined) label.nl = nl;
+      if (en !== undefined) label.en = en;
+      value.label = label;
+    }
+  }
+}
+
+// The fallback size range when stats are unavailable or the search failed.
+const SIZE_RANGE_FALLBACK: FacetValueRange = { min: 1, max: 1000000000 };
+
+/**
+ * The Typesense search params for the size histogram: a per_page:0 search faceted
+ * on the logarithmic `size` ranges. Typesense reports the numeric facet’s stats
+ * (min/max) alongside the labelled range buckets, so one search yields both the
+ * bins and the global range. Applies the current filters but excludes the size
+ * filter, so the histogram shows the full distribution of otherwise-matching
+ * datasets.
+ */
+function sizeHistogramParams(
+  searchFilters: SearchRequest,
+  locale: SearchLocale,
+): Record<string, unknown> {
   const filtersWithoutSize = {
     ...searchFilters,
     size: { min: undefined, max: undefined },
   };
 
-  const query = `
-    ${prefixes}
+  const parameters: SearchParams<SearchHitDocument> = {
+    ...buildSearchParams(filtersWithoutSize, {
+      limit: 1,
+      offset: 0,
+      orderBy: 'title',
+      locale,
+    }),
+    per_page: 0,
+    facet_by: sizeFacetBy(),
+    max_facet_values: SIZE_BIN_COUNT,
+  };
+  return parameters as Record<string, unknown>;
+}
 
-    SELECT ?bin (COUNT(DISTINCT ?dataset) as ?count) WHERE {
-      ${filterDatasets(filtersWithoutSize)}
-
-      SERVICE <${PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT}> {
-        ?dataset a void:Dataset ;
-          void:triples ?size .
-      }
-
-      # Bin sizes into logarithmic buckets using nested IF conditions
-      BIND(
-        IF(?size < 10, 0,
-        IF(?size < 100, 1,
-        IF(?size < 1000, 2,
-        IF(?size < 10000, 3,
-        IF(?size < 100000, 4,
-        IF(?size < 1000000, 5,
-        IF(?size < 10000000, 6,
-        IF(?size < 100000000, 7,
-        IF(?size < 1000000000, 8, 9)))))))))
-      as ?bin)
-    }
-    GROUP BY ?bin
-    ORDER BY ?bin
-  `;
-
-  try {
-    const bindings = await fetcher.fetchBindings(PUBLIC_SPARQL_ENDPOINT, query);
-
-    const histogram: HistogramBin[] = [];
-    for await (const binding of bindings) {
-      const typedBinding = binding as unknown as {
-        bin: { value: string };
-        count: { value: string };
-      };
-      histogram.push({
-        bin: parseInt(typedBinding.bin.value),
-        count: parseInt(typedBinding.count.value),
-      });
-    }
-
-    return histogram;
-  } catch (error) {
-    console.error('Size histogram query failed:', error, '\nQuery:', query);
-    return [];
+// Parse the size histogram (bins + range) out of its multi_search result. A
+// per-search error degrades to the fallback range with no bins.
+function parseSizeHistogram(
+  result: SearchResponse<SearchHitDocument> | { error: string } | undefined,
+): Histogram {
+  if (result === undefined || 'error' in result) {
+    console.error(
+      'Size histogram query failed:',
+      (result as { error?: string } | undefined)?.error,
+    );
+    return { range: SIZE_RANGE_FALLBACK, bins: [] };
   }
+
+  const sizeFacet = (result.facet_counts ?? []).find(
+    (facet) => (facet.field_name as string) === 'size',
+  );
+
+  const bins: HistogramBin[] = (sizeFacet?.counts ?? [])
+    .map((bucket) => ({
+      bin: parseInt(bucket.value, 10),
+      count: bucket.count,
+    }))
+    .filter((bin) => !Number.isNaN(bin.bin) && bin.count > 0)
+    .sort((a, b) => a.bin - b.bin);
+
+  // Typesense reports min/max in the numeric facet’s stats.
+  const stats = (sizeFacet as { stats?: { min?: number; max?: number } })
+    ?.stats;
+  const range: FacetValueRange =
+    stats?.min !== undefined && stats?.max !== undefined
+      ? { min: Math.round(stats.min), max: Math.round(stats.max) }
+      : SIZE_RANGE_FALLBACK;
+
+  return { range, bins };
+}
+
+// The `facet_by` range definition that bins `size` into the UI’s logarithmic
+// buckets. Each range is labelled with its bin index (`0`..`9`); start inclusive,
+// end exclusive, with the last bin open-ended (≥ 1e9).
+function sizeFacetBy(): string {
+  const ranges: string[] = [];
+  for (let bin = 0; bin < SIZE_BIN_COUNT; bin++) {
+    const start = Math.pow(10, bin);
+    if (bin === SIZE_BIN_COUNT - 1) {
+      ranges.push(`${bin}:[${start}, ]`);
+    } else {
+      const end = Math.pow(10, bin + 1);
+      ranges.push(`${bin}:[${start}, ${end}]`);
+    }
+  }
+  return `size(${ranges.join(', ')})`;
+}
+
+function emptyFacets(): Facets {
+  return {
+    publisher: [],
+    keyword: [],
+    format: [],
+    class: [],
+    terminologySource: [],
+    status: [],
+    size: { range: { min: 1, max: 1000000000 }, bins: [] },
+  };
 }
 
 const valueTranslations = {
   [VALUE_GONE]: m['facets_status_gone'],
   [VALUE_INVALID]: m['facets_status_invalid'],
-  [GROUP_RDF]: m['group:rdf'],
-  [GROUP_SPARQL]: m['group:sparql'],
+  [FORMAT_GROUP_RDF]: m['group:rdf'],
+  [FORMAT_GROUP_SPARQL]: m['group:sparql'],
   [GROUP_PERSON]: m['group:person'],
   [GROUP_ORGANIZATION]: m['group:organization'],
   [GROUP_MEDIA]: m['group:media'],

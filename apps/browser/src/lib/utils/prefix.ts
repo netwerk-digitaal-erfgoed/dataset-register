@@ -1,5 +1,7 @@
 import { shrink } from '@zazuko/prefixes';
 
+export { stripIanaPrefix } from '@dataset-register/core/search';
+
 /**
  * Shortens a full URI to a prefixed name if a known prefix exists.
  * Falls back to the original URI if no prefix is found.
@@ -49,17 +51,4 @@ export function languageCode(value: string): string {
   if (value.startsWith(EU_LANGUAGE_PREFIX))
     return value.slice(EU_LANGUAGE_PREFIX.length);
   return value;
-}
-
-const IANA_MEDIA_TYPES_PREFIX = 'https://www.iana.org/assignments/media-types/';
-
-/**
- * Strips the IANA media types prefix from a media type URI.
- * Returns the bare media type (e.g., 'application/n-triples+gzip').
- */
-export function stripIanaPrefix(mediaType: string): string {
-  if (mediaType.startsWith(IANA_MEDIA_TYPES_PREFIX)) {
-    return mediaType.slice(IANA_MEDIA_TYPES_PREFIX.length);
-  }
-  return mediaType;
 }

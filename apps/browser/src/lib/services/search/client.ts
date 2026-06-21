@@ -1,0 +1,143 @@
+import type {
+  DocumentSchema,
+  SearchResponse,
+} from 'typesense/lib/Typesense/Documents.js';
+import { env } from '$env/dynamic/public';
+import { LABELS_COLLECTION_ALIAS } from '@dataset-register/core/search';
+import { createLabelResolver, type LabelResolver } from './labels.js';
+
+/**
+ * Whether a Typesense search backend is configured. The browser queries
+ * Typesense directly with a search-only (read) key – scoped to search and safe
+ * to expose – so this is a public-env feature flag. When unset, the dataset
+ * listing returns empty and logs an error: the Typesense migration removed the
+ * SPARQL listing path, so the listing now requires Typesense. (The dataset
+ * detail pages read over SPARQL independently and are unaffected.) A later
+ * iteration swaps this direct path for a GraphQL API that runs the Typesense
+ * queries, behind the same service seam.
+ */
+export function isSearchConfigured(): boolean {
+  return Boolean(
+    env.PUBLIC_TYPESENSE_HOST && env.PUBLIC_TYPESENSE_SEARCH_ONLY_API_KEY,
+  );
+}
+
+/**
+ * Run a search against a Typesense collection over the HTTP API with `fetch`.
+ *
+ * We hit the REST endpoint directly rather than through the `typesense` SDK so
+ * the bundle stays free of the SDK’s `axios`/`node:stream` dependency, which
+ * breaks in the browser. The search-only key is public (read-scoped), so it is
+ * safe to send from the client.
+ */
+export async function searchCollection<T extends DocumentSchema>(
+  collection: string,
+  params: Record<string, unknown>,
+): Promise<SearchResponse<T>> {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined) {
+      // All Typesense search params are scalars/strings, so a plain stringify is
+      // exact.
+      query.set(key, String(value));
+    }
+  }
+  const response = await fetch(
+    `${baseUrl()}/collections/${encodeURIComponent(collection)}/documents/search?${query.toString()}`,
+    { headers: apiKeyHeader() },
+  );
+  if (!response.ok) {
+    throw new Error(
+      `Typesense search failed (${response.status}): ${await response.text()}`,
+    );
+  }
+  return (await response.json()) as SearchResponse<T>;
+}
+
+/**
+ * Run several searches in a single `multi_search` request over the HTTP API.
+ *
+ * Each entry pairs a collection with its search params; the body is
+ * `{ searches: [{ collection, ...params }, …] }` and the returned array of
+ * per-search results preserves the input order. Individual results may be an
+ * error object (`{ error }`) when that single search failed but the request as a
+ * whole succeeded. Uses `fetch` for the same bundle reason as
+ * {@link searchCollection}.
+ */
+export async function multiSearch<T extends DocumentSchema>(
+  searches: ReadonlyArray<{
+    collection: string;
+    params: Record<string, unknown>;
+  }>,
+): Promise<Array<SearchResponse<T> | { error: string }>> {
+  const body = {
+    searches: searches.map(({ collection, params }) => {
+      const search: Record<string, unknown> = { collection };
+      for (const [key, value] of Object.entries(params)) {
+        if (value !== undefined) {
+          search[key] = value;
+        }
+      }
+      return search;
+    }),
+  };
+  const response = await fetch(`${baseUrl()}/multi_search`, {
+    method: 'POST',
+    headers: { ...apiKeyHeader(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw new Error(
+      `Typesense multi_search failed (${response.status}): ${await response.text()}`,
+    );
+  }
+  const result = (await response.json()) as {
+    results: Array<SearchResponse<T> | { error: string }>;
+  };
+  return result.results;
+}
+
+/**
+ * Export every document of a Typesense collection as JSONL over the HTTP API.
+ * Used to pull the (bounded) `labels` collection in one request.
+ */
+export async function exportCollection(collection: string): Promise<string> {
+  const response = await fetch(
+    `${baseUrl()}/collections/${encodeURIComponent(collection)}/documents/export`,
+    { headers: apiKeyHeader() },
+  );
+  if (!response.ok) {
+    throw new Error(
+      `Typesense export failed (${response.status}): ${await response.text()}`,
+    );
+  }
+  return response.text();
+}
+
+/**
+ * Shared resolver for the sidecar `labels` collection, so its cached copy of the
+ * (bounded) collection is reused across the session.
+ */
+export function labelResolver(): LabelResolver {
+  resolver ??= createLabelResolver(() =>
+    exportCollection(LABELS_COLLECTION_ALIAS),
+  );
+  return resolver;
+}
+
+let resolver: LabelResolver | undefined;
+
+/** The Typesense HTTP API base URL from the public env. */
+function baseUrl(): string {
+  const protocol = env.PUBLIC_TYPESENSE_PROTOCOL ?? 'https';
+  const host = env.PUBLIC_TYPESENSE_HOST ?? 'localhost';
+  const port = Number(env.PUBLIC_TYPESENSE_PORT ?? '8108');
+  return `${protocol}://${host}:${port}`;
+}
+
+/** The search-only API key header sent with every Typesense request. */
+function apiKeyHeader(): Record<string, string> {
+  return {
+    'X-TYPESENSE-API-KEY': env.PUBLIC_TYPESENSE_SEARCH_ONLY_API_KEY ?? '',
+  };
+}
