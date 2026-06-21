@@ -170,6 +170,8 @@
   "detail_archived_warning": "This dataset has been archived",
   "detail_archived_message": "This dataset is no longer actively maintained and may be out of date.",
   "detail_query_dataset": "Query this dataset",
+  "detail_query_none_available": "No working endpoint available",
+  "detail_query_none_available_tooltip": "None of this dataset’s SPARQL endpoints currently return data, according to the register’s latest check.",
   "detail_uri": "URI",
   "detail_uri_description": "The unique identifier (URI) for this dataset.",
   "detail_publisher": "Publisher",

@@ -170,6 +170,8 @@
   "detail_archived_warning": "Deze dataset is gearchiveerd",
   "detail_archived_message": "Deze dataset wordt niet langer actief onderhouden en kan verouderd zijn.",
   "detail_query_dataset": "Bevraag deze dataset",
+  "detail_query_none_available": "Geen werkend endpoint beschikbaar",
+  "detail_query_none_available_tooltip": "Geen van de SPARQL-endpoints van deze dataset geeft op dit moment gegevens terug, volgens de meest recente controle van het register.",
   "detail_uri": "URI",
   "detail_uri_description": "De unieke identificatie (URI) van deze dataset.",
   "detail_publisher": "Uitgever",

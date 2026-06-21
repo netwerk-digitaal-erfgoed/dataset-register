@@ -76,15 +76,16 @@ function availabilityOf(
   );
 }
 
-// Select the distribution the default Download action should point at: the first
-// reachable (or not-yet-probed) entry in the same order the dropdown renders, so
-// the primary button always matches the topmost working option and the visitor
-// never has to open the dropdown to find it. A distribution that is reachable but
-// serves invalid RDF (in `invalidUrls`) is only offered as a last resort — a
-// valid one is always preferred — but its bytes are still downloadable when it is
-// the sole option. Returns undefined when every distribution is unavailable,
-// which drives the disabled download state.
-export function selectPreferredDownload<T extends RankableDistribution>(
+// Select the distribution a default split-button action (Download or Query)
+// should point at: the first reachable (or not-yet-probed) entry in the same
+// order the dropdown renders, so the primary button always matches the topmost
+// working option and the visitor never has to open the dropdown to find it. A
+// distribution that is reachable but serves invalid RDF (in `invalidUrls`) is
+// only offered as a last resort — a valid one is always preferred — but its
+// bytes are still downloadable when it is the sole option. Returns undefined
+// when every distribution is unavailable, which drives the disabled state of
+// that action.
+export function selectPreferredDistribution<T extends RankableDistribution>(
   distributions: readonly T[],
   healthByUrl: ReadonlyMap<string, DistributionHealth>,
   now: Date,

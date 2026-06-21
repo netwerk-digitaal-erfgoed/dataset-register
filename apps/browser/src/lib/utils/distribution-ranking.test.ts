@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  selectPreferredDownload,
+  selectPreferredDistribution,
   sortDistributionsByAvailability,
 } from './distribution-ranking';
 import type { DistributionHealth } from '$lib/services/distribution-health';
@@ -27,7 +27,7 @@ const healthy: DistributionHealth = {
   sourceFingerprint: null,
 };
 
-describe('selectPreferredDownload', () => {
+describe('selectPreferredDistribution', () => {
   it('prefers a reachable distribution over an unavailable one of the same type', () => {
     const unavailable = {
       accessURL: 'https://example.org/empty.ttl',
@@ -41,9 +41,9 @@ describe('selectPreferredDownload', () => {
       [unavailable.accessURL, staleFailure],
       [reachable.accessURL, healthy],
     ]);
-    expect(selectPreferredDownload([unavailable, reachable], health, now)).toBe(
-      reachable,
-    );
+    expect(
+      selectPreferredDistribution([unavailable, reachable], health, now),
+    ).toBe(reachable);
   });
 
   it('prefers a valid distribution over a reachable-but-invalid one, but still offers the invalid bytes as a last resort', () => {
@@ -63,13 +63,13 @@ describe('selectPreferredDownload', () => {
 
     // A valid distribution wins even though both are reachable.
     expect(
-      selectPreferredDownload([invalid, valid], health, now, invalidUrls),
+      selectPreferredDistribution([invalid, valid], health, now, invalidUrls),
     ).toBe(valid);
     // When the invalid one is the only reachable option, its bytes are still
     // offered rather than disabling the download.
-    expect(selectPreferredDownload([invalid], health, now, invalidUrls)).toBe(
-      invalid,
-    );
+    expect(
+      selectPreferredDistribution([invalid], health, now, invalidUrls),
+    ).toBe(invalid);
   });
 
   it('applies type priority among reachable distributions (gzipped N-Triples wins over Turtle, Turtle over JSON-LD)', () => {
@@ -87,10 +87,12 @@ describe('selectPreferredDownload', () => {
     };
     // No health records: all unknown, hence all selectable.
     const health = new Map<string, DistributionHealth>();
-    expect(selectPreferredDownload([jsonLd, turtle], health, now)).toBe(turtle);
-    expect(selectPreferredDownload([jsonLd, turtle, ntGzip], health, now)).toBe(
-      ntGzip,
+    expect(selectPreferredDistribution([jsonLd, turtle], health, now)).toBe(
+      turtle,
     );
+    expect(
+      selectPreferredDistribution([jsonLd, turtle, ntGzip], health, now),
+    ).toBe(ntGzip);
   });
 
   it('returns undefined when every distribution is unavailable', () => {
@@ -106,7 +108,7 @@ describe('selectPreferredDownload', () => {
       [a.accessURL, staleFailure],
       [b.accessURL, staleFailure],
     ]);
-    expect(selectPreferredDownload([a, b], health, now)).toBeUndefined();
+    expect(selectPreferredDistribution([a, b], health, now)).toBeUndefined();
   });
 });
 
@@ -194,7 +196,7 @@ describe('sortDistributionsByAvailability', () => {
   });
 });
 
-describe('selectPreferredDownload matches the topmost dropdown entry', () => {
+describe('selectPreferredDistribution matches the topmost dropdown entry', () => {
   it('points at the compressed N-Triples that also sorts to the top', () => {
     const jsonLd = {
       accessURL: 'https://example.org/data.jsonld',
@@ -211,8 +213,8 @@ describe('selectPreferredDownload matches the topmost dropdown entry', () => {
     const health = new Map<string, DistributionHealth>();
     const candidates = [jsonLd, turtle, ntGzip];
     const top = sortDistributionsByAvailability(candidates, health, now)[0];
-    expect(selectPreferredDownload(candidates, health, now)).toBe(top);
-    expect(selectPreferredDownload(candidates, health, now)).toBe(ntGzip);
+    expect(selectPreferredDistribution(candidates, health, now)).toBe(top);
+    expect(selectPreferredDistribution(candidates, health, now)).toBe(ntGzip);
   });
 
   it('skips an unavailable topmost entry and points at the next working one', () => {
@@ -227,6 +229,8 @@ describe('selectPreferredDownload matches the topmost dropdown entry', () => {
     // The otherwise-preferred compressed download is unavailable, so the button
     // falls through to the first reachable entry rather than a broken link.
     const health = new Map([[ntGzip.accessURL, staleFailure]]);
-    expect(selectPreferredDownload([ntGzip, turtle], health, now)).toBe(turtle);
+    expect(selectPreferredDistribution([ntGzip, turtle], health, now)).toBe(
+      turtle,
+    );
   });
 });
