@@ -5,27 +5,25 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts",
-      "default": "./src/index.ts"
+      "development": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./package.json": "./package.json"
   },
-  "main": "./src/index.ts",
-  "types": "./src/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "dependencies": {
-    "@comunica/types": "^5.2.3",
     "@dataset-register/core": "*",
     "@lde/search": "^0.1.1",
     "@lde/search-typesense": "^0.1.0",
-    "@lde/text-normalization": "^0.1.0",
+    "@rdfjs/types": "2.0.1",
     "env-schema": "^7.0.0",
     "pino": "^10.2.0",
     "tslib": "^2.3.0",
     "typesense": "^3.0.6"
   },
   "devDependencies": {
-    "@rdfjs/types": "^2.0.1",
     "@types/jsonld": "^1.5.15",
     "jsonld": "^9.0.0",
     "n3": "^2.0.3",
@@ -33,6 +31,25 @@
     "testcontainers": "^12.0.1"
   },
   "nx": {
-    "projectType": "library"
+    "projectType": "library",
+    "targets": {
+      "build": {
+        "executor": "nx:run-commands",
+        "cache": true,
+        "inputs": [
+          "production",
+          "^production"
+        ],
+        "outputs": [
+          "{projectRoot}/dist"
+        ],
+        "dependsOn": [
+          "^build"
+        ],
+        "options": {
+          "command": "tsc -b packages/search-indexer/tsconfig.lib.json"
+        }
+      }
+    }
   }
 }

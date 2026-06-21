@@ -5,20 +5,17 @@
   "type": "module",
   "dependencies": {
     "@dataset-register/core": "*",
+    "@dataset-register/search-indexer": "*",
     "@fastify/bearer-auth": "^10.1.2",
     "@fastify/cors": "^11.0.0",
     "@fastify/swagger": "^9.7.0",
     "@fastify/swagger-ui": "^6.0.0",
     "@lde/fastify-rdf": "^0.4.5",
-    "@lde/search": "^0.1.1",
-    "@lde/search-typesense": "^0.1.0",
-    "@lde/text-normalization": "^0.1.0",
     "@rdfjs/types": "2.0.1",
     "env-schema": "^7.0.0",
     "fastify": "^5.8.5",
     "psl": "1.15.0",
-    "rdf-ext": "2.6.0",
-    "typesense": "^3.0.6"
+    "rdf-ext": "2.6.0"
   },
   "nx": {
     "projectType": "application",
@@ -32,7 +29,7 @@
         "options": {
           "platform": "node",
           "outputPath": "apps/api/dist",
-          "bundle": true,
+          "bundle": false,
           "main": "apps/api/src/main.ts",
           "declarationRootDir": "apps/api/src",
           "tsConfig": "apps/api/tsconfig.app.json",
@@ -90,7 +87,17 @@
         }
       },
       "copy-workspace-modules": {},
-      "prune-lockfile": {}
+      "prune-lockfile": {},
+      "docker:smoke": {
+        "executor": "nx:run-commands",
+        "dependsOn": [
+          "docker:build"
+        ],
+        "cache": false,
+        "options": {
+          "command": "./apps/docker-smoke.sh apps-api 'Server listening'"
+        }
+      }
     }
   }
 }
