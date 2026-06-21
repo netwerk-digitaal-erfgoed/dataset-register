@@ -43,11 +43,16 @@ export const QUADS_VALIDATED_METRIC =
 // recorded by the Dataset Knowledge Graph on the dataset’s self-minted subject
 // namespace. `subject-uris-sampled` is the denominator (how many subject URIs
 // were sampled), `subject-uris-resolved` the numerator (how many of those
-// resolved to an HTML landing page).
+// dereferenced to an HTML page or RDF). `subject-uris-html-landing-pages` is the
+// subset of resolved URIs that returned an HTML landing page (an HTML page that
+// references its own URI) — a positive signal that promotes human-readable
+// pages without gating resolution on them.
 export const SUBJECT_URIS_SAMPLED_METRIC =
   'https://def.nde.nl/metric#subject-uris-sampled';
 export const SUBJECT_URIS_RESOLVED_METRIC =
   'https://def.nde.nl/metric#subject-uris-resolved';
+export const SUBJECT_URIS_HTML_LANDING_PAGES_METRIC =
+  'https://def.nde.nl/metric#subject-uris-html-landing-pages';
 
 // Boolean DQV metric the Dataset Knowledge Graph records (`true`) when the
 // subject-URI sample query failed on every attempt — the namespace was selected
@@ -132,12 +137,8 @@ export type LinkedDataFailureReason = 'no-linked-data' | 'empty';
 export type SchemaApNdeFailureReason = 'violations' | 'declared-but-empty';
 
 // Why the persistent-URI criterion is in a non-green state:
-// 'unresolved'        — 🔴 at least one sampled URI did not (properly) resolve
-//                       (a hard failure), or per-URI reasons are not available
-//                       yet so the failure cannot be classified as soft.
-// 'no-self-reference' — 🟠 every failed URI resolves but does not advertise its
-//                       own persistent URI: the pages work, they just do not
-//                       reference their PID.
+// 'unresolved'        — 🔴 at least one sampled URI did not resolve to an HTML
+//                       page or RDF (a hard failure).
 // 'non-durable'       — 🟠 the URIs resolve, but on a namespace the DKG flags as
 //                       a non-durable home (its disallow list).
 // 'sampling-failed'   — 🟠 the namespace was selected and sampling was attempted,
@@ -147,9 +148,15 @@ export type SchemaApNdeFailureReason = 'violations' | 'declared-but-empty';
 //                       not the neutral “not yet checked” of a never-sampled one.
 export type PersistentFailureReason =
   | 'unresolved'
-  | 'no-self-reference'
   | 'non-durable'
   | 'sampling-failed';
+
+// A non-blocking advisory shown alongside a green (`met`) persistent-URI row.
+// 'no-html-landing-pages' — the subject URIs resolve, but none served an HTML
+//                           landing page (they resolve to RDF only). The row
+//                           stays green; the advisory nudges the provider to
+//                           also offer a human-readable landing page.
+export type PersistentAdvisory = 'no-html-landing-pages';
 
 // Why a criterion is in a non-green state. The registration reasons ('gone',
 // 'invalid') carry the dataset’s status; the linked-data reasons say why no
@@ -177,22 +184,23 @@ export interface IiifManifests {
 export type PidScheme = 'ark' | 'handle';
 
 // Why a single sampled subject URI failed, mirroring the Knowledge Graph’s
-// `subject-resolution-failure` concept scheme:
-// 'no-self-reference'  — the page resolves (a 200, text/html response), but its
-//                        body does not advertise the original URI. A soft gap:
-//                        the identifier dereferences, it just is not referenced.
+// `subject-resolution-failure` concept scheme. All are hard failures: the URI
+// did not resolve to an HTML page or RDF.
 // 'http-error'         — a non-2xx HTTP response.
 // 'timeout'            — the request did not complete within the budget.
 // 'network-error'      — the request failed to connect (DNS, TLS, reset, …).
-// 'wrong-content-type' — a 200, but not an HTML landing page.
-// All but 'no-self-reference' are hard failures: the page did not (properly)
-// resolve at all.
+// 'wrong-content-type' — a 2xx that is neither HTML nor RDF (e.g. a JSON or
+//                        plain-text error page).
+// 'no-self-reference'  — legacy: the DKG no longer emits this (an HTML page that
+//                        does not reference its own URI now resolves and is not a
+//                        failure). Retained so historical per-URI failure lists
+//                        still render; it drives no state.
 export type PersistentUriFailureReason =
-  | 'no-self-reference'
   | 'http-error'
   | 'timeout'
   | 'network-error'
-  | 'wrong-content-type';
+  | 'wrong-content-type'
+  | 'no-self-reference';
 
 // A single sampled subject URI that did not resolve, paired with its typed
 // reason. Surfaced on the detail page so providers can see exactly which pages
@@ -205,8 +213,9 @@ export interface PersistentUriFailure {
 // Persistent-URI figures from the Knowledge Graph for the dataset’s most common
 // self-minted subject namespace. The DKG samples subject URIs from that namespace
 // and dereferences them. Persistence is judged by resolution: every sampled URI
-// reaching an HTML landing page is the bar. A recognised PID scheme and its
-// issuing organisation are surfaced as positive embellishments, not as a gate.
+// dereferencing to an HTML page or RDF is the bar. An HTML landing page is
+// promoted but not required; a recognised PID scheme and its issuing organisation
+// are surfaced as positive embellishments, not as a gate.
 // 'uriSpace'      — the namespace that was assessed, or null when the DKG found no
 //                   self-minted namespace to sample (nothing to assess yet).
 // 'scheme'        — the recognised PID scheme (ARK or Handle), or null. Shown as a
@@ -215,19 +224,22 @@ export interface PersistentUriFailure {
 //                   only); null for Handle or when the lookup found none.
 // 'sampled'       — how many subject URIs were sampled (the denominator), or null
 //                   when no resolution measurement has been recorded yet.
-// 'resolved'      — how many of the sampled URIs resolved to an HTML landing page
+// 'resolved'      — how many of the sampled URIs resolved to an HTML page or RDF
 //                   (the numerator); null when no measurement exists.
+// 'htmlLandingPages' — how many of the resolved URIs served an HTML landing page
+//                   (an HTML page that references its own URI). A subset of
+//                   `resolved`; null when no measurement exists. Drives the
+//                   `no-html-landing-pages` advisory (0 of a resolved sample) but
+//                   never the state — resolving to RDF alone is still green.
 // 'onDisallowList' — whether the namespace is on the DKG’s disallow list of known
 //                   non-durable vendor namespaces: it resolves today but is not a
 //                   durable home for the identifiers, so it warns rather than
 //                   passing. False until the DKG emits the marker (see
 //                   dataset-knowledge-graph): the orange tier is dormant until then.
 // 'failures'      — the sampled URIs that did not resolve, each with its typed
-//                   reason. Drives the soft/hard split: when every failure is
-//                   `no-self-reference` the page resolves but does not reference
-//                   its PID (🟠), otherwise at least one page did not resolve
-//                   (🔴). Empty until the DKG ships the per-URI data, so the
-//                   split falls back to the hard red state — matching today.
+//                   reason. All are hard failures (🔴); empty until the DKG ships
+//                   the per-URI data, in which case the count alone drives the red
+//                   state.
 // 'samplingFailed' — whether the DKG recorded a `subject-uris-sampling-failed`
 //                   marker: the namespace was selected and sampling was attempted
 //                   but failed every attempt this run. Distinguishes an errored
@@ -241,6 +253,7 @@ export interface PersistentUris {
   publisher: string | null;
   sampled: number | null;
   resolved: number | null;
+  htmlLandingPages: number | null;
   onDisallowList: boolean;
   failures: PersistentUriFailure[];
   samplingFailed?: boolean;
@@ -302,6 +315,9 @@ export interface CompatibilityCriterion {
   state: CompatibilityState;
   count: number;
   reason?: CompatibilityFailureReason;
+  // A non-blocking advisory shown alongside a `met` (green) row. Only the
+  // persistent criterion sets one (see `PersistentAdvisory`).
+  advisory?: PersistentAdvisory;
 }
 
 export interface CompatibilityInput {
@@ -421,30 +437,31 @@ export function iiifState(manifests: IiifManifests): CompatibilityState {
 }
 
 // Derives the persistent-URI state from the subject-URI resolution measurement.
-// Persistence is judged by resolution, not by the identifier scheme: a self-minted
-// HTTP namespace that resolves to an HTML landing page is just as persistent as an
-// ARK or Handle, so it is `met` (🟢).
+// Persistence is judged by resolution, not by the identifier scheme or by serving
+// an HTML page: a self-minted HTTP namespace that dereferences to RDF or HTML is
+// just as persistent as an ARK or Handle, so it is `met` (🟢).
 //
-// When some sampled URIs did not resolve (`resolved` < `sampled`), the typed
-// per-URI failures split the outcome: if every failure is `no-self-reference`
-// the pages resolve but do not advertise their own PID — a soft `warning` (🟠,
-// 'no-self-reference'); otherwise at least one page did not (properly) resolve,
-// a hard `failed` (🔴, 'unresolved'). With no per-URI reasons yet (old DKG data),
-// the failure cannot be classified as soft, so it falls back to the hard red
-// state — exactly today’s behaviour.
+// When some sampled URIs did not resolve (`resolved` < `sampled`), at least one
+// did not dereference to an HTML page or RDF — a hard `failed` (🔴, 'unresolved').
 //
-// A namespace that fully resolves but is on the DKG’s disallow list of known
-// non-durable vendor namespaces is a `warning` (🟠, 'non-durable'): it works
-// today but is not a durable home for the identifiers. With no ratio, the
-// sampling-failed marker splits the two no-measurement cases: a sample that was
-// attempted and failed this run is a `warning` (🟠, 'sampling-failed') — an error
-// to surface — whereas no marker means the resolution step has not run, or the
-// DKG found no self-minted namespace to sample, so the criterion is neutral
-// pending (⚪): a grey row signalling “this will still be checked”, unlike terms
-// it keeps its place rather than being omitted.
+// A fully-resolving namespace is `met` (🟢), with two refinements: if it is on the
+// DKG’s disallow list of known non-durable vendor namespaces it is a `warning`
+// (🟠, 'non-durable') — it works today but is not a durable home; and if none of
+// the resolved URIs served an HTML landing page (`htmlLandingPages` is 0) the row
+// stays green but carries a non-blocking `no-html-landing-pages` advisory nudging
+// the provider to also offer a human-readable page.
+//
+// With no ratio, the sampling-failed marker splits the two no-measurement cases:
+// a sample that was attempted and failed this run is a `warning` (🟠,
+// 'sampling-failed') — an error to surface — whereas no marker means the
+// resolution step has not run, or the DKG found no self-minted namespace to
+// sample, so the criterion is neutral pending (⚪): a grey row signalling “this
+// will still be checked”, unlike terms it keeps its place rather than being
+// omitted.
 export function persistentUrisState(persistent: PersistentUris): {
   state: CompatibilityState;
   reason?: PersistentFailureReason;
+  advisory?: PersistentAdvisory;
 } {
   if (persistent.sampled === null || persistent.sampled <= 0) {
     return persistent.samplingFailed
@@ -453,17 +470,16 @@ export function persistentUrisState(persistent: PersistentUris): {
   }
   const resolved = persistent.resolved ?? 0;
   if (resolved < persistent.sampled) {
-    const onlyNoSelfReference =
-      persistent.failures.length > 0 &&
-      persistent.failures.every(
-        (failure) => failure.reason === 'no-self-reference',
-      );
-    return onlyNoSelfReference
-      ? { state: 'warning', reason: 'no-self-reference' }
-      : { state: 'failed', reason: 'unresolved' };
+    return { state: 'failed', reason: 'unresolved' };
   }
-  return persistent.onDisallowList
-    ? { state: 'warning', reason: 'non-durable' }
+  if (persistent.onDisallowList) {
+    return { state: 'warning', reason: 'non-durable' };
+  }
+  // Resolves, durable, green. Promote HTML landing pages: when the URIs resolve
+  // but none served one (RDF-only), keep green but advise adding one. A null
+  // count is old data without the measurement — no advisory.
+  return persistent.htmlLandingPages === 0
+    ? { state: 'met', advisory: 'no-html-landing-pages' }
     : { state: 'met' };
 }
 
@@ -524,6 +540,7 @@ export function compatibilityCriteria(
       // sampled) from the prop, not a single count.
       count: input.persistent.sampled ?? 0,
       reason: persistent.reason,
+      advisory: persistent.advisory,
     },
     {
       key: 'linked-data',

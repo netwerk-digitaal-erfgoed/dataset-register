@@ -516,6 +516,7 @@ async function fetchPersistentUris(
     publisher: null,
     sampled: null,
     resolved: null,
+    htmlLandingPages: null,
     onDisallowList: false,
     // The per-URI failures are fetched separately (fetchPersistentUriFailures)
     // and merged in by fetchDatasetDetail; this query does not read them.
@@ -527,7 +528,7 @@ async function fetchPersistentUris(
     PREFIX dct: <http://purl.org/dc/terms/>
     PREFIX dqv: <http://www.w3.org/ns/dqv#>
     PREFIX nde: <https://def.nde.nl/metric#>
-    SELECT ?uriSpace ?scheme ?publisher ?sampled ?resolved ?durable ?samplingFailed WHERE {
+    SELECT ?uriSpace ?scheme ?publisher ?sampled ?resolved ?htmlLandingPages ?durable ?samplingFailed WHERE {
       <${datasetUri}> void:subset ?ns .
       ?ns void:uriSpace ?uriSpace .
       OPTIONAL {
@@ -540,6 +541,12 @@ async function fetchPersistentUris(
         ?ns dqv:hasQualityMeasurement [
           dqv:isMeasurementOf nde:subject-uris-resolved ;
           dqv:value ?resolved
+        ]
+      }
+      OPTIONAL {
+        ?ns dqv:hasQualityMeasurement [
+          dqv:isMeasurementOf nde:subject-uris-html-landing-pages ;
+          dqv:value ?htmlLandingPages
         ]
       }
       OPTIONAL {
@@ -577,6 +584,7 @@ async function fetchPersistentUris(
         publisher?: { value: string };
         sampled?: { value: string };
         resolved?: { value: string };
+        htmlLandingPages?: { value: string };
         durable?: { value: string };
         samplingFailed?: { value: string };
       };
@@ -589,6 +597,12 @@ async function fetchPersistentUris(
           : null,
         resolved: binding.resolved?.value
           ? parseInt(binding.resolved.value, 10)
+          : null,
+        // Subset of `resolved` that served an HTML landing page; null when the
+        // DKG has not emitted the measurement (old data), which suppresses the
+        // no-html-landing-pages advisory rather than firing it on absence.
+        htmlLandingPages: binding.htmlLandingPages?.value
+          ? parseInt(binding.htmlLandingPages.value, 10)
           : null,
         // The DKG emits the durability flag as `false` only for a namespace on
         // its disallow list; absence means unflagged. Dormant until the DKG ships

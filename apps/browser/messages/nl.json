@@ -287,9 +287,9 @@
   "nde_compat_persistent_heading_pending": "Persistente URI’s nog niet gecontroleerd",
   "nde_compat_persistent_heading_sampling_failed": "Persistente URI’s konden niet worden gecontroleerd",
   "nde_compat_state_legend_label": "Wat de kleuren betekenen",
-  "nde_compat_persistent_explanation_persistent": "De persistente URI’s van deze dataset leiden naar een landingspagina.",
+  "nde_compat_persistent_explanation_persistent": "De persistente URI’s van deze dataset leiden naar een webpagina of naar linked data.",
   "nde_compat_persistent_explanation_resolves": "De URI’s werken nu, maar gebruiken een domein dat kan veranderen, bijvoorbeeld dat van een software-leverancier.",
-  "nde_compat_persistent_explanation_unresolved": "Sommige URI’s uit de steekproef leiden niet naar een landingspagina.",
+  "nde_compat_persistent_explanation_unresolved": "Sommige URI’s uit de steekproef leiden niet naar een webpagina of naar linked data.",
   "nde_compat_persistent_explanation_pending": "De URI’s van deze dataset zijn nog niet op persistentie gecontroleerd.",
   "nde_compat_persistent_explanation_sampling_failed": "We hebben geprobeerd de URI’s van deze dataset te bemonsteren, maar de bron kon deze keer niet worden bevraagd, waardoor de persistentie niet kon worden beoordeeld. De controle wordt automatisch opnieuw uitgevoerd bij de volgende analyse.",
   "nde_compat_persistent_count_unresolved": [
@@ -310,28 +310,12 @@
   "nde_compat_persistent_issued_by": "Uitgegeven door {publisher}.",
   "nde_compat_persistent_uses_scheme": "Gebruikt {scheme}-identifiers.",
   "nde_compat_persistent_scheme_issued_by": "{scheme}, uitgegeven door {publisher}.",
-  "nde_compat_persistent_heading_no_self_reference": "Landingspagina’s verwijzen niet naar hun persistente URI",
-  "nde_compat_persistent_explanation_no_self_reference": "De pagina’s uit de steekproef leiden naar een landingspagina, maar vermelden hun persistente URI niet, waardoor die niet vanaf de pagina zelf te vinden is.",
-  "nde_compat_persistent_count_no_self_reference": [
-    {
-      "declarations": [
-        "input count",
-        "input display",
-        "input unreferenced",
-        "local countPlural = count: plural"
-      ],
-      "selectors": ["countPlural"],
-      "match": {
-        "countPlural=one": "{unreferenced} van {display} pagina’s uit de steekproef verwijst niet naar zijn persistente URI.",
-        "countPlural=other": "{unreferenced} van {display} pagina’s uit de steekproef verwijzen niet naar hun persistente URI."
-      }
-    }
-  ],
+  "nde_compat_persistent_advisory_no_html_landing_pages": "De URI’s leiden naar linked data, maar niet naar een leesbare webpagina. Overweeg om ook een HTML-landingspagina aan te bieden.",
   "nde_compat_persistent_reason_no_self_reference": "geen zelfverwijzing",
   "nde_compat_persistent_reason_http_error": "HTTP-fout",
   "nde_compat_persistent_reason_timeout": "time-out",
   "nde_compat_persistent_reason_network_error": "netwerkfout",
-  "nde_compat_persistent_reason_wrong_content_type": "onjuist content-type",
+  "nde_compat_persistent_reason_wrong_content_type": "geen webpagina of linked data",
   "nde_compat_linked_data_heading_conforms": "Biedt linked data volgens het NDE-applicatieprofiel",
   "nde_compat_linked_data_heading_not_conforms": "Biedt linked data",
   "nde_compat_linked_data_heading_pending": "Linked data nog niet beoordeeld",
