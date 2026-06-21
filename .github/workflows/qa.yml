@@ -39,7 +39,7 @@ jobs:
       # docker:smoke runs each freshly built image and asserts it reaches startup,
       # so a runtime-only failure (e.g. a runtime dep missing from the pruned image,
       # surfacing as ERR_MODULE_NOT_FOUND at boot) is caught here rather than in
-      # production — docker:build alone only builds, it never runs the image (#2128).
+      # production – docker:build alone only builds, it never runs the image (#2128).
       - run: npx nx affected -t lint test typecheck check build docker:build docker:smoke
 
       # Only set up Playwright when a project that owns an e2e target is actually
