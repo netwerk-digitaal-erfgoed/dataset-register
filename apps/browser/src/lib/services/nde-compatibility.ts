@@ -436,6 +436,34 @@ export function iiifState(manifests: IiifManifests): CompatibilityState {
   return 'met';
 }
 
+// Reinterprets legacy DKG measurements under the relaxed resolution semantics
+// this UI now consumes. The DKG used to count a subject URI as resolved only when
+// its page also referenced its own URI; pages that resolved to HTML without that
+// self-reference were recorded as `no-self-reference` failures and left out of
+// `resolved`. Those pages now count as resolved, so fold them back into the
+// numerator and drop them from the failure list. Without this, a dataset that is
+// green under the current rules would briefly turn red — and list pages that did
+// resolve under “did not resolve” — until its next DKG re-crawl rewrites the
+// measurement. Idempotent: re-crawled data carries no `no-self-reference`
+// failures, so it is returned unchanged.
+export function normalizePersistentUris(
+  persistent: PersistentUris,
+): PersistentUris {
+  const noSelfReferenceResolved = persistent.failures.filter(
+    (failure) => failure.reason === 'no-self-reference',
+  ).length;
+  if (noSelfReferenceResolved === 0) {
+    return persistent;
+  }
+  return {
+    ...persistent,
+    resolved: (persistent.resolved ?? 0) + noSelfReferenceResolved,
+    failures: persistent.failures.filter(
+      (failure) => failure.reason !== 'no-self-reference',
+    ),
+  };
+}
+
 // Derives the persistent-URI state from the subject-URI resolution measurement.
 // Persistence is judged by resolution, not by the identifier scheme or by serving
 // an HTML page: a self-minted HTTP namespace that dereferences to RDF or HTML is

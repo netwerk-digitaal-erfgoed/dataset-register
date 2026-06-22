@@ -3,6 +3,7 @@ import {
   compatibilityCriteria,
   iiifState,
   linkedDataState,
+  normalizePersistentUris,
   persistentUrisState,
   registrationState,
   schemaApNdeState,
@@ -259,6 +260,70 @@ describe('persistentUrisState', () => {
         failures: [],
       }),
     ).toEqual({ state: 'failed', reason: 'unresolved' });
+  });
+});
+
+describe('normalizePersistentUris', () => {
+  it('folds legacy no-self-reference failures into the resolved count', () => {
+    // Legacy DKG data: two pages resolved to HTML but did not reference their own
+    // URI, so they were excluded from `resolved` and recorded as failures. Under
+    // the current rules they count as resolved, so the namespace fully resolves.
+    const normalized = normalizePersistentUris({
+      uriSpace: 'https://example.org/id/',
+      scheme: null,
+      publisher: null,
+      sampled: 10,
+      resolved: 8,
+      htmlLandingPages: null,
+      onDisallowList: false,
+      failures: [
+        { uri: 'https://example.org/id/1', reason: 'no-self-reference' },
+        { uri: 'https://example.org/id/2', reason: 'no-self-reference' },
+      ],
+    });
+    expect(normalized.resolved).toBe(10);
+    expect(normalized.failures).toEqual([]);
+    // The whole point: such a dataset is green, not red, before its next re-crawl.
+    expect(persistentUrisState(normalized)).toEqual({ state: 'met' });
+  });
+
+  it('keeps hard failures while folding only the no-self-reference ones', () => {
+    const normalized = normalizePersistentUris({
+      uriSpace: 'https://example.org/id/',
+      scheme: null,
+      publisher: null,
+      sampled: 10,
+      resolved: 8,
+      htmlLandingPages: null,
+      onDisallowList: false,
+      failures: [
+        { uri: 'https://example.org/id/1', reason: 'no-self-reference' },
+        { uri: 'https://example.org/id/2', reason: 'network-error' },
+      ],
+    });
+    expect(normalized.resolved).toBe(9);
+    expect(normalized.failures).toEqual([
+      { uri: 'https://example.org/id/2', reason: 'network-error' },
+    ]);
+    // One real failure remains, so the row stays red and lists only that URI.
+    expect(persistentUrisState(normalized)).toEqual({
+      state: 'failed',
+      reason: 'unresolved',
+    });
+  });
+
+  it('returns re-crawled data unchanged (no no-self-reference failures)', () => {
+    const persistent: PersistentUris = {
+      uriSpace: 'https://example.org/id/',
+      scheme: null,
+      publisher: null,
+      sampled: 10,
+      resolved: 8,
+      htmlLandingPages: 8,
+      onDisallowList: false,
+      failures: [{ uri: 'https://example.org/id/1', reason: 'timeout' }],
+    };
+    expect(normalizePersistentUris(persistent)).toBe(persistent);
   });
 });
 

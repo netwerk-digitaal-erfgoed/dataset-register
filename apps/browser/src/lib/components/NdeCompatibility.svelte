@@ -305,9 +305,8 @@
               display: sampled.toLocaleString(getLocale()),
             });
           }
-          case 'warning':
-            // The non-durable and sampling-failed warnings carry no count line.
-            return null;
+          // The non-durable and sampling-failed warnings carry no count line, so
+          // they fall through to the `default` below.
           case 'met': {
             // Surface the recognised PID scheme (ARK/Handle) as a bonus, and
             // name the issuing organisation when known (ARK only). The scheme
@@ -668,7 +667,7 @@
                    resolve (so the criterion is met), but to RDF only — no HTML
                    landing page was served. Surfaced as a gentle nudge, distinct
                    from the warning/error tiers, alongside any PID-scheme bonus. -->
-              {#if criterion.advisory === 'no-html-landing-pages'}
+              {#if criterion.key === 'persistent' && criterion.advisory === 'no-html-landing-pages'}
                 <p
                   class="mt-1 flex items-start gap-1 text-sm text-gray-500 dark:text-gray-400"
                 >

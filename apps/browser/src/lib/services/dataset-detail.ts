@@ -19,6 +19,7 @@ import {
   SUBJECT_RESOLUTION_FAILURE_BASE_URI,
   type IiifManifests,
   type LinkedData,
+  normalizePersistentUris,
   type PersistentUriFailure,
   type PersistentUriFailureReason,
   type PersistentUris,
@@ -1266,12 +1267,15 @@ export async function fetchDatasetDetail(
   }
 
   // Merge the separately-fetched per-URI failures into the persistent-URI
-  // figures, so the criterion can split a soft “resolves but no PID reference”
-  // from a hard “did not resolve” and list the failing URIs.
-  const persistentUrisWithFailures: PersistentUris = {
+  // figures, then normalize legacy `no-self-reference` failures into the resolved
+  // count (see normalizePersistentUris): under the current rules a page that
+  // resolves to HTML without referencing its own URI is no longer a failure, so
+  // the state, the count line and the failing-URI list all stay consistent until
+  // the next DKG re-crawl.
+  const persistentUrisWithFailures: PersistentUris = normalizePersistentUris({
     ...persistentUris,
     failures: persistentUriFailures,
-  };
+  });
 
   // Merge classPartition into summary
   const summaryWithClassPartition = summary
