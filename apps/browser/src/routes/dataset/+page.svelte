@@ -252,6 +252,43 @@
         (summary.vocabulary && summary.vocabulary.length > 0)),
   );
 
+  // RDF distributions (downloads or SPARQL endpoints) the Knowledge Graph would
+  // summarise. A dataset offering only non-RDF downloads (CSV, PDF, …) is not
+  // expected to have a Linked Data summary, so the “why is it missing” notice
+  // below is never shown for it.
+  const rdfDistributions = $derived(
+    distributions.filter(
+      (distribution) =>
+        isRdfDistribution(distribution) || isSparqlDistribution(distribution),
+    ),
+  );
+
+  // When there is no summary, explain why — but only when a concrete cause is
+  // known: an RDF distribution that is reachable-but-invalid, or unreachable.
+  // A dataset with no RDF at all, or one whose RDF is still reachable/unprobed
+  // (merely pending or not yet processed), shows nothing rather than a false
+  // failure. Prefers an invalid-RDF cause over a reachability one, as it is the
+  // more specific explanation.
+  const summaryUnavailable = $derived.by(() => {
+    if (summary && hasVoidStats) return undefined;
+    if (rdfDistributions.length === 0) return undefined;
+    const failed =
+      rdfDistributions.find((distribution) => {
+        const usability = usabilityForDistribution(distribution);
+        return usability.state === 'unusable' && usability.cause === 'invalid';
+      }) ??
+      rdfDistributions.find(
+        (distribution) =>
+          usabilityForDistribution(distribution).state === 'unusable',
+      );
+    if (!failed) return undefined;
+    const invalid = usabilityForDistribution(failed).cause === 'invalid';
+    const reason = invalid
+      ? validityReason(validityByUrl.get(failed.accessURL) ?? [])
+      : probeReason(healthByUrl.get(failed.accessURL)?.lastOutcome ?? null);
+    return { invalid, reason };
+  });
+
   // Get registration status (gone, invalid, or null)
   const registrationStatus = $derived(
     getRegistrationStatus(dataset.subjectOf?.additionalType),
@@ -1811,6 +1848,28 @@
           </ul>
         </div>
       {/if}
+    </div>
+  {:else if summaryUnavailable}
+    <!-- No summary, but the dataset offers RDF that failed: explain why, so the
+         absence is not silent (the per-distribution detail is in the list below). -->
+    <div class="mb-8">
+      <h2
+        id="linked-data-summary"
+        class="mb-4 flex scroll-mt-20 items-center gap-2 text-xl font-semibold text-gray-900 lg:scroll-mt-24 dark:text-white"
+      >
+        {m.detail_linked_data_summary()}
+      </h2>
+      <Alert border color="yellow" class="mb-6">
+        {#snippet icon()}
+          <ExclamationCircleOutline class="h-5 w-5" />
+        {/snippet}
+        <p class="font-semibold">
+          {summaryUnavailable.invalid
+            ? m.detail_summary_unavailable_invalid()
+            : m.detail_summary_unavailable_unreachable()}
+        </p>
+        <p>{summaryUnavailable.reason}</p>
+      </Alert>
     </div>
   {/if}
 

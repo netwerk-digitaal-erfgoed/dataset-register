@@ -201,6 +201,8 @@
   "detail_about": "Onderwerp",
   "detail_linked_data_summary_description": "Statistische informatie over deze dataset opgehaald uit de Dataset Knowledge Graph, inclusief het aantal feiten, entiteiten, eigenschappen en typeverdeling.",
   "detail_summary_updated": "{time} bijgewerkt",
+  "detail_summary_unavailable_invalid": "Er kon geen Linked Data-samenvatting worden gegenereerd: de data van deze dataset is geen geldige RDF.",
+  "detail_summary_unavailable_unreachable": "Er kon geen Linked Data-samenvatting worden gegenereerd: de data van deze dataset kon niet worden opgehaald.",
   "detail_registered_url": "Geregistreerde URL",
   "detail_registered_url_description": "URL waar de dataset wordt beschreven.",
   "detail_validate": "Controleren",
