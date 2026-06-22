@@ -287,9 +287,9 @@
   "nde_compat_persistent_heading_pending": "Persistent URIs not yet checked",
   "nde_compat_persistent_heading_sampling_failed": "Persistent URIs could not be checked",
   "nde_compat_state_legend_label": "What the colours mean",
-  "nde_compat_persistent_explanation_persistent": "This dataset’s URIs resolve to a landing page.",
+  "nde_compat_persistent_explanation_persistent": "This dataset’s URIs resolve to a web page or to linked data.",
   "nde_compat_persistent_explanation_resolves": "The URIs resolve, but on a domain that may change, such as a software vendor’s.",
-  "nde_compat_persistent_explanation_unresolved": "Some of this dataset’s sampled URIs do not resolve to a landing page.",
+  "nde_compat_persistent_explanation_unresolved": "Some of this dataset’s sampled URIs do not resolve to a web page or to linked data.",
   "nde_compat_persistent_explanation_pending": "This dataset’s URIs have not been checked for persistence yet.",
   "nde_compat_persistent_explanation_sampling_failed": "We tried to sample this dataset’s URIs, but its source could not be queried this time, so persistence could not be assessed. The check runs again automatically on the next analysis.",
   "nde_compat_persistent_count_unresolved": [
@@ -310,28 +310,12 @@
   "nde_compat_persistent_issued_by": "Issued by {publisher}.",
   "nde_compat_persistent_uses_scheme": "Uses {scheme} identifiers.",
   "nde_compat_persistent_scheme_issued_by": "{scheme}, issued by {publisher}.",
-  "nde_compat_persistent_heading_no_self_reference": "Landing pages do not reference their persistent URI",
-  "nde_compat_persistent_explanation_no_self_reference": "The sampled pages resolve to a landing page, but do not mention their persistent URI, so it cannot be found on the page itself.",
-  "nde_compat_persistent_count_no_self_reference": [
-    {
-      "declarations": [
-        "input count",
-        "input display",
-        "input unreferenced",
-        "local countPlural = count: plural"
-      ],
-      "selectors": ["countPlural"],
-      "match": {
-        "countPlural=one": "{unreferenced} of {display} sampled pages does not reference its persistent URI.",
-        "countPlural=other": "{unreferenced} of {display} sampled pages do not reference their persistent URI."
-      }
-    }
-  ],
+  "nde_compat_persistent_advisory_no_html_landing_pages": "The URIs resolve to linked data but not to a human-readable web page. Consider also serving an HTML landing page.",
   "nde_compat_persistent_reason_no_self_reference": "no self-reference",
   "nde_compat_persistent_reason_http_error": "HTTP error",
   "nde_compat_persistent_reason_timeout": "timeout",
   "nde_compat_persistent_reason_network_error": "network error",
-  "nde_compat_persistent_reason_wrong_content_type": "wrong content type",
+  "nde_compat_persistent_reason_wrong_content_type": "not a web page or linked data",
   "nde_compat_linked_data_heading_conforms": "Provides linked data conforming to the NDE Application Profile",
   "nde_compat_linked_data_heading_not_conforms": "Provides linked data",
   "nde_compat_linked_data_heading_pending": "Linked data not yet assessed",

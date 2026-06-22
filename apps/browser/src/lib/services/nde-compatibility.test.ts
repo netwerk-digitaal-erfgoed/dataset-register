@@ -3,6 +3,7 @@ import {
   compatibilityCriteria,
   iiifState,
   linkedDataState,
+  normalizePersistentUris,
   persistentUrisState,
   registrationState,
   schemaApNdeState,
@@ -30,6 +31,7 @@ const pendingPersistent: PersistentUris = {
   publisher: null,
   sampled: null,
   resolved: null,
+  htmlLandingPages: null,
   onDisallowList: false,
   failures: [],
 };
@@ -60,7 +62,7 @@ describe('iiifState', () => {
 });
 
 describe('persistentUrisState', () => {
-  it('is met when all sampled URIs resolve, for a recognised PID scheme', () => {
+  it('is met when all sampled URIs resolve to HTML landing pages, for a recognised PID scheme', () => {
     expect(
       persistentUrisState({
         uriSpace: 'https://n2t.net/ark:/22921/',
@@ -68,6 +70,7 @@ describe('persistentUrisState', () => {
         publisher: 'Gemeentemuseum Het Hannemahuis',
         sampled: 10,
         resolved: 10,
+        htmlLandingPages: 10,
         onDisallowList: false,
         failures: [],
       }),
@@ -82,6 +85,41 @@ describe('persistentUrisState', () => {
         publisher: null,
         sampled: 10,
         resolved: 10,
+        htmlLandingPages: 10,
+        onDisallowList: false,
+        failures: [],
+      }),
+    ).toEqual({ state: 'met' });
+  });
+
+  it('is met with a no-html-landing-pages advisory when the URIs resolve to RDF only', () => {
+    // Every sampled URI dereferences (to RDF, not an HTML page): green, but a
+    // soft advisory nudges the provider to also offer a landing page.
+    expect(
+      persistentUrisState({
+        uriSpace: 'http://data.beeldengeluid.nl/id/program/',
+        scheme: null,
+        publisher: null,
+        sampled: 10,
+        resolved: 10,
+        htmlLandingPages: 0,
+        onDisallowList: false,
+        failures: [],
+      }),
+    ).toEqual({ state: 'met', advisory: 'no-html-landing-pages' });
+  });
+
+  it('does not advise when the landing-page count is unknown (old data)', () => {
+    // No html-landing-pages measurement yet: stay green without the advisory
+    // rather than firing it on a missing count.
+    expect(
+      persistentUrisState({
+        uriSpace: 'http://data.beeldengeluid.nl/id/program/',
+        scheme: null,
+        publisher: null,
+        sampled: 10,
+        resolved: 10,
+        htmlLandingPages: null,
         onDisallowList: false,
         failures: [],
       }),
@@ -96,6 +134,7 @@ describe('persistentUrisState', () => {
         publisher: null,
         sampled: 10,
         resolved: 10,
+        htmlLandingPages: 10,
         onDisallowList: true,
         failures: [],
       }),
@@ -110,6 +149,7 @@ describe('persistentUrisState', () => {
         publisher: 'Stichting Erfgoedpark Batavialand',
         sampled: 10,
         resolved: 0,
+        htmlLandingPages: 0,
         onDisallowList: false,
         failures: [
           { uri: 'https://n2t.net/ark:/53016/1', reason: 'http-error' },
@@ -123,49 +163,16 @@ describe('persistentUrisState', () => {
         publisher: 'Hunebedcentrum',
         sampled: 10,
         resolved: 2,
-        onDisallowList: false,
-        failures: [{ uri: 'https://n2t.net/ark:/32154/1', reason: 'timeout' }],
-      }),
-    ).toEqual({ state: 'failed', reason: 'unresolved' });
-  });
-
-  it('is a warning (no-self-reference) when every failure is a page that resolves but does not reference its PID', () => {
-    expect(
-      persistentUrisState({
-        uriSpace: 'https://example.org/id/',
-        scheme: null,
-        publisher: null,
-        sampled: 10,
-        resolved: 8,
+        htmlLandingPages: 2,
         onDisallowList: false,
         failures: [
-          { uri: 'https://example.org/id/1', reason: 'no-self-reference' },
-          { uri: 'https://example.org/id/2', reason: 'no-self-reference' },
-        ],
-      }),
-    ).toEqual({ state: 'warning', reason: 'no-self-reference' });
-  });
-
-  it('is failed/unresolved when failures mix no-self-reference with a hard failure', () => {
-    expect(
-      persistentUrisState({
-        uriSpace: 'https://example.org/id/',
-        scheme: null,
-        publisher: null,
-        sampled: 10,
-        resolved: 8,
-        onDisallowList: false,
-        failures: [
-          { uri: 'https://example.org/id/1', reason: 'no-self-reference' },
-          { uri: 'https://example.org/id/2', reason: 'network-error' },
+          { uri: 'https://n2t.net/ark:/32154/1', reason: 'wrong-content-type' },
         ],
       }),
     ).toEqual({ state: 'failed', reason: 'unresolved' });
   });
 
-  it('falls back to failed/unresolved when resolution fell short but no per-URI reasons are available yet', () => {
-    // Old DKG data: resolved < sampled with no failure list, so the soft
-    // no-self-reference state cannot be inferred — stays the hard red state.
+  it('is failed/unresolved whenever resolution fell short, regardless of per-URI reasons', () => {
     expect(
       persistentUrisState({
         uriSpace: 'https://example.org/id/',
@@ -173,6 +180,7 @@ describe('persistentUrisState', () => {
         publisher: null,
         sampled: 10,
         resolved: 2,
+        htmlLandingPages: 0,
         onDisallowList: false,
         failures: [],
       }),
@@ -187,6 +195,7 @@ describe('persistentUrisState', () => {
         publisher: null,
         sampled: 10,
         resolved: 3,
+        htmlLandingPages: 0,
         onDisallowList: true,
         failures: [
           { uri: 'https://vendor.example/cms/1', reason: 'http-error' },
@@ -204,6 +213,7 @@ describe('persistentUrisState', () => {
         publisher: null,
         sampled: 0,
         resolved: 0,
+        htmlLandingPages: null,
         onDisallowList: false,
         failures: [],
       }),
@@ -229,6 +239,7 @@ describe('persistentUrisState', () => {
         publisher: null,
         sampled: 10,
         resolved: 10,
+        htmlLandingPages: 10,
         onDisallowList: false,
         failures: [],
         samplingFailed: true,
@@ -244,10 +255,75 @@ describe('persistentUrisState', () => {
         publisher: null,
         sampled: 10,
         resolved: null,
+        htmlLandingPages: null,
         onDisallowList: false,
         failures: [],
       }),
     ).toEqual({ state: 'failed', reason: 'unresolved' });
+  });
+});
+
+describe('normalizePersistentUris', () => {
+  it('folds legacy no-self-reference failures into the resolved count', () => {
+    // Legacy DKG data: two pages resolved to HTML but did not reference their own
+    // URI, so they were excluded from `resolved` and recorded as failures. Under
+    // the current rules they count as resolved, so the namespace fully resolves.
+    const normalized = normalizePersistentUris({
+      uriSpace: 'https://example.org/id/',
+      scheme: null,
+      publisher: null,
+      sampled: 10,
+      resolved: 8,
+      htmlLandingPages: null,
+      onDisallowList: false,
+      failures: [
+        { uri: 'https://example.org/id/1', reason: 'no-self-reference' },
+        { uri: 'https://example.org/id/2', reason: 'no-self-reference' },
+      ],
+    });
+    expect(normalized.resolved).toBe(10);
+    expect(normalized.failures).toEqual([]);
+    // The whole point: such a dataset is green, not red, before its next re-crawl.
+    expect(persistentUrisState(normalized)).toEqual({ state: 'met' });
+  });
+
+  it('keeps hard failures while folding only the no-self-reference ones', () => {
+    const normalized = normalizePersistentUris({
+      uriSpace: 'https://example.org/id/',
+      scheme: null,
+      publisher: null,
+      sampled: 10,
+      resolved: 8,
+      htmlLandingPages: null,
+      onDisallowList: false,
+      failures: [
+        { uri: 'https://example.org/id/1', reason: 'no-self-reference' },
+        { uri: 'https://example.org/id/2', reason: 'network-error' },
+      ],
+    });
+    expect(normalized.resolved).toBe(9);
+    expect(normalized.failures).toEqual([
+      { uri: 'https://example.org/id/2', reason: 'network-error' },
+    ]);
+    // One real failure remains, so the row stays red and lists only that URI.
+    expect(persistentUrisState(normalized)).toEqual({
+      state: 'failed',
+      reason: 'unresolved',
+    });
+  });
+
+  it('returns re-crawled data unchanged (no no-self-reference failures)', () => {
+    const persistent: PersistentUris = {
+      uriSpace: 'https://example.org/id/',
+      scheme: null,
+      publisher: null,
+      sampled: 10,
+      resolved: 8,
+      htmlLandingPages: 8,
+      onDisallowList: false,
+      failures: [{ uri: 'https://example.org/id/1', reason: 'timeout' }],
+    };
+    expect(normalizePersistentUris(persistent)).toBe(persistent);
   });
 });
 
@@ -538,6 +614,7 @@ describe('compatibilityCriteria', () => {
         publisher: 'Gemeentemuseum Het Hannemahuis',
         sampled: 10,
         resolved: 10,
+        htmlLandingPages: 10,
         onDisallowList: false,
         failures: [],
       },
@@ -549,7 +626,7 @@ describe('compatibilityCriteria', () => {
     expect(persistent.state).toBe('met');
   });
 
-  it('carries the persistent no-self-reference warning reason and sample count', () => {
+  it('carries the persistent no-html-landing-pages advisory and sample count on a green row', () => {
     const [, persistent] = compatibilityCriteria({
       isAnalyzed: true,
       registration: null,
@@ -558,20 +635,18 @@ describe('compatibilityCriteria', () => {
         scheme: null,
         publisher: null,
         sampled: 10,
-        resolved: 8,
+        resolved: 10,
+        htmlLandingPages: 0,
         onDisallowList: false,
-        failures: [
-          { uri: 'https://example.org/id/1', reason: 'no-self-reference' },
-          { uri: 'https://example.org/id/2', reason: 'no-self-reference' },
-        ],
+        failures: [],
       },
       linkedData: noLinkedData,
       terms: null,
       iiif: { declared: 0, sampled: null, validated: null },
     });
     expect(persistent.key).toBe('persistent');
-    expect(persistent.state).toBe('warning');
-    expect(persistent.reason).toBe('no-self-reference');
+    expect(persistent.state).toBe('met');
+    expect(persistent.advisory).toBe('no-html-landing-pages');
     expect(persistent.count).toBe(10);
   });
 
@@ -714,6 +789,7 @@ describe('compatibilityCriteria', () => {
           publisher: 'Gemeentemuseum Het Hannemahuis',
           sampled: 10,
           resolved: 10,
+          htmlLandingPages: 10,
           onDisallowList: false,
           failures: [],
         },

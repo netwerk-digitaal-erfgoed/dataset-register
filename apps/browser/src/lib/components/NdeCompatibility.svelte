@@ -84,12 +84,9 @@
           case 'met':
             return m.nde_compat_persistent_heading_persistent();
           case 'warning':
-            // Three orange reasons: pages that resolve but do not reference their
-            // PID, a sample that errored, versus a namespace that resolves but is
-            // non-durable.
+            // Two orange reasons: a sample that errored, versus a namespace that
+            // resolves but is non-durable.
             switch (criterion.reason) {
-              case 'no-self-reference':
-                return m.nde_compat_persistent_heading_no_self_reference();
               case 'sampling-failed':
                 return m.nde_compat_persistent_heading_sampling_failed();
               default:
@@ -153,8 +150,6 @@
             return m.nde_compat_persistent_explanation_persistent();
           case 'warning':
             switch (criterion.reason) {
-              case 'no-self-reference':
-                return m.nde_compat_persistent_explanation_no_self_reference();
               case 'sampling-failed':
                 return m.nde_compat_persistent_explanation_sampling_failed();
               default:
@@ -257,7 +252,6 @@
         return [
           entry('met'),
           entry('warning', 'non-durable'),
-          entry('warning', 'no-self-reference'),
           // Errored sampling is a transient condition, so list it only while the
           // criterion is actually in it, like the neutral pending tier below.
           ...(criterion.reason === 'sampling-failed'
@@ -311,21 +305,8 @@
               display: sampled.toLocaleString(getLocale()),
             });
           }
-          case 'warning': {
-            // The non-durable warning carries no count line; the no-self-reference
-            // warning reports how many sampled pages resolve but do not reference
-            // their PID, mirroring the failing-URI list below.
-            if (criterion.reason !== 'no-self-reference') {
-              return null;
-            }
-            const sampled = persistentUris.sampled ?? 0;
-            const unreferenced = persistentUris.failures.length;
-            return m.nde_compat_persistent_count_no_self_reference({
-              count: unreferenced,
-              unreferenced: unreferenced.toLocaleString(getLocale()),
-              display: sampled.toLocaleString(getLocale()),
-            });
-          }
+          // The non-durable and sampling-failed warnings carry no count line, so
+          // they fall through to the `default` below.
           case 'met': {
             // Surface the recognised PID scheme (ARK/Handle) as a bonus, and
             // name the issuing organisation when known (ARK only). The scheme
@@ -616,16 +597,15 @@
                 {/if}
               </p>
               {#if detailText}
-                <!-- For the persistent criterion’s failing states (the red “did
-                     not resolve” and orange “does not reference its PID” rows),
-                     the count sentence doubles as the summary of a fold-out that
+                <!-- For the persistent criterion’s red “did not resolve” row, the
+                     count sentence doubles as the summary of a fold-out that
                      reveals exactly which sampled URIs failed, each with its
                      reason. This keeps the row compact until a provider wants the
-                     detail. Gated on the failure reasons so the
+                     detail. Gated on the failure reason so the
                      independently-fetched failures only surface alongside the
                      matching figures, never under a green/neutral row. The reason
                      is text, not colour, for accessibility. -->
-                {#if criterion.key === 'persistent' && (criterion.reason === 'unresolved' || criterion.reason === 'no-self-reference') && persistentUris.failures.length > 0}
+                {#if criterion.key === 'persistent' && criterion.reason === 'unresolved' && persistentUris.failures.length > 0}
                   <details class="group mt-1 text-sm">
                     <summary
                       class="flex cursor-pointer list-none items-center gap-1 font-medium text-gray-700 [&::-webkit-details-marker]:hidden dark:text-gray-300"
@@ -682,6 +662,23 @@
                     {/if}
                   </p>
                 {/if}
+              {/if}
+              <!-- A non-blocking advisory on the green persistent row: the URIs
+                   resolve (so the criterion is met), but to RDF only — no HTML
+                   landing page was served. Surfaced as a gentle nudge, distinct
+                   from the warning/error tiers, alongside any PID-scheme bonus. -->
+              {#if criterion.key === 'persistent' && criterion.advisory === 'no-html-landing-pages'}
+                <p
+                  class="mt-1 flex items-start gap-1 text-sm text-gray-500 dark:text-gray-400"
+                >
+                  <InfoCircleSolid
+                    class="mt-0.5 h-3.5 w-3.5 flex-shrink-0"
+                    aria-hidden="true"
+                  />
+                  <span
+                    >{m.nde_compat_persistent_advisory_no_html_landing_pages()}</span
+                  >
+                </p>
               {/if}
             </div>
           </li>
