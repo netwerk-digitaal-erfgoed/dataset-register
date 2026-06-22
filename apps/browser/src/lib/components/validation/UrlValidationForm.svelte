@@ -86,19 +86,18 @@
   let fetchController: AbortController | null = null;
   let innerGoToLine = $state<((line: number) => void) | undefined>(undefined);
 
-  // Acknowledge what was actually fetched: a single dataset description, several,
-  // or a whole data catalog. Falls back to the generic title when the source
-  // could not be parsed or held no datasets.
+  // Acknowledge what was actually fetched: a single dataset description or
+  // several (presented as a data catalog). Falls back to the generic title when
+  // the source could not be parsed or held no datasets.
   const sourceTitle = $derived.by(() => {
     const summary = descriptionSummary;
-    if (!summary) return m.validate_url_source_title();
-    if (summary.isCatalog) {
-      return m.validate_url_source_title_catalog({
-        count: summary.datasetCount,
-      });
+    if (!summary || summary.datasetCount === 0) {
+      return m.validate_url_source_title();
     }
-    if (summary.datasetCount === 0) return m.validate_url_source_title();
-    return m.validate_url_source_title_dataset({ count: summary.datasetCount });
+    if (summary.datasetCount === 1) {
+      return m.validate_url_source_title_dataset({ count: 1 });
+    }
+    return m.validate_url_source_title_catalog({ count: summary.datasetCount });
   });
 
   // Expose a wrapped goToLine: auto-open the accordion and wait for the
