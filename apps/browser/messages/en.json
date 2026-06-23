@@ -136,6 +136,8 @@
   "detail_probe_unavailable_generic": "This distribution is currently unavailable.",
   "detail_download_none_available": "No working download available",
   "detail_download_none_available_tooltip": "None of this dataset’s downloads currently return data, according to the register’s latest check.",
+  "detail_download_not_usable": "Not usable",
+  "detail_download_not_usable_tooltip": "This distribution is not usable: its content is not valid RDF.",
   "detail_media_type": "Media Type",
   "detail_access_url": "Access URL",
   "detail_last_updated": "Last Updated",

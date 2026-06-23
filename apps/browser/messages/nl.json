@@ -136,6 +136,8 @@
   "detail_probe_unavailable_generic": "Deze distributie is op dit moment niet beschikbaar.",
   "detail_download_none_available": "Geen werkende download beschikbaar",
   "detail_download_none_available_tooltip": "Geen van de downloads van deze dataset geeft op dit moment gegevens terug, volgens de meest recente controle van het register.",
+  "detail_download_not_usable": "Niet bruikbaar",
+  "detail_download_not_usable_tooltip": "Deze distributie is niet bruikbaar: de inhoud is geen geldige RDF.",
   "detail_media_type": "Mediatype",
   "detail_access_url": "Toegangs-URL",
   "detail_last_updated": "Laatst bijgewerkt",

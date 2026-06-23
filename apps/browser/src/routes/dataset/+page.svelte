@@ -210,6 +210,16 @@
     ),
   );
 
+  // True when the only download the button could point at is reachable but serves
+  // invalid RDF. selectPreferredDistribution falls back to such a distribution
+  // only when no valid one exists, so the primary action surfaces a "not usable"
+  // state instead of offering bytes that cannot be parsed. The dropdown still
+  // lists every distribution, so the invalid bytes stay reachable for inspection.
+  const preferredDownloadUnusable = $derived(
+    preferredDownload !== undefined &&
+      invalidUrls.has(preferredDownload.accessURL),
+  );
+
   // Likewise for the Query action: point it at the first reachable SPARQL
   // endpoint; undefined when every endpoint is unavailable, which greys out the
   // primary action. The dropdown still lists each endpoint URL so an unavailable
@@ -1493,7 +1503,7 @@
         <!-- Download dataset split button -->
         {#if downloadDistributions.length > 0}
           <div class="inline-flex rounded-lg shadow-sm" role="group">
-            {#if preferredDownload}
+            {#if preferredDownload && !preferredDownloadUnusable}
               <a
                 href={preferredDownload.accessURL}
                 target="_blank"
@@ -1504,6 +1514,18 @@
                 {m.detail_download_dataset()}
                 <span class="sr-only"> ({m.opens_in_new_tab()})</span>
               </a>
+            {:else if preferredDownloadUnusable}
+              <span
+                id="download-not-usable"
+                class={splitBtnMainDisabledClass}
+                aria-disabled="true"
+              >
+                <DownloadOutline class="me-2 h-4 w-4" />
+                {m.detail_download_not_usable()}
+              </span>
+              <Tooltip triggeredBy="#download-not-usable"
+                >{m.detail_download_not_usable_tooltip()}</Tooltip
+              >
             {:else}
               <span
                 id="download-none-available"
