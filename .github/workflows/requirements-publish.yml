@@ -20,7 +20,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v6
         with:
@@ -55,7 +55,7 @@ jobs:
           owner: netwerk-digitaal-erfgoed
           repositories: netwerk-digitaal-erfgoed.github.io
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           repository: netwerk-digitaal-erfgoed/netwerk-digitaal-erfgoed.github.io
           token: ${{ steps.generate-token.outputs.token }}
