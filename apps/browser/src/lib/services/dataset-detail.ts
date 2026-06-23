@@ -906,16 +906,33 @@ interface ValidityBinding {
   message?: { value: string };
 }
 
+// The Dataset Knowledge Graph writes RDF-validity verdicts to one named graph per
+// dataset, keyed by the dataset IRI, and stores no dcat:distribution metadata
+// alongside them. This mirrors dataset-knowledge-graph graphIri.ts:
+// base + encodeURIComponent(datasetIri). Kept here so the deep validity query can
+// scope to a dataset without a dcat join the DKG cannot satisfy.
+const DKG_DISTRIBUTION_VALIDITY_GRAPH_BASE =
+  'https://data.netwerkdigitaalerfgoed.nl/dkg/distribution-validity/';
+
+function deepValidityGraphIri(datasetUri: string): string {
+  return DKG_DISTRIBUTION_VALIDITY_GRAPH_BASE + encodeURIComponent(datasetUri);
+}
+
 async function fetchValidityVerdicts(
   datasetUri: string,
   endpoint: string,
   depth: ValidityVerdict['depth'],
 ): Promise<Map<string, ValidityVerdict[]>> {
-  // The register (shallow) stores datasets and validity measurements in named
-  // graphs, so the query must name them — exactly as fetchDistributionHealth
-  // does. The Knowledge Graph (deep) serves the default graph, so its query is
-  // unscoped, matching the other DKG queries in this file. Using GRAPH blocks on
-  // the register endpoint is what makes the shallow rail resolve at all.
+  // The register (shallow) stores the dataset description and its validity
+  // measurements in named graphs, so the query names them and joins through
+  // dcat:distribution / dcat:accessURL, exactly as fetchDistributionHealth does.
+  //
+  // The Knowledge Graph (deep) is different: it writes the validity verdicts for
+  // each dataset to a per-dataset named graph and carries no dcat:distribution
+  // metadata, so that same dcat join matches zero rows there. The deep query
+  // instead scopes to the per-dataset graph and reads the distribution URL
+  // directly from dqv:computedOn (which equals the access URL). See
+  // deepValidityGraphIri.
   const datasetPattern = `
       <${datasetUri}> dcat:distribution ?distribution .
       ?distribution dcat:accessURL ?accessURL .`;
@@ -936,7 +953,8 @@ async function fetchValidityVerdicts(
       }
       GRAPH ?validityGraph {${measurementPattern}
       }`
-      : `${datasetPattern}${measurementPattern}`;
+      : `GRAPH <${deepValidityGraphIri(datasetUri)}> {${measurementPattern}
+      }`;
   const query = `
     PREFIX dcat: <http://www.w3.org/ns/dcat#>
     PREFIX dqv: <http://www.w3.org/ns/dqv#>
