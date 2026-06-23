@@ -78,12 +78,22 @@ export const SUBJECT_NAMESPACE_DURABLE_METRIC =
 // discriminator for the persistent criterion.
 export const PID_SCHEME_BASE_URI = 'https://def.nde.nl/pid-scheme#';
 
-// Namespace of the typed subject-resolution failure reasons the Knowledge Graph
-// records per failed sample URI (e.g.
+// Namespace of the typed subject-resolution failure reasons the legacy Knowledge
+// Graph records per failed sample URI (e.g.
 // `https://def.nde.nl/subject-resolution-failure#no-self-reference`). The local
 // name maps to a `PersistentUriFailureReason`.
 export const SUBJECT_RESOLUTION_FAILURE_BASE_URI =
   'https://def.nde.nl/subject-resolution-failure#';
+
+// Namespace of the unified subject-resolution *outcome* concepts the current
+// Knowledge Graph records per sampled URI (e.g.
+// `https://def.nde.nl/subject-resolution-outcome#http-error`). It supersedes the
+// failures-only scheme above: every sampled URI now carries an outcome, the
+// successes (`resolved`, `html-landing-page`) alongside the definitive failures
+// (`http-error`, `wrong-content-type`). Both schemes are read so the panel works
+// across the breaking change while the live DKG is re-crawled.
+export const SUBJECT_RESOLUTION_OUTCOME_BASE_URI =
+  'https://def.nde.nl/subject-resolution-outcome#';
 
 // The registration criterion leads — every registered dataset has it, so it
 // anchors the section regardless of analysis. Persistent identifiers follow, then
@@ -208,6 +218,45 @@ export type PersistentUriFailureReason =
 export interface PersistentUriFailure {
   uri: string;
   reason: PersistentUriFailureReason;
+}
+
+// The failure local names shared by both the legacy `subject-resolution-failure#`
+// scheme and the current `subject-resolution-outcome#` scheme. The outcome scheme
+// also carries success concepts (`resolved`, `html-landing-page`), which are
+// deliberately absent here so they never read as failures.
+const PERSISTENT_URI_FAILURE_REASONS: ReadonlySet<PersistentUriFailureReason> =
+  new Set([
+    'http-error',
+    'timeout',
+    'network-error',
+    'wrong-content-type',
+    'no-self-reference',
+  ]);
+
+// Maps a per-URI reason/outcome concept IRI — from either the legacy
+// `subject-resolution-failure#` scheme or the current `subject-resolution-outcome#`
+// scheme — to its `PersistentUriFailureReason`, or `null` for a success outcome
+// (`resolved`/`html-landing-page`), an unrecognised local name, or a missing IRI.
+// Reading both schemes keeps the persistent-URI panel working across the DKG’s
+// breaking switch to unified outcomes while the live data is re-crawled. A `null`
+// is skipped by the caller, so an unknown concept never surfaces as a blank row.
+export function parsePersistentUriFailureReason(
+  reasonIri: string | undefined,
+): PersistentUriFailureReason | null {
+  if (reasonIri === undefined) return null;
+  for (const base of [
+    SUBJECT_RESOLUTION_FAILURE_BASE_URI,
+    SUBJECT_RESOLUTION_OUTCOME_BASE_URI,
+  ]) {
+    if (!reasonIri.startsWith(base)) continue;
+    const localName = reasonIri.slice(base.length);
+    return PERSISTENT_URI_FAILURE_REASONS.has(
+      localName as PersistentUriFailureReason,
+    )
+      ? (localName as PersistentUriFailureReason)
+      : null;
+  }
+  return null;
 }
 
 // Persistent-URI figures from the Knowledge Graph for the dataset’s most common

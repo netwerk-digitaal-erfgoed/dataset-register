@@ -4,6 +4,7 @@ import {
   iiifState,
   linkedDataState,
   normalizePersistentUris,
+  parsePersistentUriFailureReason,
   persistentUrisState,
   registrationState,
   schemaApNdeState,
@@ -324,6 +325,47 @@ describe('normalizePersistentUris', () => {
       failures: [{ uri: 'https://example.org/id/1', reason: 'timeout' }],
     };
     expect(normalizePersistentUris(persistent)).toBe(persistent);
+  });
+});
+
+describe('parsePersistentUriFailureReason', () => {
+  const FAILURE = 'https://def.nde.nl/subject-resolution-failure#';
+  const OUTCOME = 'https://def.nde.nl/subject-resolution-outcome#';
+
+  it('maps a legacy subject-resolution-failure# reason', () => {
+    expect(parsePersistentUriFailureReason(`${FAILURE}http-error`)).toBe(
+      'http-error',
+    );
+    expect(parsePersistentUriFailureReason(`${FAILURE}no-self-reference`)).toBe(
+      'no-self-reference',
+    );
+  });
+
+  it('maps a failure outcome from the new subject-resolution-outcome# scheme', () => {
+    // The DKG now records every sampled URI as a resolution:outcome concept; the
+    // definitive failures share this scheme. Reading both keeps the panel working
+    // across the breaking change while the live DKG is re-crawled.
+    expect(parsePersistentUriFailureReason(`${OUTCOME}http-error`)).toBe(
+      'http-error',
+    );
+    expect(
+      parsePersistentUriFailureReason(`${OUTCOME}wrong-content-type`),
+    ).toBe('wrong-content-type');
+  });
+
+  it('treats a success outcome as not-a-failure', () => {
+    // resolved / html-landing-page are successes in the unified scheme: they must
+    // never surface as failed URIs.
+    expect(parsePersistentUriFailureReason(`${OUTCOME}resolved`)).toBeNull();
+    expect(
+      parsePersistentUriFailureReason(`${OUTCOME}html-landing-page`),
+    ).toBeNull();
+  });
+
+  it('returns null for an unknown or missing IRI', () => {
+    expect(parsePersistentUriFailureReason(`${OUTCOME}made-up`)).toBeNull();
+    expect(parsePersistentUriFailureReason('https://example.org/x')).toBeNull();
+    expect(parsePersistentUriFailureReason(undefined)).toBeNull();
   });
 });
 
