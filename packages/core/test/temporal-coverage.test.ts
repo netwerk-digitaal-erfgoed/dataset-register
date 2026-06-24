@@ -132,6 +132,17 @@ describe('parseTemporalCoverage', () => {
         end: '0476',
       });
     });
+
+    it('accepts archaeological-scale BCE years (five or more digits)', () => {
+      expect(parseTemporalCoverage('-13000/-10000')).toEqual({
+        start: '-13000',
+        end: '-10000',
+      });
+      expect(parseTemporalCoverage('-400000/-400000')).toEqual({
+        start: '-400000',
+        end: '-400000',
+      });
+    });
   });
 
   describe('approximation prefixes', () => {
