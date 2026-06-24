@@ -249,8 +249,15 @@ export class DistributionProbeStage {
       };
     }
 
+    // Opt into shallow RDF body validation: @lde/distribution-probe 0.2.0 made it
+    // opt-in (validateRdfContent defaults to false, settling reachability from the
+    // response alone). The register needs it so an empty or unparseable data-dump
+    // body yields a failureReason, which probeResultToVerdict turns into the invalid
+    // validity verdict that feeds the validity rail and the registration-path
+    // sh:Violation. The validation budget defaults to min(timeoutMs, lde default).
     const result: ProbeResultType = await probeDistribution(distribution, {
       timeoutMs: this.timeoutMs,
+      validateRdfContent: true,
     });
     const verdict = classify(result);
 
