@@ -467,8 +467,10 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
     expect(await search('Mohlmann')).toContain(base('mohlmann'));
   });
 
-  // Runs before the final rebuild: a failed DKG read must not abort the rebuild.
-  it('rebuilds register data even when the DKG endpoint is unreachable', async () => {
+  // Runs before the final (DKG-less) rebuild: a configured DKG that returns
+  // nothing — here an unreachable endpoint — must not strip enrichment off the
+  // live index. The run is skipped and the last-good enriched index is kept (#2151).
+  it('keeps the last-good enriched index when the configured DKG returns nothing', async () => {
     const result = await runIndex({
       sparqlUrl,
       registrationsGraphIri: REGISTRATIONS_GRAPH,
@@ -476,14 +478,36 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
       typesense: connection,
     });
 
-    // Register correctness lands; DKG facets are simply absent this run.
-    expect(result.mode).toBe('rebuild');
+    // The run is a no-op: the previous run’s enriched index stays live and intact,
+    // rather than being swapped for an enrichment-less one.
+    expect(result.mode).toBe('skipped');
+    expect(result).toMatchObject({ reason: 'empty-knowledge-graph' });
     expect(await search('Mohlmann')).toContain(base('mohlmann'));
     const document = (await client
       .collections(SEARCH_COLLECTION_ALIAS)
       .documents(base('mohlmann'))
       .retrieve()) as Record<string, unknown>;
-    expect(document.class).toBeUndefined();
+    expect(document.class).toEqual([PERSON_CLASS]);
+  });
+
+  // A cold start (no live index yet) with a configured but unreachable DKG still
+  // builds register-only: there is no enriched index to protect, so the guard must
+  // not skip into an empty search. Fresh aliases simulate a first run.
+  it('builds register-only on a cold start when the DKG is unreachable', async () => {
+    const result = await runIndex({
+      sparqlUrl,
+      registrationsGraphIri: REGISTRATIONS_GRAPH,
+      knowledgeGraphEndpoint: 'http://127.0.0.1:1/',
+      typesense: connection,
+      collectionAlias: 'datasets_coldstart',
+      labelsAlias: 'labels_coldstart',
+    });
+
+    expect(result.mode).toBe('rebuild');
+    const collection = await client
+      .collections('datasets_coldstart')
+      .retrieve();
+    expect(collection.num_documents).toBe(SEEDS.length);
   });
 
   // Runs last: it mutates the store, then a full rebuild re-derives the index.
