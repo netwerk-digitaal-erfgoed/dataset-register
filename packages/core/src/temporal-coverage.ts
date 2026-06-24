@@ -5,6 +5,7 @@
  * Accepts:
  * - ISO 8601 points: `"2011"`, `"2011-05"`, `"2011-05-01"`, `"2011-05-01T12:00:00"`
  * - BCE points with ISO 8601 leading-minus notation: `"-0500"`, `"-0753-04"`
+ * - Archaeological-scale years with five or more digits: `"-13000"`, `"-400000"`
  * - ISO 8601 intervals: `"2011/2012"`, `"-0753/0476"`, `"2011-05-01/2012-06"`
  * - Shortened intervals (end inherits start's prefix): `"1889-06/07"` → `"1889-06"` / `"1889-07"`
  * - Open-ended intervals: `"2015-11/.."`, `"../2020"`
@@ -55,7 +56,11 @@ const spacedHyphen = /\s+-\s+/g;
 // Collapse "YYYY-YYYY" to "YYYY/YYYY" only when that is the *entire* string —
 // ISO 8601 dates like "2011-05" or "2011-05-01" must not be touched.
 const bareYearRange = /^(\d{4})-(\d{4})$/;
-const isoPointPattern = /^-?\d{4}(-\d{2}(-\d{2}(T\d{2}:\d{2}(:\d{2})?)?)?)?$/;
+// Years are four or more digits: 0000–9999 use the canonical leading-zero
+// padding (e.g. `-0431`), while archaeological dates run to five or six digits
+// (e.g. `-13000`, `-400000`). Padding stays mandatory below 10000, so an
+// under-padded `-431` remains invalid.
+const isoPointPattern = /^-?\d{4,}(-\d{2}(-\d{2}(T\d{2}:\d{2}(:\d{2})?)?)?)?$/;
 
 const openEndMarkers = new Set(['..', 'heden', 'nu', 'present', 'now']);
 

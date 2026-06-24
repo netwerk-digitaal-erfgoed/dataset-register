@@ -310,6 +310,19 @@ describe('Validator', () => {
     expect(temporalResults.size).toEqual(0);
   });
 
+  it('accepts archaeological-scale BCE temporal coverage', async () => {
+    const report = (await validate(
+      'dataset-schema-org-temporal-archaeological.jsonld',
+    )) as Valid;
+    expect(report.state).toEqual('valid');
+    const temporalResults = report.errors.match(
+      null,
+      shacl('resultPath'),
+      rdf.namedNode('https://schema.org/temporalCoverage'),
+    );
+    expect(temporalResults.size).toEqual(0);
+  });
+
   it('accepts dct:temporal as a dct:PeriodOfTime structured value', async () => {
     // The register rewrites ISO 8601 dct:temporal literals into dct:PeriodOfTime
     // blank nodes (see normalizeTemporalCoverage), which is the canonical DCAT
