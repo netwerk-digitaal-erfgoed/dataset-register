@@ -3,11 +3,6 @@
 ## [1.12.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.11.3...requirements-1.12.0) (2026-06-24)
 
 
-### Features
-
-* **core:** probe distribution URLs during validation ([#1919](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1919)) ([d0d82c0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/d0d82c014221e25c996e1b59786cbd8cba0d3333))
-
-
 ### Bug Fixes
 
 * accept dct:temporal as a dct:PeriodOfTime in temporal warning ([#2059](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2059)) ([5ff7a37](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/5ff7a3725c28ca66d5ae52b10fb051313bc83c5e))
