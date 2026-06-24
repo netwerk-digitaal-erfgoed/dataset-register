@@ -12,7 +12,8 @@
     "test": "nx run-many -t test"
   },
   "overrides": {
-    "undici@^7.0.0": "7.24.8"
+    "undici@^7.0.0": "7.24.8",
+    "undici@^8.0.0": "7.24.8"
   },
   "dependencies": {},
   "devDependencies": {
