@@ -37,14 +37,22 @@ export interface RunIndexOptions {
   readonly log?: (message: string) => void;
 }
 
+/**
+ * Why a run left the live index untouched. `concurrent-rebuild`: another rebuild
+ * already held the cross-pod lock. `empty-knowledge-graph`: a configured DKG
+ * returned no enrichment, so the current enriched index was kept rather than
+ * swapped for an enrichment-less one (see {@link runIndex}).
+ */
+export type SkipReason = 'concurrent-rebuild' | 'empty-knowledge-graph';
+
 export type RunIndexResult =
   | {
       readonly mode: 'rebuild';
       readonly collection: string;
       readonly upserted: number;
     }
-  /** Another rebuild for this index was already in flight, so this run was a no-op. */
-  | { readonly mode: 'skipped' };
+  /** The run was a no-op and the live index was left untouched. */
+  | { readonly mode: 'skipped'; readonly reason: SkipReason };
 
 /**
  * Rebuild the Typesense `datasets` index from the register store.
@@ -93,6 +101,30 @@ export async function runIndex(
     source.readQuads(),
     readKnowledgeGraphQuads(options, log),
   ]);
+
+  // Guard a transient or empty Knowledge Graph from stripping every facet off the
+  // live index. The rebuild is a full blue/green swap, so projecting register data
+  // with no DKG enrichment would atomically replace a good, enriched index with an
+  // enrichment-less one for every dataset at once (no terminology-source facet, no
+  // Linked Data summary class data). When a DKG endpoint is configured but returned
+  // nothing — unreachable, or reduced to a bootstrap-only store — while the
+  // register has data and a live index already exists, keep that index instead of
+  // swapping. A run with no DKG endpoint configured, or a cold start with no index
+  // yet, still proceeds register-only. The next run self-heals once the DKG is
+  // back. (See dataset-knowledge-graph#385, which makes the DKG fail loudly rather
+  // than serve empty.)
+  if (
+    options.knowledgeGraphEndpoint !== undefined &&
+    dkgQuads.length === 0 &&
+    registerQuads.length > 0 &&
+    (await collectionExists(client, alias))
+  ) {
+    log(
+      `Rebuild of ${alias} skipped: the Knowledge Graph returned no enrichment; keeping the current index to avoid stripping facets`,
+    );
+    return { mode: 'skipped', reason: 'empty-knowledge-graph' };
+  }
+
   const result = await rebuild(
     client,
     buildCollectionSchema(alias),
@@ -100,7 +132,7 @@ export async function runIndex(
   );
   if (result === null) {
     log(`Rebuild of ${alias} skipped: another rebuild is already running`);
-    return { mode: 'skipped' };
+    return { mode: 'skipped', reason: 'concurrent-rebuild' };
   }
   log(
     `Indexed ${result.imported} datasets; alias ${alias} → ${result.collection}`,
@@ -118,6 +150,24 @@ export async function runIndex(
     collection: result.collection,
     upserted: result.imported,
   };
+}
+
+/**
+ * Whether the search alias already resolves to a live collection. Distinguishes a
+ * cold start (no index yet) from a populated one: an empty Knowledge Graph read
+ * only warrants keeping the current index when there is one to keep, so a first
+ * run still builds register-only rather than skipping into an empty search.
+ */
+async function collectionExists(
+  client: Client,
+  alias: string,
+): Promise<boolean> {
+  try {
+    await client.aliases(alias).retrieve();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
