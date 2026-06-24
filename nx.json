@@ -33,7 +33,6 @@
       "plugin": "@nx/vite/plugin",
       "options": {
         "buildTargetName": "build",
-        "testTargetName": "test",
         "serveTargetName": "serve",
         "devTargetName": "dev",
         "previewTargetName": "preview",
@@ -41,6 +40,13 @@
         "typecheckTargetName": "typecheck",
         "buildDepsTargetName": "build-deps",
         "watchDepsTargetName": "watch-deps"
+      },
+      "exclude": ["apps/browser/**"]
+    },
+    {
+      "plugin": "@nx/vitest",
+      "options": {
+        "testTargetName": "test"
       },
       "exclude": ["apps/browser/**"]
     },
@@ -59,13 +65,15 @@
     },
     "projects": ["api", "browser", "crawler"],
     "projectsRelationship": "independent",
-    "releaseTagPattern": "release/{projectName}/{version}",
     "docker": {
       "skipVersionActions": true,
       "registryUrl": "ghcr.io/netwerk-digitaal-erfgoed/dataset-register",
       "versionSchemes": {
         "production": "{currentDate|YYYYMMDDHHmmss}-{shortCommitSha}"
       }
+    },
+    "releaseTag": {
+      "pattern": "release/{projectName}/{version}"
     }
   },
   "targetDefaults": {
