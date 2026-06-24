@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.12.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.11.3...requirements-1.12.0) (2026-06-24)
+
+
+### Bug Fixes
+
+* accept dct:temporal as a dct:PeriodOfTime in temporal warning ([#2059](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2059)) ([5ff7a37](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/5ff7a3725c28ca66d5ae52b10fb051313bc83c5e))
+* **core:** accept archaeological-scale years in temporalCoverage ([#2154](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2154)) ([8c818dc](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/8c818dc4b38a4543bc922b230d478d1fb14b18fb))
+* enforce HTTP(S) IRI for dcat:Dataset and reject blank-node datasets ([#2088](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2088)) ([5b4cdd6](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/5b4cdd6583730440d678747ba6d94dea0f2a3dd3))
+* **shacl:** write contentUrl description as plain HTML, link web API spec-side ([#2021](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2021)) ([5670817](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/5670817b68e27943617356860503536481cbd329))
+
 ## [1.11.3](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.11.2...requirements-1.11.3) (2026-05-21)
 
 
