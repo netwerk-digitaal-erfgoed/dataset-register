@@ -50,4 +50,25 @@ describe('/dataset loader', () => {
     }
     expect((caught as { status?: number } | undefined)?.status).toBe(400);
   });
+
+  // A literal `+` shared without percent-encoding decodes to a space, yielding an
+  // IRI that is illegal inside a SPARQL IRIREF. Guard with a 404 rather than
+  // letting the malformed query throw a 500.
+  it('throws a 404 when the uri contains a space (decoded from a literal +)', async () => {
+    let caught: unknown;
+    try {
+      await load(
+        makeEvent(
+          '?uri=' +
+            'https://collecties.zuidafrikahuis.nl/AtlantisPubliek/data/dataset/Zuid-Afrikahuis+-+Archieven',
+        ),
+      );
+    } catch (error) {
+      caught = error;
+    }
+    expect((caught as { status?: number } | undefined)?.status).toBe(404);
+    expect(fetchDatasetDetail).not.toHaveBeenCalledWith(
+      expect.stringContaining(' '),
+    );
+  });
 });
