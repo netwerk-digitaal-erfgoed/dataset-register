@@ -26,9 +26,9 @@
   "devDependencies": {
     "@types/jsonld": "^1.5.15",
     "jsonld": "^9.0.0",
-    "n3": "^2.0.3",
+    "n3": "^2.0.4",
     "rdf-ext": "^2.6.0",
-    "testcontainers": "^12.0.2"
+    "testcontainers": "^12.0.3"
   },
   "nx": {
     "projectType": "library",

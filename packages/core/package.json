@@ -43,7 +43,7 @@
     "@opentelemetry/semantic-conventions": "^1.41.1",
     "@rdfjs/types": "2.0.1",
     "jsonld-streaming-parser": "^5.0.1",
-    "n3": "^2.0.3",
+    "n3": "^2.0.4",
     "rdf-dereference": "^5.0.0",
     "rdf-ext": "^2.6.0",
     "shacl-engine": "^1.0.2",
@@ -56,7 +56,7 @@
     "nock": "^14.0.15",
     "node-fetch": "^3.3.1",
     "rdfa-streaming-parser": "^3.0.1",
-    "testcontainers": "^12.0.2"
+    "testcontainers": "^12.0.3"
   },
   "nx": {
     "projectType": "library",

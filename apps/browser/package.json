@@ -39,7 +39,7 @@
     "flowbite-svelte-icons": "^3.1.0",
     "ldkit": "^2.6.0",
     "lz-string": "^1.5.0",
-    "n3": "^2.0.3",
+    "n3": "^2.0.4",
     "sparqljs": "^3.7.4",
     "svelte-range-slider-pips": "^4.1.1",
     "typesense": "^3.0.6"
@@ -49,7 +49,7 @@
     "@eslint/compat": "^2.1.0",
     "@eslint/js": "^10.0.1",
     "@flowbite-svelte-plugins/chart": "^0.2.4",
-    "@inlang/paraglide-js": "^2.19.0",
+    "@inlang/paraglide-js": "^2.20.0",
     "@playwright/test": "^1.61.0",
     "@sveltejs/adapter-node": "^5.5.4",
     "@sveltejs/kit": "^2.65.2",
