@@ -33,7 +33,7 @@
     "@comunica/types": "^5.2.3",
     "@lde/dataset": "^0.7.7",
     "@lde/distribution-health": "^0.2.0",
-    "@lde/distribution-probe": "^0.2.0",
+    "@lde/distribution-probe": "^0.2.1",
     "@lde/pipeline": "^0.31.0",
     "@lde/text-normalization": "^0.1.0",
     "@opentelemetry/api": "^1.9.1",
