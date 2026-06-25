@@ -7,7 +7,7 @@ import type {
   Term,
 } from '@rdfjs/types';
 import { Distribution } from '@lde/dataset';
-import { probe as probeDistribution } from '@lde/distribution-probe';
+import { probeMany } from '@lde/distribution-probe';
 import { DataDumpProbeResult } from '@lde/distribution-probe';
 import type { ProbeResultType } from '@lde/distribution-probe';
 import { probeResultToVerdict } from '@lde/distribution-health';
@@ -70,11 +70,21 @@ export interface DistributionProbeStageOptions {
    */
   failureStreakMaxAgeMs?: number;
   /**
-   * Maximum number of distribution probes to run in parallel. Bounded because a dataset
-   * can declare thousands of distributions and an unbounded fan-out exhausts sockets,
-   * trips rate limiters on the target host, and starves the event loop. Default 20.
+   * Maximum number of distribution probes to run in parallel across all hosts. Bounded
+   * because a dataset can declare thousands of distributions and an unbounded fan-out
+   * exhausts sockets, buffers too many response bodies, and starves the event loop. The
+   * per-host burst that trips a server's rate limiter is bounded separately by
+   * {@link probePerHostConcurrency}. Default 20.
    */
   probeConcurrency?: number;
+  /**
+   * Maximum number of probes to run in parallel against a single host, beneath the global
+   * {@link probeConcurrency} cap. Bounded to be a polite client: a catalogue commonly declares
+   * many distributions on one host (e.g. a download endpoint per named graph), and firing the
+   * full global pool at one server trips its rate limiter (HTTP 429). Passed through to
+   * @lde/distribution-probe's probeMany. Default 4.
+   */
+  probePerHostConcurrency?: number;
   /**
    * Maximum number of distinct distribution endpoints to probe per dataset, applied after
    * candidates are coalesced by probe target. Bounded because a single dataset can declare
@@ -112,6 +122,7 @@ export interface DistributionProbeStageOptions {
 
 const DEFAULT_FAILURE_STREAK_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const DEFAULT_PROBE_CONCURRENCY = 20;
+const DEFAULT_PROBE_PER_HOST_CONCURRENCY = 4;
 const DEFAULT_MAX_PROBES = 100;
 const DEFAULT_PRODUCER_AGENT =
   'https://datasetregister.netwerkdigitaalerfgoed.nl/#crawler';
@@ -139,6 +150,7 @@ export class DistributionProbeStage {
   private readonly timeoutMs: number;
   private readonly failureStreakMaxAgeMs: number;
   private readonly probeConcurrency: number;
+  private readonly probePerHostConcurrency: number;
   private readonly maxProbes: number;
   private readonly logger: ProbeLogger | null;
   private readonly severities: ProbeSeverities;
@@ -152,6 +164,8 @@ export class DistributionProbeStage {
       options.failureStreakMaxAgeMs ?? DEFAULT_FAILURE_STREAK_MAX_AGE_MS;
     this.probeConcurrency =
       options.probeConcurrency ?? DEFAULT_PROBE_CONCURRENCY;
+    this.probePerHostConcurrency =
+      options.probePerHostConcurrency ?? DEFAULT_PROBE_PER_HOST_CONCURRENCY;
     this.maxProbes = options.maxProbes ?? DEFAULT_MAX_PROBES;
     this.logger = options.logger ?? null;
     this.severities = options.severities ?? {
@@ -183,28 +197,15 @@ export class DistributionProbeStage {
       );
     }
 
-    const probed = await allSettledLimited(
-      groups,
-      this.probeConcurrency,
-      (group) => this.probeCandidate(group.representative),
-    );
+    // Probe every distinct endpoint — bounding total fan-out and the per-host burst so a
+    // catalogue with many distributions on one server does not trip its rate limiter — then
+    // evaluate each result into a verdict (and health/validity records).
+    const evaluated = await this.probeGroups(groups);
 
     const quads: Quad[] = [];
-    for (let index = 0; index < probed.length; index++) {
-      const settled = probed[index];
+    for (let index = 0; index < groups.length; index++) {
       const { members } = groups[index];
-      const { verdict, record, validityVerdict } =
-        settled.status === 'rejected'
-          ? {
-              verdict: {
-                success: false,
-                outcome: probeOutcomes.NetworkError,
-                detail: String(settled.reason),
-              } satisfies ProbeVerdict,
-              record: null,
-              validityVerdict: null,
-            }
-          : settled.value;
+      const { verdict, record, validityVerdict } = evaluated[index];
 
       for (const member of members) {
         if (!verdict.success) {
@@ -231,13 +232,64 @@ export class DistributionProbeStage {
     return quads;
   }
 
-  private async probeCandidate(candidate: DistributionCandidate): Promise<{
+  private async probeGroups(groups: ProbeGroup[]): Promise<
+    Array<{
+      verdict: ProbeVerdict;
+      record: DistributionHealthRecord | null;
+      validityVerdict: ValidityVerdict | null;
+    }>
+  > {
+    // Probe the representatives that have a parsable URL via probeMany, which bounds total
+    // fan-out (probeConcurrency) and the per-host burst (probePerHostConcurrency). A
+    // representative without a Distribution never reaches the network and is evaluated
+    // synthetically. Opt into shallow RDF body validation — @lde/distribution-probe makes it
+    // opt-in (reachability is settled from the response alone by default) — so an empty or
+    // unparseable data-dump body yields a failureReason that feeds the validity rail and the
+    // registration-path sh:Violation.
+    const probeable = groups
+      .map((group, index) => ({
+        index,
+        distribution: group.representative.distribution,
+      }))
+      .filter(
+        (entry): entry is { index: number; distribution: Distribution } =>
+          entry.distribution !== null,
+      );
+    const results = await probeMany(
+      probeable.map((entry) => entry.distribution),
+      {
+        timeoutMs: this.timeoutMs,
+        validateRdfContent: true,
+        concurrency: this.probeConcurrency,
+        perHostConcurrency: this.probePerHostConcurrency,
+      },
+    );
+    const resultByGroup: (ProbeResultType | null)[] = new Array(
+      groups.length,
+    ).fill(null);
+    probeable.forEach((entry, position) => {
+      resultByGroup[entry.index] = results[position];
+    });
+
+    // Evaluate each probe into a verdict (and health/validity records). probeMany bounds the
+    // network fan-out; this bounds the post-probe store writes — our own stores, so a plain
+    // global cap (probeConcurrency), not the per-host budget — keeping concurrent writes at the
+    // same ceiling the combined worker pool enforced before.
+    return mapLimited(groups, this.probeConcurrency, (group, index) =>
+      this.evaluateProbe(group.representative, resultByGroup[index]),
+    );
+  }
+
+  private async evaluateProbe(
+    candidate: DistributionCandidate,
+    result: ProbeResultType | null,
+  ): Promise<{
     verdict: ProbeVerdict;
     record: DistributionHealthRecord | null;
     validityVerdict: ValidityVerdict | null;
   }> {
     const { distribution } = candidate;
-    if (distribution === null) {
+    if (distribution === null || result === null) {
       return {
         verdict: {
           success: false,
@@ -249,47 +301,57 @@ export class DistributionProbeStage {
       };
     }
 
-    // Opt into shallow RDF body validation: @lde/distribution-probe 0.2.0 made it
-    // opt-in (validateRdfContent defaults to false, settling reachability from the
-    // response alone). The register needs it so an empty or unparseable data-dump
-    // body yields a failureReason, which probeResultToVerdict turns into the invalid
-    // validity verdict that feeds the validity rail and the registration-path
-    // sh:Violation. The validation budget defaults to min(timeoutMs, lde default).
-    const result: ProbeResultType = await probeDistribution(distribution, {
-      timeoutMs: this.timeoutMs,
-      validateRdfContent: true,
-    });
-    const verdict = classify(result);
+    // A failure while recording the verdict (e.g. a health-store outage) must not reject
+    // the whole batch: isolate it per candidate and surface it as a NetworkError, matching
+    // the per-task error handling the worker pool previously provided.
+    try {
+      const verdict = classify(result);
 
-    // The source-change fingerprint is the shared key across both rails: it is
-    // recorded on the reachability health record and on the validity
-    // measurement, so the staleness gate can match them by value.
-    const fingerprint = sourceFingerprint(distribution, result);
-    const validityVerdict = probeResultToVerdict(result, fingerprint);
+      // The source-change fingerprint is the shared key across both rails: it is
+      // recorded on the reachability health record and on the validity
+      // measurement, so the staleness gate can match them by value.
+      const fingerprint = sourceFingerprint(distribution, result);
+      const validityVerdict = probeResultToVerdict(result, fingerprint);
 
-    const probeUrl = canonicalProbeUrl(distribution.accessUrl);
+      const probeUrl = canonicalProbeUrl(distribution.accessUrl);
 
-    // The reachability rail is authoritative and updated first; the validity
-    // rail is best-effort enrichment recorded afterwards. recordValidity
-    // isolates its own failures so a validity-store outage can never reject the
-    // probe and corrupt the reachability verdict (which would surface as a
-    // spurious NetworkError).
-    const healthStore = this.healthStore;
-    const record =
-      healthStore === null
-        ? null
-        : await this.updateHealth(healthStore, probeUrl, verdict, fingerprint);
-    await this.recordValidity(
-      probeUrl,
-      validityVerdict,
-      result instanceof DataDumpProbeResult,
-    );
+      // The reachability rail is authoritative and updated first; the validity
+      // rail is best-effort enrichment recorded afterwards. recordValidity
+      // isolates its own failures so a validity-store outage can never reject the
+      // probe and corrupt the reachability verdict.
+      const healthStore = this.healthStore;
+      const record =
+        healthStore === null
+          ? null
+          : await this.updateHealth(
+              healthStore,
+              probeUrl,
+              verdict,
+              fingerprint,
+            );
+      await this.recordValidity(
+        probeUrl,
+        validityVerdict,
+        result instanceof DataDumpProbeResult,
+      );
 
-    return {
-      verdict: record === null ? verdict : this.applyPromotion(verdict, record),
-      record,
-      validityVerdict,
-    };
+      return {
+        verdict:
+          record === null ? verdict : this.applyPromotion(verdict, record),
+        record,
+        validityVerdict,
+      };
+    } catch (reason) {
+      return {
+        verdict: {
+          success: false,
+          outcome: probeOutcomes.NetworkError,
+          detail: String(reason),
+        },
+        record: null,
+        validityVerdict: null,
+      };
+    }
   }
 
   /**
@@ -426,6 +488,30 @@ function severityForMarker(
   return declared.size === 1
     ? factory.namedNode([...declared][0]!)
     : shacl('Violation');
+}
+
+/**
+ * Map items to results in input order, running at most `limit` tasks at once. Bounds the
+ * post-probe store writes: probeMany already caps the network fan-out, so this only needs a
+ * plain global cap, not the per-host budget. `task` must not reject — evaluateProbe isolates
+ * its own failures into a verdict — so unlike a worker pool there is no per-task error handling.
+ */
+async function mapLimited<TItem, TResult>(
+  items: readonly TItem[],
+  limit: number,
+  task: (item: TItem, index: number) => Promise<TResult>,
+): Promise<TResult[]> {
+  const results: TResult[] = new Array(items.length);
+  let cursor = 0;
+  const worker = async (): Promise<void> => {
+    while (cursor < items.length) {
+      const index = cursor++;
+      results[index] = await task(items[index]!, index);
+    }
+  };
+  const workerCount = Math.max(1, Math.min(limit, items.length));
+  await Promise.all(Array.from({ length: workerCount }, worker));
+  return results;
 }
 
 interface ProbeGroup {
@@ -810,33 +896,4 @@ function sparqlWebPageRemedy(
   return candidate.path.equals(schema('contentUrl'))
     ? ' Put the SPARQL protocol endpoint in schema:contentUrl and move the query UI to schema:documentation.'
     : ' Put the SPARQL protocol endpoint in dcat:accessURL and move the query UI to foaf:page.';
-}
-
-/**
- * Promise.allSettled with a worker-pool concurrency cap. Preserves input ordering in the
- * returned array. Used to bound the fan-out of distribution probes per dataset.
- */
-async function allSettledLimited<TItem, TResult>(
-  items: readonly TItem[],
-  limit: number,
-  task: (item: TItem) => Promise<TResult>,
-): Promise<PromiseSettledResult<TResult>[]> {
-  const results: PromiseSettledResult<TResult>[] = new Array(items.length);
-  let cursor = 0;
-  const worker = async (): Promise<void> => {
-    while (cursor < items.length) {
-      const index = cursor++;
-      try {
-        results[index] = {
-          status: 'fulfilled',
-          value: await task(items[index]!),
-        };
-      } catch (reason) {
-        results[index] = { status: 'rejected', reason };
-      }
-    }
-  };
-  const workerCount = Math.max(1, Math.min(limit, items.length));
-  await Promise.all(Array.from({ length: workerCount }, worker));
-  return results;
 }
