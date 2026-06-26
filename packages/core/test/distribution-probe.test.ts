@@ -338,6 +338,52 @@ describe('DistributionProbeStage', () => {
     expect(resultPath?.object.equals(dcat('accessURL'))).toBe(true);
   });
 
+  it('forwards probe progress, announcing the total before the first probe', async () => {
+    // Two distinct SPARQL endpoints on different hosts → two probes. The stage announces
+    // (0, total) up front, then probeMany reports (1, total) and (2, total) as they settle.
+    for (const host of ['a.example', 'b.example']) {
+      nock(`https://${host}`)
+        .post('/sparql')
+        .reply(200, '{"head":{"vars":[]},"results":{"bindings":[]}}', {
+          'Content-Type': 'application/sparql-results+json',
+        });
+    }
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-progress');
+    for (const host of ['a.example', 'b.example']) {
+      const distributionNode = factory.blankNode();
+      dataset.add(
+        factory.quad(datasetNode, dcat('distribution'), distributionNode),
+      );
+      dataset.add(
+        factory.quad(
+          distributionNode,
+          dcat('accessURL'),
+          factory.namedNode(`https://${host}/sparql`),
+        ),
+      );
+      dataset.add(
+        factory.quad(
+          distributionNode,
+          dct('conformsTo'),
+          factory.namedNode('https://www.w3.org/TR/sparql11-protocol/'),
+        ),
+      );
+    }
+
+    const calls: Array<[number, number]> = [];
+    await new DistributionProbeStage().run(dataset, (completed, total) =>
+      calls.push([completed, total]),
+    );
+
+    expect(calls).toEqual([
+      [0, 2],
+      [1, 2],
+      [2, 2],
+    ]);
+  });
+
   it('emits a sh:Warning, not a sh:Violation, for an HTTP 429 probe result', async () => {
     // A 429 means the Register was rate-limited while probing, not that the publisher’s
     // distribution is faulty, so it must never invalidate the dataset — even here on the strict

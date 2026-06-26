@@ -8,10 +8,21 @@ import type { ValidationReport } from 'shacl-engine';
 import { Validator as ShaclValidator } from 'shacl-engine';
 import { validations as sparqlValidations } from 'shacl-engine/sparql.js';
 import { standardizeSchemaOrgPrefix } from './transform.ts';
-import type { DistributionProbeStage } from './distribution-probe/probe.ts';
+import type {
+  DistributionProbeStage,
+  ProbeProgressListener,
+} from './distribution-probe/probe.ts';
 
 export interface Validator {
-  validate(datasets: DatasetCore): Promise<ValidationResult>;
+  /**
+   * Validate the dataset(s). `onProgress`, when given, is forwarded to the distribution probe
+   * stage so a caller can report progress while many distributions are checked; validators that
+   * do no probing (e.g. {@link ShaclEngineValidator}) ignore it.
+   */
+  validate(
+    datasets: DatasetCore,
+    onProgress?: ProbeProgressListener,
+  ): Promise<ValidationResult>;
 }
 
 /**
@@ -66,12 +77,16 @@ export class CompositeValidator implements Validator {
     private readonly probeStage: DistributionProbeStage,
   ) {}
 
-  public async validate(input: DatasetCore): Promise<ValidationResult> {
+  public async validate(
+    input: DatasetCore,
+    onProgress?: ProbeProgressListener,
+  ): Promise<ValidationResult> {
     const shaclResult = await this.shacl.validate(input);
     if (shaclResult.state !== 'valid') return shaclResult;
 
     const probeQuads = await this.probeStage.run(
       standardizeSchemaOrgPrefix(input),
+      onProgress,
     );
     if (probeQuads.length === 0) return shaclResult;
 

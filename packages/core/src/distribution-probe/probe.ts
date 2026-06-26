@@ -61,6 +61,14 @@ export interface ProbeSeverities {
   rateLimited: NamedNode;
 }
 
+/**
+ * Notified as the probe stage advances: `completed` of `total` distinct endpoints probed. Fired
+ * once with `(0, total)` before the first probe so a caller can show a determinate indicator from
+ * the start, then once after each probe settles, ending at `(total, total)`. `total` counts only
+ * the endpoints actually probed (representatives with a parsable URL), not synthetic candidates.
+ */
+export type ProbeProgressListener = (completed: number, total: number) => void;
+
 export interface DistributionProbeStageOptions {
   /**
    * When set, each failing probe is assessed against this store and emitted only once the
@@ -186,7 +194,10 @@ export class DistributionProbeStage {
     };
   }
 
-  public async run(input: DatasetCore): Promise<Quad[]> {
+  public async run(
+    input: DatasetCore,
+    onProgress?: ProbeProgressListener,
+  ): Promise<Quad[]> {
     const candidates = collectDistributions(input);
     if (candidates.length === 0) return [];
 
@@ -212,7 +223,7 @@ export class DistributionProbeStage {
     // Probe every distinct endpoint — bounding total fan-out and the per-host burst so a
     // catalogue with many distributions on one server does not trip its rate limiter — then
     // evaluate each result into a verdict (and health/validity records).
-    const evaluated = await this.probeGroups(groups);
+    const evaluated = await this.probeGroups(groups, onProgress);
 
     const quads: Quad[] = [];
     for (let index = 0; index < groups.length; index++) {
@@ -244,7 +255,10 @@ export class DistributionProbeStage {
     return quads;
   }
 
-  private async probeGroups(groups: ProbeGroup[]): Promise<
+  private async probeGroups(
+    groups: ProbeGroup[],
+    onProgress?: ProbeProgressListener,
+  ): Promise<
     Array<{
       verdict: ProbeVerdict;
       record: DistributionHealthRecord | null;
@@ -267,6 +281,9 @@ export class DistributionProbeStage {
         (entry): entry is { index: number; distribution: Distribution } =>
           entry.distribution !== null,
       );
+    // Announce the total up front — probeMany only reports after each probe settles — so a caller
+    // can render a determinate indicator from 0 before the first endpoint responds.
+    onProgress?.(0, probeable.length);
     const results = await probeMany(
       probeable.map((entry) => entry.distribution),
       {
@@ -274,6 +291,7 @@ export class DistributionProbeStage {
         validateRdfContent: true,
         concurrency: this.probeConcurrency,
         perHostConcurrency: this.probePerHostConcurrency,
+        onProgress,
       },
     );
     const resultByGroup: (ProbeResultType | null)[] = new Array(
