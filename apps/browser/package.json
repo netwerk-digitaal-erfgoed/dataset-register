@@ -99,6 +99,16 @@
         "options": {
           "outputPath": "apps/browser/build"
         }
+      },
+      "docker:smoke": {
+        "executor": "nx:run-commands",
+        "dependsOn": [
+          "docker:build"
+        ],
+        "cache": false,
+        "options": {
+          "command": "./apps/docker-smoke.sh apps-browser 'Listening on' /datasets"
+        }
       }
     }
   }
