@@ -136,14 +136,14 @@
 </script>
 
 <div class="mb-6">
-  <h3
+  <h2
     class="relative text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 tracking-tight flex items-center"
   >
     {m.facets_size()}
     {#if explanation}
       <FacetHelper {explanation} />
     {/if}
-  </h3>
+  </h2>
 
   <div class="space-y-4" class:active={isActive}>
     <!-- Histogram -->
@@ -182,6 +182,7 @@
           pushy
           float
           formatter={pipFormatter}
+          ariaLabels={[m.facets_size_min_label(), m.facets_size_max_label()]}
           on:stop={handleSliderStop}
         />
       {:else}

@@ -48,6 +48,8 @@
   "facets_size": "Grootte",
   "facets_size_min": "Min",
   "facets_size_max": "Max",
+  "facets_size_min_label": "Minimale datasetgrootte",
+  "facets_size_max_label": "Maximale datasetgrootte",
   "facets_remove_filter": "Filter verwijderen",
   "facets_search": "Zoek...",
   "facets_show_more": "Toon meer",
