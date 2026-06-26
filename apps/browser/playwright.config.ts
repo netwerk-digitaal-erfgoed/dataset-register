@@ -2,16 +2,14 @@ import { defineConfig, devices } from '@playwright/test';
 
 const isCI = !!process.env.CI;
 
-// In CI we run two servers so we test what we actually ship:
-//   - `vite preview` (port 4173) backs the accessibility specs;
-//   - `node build` (port 4174) is the real adapter-node production server and
-//     backs e2e/hydration.spec.ts. `vite preview` serves /_app assets through
-//     Vite, so it would NOT catch a broken production build (e.g. the
-//     adapter-node 5.5.5 regression that 404'd every /_app asset and left the
-//     app un-hydrated — sveltejs/kit#16095). Only `node build` exercises that path.
-// Locally a single dev server backs both projects.
-const previewURL = 'http://localhost:4173';
-const productionURL = 'http://localhost:4174';
+// In CI we run the whole suite against the real adapter-node production server
+// (`node build`) — the same artifact we ship in the Docker image — so a broken
+// production build (e.g. the adapter-node 5.5.5 regression that 404'd every
+// /_app asset and left the app un-hydrated, sveltejs/kit#16095) is caught.
+// `vite preview` serves /_app through Vite and would mask that, so we don't use
+// it. Locally we use the dev server for fast iteration; the production build path
+// is exercised in CI (and by the docker:smoke gate against the actual image).
+const ciURL = 'http://localhost:4173';
 const devURL = 'http://localhost:5173';
 
 export default defineConfig({
@@ -23,47 +21,19 @@ export default defineConfig({
   reporter: isCI ? 'github' : 'html',
   timeout: isCI ? 60000 : 30000,
   use: {
+    baseURL: isCI ? ciURL : devURL,
     trace: 'on-first-retry',
   },
   projects: [
     {
       name: 'chromium',
-      testIgnore: '**/hydration.spec.ts',
-      use: {
-        ...devices['Desktop Chrome'],
-        baseURL: isCI ? previewURL : devURL,
-      },
-    },
-    {
-      name: 'production',
-      testMatch: '**/hydration.spec.ts',
-      use: {
-        ...devices['Desktop Chrome'],
-        baseURL: isCI ? productionURL : devURL,
-      },
+      use: { ...devices['Desktop Chrome'] },
     },
   ],
-  webServer: isCI
-    ? [
-        {
-          command: 'npm run preview',
-          url: `${previewURL}/datasets`,
-          reuseExistingServer: false,
-          timeout: 120000,
-        },
-        {
-          command: 'PORT=4174 node build',
-          url: `${productionURL}/datasets`,
-          reuseExistingServer: false,
-          timeout: 120000,
-        },
-      ]
-    : [
-        {
-          command: 'npm run dev',
-          url: `${devURL}/datasets`,
-          reuseExistingServer: true,
-          timeout: 120000,
-        },
-      ],
+  webServer: {
+    command: isCI ? 'PORT=4173 node build' : 'npm run dev',
+    url: `${isCI ? ciURL : devURL}/datasets`,
+    reuseExistingServer: !isCI,
+    timeout: 120000,
+  },
 });
