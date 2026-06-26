@@ -53,7 +53,7 @@ fi
 # both with HTTP 200. Exits the script non-zero on any failure.
 http_check() {
   local base host_port asset path_code asset_code html
-  host_port="$(docker port "$container" "${container_port}/tcp" | head -1 | sed 's/.*://')"
+  host_port="$(docker port "$container" "${container_port}/tcp" | head -1 | sed 's/.*://' || true)"
   if [ -z "$host_port" ]; then
     echo "FAIL: $image did not publish container port $container_port"
     exit 1
