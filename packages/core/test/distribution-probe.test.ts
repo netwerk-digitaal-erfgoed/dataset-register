@@ -338,6 +338,54 @@ describe('DistributionProbeStage', () => {
     expect(resultPath?.object.equals(dcat('accessURL'))).toBe(true);
   });
 
+  it('emits a sh:Warning, not a sh:Violation, for an HTTP 429 probe result', async () => {
+    // A 429 means the Register was rate-limited while probing, not that the publisher’s
+    // distribution is faulty, so it must never invalidate the dataset — even here on the strict
+    // default (registration/validate) path, where every other probe failure is a sh:Violation.
+    nock('https://example.org')
+      .post('/throttled')
+      .reply(429, '', { 'Content-Type': 'application/sparql-results+json' });
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-429');
+    const distributionNode = factory.blankNode();
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('accessURL'),
+        factory.namedNode('https://example.org/throttled'),
+      ),
+    );
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dct('conformsTo'),
+        factory.namedNode('https://www.w3.org/TR/sparql11-protocol/'),
+      ),
+    );
+
+    const quads = await new DistributionProbeStage().run(dataset);
+
+    const outcome = quads.find((quad) =>
+      quad.predicate.equals(factory.namedNode(`${ndeProbePrefix}probeOutcome`)),
+    );
+    expect(outcome?.object.value).toBe(`${ndeProbePrefix}RateLimited`);
+
+    const severities = quads.filter((quad) =>
+      quad.predicate.equals(shacl('resultSeverity')),
+    );
+    expect(severities.length).toBeGreaterThan(0);
+    expect(
+      severities.every((quad) => quad.object.equals(shacl('Warning'))),
+    ).toBe(true);
+    expect(
+      severities.some((quad) => quad.object.equals(shacl('Violation'))),
+    ).toBe(false);
+  });
+
   it('tells a DCAT publisher to move a SPARQL query UI to foaf:page', async () => {
     nock('https://example.org')
       .post('/sparql')
@@ -1229,13 +1277,21 @@ describe('DistributionProbeStage', () => {
 
     expect(postCount).toBe(1); // the two distributions collapse to a single probe
 
-    // Each distribution still receives its own result carrying the shared verdict.
+    // Each distribution still receives its own result carrying the shared verdict. A 429 is the
+    // Register being rate-limited, not a publisher defect, so the shared verdict is a sh:Warning
+    // and never a sh:Violation.
+    const warnings = quads.filter(
+      (quad) =>
+        quad.predicate.equals(shacl('resultSeverity')) &&
+        quad.object.equals(shacl('Warning')),
+    );
+    expect(warnings).toHaveLength(2);
     const violations = quads.filter(
       (quad) =>
         quad.predicate.equals(shacl('resultSeverity')) &&
         quad.object.equals(shacl('Violation')),
     );
-    expect(violations).toHaveLength(2);
+    expect(violations).toHaveLength(0);
 
     const outcomes = quads.filter((quad) =>
       quad.predicate.equals(factory.namedNode(`${ndeProbePrefix}probeOutcome`)),
@@ -1329,7 +1385,11 @@ describe('DistributionProbeStage', () => {
     );
 
     const stage = new DistributionProbeStage({
-      severities: { reachable: shacl('Warning'), formatMatch: shacl('Info') },
+      severities: {
+        reachable: shacl('Warning'),
+        formatMatch: shacl('Info'),
+        rateLimited: shacl('Warning'),
+      },
     });
     const quads = await stage.run(dataset);
 
@@ -1375,7 +1435,11 @@ describe('DistributionProbeStage', () => {
     );
 
     const stage = new DistributionProbeStage({
-      severities: { reachable: shacl('Warning'), formatMatch: shacl('Info') },
+      severities: {
+        reachable: shacl('Warning'),
+        formatMatch: shacl('Info'),
+        rateLimited: shacl('Warning'),
+      },
     });
     const quads = await stage.run(dataset);
 

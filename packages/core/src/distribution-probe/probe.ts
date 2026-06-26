@@ -40,16 +40,25 @@ export interface ProbeLogger {
 }
 
 /**
- * The sh:severity at which each probe check reports a failure. Read from the SHACL shapes
- * (see {@link readProbeSeverities}) so the requirements graph is the single source of truth:
- * bumping a shape from sh:Warning to sh:Violation changes runtime behaviour — a Warning informs
- * without invalidating the dataset, a Violation invalidates it — with no code change here.
+ * The sh:severity at which each probe check reports a failure. The reachability and format-match
+ * severities are read from the SHACL shapes (see {@link readProbeSeverities}) so the requirements
+ * graph is the single source of truth: bumping a shape from sh:Warning to sh:Violation changes
+ * runtime behaviour — a Warning informs without invalidating the dataset, a Violation invalidates
+ * it — with no code change here. The rate-limited severity is the exception (see {@link checkKind}):
+ * an HTTP 429 means the Register was throttled while probing, not that the publisher’s distribution
+ * is faulty, so it is fixed at sh:Warning in code and never governed by the shapes.
  */
 export interface ProbeSeverities {
   /** Reachability failures: network error, 4xx/5xx, SPARQL or RDF-parse failures, empty body. */
   reachable: NamedNode;
   /** The server Content-Type does not match the declared media type. */
   formatMatch: NamedNode;
+  /**
+   * An endpoint answered HTTP 429 (Too Many Requests): the Register was rate-limited while
+   * probing — our infrastructure condition, not a defect in the publisher’s data — so this is
+   * always sh:Warning and never invalidates a dataset, on both the registration and crawler paths.
+   */
+  rateLimited: NamedNode;
 }
 
 export interface DistributionProbeStageOptions {
@@ -171,6 +180,9 @@ export class DistributionProbeStage {
     this.severities = options.severities ?? {
       reachable: shacl('Violation'),
       formatMatch: shacl('Violation'),
+      // A 429 is the Register being throttled, never a publisher defect, so it stays a Warning
+      // even on this strict path where every other probe failure falls back to a Violation.
+      rateLimited: shacl('Warning'),
     };
   }
 
@@ -465,6 +477,10 @@ export function readProbeSeverities(shaclGraph: DatasetCore): ProbeSeverities {
   return {
     reachable: severityForMarker(shaclGraph, probeReachableMarker),
     formatMatch: severityForMarker(shaclGraph, probeFormatMatchMarker),
+    // Not shape-governed: a 429 reflects the Register being rate-limited while probing, not a
+    // publisher data-quality requirement, so it is fixed at sh:Warning rather than read from the
+    // shapes (severityForMarker would otherwise fail closed to sh:Violation absent a marker).
+    rateLimited: shacl('Warning'),
   };
 }
 
@@ -751,13 +767,17 @@ function toDistribution(
 }
 
 /**
- * The probe check a verdict belongs to. A content-type outcome is a format-match failure;
- * every other outcome (unreachable, server error, SPARQL/parse failure) is a reachability
- * failure. The verdict outcome decides this, not the result path, because the path always
- * carries the access/download/content URL — never the media-type property.
+ * The probe check a verdict belongs to. A rate-limited outcome (HTTP 429) is its own check so it
+ * can stay a non-blocking Warning; a content-type outcome is a format-match failure; every other
+ * outcome (unreachable, server error, SPARQL/parse failure) is a reachability failure. The verdict
+ * outcome decides this, not the result path, because the path always carries the
+ * access/download/content URL — never the media-type property.
  */
 function checkKind(verdict: ProbeVerdict): keyof ProbeSeverities {
   const outcome = verdict.outcome;
+  if (outcome !== null && outcome.equals(probeOutcomes.RateLimited)) {
+    return 'rateLimited';
+  }
   if (
     outcome !== null &&
     (outcome.equals(probeOutcomes.ContentTypeMismatch) ||
