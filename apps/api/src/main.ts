@@ -44,7 +44,9 @@ await (async () => {
   startInstrumentation(datasetStore);
   const shacl = await readUrl('requirements/shacl.ttl');
   // Strict mode for the API. The DistributionProbeStage omits `severities`, so it falls back to
-  // emitting every probe failure at sh:Violation regardless of the shapes' declared severity:
+  // emitting every probe failure at sh:Violation regardless of the shapes' declared severity —
+  // except an HTTP 429, which stays a sh:Warning because it means the Register was rate-limited
+  // while probing, not that the distribution is faulty (see ProbeSeverities.rateLimited):
   // a faulty distribution invalidates the dataset, so it is rejected at registration and shown
   // as invalid on the /validate endpoints. The crawler honours the shapes' sh:Warning instead,
   // so a distribution that breaks after a dataset is registered is reported without invalidating
