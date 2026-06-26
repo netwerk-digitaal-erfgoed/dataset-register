@@ -1,5 +1,20 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+
+// Navigate to /datasets and wait for the server-rendered shell. We deliberately
+// do NOT wait for the client-side search or facets to resolve: those depend on
+// backend availability (unreliable in CI, where the facet panel can stay in its
+// loading skeleton indefinitely) and aren't needed for these structural a11y
+// checks. The checks hold whether the facet sidebar is still loading or rendered,
+// because the underlying violations they used to catch are now fixed at the
+// source (named slider handles, h2 facet headings). The search box is
+// server-rendered, so waiting for it is deterministic and backend-independent.
+async function gotoDatasets(page: Page) {
+  await page.goto('/datasets');
+  await expect(
+    page.getByRole('searchbox', { name: /datasets/i }),
+  ).toBeVisible();
+}
 
 // Mock SPARQL response for datasets list
 const mockDatasetsListResponse = {
@@ -78,8 +93,7 @@ test.beforeEach(async ({ page }) => {
 
 test.describe('Accessibility', () => {
   test('datasets page has no accessibility violations', async ({ page }) => {
-    await page.goto('/datasets');
-    await page.waitForLoadState('load');
+    await gotoDatasets(page);
 
     const results = await new AxeBuilder({ page }).analyze();
 
@@ -95,8 +109,7 @@ test.describe('Accessibility', () => {
   });
 
   test('page has proper heading structure', async ({ page }) => {
-    await page.goto('/datasets');
-    await page.waitForLoadState('load');
+    await gotoDatasets(page);
 
     // Check for main heading
     const h1 = page.locator('h1');
@@ -113,34 +126,33 @@ test.describe('Accessibility', () => {
   });
 
   test('interactive elements are keyboard accessible', async ({ page }) => {
-    await page.goto('/datasets');
-    await page.waitForLoadState('load');
+    await gotoDatasets(page);
 
-    // Find the search input and verify it can receive focus
-    const searchInput = page.getByRole('searchbox');
+    // Target the main dataset search box specifically: once the facets render,
+    // each foldable facet adds its own search input, so a bare getByRole(
+    // 'searchbox') is ambiguous. The main box's placeholder ("Search datasets…"
+    // / "Zoek datasets…") is the only one containing "datasets".
+    const searchInput = page.getByRole('searchbox', { name: /datasets/i });
     await searchInput.focus();
     await expect(searchInput).toBeFocused();
   });
 
   test('page has lang attribute', async ({ page }) => {
-    await page.goto('/datasets');
-    await page.waitForLoadState('load');
+    await gotoDatasets(page);
 
     const lang = await page.getAttribute('html', 'lang');
     expect(lang).toBeTruthy();
   });
 
   test('images have alt text', async ({ page }) => {
-    await page.goto('/datasets');
-    await page.waitForLoadState('load');
+    await gotoDatasets(page);
 
     const imagesWithoutAlt = await page.locator('img:not([alt])').count();
     expect(imagesWithoutAlt).toBe(0);
   });
 
   test('color contrast meets WCAG AA standards', async ({ page }) => {
-    await page.goto('/datasets');
-    await page.waitForLoadState('load');
+    await gotoDatasets(page);
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2aa'])
@@ -154,8 +166,7 @@ test.describe('Accessibility', () => {
   });
 
   test('form inputs have associated labels', async ({ page }) => {
-    await page.goto('/datasets');
-    await page.waitForLoadState('load');
+    await gotoDatasets(page);
 
     const results = await new AxeBuilder({ page })
       .withRules(['label'])

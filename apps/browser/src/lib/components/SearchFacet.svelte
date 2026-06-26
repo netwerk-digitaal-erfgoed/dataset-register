@@ -135,14 +135,14 @@
 </script>
 
 <div class="mb-6">
-  <h3
+  <h2
     class="relative text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 tracking-tight flex items-center"
   >
     {title}
     {#if explanation}
       <FacetHelper {explanation} />
     {/if}
-  </h3>
+  </h2>
 
   <!-- Search/Filter Input -->
   {#if values.length > FOLD_LIMIT}

@@ -48,6 +48,8 @@
   "facets_size": "Size",
   "facets_size_min": "Min",
   "facets_size_max": "Max",
+  "facets_size_min_label": "Minimum dataset size",
+  "facets_size_max_label": "Maximum dataset size",
   "facets_remove_filter": "Remove filter",
   "facets_search": "Search...",
   "facets_show_more": "Show more",
