@@ -10,6 +10,7 @@
     checkDomainAllowed,
     validateByUrl,
     type UrlValidationOutcome,
+    type ValidationProgress,
   } from '$lib/services/validation.js';
   import CodeEditor from './CodeEditor.svelte';
   import {
@@ -49,6 +50,7 @@
 
   let url = $state('');
   let submitting = $state(false);
+  let progress = $state<ValidationProgress | null>(null);
   let domainAllowed = $state<boolean | 'unknown'>('unknown');
   let submitController: AbortController | null = null;
   let checkController: AbortController | null = null;
@@ -222,6 +224,7 @@
     const controller = new AbortController();
     submitController = controller;
     submitting = true;
+    progress = null;
     hasSubmitted = true;
     hideFetched = false;
     onStart();
@@ -236,7 +239,13 @@
           ? false
           : undefined;
     try {
-      const outcome = await validateByUrl(submittedUrl, controller.signal);
+      const outcome = await validateByUrl(
+        submittedUrl,
+        controller.signal,
+        (update) => {
+          if (!controller.signal.aborted) progress = update;
+        },
+      );
       if (!controller.signal.aborted) {
         hideFetched = outcome.kind === 'no-dataset';
         onOutcome(outcome, submittedUrl, allowedNow);
@@ -254,7 +263,10 @@
         );
       }
     } finally {
-      if (!controller.signal.aborted) submitting = false;
+      if (!controller.signal.aborted) {
+        submitting = false;
+        progress = null;
+      }
     }
   }
 
@@ -267,6 +279,17 @@
   });
 
   const isValidUrl = $derived(parseUrl(url) !== null);
+
+  // Single source of truth for "we have a determinate progress to show": the
+  // fill, the label, and the percent all key off this one value.
+  const activeProgress = $derived(
+    progress !== null && progress.total > 0 ? progress : null,
+  );
+  const progressPercent = $derived(
+    activeProgress
+      ? Math.round((activeProgress.completed / activeProgress.total) * 100)
+      : 0,
+  );
 </script>
 
 <form class="space-y-3" onsubmit={submit}>
@@ -286,17 +309,48 @@
     <button
       type="submit"
       disabled={!isValidUrl || submitting}
-      class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:bg-blue-400 disabled:cursor-not-allowed dark:bg-blue-600 dark:hover:bg-blue-700 dark:disabled:bg-blue-900 dark:disabled:text-blue-300 cursor-pointer"
+      aria-busy={submitting}
+      class="relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:bg-blue-400 disabled:cursor-not-allowed dark:bg-blue-600 dark:hover:bg-blue-700 dark:disabled:bg-blue-900 dark:disabled:text-blue-300 cursor-pointer"
     >
-      {#if submitting}
+      {#if activeProgress}
+        <!-- Determinate fill: a darker overlay keeps the white label well above
+             the WCAG AA contrast minimum across the whole button. role +
+             aria-value* expose the progress to assistive tech (the visible
+             label is decorative and hidden from it to avoid double-announcing). -->
         <span
-          class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/50 border-t-white"
-          aria-hidden="true"
+          class="absolute inset-y-0 left-0 bg-blue-900/50 transition-[width] duration-300 ease-out"
+          style="width: {progressPercent}%"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={activeProgress.total}
+          aria-valuenow={activeProgress.completed}
+          aria-valuetext={m.validate_checking({
+            completed: activeProgress.completed,
+            total: activeProgress.total,
+          })}
         ></span>
-        {m.validate_running()}
-      {:else}
-        {m.validate_url_submit()}
       {/if}
+      <span
+        class="relative inline-flex items-center gap-2"
+        aria-hidden={!!activeProgress}
+      >
+        {#if submitting}
+          <span
+            class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/50 border-t-white"
+            aria-hidden="true"
+          ></span>
+          {#if activeProgress}
+            {m.validate_checking({
+              completed: activeProgress.completed,
+              total: activeProgress.total,
+            })}
+          {:else}
+            {m.validate_running()}
+          {/if}
+        {:else}
+          {m.validate_url_submit()}
+        {/if}
+      </span>
     </button>
   </div>
 

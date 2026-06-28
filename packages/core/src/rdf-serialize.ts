@@ -1,4 +1,7 @@
 import { Writer } from 'n3';
+import { Readable } from 'node:stream';
+import { text } from 'node:stream/consumers';
+import { rdfSerializer } from 'rdf-serialize';
 import type { Quad } from '@rdfjs/types';
 
 /**
@@ -19,4 +22,16 @@ export function quadsToNTriples(quads: Quad[]): Promise<string> {
       }
     });
   });
+}
+
+/**
+ * Serialize quads to a string in the given RDF content type (e.g.
+ * `application/ld+json`). Uses `rdf-serialize`, which — unlike the N3 `Writer`
+ * above — supports JSON-LD, and Node's stream consumer to collect the result.
+ */
+export function serializeQuads(
+  quads: Iterable<Quad>,
+  contentType: string,
+): Promise<string> {
+  return text(rdfSerializer.serialize(Readable.from(quads), { contentType }));
 }

@@ -35,20 +35,48 @@ export type InlineValidationOutcome =
   | { kind: 'no-dataset'; details?: ApiErrorDetails }
   | { kind: 'error'; message: string };
 
+/** Progress of a streamed URL validation: distributions probed so far. */
+export interface ValidationProgress {
+  completed: number;
+  total: number;
+}
+
 export async function validateByUrl(
   url: string,
   signal?: AbortSignal,
+  onProgress?: (progress: ValidationProgress) => void,
 ): Promise<UrlValidationOutcome> {
   const response = await fetch(`${PUBLIC_API_ENDPOINT}/datasets/validate`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/ld+json',
-      Accept: 'application/ld+json',
+      // Ask for a progress stream only when the caller wants progress updates;
+      // other callers keep the simpler one-shot JSON-LD response.
+      Accept: onProgress ? 'text/event-stream' : 'application/ld+json',
     },
     body: JSON.stringify({ '@id': url }),
     signal,
   });
 
+  // The server streams progress only when it accepted the request and chose to;
+  // resolve errors (404/406) still arrive as plain HTTP, so fall back on those.
+  const contentType = response.headers.get('content-type') ?? '';
+  if (
+    onProgress &&
+    response.ok &&
+    contentType.includes('text/event-stream') &&
+    response.body
+  ) {
+    return readValidationStream(response.body, onProgress);
+  }
+
+  return readUrlValidationResponse(response);
+}
+
+/** Parse the one-shot (non-streaming) validation response by status code. */
+async function readUrlValidationResponse(
+  response: Response,
+): Promise<UrlValidationOutcome> {
   if (response.status === 404) {
     return { kind: 'not-found', details: await readHydraError(response) };
   }
@@ -67,6 +95,82 @@ export async function validateByUrl(
     kind: 'error',
     message: `Unexpected response ${response.status} from validation API`,
   };
+}
+
+/**
+ * Read a Server-Sent Events stream of `progress` frames followed by a final
+ * `report` (JSON-LD SHACL report) or `error` (no dataset found) frame.
+ */
+async function readValidationStream(
+  body: ReadableStream<Uint8Array>,
+  onProgress: (progress: ValidationProgress) => void,
+): Promise<UrlValidationOutcome> {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let outcome: UrlValidationOutcome | null = null;
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    let boundary: number;
+    while ((boundary = buffer.indexOf('\n\n')) !== -1) {
+      const frame = buffer.slice(0, boundary);
+      buffer = buffer.slice(boundary + 2);
+      const frameOutcome = handleSseFrame(frame, onProgress);
+      if (frameOutcome) outcome = frameOutcome;
+    }
+  }
+
+  return (
+    outcome ?? {
+      kind: 'error',
+      message: 'Validation stream ended without a report',
+    }
+  );
+}
+
+/**
+ * Handle one SSE frame. `progress` frames invoke {@link onProgress} and return
+ * null; terminal frames return the outcome to resolve with.
+ */
+function handleSseFrame(
+  frame: string,
+  onProgress: (progress: ValidationProgress) => void,
+): UrlValidationOutcome | null {
+  let event = 'message';
+  const dataLines: string[] = [];
+  for (const line of frame.split('\n')) {
+    if (line.startsWith('event: ')) event = line.slice('event: '.length);
+    else if (line.startsWith('data: '))
+      dataLines.push(line.slice('data: '.length));
+  }
+  const data = dataLines.join('\n');
+  if (data === '') return null;
+
+  if (event === 'progress') {
+    onProgress(JSON.parse(data) as ValidationProgress);
+    return null;
+  }
+  if (event === 'report') {
+    return { kind: 'report', report: parseShaclReport(JSON.parse(data)) };
+  }
+  if (event === 'error') {
+    const payload = JSON.parse(data) as { statusCode?: number };
+    const details = toHydraError(payload);
+    if (details?.title?.startsWith(COULD_NOT_FETCH_URL_PREFIX)) {
+      return { kind: 'fetch-failed', details };
+    }
+    // 406 is the no-dataset case; any other status (e.g. 500 when validation
+    // threw mid-stream) is a generic error rather than a missing dataset.
+    if (payload.statusCode === 406) {
+      return { kind: 'no-dataset', details };
+    }
+    return { kind: 'error', message: details?.title ?? 'Validation failed' };
+  }
+  return null;
 }
 
 export async function validateInline(

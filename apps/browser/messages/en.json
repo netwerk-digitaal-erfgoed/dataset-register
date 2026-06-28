@@ -444,6 +444,7 @@
   "validate_editor_copied": "Copied",
   "validate_format_unsupported": "Automatic formatting isn’t available for this content type.",
   "validate_running": "Validating…",
+  "validate_checking": "Checking {completed} / {total}",
   "validate_parse_failed_title": "Couldn’t parse your input",
   "validate_result_not_found_title": "No datasets found at URL",
   "validate_result_not_found_body": "The Dataset Register couldn’t resolve this URL. Check that it is publicly reachable and returns a dataset description.",
