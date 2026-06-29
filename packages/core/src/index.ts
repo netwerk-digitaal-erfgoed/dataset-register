@@ -9,6 +9,7 @@ export * from './instrumentation.ts';
 export * from './literal.ts';
 export * from './query.ts';
 export * from './rate.ts';
+export * from './rdf-serialize.ts';
 export * from './registration.ts';
 export * from './search/class-groups.ts';
 export * from './search/compatibility.ts';

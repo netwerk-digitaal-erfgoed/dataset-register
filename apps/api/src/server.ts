@@ -1,6 +1,7 @@
 import fastify, {
   FastifyError,
   FastifyInstance,
+  FastifyPluginAsync,
   FastifyReply,
   FastifyServerOptions,
 } from 'fastify';
@@ -15,10 +16,12 @@ import {
   FetchError,
   HttpError,
   NoDatasetFoundAtUrl,
+  ProbeProgressListener,
   RatingStore,
   Registration,
   registrationsCounter,
   RegistrationStore,
+  serializeQuads,
   validationsCounter,
   Validator,
 } from '@dataset-register/core';
@@ -28,10 +31,16 @@ import { Server } from 'http';
 import * as psl from 'psl';
 import fastifySwagger from '@fastify/swagger';
 import fastifyCors from '@fastify/cors';
+import fastifySse from '@fastify/sse';
 import fastifyRdf from '@lde/fastify-rdf';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import type { DatasetCore } from '@rdfjs/types';
 import { dirname } from 'node:path';
+
+/** Whether the client asked for a Server-Sent Events response. */
+function wantsEventStream(accept: string | undefined): boolean {
+  return accept?.includes('text/event-stream') ?? false;
+}
 
 export async function server(
   datasetStore: DatasetStore,
@@ -87,6 +96,13 @@ export async function server(
       }
       return reply.code(error.statusCode ?? 500).send(error);
     });
+
+  // Await so the plugin’s `onRoute` hook is installed before the routes below
+  // are registered; otherwise the `{ sse: true }` wrapper never wraps them.
+  // @fastify/sse@0.4.0 ships ESM-style `export default` types in a CJS package,
+  // so under nodenext the default import mistypes as the module namespace; at
+  // runtime it is the plugin, so cast to the expected plugin type.
+  await server.register(fastifySse as unknown as FastifyPluginAsync);
 
   const datasetsRequest = {
     schema: {
@@ -169,6 +185,83 @@ export async function server(
     }
   }
 
+  /**
+   * Stream validation over Server-Sent Events: a `progress` event per probed
+   * distribution, then a final `report` event (the JSON-LD SHACL report) or an
+   * `error` event when no dataset was found. Assumes the dataset was already
+   * resolved.
+   *
+   * Frames go through `@fastify/sse` (`reply.sse`), which formats them, manages
+   * the `text/event-stream` headers, and closes the stream when the handler
+   * returns — all on the managed reply, so CORS and the other hooks still run.
+   */
+  async function validateStreaming(
+    reply: FastifyReply,
+    dataset: DatasetCore,
+    url: URL,
+  ): Promise<number> {
+    // `reply.sse.send` is async and not internally queued, but the probe emits
+    // progress from a synchronous callback, so chain the writes to keep frames
+    // ordered and ensure they are all flushed before the route wrapper closes.
+    let writes = Promise.resolve();
+    const send = (message: { event: string; data: unknown }) => {
+      writes = writes.then(() => reply.sse.send(message));
+      return writes;
+    };
+
+    const onProgress: ProbeProgressListener = (completed, total) => {
+      void send({ event: 'progress', data: { completed, total } });
+    };
+
+    try {
+      const validation = await validator.validate(dataset, onProgress);
+
+      if (validation.state === 'no-dataset') {
+        const error = new NoDatasetFoundAtUrl(url);
+        void send({
+          event: 'error',
+          data: {
+            statusCode: 406,
+            title: error.message,
+            description: error.cause,
+          },
+        });
+        await writes;
+        return 406;
+      }
+
+      // Both `valid` and `invalid` carry the SHACL report; the browser reads
+      // sh:conforms to tell them apart, exactly as on the non-streaming path.
+      // Send the parsed JSON-LD so the plugin's default serializer encodes it
+      // like every other frame (no per-frame string/object special-casing).
+      void send({
+        event: 'report',
+        data: JSON.parse(
+          await serializeQuads(validation.errors, 'application/ld+json'),
+        ),
+      });
+      await writes;
+      // Mirror the non-streaming status so validationsCounter stays comparable
+      // across the streaming and one-shot paths.
+      return validation.state === 'invalid' ? 400 : 200;
+    } catch (error) {
+      // validator.validate threw, or a frame write failed (e.g. the client
+      // disconnected). The response is already streaming, so surface the cause
+      // as an error frame instead of a silent close, and report 500 — what the
+      // non-streaming path's error handler would have recorded.
+      reply.log.error(error, 'Streaming validation failed');
+      try {
+        await reply.sse.send({
+          event: 'error',
+          data: { statusCode: 500, title: 'Validation failed' },
+        });
+      } catch {
+        // The connection is already gone; nothing more we can send.
+      }
+      return 500;
+    }
+  }
+
   async function domainIsAllowed(url: URL): Promise<boolean> {
     const result = psl.parse(url.hostname);
     if (result.error || result.domain === null) {
@@ -227,24 +320,49 @@ export async function server(
     return reply;
   });
 
-  server.put('/datasets/validate', datasetsRequest, async (request, reply) => {
-    const url = new URL((request.body as { '@id': string })['@id']);
-    request.log.info(url.toString());
-    const resolved = await resolveDataset(url, reply);
+  server.put(
+    '/datasets/validate',
+    {
+      ...datasetsRequest,
+      // `@fastify/sse` only engages for `Accept: text/event-stream` requests and
+      // calls the original handler unchanged otherwise, so the default JSON-LD
+      // response stays byte-for-byte identical for existing clients.
+      sse: { heartbeat: false },
+    },
+    async (request, reply) => {
+      const url = new URL((request.body as { '@id': string })['@id']);
+      request.log.info(url.toString());
+      const resolved = await resolveDataset(url, reply);
 
-    if (resolved) {
-      await validate(resolved.data, reply, resolved.url);
-    }
-    validationsCounter.add(1, {
-      status: reply.statusCode,
-    });
-    request.log.info(
-      `Validated at ${Math.round(
-        process.memoryUsage().rss / 1024 / 1024,
-      )} MB memory`,
-    );
-    return reply;
-  });
+      // `wantsEventStream` must match the Accept check `@fastify/sse` uses to set
+      // up `reply.sse`; keep them in sync. On a stream the wire status is always
+      // 200, so take the logical status from `validateStreaming` for the metric.
+      let streaming = false;
+      let status = reply.statusCode;
+      if (resolved && wantsEventStream(request.headers.accept)) {
+        streaming = true;
+        status = await validateStreaming(reply, resolved.data, resolved.url);
+      } else if (resolved) {
+        await validate(resolved.data, reply, resolved.url);
+        status = reply.statusCode;
+      }
+      validationsCounter.add(1, {
+        status,
+      });
+      request.log.info(
+        `Validated at ${Math.round(
+          process.memoryUsage().rss / 1024 / 1024,
+        )} MB memory`,
+      );
+
+      // For a stream, return nothing so the @fastify/sse wrapper closes it;
+      // otherwise return the reply as usual.
+      if (streaming) {
+        return;
+      }
+      return reply;
+    },
+  );
 
   server.post(
     '/datasets/validate',

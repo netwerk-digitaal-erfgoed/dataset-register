@@ -444,6 +444,7 @@
   "validate_editor_copy": "Kopiëren",
   "validate_editor_copied": "Gekopieerd",
   "validate_running": "Bezig met valideren…",
+  "validate_checking": "Bezig met controleren {completed} / {total}",
   "validate_parse_failed_title": "Kan invoer niet verwerken",
   "validate_result_not_found_title": "Geen datasets gevonden op URL",
   "validate_result_not_found_body": "Het Datasetregister kan deze URL niet ophalen. Controleer of deze publiek bereikbaar is en een datasetbeschrijving teruggeeft.",

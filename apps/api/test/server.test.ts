@@ -3,7 +3,13 @@ import type { Mock } from 'vitest';
 import { FastifyInstance } from 'fastify';
 import { Server } from 'http';
 import { server } from '../src/server.js';
-import { readUrl, ShaclEngineValidator } from '@dataset-register/core';
+import {
+  readUrl,
+  ShaclEngineValidator,
+  type InvalidDataset,
+  type Valid,
+  type Validator,
+} from '@dataset-register/core';
 import {
   file,
   MockAllowedRegistrationDomainStore,
@@ -17,6 +23,28 @@ import { dirname } from 'path';
 
 let httpServer: FastifyInstance<Server>;
 const registrationStore = new MockRegistrationStore();
+
+/**
+ * Parse a Server-Sent Events stream body into its individual events. This is
+ * an intentionally independent parser (the browser client has its own in
+ * validation.ts) so the test validates the server's wire format on its own
+ * terms rather than through the client's parsing assumptions.
+ */
+function parseSse(body: string): { event: string; data: string }[] {
+  return body
+    .split('\n\n')
+    .filter((block) => block.trim() !== '')
+    .map((block) => {
+      const event = /^event: (.*)$/m.exec(block)?.[1] ?? 'message';
+      const data = block
+        .split('\n')
+        .filter((line) => line.startsWith('data: '))
+        .map((line) => line.slice('data: '.length))
+        .join('\n');
+      return { event, data };
+    });
+}
+
 describe('Server', () => {
   beforeAll(async () => {
     const shacl = await readUrl('../../requirements/shacl.ttl');
@@ -193,6 +221,205 @@ describe('Server', () => {
     );
     console.log(response.body);
     expect(response.payload).not.toEqual('');
+  });
+
+  it('streams progress events then a report when the client accepts text/event-stream', async () => {
+    const shacl = await readUrl('../../requirements/shacl.ttl');
+    const progressingValidator: Validator = {
+      async validate(_input, onProgress) {
+        onProgress?.(0, 2);
+        onProgress?.(1, 2);
+        onProgress?.(2, 2);
+        // `readUrl` yields a DatasetCore; cast to the report's richer Dataset
+        // type — the streaming path only iterates its quads.
+        return { state: 'valid', errors: shacl } as Valid;
+      },
+    };
+    const streamingServer = await server(
+      new MockDatasetStore(),
+      registrationStore,
+      new MockAllowedRegistrationDomainStore(),
+      progressingValidator,
+      shacl,
+      '/',
+      { logger: false },
+    );
+    nock('https://example.com/')
+      .get('/streamed')
+      .reply(200, '<https://example.com/s> <https://example.com/p> "o" .', {
+        'Content-Type': 'text/turtle',
+      });
+
+    const response = await streamingServer.inject({
+      method: 'PUT',
+      url: '/datasets/validate',
+      headers: {
+        'Content-Type': 'application/ld+json',
+        Accept: 'text/event-stream',
+      },
+      payload: JSON.stringify({ '@id': 'https://example.com/streamed' }),
+    });
+
+    expect(response.statusCode).toEqual(200);
+    expect(response.headers['content-type']).toContain('text/event-stream');
+
+    const events = parseSse(response.payload);
+    const progress = events.filter((event) => event.event === 'progress');
+    expect(progress.map((event) => JSON.parse(event.data))).toEqual([
+      { completed: 0, total: 2 },
+      { completed: 1, total: 2 },
+      { completed: 2, total: 2 },
+    ]);
+
+    const report = events.find((event) => event.event === 'report');
+    expect(report).toBeDefined();
+    expect(Array.isArray(JSON.parse(report?.data ?? ''))).toBe(true);
+  });
+
+  it('streams an error event when no dataset is found and the client accepts text/event-stream', async () => {
+    const shacl = await readUrl('../../requirements/shacl.ttl');
+    const noDatasetValidator: Validator = {
+      async validate() {
+        return { state: 'no-dataset' };
+      },
+    };
+    const streamingServer = await server(
+      new MockDatasetStore(),
+      registrationStore,
+      new MockAllowedRegistrationDomainStore(),
+      noDatasetValidator,
+      shacl,
+      '/',
+      { logger: false },
+    );
+    nock('https://example.com/')
+      .get('/empty')
+      .reply(200, '<https://example.com/s> <https://example.com/p> "o" .', {
+        'Content-Type': 'text/turtle',
+      });
+
+    const response = await streamingServer.inject({
+      method: 'PUT',
+      url: '/datasets/validate',
+      headers: {
+        'Content-Type': 'application/ld+json',
+        Accept: 'text/event-stream',
+      },
+      payload: JSON.stringify({ '@id': 'https://example.com/empty' }),
+    });
+
+    expect(response.headers['content-type']).toContain('text/event-stream');
+    const error = parseSse(response.payload).find(
+      (event) => event.event === 'error',
+    );
+    expect(error).toBeDefined();
+    expect(JSON.parse(error?.data ?? '{}').title).toEqual(
+      'No dataset found at URL https://example.com/empty',
+    );
+  });
+
+  it('ends the stream cleanly when validation throws mid-stream', async () => {
+    const shacl = await readUrl('../../requirements/shacl.ttl');
+    const failingValidator: Validator = {
+      async validate(_input, onProgress) {
+        onProgress?.(0, 1);
+        throw new Error('probe exploded');
+      },
+    };
+    const streamingServer = await server(
+      new MockDatasetStore(),
+      registrationStore,
+      new MockAllowedRegistrationDomainStore(),
+      failingValidator,
+      shacl,
+      '/',
+      { logger: false },
+    );
+    nock('https://example.com/')
+      .get('/boom')
+      .reply(200, '<https://example.com/s> <https://example.com/p> "o" .', {
+        'Content-Type': 'text/turtle',
+      });
+
+    const response = await streamingServer.inject({
+      method: 'PUT',
+      url: '/datasets/validate',
+      headers: {
+        'Content-Type': 'application/ld+json',
+        Accept: 'text/event-stream',
+      },
+      payload: JSON.stringify({ '@id': 'https://example.com/boom' }),
+    });
+
+    // The partial progress was delivered, then an error frame surfaces the
+    // failure (instead of a silent close), and no report frame is sent.
+    const events = parseSse(response.payload);
+    expect(events.some((event) => event.event === 'progress')).toBe(true);
+    expect(events.some((event) => event.event === 'report')).toBe(false);
+    const error = events.find((event) => event.event === 'error');
+    expect(error).toBeDefined();
+    expect(JSON.parse(error?.data ?? '{}').statusCode).toEqual(500);
+  });
+
+  it('streams a report (not a 4xx) for an invalid dataset over text/event-stream', async () => {
+    const shacl = await readUrl('../../requirements/shacl.ttl');
+    const invalidValidator: Validator = {
+      async validate(_input, onProgress) {
+        onProgress?.(0, 1);
+        // `readUrl` yields a DatasetCore; the streaming path only iterates it.
+        return { state: 'invalid', errors: shacl } as InvalidDataset;
+      },
+    };
+    const streamingServer = await server(
+      new MockDatasetStore(),
+      registrationStore,
+      new MockAllowedRegistrationDomainStore(),
+      invalidValidator,
+      shacl,
+      '/',
+      { logger: false },
+    );
+    nock('https://example.com/')
+      .get('/invalid')
+      .reply(200, '<https://example.com/s> <https://example.com/p> "o" .', {
+        'Content-Type': 'text/turtle',
+      });
+
+    const response = await streamingServer.inject({
+      method: 'PUT',
+      url: '/datasets/validate',
+      headers: {
+        'Content-Type': 'application/ld+json',
+        Accept: 'text/event-stream',
+      },
+      payload: JSON.stringify({ '@id': 'https://example.com/invalid' }),
+    });
+
+    // Like the valid case, invalid datasets stream a report frame; the browser
+    // reads sh:conforms to tell them apart.
+    expect(response.headers['content-type']).toContain('text/event-stream');
+    const report = parseSse(response.payload).find(
+      (event) => event.event === 'report',
+    );
+    expect(report).toBeDefined();
+    expect(Array.isArray(JSON.parse(report?.data ?? ''))).toBe(true);
+  });
+
+  it('returns a normal error response (not a stream) when an event-stream request cannot resolve the URL', async () => {
+    nock('https://example.com/').get('/404-stream').reply(404);
+    const response = await httpServer.inject({
+      method: 'PUT',
+      url: '/datasets/validate',
+      headers: {
+        'Content-Type': 'application/ld+json',
+        Accept: 'text/event-stream',
+      },
+      payload: JSON.stringify({ '@id': 'https://example.com/404-stream' }),
+    });
+    // Resolution errors arrive as plain HTTP so the browser falls back to its
+    // one-shot parser, exactly as for non-streaming requests.
+    expect(response.statusCode).toEqual(404);
+    expect(response.headers['content-type']).not.toContain('text/event-stream');
   });
 
   it('validates JSON-LD dataset description in request body', async () => {
