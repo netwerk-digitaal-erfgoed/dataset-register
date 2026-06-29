@@ -15,8 +15,8 @@
   "types": "./dist/index.d.ts",
   "dependencies": {
     "@dataset-register/core": "*",
-    "@lde/search": "^0.1.1",
-    "@lde/search-typesense": "^0.1.0",
+    "@lde/search": "^0.1.2",
+    "@lde/search-typesense": "^0.1.1",
     "@rdfjs/types": "2.0.1",
     "env-schema": "^7.0.0",
     "pino": "^10.2.0",
