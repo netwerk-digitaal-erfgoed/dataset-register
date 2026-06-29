@@ -17,6 +17,7 @@ export * from './search/field-registry.ts';
 export * from './search/media-types.ts';
 export * from './search/synonyms.ts';
 export * from './sparql.ts';
+export * from './sparql-iri.ts';
 export * from './transform.ts';
 export * from './validation-report.ts';
 export * from './validator.ts';
