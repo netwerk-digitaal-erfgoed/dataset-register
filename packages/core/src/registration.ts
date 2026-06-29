@@ -4,6 +4,7 @@ import {
   REGISTRATION_STATUS_BASE_URI,
   REGISTRATION_WARNING_COUNT_PREDICATE,
 } from './constants.js';
+import { sparqlIri } from './sparql-iri.js';
 
 export class Registration {
   private _dateRead?: Date;
@@ -118,7 +119,7 @@ export interface AllowedRegistrationDomainStore {
 }
 
 export function toRdf(registration: Registration) {
-  const iri = factory.namedNode(registration.url.toString());
+  const iri = factory.namedNode(sparqlIri(registration.url));
 
   const quads = [
     factory.quad(
@@ -154,7 +155,7 @@ export function toRdf(registration: Registration) {
         factory.quad(
           factory.namedNode(datasetIri.toString()),
           factory.namedNode('https://schema.org/subjectOf'),
-          factory.namedNode(registration.url.toString()),
+          iri,
         ),
       ];
       if (registration.dateRead !== undefined) {

@@ -363,6 +363,52 @@ describe('SPARQL', () => {
       expect(found).toBeUndefined();
     });
 
+    // A SPARQL registration URL may contain characters that are illegal in a
+    // SPARQL/Turtle IRIREF – notably the literal braces and spaces of an inlined
+    // CONSTRUCT query (e.g. KB’s `…/sparql?query=CONSTRUCT { ?s ?p ?o } …`). The
+    // WHATWG URL parser leaves `{`/`}` un-encoded in the query component, so the
+    // store must percent-encode them before embedding the URL as `<…>`, both when
+    // writing and when querying, or store/find/delete all fail to parse.
+    it('round-trips a registration whose URL contains IRIREF-illegal characters', async () => {
+      const url = new URL(
+        'http://api.bibliotheken.nl/datasets/KB/Production/sparql?query=CONSTRUCT%20{%20?s%20?p%20?o%20.%20}%20WHERE%20{%20GRAPH%20%3Chttp://data.bibliotheken.nl/datasetbeschrijvingen%3E%20{%20?s%20?p%20?o%20.%20}%20}',
+      );
+      const registration = createTestRegistration(
+        url.toString(),
+        new Date('2025-01-01T10:00:00Z'),
+        undefined,
+        new Date('2025-01-15T08:30:00Z'),
+        [new URL('https://example.org/dataset/1')],
+      );
+
+      await registrationStore.store(registration);
+
+      // The IRI is persisted in its IRIREF-safe form: the literal braces are
+      // percent-encoded as %7B/%7D, never stored raw.
+      const stored = await sparqlClient.query(`
+        PREFIX schema: <https://schema.org/>
+        SELECT ?s WHERE {
+          GRAPH <${registrationsGraphIri}> { ?s a schema:EntryPoint }
+        }
+      `);
+      const storedIri = (await stored.toArray())[0]!.get('s')!.value;
+      expect(storedIri).not.toMatch(/[{}]/);
+      expect(storedIri).toContain('CONSTRUCT%20%7B%20?s');
+
+      const found = await registrationStore.findByUrl(url);
+      expect(found).toBeDefined();
+      // findByUrl echoes back the URL it was queried with, so callers keep the
+      // original literal-brace form; lookup still matches because sparqlIri() is
+      // idempotent across the original and percent-encoded forms.
+      expect(found!.url.toString()).toBe(url.toString());
+      expect(found!.datasets.map((d) => d.toString())).toContain(
+        'https://example.org/dataset/1',
+      );
+
+      await registrationStore.delete(url);
+      expect(await registrationStore.findByUrl(url)).toBeUndefined();
+    });
+
     it('should delete a registration and its linked datasets', async () => {
       const datasets = [
         new URL('https://example.org/dataset/1'),

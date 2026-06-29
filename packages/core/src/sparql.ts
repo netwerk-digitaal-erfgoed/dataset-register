@@ -3,6 +3,7 @@ import { QueryEngine } from '@comunica/query-sparql';
 import type { BindingsStream } from '@comunica/types';
 import { Parser } from 'n3';
 import { quadsToNTriples } from './rdf-serialize.js';
+import { sparqlIri } from './sparql-iri.js';
 import {
   AllowedRegistrationDomainStore,
   Registration,
@@ -195,15 +196,16 @@ export class SparqlRegistrationStore implements RegistrationStore {
   }
 
   async findByUrl(url: URL): Promise<Registration | undefined> {
+    const iri = sparqlIri(url);
     const result = await this.client.query(`
       PREFIX schema: <https://schema.org/>
 
       SELECT ?datePosted ?validUntil ?dataset WHERE {
         GRAPH <${this.graphIri}> {
-          <${url}> a schema:EntryPoint ;
+          <${iri}> a schema:EntryPoint ;
             schema:datePosted ?datePosted .
-          OPTIONAL { <${url}> schema:validUntil ?validUntil . }
-          OPTIONAL { <${url}> schema:about ?dataset . }
+          OPTIONAL { <${iri}> schema:validUntil ?validUntil . }
+          OPTIONAL { <${iri}> schema:about ?dataset . }
         }
       }
     `);
@@ -229,6 +231,7 @@ export class SparqlRegistrationStore implements RegistrationStore {
   }
 
   async store(registration: Registration): Promise<void> {
+    const iri = sparqlIri(registration.url);
     const quads = toRdf(registration);
     const triples = await quadsToNTriples(quads);
 
@@ -236,20 +239,20 @@ export class SparqlRegistrationStore implements RegistrationStore {
     // Need to delete both the registration and any dataset relationships it created
     const sparqlUpdate = `
       PREFIX schema: <https://schema.org/>
-      
+
       WITH <${this.graphIri}>
       DELETE {
-        <${registration.url}> ?p ?o .
+        <${iri}> ?p ?o .
         ?dataset ?dp ?do .
       }
       WHERE {
         {
-          <${registration.url}> ?p ?o .
+          <${iri}> ?p ?o .
         } UNION {
-          ?dataset schema:subjectOf <${registration.url}> .
+          ?dataset schema:subjectOf <${iri}> .
           ?dataset ?dp ?do .
         } UNION {
-          <${registration.url}> schema:about ?dataset .
+          <${iri}> schema:about ?dataset .
           ?dataset ?dp ?do .
         }
       };
@@ -264,22 +267,23 @@ export class SparqlRegistrationStore implements RegistrationStore {
   }
 
   async delete(url: URL): Promise<void> {
+    const iri = sparqlIri(url);
     await this.client.update(`
       PREFIX schema: <https://schema.org/>
 
       WITH <${this.graphIri}>
       DELETE {
-        <${url}> ?p ?o .
+        <${iri}> ?p ?o .
         ?dataset ?dp ?do .
       }
       WHERE {
         {
-          <${url}> ?p ?o .
+          <${iri}> ?p ?o .
         } UNION {
-          ?dataset schema:subjectOf <${url}> .
+          ?dataset schema:subjectOf <${iri}> .
           ?dataset ?dp ?do .
         } UNION {
-          <${url}> schema:about ?dataset .
+          <${iri}> schema:about ?dataset .
           ?dataset ?dp ?do .
         }
       }`);
