@@ -1,7 +1,9 @@
 import { Client } from 'typesense';
-import { rebuild } from '@lde/search-typesense';
+import { rebuild, buildCollectionSchema } from '@lde/search-typesense';
 import { projectGraph, type SearchDocument } from '@lde/search';
 import {
+  DATASET,
+  DATASET_DEFAULT_SORTING_FIELD,
   DEFAULT_REGISTRATIONS_GRAPH,
   LABELS_COLLECTION_ALIAS,
   SEARCH_COLLECTION_ALIAS,
@@ -10,7 +12,6 @@ import {
   SparqlClient,
 } from '@dataset-register/core';
 import type { Quad } from '@rdfjs/types';
-import { buildCollectionSchema } from './collection-schema.js';
 import {
   buildLabelCollectionSchema,
   toLabelDocuments,
@@ -18,7 +19,6 @@ import {
 } from './labels.js';
 import { RegisterSource } from './register-source.js';
 import { DkgSource } from './dkg-source.js';
-import { DATASET_PROJECTION } from './projection.js';
 import {
   createTypesenseClient,
   type TypesenseConnection,
@@ -127,8 +127,13 @@ export async function runIndex(
 
   const result = await rebuild(
     client,
-    buildCollectionSchema(alias),
-    projectGraph([...registerQuads, ...dkgQuads], [DATASET_PROJECTION]),
+    buildCollectionSchema(DATASET, {
+      name: alias,
+      defaultSortingField: DATASET_DEFAULT_SORTING_FIELD,
+      defaultLocale: 'nl',
+      synonymSets: [SEARCH_SYNONYM_SET],
+    }),
+    projectGraph([...registerQuads, ...dkgQuads], [DATASET]),
   );
   if (result === null) {
     log(`Rebuild of ${alias} skipped: another rebuild is already running`);

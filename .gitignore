@@ -51,3 +51,5 @@ vitest.config.*.timestamp*
 .nx/polygraph
 .nx/self-healing
 .nx/migrate-runs
+# local verdaccio registry pointer (step-5 dev)
+.npmrc

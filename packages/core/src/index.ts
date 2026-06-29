@@ -12,6 +12,7 @@ export * from './rate.ts';
 export * from './registration.ts';
 export * from './search/class-groups.ts';
 export * from './search/compatibility.ts';
+export * from './search/dataset.ts';
 export * from './search/field-registry.ts';
 export * from './search/media-types.ts';
 export * from './search/synonyms.ts';

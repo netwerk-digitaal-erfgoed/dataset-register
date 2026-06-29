@@ -15,7 +15,10 @@
     "undici@^7.0.0": "7.24.8",
     "undici@^8.0.0": "7.24.8"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@lde/search": "^0.2.0",
+    "@lde/search-typesense": "^0.1.2"
+  },
   "devDependencies": {
     "@commitlint/cli": "^21.0.2",
     "@commitlint/config-conventional": "^21.0.2",
