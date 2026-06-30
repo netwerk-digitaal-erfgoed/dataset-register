@@ -65,14 +65,10 @@
   const dataset = $derived(data.dataset);
   const distributions = $derived(data.distributions);
   const totalDistributions = $derived(data.totalDistributions);
-  const summary = $derived(data.summary);
-  const summaryGeneratedAt = $derived(data.summaryGeneratedAt);
-  const linksets = $derived(data.linksets);
   const temporalCoverages = $derived(data.temporalCoverages);
-  const iiifManifests = $derived(data.iiifManifests);
-  const persistentUris = $derived(data.persistentUris);
-  const linkedData = $derived(data.linkedData);
-  const terms = $derived(data.terms);
+  // summary, summaryGeneratedAt, linksets, iiifManifests, persistentUris,
+  // linkedData and terms now arrive via the streamed data.analysis promise (see
+  // DatasetAnalysis) and are read inside the {#await} block in the template.
   const registrationHasWarnings = $derived(data.warningCount > 0);
 
   // SEO: canonical and hreflang URLs
@@ -251,16 +247,23 @@
       dataset.creator[0].$id === dataset.publisher.$id,
   );
 
-  const hasVoidStats = $derived(
-    summary &&
+  // summary now arrives via the streamed data.analysis promise, so the
+  // summary-derived values below are plain functions called inside the {#await}
+  // block (with {@const}) rather than top-level $derived. Svelte still tracks any
+  // reactive signals these read (e.g. the streamed health/validity maps), so the
+  // results update as those resolve.
+  function computeHasVoidStats(summary: DatasetSummary | null): boolean {
+    return !!(
+      summary &&
       (summary.triples != null ||
         summary.distinctSubjects != null ||
         summary.properties != null ||
         summary.distinctObjectsURI != null ||
         summary.distinctObjectsLiteral != null ||
         (summary.classPartition && summary.classPartition.length > 0) ||
-        (summary.vocabulary && summary.vocabulary.length > 0)),
-  );
+        (summary.vocabulary && summary.vocabulary.length > 0))
+    );
+  }
 
   // RDF distributions (downloads or SPARQL endpoints) the Knowledge Graph would
   // summarise. A dataset offering only non-RDF downloads (CSV, PDF, …) is not
@@ -279,7 +282,10 @@
   // (merely pending or not yet processed), shows nothing rather than a false
   // failure. Prefers an invalid-RDF cause over a reachability one, as it is the
   // more specific explanation.
-  const summaryUnavailable = $derived.by(() => {
+  function computeSummaryUnavailable(
+    summary: DatasetSummary | null,
+    hasVoidStats: boolean,
+  ) {
     if (summary && hasVoidStats) return undefined;
     if (rdfDistributions.length === 0) return undefined;
     const failed =
@@ -297,7 +303,7 @@
       ? validityReason(validityByUrl.get(failed.accessURL) ?? [])
       : probeReason(healthByUrl.get(failed.accessURL)?.lastOutcome ?? null);
     return { invalid, reason };
-  });
+  }
 
   // Get registration status (gone, invalid, or null)
   const registrationStatus = $derived(
@@ -378,7 +384,7 @@
   }
 
   // Table data for all class partitions with nested property partitions
-  const classPartitionTable = $derived.by(() => {
+  function buildClassPartitionTable(summary: DatasetSummary | null) {
     if (!summary?.classPartition?.length) return undefined;
 
     const sorted = mergeClassPartitions(summary.classPartition).sort(
@@ -424,7 +430,7 @@
       }),
       total,
     };
-  });
+  }
 
   const splitBtnMainClass =
     'inline-flex items-center rounded-s-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:z-10 focus:ring-2 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800';
@@ -1576,324 +1582,356 @@
     </div>
   {/if}
 
-  <!-- NDE compatibility (“vinkjes”) -->
-  <NdeCompatibility
-    isAnalyzed={isAnalyzed(summary)}
-    {registrationStatus}
-    {registrationHasWarnings}
-    {persistentUris}
-    {terms}
-    {iiifManifests}
-    {linkedData}
-    validateHref={dataset.subjectOf?.$id
-      ? localizeHref(`/validate?url=${encodeUrlParam(dataset.subjectOf.$id)}`)
-      : null}
-  />
+  <!-- The Knowledge Graph analysis (NDE-compatibility criteria + the VoID
+       linked-data summary) streams in after the register record above; see
+       DatasetAnalysis. The shell renders immediately and this section fills in
+       once data.analysis resolves. -->
+  {#await data.analysis then analysis}
+    {@const summary = analysis.summary}
+    {@const summaryGeneratedAt = analysis.summaryGeneratedAt}
+    {@const linksets = analysis.linksets}
+    {@const iiifManifests = analysis.iiifManifests}
+    {@const persistentUris = analysis.persistentUris}
+    {@const linkedData = analysis.linkedData}
+    {@const terms = analysis.terms}
+    {@const hasVoidStats = computeHasVoidStats(summary)}
+    {@const classPartitionTable = buildClassPartitionTable(summary)}
+    {@const summaryUnavailable = computeSummaryUnavailable(
+      summary,
+      hasVoidStats,
+    )}
+    <!-- NDE compatibility (“vinkjes”) -->
+    <NdeCompatibility
+      isAnalyzed={isAnalyzed(summary)}
+      {registrationStatus}
+      {registrationHasWarnings}
+      {persistentUris}
+      {terms}
+      {iiifManifests}
+      {linkedData}
+      validateHref={dataset.subjectOf?.$id
+        ? localizeHref(`/validate?url=${encodeUrlParam(dataset.subjectOf.$id)}`)
+        : null}
+    />
 
-  <!-- VoID Summary Section -->
-  {#if summary && hasVoidStats}
-    <div class="mb-8">
-      <h2
-        id="linked-data-summary"
-        class="mb-4 flex scroll-mt-20 flex-wrap items-center gap-2 text-xl font-semibold text-gray-900 lg:scroll-mt-24 dark:text-white"
-      >
-        {m.detail_linked_data_summary()}
-        <span id="tooltip-linked-data-summary" class="cursor-pointer">
-          <InfoCircleSolid
-            class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
-          />
-        </span>
-        <Tooltip triggeredBy="#tooltip-linked-data-summary"
-          >{m.detail_linked_data_summary_description()}</Tooltip
+    <!-- VoID Summary Section -->
+    {#if summary && hasVoidStats}
+      <div class="mb-8">
+        <h2
+          id="linked-data-summary"
+          class="mb-4 flex scroll-mt-20 flex-wrap items-center gap-2 text-xl font-semibold text-gray-900 lg:scroll-mt-24 dark:text-white"
         >
-        {#if summaryGeneratedAt}
-          <span
-            id="summary-generated-relative"
-            class="ml-auto cursor-default text-sm font-normal text-gray-600 dark:text-gray-400"
-          >
-            {m.detail_summary_updated({
-              time: getRelativeTimeString(new Date(summaryGeneratedAt)),
-            })}
+          {m.detail_linked_data_summary()}
+          <span id="tooltip-linked-data-summary" class="cursor-pointer">
+            <InfoCircleSolid
+              class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+            />
           </span>
-          <Tooltip triggeredBy="#summary-generated-relative">
-            {new Date(summaryGeneratedAt).toLocaleDateString(getLocale(), {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </Tooltip>
-        {/if}
-      </h2>
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <!-- Merged: Triples + Subjects + Avg Triples Per Subject -->
-        {#if (summary.triples !== undefined && summary.triples !== null) || (summary.distinctSubjects !== undefined && summary.distinctSubjects !== null)}
-          <div
-            class="rounded-lg border border-gray-200 bg-white p-4 shadow dark:border-gray-700 dark:bg-gray-800"
+          <Tooltip triggeredBy="#tooltip-linked-data-summary"
+            >{m.detail_linked_data_summary_description()}</Tooltip
           >
-            <div class="space-y-3">
-              {#if summary.distinctSubjects !== undefined && summary.distinctSubjects !== null}
-                <div>
-                  <div class="text-3xl font-bold text-gray-900 dark:text-white">
-                    {summary.distinctSubjects.toLocaleString(getLocale())}
+          {#if summaryGeneratedAt}
+            <span
+              id="summary-generated-relative"
+              class="ml-auto cursor-default text-sm font-normal text-gray-600 dark:text-gray-400"
+            >
+              {m.detail_summary_updated({
+                time: getRelativeTimeString(new Date(summaryGeneratedAt)),
+              })}
+            </span>
+            <Tooltip triggeredBy="#summary-generated-relative">
+              {new Date(summaryGeneratedAt).toLocaleDateString(getLocale(), {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </Tooltip>
+          {/if}
+        </h2>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <!-- Merged: Triples + Subjects + Avg Triples Per Subject -->
+          {#if (summary.triples !== undefined && summary.triples !== null) || (summary.distinctSubjects !== undefined && summary.distinctSubjects !== null)}
+            <div
+              class="rounded-lg border border-gray-200 bg-white p-4 shadow dark:border-gray-700 dark:bg-gray-800"
+            >
+              <div class="space-y-3">
+                {#if summary.distinctSubjects !== undefined && summary.distinctSubjects !== null}
+                  <div>
+                    <div
+                      class="text-3xl font-bold text-gray-900 dark:text-white"
+                    >
+                      {summary.distinctSubjects.toLocaleString(getLocale())}
+                    </div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                      {m.detail_subjects()}
+                    </div>
                   </div>
-                  <div class="text-sm text-gray-600 dark:text-gray-400">
-                    {m.detail_subjects()}
-                  </div>
-                </div>
-              {/if}
-              {#if summary.triples !== undefined && summary.triples !== null}
-                <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
-                  <div class="text-3xl font-bold text-gray-900 dark:text-white">
-                    {summary.triples.toLocaleString(getLocale())}
-                  </div>
-                  <div class="text-sm text-gray-600 dark:text-gray-400">
-                    {m.detail_triples()}
-                  </div>
-                </div>
-              {/if}
-              {#if summary.triples !== undefined && summary.triples !== null && summary.distinctSubjects !== undefined && summary.distinctSubjects !== null && summary.distinctSubjects > 0}
-                <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
+                {/if}
+                {#if summary.triples !== undefined && summary.triples !== null}
                   <div
-                    class="text-2xl font-semibold text-blue-700 dark:text-blue-300"
+                    class="border-t border-gray-200 dark:border-gray-700 pt-3"
                   >
-                    {(
-                      summary.triples / summary.distinctSubjects
-                    ).toLocaleString(getLocale(), {
-                      minimumFractionDigits: 1,
-                      maximumFractionDigits: 1,
-                    })}
+                    <div
+                      class="text-3xl font-bold text-gray-900 dark:text-white"
+                    >
+                      {summary.triples.toLocaleString(getLocale())}
+                    </div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                      {m.detail_triples()}
+                    </div>
                   </div>
-                  <div class="text-xs text-gray-600 dark:text-gray-400">
-                    {m.detail_avg_triples_per_subject()}
+                {/if}
+                {#if summary.triples !== undefined && summary.triples !== null && summary.distinctSubjects !== undefined && summary.distinctSubjects !== null && summary.distinctSubjects > 0}
+                  <div
+                    class="border-t border-gray-200 dark:border-gray-700 pt-3"
+                  >
+                    <div
+                      class="text-2xl font-semibold text-blue-700 dark:text-blue-300"
+                    >
+                      {(
+                        summary.triples / summary.distinctSubjects
+                      ).toLocaleString(getLocale(), {
+                        minimumFractionDigits: 1,
+                        maximumFractionDigits: 1,
+                      })}
+                    </div>
+                    <div class="text-xs text-gray-600 dark:text-gray-400">
+                      {m.detail_avg_triples_per_subject()}
+                    </div>
                   </div>
-                </div>
-              {/if}
+                {/if}
+              </div>
             </div>
-          </div>
-        {/if}
+          {/if}
 
-        {#if summary.properties !== undefined && summary.properties !== null}
-          <div
-            class="rounded-lg border border-gray-200 bg-white p-4 shadow dark:border-gray-700 dark:bg-gray-800"
-          >
-            <div class="text-3xl font-bold text-gray-900 dark:text-white">
-              {summary.properties.toLocaleString(getLocale())}
-            </div>
-            <div class="text-sm text-gray-600 dark:text-gray-400">
-              {m.detail_properties()}
-            </div>
-          </div>
-        {/if}
-
-        {#if summary.distinctObjectsURI !== undefined || summary.distinctObjectsLiteral !== undefined}
-          {@const totalObjects =
-            (summary.distinctObjectsURI || 0) +
-            (summary.distinctObjectsLiteral || 0)}
-          {@const literalsCount = summary.distinctObjectsLiteral || 0}
-          {@const urisCount = summary.distinctObjectsURI || 0}
-          {@const literalsPercent =
-            totalObjects > 0 ? (literalsCount / totalObjects) * 100 : 0}
-          {@const urisPercent =
-            totalObjects > 0 ? (urisCount / totalObjects) * 100 : 0}
-          {#if totalObjects > 0}
+          {#if summary.properties !== undefined && summary.properties !== null}
             <div
               class="rounded-lg border border-gray-200 bg-white p-4 shadow dark:border-gray-700 dark:bg-gray-800"
             >
               <div class="text-3xl font-bold text-gray-900 dark:text-white">
-                {totalObjects.toLocaleString(getLocale())}
+                {summary.properties.toLocaleString(getLocale())}
               </div>
-              <div class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                {m.detail_objects()}
-              </div>
-
-              <!-- Horizontal bar chart -->
-              <div class="mt-4 space-y-3">
-                <div class="flex h-8 overflow-hidden rounded-lg">
-                  {#if literalsCount > 0}
-                    <div
-                      class="flex items-center justify-center bg-blue-500 text-white text-xs font-semibold tabular-nums transition-all"
-                      style="width: {literalsPercent}%"
-                      title="{m.detail_literals()}: {literalsCount.toLocaleString(
-                        getLocale(),
-                      )} ({literalsPercent.toLocaleString(getLocale(), {
-                        minimumFractionDigits: 1,
-                        maximumFractionDigits: 1,
-                      })}%)"
-                    >
-                      {#if literalsPercent > 10}
-                        {literalsPercent.toLocaleString(getLocale(), {
-                          maximumFractionDigits: 0,
-                        })}%
-                      {/if}
-                    </div>
-                  {/if}
-                  {#if urisCount > 0}
-                    <div
-                      class="flex items-center justify-center bg-cyan-500 text-white text-xs font-semibold tabular-nums transition-all"
-                      style="width: {urisPercent}%"
-                      title="{m.detail_uris()}: {urisCount.toLocaleString(
-                        getLocale(),
-                      )} ({urisPercent.toLocaleString(getLocale(), {
-                        minimumFractionDigits: 1,
-                        maximumFractionDigits: 1,
-                      })}%)"
-                    >
-                      {#if urisPercent > 10}
-                        {urisPercent.toLocaleString(getLocale(), {
-                          maximumFractionDigits: 0,
-                        })}%
-                      {/if}
-                    </div>
-                  {/if}
-                </div>
-
-                <!-- Legend -->
-                <div class="flex flex-wrap gap-4 text-xs">
-                  <div class="flex items-center gap-2">
-                    <div class="h-3 w-3 rounded bg-blue-500"></div>
-                    <span class="text-gray-700 dark:text-gray-300">
-                      {m.detail_literals()}: {literalsCount.toLocaleString(
-                        getLocale(),
-                      )}
-                    </span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <div class="h-3 w-3 rounded bg-cyan-500"></div>
-                    <span class="text-gray-700 dark:text-gray-300">
-                      {m.detail_uris()}: {urisCount.toLocaleString(getLocale())}
-                    </span>
-                  </div>
-                </div>
+              <div class="text-sm text-gray-600 dark:text-gray-400">
+                {m.detail_properties()}
               </div>
             </div>
           {/if}
+
+          {#if summary.distinctObjectsURI !== undefined || summary.distinctObjectsLiteral !== undefined}
+            {@const totalObjects =
+              (summary.distinctObjectsURI || 0) +
+              (summary.distinctObjectsLiteral || 0)}
+            {@const literalsCount = summary.distinctObjectsLiteral || 0}
+            {@const urisCount = summary.distinctObjectsURI || 0}
+            {@const literalsPercent =
+              totalObjects > 0 ? (literalsCount / totalObjects) * 100 : 0}
+            {@const urisPercent =
+              totalObjects > 0 ? (urisCount / totalObjects) * 100 : 0}
+            {#if totalObjects > 0}
+              <div
+                class="rounded-lg border border-gray-200 bg-white p-4 shadow dark:border-gray-700 dark:bg-gray-800"
+              >
+                <div class="text-3xl font-bold text-gray-900 dark:text-white">
+                  {totalObjects.toLocaleString(getLocale())}
+                </div>
+                <div class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  {m.detail_objects()}
+                </div>
+
+                <!-- Horizontal bar chart -->
+                <div class="mt-4 space-y-3">
+                  <div class="flex h-8 overflow-hidden rounded-lg">
+                    {#if literalsCount > 0}
+                      <div
+                        class="flex items-center justify-center bg-blue-500 text-white text-xs font-semibold tabular-nums transition-all"
+                        style="width: {literalsPercent}%"
+                        title="{m.detail_literals()}: {literalsCount.toLocaleString(
+                          getLocale(),
+                        )} ({literalsPercent.toLocaleString(getLocale(), {
+                          minimumFractionDigits: 1,
+                          maximumFractionDigits: 1,
+                        })}%)"
+                      >
+                        {#if literalsPercent > 10}
+                          {literalsPercent.toLocaleString(getLocale(), {
+                            maximumFractionDigits: 0,
+                          })}%
+                        {/if}
+                      </div>
+                    {/if}
+                    {#if urisCount > 0}
+                      <div
+                        class="flex items-center justify-center bg-cyan-500 text-white text-xs font-semibold tabular-nums transition-all"
+                        style="width: {urisPercent}%"
+                        title="{m.detail_uris()}: {urisCount.toLocaleString(
+                          getLocale(),
+                        )} ({urisPercent.toLocaleString(getLocale(), {
+                          minimumFractionDigits: 1,
+                          maximumFractionDigits: 1,
+                        })}%)"
+                      >
+                        {#if urisPercent > 10}
+                          {urisPercent.toLocaleString(getLocale(), {
+                            maximumFractionDigits: 0,
+                          })}%
+                        {/if}
+                      </div>
+                    {/if}
+                  </div>
+
+                  <!-- Legend -->
+                  <div class="flex flex-wrap gap-4 text-xs">
+                    <div class="flex items-center gap-2">
+                      <div class="h-3 w-3 rounded bg-blue-500"></div>
+                      <span class="text-gray-700 dark:text-gray-300">
+                        {m.detail_literals()}: {literalsCount.toLocaleString(
+                          getLocale(),
+                        )}
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <div class="h-3 w-3 rounded bg-cyan-500"></div>
+                      <span class="text-gray-700 dark:text-gray-300">
+                        {m.detail_uris()}: {urisCount.toLocaleString(
+                          getLocale(),
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {/if}
+          {/if}
+        </div>
+
+        <!-- Classes Section with Property Partitions -->
+        {#if classPartitionTable}
+          <ClassPropertiesWidget
+            {classPartitionTable}
+            globalPropertyPartitions={summary.propertyPartition}
+          />
+        {/if}
+
+        <!-- Vocabularies Section -->
+        {#if summary.vocabulary && summary.vocabulary.length > 0}
+          <div class="mt-6">
+            <h3
+              class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
+            >
+              {m.detail_vocabularies()}
+              <span id="tooltip-vocabularies" class="cursor-pointer">
+                <InfoCircleSolid
+                  class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+                />
+              </span>
+              <Tooltip triggeredBy="#tooltip-vocabularies"
+                >{m.detail_vocabularies_description()}</Tooltip
+              >
+            </h3>
+            <ul class="space-y-2">
+              {#each summary.vocabulary as vocab (vocab)}
+                <li class="flex items-center gap-2 text-sm">
+                  <svg
+                    class="w-4 h-4 text-gray-600 dark:text-gray-400 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                    />
+                  </svg>
+                  <a
+                    href={vocab}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-blue-600 hover:underline dark:text-blue-400 break-all"
+                  >
+                    {vocab}
+                    <span class="sr-only"> ({m.opens_in_new_tab()})</span>
+                  </a>
+                </li>
+              {/each}
+            </ul>
+          </div>
+        {/if}
+
+        <!-- Terminology Sources Section -->
+        {#if linksets.length > 0}
+          <div
+            id="terminology-sources"
+            class="mt-6 scroll-mt-20 lg:scroll-mt-24"
+          >
+            <h3
+              class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
+            >
+              {m.detail_terminology_sources()}
+              <span id="tooltip-terminology-sources" class="cursor-pointer">
+                <InfoCircleSolid
+                  class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+                />
+              </span>
+              <Tooltip triggeredBy="#tooltip-terminology-sources"
+                >{m.detail_terminology_sources_description()}</Tooltip
+              >
+            </h3>
+            <ul class="space-y-2">
+              {#each linksets as linkset (linkset.$id)}
+                {#if linkset.objectsTarget}
+                  <li class="flex items-center gap-2 text-sm">
+                    <a
+                      href={localizeHref(
+                        `/datasets?terminologySource=${encodeURIComponent(linkset.objectsTarget.$id)}`,
+                      )}
+                      class="inline-flex items-center gap-1.5 text-blue-600 hover:underline dark:text-blue-400 break-all"
+                    >
+                      <SearchOutline class="w-4 h-4 flex-shrink-0" />
+                      {linkset.objectsTarget.title
+                        ? getLocalizedValue(linkset.objectsTarget.title)
+                        : linkset.objectsTarget.$id}
+                    </a>
+                    {#if linkset.triples !== undefined && linkset.triples !== null}
+                      <span class="text-gray-500 dark:text-gray-400">
+                        ({linkset.triples.toLocaleString(getLocale())}
+                        {m.dataset_triples({ count: linkset.triples })})
+                      </span>
+                    {/if}
+                  </li>
+                {/if}
+              {/each}
+            </ul>
+          </div>
         {/if}
       </div>
-
-      <!-- Classes Section with Property Partitions -->
-      {#if classPartitionTable}
-        <ClassPropertiesWidget
-          {classPartitionTable}
-          globalPropertyPartitions={summary.propertyPartition}
-        />
-      {/if}
-
-      <!-- Vocabularies Section -->
-      {#if summary.vocabulary && summary.vocabulary.length > 0}
-        <div class="mt-6">
-          <h3
-            class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
-          >
-            {m.detail_vocabularies()}
-            <span id="tooltip-vocabularies" class="cursor-pointer">
-              <InfoCircleSolid
-                class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
-              />
-            </span>
-            <Tooltip triggeredBy="#tooltip-vocabularies"
-              >{m.detail_vocabularies_description()}</Tooltip
-            >
-          </h3>
-          <ul class="space-y-2">
-            {#each summary.vocabulary as vocab (vocab)}
-              <li class="flex items-center gap-2 text-sm">
-                <svg
-                  class="w-4 h-4 text-gray-600 dark:text-gray-400 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                  />
-                </svg>
-                <a
-                  href={vocab}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="text-blue-600 hover:underline dark:text-blue-400 break-all"
-                >
-                  {vocab}
-                  <span class="sr-only"> ({m.opens_in_new_tab()})</span>
-                </a>
-              </li>
-            {/each}
-          </ul>
-        </div>
-      {/if}
-
-      <!-- Terminology Sources Section -->
-      {#if linksets.length > 0}
-        <div id="terminology-sources" class="mt-6 scroll-mt-20 lg:scroll-mt-24">
-          <h3
-            class="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white"
-          >
-            {m.detail_terminology_sources()}
-            <span id="tooltip-terminology-sources" class="cursor-pointer">
-              <InfoCircleSolid
-                class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
-              />
-            </span>
-            <Tooltip triggeredBy="#tooltip-terminology-sources"
-              >{m.detail_terminology_sources_description()}</Tooltip
-            >
-          </h3>
-          <ul class="space-y-2">
-            {#each linksets as linkset (linkset.$id)}
-              {#if linkset.objectsTarget}
-                <li class="flex items-center gap-2 text-sm">
-                  <a
-                    href={localizeHref(
-                      `/datasets?terminologySource=${encodeURIComponent(linkset.objectsTarget.$id)}`,
-                    )}
-                    class="inline-flex items-center gap-1.5 text-blue-600 hover:underline dark:text-blue-400 break-all"
-                  >
-                    <SearchOutline class="w-4 h-4 flex-shrink-0" />
-                    {linkset.objectsTarget.title
-                      ? getLocalizedValue(linkset.objectsTarget.title)
-                      : linkset.objectsTarget.$id}
-                  </a>
-                  {#if linkset.triples !== undefined && linkset.triples !== null}
-                    <span class="text-gray-500 dark:text-gray-400">
-                      ({linkset.triples.toLocaleString(getLocale())}
-                      {m.dataset_triples({ count: linkset.triples })})
-                    </span>
-                  {/if}
-                </li>
-              {/if}
-            {/each}
-          </ul>
-        </div>
-      {/if}
-    </div>
-  {:else if summaryUnavailable}
-    <!-- No summary, but the dataset offers RDF that failed: explain why, so the
+    {:else if summaryUnavailable}
+      <!-- No summary, but the dataset offers RDF that failed: explain why, so the
          absence is not silent (the per-distribution detail is in the list below). -->
-    <div class="mb-8">
-      <h2
-        id="linked-data-summary"
-        class="mb-4 flex scroll-mt-20 items-center gap-2 text-xl font-semibold text-gray-900 lg:scroll-mt-24 dark:text-white"
-      >
-        {m.detail_linked_data_summary()}
-      </h2>
-      <Alert border color="yellow" class="mb-6">
-        {#snippet icon()}
-          <ExclamationCircleOutline class="h-5 w-5" />
-        {/snippet}
-        <p class="font-semibold">
-          {summaryUnavailable.invalid
-            ? m.detail_summary_unavailable_invalid()
-            : m.detail_summary_unavailable_unreachable()}
-        </p>
-        <p>{summaryUnavailable.reason}</p>
-      </Alert>
-    </div>
-  {/if}
+      <div class="mb-8">
+        <h2
+          id="linked-data-summary"
+          class="mb-4 flex scroll-mt-20 items-center gap-2 text-xl font-semibold text-gray-900 lg:scroll-mt-24 dark:text-white"
+        >
+          {m.detail_linked_data_summary()}
+        </h2>
+        <Alert border color="yellow" class="mb-6">
+          {#snippet icon()}
+            <ExclamationCircleOutline class="h-5 w-5" />
+          {/snippet}
+          <p class="font-semibold">
+            {summaryUnavailable.invalid
+              ? m.detail_summary_unavailable_invalid()
+              : m.detail_summary_unavailable_unreachable()}
+          </p>
+          <p>{summaryUnavailable.reason}</p>
+        </Alert>
+      </div>
+    {/if}
+  {/await}
 
   <!-- Registration Section -->
   <div class="mb-8">

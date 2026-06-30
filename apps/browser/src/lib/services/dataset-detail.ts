@@ -401,20 +401,36 @@ export type TemporalCoverage =
   | { kind: 'period'; iri?: string; start?: string; end?: string }
   | { kind: 'literal'; value: string };
 
-export interface DatasetDetailResult {
-  dataset: DatasetDetail;
-  distributions: DistributionDetail[];
-  totalDistributions: number;
+// The Dataset Knowledge Graph analysis: everything the page derives from the DKG
+// (QLever), as opposed to the authoritative register record (the DR SPARQL
+// store). Bundled behind one streamed promise (DatasetDetailResult.analysis) so
+// the page shell renders from the register alone — the DKG queries are the slow,
+// supplementary part and never block the first paint. The boundary is exactly
+// DR-sync / DKG-async: every field here comes from PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT
+// (linkedData.declared is the one exception — derived from the register's
+// distributions, passed in — kept here because it belongs to the same criterion).
+export interface DatasetAnalysis {
   summary: DatasetSummary | null;
   // When the Knowledge Graph last generated the summary (ISO dateTime from the
   // DKG's PROV-O provenance), or null when no provenance has been recorded.
   summaryGeneratedAt: string | null;
   linksets: Linkset[];
-  temporalCoverages: TemporalCoverage[];
   iiifManifests: IiifManifests;
   persistentUris: PersistentUris;
   linkedData: LinkedData;
   terms: TermLinks | null;
+}
+
+export interface DatasetDetailResult {
+  dataset: DatasetDetail;
+  distributions: DistributionDetail[];
+  totalDistributions: number;
+  temporalCoverages: TemporalCoverage[];
+  // The Knowledge Graph analysis, streamed off the critical path (see
+  // DatasetAnalysis). The page renders the register record immediately and fills
+  // in the linked-data summary, class/property partitions and NDE-compatibility
+  // criteria once this resolves.
+  analysis: Promise<DatasetAnalysis>;
   resolvedTerms: Promise<Record<string, string>>;
   // Per-distribution health from the register's own probe, keyed by access URL.
   // An unawaited promise so SvelteKit streams it: the page renders immediately
@@ -1105,18 +1121,6 @@ export async function fetchDatasetDetail(
     sources: [PUBLIC_SPARQL_ENDPOINT],
   });
 
-  const summaryLens = createLens(DatasetSummarySchema, {
-    sources: [PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT],
-  });
-
-  const linksLens = createLens(LinksetSchema, {
-    sources: [PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT],
-  });
-
-  const classPartitionLens = createLens(ClassPartitionSchema, {
-    sources: [PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT],
-  });
-
   const distributionLens = createLens(DetailDistributionSchema, {
     sources: [PUBLIC_SPARQL_ENDPOINT],
   });
@@ -1222,9 +1226,81 @@ export async function fetchDatasetDetail(
     }
   `;
 
+  const [datasets, distributions, totalDistributions, temporalCoverages] =
+    await Promise.all([
+      detailLens.query(datasetQuery),
+      distributionLens.query(distributionQuery),
+      fetchDistributionCount(distributionCountQuery),
+      fetchTemporalCoverage(datasetUri),
+    ]);
+
+  const dataset = datasets.find((d) => d.$id === datasetUri) ?? datasets[0];
+  if (!dataset) {
+    error(404, 'Dataset not found');
+  }
+
+  // The Knowledge Graph analysis is the slow, supplementary part of the page, so
+  // fire it unawaited and stream it (see DatasetAnalysis): the register record
+  // above renders immediately and the analysis fills in once it resolves. The
+  // Linked-data declared-flag needs the register's distributions, passed in.
+  const analysis = fetchDatasetAnalysis(datasetUri, distributions);
+
+  // Resolve term URIs (e.g. spatial/temporal) to human-readable labels
+  // via the Network of Terms API. Returned as an unawaited promise so
+  // SvelteKit can stream the result without blocking the page response.
+  const temporalIris = temporalCoverages.flatMap((coverage) =>
+    coverage.kind === 'iri' || (coverage.kind === 'period' && coverage.iri)
+      ? [(coverage as { iri: string }).iri].filter(isUri)
+      : [],
+  );
+  const termUris = [
+    ...(dataset.spatial?.filter(isUri) ?? []),
+    ...temporalIris,
+    ...(dataset.theme?.filter(isUri) ?? []),
+  ];
+  const resolvedTerms =
+    termUris.length > 0
+      ? lookupTermLabels(termUris, getLocale())
+      : Promise.resolve({});
+
+  return {
+    dataset,
+    distributions,
+    totalDistributions,
+    temporalCoverages,
+    analysis,
+    resolvedTerms,
+    distributionHealth,
+    distributionValidity,
+    // The registration's warning count (from its last crawl); 0 when the
+    // registration recorded none or predates warning storage.
+    warningCount: dataset.subjectOf?.warningCount ?? 0,
+  };
+}
+
+// Fetches the Dataset Knowledge Graph analysis (see DatasetAnalysis) for a
+// dataset, off the page's critical path. Every query here hits the Knowledge
+// Graph (QLever); the register's `distributions` are passed in only so the
+// Linked-data criterion can report whether a linked-data distribution is
+// declared. Fields are empty/indeterminate when the dataset has not been
+// analyzed yet.
+async function fetchDatasetAnalysis(
+  datasetUri: string,
+  distributions: DistributionDetail[],
+): Promise<DatasetAnalysis> {
+  const summaryLens = createLens(DatasetSummarySchema, {
+    sources: [PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT],
+  });
+  const linksLens = createLens(LinksetSchema, {
+    sources: [PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT],
+  });
+  const classPartitionLens = createLens(ClassPartitionSchema, {
+    sources: [PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT],
+  });
+
   // Custom CONSTRUCT that sidesteps ldkit's auto-generated findByIri query, for
-  // the same reason as datasetQuery above: ldkit places every property under
-  // OPTIONAL in a single BGP, so the three independent multi-valued properties
+  // the same reason as datasetQuery: ldkit places every property under OPTIONAL
+  // in a single BGP, so the three independent multi-valued properties
   // (propertyPartition, vocabulary, dataDump) Cartesian-product against each
   // other. The Knowledge Graph runs on QLever, which does not deduplicate
   // CONSTRUCT output, so that product is emitted on the wire: on a rich dataset
@@ -1272,22 +1348,15 @@ export async function fetchDatasetDetail(
   `;
 
   const [
-    datasets,
-    distributions,
-    totalDistributions,
     summary,
     linksets,
     classPartitionResult,
     summaryGeneratedAt,
-    temporalCoverages,
     iiifManifests,
     persistentUris,
     persistentUriFailures,
     schemaApNdeConformance,
   ] = await Promise.all([
-    detailLens.query(datasetQuery),
-    distributionLens.query(distributionQuery),
-    fetchDistributionCount(distributionCountQuery),
     summaryLens
       .query(datasetSummaryQuery)
       .then((results) => results[0] ?? null)
@@ -1311,19 +1380,22 @@ export async function fetchDatasetDetail(
         );
         return null;
       }),
-    classPartitionLens.findByIri(datasetUri),
+    // Caught so a Knowledge Graph failure degrades to “no class partition” (the
+    // widget simply doesn't render) instead of rejecting the whole analysis
+    // promise and blanking the streamed section.
+    classPartitionLens.findByIri(datasetUri).catch((e: unknown) => {
+      console.error(
+        'Class partition query failed:',
+        e instanceof Error ? e.message : e,
+      );
+      return null;
+    }),
     fetchSummaryGeneratedAt(datasetUri),
-    fetchTemporalCoverage(datasetUri),
     fetchIiifManifests(datasetUri),
     fetchPersistentUris(datasetUri),
     fetchPersistentUriFailures(datasetUri),
     fetchSchemaApNdeConformance(datasetUri),
   ]);
-
-  const dataset = datasets.find((d) => d.$id === datasetUri) ?? datasets[0];
-  if (!dataset) {
-    error(404, 'Dataset not found');
-  }
 
   // Merge the separately-fetched per-URI failures into the persistent-URI
   // figures, then normalize legacy `no-self-reference` failures into the resolved
@@ -1375,42 +1447,14 @@ export async function fetchDatasetDetail(
             summaryWithClassPartition.distinctObjectsURI ?? null,
         };
 
-  // Resolve term URIs (e.g. spatial/temporal) to human-readable labels
-  // via the Network of Terms API. Returned as an unawaited promise so
-  // SvelteKit can stream the result without blocking the page response.
-  const temporalIris = temporalCoverages.flatMap((coverage) =>
-    coverage.kind === 'iri' || (coverage.kind === 'period' && coverage.iri)
-      ? [(coverage as { iri: string }).iri].filter(isUri)
-      : [],
-  );
-  const termUris = [
-    ...(dataset.spatial?.filter(isUri) ?? []),
-    ...temporalIris,
-    ...(dataset.theme?.filter(isUri) ?? []),
-  ];
-  const resolvedTerms =
-    termUris.length > 0
-      ? lookupTermLabels(termUris, getLocale())
-      : Promise.resolve({});
-
   return {
-    dataset,
-    distributions,
-    totalDistributions,
     summary: summaryWithClassPartition,
     summaryGeneratedAt,
     linksets: linksets ?? [],
-    temporalCoverages,
     iiifManifests,
     persistentUris: persistentUrisWithFailures,
     linkedData,
     terms,
-    resolvedTerms,
-    distributionHealth,
-    distributionValidity,
-    // The registration's warning count (from its last crawl); 0 when the
-    // registration recorded none or predates warning storage.
-    warningCount: dataset.subjectOf?.warningCount ?? 0,
   };
 }
 
