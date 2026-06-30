@@ -1222,6 +1222,55 @@ export async function fetchDatasetDetail(
     }
   `;
 
+  // Custom CONSTRUCT that sidesteps ldkit's auto-generated findByIri query, for
+  // the same reason as datasetQuery above: ldkit places every property under
+  // OPTIONAL in a single BGP, so the three independent multi-valued properties
+  // (propertyPartition, vocabulary, dataDump) Cartesian-product against each
+  // other. The Knowledge Graph runs on QLever, which does not deduplicate
+  // CONSTRUCT output, so that product is emitted on the wire: on a rich dataset
+  // (273 property partitions × 10 vocabularies) the summary ballooned to ~3.2 MB
+  // (~11k duplicated triples) for ~140 KB of actual data. Each multi-valued
+  // property gets its own UNION branch so the cardinalities add instead of
+  // multiply (~175 KB, ~10× faster). The leading `a void:Dataset` preserves
+  // findByIri's semantics: no VoID summary → no rows → null (drives isAnalyzed),
+  // never a fabricated empty summary.
+  const datasetSummaryQuery = `
+    PREFIX void: <http://rdfs.org/ns/void#>
+    PREFIX void-ext: <http://ldf.fi/void-ext#>
+    PREFIX ldkit: <https://ldkit.io/ontology/>
+    CONSTRUCT {
+      <${datasetUri}> a ldkit:Resource ;
+        void:triples ?triples ;
+        void:distinctSubjects ?distinctSubjects ;
+        void:properties ?properties ;
+        void-ext:distinctLiterals ?distinctLiterals ;
+        void-ext:distinctIRIReferenceObjects ?distinctIri ;
+        void:sparqlEndpoint ?sparqlEndpoint ;
+        void:propertyPartition ?propertyPartition ;
+        void:vocabulary ?vocabulary ;
+        void:dataDump ?dataDump .
+      ?propertyPartition void:property ?property ; void:entities ?entities .
+    }
+    WHERE {
+      <${datasetUri}> a void:Dataset .
+      {
+        OPTIONAL { <${datasetUri}> void:triples ?triples }
+        OPTIONAL { <${datasetUri}> void:distinctSubjects ?distinctSubjects }
+        OPTIONAL { <${datasetUri}> void:properties ?properties }
+        OPTIONAL { <${datasetUri}> void-ext:distinctLiterals ?distinctLiterals }
+        OPTIONAL { <${datasetUri}> void-ext:distinctIRIReferenceObjects ?distinctIri }
+        OPTIONAL { <${datasetUri}> void:sparqlEndpoint ?sparqlEndpoint }
+      } UNION {
+        <${datasetUri}> void:propertyPartition ?propertyPartition .
+        ?propertyPartition void:property ?property ; void:entities ?entities .
+      } UNION {
+        <${datasetUri}> void:vocabulary ?vocabulary .
+      } UNION {
+        <${datasetUri}> void:dataDump ?dataDump .
+      }
+    }
+  `;
+
   const [
     datasets,
     distributions,
@@ -1239,13 +1288,16 @@ export async function fetchDatasetDetail(
     detailLens.query(datasetQuery),
     distributionLens.query(distributionQuery),
     fetchDistributionCount(distributionCountQuery),
-    summaryLens.findByIri(datasetUri).catch((e: unknown) => {
-      console.error(
-        'Summary query failed:',
-        e instanceof Error ? e.message : e,
-      );
-      return null;
-    }),
+    summaryLens
+      .query(datasetSummaryQuery)
+      .then((results) => results[0] ?? null)
+      .catch((e: unknown) => {
+        console.error(
+          'Summary query failed:',
+          e instanceof Error ? e.message : e,
+        );
+        return null;
+      }),
     // The terms criterion depends on the linksets, so a Knowledge Graph failure
     // here must not fail the whole page. Catch it and treat the result as
     // unavailable (null), distinct from an empty result: the terms criterion is
