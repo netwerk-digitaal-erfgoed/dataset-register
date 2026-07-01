@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 // This spec runs against the real adapter-node production server (`node build`),
 // not `vite preview` — see playwright.config.ts. It guards against production

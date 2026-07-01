@@ -1,5 +1,6 @@
-import { test, expect, type Page } from '@playwright/test';
+import { type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { test, expect } from './fixtures';
 
 // Navigate to /datasets and wait for the server-rendered shell. We deliberately
 // do NOT wait for the client-side search or facets to resolve: those depend on
