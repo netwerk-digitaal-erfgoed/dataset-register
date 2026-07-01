@@ -111,6 +111,7 @@
   "detail_triples": "Feiten",
   "detail_distributions": "Distributies",
   "detail_linked_data_summary": "Linked Data-samenvatting",
+  "detail_analysis_loading": "Linked Data-samenvatting laden...",
   "detail_registration": "Registratie",
   "detail_class": "Type",
   "detail_classes": "Typen",

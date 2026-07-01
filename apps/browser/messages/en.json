@@ -111,6 +111,7 @@
   "detail_triples": "Triples",
   "detail_distributions": "Distributions",
   "detail_linked_data_summary": "Linked Data Summary",
+  "detail_analysis_loading": "Loading Linked Data summary...",
   "detail_registration": "Registration",
   "detail_class": "Class",
   "detail_classes": "Classes",

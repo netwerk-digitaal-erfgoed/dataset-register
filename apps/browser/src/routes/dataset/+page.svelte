@@ -1586,7 +1586,34 @@
        linked-data summary) streams in after the register record above; see
        DatasetAnalysis. The shell renders immediately and this section fills in
        once data.analysis resolves. -->
-  {#await data.analysis then analysis}
+  {#await data.analysis}
+    <!-- Skeleton placeholder while the streamed analysis loads, matching the
+         search page's shimmer style: a row for the criteria “vinkjes” and a few
+         lines for the linked-data summary. The label is screen-reader-only; the
+         bars are decorative. -->
+    <div class="mb-8" role="status" aria-live="polite">
+      <span class="sr-only">{m.detail_analysis_loading()}</span>
+      <div class="mb-6 flex flex-wrap gap-3" aria-hidden="true">
+        {#each [1, 2, 3, 4] as pill (pill)}
+          <div
+            class="h-8 w-32 animate-shimmer rounded-full bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-700 dark:to-gray-600"
+          ></div>
+        {/each}
+      </div>
+      <div
+        class="mb-4 h-7 w-2/5 animate-shimmer rounded bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-700 dark:to-gray-600"
+        aria-hidden="true"
+      ></div>
+      <div
+        class="mb-2.5 h-4 animate-shimmer rounded bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-700 dark:to-gray-600"
+        aria-hidden="true"
+      ></div>
+      <div
+        class="h-4 w-3/5 animate-shimmer rounded bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-700 dark:to-gray-600"
+        aria-hidden="true"
+      ></div>
+    </div>
+  {:then analysis}
     {@const summary = analysis.summary}
     {@const summaryGeneratedAt = analysis.summaryGeneratedAt}
     {@const linksets = analysis.linksets}
