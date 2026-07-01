@@ -28,12 +28,16 @@ import { DATASET_ANALYSIS_SCHEMA_HASH } from './dataset-analysis-schema-hash';
 // keeping the store warm. stale-while-revalidate-style refresh is a follow-up.
 const TTL_SECONDS = 30 * 60;
 
-const VALKEY_URL = process.env.VALKEY_URL ?? 'redis://localhost:6379';
+// Opt-in: the cache is active only when VALKEY_URL is configured. Unset (CI,
+// tests, local dev without Valkey) means bypass entirely — no client, no connect
+// attempts, no added latency — so those environments behave exactly as before.
+const VALKEY_URL = process.env.VALKEY_URL;
 
 let redis: Redis | null = null;
 function client(): Redis {
   if (redis) return redis;
-  redis = new Redis(VALKEY_URL, {
+  // Only reached after the VALKEY_URL guard in cachedFetchAnalysis, so it is set.
+  redis = new Redis(VALKEY_URL as string, {
     // Fail fast instead of hanging the page when Valkey is unreachable: no
     // offline queue, a single attempt per command, short connect timeout.
     enableOfflineQueue: false,
@@ -76,6 +80,9 @@ export const cachedFetchAnalysis: AnalysisFetcher = (
   datasetUri,
   distributions,
 ) => {
+  // No store configured → skip the cache path entirely.
+  if (!VALKEY_URL) return fetchDatasetAnalysis(datasetUri, distributions);
+
   const pending = inFlight.get(datasetUri);
   if (pending) return pending;
 
