@@ -248,7 +248,7 @@ export const LinksetSchema = {
 } as const;
 
 // Distribution validation schema
-const DatasetSummarySchema = {
+export const DatasetSummarySchema = {
   '@type': voidNs.Dataset,
   triples: {
     '@id': voidNs.triples,
@@ -309,7 +309,7 @@ const DatasetSummarySchema = {
 
 // Separate schema for classPartition to avoid Cartesian product explosion
 // (nested OPTIONALs: classes × props × datatypes × objectClasses = millions of rows)
-const ClassPartitionSchema = {
+export const ClassPartitionSchema = {
   '@type': voidNs.Dataset,
   classPartition: {
     '@id': voidNs.classPartition,

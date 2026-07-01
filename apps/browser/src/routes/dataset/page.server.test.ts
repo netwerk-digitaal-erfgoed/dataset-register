@@ -2,6 +2,12 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/services/dataset-detail', () => ({
   fetchDatasetDetail: vi.fn(async (uri: string) => ({ receivedUri: uri })),
+  // The analysis cache (loaded transitively via +page.server.ts) imports these;
+  // stub them so the strict mock resolves. The loader test does not exercise them.
+  fetchDatasetAnalysis: vi.fn(),
+  DatasetSummarySchema: {},
+  ClassPartitionSchema: {},
+  LinksetSchema: {},
 }));
 
 import { load } from './+page.server';

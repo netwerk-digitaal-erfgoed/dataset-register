@@ -7,22 +7,44 @@
 // cache is injected into fetchDatasetDetail from the server load only.
 //
 // Design:
-//   - Key is namespaced by DATASET_ANALYSIS_SCHEMA_HASH (the structural
-//     fingerprint of the DatasetAnalysis type), so a shape change across a deploy
-//     yields new keys and old, structurally-incompatible blobs are simply never
-//     read — no flush needed, they TTL-expire. See dataset-analysis-schema-hash.ts.
+//   - Key is namespaced by SCHEMA_VERSION, a hash of the ldkit schema objects
+//     computed at runtime (see below), so a shape change across a deploy yields
+//     new keys and old, structurally-incompatible blobs are simply never read —
+//     no flush needed, they TTL-expire, and there is no build/codegen step.
 //   - DatasetAnalysis is plain JSON (no Dates), so JSON.stringify/parse is safe.
 //   - A per-process in-flight map dedupes concurrent misses for the same dataset
 //     into one upstream fetch (stampede protection), complementing the shared cache.
 //   - Every Valkey interaction degrades gracefully: if the store is down or a blob
 //     is unreadable, we fall back to a direct fetch. The page never breaks on cache.
+import { createHash } from 'node:crypto';
 import Redis from 'ioredis';
 import {
+  ClassPartitionSchema,
+  DatasetSummarySchema,
   fetchDatasetAnalysis,
+  LinksetSchema,
   type AnalysisFetcher,
   type DatasetAnalysis,
 } from './dataset-detail';
-import { DATASET_ANALYSIS_SCHEMA_HASH } from './dataset-analysis-schema-hash';
+
+// Cache-key version, derived at runtime (no build step) so a DatasetAnalysis
+// shape change automatically invalidates stale blobs: they land under a new key
+// and TTL-expire. The bulk of the shape comes from these ldkit schema objects,
+// which are runtime values we can hash directly. The remaining fields
+// (linkedData/terms/iiifManifests/persistentUris) are plain interfaces, erased
+// at runtime — bump CACHE_VERSION by hand when you change one of those.
+const CACHE_VERSION = 1;
+const SCHEMA_VERSION = createHash('sha256')
+  .update(
+    JSON.stringify([
+      CACHE_VERSION,
+      DatasetSummarySchema,
+      ClassPartitionSchema,
+      LinksetSchema,
+    ]),
+  )
+  .digest('hex')
+  .slice(0, 12);
 
 // The analysis is regenerated ~daily by the DKG; 30 min bounds staleness while
 // keeping the store warm. stale-while-revalidate-style refresh is a follow-up.
@@ -55,7 +77,7 @@ function client(): Redis {
 }
 
 function keyFor(datasetUri: string): string {
-  return `analysis:${DATASET_ANALYSIS_SCHEMA_HASH}:${datasetUri}`;
+  return `analysis:${SCHEMA_VERSION}:${datasetUri}`;
 }
 
 // Cheap shape guard as a backstop to the schema-hash key: even within a version,

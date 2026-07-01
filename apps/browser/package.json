@@ -9,7 +9,6 @@
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "dev": "vite dev",
     "format": "prettier --write .",
-    "gen:analysis-schema-hash": "node scripts/gen-analysis-schema-hash.mjs",
     "lint": "prettier --check . --write && eslint .",
     "prepare": "svelte-kit sync || echo ''",
     "preview": "vite preview",
