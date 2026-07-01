@@ -1,0 +1,97 @@
+# publiccode.yml — https://yml.publiccode.tools/ (standard v0.7)
+publiccodeYmlVersion: "0.7"
+
+name: Dataset Register
+url: "https://github.com/netwerk-digitaal-erfgoed/dataset-register.git"
+landingURL: "https://datasetregister.netwerkdigitaalerfgoed.nl"
+
+platforms:
+  - web
+
+categories:
+  - knowledge-management
+  - data-collection
+
+developmentStatus: stable
+softwareType: standalone/web
+
+description:
+  en:
+    shortDescription: >-
+      Live index of heritage datasets that helps users find and discover
+      datasets.
+    longDescription: >
+      The NDE Dataset Register is a service that helps users find and discover
+      datasets. Institutions such as cultural heritage organizations register
+      their dataset descriptions with the Dataset Register through its HTTP API.
+      The register then builds an index by fetching, validating and periodically
+      crawling those descriptions.
+
+      The service uses the Linked Data Platform (LDP) for its HTTP operations and
+      prefers JSON-LD as the data exchange format. Dataset descriptions rely on
+      established vocabularies — Schema.org and DCAT, aligned with DCAT-AP-NL 3.0.
+
+      The project consists of an HTTP API for registering and querying datasets,
+      a periodic crawler that keeps the index up to date, and a faceted search
+      browser for discovering datasets, all available at
+      https://datasetregister.netwerkdigitaalerfgoed.nl.
+    documentation: "https://datasetregister.netwerkdigitaalerfgoed.nl/?lang=en"
+    apiDocumentation: "https://datasetregister.netwerkdigitaalerfgoed.nl/api"
+    features:
+      - Register dataset descriptions via an HTTP (LDP) API
+      - Validate submitted dataset descriptions
+      - Periodically crawl and refresh registered descriptions
+      - Faceted search browser to find and discover datasets
+      - SPARQL endpoint over the collected index
+      - Schema.org and DCAT (W3C DCAT 3) support
+  nl:
+    shortDescription: >-
+      Actuele index van erfgoeddatasets waarmee gebruikers datasets kunnen
+      vinden en ontdekken.
+    longDescription: >
+      Het NDE Datasetregister is een dienst die gebruikers helpt datasets te
+      vinden en te ontdekken. Instellingen zoals erfgoedorganisaties registreren
+      hun datasetbeschrijvingen bij het Datasetregister via de HTTP-API. Het
+      register bouwt vervolgens een index op door deze beschrijvingen op te
+      halen, te valideren en periodiek te crawlen.
+
+      De dienst gebruikt het Linked Data Platform (LDP) voor de HTTP-bewerkingen
+      en werkt bij voorkeur met JSON-LD als uitwisselingsformaat.
+      Datasetbeschrijvingen maken gebruik van gangbare vocabulaires — Schema.org
+      en DCAT, in lijn met DCAT-AP-NL 3.0.
+
+      Het project bestaat uit een HTTP-API voor het registreren en bevragen van
+      datasets, een crawler die de index actueel houdt, en een zoekapplicatie
+      met facetten om datasets te ontdekken, beschikbaar op
+      https://datasetregister.netwerkdigitaalerfgoed.nl.
+    documentation: "https://datasetregister.netwerkdigitaalerfgoed.nl/?lang=nl"
+    apiDocumentation: "https://datasetregister.netwerkdigitaalerfgoed.nl/api"
+    features:
+      - Datasetbeschrijvingen registreren via een HTTP-API (LDP)
+      - Aangeleverde datasetbeschrijvingen valideren
+      - Registraties periodiek crawlen en verversen
+      - Zoekapplicatie met facetten om datasets te vinden
+      - SPARQL-endpoint over de opgebouwde index
+      - Ondersteuning voor Schema.org en DCAT (W3C DCAT 3)
+
+legal:
+  license: EUPL-1.2
+  mainCopyrightOwner: Netwerk Digitaal Erfgoed
+
+maintenance:
+  type: internal
+  contacts:
+    - name: NDE Infra
+      email: "tech@netwerkdigitaalerfgoed.nl"
+
+intendedAudience:
+  scope:
+    - culture
+    - government
+    - research
+
+localisation:
+  localisationReady: true
+  availableLanguages:
+    - nl
+    - en
