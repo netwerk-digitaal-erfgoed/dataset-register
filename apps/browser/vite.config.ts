@@ -10,7 +10,14 @@ export default defineConfig({
     sveltekit(),
     paraglideVitePlugin({
       project: './project.inlang',
-      strategy: ['url', 'cookie', 'baseLocale'],
+      // URL-only locale: the prefix (/en/…) or its absence (base locale nl)
+      // fully determines the language. No cookie strategy, so a bare URL renders
+      // one deterministic locale — the single source of truth. This keeps links
+      // shareable/cacheable per URL and avoids the ambiguity where a cookie could
+      // make the same URL render either language. Language switching stays
+      // URL-based (see LanguageToggle), and internal links carry the locale via
+      // localizeHref, so the choice persists through navigation.
+      strategy: ['url', 'baseLocale'],
       outdir: './src/lib/paraglide',
     }),
   ],
