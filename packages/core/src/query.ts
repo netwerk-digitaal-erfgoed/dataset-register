@@ -339,7 +339,7 @@ export const constructQuery = `
         }
         BIND(COALESCE(?datasetLicenseExplicit, ?distributionLicenseSample) AS ?${license})
 
-        ?${publisher} a ?foafOrganizationOrPerson ;
+        ?${publisher} a ?foafAgentClass ;
           a ?${publisherType} ;
           foaf:name ?${publisherName} .
 
@@ -348,12 +348,12 @@ export const constructQuery = `
         OPTIONAL { ?${publisher} owl:sameAs ?${publisherSameAs} ; }
 
         OPTIONAL {
-          ?${creator} a ?foafOrganizationOrPerson ;
+          ?${creator} a ?foafAgentClass ;
             a ?${creatorType} ;
             foaf:name ?${creatorName} .
         }
           
-        VALUES ?foafOrganizationOrPerson { foaf:Organization foaf:Person }
+        VALUES ?foafAgentClass { foaf:Organization foaf:Person foaf:Agent }
   
         OPTIONAL {
           ?${dataset} dcat:distribution ?${distribution} .

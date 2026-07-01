@@ -277,6 +277,14 @@ describe('Validator', () => {
     expectViolations(report, ['https://schema.org/identifier'], 0);
   });
 
+  it('accepts foaf:Agent publishers, per DCAT-AP’s foaf:Agent range for dct:publisher', async () => {
+    const report = (await validate(
+      'dataset-dcat-valid-agent-publisher.jsonld',
+    )) as Valid;
+    expect(report.state).toEqual('valid');
+    expectViolations(report, ['http://purl.org/dc/terms/publisher'], 0);
+  });
+
   it('captures full SHACL feedback for Gouda Tijdmachine fixture', async () => {
     const report = (await validate(
       'dataset-schema-org-gouda-tijdmachine.ttl',

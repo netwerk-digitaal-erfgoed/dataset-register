@@ -1411,6 +1411,7 @@ dcat:DatasetShape
         sh:or (
             [ sh:class foaf:Organization ]
             [ sh:class foaf:Person ]
+            [ sh:class foaf:Agent ]
         ) ;
     ],
     [
@@ -1435,6 +1436,7 @@ dcat:DatasetShape
         sh:or (
             [ sh:class foaf:Organization ]
             [ sh:class foaf:Person ]
+            [ sh:class foaf:Agent ]
         ) ;
         sh:message "Voeg een maker toe"@nl, "Add a creator"@en ;
     ],
@@ -1759,7 +1761,7 @@ dcat:AgentShape
     nde-dataset:FoafNameLangStringProperty .
 
 # Publisher/creator validation is consolidated into dcat:AgentShape above, which covers
-# both foaf:Organization and foaf:Person instances. Separate Organization and Person
+# foaf:Organization, foaf:Person, and foaf:Agent instances. Separate Organization and Person
 # shapes would duplicate every constraint (nodeKind, pattern, foaf:name) and fire two
 # identical violations on the same focus node.
 
