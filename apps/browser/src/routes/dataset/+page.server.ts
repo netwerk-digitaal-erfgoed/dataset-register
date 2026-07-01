@@ -1,4 +1,5 @@
 import { fetchDatasetDetail } from '$lib/services/dataset-detail';
+import { cachedFetchAnalysis } from '$lib/services/dataset-analysis-cache.server';
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
@@ -24,5 +25,8 @@ export const load: PageServerLoad = async ({ url }) => {
     error(404, 'Dataset not found');
   }
 
-  return fetchDatasetDetail(datasetUri);
+  // Serve the Knowledge Graph analysis from the Valkey cache when warm; the
+  // register queries still run per request (they are fast), only the slow,
+  // low-churn analysis is cached.
+  return fetchDatasetDetail(datasetUri, cachedFetchAnalysis);
 };
