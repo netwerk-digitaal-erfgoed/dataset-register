@@ -2,7 +2,7 @@
   "name": "@dataset-register/source",
   "version": "0.0.0",
   "private": true,
-  "license": "MIT",
+  "license": "EUPL-1.2",
   "workspaces": [
     "apps/*",
     "packages/*"
