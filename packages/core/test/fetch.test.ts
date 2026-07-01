@@ -16,6 +16,55 @@ import { dereference, file, validSchemaOrgDataset } from '../src/test-utils.js';
 import type { BlankNode, Literal } from '@rdfjs/types';
 
 describe('Fetch', () => {
+  it('extracts title, publisher, and identifier for a foaf:Agent publisher', async () => {
+    // Regression: the dcat:Dataset branch's publisher pattern required
+    // ?publisher a ?foafOrganizationOrPerson bound to foaf:Organization/foaf:Person.
+    // Since that pattern is mandatory (not OPTIONAL) and shares the whole branch
+    // with dct:title, a foaf:Agent-typed publisher — legitimate per DCAT-AP's
+    // foaf:Agent range for dct:publisher — made the entire branch fail to bind,
+    // silently dropping title, publisher, identifier, dates and creator too, not
+    // just the publisher triple.
+    const response = await file('dataset-dcat-valid-agent-publisher.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/agent-publisher')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/agent-publisher'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const datasetUri = factory.namedNode(
+      'http://data.bibliotheken.nl/id/dataset/rise-alba',
+    );
+    const publisherUri = factory.namedNode(
+      'https://example.com/dataset-provider',
+    );
+
+    expect(
+      dataset.has(
+        factory.quad(
+          datasetUri,
+          dct('title'),
+          factory.literal(
+            'Alba amicorum van de Koninklijke Bibliotheek',
+            'nl',
+          ),
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      dataset.has(factory.quad(datasetUri, dct('publisher'), publisherUri)),
+    ).toBe(true);
+    expect(
+      dataset.has(
+        factory.quad(publisherUri, rdf('type'), foaf('Agent')),
+      ),
+    ).toBe(true);
+  });
+
   it('accepts accept valid DCAT dataset descriptions', async () => {
     const response = await file('dataset-dcat-valid.jsonld');
     nock('https://example.com')
