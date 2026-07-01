@@ -1099,8 +1099,18 @@ async function fetchTemporalCoverage(
 }
 
 // Main function to fetch all dataset detail data
+// Signature of the Knowledge Graph analysis fetcher. Injectable so the server
+// load can wrap it with the Valkey cache (see dataset-analysis-cache.server.ts)
+// without this client-safe module importing the cache (and its node-only client)
+// into the browser bundle.
+export type AnalysisFetcher = (
+  datasetUri: string,
+  distributions: DistributionDetail[],
+) => Promise<DatasetAnalysis>;
+
 export async function fetchDatasetDetail(
   datasetUri: string,
+  fetchAnalysis: AnalysisFetcher = fetchDatasetAnalysis,
 ): Promise<DatasetDetailResult> {
   // We intentionally don't pass SvelteKit's fetch to LDkit.
   // SvelteKit's fetch buffers entire response bodies for hydration serialization,
@@ -1243,7 +1253,7 @@ export async function fetchDatasetDetail(
   // fire it unawaited and stream it (see DatasetAnalysis): the register record
   // above renders immediately and the analysis fills in once it resolves. The
   // Linked-data declared-flag needs the register's distributions, passed in.
-  const analysis = fetchDatasetAnalysis(datasetUri, distributions);
+  const analysis = fetchAnalysis(datasetUri, distributions);
 
   // Resolve term URIs (e.g. spatial/temporal) to human-readable labels
   // via the Network of Terms API. Returned as an unawaited promise so
@@ -1284,7 +1294,7 @@ export async function fetchDatasetDetail(
 // Linked-data criterion can report whether a linked-data distribution is
 // declared. Fields are empty/indeterminate when the dataset has not been
 // analyzed yet.
-async function fetchDatasetAnalysis(
+export async function fetchDatasetAnalysis(
   datasetUri: string,
   distributions: DistributionDetail[],
 ): Promise<DatasetAnalysis> {

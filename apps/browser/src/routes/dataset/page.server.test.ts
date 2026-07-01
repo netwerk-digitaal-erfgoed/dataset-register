@@ -25,6 +25,7 @@ describe('/dataset loader', () => {
     );
     expect(fetchDatasetDetail).toHaveBeenCalledWith(
       'https://data.colonialcollections.nl/nmvw/collection-archives',
+      expect.any(Function), // injected cache-wrapping analysis fetcher
     );
     expect(result).toEqual({
       receivedUri:
@@ -38,6 +39,7 @@ describe('/dataset loader', () => {
     );
     expect(fetchDatasetDetail).toHaveBeenCalledWith(
       'http://legacy.example/foo',
+      expect.any(Function), // injected cache-wrapping analysis fetcher
     );
   });
 

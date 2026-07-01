@@ -24,6 +24,25 @@ services:
       - '--api-key=${TYPESENSE_API_KEY:-dev-typesense-key}'
       - '--enable-cors'
 
+  valkey:
+    image: valkey/valkey:8.1-alpine
+    volumes:
+      - valkey-data:/data
+    ports:
+      - '6379:6379'
+    # Append-only persistence so the cache survives container restarts — the
+    # cross-deployment durability we want from Valkey (locally this mirrors the
+    # k8s store surviving pod rolls).
+    command:
+      - valkey-server
+      - '--appendonly'
+      - 'yes'
+    healthcheck:
+      test: ['CMD', 'valkey-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   qlever-ui:
     image: adfreiburg/qlever-ui:latest
     volumes:
@@ -40,3 +59,4 @@ services:
 volumes:
   qlever-data:
   typesense-data:
+  valkey-data:
