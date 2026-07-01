@@ -1,5 +1,11 @@
 <script lang="ts">
   import '../app.css';
+  // Import the favicons so Vite fingerprints them into /_app/immutable/, which the
+  // ingress routes to this app. Referencing them at the site root (/favicon-*.png)
+  // would instead hit the legacy app, which only serves them under /assets/.
+  import favicon32 from '$lib/assets/favicon-32x32.png';
+  import favicon16 from '$lib/assets/favicon-16x16.png';
+  import appleTouchIcon from '$lib/assets/apple-touch-icon.png';
   import LanguageToggle from '$lib/components/LanguageToggle.svelte';
   import * as m from '$lib/paraglide/messages';
   import { getLocale, localizeHref } from '$lib/paraglide/runtime';
@@ -58,32 +64,10 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <svelte:head>
-  <link
-    href="https://datasetregister.netwerkdigitaalerfgoed.nl/assets/favicon-32x32.png"
-    rel="icon"
-  />
-  <link
-    href="https://datasetregister.netwerkdigitaalerfgoed.nl/assets/apple-touch-icon.png"
-    rel="apple-touch-icon"
-    sizes="180x180"
-  />
-  <link
-    href="https://datasetregister.netwerkdigitaalerfgoed.nl/assets/favicon-32x32.png"
-    rel="icon"
-    sizes="32x32"
-    type="image/png"
-  />
-  <link
-    href="https://datasetregister.netwerkdigitaalerfgoed.nl/assets/favicon-16x16.png"
-    rel="icon"
-    sizes="16x16"
-    type="image/png"
-  />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap"
-    rel="stylesheet"
-  />
+  <link href={favicon32} rel="icon" />
+  <link href={appleTouchIcon} rel="apple-touch-icon" sizes="180x180" />
+  <link href={favicon32} rel="icon" sizes="32x32" type="image/png" />
+  <link href={favicon16} rel="icon" sizes="16x16" type="image/png" />
 </svelte:head>
 
 <div class="min-h-screen bg-gray-50 dark:bg-gray-950">
