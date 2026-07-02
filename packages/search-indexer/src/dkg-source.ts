@@ -54,8 +54,16 @@ export class DkgSource {
           ?dataset void:subset ?iiifSubset .
           ?iiifSubset dct:conformsTo <${IIIF_PRESENTATION_API}> ; void:entities ?iiifEntities .
         }
-        UNION { ?dataset dqv:hasQualityMeasurement [ dqv:isMeasurementOf metric:manifests-sampled ; dqv:value ?manifestsSampled ] }
-        UNION { ?dataset dqv:hasQualityMeasurement [ dqv:isMeasurementOf metric:manifests-validated ; dqv:value ?manifestsValidated ] }
+        UNION {
+          ?dataset void:subset ?iiifSubset .
+          ?iiifSubset dct:conformsTo <${IIIF_PRESENTATION_API}> ;
+            dqv:hasQualityMeasurement [ dqv:isMeasurementOf metric:manifests-sampled ; dqv:value ?manifestsSampled ] .
+        }
+        UNION {
+          ?dataset void:subset ?iiifSubset .
+          ?iiifSubset dct:conformsTo <${IIIF_PRESENTATION_API}> ;
+            dqv:hasQualityMeasurement [ dqv:isMeasurementOf metric:manifests-validated ; dqv:value ?manifestsValidated ] .
+        }
         UNION { ?dataset dqv:hasQualityMeasurement [ dqv:isMeasurementOf metric:quads-validated ; dqv:value ?quadsValidated ] }
         UNION { ?dataset dqv:hasQualityMeasurement [ dqv:isMeasurementOf metric:schema-ap-nde-sample-conformance ; dqv:value ?schemaApNdeConformant ] }
         UNION { ?dataset dqv:hasQualityMeasurement [ dqv:isMeasurementOf metric:subject-uris-sampled ; dqv:value ?subjectUrisSampled ] }

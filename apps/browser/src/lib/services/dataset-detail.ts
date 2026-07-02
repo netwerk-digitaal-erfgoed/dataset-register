@@ -462,18 +462,17 @@ async function fetchIiifManifests(datasetUri: string): Promise<IiifManifests> {
     PREFIX dqv: <http://www.w3.org/ns/dqv#>
     PREFIX nde: <https://def.nde.nl/metric#>
     SELECT ?declared ?sampled ?validated WHERE {
-      <${datasetUri}> void:subset [
-        dct:conformsTo <${IIIF_PRESENTATION_API}> ;
-        void:entities ?declared
-      ] .
+      <${datasetUri}> void:subset ?iiifSubset .
+      ?iiifSubset dct:conformsTo <${IIIF_PRESENTATION_API}> ;
+        void:entities ?declared .
       OPTIONAL {
-        <${datasetUri}> dqv:hasQualityMeasurement [
+        ?iiifSubset dqv:hasQualityMeasurement [
           dqv:isMeasurementOf nde:manifests-sampled ;
           dqv:value ?sampled
         ]
       }
       OPTIONAL {
-        <${datasetUri}> dqv:hasQualityMeasurement [
+        ?iiifSubset dqv:hasQualityMeasurement [
           dqv:isMeasurementOf nde:manifests-validated ;
           dqv:value ?validated
         ]

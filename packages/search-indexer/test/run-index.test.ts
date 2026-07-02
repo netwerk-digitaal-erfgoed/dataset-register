@@ -165,11 +165,18 @@ const IIIF_PRESENTATION_API = 'http://iiif.io/api/presentation/';
 const XSD_BOOLEAN = 'http://www.w3.org/2001/XMLSchema#boolean';
 
 /** A `dqv:hasQualityMeasurement` of a metric carrying a typed value, keyed to a
- *  fresh measurement node so several metrics coexist on one dataset. */
-function measurement(slug: string, metric: string, value: string): string {
-  const measurementNode = `${base(slug)}/measurement/${metric}`;
+ *  fresh measurement node so several metrics coexist on one subject. Defaults to
+ *  hanging the measurement off the dataset; pass `subject` to attach it to a
+ *  subset (the IIIF measurements hang off the IIIF `void:subset`). */
+function measurement(
+  slug: string,
+  metric: string,
+  value: string,
+  subject: string = base(slug),
+): string {
+  const measurementNode = `${subject}/measurement/${metric}`;
   return `
-    <${base(slug)}> <${DQV}hasQualityMeasurement> <${measurementNode}> .
+    <${subject}> <${DQV}hasQualityMeasurement> <${measurementNode}> .
     <${measurementNode}> <${DQV}isMeasurementOf> <${METRIC}${metric}> ;
       <${DQV}value> ${value} .`;
 }
@@ -183,8 +190,8 @@ function dqvInsertQuery(slug: string): string {
     <${iri}> <${VOID}subset> <${iiifSubset}> .
     <${iiifSubset}> <${DCT}conformsTo> <${IIIF_PRESENTATION_API}> ;
       <${VOID}entities> 5 .
-    ${measurement(slug, 'manifests-sampled', '5')}
-    ${measurement(slug, 'manifests-validated', '5')}
+    ${measurement(slug, 'manifests-sampled', '5', iiifSubset)}
+    ${measurement(slug, 'manifests-validated', '5', iiifSubset)}
     ${measurement(slug, 'quads-validated', '42')}
     ${measurement(slug, 'schema-ap-nde-sample-conformance', `"true"^^<${XSD_BOOLEAN}>`)}
     ${measurement(slug, 'subject-uris-sampled', '10')}
