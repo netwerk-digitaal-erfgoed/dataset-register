@@ -553,6 +553,39 @@ nde-dataset:DistributionShape
             ] ;
             sh:message "Verwijder het SPARQL MIME-type uit schema:encodingFormat; SPARQL-endpoints worden gedeclareerd via schema:usageInfo"@nl, "Remove the SPARQL MIME type from schema:encodingFormat; SPARQL endpoints are declared via schema:usageInfo"@en ;
         ] ,
+        # A bare compression container (zip/gzip) names how the bytes are packed
+        # but not the media type of the file(s) inside, so consumers cannot know
+        # how to parse the download. The inner format need not be RDF (it may be
+        # CSV, XML, etc.). Declare the packaged media type together with the
+        # compression as a suffix, e.g. application/rdf+xml+zip or text/csv+gzip.
+        [
+            sh:path schema:encodingFormat ;
+            sh:not [ sh:in (
+                "application/zip"
+                "application/x-zip-compressed"
+                "application/gzip"
+                "application/x-gzip"
+            ) ] ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:message "Een kaal compressietype (zoals application/zip of application/gzip) geeft niet aan welk mediatype de ingepakte bestanden hebben. Declareer het werkelijke mediatype met een compressiesuffix, bijvoorbeeld application/rdf+xml+zip of text/csv+gzip"@nl, "A bare compression type (such as application/zip or application/gzip) does not indicate the media type of the packaged file(s). Declare the actual media type with a compression suffix, such as application/rdf+xml+zip or text/csv+gzip"@en ;
+        ] ,
+        # Media types with an x- prefix (e.g. application/x-zip-compressed) are
+        # not registered with IANA; the x- convention was deprecated by RFC 6648.
+        # Use the registered type so consumers recognise it.
+        [
+            sh:path schema:encodingFormat ;
+            sh:not [ sh:pattern "^[a-zA-Z]+/x-" ] ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:message "Gebruik een geregistreerd IANA-mediatype. Mediatypes met het voorvoegsel x- (zoals application/x-zip-compressed) zijn niet geregistreerd bij IANA; gebruik het geregistreerde type, bijvoorbeeld application/zip"@nl, "Use a registered IANA media type. Media types with the x- prefix (such as application/x-zip-compressed) are not registered with IANA; use the registered type, such as application/zip"@en ;
+        ] ,
         # Recommended properties
         [
             sh:path schema:description ;

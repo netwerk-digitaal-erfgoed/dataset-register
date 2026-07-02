@@ -305,6 +305,50 @@ describe('Validator', () => {
     `);
   });
 
+  it('warns on a bare compression encodingFormat and on a non-IANA x- prefix', async () => {
+    // A dump declared as a bare zip container names how the bytes are packed but
+    // not the RDF serialization inside, so it cannot be imported; and the
+    // x- prefixed type is not registered with IANA. Both fire as warnings, so the
+    // dataset stays valid while the provider is told to declare, for example,
+    // application/rdf+xml+zip.
+    const report = (await validate(
+      'dataset-schema-org-bare-compression-distribution.jsonld',
+    )) as Valid;
+    expect(report.state).toEqual('valid');
+
+    const encodingFormatResults = [
+      ...report.errors.match(
+        null,
+        shacl('resultPath'),
+        rdf.namedNode('https://schema.org/encodingFormat'),
+      ),
+    ].map((quad) => quad.subject);
+    // One result per warning shape: bare-compression and non-IANA x- prefix.
+    expect(encodingFormatResults).toHaveLength(2);
+
+    for (const result of encodingFormatResults) {
+      expect(
+        [...report.errors.match(result, shacl('resultSeverity'), null)][0]
+          ?.object.value,
+      ).toEqual('http://www.w3.org/ns/shacl#Warning');
+    }
+
+    const messages = encodingFormatResults.flatMap((result) =>
+      [...report.errors.match(result, shacl('resultMessage'), null)]
+        .filter(
+          (quad) =>
+            quad.object.termType === 'Literal' && quad.object.language === 'en',
+        )
+        .map((quad) => quad.object.value),
+    );
+    expect(messages).toContain(
+      'A bare compression type (such as application/zip or application/gzip) does not indicate the media type of the packaged file(s). Declare the actual media type with a compression suffix, such as application/rdf+xml+zip or text/csv+gzip',
+    );
+    expect(messages).toContain(
+      'Use a registered IANA media type. Media types with the x- prefix (such as application/x-zip-compressed) are not registered with IANA; use the registered type, such as application/zip',
+    );
+  });
+
   it('accepts ISO 8601 shortened-end temporal coverage notation', async () => {
     const report = (await validate(
       'dataset-schema-org-temporal-shortened.jsonld',
