@@ -2,6 +2,7 @@
   "include-component-in-tag": true,
   "include-v-in-tag": false,
   "bump-minor-pre-major": true,
+  "separate-pull-requests": true,
   "packages": {
     "requirements": {
       "release-type": "simple",
