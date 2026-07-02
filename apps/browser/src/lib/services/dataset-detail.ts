@@ -1242,7 +1242,23 @@ export async function fetchDatasetDetail(
       distributionLens.query(distributionQuery),
       fetchDistributionCount(distributionCountQuery),
       fetchTemporalCoverage(datasetUri),
-    ]);
+    ]).catch((e: unknown) => {
+      // The register lens queries hit the SPARQL endpoint directly and have no
+      // internal fallback (unlike the count/temporal fetches, which catch and
+      // return empty). If the endpoint is unreachable or returns a malformed
+      // response the Promise rejects here; surface it as a deliberate 503 so the
+      // route renders a handled “temporarily unavailable” page instead of
+      // crashing with an unhandled 500 (see issue #1860). A genuinely missing
+      // dataset comes back as an empty result set and is handled as 404 below.
+      console.error(
+        `Register queries failed for <${datasetUri}>:`,
+        e instanceof Error ? e.message : e,
+      );
+      error(
+        503,
+        'The dataset register is temporarily unavailable. Please try again shortly.',
+      );
+    });
 
   const dataset = datasets.find((d) => d.$id === datasetUri) ?? datasets[0];
   if (!dataset) {
