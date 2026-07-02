@@ -2,6 +2,14 @@
   "include-component-in-tag": true,
   "include-v-in-tag": false,
   "bump-minor-pre-major": true,
+  "separate-pull-requests": true,
+  "plugins": [
+    {
+      "type": "linked-versions",
+      "groupName": "dataset-register-app",
+      "components": ["browser", "core"]
+    }
+  ],
   "packages": {
     "requirements": {
       "release-type": "simple",
