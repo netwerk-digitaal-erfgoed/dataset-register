@@ -1,5 +1,5 @@
 {
-  "requirements": "1.12.0",
-  "apps/browser": "0.1.0",
-  "packages/core": "0.1.0"
+  "requirements": "1.12.1",
+  "apps/browser": "0.2.0",
+  "packages/core": "0.2.0"
 }

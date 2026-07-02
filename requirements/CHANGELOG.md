@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.1](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.12.0...requirements-1.12.1) (2026-07-02)
+
+
+### Bug Fixes
+
+* **core:** accept foaf:Agent as a valid dct:publisher/dct:creator class ([#2194](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2194)) ([cdc139f](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/cdc139fb720021a4c9312d30d40d55baf736b0c4))
+
 ## [1.12.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.11.3...requirements-1.12.0) (2026-06-24)
 
 
