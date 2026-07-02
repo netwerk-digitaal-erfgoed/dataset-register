@@ -12,6 +12,24 @@
         { "type": "fix", "section": "Bug Fixes" },
         { "type": "docs", "section": "Documentation" }
       ]
+    },
+    "apps/browser": {
+      "release-type": "simple",
+      "component": "browser",
+      "initial-version": "0.1.0",
+      "changelog-sections": [
+        { "type": "feat", "section": "Features" },
+        { "type": "fix", "section": "Bug Fixes" }
+      ]
+    },
+    "packages/core": {
+      "release-type": "simple",
+      "component": "core",
+      "initial-version": "0.1.0",
+      "changelog-sections": [
+        { "type": "feat", "section": "Features" },
+        { "type": "fix", "section": "Bug Fixes" }
+      ]
     }
   }
 }

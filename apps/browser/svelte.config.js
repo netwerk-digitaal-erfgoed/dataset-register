@@ -9,6 +9,13 @@ const config = {
 
   kit: {
     adapter: adapter(),
+    prerender: {
+      // The /changes page renders changelog entries sourced from commit history;
+      // a broken link in one entry shouldn't fail the entire site build.
+      handleHttpError: ({ message }) => {
+        console.warn(message);
+      },
+    },
   },
 };
 
