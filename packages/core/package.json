@@ -47,7 +47,7 @@
     "rdf-dereference": "^5.0.0",
     "rdf-ext": "^2.6.0",
     "rdf-serialize": "^5.1.0",
-    "shacl-engine": "^1.0.2",
+    "shacl-engine": "^1.1.1",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
