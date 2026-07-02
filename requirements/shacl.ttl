@@ -412,7 +412,8 @@ The value MUST be the canonical URI of a license. For example, use `https://crea
             sh:path schema:spatialCoverage ;
             sh:minCount 1 ;
             sh:severity sh:Info ;
-            sh:description """Het geografische gebied waarop de gegevens in de dataset betrekking hebben. Gebruik een URI uit een gecontroleerd vocabulaire zoals <a href="https://www.geonames.org/">GeoNames</a> via het <a href="https://termennetwerk.netwerkdigitaalerfgoed.nl/">Termennetwerk</a>."""@nl, """The geographical area to which the data in the dataset pertains. Use a URI from a controlled vocabulary such as <a href="https://www.geonames.org/">GeoNames</a> via the <a href="https://termennetwerk.netwerkdigitaalerfgoed.nl/en">Network of Terms</a>."""@en ;
+            sh:description """Het geografische gebied waarop de gegevens in de dataset betrekking hebben. Gebruik een URI uit een gecontroleerd vocabulaire zoals <a href="https://www.geonames.org/">GeoNames</a> via het <a href="https://termennetwerk.netwerkdigitaalerfgoed.nl/">Termennetwerk</a>. Geef alleen het meest specifieke (laagste) niveau op, bijvoorbeeld de URI voor Roermond en niet die voor Limburg of Nederland. Bredere gebieden kunnen worden afgeleid op basis van de hiërarchische relaties van de term."""@nl,
+                """The geographical area to which the data in the dataset pertains. Use a URI from a controlled vocabulary such as <a href="https://www.geonames.org/">GeoNames</a> via the <a href="https://termennetwerk.netwerkdigitaalerfgoed.nl/en">Network of Terms</a>. Provide only the most specific (lowest) level, for example the URI for Roermond and not the one for Limburg or the Netherlands. Broader areas can be derived from the term’s hierarchical relations."""@en ;
             sh:message "Voeg een gebiedsaanduiding toe (bijv. een URI uit GeoNames)"@nl, "Add spatial coverage (such as a GeoNames URI)"@en ;
         ] ,
         [
