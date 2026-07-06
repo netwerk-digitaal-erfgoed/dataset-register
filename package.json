@@ -35,7 +35,7 @@
     "@vitest/coverage-v8": "^4.1.9",
     "@vitest/ui": "^4.0.15",
     "esbuild": "^0.28.1",
-    "eslint": "~10.5.0",
+    "eslint": "~10.6.0",
     "eslint-config-prettier": "^10.0.0",
     "husky": "^9.1.7",
     "jiti": "2.7.0",
