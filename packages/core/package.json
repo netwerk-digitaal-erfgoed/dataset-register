@@ -57,7 +57,7 @@
     "nock": "^14.0.16",
     "node-fetch": "^3.3.1",
     "rdfa-streaming-parser": "^3.0.1",
-    "testcontainers": "^12.0.3"
+    "testcontainers": "^12.0.4"
   },
   "nx": {
     "projectType": "library",
