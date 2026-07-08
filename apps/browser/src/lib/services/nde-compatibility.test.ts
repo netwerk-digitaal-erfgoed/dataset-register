@@ -555,7 +555,7 @@ describe('linkedDataState', () => {
     ).toEqual({ state: 'failed', reason: 'empty' });
   });
 
-  it('is a warning/source-invalid when a declared source is invalid, even over conforming content', () => {
+  it('is a warning/invalid-linked-data when a declared source is invalid, even over conforming content', () => {
     // The extracted content is from an earlier crawl (the Knowledge Graph keeps
     // its previous summary when a re-crawl fails to parse); the live source no
     // longer parses, so the pass is downgraded to an orange warning rather than
@@ -570,10 +570,10 @@ describe('linkedDataState', () => {
         triples: 1000,
         sourceInvalid: true,
       }),
-    ).toEqual({ state: 'warning', reason: 'source-invalid' });
+    ).toEqual({ state: 'warning', reason: 'invalid-linked-data' });
   });
 
-  it('is a warning/source-invalid when a declared source is invalid and no content exists', () => {
+  it('is a warning/invalid-linked-data when a declared source is invalid and no content exists', () => {
     // Declared and invalid but nothing extracted yet: still a warning (it is
     // trying to provide linked data), not the red failed/empty of a source that
     // parsed but yielded nothing.
@@ -587,7 +587,7 @@ describe('linkedDataState', () => {
         triples: null,
         sourceInvalid: true,
       }),
-    ).toEqual({ state: 'warning', reason: 'source-invalid' });
+    ).toEqual({ state: 'warning', reason: 'invalid-linked-data' });
   });
 
   it('ignores sourceInvalid when nothing is declared (no RDF distribution to be invalid)', () => {

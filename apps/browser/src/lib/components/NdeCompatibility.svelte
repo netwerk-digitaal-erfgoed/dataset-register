@@ -103,8 +103,8 @@
           case 'met':
             return m.nde_compat_linked_data_heading_conforms();
           case 'warning':
-            return criterion.reason === 'source-invalid'
-              ? m.nde_compat_linked_data_heading_source_invalid()
+            return criterion.reason === 'invalid-linked-data'
+              ? m.nde_compat_linked_data_heading_invalid()
               : m.nde_compat_linked_data_heading_not_conforms();
           case 'unmet':
             return m.nde_compat_linked_data_heading_pending();
@@ -167,8 +167,8 @@
           case 'met':
             return m.nde_compat_linked_data_explanation_conforms();
           case 'warning':
-            return criterion.reason === 'source-invalid'
-              ? m.nde_compat_linked_data_explanation_source_invalid()
+            return criterion.reason === 'invalid-linked-data'
+              ? m.nde_compat_linked_data_explanation_invalid()
               : m.nde_compat_linked_data_explanation_not_conforms();
           case 'unmet':
             return m.nde_compat_linked_data_explanation_pending();
@@ -268,12 +268,12 @@
         return [
           entry('met'),
           entry('warning'),
-          // The invalid-source warning is an uncommon condition (the live data
-          // stopped parsing while an earlier summary lingers), so it is listed
-          // only while the criterion is actually in it, like the persistent
-          // criterion's sampling-failed warning above.
-          ...(criterion.reason === 'source-invalid'
-            ? [entry('warning', 'source-invalid')]
+          // The invalid-linked-data warning is an uncommon condition (the live
+          // data stopped parsing, so a lingering summary is stale), so it is
+          // listed only while the criterion is actually in it, like the
+          // persistent criterion's sampling-failed warning above.
+          ...(criterion.reason === 'invalid-linked-data'
+            ? [entry('warning', 'invalid-linked-data')]
             : []),
           entry('failed', 'no-linked-data'),
           entry('failed', 'empty'),

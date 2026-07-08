@@ -276,17 +276,22 @@
     ),
   );
 
-  // True when a declared RDF distribution is reachable but currently serves
-  // invalid RDF (a fresh, fingerprint-matched invalid verdict — see invalidUrls).
-  // The Knowledge Graph keeps its previous summary when a re-crawl fails to
-  // parse, so any summary shown is then from an earlier version: this flags it as
-  // outdated, and downgrades the Linked data criterion to a warning rather than a
-  // clean pass. Reuses the same usability rollup the download list already
-  // classifies with, so the page has one notion of “this source is broken”.
+  // True when EVERY declared RDF distribution is reachable but currently serves
+  // invalid RDF (a fresh, fingerprint-matched invalid verdict — see invalidUrls),
+  // i.e. no still-valid RDF source remains that could account for a current
+  // summary. Requiring `every` (not `some`) avoids falsely flagging a current
+  // summary when one distribution is broken but another valid RDF source (e.g. a
+  // SPARQL endpoint, which never carries a validity verdict) is still present.
+  // When true, the Knowledge Graph is showing a summary from an earlier crawl, so
+  // it is flagged outdated and the Linked data criterion is downgraded to a
+  // warning rather than a clean pass. Reuses the same usability rollup (via
+  // invalidUrls) the download list classifies with, so the page has one notion of
+  // “this source is broken”.
   const summarySourceInvalid = $derived(
-    rdfDistributions.some((distribution) =>
-      invalidUrls.has(distribution.accessURL),
-    ),
+    rdfDistributions.length > 0 &&
+      rdfDistributions.every((distribution) =>
+        invalidUrls.has(distribution.accessURL),
+      ),
   );
 
   // When there is no summary, explain why — but only when a concrete cause is
@@ -1707,24 +1712,27 @@
             class:ml-auto={!summaryGeneratedAt}
           >
             <ExclamationCircleOutline class="h-5 w-5" />
+            <!-- Names the icon for assistive tech; the tooltip carries the
+                 description, so the title is not repeated there. -->
             <span class="sr-only">{m.detail_summary_outdated()}</span>
           </span>
           <Tooltip
             triggeredBy="#summary-outdated-warning"
             class="max-w-xs text-left"
           >
-            <span class="font-medium">{m.detail_summary_outdated()}</span>:
             {m.detail_summary_outdated_description()}
           </Tooltip>
         {/if}
       </h2>
-      <!-- Only the figures below are faded (opacity-75 + grayscale) when the
-             source is invalid; the header and its warning icon stay crisp.
-             opacity-75 keeps the secondary labels above WCAG AA. -->
+      <!-- When no valid RDF source remains, the whole summary body below (figures,
+           class/property tables, vocabularies, terminology links) is stale, so it
+           is faded to signal that. A soft opacity only — no grayscale — keeps the
+           terminology/vocabulary links legible and clickable and stays above WCAG
+           AA in both themes (including the dark-mode gray-400 labels); the header
+           and its warning icon stay crisp. -->
       <div
         class="mb-8 transition-opacity"
-        class:opacity-75={summarySourceInvalid}
-        class:grayscale={summarySourceInvalid}
+        class:opacity-80={summarySourceInvalid}
       >
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <!-- Merged: Triples + Subjects + Avg Triples Per Subject -->
