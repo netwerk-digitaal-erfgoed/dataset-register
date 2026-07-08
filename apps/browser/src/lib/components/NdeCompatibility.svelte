@@ -103,7 +103,9 @@
           case 'met':
             return m.nde_compat_linked_data_heading_conforms();
           case 'warning':
-            return m.nde_compat_linked_data_heading_not_conforms();
+            return criterion.reason === 'source-invalid'
+              ? m.nde_compat_linked_data_heading_source_invalid()
+              : m.nde_compat_linked_data_heading_not_conforms();
           case 'unmet':
             return m.nde_compat_linked_data_heading_pending();
           case 'failed':
@@ -165,7 +167,9 @@
           case 'met':
             return m.nde_compat_linked_data_explanation_conforms();
           case 'warning':
-            return m.nde_compat_linked_data_explanation_not_conforms();
+            return criterion.reason === 'source-invalid'
+              ? m.nde_compat_linked_data_explanation_source_invalid()
+              : m.nde_compat_linked_data_explanation_not_conforms();
           case 'unmet':
             return m.nde_compat_linked_data_explanation_pending();
           case 'failed':
@@ -264,6 +268,13 @@
         return [
           entry('met'),
           entry('warning'),
+          // The invalid-source warning is an uncommon condition (the live data
+          // stopped parsing while an earlier summary lingers), so it is listed
+          // only while the criterion is actually in it, like the persistent
+          // criterion's sampling-failed warning above.
+          ...(criterion.reason === 'source-invalid'
+            ? [entry('warning', 'source-invalid')]
+            : []),
           entry('failed', 'no-linked-data'),
           entry('failed', 'empty'),
           ...(criterion.state === 'unmet' ? [entry('unmet')] : []),

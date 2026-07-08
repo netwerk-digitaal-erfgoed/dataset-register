@@ -99,11 +99,7 @@ export const SUBJECT_RESOLUTION_OUTCOME_BASE_URI =
 // anchors the section regardless of analysis. Persistent identifiers follow, then
 // linked data and terms, then iiif, matching the order in NDE communication.
 export type CompatibilityCriterionKey =
-  | 'registration'
-  | 'persistent'
-  | 'linked-data'
-  | 'terms'
-  | 'iiif';
+  'registration' | 'persistent' | 'linked-data' | 'terms' | 'iiif';
 
 // Criteria that can only be assessed from the dataset’s analysis in the Dataset
 // Knowledge Graph, so they are shown only for an analyzed dataset. The
@@ -136,6 +132,16 @@ export type RegistrationFailureReason = 'gone' | 'invalid';
 //                    linked data ophalen”).
 export type LinkedDataFailureReason = 'no-linked-data' | 'empty';
 
+// Why the linked-data criterion is in the `warning` state (🟠) rather than a
+// plain pass:
+// 'source-invalid' — a declared RDF distribution is reachable but currently
+//                    serves invalid RDF (a fresh, fingerprint-matched invalid
+//                    verdict). Any summary shown is then from an earlier, still-
+//                    valid version of the source, so the dataset is offering
+//                    linked data that is broken, not absent — a warning, never a
+//                    plain failure.
+export type LinkedDataWarningReason = 'source-invalid';
+
 // Why the SCHEMA-AP-NDE conformance check (still surfaced on the dataset card)
 // is in the `failed` state:
 // 'violations'         — the sample exercised the profile’s classes but at least
@@ -157,9 +163,7 @@ export type SchemaApNdeFailureReason = 'violations' | 'declared-but-empty';
 //                       the criterion could not be assessed — an error to fix,
 //                       not the neutral “not yet checked” of a never-sampled one.
 export type PersistentFailureReason =
-  | 'unresolved'
-  | 'non-durable'
-  | 'sampling-failed';
+  'unresolved' | 'non-durable' | 'sampling-failed';
 
 // A non-blocking advisory shown alongside a green (`met`) persistent-URI row.
 // 'no-html-landing-pages' — the subject URIs resolve, but none served an HTML
@@ -174,6 +178,7 @@ export type PersistentAdvisory = 'no-html-landing-pages';
 // but no PID reference” from a hard “did not resolve”.
 export type CompatibilityFailureReason =
   | LinkedDataFailureReason
+  | LinkedDataWarningReason
   | RegistrationFailureReason
   | PersistentFailureReason;
 
@@ -337,6 +342,15 @@ export interface SchemaApNdeConformance {
 //                    means nothing of the profile’s classes was sampled, so the
 //                    co-emitted 'conformant' carries no evidence.
 // 'triples'        — void:triples, for the “n feiten” count; null when absent.
+// 'sourceInvalid'  — a declared RDF distribution is reachable but currently
+//                    serves invalid RDF (a fresh, fingerprint-matched invalid
+//                    verdict from the usability rollup). Unlike the other
+//                    signals, this comes from the per-distribution validity rail
+//                    (streamed separately), not the analysis query, so the
+//                    component fills it in. When true it takes precedence over
+//                    any (necessarily stale) extracted content: the summary is
+//                    outdated and the criterion warns rather than passing.
+//                    Optional: absent reads as not invalid.
 export interface LinkedData {
   declared: boolean;
   hasVoidDataset: boolean;
@@ -344,6 +358,7 @@ export interface LinkedData {
   conformant: boolean | null;
   quadsValidated: number | null;
   triples: number | null;
+  sourceInvalid?: boolean;
 }
 
 // Term-usage figures for a dataset. `links` is the total number of link
@@ -452,10 +467,19 @@ export function schemaApNdeState(
 // a declared distribution awaiting analysis is neutral pending (⚪, `unmet`); a
 // declared distribution that was analyzed but yielded no content is
 // `failed`/'empty'.
+//
+// A declared RDF distribution that is currently invalid (`sourceInvalid`) is
+// judged first: its live bytes cannot be parsed, so any extracted content is
+// from an earlier version and reads as stale. The dataset is still offering
+// linked data — broken, not absent — so this is a warning (🟠), never a plain
+// failure (🔴), and it wins over the otherwise-green content branch below.
 export function linkedDataState(linkedData: LinkedData): {
   state: CompatibilityState;
-  reason?: LinkedDataFailureReason;
+  reason?: LinkedDataFailureReason | LinkedDataWarningReason;
 } {
+  if (linkedData.declared && linkedData.sourceInvalid === true) {
+    return { state: 'warning', reason: 'source-invalid' };
+  }
   if (linkedData.hasContent) {
     const conformanceProven =
       linkedData.conformant === true && (linkedData.quadsValidated ?? 0) > 0;

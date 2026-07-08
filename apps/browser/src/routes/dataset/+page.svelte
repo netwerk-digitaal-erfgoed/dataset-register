@@ -276,6 +276,19 @@
     ),
   );
 
+  // True when a declared RDF distribution is reachable but currently serves
+  // invalid RDF (a fresh, fingerprint-matched invalid verdict — see invalidUrls).
+  // The Knowledge Graph keeps its previous summary when a re-crawl fails to
+  // parse, so any summary shown is then from an earlier version: this flags it as
+  // outdated, and downgrades the Linked data criterion to a warning rather than a
+  // clean pass. Reuses the same usability rollup the download list already
+  // classifies with, so the page has one notion of “this source is broken”.
+  const summarySourceInvalid = $derived(
+    rdfDistributions.some((distribution) =>
+      invalidUrls.has(distribution.accessURL),
+    ),
+  );
+
   // When there is no summary, explain why — but only when a concrete cause is
   // known: an RDF distribution that is reachable-but-invalid, or unreachable.
   // A dataset with no RDF at all, or one whose RDF is still reachable/unprobed
@@ -1619,7 +1632,14 @@
     {@const linksets = analysis.linksets}
     {@const iiifManifests = analysis.iiifManifests}
     {@const persistentUris = analysis.persistentUris}
-    {@const linkedData = analysis.linkedData}
+    <!-- sourceInvalid comes from the per-distribution validity rail (streamed
+         separately), not the analysis query, so it is merged in here where both
+         are available. It downgrades the Linked data criterion to a warning when
+         the live RDF no longer parses. -->
+    {@const linkedData = {
+      ...analysis.linkedData,
+      sourceInvalid: summarySourceInvalid,
+    }}
     {@const terms = analysis.terms}
     {@const hasVoidStats = computeHasVoidStats(summary)}
     {@const classPartitionTable = buildClassPartitionTable(summary)}
@@ -1643,40 +1663,69 @@
 
     <!-- VoID Summary Section -->
     {#if summary && hasVoidStats}
-      <div class="mb-8">
-        <h2
-          id="linked-data-summary"
-          class="mb-4 flex scroll-mt-20 flex-wrap items-center gap-2 text-xl font-semibold text-gray-900 lg:scroll-mt-24 dark:text-white"
+      <h2
+        id="linked-data-summary"
+        class="mb-4 flex scroll-mt-20 flex-wrap items-center gap-2 text-xl font-semibold text-gray-900 lg:scroll-mt-24 dark:text-white"
+      >
+        {m.detail_linked_data_summary()}
+        <span id="tooltip-linked-data-summary" class="cursor-pointer">
+          <InfoCircleSolid
+            class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+          />
+        </span>
+        <Tooltip triggeredBy="#tooltip-linked-data-summary"
+          >{m.detail_linked_data_summary_description()}</Tooltip
         >
-          {m.detail_linked_data_summary()}
-          <span id="tooltip-linked-data-summary" class="cursor-pointer">
-            <InfoCircleSolid
-              class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
-            />
-          </span>
-          <Tooltip triggeredBy="#tooltip-linked-data-summary"
-            >{m.detail_linked_data_summary_description()}</Tooltip
+        {#if summaryGeneratedAt}
+          <span
+            id="summary-generated-relative"
+            class="ml-auto cursor-default text-sm font-normal text-gray-600 dark:text-gray-400"
           >
-          {#if summaryGeneratedAt}
-            <span
-              id="summary-generated-relative"
-              class="ml-auto cursor-default text-sm font-normal text-gray-600 dark:text-gray-400"
-            >
-              {m.detail_summary_updated({
-                time: getRelativeTimeString(new Date(summaryGeneratedAt)),
-              })}
-            </span>
-            <Tooltip triggeredBy="#summary-generated-relative">
-              {new Date(summaryGeneratedAt).toLocaleDateString(getLocale(), {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </Tooltip>
-          {/if}
-        </h2>
+            {m.detail_summary_updated({
+              time: getRelativeTimeString(new Date(summaryGeneratedAt)),
+            })}
+          </span>
+          <Tooltip triggeredBy="#summary-generated-relative">
+            {new Date(summaryGeneratedAt).toLocaleDateString(getLocale(), {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </Tooltip>
+        {/if}
+        {#if summarySourceInvalid}
+          <!-- The figures are retained from an earlier crawl (the current source
+                 no longer parses as valid RDF), so the Knowledge Graph kept its
+                 previous summary. A subtle orange warning next to the timestamp —
+                 with the reason in its tooltip — flags the figures as not current;
+                 the affected distribution is listed in the download section below. -->
+          <span
+            id="summary-outdated-warning"
+            class="cursor-pointer text-orange-500 dark:text-orange-400"
+            class:ml-auto={!summaryGeneratedAt}
+          >
+            <ExclamationCircleOutline class="h-5 w-5" />
+            <span class="sr-only">{m.detail_summary_outdated()}</span>
+          </span>
+          <Tooltip
+            triggeredBy="#summary-outdated-warning"
+            class="max-w-xs text-left"
+          >
+            <span class="font-medium">{m.detail_summary_outdated()}</span>:
+            {m.detail_summary_outdated_description()}
+          </Tooltip>
+        {/if}
+      </h2>
+      <!-- Only the figures below are faded (opacity-75 + grayscale) when the
+             source is invalid; the header and its warning icon stay crisp.
+             opacity-75 keeps the secondary labels above WCAG AA. -->
+      <div
+        class="mb-8 transition-opacity"
+        class:opacity-75={summarySourceInvalid}
+        class:grayscale={summarySourceInvalid}
+      >
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <!-- Merged: Triples + Subjects + Avg Triples Per Subject -->
           {#if (summary.triples !== undefined && summary.triples !== null) || (summary.distinctSubjects !== undefined && summary.distinctSubjects !== null)}

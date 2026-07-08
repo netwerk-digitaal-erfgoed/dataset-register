@@ -554,6 +554,57 @@ describe('linkedDataState', () => {
       }),
     ).toEqual({ state: 'failed', reason: 'empty' });
   });
+
+  it('is a warning/source-invalid when a declared source is invalid, even over conforming content', () => {
+    // The extracted content is from an earlier crawl (the Knowledge Graph keeps
+    // its previous summary when a re-crawl fails to parse); the live source no
+    // longer parses, so the pass is downgraded to an orange warning rather than
+    // shown as a clean green.
+    expect(
+      linkedDataState({
+        declared: true,
+        hasVoidDataset: true,
+        hasContent: true,
+        conformant: true,
+        quadsValidated: 200,
+        triples: 1000,
+        sourceInvalid: true,
+      }),
+    ).toEqual({ state: 'warning', reason: 'source-invalid' });
+  });
+
+  it('is a warning/source-invalid when a declared source is invalid and no content exists', () => {
+    // Declared and invalid but nothing extracted yet: still a warning (it is
+    // trying to provide linked data), not the red failed/empty of a source that
+    // parsed but yielded nothing.
+    expect(
+      linkedDataState({
+        declared: true,
+        hasVoidDataset: false,
+        hasContent: false,
+        conformant: null,
+        quadsValidated: null,
+        triples: null,
+        sourceInvalid: true,
+      }),
+    ).toEqual({ state: 'warning', reason: 'source-invalid' });
+  });
+
+  it('ignores sourceInvalid when nothing is declared (no RDF distribution to be invalid)', () => {
+    // sourceInvalid only applies to a declared RDF distribution; without one the
+    // criterion follows the content/declared branches as before.
+    expect(
+      linkedDataState({
+        declared: false,
+        hasVoidDataset: false,
+        hasContent: false,
+        conformant: null,
+        quadsValidated: null,
+        triples: null,
+        sourceInvalid: true,
+      }),
+    ).toEqual({ state: 'failed', reason: 'no-linked-data' });
+  });
 });
 
 describe('registrationState', () => {
