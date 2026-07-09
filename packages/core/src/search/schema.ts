@@ -1,8 +1,8 @@
 /**
  * The shared `@lde/search` schema for the dataset search index.
  *
- * One `SearchType` declaration drives all three consumers — the indexer’s
- * projection + Typesense collection schema and the GraphQL query API — so they
+ * One `SearchType` declaration drives all three consumers – the indexer’s
+ * projection + Typesense collection schema and the GraphQL query API – so they
  * cannot drift. It supersedes the hand-rolled {@link ./field-registry.ts}
  * registry, which stays in place until the browser query path moves onto the
  * GraphQL API (then the old registry and its direct-fetch path are removed).
@@ -33,6 +33,10 @@ import {
   STATUS_RANK,
   sumNumbers,
 } from './derivations.ts';
+// SEARCH_LOCALES has a single home in field-registry.ts (the browser query path
+// reads it too); the schema-driven projection imports it so the two sides cannot
+// declare a different locale set.
+import { SEARCH_LOCALES } from './field-registry.ts';
 
 /** schema.org and the register-internal IR predicate prefixes. */
 const SCHEMA = 'https://schema.org/';
@@ -40,9 +44,6 @@ const DR = 'urn:dr:';
 
 /** The RDF class the dataset search documents are instances of. */
 export const DATASET_TYPE = 'http://www.w3.org/ns/dcat#Dataset';
-
-/** The locales every localized (`langText`) field is projected in. */
-export const SEARCH_LOCALES = ['nl', 'en'] as const;
 
 const dataset = defineSearchType({
   name: 'Dataset',
@@ -95,7 +96,7 @@ const dataset = defineSearchType({
       // The merged publisher + creator organization IRIs. Faceted on the IRI;
       // the display label resolves at query time from the Organization
       // collection (ADR 0008), so this carries no per-locale search field of
-      // its own — that is `publisherName` above.
+      // its own – that is `publisherName` above.
       name: 'publisher',
       kind: 'reference',
       path: 'urn:dr:organization',

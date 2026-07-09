@@ -15,10 +15,7 @@ export * from './search/class-groups.ts';
 export * from './search/compatibility.ts';
 export * from './search/field-registry.ts';
 export * from './search/media-types.ts';
-// Named re-export (not `export *`): `schema.ts` also declares `SEARCH_LOCALES`,
-// which `field-registry.ts` already exports. The shared `@lde/search` schema and
-// its dataset type IRI are the two symbols the indexer consumes.
-export { DATASET_TYPE, SEARCH_SCHEMA } from './search/schema.ts';
+export * from './search/schema.ts';
 export * from './search/synonyms.ts';
 export * from './sparql.ts';
 export * from './sparql-iri.ts';

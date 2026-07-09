@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { Parser } from 'n3';
 import type { Quad } from '@rdfjs/types';
 import { projectGraph, type SearchDocument } from '@lde/search';
-import { SEARCH_SCHEMA } from '../src/search/schema.ts';
+import { physicalFields, searchableFields } from '@lde/search/adapter';
+import { DATASET_TYPE, SEARCH_SCHEMA } from '../src/search/schema.ts';
+import { queryBy } from '../src/search/field-registry.ts';
 import { REGISTRATION_STATUS_BASE_URI } from '../src/constants.ts';
 import { SPARQL_PROTOCOL_URI } from '../src/search/media-types.ts';
 
@@ -34,6 +36,19 @@ describe('dataset search schema projection', () => {
     // The searchable and sort companions are folded (case/diacritic-normalized).
     expect(document.title_search_nl).toBe('verhalen');
     expect(document.title_sort_nl).toBe('verhalen');
+  });
+
+  it('folds diacritics in the search and sort companions (regression #1661)', async () => {
+    const [document] = await project(`${PREFIXES}
+      <http://example.org/ds1> a dcat:Dataset ;
+        dct:title "Møhlmann"@nl .
+    `);
+
+    // The display field keeps the original spelling; the folded companions strip
+    // the diacritic so a query for “Mohlmann” still matches “Møhlmann” (#1661).
+    expect(document.title_nl).toBe('Møhlmann');
+    expect(document.title_search_nl).toBe('mohlmann');
+    expect(document.title_sort_nl).toBe('mohlmann');
   });
 
   it('projects a description into per-locale display and search fields', async () => {
@@ -217,5 +232,28 @@ describe('dataset search schema projection', () => {
     expect(document.linked_data).toBe(true);
     expect(document.terms).toBe(true);
     expect(document.persistent_uris).toBe(true);
+  });
+});
+
+describe('field-registry and schema parity', () => {
+  const datasetType = SEARCH_SCHEMA.get(DATASET_TYPE);
+  if (datasetType === undefined) {
+    throw new Error(`SEARCH_SCHEMA is missing the dataset type ${DATASET_TYPE}.`);
+  }
+
+  it('every browser query_by field is a physical search field the index writes', () => {
+    // The browser query path (field-registry.ts) and the index/collection
+    // (SEARCH_SCHEMA) are separate declarations until the query path moves onto
+    // the GraphQL API. Assert they cannot silently drift: a field the browser
+    // queries but the index never writes would be a zero-hit query, not a build
+    // error (this is what the publisher → publisherName reconciliation aligned).
+    const written = new Set(
+      searchableFields(datasetType).flatMap(
+        (field) => physicalFields(field).search,
+      ),
+    );
+    for (const queried of queryBy().split(',')) {
+      expect(written).toContain(queried);
+    }
   });
 });

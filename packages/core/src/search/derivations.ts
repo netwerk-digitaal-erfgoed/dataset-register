@@ -1,5 +1,5 @@
 /**
- * Derived search values — fields computed from several predicates rather than
+ * Derived search values – fields computed from several predicates rather than
  * projected from one. Kept here (not in the indexer) so the logic is shared and
  * unit-testable, mirroring {@link ./compatibility.ts} and {@link ./class-groups.ts}.
  */
