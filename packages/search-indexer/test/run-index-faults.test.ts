@@ -33,6 +33,7 @@ const mocks = vi.hoisted(() => ({
   client: undefined as unknown as Client,
   registerQuads: [] as Quad[],
   orgLabelQuads: [] as Quad[],
+  orgLabelError: false,
 }));
 
 vi.mock('../src/typesense-client.ts', () => ({
@@ -45,7 +46,9 @@ vi.mock('../src/register-source.ts', () => ({
       return Promise.resolve(mocks.registerQuads);
     }
     readOrganizationLabelQuads(): Promise<Quad[]> {
-      return Promise.resolve(mocks.orgLabelQuads);
+      return mocks.orgLabelError
+        ? Promise.reject(new Error('label read failed'))
+        : Promise.resolve(mocks.orgLabelQuads);
     }
   },
 }));
@@ -156,6 +159,7 @@ describe('runIndex fault handling', () => {
     mocks.openRun.mockReset();
     mocks.registerQuads = REGISTER_QUADS;
     mocks.orgLabelQuads = [];
+    mocks.orgLabelError = false;
     mocks.client = fakeClient();
   });
 
@@ -317,5 +321,28 @@ describe('runIndex fault handling', () => {
 
     // The created-but-never-swapped collection is reaped, not leaked.
     expect(deleted.some((name) => name.startsWith('labels_'))).toBe(true);
+  });
+
+  it('keeps the previous labels when the prefetched label read fails', async () => {
+    // The label read (prefetched at the start of the run) rejects. The dataset
+    // index still goes live; the sidecar is skipped so the previous labels stay,
+    // and no half-built collection is created to leak.
+    mocks.orgLabelError = true;
+    const deleted: string[] = [];
+    mocks.client = fakeClient({ deleted });
+    mocks.openRun.mockResolvedValueOnce(fakeRun());
+
+    const logs: string[] = [];
+    const result = await runIndex({
+      ...baseOptions,
+      log: (message) => logs.push(message),
+    });
+
+    expect(result.mode).toBe('rebuild');
+    expect(logs.some((line) => line.startsWith('Label index skipped'))).toBe(
+      true,
+    );
+    // The read failed before any collection was created, so nothing to drop.
+    expect(deleted).toHaveLength(0);
   });
 });

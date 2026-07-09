@@ -106,21 +106,25 @@ export async function runIndex(
     );
   }
 
-  // Sync the global synonym set before any collection is created – the
-  // collection schema references it by name. Idempotent and query-time, so it
-  // re-runs each indexer run with no reindex.
-  await syncSynonyms(client, log);
-
   log(`Rebuilding search index ${alias}`);
 
-  // Unified read: one CONSTRUCT for the register, one for the DKG, merged by
-  // dataset IRI into a single RDF graph, then framed per dataset into the
-  // JSON-LD IR and projected – streamed straight into the rebuild so only one
-  // document is held at a time. DKG quads are optional (see below). The
+  // Kick off every read/sync that does not depend on the writer up front so they
+  // overlap instead of serializing on the critical path: the two main CONSTRUCTs
+  // (register + DKG, different endpoints), the sidecar label reads, and the
+  // synonym-set sync. The label reads and the synonym sync otherwise sit serially
+  // – labels after commit, synonyms before the reads – adding their full
+  // round-trip latency to the run; overlapping hides it behind the main reads and
+  // the import. Each dataset is framed per subject and projected, streamed
+  // straight into the rebuild so only one document is held at a time; the
   // versioned collection name, alias swap and cross-pod lock are managed by
-  // {@link BlueGreenRebuild}; the caller supplies only the logical alias.
-  // The register and DKG reads are independent (different endpoints), so run
-  // them concurrently.
+  // {@link BlueGreenRebuild}.
+  const labelDocumentsPromise = readLabelDocuments(source, options, log);
+  // readLabelDocuments can reject (the register org-label read has no fallback);
+  // mark it handled so an early skip-return below does not surface an unhandled
+  // rejection. rebuildLabels awaits the same promise and its catch handles a real
+  // failure by keeping the previous labels.
+  labelDocumentsPromise.catch(() => undefined);
+  const synonymsPromise = syncSynonyms(client, log);
   const [registerQuads, dkgQuads] = await Promise.all([
     source.readQuads(),
     readKnowledgeGraphQuads(options, log),
@@ -148,6 +152,10 @@ export async function runIndex(
     );
     return { mode: 'skipped', reason: 'empty-knowledge-graph' };
   }
+
+  // The collection schema references the synonym set by name, so the sync must
+  // complete before openRun creates the collection.
+  await synonymsPromise;
 
   const writer = new BlueGreenRebuild<SearchDocument>(client, datasetType, {
     name: alias,
@@ -220,7 +228,7 @@ export async function runIndex(
   // user-facing dataset index (which is already live by now), so it degrades to
   // the previous labels and self-heals next run.
   const labelsAlias = options.labelsAlias ?? LABELS_COLLECTION_ALIAS;
-  await rebuildLabels(client, source, options, labelsAlias, log);
+  await rebuildLabels(client, labelsAlias, log, labelDocumentsPromise);
 
   return { mode: 'rebuild', collection, upserted };
 }
@@ -295,39 +303,55 @@ async function aliasTarget(
 }
 
 /**
- * Build the sidecar `labels` collection: organization IRIs (`foaf:name`) from
- * the register plus term IRIs and labels (`dct:title`) and class (`rdfs:label`)
- * from the DKG. Blue/green-swap its alias with a minimal inline rebuild (create
+ * Read the sidecar label documents: organization IRIs (`foaf:name`) from the
+ * register plus terminology-source (`dct:title`) and class (`rdfs:label`) labels
+ * from the DKG, read concurrently. Prefetched at the start of a run so it
+ * overlaps the main build rather than serializing after commit. Rejects only if
+ * the register org-label read fails (the DKG labels degrade to none); the caller
+ * treats a rejection as "keep the previous labels".
+ */
+async function readLabelDocuments(
+  source: RegisterSource,
+  options: RunIndexOptions,
+  log: (message: string) => void,
+): Promise<LabelDocument[]> {
+  const [organizationQuads, knowledgeGraphLabels] = await Promise.all([
+    source.readOrganizationLabelQuads(),
+    readKnowledgeGraphLabels(options, log),
+  ]);
+  return [
+    ...toLabelDocuments(organizationQuads, 'organization'),
+    ...knowledgeGraphLabels,
+  ];
+}
+
+/**
+ * Build the sidecar `labels` collection from the prefetched label documents.
+ * Blue/green-swap its alias with a minimal inline rebuild (create
  * `${alias}_${timestamp}`, import the label docs, repoint the alias, drop the
  * previous collection) – the browser still reads this sidecar in PR 1, so the
  * typed label-source collections are deliberately not introduced here.
- * Defensive: a failure here is logged and swallowed so it never fails an
- * otherwise-good dataset rebuild; labels are display-only and the browser falls
- * back to a shortened IRI when one is missing. The DKG labels are independently
- * optional (see below).
+ * Defensive: a failure here (including a rejected `documents` read) is logged and
+ * swallowed so it never fails an otherwise-good dataset rebuild; labels are
+ * display-only and the browser falls back to a shortened IRI when one is missing.
  */
 async function rebuildLabels(
   client: Client,
-  source: RegisterSource,
-  options: RunIndexOptions,
   alias: string,
   log: (message: string) => void,
+  documents: Promise<readonly LabelDocument[]>,
 ): Promise<void> {
   // The collection created below is orphaned if a later step throws before the
   // alias is repointed; track it so the catch can drop it rather than leak it.
   let orphan: string | undefined;
   try {
-    const documents = toLabelDocuments(
-      await source.readOrganizationLabelQuads(),
-      'organization',
-    );
-    documents.push(...(await readKnowledgeGraphLabels(options, log)));
+    const labelDocuments = await documents;
 
     const collection = `${alias}_${Date.now()}`;
     const previous = await aliasTarget(client, alias);
     await client.collections().create(buildLabelCollectionSchema(collection));
     orphan = collection;
-    await importLabels(client, collection, documents);
+    await importLabels(client, collection, labelDocuments);
     await client.aliases().upsert(alias, { collection_name: collection });
     // Live now: the collection to reap is the superseded `previous`, not this one.
     orphan = undefined;
@@ -339,7 +363,9 @@ async function rebuildLabels(
         .delete()
         .catch(() => undefined);
     }
-    log(`Indexed ${documents.length} labels; alias ${alias} → ${collection}`);
+    log(
+      `Indexed ${labelDocuments.length} labels; alias ${alias} → ${collection}`,
+    );
   } catch (error) {
     if (orphan !== undefined) {
       // Drop the half-built collection we created but never swapped live, so a
