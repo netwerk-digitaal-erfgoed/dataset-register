@@ -374,19 +374,37 @@ export const SEARCH_SYNONYM_SET = 'dataset-register-synonyms';
 /** A searchable field is one carrying a `query_by` weight. */
 type WeightedField = SearchFieldSpec & { weight: number };
 
+// SEARCH_FIELDS is a module constant, so every list derived from it below is
+// invariant. Precompute them once at load rather than re-filtering/sorting/
+// joining on every browser query request (queryBy/queryByWeights/facetFields run
+// per request).
+const SEARCHABLE_FIELDS: readonly WeightedField[] = SEARCH_FIELDS.filter(
+  (field): field is WeightedField => field.weight !== undefined,
+).sort((left, right) => right.weight - left.weight);
+
 /** Full-text searchable fields, highest weight first. */
 export function searchableFields(): readonly WeightedField[] {
-  return SEARCH_FIELDS.filter(
-    (field): field is WeightedField => field.weight !== undefined,
-  ).sort((a, b) => b.weight - a.weight);
+  return SEARCHABLE_FIELDS;
 }
+
+const QUERY_BY = SEARCHABLE_FIELDS.map((field) => field.name).join(',');
 
 /** Comma-separated `query_by` value for a Typesense search. */
 export function queryBy(): string {
-  return searchableFields()
-    .map((field) => field.name)
-    .join(',');
+  return QUERY_BY;
 }
+
+const queryByWeightsFor = (activeLocale: SearchLocale | undefined): string =>
+  SEARCHABLE_FIELDS.map((field) =>
+    String(weightForLocale(field, activeLocale)),
+  ).join(',');
+
+// activeLocale has only three possible values, so cache the three strings.
+const QUERY_BY_WEIGHTS: Readonly<Record<SearchLocale | 'none', string>> = {
+  none: queryByWeightsFor(undefined),
+  nl: queryByWeightsFor('nl'),
+  en: queryByWeightsFor('en'),
+};
 
 /**
  * Comma-separated `query_by_weights`, aligned with {@link queryBy}. Given an
@@ -398,9 +416,7 @@ export function queryBy(): string {
  * keep their weight. Without an `activeLocale`, every field keeps its weight.
  */
 export function queryByWeights(activeLocale?: SearchLocale): string {
-  return searchableFields()
-    .map((field) => String(weightForLocale(field, activeLocale)))
-    .join(',');
+  return QUERY_BY_WEIGHTS[activeLocale ?? 'none'];
 }
 
 /** Per-locale fields (flagged {@link SearchFieldSpec.perLocale}) get the active
@@ -418,9 +434,11 @@ function weightForLocale(
     : Math.max(1, field.weight - 1);
 }
 
+const FACET_FIELDS: readonly string[] = SEARCH_FIELDS.filter(
+  (field) => field.facet,
+).map((field) => field.name);
+
 /** Facet field names. */
 export function facetFields(): readonly string[] {
-  return SEARCH_FIELDS.filter((field) => field.facet).map(
-    (field) => field.name,
-  );
+  return FACET_FIELDS;
 }

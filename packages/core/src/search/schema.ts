@@ -11,6 +11,7 @@
 import {
   defineSearchType,
   firstLiteralOf,
+  type FramedNode,
   irisOf,
   literalsOf,
   searchSchema,
@@ -41,6 +42,32 @@ import { SEARCH_LOCALES } from './field-registry.ts';
 /** schema.org and the register-internal IR predicate prefixes. */
 const SCHEMA = 'https://schema.org/';
 const DR = 'urn:dr:';
+
+/**
+ * The schema-AP and Linked-Data booleans both read `quadsValidated` and
+ * `schemaApNdeConformant` off the same node. Memoize the pair per node so the
+ * projection looks each predicate up once per dataset instead of twice.
+ */
+const qualityByNode = new WeakMap<
+  FramedNode,
+  { readonly quadsValidated: number | null; readonly conformant: boolean | null }
+>();
+function qualityMeasurements(node: FramedNode): {
+  readonly quadsValidated: number | null;
+  readonly conformant: boolean | null;
+} {
+  let quality = qualityByNode.get(node);
+  if (quality === undefined) {
+    quality = {
+      quadsValidated: parseNumber(firstLiteralOf(node, `${DR}quadsValidated`)),
+      conformant: parseBoolean(
+        firstLiteralOf(node, `${DR}schemaApNdeConformant`),
+      ),
+    };
+    qualityByNode.set(node, quality);
+  }
+  return quality;
+}
 
 /** The RDF class the dataset search documents are instances of. */
 export const DATASET_TYPE = 'http://www.w3.org/ns/dcat#Dataset';
@@ -243,16 +270,7 @@ const dataset = defineSearchType({
       kind: 'boolean',
       facetable: true,
       derive: (node) =>
-        isSchemaApNdeMet({
-          quadsValidated: parseNumber(
-            firstLiteralOf(node, `${DR}quadsValidated`),
-          ),
-          conformant: parseBoolean(
-            firstLiteralOf(node, `${DR}schemaApNdeConformant`),
-          ),
-        })
-          ? true
-          : undefined,
+        isSchemaApNdeMet(qualityMeasurements(node)) ? true : undefined,
     },
     {
       name: 'linked_data',
@@ -261,12 +279,7 @@ const dataset = defineSearchType({
       derive: (node, document) =>
         isLinkedDataMet({
           triples: (document.size as number | undefined) ?? null,
-          quadsValidated: parseNumber(
-            firstLiteralOf(node, `${DR}quadsValidated`),
-          ),
-          conformant: parseBoolean(
-            firstLiteralOf(node, `${DR}schemaApNdeConformant`),
-          ),
+          ...qualityMeasurements(node),
         })
           ? true
           : undefined,
