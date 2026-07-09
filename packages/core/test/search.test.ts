@@ -22,7 +22,7 @@ describe('search field registry', () => {
   it('orders query_by by descending weight, title first', () => {
     expect(searchableFields()[0].name).toBe('title_search_nl');
     expect(queryBy()).toBe(
-      'title_search_nl,title_search_en,publisher_search_nl,publisher_search_en,description_search_nl,description_search_en,creator_search_nl,creator_search_en,keyword_search',
+      'title_search_nl,title_search_en,publisherName_search_nl,publisherName_search_en,description_search_nl,description_search_en,creator_search_nl,creator_search_en,keyword_search',
     );
     expect(queryByWeights()).toBe('5,5,3,3,2,2,2,2,1');
   });

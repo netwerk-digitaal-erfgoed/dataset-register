@@ -16,22 +16,13 @@
  */
 
 export type SearchFieldType =
-  | 'string'
-  | 'string[]'
-  | 'int32'
-  | 'int64'
-  | 'float'
-  | 'bool';
+  'string' | 'string[]' | 'int32' | 'int64' | 'float' | 'bool';
 
 /** Which pipeline owns a field’s values (Mode 2 multi-source composition). */
 export type SearchFieldSource = 'register' | 'dkg';
 
 export type SearchFieldRole =
-  | 'searchable'
-  | 'display'
-  | 'facet'
-  | 'sort'
-  | 'meta';
+  'searchable' | 'display' | 'facet' | 'sort' | 'meta';
 
 export interface SearchFieldSpec {
   /** Typesense document field name. */
@@ -115,7 +106,10 @@ export const SEARCH_FIELDS: readonly SearchFieldSpec[] = [
   // Optional like every per-locale field: a dataset titled in one language has
   // no `_search_` field for the other, so neither locale’s field can be required.
   ...perLocaleSearch('title', 5, { optional: true }),
-  ...perLocaleSearch('publisher', 3, { optional: true }),
+  // Publisher-name search, renamed `publisher`→`publisherName` to match the
+  // shared SEARCH_SCHEMA split (searchable `publisherName` + a separate
+  // `publisher` reference/facet); the index now writes `publisherName_search_*`.
+  ...perLocaleSearch('publisherName', 3, { optional: true }),
   ...perLocaleSearch('description', 2, { optional: true }),
   ...perLocaleSearch('creator', 2, { optional: true }),
   // Keyword is a faceted tag list, not language-tagged prose: one folded,

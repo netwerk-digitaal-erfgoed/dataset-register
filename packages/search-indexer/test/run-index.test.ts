@@ -2,11 +2,12 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Client } from 'typesense';
 import type { SearchParams } from 'typesense/lib/Typesense/Documents.js';
 import { fold } from '@lde/text-normalization';
+import { physicalFields, searchableFields } from '@lde/search/adapter';
 import {
+  DATASET_TYPE,
   LABELS_COLLECTION_ALIAS,
-  queryBy,
-  queryByWeights,
   SEARCH_COLLECTION_ALIAS,
+  SEARCH_SCHEMA,
   SparqlClient,
 } from '@dataset-register/core';
 import {
@@ -199,6 +200,24 @@ function dqvInsertQuery(slug: string): string {
   }`;
 }
 
+// Query the new index through the shared schema's physical field names — now
+// identical to the browser's `field-registry.queryBy()` after the
+// `publisher`→`publisherName` reconciliation (see field-registry.ts), so this
+// exercises exactly the fields the live browser query sends.
+const DATASET_SEARCH_TYPE = SEARCH_SCHEMA.get(DATASET_TYPE);
+if (DATASET_SEARCH_TYPE === undefined) {
+  throw new Error(
+    `SEARCH_SCHEMA does not declare the dataset type ${DATASET_TYPE}.`,
+  );
+}
+const SEARCHABLE = searchableFields(DATASET_SEARCH_TYPE);
+const QUERY_BY = SEARCHABLE.flatMap(
+  (field) => physicalFields(field).search,
+).join(',');
+const QUERY_BY_WEIGHTS = SEARCHABLE.flatMap((field) =>
+  physicalFields(field).search.map(() => field.searchable.weight),
+).join(',');
+
 describe('runIndex acceptance (QLever + Typesense)', () => {
   const qlever = new QLeverContainer();
   const dkg = new QLeverContainer();
@@ -261,8 +280,8 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
   ): Promise<string[]> {
     const params: SearchParams<object> = {
       q: fold(text),
-      query_by: queryBy(),
-      query_by_weights: queryByWeights(),
+      query_by: QUERY_BY,
+      query_by_weights: QUERY_BY_WEIGHTS,
       per_page: 50,
       ...extra,
     };
@@ -379,7 +398,7 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
       .documents()
       .search({
         q: '*',
-        query_by: queryBy(),
+        query_by: QUERY_BY,
         facet_by: 'status',
         per_page: 0,
       });
@@ -472,6 +491,31 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
       .retrieve();
     expect(collection.num_documents).toBe(SEEDS.length);
     expect(await search('Mohlmann')).toContain(base('mohlmann'));
+  });
+
+  it('skips the rebuild when another already holds the cross-pod lock', async () => {
+    const alias = 'datasets_locked';
+    // Simulate a concurrent rebuild by pre-taking this index’s single-flight
+    // lock (the marker document `@lde/search-typesense` creates on `openRun`).
+    await client
+      .collections('rebuild_locks')
+      .documents()
+      .upsert({ id: alias, acquired_at: Date.now() });
+
+    const result = await runIndex({
+      sparqlUrl,
+      registrationsGraphIri: REGISTRATIONS_GRAPH,
+      knowledgeGraphEndpoint: knowledgeGraphUrl,
+      typesense: connection,
+      collectionAlias: alias,
+    });
+
+    // The lock is held, so the run is a graceful no-op rather than a failure.
+    expect(result).toMatchObject({
+      mode: 'skipped',
+      reason: 'concurrent-rebuild',
+    });
+    await client.collections('rebuild_locks').documents(alias).delete();
   });
 
   // Runs before the final (DKG-less) rebuild: a configured DKG that returns
