@@ -276,6 +276,24 @@
     ),
   );
 
+  // True when EVERY declared RDF distribution is reachable but currently serves
+  // invalid RDF (a fresh, fingerprint-matched invalid verdict — see invalidUrls),
+  // i.e. no still-valid RDF source remains that could account for a current
+  // summary. Requiring `every` (not `some`) avoids falsely flagging a current
+  // summary when one distribution is broken but another valid RDF source (e.g. a
+  // SPARQL endpoint, which never carries a validity verdict) is still present.
+  // When true, the Knowledge Graph is showing a summary from an earlier crawl, so
+  // it is flagged outdated and the Linked data criterion is downgraded to a
+  // warning rather than a clean pass. Reuses the same usability rollup (via
+  // invalidUrls) the download list classifies with, so the page has one notion of
+  // “this source is broken”.
+  const summarySourceInvalid = $derived(
+    rdfDistributions.length > 0 &&
+      rdfDistributions.every((distribution) =>
+        invalidUrls.has(distribution.accessURL),
+      ),
+  );
+
   // When there is no summary, explain why — but only when a concrete cause is
   // known: an RDF distribution that is reachable-but-invalid, or unreachable.
   // A dataset with no RDF at all, or one whose RDF is still reachable/unprobed
@@ -1619,7 +1637,14 @@
     {@const linksets = analysis.linksets}
     {@const iiifManifests = analysis.iiifManifests}
     {@const persistentUris = analysis.persistentUris}
-    {@const linkedData = analysis.linkedData}
+    <!-- sourceInvalid comes from the per-distribution validity rail (streamed
+         separately), not the analysis query, so it is merged in here where both
+         are available. It downgrades the Linked data criterion to a warning when
+         the live RDF no longer parses. -->
+    {@const linkedData = {
+      ...analysis.linkedData,
+      sourceInvalid: summarySourceInvalid,
+    }}
     {@const terms = analysis.terms}
     {@const hasVoidStats = computeHasVoidStats(summary)}
     {@const classPartitionTable = buildClassPartitionTable(summary)}
@@ -1643,40 +1668,72 @@
 
     <!-- VoID Summary Section -->
     {#if summary && hasVoidStats}
-      <div class="mb-8">
-        <h2
-          id="linked-data-summary"
-          class="mb-4 flex scroll-mt-20 flex-wrap items-center gap-2 text-xl font-semibold text-gray-900 lg:scroll-mt-24 dark:text-white"
+      <h2
+        id="linked-data-summary"
+        class="mb-4 flex scroll-mt-20 flex-wrap items-center gap-2 text-xl font-semibold text-gray-900 lg:scroll-mt-24 dark:text-white"
+      >
+        {m.detail_linked_data_summary()}
+        <span id="tooltip-linked-data-summary" class="cursor-pointer">
+          <InfoCircleSolid
+            class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+          />
+        </span>
+        <Tooltip triggeredBy="#tooltip-linked-data-summary"
+          >{m.detail_linked_data_summary_description()}</Tooltip
         >
-          {m.detail_linked_data_summary()}
-          <span id="tooltip-linked-data-summary" class="cursor-pointer">
-            <InfoCircleSolid
-              class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
-            />
-          </span>
-          <Tooltip triggeredBy="#tooltip-linked-data-summary"
-            >{m.detail_linked_data_summary_description()}</Tooltip
+        {#if summaryGeneratedAt}
+          <span
+            id="summary-generated-relative"
+            class="ml-auto cursor-default text-sm font-normal text-gray-600 dark:text-gray-400"
           >
-          {#if summaryGeneratedAt}
-            <span
-              id="summary-generated-relative"
-              class="ml-auto cursor-default text-sm font-normal text-gray-600 dark:text-gray-400"
-            >
-              {m.detail_summary_updated({
-                time: getRelativeTimeString(new Date(summaryGeneratedAt)),
-              })}
-            </span>
-            <Tooltip triggeredBy="#summary-generated-relative">
-              {new Date(summaryGeneratedAt).toLocaleDateString(getLocale(), {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </Tooltip>
-          {/if}
-        </h2>
+            {m.detail_summary_updated({
+              time: getRelativeTimeString(new Date(summaryGeneratedAt)),
+            })}
+          </span>
+          <Tooltip triggeredBy="#summary-generated-relative">
+            {new Date(summaryGeneratedAt).toLocaleDateString(getLocale(), {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </Tooltip>
+        {/if}
+        {#if summarySourceInvalid}
+          <!-- The figures are retained from an earlier crawl (the current source
+                 no longer parses as valid RDF), so the Knowledge Graph kept its
+                 previous summary. A subtle orange warning next to the timestamp —
+                 with the reason in its tooltip — flags the figures as not current;
+                 the affected distribution is listed in the download section below. -->
+          <span
+            id="summary-outdated-warning"
+            class="cursor-pointer text-orange-500 dark:text-orange-400"
+            class:ml-auto={!summaryGeneratedAt}
+          >
+            <ExclamationCircleOutline class="h-5 w-5" />
+            <!-- Names the icon for assistive tech; the tooltip carries the
+                 description, so the title is not repeated there. -->
+            <span class="sr-only">{m.detail_summary_outdated()}</span>
+          </span>
+          <Tooltip
+            triggeredBy="#summary-outdated-warning"
+            class="max-w-xs text-left"
+          >
+            {m.detail_summary_outdated_description()}
+          </Tooltip>
+        {/if}
+      </h2>
+      <!-- When no valid RDF source remains, the whole summary body below (figures,
+           class/property tables, vocabularies, terminology links) is stale, so it
+           is faded to signal that. A soft opacity only — no grayscale — keeps the
+           terminology/vocabulary links legible and clickable and stays above WCAG
+           AA in both themes (including the dark-mode gray-400 labels); the header
+           and its warning icon stay crisp. -->
+      <div
+        class="mb-8 transition-opacity"
+        class:opacity-80={summarySourceInvalid}
+      >
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <!-- Merged: Triples + Subjects + Avg Triples Per Subject -->
           {#if (summary.triples !== undefined && summary.triples !== null) || (summary.distinctSubjects !== undefined && summary.distinctSubjects !== null)}
