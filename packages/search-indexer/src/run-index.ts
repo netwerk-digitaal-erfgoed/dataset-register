@@ -1,4 +1,4 @@
-import { Client, type ImportResponse } from 'typesense';
+import { Client, Errors, type ImportResponse } from 'typesense';
 import { BlueGreenRebuild, RebuildAlreadyRunning } from '@lde/search-typesense';
 import {
   projectGraph,
@@ -49,9 +49,14 @@ export interface RunIndexOptions {
  * Why a run left the live index untouched. `concurrent-rebuild`: another rebuild
  * already held the cross-pod lock. `empty-knowledge-graph`: a configured DKG
  * returned no enrichment, so the current enriched index was kept rather than
- * swapped for an enrichment-less one (see {@link runIndex}).
+ * swapped for an enrichment-less one. `empty-projection`: the projection produced
+ * no documents while a live index already exists, so the populated index was kept
+ * rather than replaced with an empty one (see {@link runIndex}).
  */
-export type SkipReason = 'concurrent-rebuild' | 'empty-knowledge-graph';
+export type SkipReason =
+  | 'concurrent-rebuild'
+  | 'empty-knowledge-graph'
+  | 'empty-projection';
 
 export type RunIndexResult =
   | {
@@ -126,7 +131,7 @@ export async function runIndex(
   // with no DKG enrichment would atomically replace a good, enriched index with an
   // enrichment-less one for every dataset at once (no terminology-source facet, no
   // Linked Data summary class data). When a DKG endpoint is configured but returned
-  // nothing — unreachable, or reduced to a bootstrap-only store — while the
+  // nothing – unreachable, or reduced to a bootstrap-only store – while the
   // register has data and a live index already exists, keep that index instead of
   // swapping. A run with no DKG endpoint configured, or a cold start with no index
   // yet, still proceeds register-only. The next run self-heals once the DKG is
@@ -147,6 +152,12 @@ export async function runIndex(
   const writer = new BlueGreenRebuild<SearchDocument>(client, datasetType, {
     name: alias,
     defaultSortingField: DEFAULT_SORTING_FIELD,
+    // Dutch-stem the folded keyword/reference `*_search` companion fields. The
+    // per-locale text fields (title/description/...) carry their own nl/en
+    // locale, but `keyword_search` has none of its own, so without a default
+    // locale it ships unstemmed while the browser queries it stemmed (verhaal
+    // vs verhalen), silently narrowing keyword recall.
+    defaultLocale: 'nl',
     // Reference the live synonym set; its items are synced separately each run.
     synonymSets: [SEARCH_SYNONYM_SET],
   });
@@ -181,6 +192,18 @@ export async function runIndex(
     // rebuild projects the whole register in one pass rather than dataset by
     // dataset, so per-dataset rollback never fires (we go straight to commit).
     await run.write(INDEX_SOURCE, documents);
+    // A projection that produced no documents would swap an empty collection
+    // live and drop the populated one on the next commit. When a live index
+    // already exists, keep it (a transient upstream gap self-heals next run)
+    // rather than wipe it; a cold start with genuinely no data still commits the
+    // empty collection so queries have something to hit.
+    if (upserted === 0 && (await aliasTarget(client, alias)) !== undefined) {
+      await run.abort(new Error('projection produced no documents'));
+      log(
+        `Rebuild of ${alias} skipped: projection produced no documents; keeping the current index`,
+      );
+      return { mode: 'skipped', reason: 'empty-projection' };
+    }
     await run.commit();
   } catch (error) {
     await run.abort(error);
@@ -250,6 +273,11 @@ function projectDatasets(
  * The collection an alias currently points at, or `undefined` when the alias is
  * unset. Distinguishes a cold start (no index yet) from a populated one and,
  * after a swap, reports which versioned collection went live.
+ *
+ * Only a missing alias (Typesense 404) yields `undefined`; every other error
+ * propagates. A transient failure must never be mistaken for a cold start, or
+ * the empty-Knowledge-Graph and empty-projection guards would fail open and swap
+ * a degraded index live.
  */
 async function aliasTarget(
   client: Client,
@@ -258,8 +286,11 @@ async function aliasTarget(
   try {
     const { collection_name } = await client.aliases(alias).retrieve();
     return collection_name;
-  } catch {
-    return undefined;
+  } catch (error) {
+    if (error instanceof Errors.ObjectNotFound) {
+      return undefined;
+    }
+    throw error;
   }
 }
 
@@ -282,6 +313,9 @@ async function rebuildLabels(
   alias: string,
   log: (message: string) => void,
 ): Promise<void> {
+  // The collection created below is orphaned if a later step throws before the
+  // alias is repointed; track it so the catch can drop it rather than leak it.
+  let orphan: string | undefined;
   try {
     const documents = toLabelDocuments(
       await source.readOrganizationLabelQuads(),
@@ -292,8 +326,11 @@ async function rebuildLabels(
     const collection = `${alias}_${Date.now()}`;
     const previous = await aliasTarget(client, alias);
     await client.collections().create(buildLabelCollectionSchema(collection));
+    orphan = collection;
     await importLabels(client, collection, documents);
     await client.aliases().upsert(alias, { collection_name: collection });
+    // Live now: the collection to reap is the superseded `previous`, not this one.
+    orphan = undefined;
     if (previous !== undefined && previous !== collection) {
       // Best-effort: dropping the superseded collection must not fail the swap
       // that already made the new labels live.
@@ -304,6 +341,14 @@ async function rebuildLabels(
     }
     log(`Indexed ${documents.length} labels; alias ${alias} → ${collection}`);
   } catch (error) {
+    if (orphan !== undefined) {
+      // Drop the half-built collection we created but never swapped live, so a
+      // failed label run does not leak an orphaned Typesense collection.
+      await client
+        .collections(orphan)
+        .delete()
+        .catch(() => undefined);
+    }
     log(`Label index skipped: ${(error as Error).message}`);
   }
 }

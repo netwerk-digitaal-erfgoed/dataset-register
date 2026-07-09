@@ -200,7 +200,7 @@ function dqvInsertQuery(slug: string): string {
   }`;
 }
 
-// Query the new index through the shared schema's physical field names — now
+// Query the new index through the shared schema's physical field names – now
 // identical to the browser's `field-registry.queryBy()` after the
 // `publisher`→`publisherName` reconciliation (see field-registry.ts), so this
 // exercises exactly the fields the live browser query sends.
@@ -317,6 +317,20 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
 
   it('matches Dutch inflections via stemming (#2071)', async () => {
     expect(await search('verhalen')).toContain(base('verhaal-utrecht'));
+  });
+
+  it('Dutch-stems the folded keyword_search field via defaultLocale', async () => {
+    // keyword_search has no per-locale variant of its own, so its stemming
+    // depends on the writer being given a defaultLocale; without it the field
+    // ships folded-only and Dutch keyword queries under-recall.
+    const schema = (await client.collections(SEARCH_COLLECTION_ALIAS).retrieve()) as {
+      fields: ReadonlyArray<Record<string, unknown>>;
+    };
+    const keywordSearch = schema.fields.find(
+      (field) => field.name === 'keyword_search',
+    );
+    expect(keywordSearch?.stem).toBe(true);
+    expect(keywordSearch?.locale).toBe('nl');
   });
 
   it('treats persoon/person as synonyms (#1684)', async () => {
@@ -519,7 +533,7 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
   });
 
   // Runs before the final (DKG-less) rebuild: a configured DKG that returns
-  // nothing — here an unreachable endpoint — must not strip enrichment off the
+  // nothing – here an unreachable endpoint – must not strip enrichment off the
   // live index. The run is skipped and the last-good enriched index is kept (#2151).
   it('keeps the last-good enriched index when the configured DKG returns nothing', async () => {
     const result = await runIndex({
