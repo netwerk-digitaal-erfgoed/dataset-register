@@ -13,8 +13,8 @@ export interface TypesenseConnection {
 /**
  * Build a single-node Typesense {@link Client} from a flat connection config.
  * The blue/green rebuild and its cross-pod lock now live in `@lde/search-typesense`’s
- * `rebuild`, which takes a {@link Client}; this is the one place the indexer turns
- * its environment config into that client.
+ * `BlueGreenRebuild`, which takes a {@link Client}; this is the one place the
+ * indexer turns its environment config into that client.
  */
 export function createTypesenseClient(connection: TypesenseConnection): Client {
   return new Client({
