@@ -4,7 +4,6 @@ interface Env {
   SPARQL_URL: string;
   SPARQL_ACCESS_TOKEN: string;
   REGISTRATION_URL_TTL: number;
-  CRAWLER_SCHEDULE?: string;
   HTTP_REQUEST_TIMEOUT: number;
   CRAWLER_MAX_DISTRIBUTION_PROBES: number;
   // Optional Typesense target. When host + API key are set, the crawler triggers
@@ -34,10 +33,6 @@ const schema: JSONSchemaType<Env> = {
     REGISTRATION_URL_TTL: {
       type: 'number',
       default: 86400,
-    },
-    CRAWLER_SCHEDULE: {
-      type: 'string',
-      nullable: true,
     },
     HTTP_REQUEST_TIMEOUT: {
       type: 'number',

@@ -7,11 +7,9 @@
     "@dataset-register/core": "*",
     "@dataset-register/search-indexer": "*",
     "env-schema": "^7.0.0",
-    "node-schedule": "^2.1.1",
     "pino": "^10.2.0"
   },
   "devDependencies": {
-    "@types/node-schedule": "^2.1.8",
     "rdf-ext": "^2.6.0"
   },
   "nx": {
@@ -84,7 +82,7 @@
         ],
         "cache": false,
         "options": {
-          "command": "./apps/docker-smoke.sh apps-crawler 'Crawler scheduled'"
+          "command": "./apps/docker-smoke.sh apps-crawler 'Starting crawl'"
         }
       }
     }

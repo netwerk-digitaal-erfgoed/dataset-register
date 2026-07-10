@@ -33,6 +33,32 @@ const meterProvider = new MeterProvider({
 
 metrics.setGlobalMeterProvider(meterProvider);
 
+let shutdown: Promise<void> | undefined;
+
+/**
+ * Flush pending metrics and stop the reader, at most once. The
+ * PeriodicExportingMetricReader only exports every `exportIntervalMillis`, so a
+ * short-lived one-shot process (e.g. the crawler CronJob) would exit before its
+ * final window is exported, silently dropping counts. Await this before exit –
+ * and on SIGTERM, so a watchdog-terminated pod still ships the metrics it
+ * managed to record.
+ *
+ * Memoized so a normal-exit flush and a concurrent SIGTERM flush share one
+ * shutdown instead of calling `meterProvider.shutdown()` twice. Bounded by
+ * `timeoutMillis` so a slow or unreachable OTLP collector can never delay
+ * process exit past the pod's termination grace period; the underlying export
+ * is best-effort and keeps running in the background if it loses the race.
+ */
+export function shutdownInstrumentation(timeoutMillis = 5000): Promise<void> {
+  shutdown ??= Promise.race([
+    meterProvider.shutdown(),
+    new Promise<void>((resolve) => {
+      setTimeout(resolve, timeoutMillis).unref();
+    }),
+  ]);
+  return shutdown;
+}
+
 const meter = metrics.getMeter('default');
 
 const datasetsCounter = meter.createObservableCounter('datasets.counter', {

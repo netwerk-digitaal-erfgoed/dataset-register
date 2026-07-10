@@ -96,9 +96,7 @@ You can configure the application through environment variables:
 - `SPARQL_URL`: URL to the SPARQL store.
 - `SPARQL_ACCESS_TOKEN`: access token for write operations on SPARQL Store (default: `SECRET_TOKEN`).
 - `LOG`: enable/disable logging (default: `true`).
-- `CRAWLER_SCHEDULE`: a schedule in Cron format; for example `0 * * * *` to [crawl](#crawler) every hour
-  (default: crawling disabled).
-- `REGISTRATION_URL_TTL`: if crawling is enabled, a registered URL’s maximum age (in seconds) before it is fetched again
+- `REGISTRATION_URL_TTL`: a registered URL’s maximum age (in seconds) before the [crawler](#crawler) fetches it again
   (default: `86400`, so one day).
 - `HTTP_REQUEST_TIMEOUT`: the per-request HTTP timeout (in seconds, minimum `1`) applied to every page fetched while
   dereferencing and paginating a registration URL. Each page gets its own fresh deadline, so a slow or trickling host
@@ -133,12 +131,16 @@ npm test
 
 The crawler will periodically fetch registration URLs ([`schema:EntryPoint`](https://docs.nde.nl/services/dataset-register/data-model#schemaentrypoint)) to update the dataset descriptions stored in the Dataset Register.
 
-To enable the crawler, set [the `CRAWLER_SCHEDULE` configuration variable](#configuration).
-The crawler will then check all registration URLs according to that schedule to see if any of the URLs have become outdated.
-A registration URL is considered outdated if it has been last read longer than
-[`REGISTRATION_URL_TTL`](#configuration) ago (its `schema:dateRead` is older).
+The crawler runs a single pass and exits: it checks every registration URL, fetches those that have become
+outdated, and rebuilds the search index. A registration URL is considered outdated if it has been last read longer
+than [`REGISTRATION_URL_TTL`](#configuration) ago (its `schema:dateRead` is older). If any outdated registration URLs
+are found, they are fetched and updated in the SPARQL store.
 
-If any outdated registration URLs are found, they are fetched and updated in the SPARQL store.
+Because it is one-shot, recurring crawls are scheduled externally rather than in-process – in production by a
+[Kubernetes CronJob](https://github.com/netwerk-digitaal-erfgoed/infrastructure/blob/main/k8s/dataset-register/crawler.yaml),
+locally by running it on a timer (for example `cron` or `watch`). Scheduling externally is what prevents two crawl
+rounds from ever overlapping: the process is gone between rounds, and the CronJob’s `concurrencyPolicy: Forbid` skips a
+tick while a previous round is still running.
 
 ### Search index
 
@@ -160,7 +162,7 @@ crawler:
 npx nx serve crawler
 ```
 
-Without a `CRAWLER_SCHEDULE` this performs a single crawl and one full rebuild from the current store. Set
+This performs a single crawl and one full rebuild from the current store, then exits. Set
 [`KNOWLEDGE_GRAPH_URL`](#configuration) to enrich the index with Knowledge Graph facets, and the
 [`TYPESENSE_*` variables](#configuration) to point at a non-local Typesense.
 
