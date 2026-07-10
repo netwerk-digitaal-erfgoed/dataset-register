@@ -1,4 +1,3 @@
-import { scheduleJob } from 'node-schedule';
 import { Crawler } from './crawler.js';
 import {
   CompositeValidator,
@@ -6,6 +5,7 @@ import {
   readProbeSeverities,
   readUrl,
   ShaclEngineValidator,
+  shutdownInstrumentation,
   stores,
 } from '@dataset-register/core';
 import pino from 'pino';
@@ -75,16 +75,21 @@ async function updateSearchIndex(): Promise<void> {
   }
 }
 
-// Schedule crawler to check every hour for registrations that have expired their REGISTRATION_URL_TTL.
+// One-shot: crawl every registration whose REGISTRATION_URL_TTL has expired,
+// rebuild the search index, flush metrics, then exit. Recurring crawls are
+// scheduled externally (a k8s CronJob), which owns overlap prevention: two
+// rounds can never run concurrently in one process because the process is gone
+// between rounds.
 const ttl = config.REGISTRATION_URL_TTL * 1000;
-if (config.CRAWLER_SCHEDULE === undefined) {
-  await crawler.crawl(new Date(Date.now() - ttl));
-  await updateSearchIndex();
-} else {
-  logger.info(`Crawler scheduled at ${config.CRAWLER_SCHEDULE}`);
-  scheduleJob(config.CRAWLER_SCHEDULE, async () => {
-    await crawler.crawl(new Date(Date.now() - ttl));
-    // Fire-and-forget: do not block the next scheduled crawl on indexing.
-    void updateSearchIndex();
-  });
-}
+
+// Flush metrics on SIGTERM so a watchdog-terminated pod (activeDeadlineSeconds)
+// still ships what it recorded. Kubernetes sends SIGTERM before SIGKILL.
+process.on('SIGTERM', () => {
+  void shutdownInstrumentation().finally(() => process.exit(143));
+});
+
+logger.info('Starting crawl');
+await crawler.crawl(new Date(Date.now() - ttl));
+await updateSearchIndex();
+await shutdownInstrumentation();
+logger.info('Crawl finished');

@@ -33,6 +33,17 @@ const meterProvider = new MeterProvider({
 
 metrics.setGlobalMeterProvider(meterProvider);
 
+/**
+ * Flush pending metrics and stop the reader. The PeriodicExportingMetricReader
+ * only exports every `exportIntervalMillis`, so a short-lived one-shot process
+ * (e.g. the crawler CronJob) would exit before its final window is exported,
+ * silently dropping counts. Await this before exit — and on SIGTERM, so a
+ * watchdog-terminated pod still ships the metrics it managed to record.
+ */
+export async function shutdownInstrumentation(): Promise<void> {
+  await meterProvider.shutdown();
+}
+
 const meter = metrics.getMeter('default');
 
 const datasetsCounter = meter.createObservableCounter('datasets.counter', {

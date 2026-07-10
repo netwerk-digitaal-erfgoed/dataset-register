@@ -26,16 +26,14 @@ trap cleanup EXIT
 
 # A superset of both apps' required env. Values are dummy: we test module
 # resolution and startup, not behaviour. SPARQL stores connect lazily, so an
-# unreachable URL does not block boot. CRAWLER_SCHEDULE keeps the crawler
-# scheduling (idle) instead of crawling the dummy endpoint on startup. Setting
-# TYPESENSE_* exercises the search-indexer import chain that #2128 broke.
-# Extra args (e.g. a port publish) are forwarded via "$@"; passing none is safe
-# under `set -u`, unlike an empty array on older bash.
+# unreachable URL does not block boot. Setting TYPESENSE_* exercises the
+# search-indexer import chain that #2128 broke. Extra args (e.g. a port publish)
+# are forwarded via "$@"; passing none is safe under `set -u`, unlike an empty
+# array on older bash.
 run_container() {
   docker run -d --name "$container" "$@" \
     -e SPARQL_URL=http://example.invalid/sparql \
     -e SPARQL_ACCESS_TOKEN=dummy \
-    -e CRAWLER_SCHEDULE="0 0 * * *" \
     -e TYPESENSE_HOST=localhost \
     -e TYPESENSE_API_KEY=dummy \
     "$image" >/dev/null
@@ -92,6 +90,14 @@ for _ in $(seq 1 30); do
     exit 1
   fi
   if [ "$(docker inspect -f '{{.State.Status}}' "$container")" = "exited" ]; then
+    # A one-shot batch image (e.g. the crawler CronJob) legitimately exits once
+    # its work is done. If it logged the startup line before exiting, module
+    # resolution and startup succeeded — the only thing this smoke gates — so
+    # that is a PASS. Exit without the line means it crashed before startup.
+    if echo "$logs" | grep -qE "$startup_pattern"; then
+      echo "PASS: $image reached startup then exited (matched /$startup_pattern/)"
+      exit 0
+    fi
     echo "FAIL: $image exited before reaching startup:"
     echo "$logs"
     exit 1
