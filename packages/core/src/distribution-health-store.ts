@@ -21,6 +21,12 @@ export interface DistributionHealthRecord {
 
 export interface DistributionHealthStore {
   get(url: URL): Promise<DistributionHealthRecord | null>;
+  /**
+   * Fetch the records for many URLs in one query, keyed by URL string; URLs without a stored
+   * record are absent from the map. The crawler probes every distribution of a dataset at once,
+   * so batching the reads collapses N round-trips into one.
+   */
+  getMany(urls: URL[]): Promise<Map<string, DistributionHealthRecord>>;
   store(record: DistributionHealthRecord): Promise<void>;
   delete(url: URL): Promise<void>;
 }
@@ -36,36 +42,47 @@ export class SparqlDistributionHealthStore implements DistributionHealthStore {
   ) {}
 
   public async get(url: URL): Promise<DistributionHealthRecord | null> {
+    const records = await this.getMany([url]);
+    return records.get(url.toString()) ?? null;
+  }
+
+  public async getMany(
+    urls: URL[],
+  ): Promise<Map<string, DistributionHealthRecord>> {
+    const records = new Map<string, DistributionHealthRecord>();
+    if (urls.length === 0) return records;
+
+    const values = urls.map((url) => `<${url.toString()}>`).join(' ');
     const result = await this.client.query(`
       PREFIX nde-probe: <https://def.nde.nl/probe#>
       PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-      SELECT ?lastProbedAt ?lastOutcome ?lastSuccessAt ?firstFailureAt ?consecutiveFailures ?sourceFingerprint
+      SELECT ?url ?lastProbedAt ?lastOutcome ?lastSuccessAt ?firstFailureAt ?consecutiveFailures ?sourceFingerprint
       FROM <${this.graphIri}>
       WHERE {
-        <${url.toString()}> a nde-probe:DistributionHealthRecord ;
+        VALUES ?url { ${values} }
+        ?url a nde-probe:DistributionHealthRecord ;
             nde-probe:lastProbedAt ?lastProbedAt ;
             nde-probe:consecutiveFailures ?consecutiveFailures .
-        OPTIONAL { <${url.toString()}> nde-probe:lastOutcome ?lastOutcome }
-        OPTIONAL { <${url.toString()}> nde-probe:lastSuccessAt ?lastSuccessAt }
-        OPTIONAL { <${url.toString()}> nde-probe:firstFailureAt ?firstFailureAt }
-        OPTIONAL { <${url.toString()}> nde-probe:sourceFingerprint ?sourceFingerprint }
-      }
-      LIMIT 1`);
+        OPTIONAL { ?url nde-probe:lastOutcome ?lastOutcome }
+        OPTIONAL { ?url nde-probe:lastSuccessAt ?lastSuccessAt }
+        OPTIONAL { ?url nde-probe:firstFailureAt ?firstFailureAt }
+        OPTIONAL { ?url nde-probe:sourceFingerprint ?sourceFingerprint }
+      }`);
 
-    const bindings = await result.toArray();
-    if (bindings.length === 0) return null;
-    const row = bindings[0]!;
-
-    return {
-      url,
-      lastProbedAt: new Date(row.get('lastProbedAt')!.value),
-      lastOutcome: namedNodeOrNull(row.get('lastOutcome')),
-      lastSuccessAt: dateOrNull(row.get('lastSuccessAt')),
-      firstFailureAt: dateOrNull(row.get('firstFailureAt')),
-      consecutiveFailures: parseInt(row.get('consecutiveFailures')!.value),
-      sourceFingerprint: row.get('sourceFingerprint')?.value ?? null,
-    };
+    for (const row of await result.toArray()) {
+      const urlValue = row.get('url')!.value;
+      records.set(urlValue, {
+        url: new URL(urlValue),
+        lastProbedAt: new Date(row.get('lastProbedAt')!.value),
+        lastOutcome: namedNodeOrNull(row.get('lastOutcome')),
+        lastSuccessAt: dateOrNull(row.get('lastSuccessAt')),
+        firstFailureAt: dateOrNull(row.get('firstFailureAt')),
+        consecutiveFailures: parseInt(row.get('consecutiveFailures')!.value),
+        sourceFingerprint: row.get('sourceFingerprint')?.value ?? null,
+      });
+    }
+    return records;
   }
 
   public async store(record: DistributionHealthRecord): Promise<void> {
