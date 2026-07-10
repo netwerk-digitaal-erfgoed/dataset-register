@@ -403,6 +403,10 @@ export class DistributionProbeStage {
               verdict,
               fingerprint,
             );
+      // The validity rail is independent of the health-write dedup: a source can keep the same
+      // reachability outcome and fingerprint (date|size) while its RDF body validity changes (e.g.
+      // a Content-Type flip makes a dump unparseable). So the validity write/delete runs on every
+      // probe, never gated on whether the health record was rewritten.
       await this.recordValidity(
         probeUrl,
         validityVerdict,
@@ -474,29 +478,35 @@ export class DistributionProbeStage {
     const now = new Date();
     const existing = await store.get(probeUrl);
 
-    if (verdict.success) {
-      const record: DistributionHealthRecord = {
-        url: probeUrl,
-        lastProbedAt: now,
-        lastOutcome: null,
-        lastSuccessAt: now,
-        firstFailureAt: null,
-        consecutiveFailures: 0,
-        sourceFingerprint: fingerprint,
-      };
-      await store.store(record);
+    const record: DistributionHealthRecord = verdict.success
+      ? {
+          url: probeUrl,
+          lastProbedAt: now,
+          lastOutcome: null,
+          lastSuccessAt: now,
+          firstFailureAt: null,
+          consecutiveFailures: 0,
+          sourceFingerprint: fingerprint,
+        }
+      : {
+          url: probeUrl,
+          lastProbedAt: now,
+          lastOutcome: verdict.outcome,
+          lastSuccessAt: existing?.lastSuccessAt ?? null,
+          firstFailureAt: existing?.firstFailureAt ?? now,
+          consecutiveFailures: (existing?.consecutiveFailures ?? 0) + 1,
+          sourceFingerprint: fingerprint,
+        };
+
+    // Dedup the store write. The register re-probes every distribution each crawl, but the health
+    // record only carries new signal when the reachability outcome or the source fingerprint
+    // changes. Otherwise the write is pure churn – a DELETE+INSERT on QLever, the dominant
+    // per-registration cost. Skip it while the record is unchanged, refreshing at most once per
+    // HEALTH_REWRITE_MAX_STALENESS_MS so lastProbedAt (surfaced as the distribution's last-checked
+    // time) never drifts further than that.
+    if (existing !== null && !healthRecordNeedsWrite(existing, record, now)) {
       return record;
     }
-
-    const record: DistributionHealthRecord = {
-      url: probeUrl,
-      lastProbedAt: now,
-      lastOutcome: verdict.outcome,
-      lastSuccessAt: existing?.lastSuccessAt ?? null,
-      firstFailureAt: existing?.firstFailureAt ?? now,
-      consecutiveFailures: (existing?.consecutiveFailures ?? 0) + 1,
-      sourceFingerprint: fingerprint,
-    };
     await store.store(record);
     return record;
   }
@@ -523,6 +533,33 @@ export class DistributionProbeStage {
 
     return persistent ? verdict : { ...verdict, success: true };
   }
+}
+
+// An unchanged health record is rewritten at most this often, purely to keep lastProbedAt (the
+// distribution's last-checked time) reasonably fresh. Bounding staleness by elapsed time rather
+// than a calendar day keeps it correct regardless of the viewer's timezone.
+const HEALTH_REWRITE_MAX_STALENESS_MS = 12 * 60 * 60 * 1000;
+
+/**
+ * Whether a freshly built health record must be persisted, or is redundant with the stored one. A
+ * write is warranted when the reachability outcome or the source fingerprint changed (genuinely new
+ * signal), or when the stored probe is older than {@link HEALTH_REWRITE_MAX_STALENESS_MS} – so
+ * lastProbedAt does not drift. `lastProbedAt` and `consecutiveFailures` churn on every probe and, on
+ * their own, are not worth a QLever DELETE+INSERT.
+ */
+function healthRecordNeedsWrite(
+  existing: DistributionHealthRecord,
+  next: DistributionHealthRecord,
+  now: Date,
+): boolean {
+  const outcomeChanged =
+    (existing.lastOutcome?.value ?? null) !== (next.lastOutcome?.value ?? null);
+  const fingerprintChanged =
+    existing.sourceFingerprint !== next.sourceFingerprint;
+  const stale =
+    now.getTime() - existing.lastProbedAt.getTime() >=
+    HEALTH_REWRITE_MAX_STALENESS_MS;
+  return outcomeChanged || fingerprintChanged || stale;
 }
 
 const probeReachableMarker = ndeProbe('probeReachable');
