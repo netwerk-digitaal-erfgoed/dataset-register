@@ -25,6 +25,14 @@ const SLOW_REGISTRATION_TIMING_THRESHOLD_MS = 5000;
 // How many of the slowest registrations to name in the per-round summary.
 const ROUND_SUMMARY_SLOWEST_COUNT = 5;
 
+// Per-registration crawl phases timed outside the validator (the SHACL/probe split lives in
+// ValidationTiming); logged alongside it for a slow registration.
+interface CrawlPhaseTimings {
+  dereferenceMs?: number;
+  validateMs?: number;
+  storeLoopMs?: number;
+}
+
 export interface CrawlerOptions {
   /**
    * Per-request HTTP timeout (ms) applied to every page GET while dereferencing and
@@ -75,11 +83,7 @@ export class Crawler {
       // Populated by validate() with the SHACL / probe-network / store-write split,
       // then logged for slow registrations to attribute a stall (see #2233).
       const timing: ValidationTiming = {};
-      const phases: {
-        dereferenceMs?: number;
-        validateMs?: number;
-        storeLoopMs?: number;
-      } = {};
+      const phases: CrawlPhaseTimings = {};
       let statusCode: number | undefined = undefined;
       let isValid = false;
       let datasetIris = registration.datasets;
@@ -89,116 +93,114 @@ export class Crawler {
       // Left undefined when the URL yields no report (gone, no datasets).
       let warningCount: number | undefined = undefined;
 
+      // `finally` records the timing exactly once on every path — normal completion, the
+      // RequestTimeout `continue`, and the error branches — so there is a single call site.
       try {
-        const dereferenceStart = performance.now();
-        const data = await dereference(
-          registration.url,
-          this.httpRequestTimeoutMs,
-        );
-        phases.dereferenceMs = Math.round(
-          performance.now() - dereferenceStart,
-        );
-        const validateStart = performance.now();
-        const validationResult = await this.validator.validate(
-          data,
-          undefined,
-          timing,
-        );
-        phases.validateMs = Math.round(performance.now() - validateStart);
-        if (
-          validationResult.state === 'valid' ||
-          validationResult.state === 'invalid'
-        ) {
-          warningCount = countWarnings(validationResult.errors);
-          await this.validationReportStore.store(
+        try {
+          const dereferenceStart = performance.now();
+          const data = await dereference(
             registration.url,
-            validationResult.errors,
-          );
-        }
-        if (validationResult.state === 'valid') {
-          statusCode = 200;
-          isValid = true;
-          this.logger.info(`${registration.url} passes validation`);
-          datasetIris = []; // Start with a fresh list.
-          const storeLoopStart = performance.now();
-          for await (const dataset of fetch(
-            registration.url,
-            data,
             this.httpRequestTimeoutMs,
-          )) {
-            datasetIris.push(extractIri(dataset));
-            await this.datasetStore.store(dataset);
-            const dcatValidationResult = await this.validator.validate(dataset);
-            const rating = rate(dcatValidationResult as Valid);
-            await this.ratingStore.store(extractIri(dataset), rating);
-          }
-          phases.storeLoopMs = Math.round(
-            performance.now() - storeLoopStart,
           );
-        } else if (validationResult.state === 'invalid') {
-          statusCode = 200;
-          this.logger.info(`${registration.url} does not pass validation`);
-        } else {
-          // 'no-dataset': URL responded but contained no Dataset triples.
-          this.logger.info(`${registration.url} contains no datasets`);
-        }
-      } catch (e) {
-        if (e instanceof RequestTimeout) {
-          // A page exceeded the HTTP request timeout. Leave the registration
-          // untouched so the next pass retries it, rather than recording a bogus
-          // crawl result (e.g. marking a transiently slow host as gone).
-          this.logger.warn(
-            `Crawling registration URL ${registration.url} exceeded the HTTP request timeout; leaving it for the next pass`,
+          phases.dereferenceMs = Math.round(
+            performance.now() - dereferenceStart,
           );
-          crawlCounter.add(1, {
-            status: undefined,
-            valid: false,
-            timedOut: true,
-          });
-          this.recordRegistrationTiming(
-            registration.url,
-            registrationStart,
-            phases,
+          const validateStart = performance.now();
+          const validationResult = await this.validator.validate(
+            data,
+            undefined,
             timing,
-            roundTimings,
           );
-          continue;
-        } else if (e instanceof HttpError) {
-          statusCode = e.statusCode;
-          this.logger.info(
-            `${registration.url} returned HTTP error ${statusCode}`,
-          );
-        } else if (e instanceof NoDatasetFoundAtUrl) {
-          this.logger.info({ err: e }, `${registration.url} has no datasets`);
-        } else {
-          this.logger.warn(
-            { err: e },
-            `${registration.url} fetch or parse failed`,
-          );
+          phases.validateMs = Math.round(performance.now() - validateStart);
+          if (
+            validationResult.state === 'valid' ||
+            validationResult.state === 'invalid'
+          ) {
+            warningCount = countWarnings(validationResult.errors);
+            await this.validationReportStore.store(
+              registration.url,
+              validationResult.errors,
+            );
+          }
+          if (validationResult.state === 'valid') {
+            statusCode = 200;
+            isValid = true;
+            this.logger.info(`${registration.url} passes validation`);
+            datasetIris = []; // Start with a fresh list.
+            const storeLoopStart = performance.now();
+            for await (const dataset of fetch(
+              registration.url,
+              data,
+              this.httpRequestTimeoutMs,
+            )) {
+              datasetIris.push(extractIri(dataset));
+              await this.datasetStore.store(dataset);
+              const dcatValidationResult =
+                await this.validator.validate(dataset);
+              const rating = rate(dcatValidationResult as Valid);
+              await this.ratingStore.store(extractIri(dataset), rating);
+            }
+            phases.storeLoopMs = Math.round(
+              performance.now() - storeLoopStart,
+            );
+          } else if (validationResult.state === 'invalid') {
+            statusCode = 200;
+            this.logger.info(`${registration.url} does not pass validation`);
+          } else {
+            // 'no-dataset': URL responded but contained no Dataset triples.
+            this.logger.info(`${registration.url} contains no datasets`);
+          }
+        } catch (e) {
+          if (e instanceof RequestTimeout) {
+            // A page exceeded the HTTP request timeout. Leave the registration
+            // untouched so the next pass retries it, rather than recording a bogus
+            // crawl result (e.g. marking a transiently slow host as gone).
+            this.logger.warn(
+              `Crawling registration URL ${registration.url} exceeded the HTTP request timeout; leaving it for the next pass`,
+            );
+            crawlCounter.add(1, {
+              status: undefined,
+              valid: false,
+              timedOut: true,
+            });
+            continue;
+          } else if (e instanceof HttpError) {
+            statusCode = e.statusCode;
+            this.logger.info(
+              `${registration.url} returned HTTP error ${statusCode}`,
+            );
+          } else if (e instanceof NoDatasetFoundAtUrl) {
+            this.logger.info({ err: e }, `${registration.url} has no datasets`);
+          } else {
+            this.logger.warn(
+              { err: e },
+              `${registration.url} fetch or parse failed`,
+            );
+          }
         }
+
+        crawlCounter.add(1, {
+          status: statusCode,
+          valid: isValid,
+        });
+
+        const updatedRegistration = registration.read(
+          datasetIris,
+          statusCode,
+          isValid,
+          undefined,
+          warningCount,
+        );
+        await this.registrationStore.store(updatedRegistration);
+      } finally {
+        this.recordRegistrationTiming(
+          registration.url,
+          registrationStart,
+          phases,
+          timing,
+          roundTimings,
+        );
       }
-
-      crawlCounter.add(1, {
-        status: statusCode,
-        valid: isValid,
-      });
-
-      const updatedRegistration = registration.read(
-        datasetIris,
-        statusCode,
-        isValid,
-        undefined,
-        warningCount,
-      );
-      await this.registrationStore.store(updatedRegistration);
-
-      this.recordRegistrationTiming(
-        registration.url,
-        registrationStart,
-        phases,
-        timing,
-        roundTimings,
-      );
     }
 
     this.logRoundSummary(registrations.length, roundStart, roundTimings);
@@ -216,11 +218,7 @@ export class Crawler {
   private recordRegistrationTiming(
     url: URL | string,
     registrationStart: number,
-    phases: {
-      dereferenceMs?: number;
-      validateMs?: number;
-      storeLoopMs?: number;
-    },
+    phases: CrawlPhaseTimings,
     timing: ValidationTiming,
     roundTimings: Array<{ url: string; totalMs: number }>,
   ): void {
