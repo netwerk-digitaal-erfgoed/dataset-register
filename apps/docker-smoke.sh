@@ -92,7 +92,7 @@ for _ in $(seq 1 30); do
   if [ "$(docker inspect -f '{{.State.Status}}' "$container")" = "exited" ]; then
     # A one-shot batch image (e.g. the crawler CronJob) legitimately exits once
     # its work is done. If it logged the startup line before exiting, module
-    # resolution and startup succeeded — the only thing this smoke gates — so
+    # resolution and startup succeeded – the only thing this smoke gates – so
     # that is a PASS. Exit without the line means it crashed before startup.
     if echo "$logs" | grep -qE "$startup_pattern"; then
       echo "PASS: $image reached startup then exited (matched /$startup_pattern/)"

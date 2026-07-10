@@ -89,7 +89,16 @@ process.on('SIGTERM', () => {
 });
 
 logger.info('Starting crawl');
-await crawler.crawl(new Date(Date.now() - ttl));
-await updateSearchIndex();
-await shutdownInstrumentation();
-logger.info('Crawl finished');
+try {
+  await crawler.crawl(new Date(Date.now() - ttl));
+  await updateSearchIndex();
+  logger.info('Crawl finished');
+} catch (error) {
+  // Fail the run (a non-zero exit lets the CronJob retry) rather than crash with
+  // an unhandled rejection, and still flush metrics in the finally below so the
+  // partial round's counts are not lost.
+  logger.error({ error }, 'Crawl failed');
+  process.exitCode = 1;
+} finally {
+  await shutdownInstrumentation();
+}

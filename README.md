@@ -136,7 +136,7 @@ outdated, and rebuilds the search index. A registration URL is considered outdat
 than [`REGISTRATION_URL_TTL`](#configuration) ago (its `schema:dateRead` is older). If any outdated registration URLs
 are found, they are fetched and updated in the SPARQL store.
 
-Because it is one-shot, recurring crawls are scheduled externally rather than in-process — in production by a
+Because it is one-shot, recurring crawls are scheduled externally rather than in-process – in production by a
 [Kubernetes CronJob](https://github.com/netwerk-digitaal-erfgoed/infrastructure/blob/main/k8s/dataset-register/crawler.yaml),
 locally by running it on a timer (for example `cron` or `watch`). Scheduling externally is what prevents two crawl
 rounds from ever overlapping: the process is gone between rounds, and the CronJob’s `concurrencyPolicy: Forbid` skips a
