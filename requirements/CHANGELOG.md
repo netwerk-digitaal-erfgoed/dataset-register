@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.13.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.12.0...requirements-1.13.0) (2026-07-10)
+
+
+### Features
+
+* **core:** warn on bare compression and non-IANA x- media types in encodingFormat ([#2204](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2204)) ([c01ed4a](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/c01ed4a9f9e907a49f56fb70feae0628f72caa6a))
+
+
+### Bug Fixes
+
+* **core:** accept foaf:Agent as a valid dct:publisher/dct:creator class ([#2194](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2194)) ([cdc139f](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/cdc139fb720021a4c9312d30d40d55baf736b0c4))
+
+
+### Documentation
+
+* **requirements:** clarify spatial coverage should use most specific level ([#2206](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2206)) ([6964f6d](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/6964f6da7c41923136c674dc3eb1b37f26b1abeb))
+
 ## [1.12.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.11.3...requirements-1.12.0) (2026-06-24)
 
 
