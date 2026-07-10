@@ -617,8 +617,88 @@ describe('DistributionProbeStage', () => {
         quad.object.equals(shacl('Violation')),
     );
     expect(violation).toBeDefined();
+    // The second probe saw the same outcome on the same day, so its health write was deduped
+    // (#2230): the streak still ages and promotes via firstFailureAt, but the persisted
+    // consecutiveFailures stays at 1 rather than re-incrementing on every identical probe.
     const stored = await healthStore.get(new URL(url.value));
-    expect(stored?.consecutiveFailures).toBe(2);
+    expect(stored?.consecutiveFailures).toBe(1);
+  });
+
+  it('dedups the health write for a stably reachable, unchanged distribution', async () => {
+    nock('https://example.org')
+      .head('/reachable')
+      .times(2)
+      .reply(200, '', { 'Content-Type': 'text/turtle' });
+    nock('https://example.org')
+      .get('/reachable')
+      .times(2)
+      .reply(200, '<urn:a> <urn:b> <urn:c> .', { 'Content-Type': 'text/turtle' });
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-reachable');
+    const distributionNode = factory.blankNode();
+    const url = factory.namedNode('https://example.org/reachable');
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    dataset.add(factory.quad(distributionNode, dcat('accessURL'), url));
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('mediaType'),
+        factory.literal('text/turtle'),
+      ),
+    );
+
+    const healthStore = new InMemoryHealthStore();
+    const storeSpy = vi.spyOn(healthStore, 'store');
+    const stage = new DistributionProbeStage({ healthStore });
+
+    await stage.run(dataset); // First reachable probe → write.
+    await stage.run(dataset); // Still reachable, unchanged → deduped.
+    expect(storeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('dedups the health write, rewriting only when the outcome, fingerprint, or staleness window changes', async () => {
+    nock('https://example.org')
+      .head('/dedup')
+      .times(5)
+      .replyWithError('ECONNREFUSED');
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-dedup');
+    const distributionNode = factory.blankNode();
+    const url = factory.namedNode('https://example.org/dedup');
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    dataset.add(factory.quad(distributionNode, dcat('accessURL'), url));
+
+    const healthStore = new InMemoryHealthStore();
+    const storeSpy = vi.spyOn(healthStore, 'store');
+    const stage = new DistributionProbeStage({ healthStore });
+    const key = new URL('https://example.org/dedup');
+
+    await stage.run(dataset); // No stored record yet → write.
+    await stage.run(dataset); // Same outcome, within the staleness window → deduped.
+    expect(storeSpy).toHaveBeenCalledTimes(1);
+
+    // A stored probe older than the staleness window forces a refresh so lastProbedAt (the
+    // last-checked time) does not drift.
+    const staleRecord = await healthStore.get(key);
+    staleRecord!.lastProbedAt = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    await stage.run(dataset);
+    expect(storeSpy).toHaveBeenCalledTimes(2);
+
+    // A changed reachability outcome is new signal → write.
+    (await healthStore.get(key))!.lastOutcome = probeOutcomes.NotFound;
+    await stage.run(dataset);
+    expect(storeSpy).toHaveBeenCalledTimes(3);
+
+    // A changed source fingerprint is new signal → write.
+    (await healthStore.get(key))!.sourceFingerprint = 'changed-source-fingerprint';
+    await stage.run(dataset);
+    expect(storeSpy).toHaveBeenCalledTimes(4);
   });
 
   it('records an empty data-dump body as an invalid validity measurement, not a reachability failure', async () => {
