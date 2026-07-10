@@ -7,18 +7,17 @@ import { normalizeMediaType, inLiterals } from '$lib/utils/sparql';
 import {
   FORMAT_GROUP_RDF,
   FORMAT_GROUP_SPARQL,
+  GROUP_PREFIX,
   RDF_MEDIA_TYPES,
   SPARQL_PROTOCOL_URI,
 } from '@dataset-register/core/search';
 import { REGISTRATION_STATUS_BASE_URI } from '@dataset-register/core/constants';
-import { type Facets, fetchFacets } from '$lib/services/facets';
+import { type Facets, emptyFacets, mapFacets } from '$lib/services/facets';
 import {
-  isSearchConfigured,
-  labelResolver,
-} from '$lib/services/search/client.js';
-import {
-  searchDatasets,
-  type SearchHitDocument,
+  type DatasetItem,
+  type DatasetReference,
+  localizedRecord,
+  runDatasetSearch,
   type SearchLocale,
 } from '$lib/services/search/datasets.js';
 
@@ -162,112 +161,65 @@ export interface SearchResults {
 }
 
 /**
- * Map a Typesense document to the {@link DatasetCard} view-model. Title and
- * description fall back to the other locale when the active one is missing;
- * publisher IRIs are resolved to labels (both supplied separately because the
- * resolver is async); the distribution badges are reconstructed from the
- * `format`/`format_group` facet fields.
+ * Map a GraphQL {@link DatasetItem} to the {@link DatasetCard} view-model.
+ * Localized text (title, description, publisher label) comes back best-first per
+ * the request’s Accept-Language and is reshaped into the `{nl, en}` records the
+ * card’s getLocalizedValue expects; the publisher label is already resolved by
+ * the engine; the distribution badges are reconstructed from the `format`
+ * field’s media types and `group:*` tokens.
  */
-export function cardFromDocument(
-  document: SearchHitDocument,
-  locale: SearchLocale,
-  publisherLabels: { nl: Map<string, string>; en: Map<string, string> },
-): DatasetCard {
-  const otherLocale: SearchLocale = locale === 'nl' ? 'en' : 'nl';
-
-  // Title is required on the card; a document with neither locale’s title (rare –
-  // the index requires a title) degrades to an empty record rather than crashing.
-  const title = localizedField(document, 'title', locale, otherLocale) ?? {};
-  const description = localizedField(
-    document,
-    'description',
-    locale,
-    otherLocale,
-  );
-
-  const publisherIris = stringArray(document.publisher);
-  const publisher = publisherLabel(publisherIris, publisherLabels);
+export function cardFromItem(item: DatasetItem): DatasetCard {
+  // Title is required on the card; an item with no title (rare – the index
+  // requires one) degrades to an empty record rather than crashing.
+  const title = localizedRecord(item.title) ?? {};
 
   return {
-    $id: document.id,
+    $id: item.id,
     title,
-    description,
-    language: stringArray(document.language),
-    publisher,
-    status: typeof document.status === 'string' ? document.status : undefined,
-    size: typeof document.size === 'number' ? document.size : undefined,
+    description: localizedRecord(item.description),
+    language: [...item.language],
+    publisher: cardPublisher(item.publisher),
+    status: item.status,
+    size: item.size ?? undefined,
     datePosted:
-      typeof document.date_posted === 'number'
-        ? new Date(document.date_posted * 1000)
-        : undefined,
-    distribution: cardDistributions(document),
-    iiif: document.iiif === true,
-    iiif_manifest_count:
-      typeof document.iiif_manifest_count === 'number'
-        ? document.iiif_manifest_count
-        : undefined,
-    nde_schema_ap: document.nde_schema_ap === true,
+      item.date_posted !== null ? new Date(item.date_posted) : undefined,
+    distribution: cardDistributions(item.format),
+    iiif: item.iiif === true,
+    iiif_manifest_count: item.iiif_manifest_count ?? undefined,
+    nde_schema_ap: item.nde_schema_ap === true,
   };
 }
 
-// A multilingual field reconstructed from the per-locale display fields, keyed by
-// the locale codes `getLocalizedValue` expects. Returns undefined when neither
-// locale carries a value (so optional fields like description stay absent).
-function localizedField(
-  document: SearchHitDocument,
-  base: string,
-  locale: SearchLocale,
-  otherLocale: SearchLocale,
-): Record<string, string> | undefined {
-  const value: Record<string, string> = {};
-  const primary = document[`${base}_${locale}`];
-  const fallback = document[`${base}_${otherLocale}`];
-  if (typeof primary === 'string' && primary.length > 0) {
-    value[locale] = primary;
-  }
-  if (typeof fallback === 'string' && fallback.length > 0) {
-    value[otherLocale] = fallback;
-  }
-  return Object.keys(value).length > 0 ? value : undefined;
-}
-
-// Resolve the dataset’s (single, in practice) publisher IRI to a `{nl, en}`
-// label record so the card’s getLocalizedValue renders the right language.
-// Falls back to the bare IRI when the labels collection has no entry.
-function publisherLabel(
-  iris: string[],
-  labels: { nl: Map<string, string>; en: Map<string, string> },
-): { $id: string; name: Record<string, string> } | undefined {
-  const iri = iris[0];
-  if (iri === undefined) {
+// The card’s (single, in practice) publisher: its IRI plus the engine-resolved
+// `{nl, en}` label, falling back to the bare IRI when the reference has no label.
+function cardPublisher(
+  publishers: readonly DatasetReference[],
+): DatasetCard['publisher'] {
+  const publisher = publishers[0];
+  if (publisher === undefined) {
     return undefined;
   }
-  const name: Record<string, string> = {};
-  const nl = labels.nl.get(iri);
-  const en = labels.en.get(iri);
-  if (nl !== undefined) name.nl = nl;
-  if (en !== undefined) name.en = en;
-  if (Object.keys(name).length === 0) {
-    name[''] = iri;
-  }
-  return { $id: iri, name };
+  return {
+    $id: publisher.id,
+    name: localizedRecord(publisher.name) ?? { '': publisher.id },
+  };
 }
 
-// Rebuild the card’s distribution badges from the search document’s facet
-// fields: each granular `format` value becomes a media-type badge, and the
-// `group:sparql`/`group:rdf` tokens in `format_group` re-create the conformsTo /
-// RDF media-type signals the card looks for.
-function cardDistributions(document: SearchHitDocument): CardDistribution[] {
-  const distributions: CardDistribution[] = stringArray(document.format).map(
-    (mediaType) => ({ mediaType, conformsTo: [] }),
-  );
+// Rebuild the card’s distribution badges from the `format` field, which now
+// carries both granular media types and the `group:*` tokens: each media type
+// becomes a badge, and the `group:sparql`/`group:rdf` tokens re-create the
+// conformsTo / RDF media-type signals the card looks for.
+function cardDistributions(format: readonly string[]): CardDistribution[] {
+  const mediaTypes = format.filter((value) => !value.startsWith(GROUP_PREFIX));
+  const groups = format.filter((value) => value.startsWith(GROUP_PREFIX));
 
-  const groups = stringArray(document.format_group);
+  const distributions: CardDistribution[] = mediaTypes.map((mediaType) => ({
+    mediaType,
+    conformsTo: [],
+  }));
+
   if (groups.includes(FORMAT_GROUP_SPARQL)) {
-    distributions.push({
-      mediaType: null,
-      conformsTo: [SPARQL_PROTOCOL_URI],
-    });
+    distributions.push({ mediaType: null, conformsTo: [SPARQL_PROTOCOL_URI] });
   }
   if (
     groups.includes(FORMAT_GROUP_RDF) &&
@@ -285,66 +237,49 @@ function cardDistributions(document: SearchHitDocument): CardDistribution[] {
   return distributions;
 }
 
-function stringArray(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value.filter((item): item is string => typeof item === 'string');
-  }
-  return typeof value === 'string' ? [value] : [];
-}
-
 /**
- * Run a dataset listing search against Typesense, mapping the hits to cards and
- * computing the facet sidebar. Returns empty results (and logs) when no search
- * backend is configured – the SPARQL listing fallback is intentionally gone.
+ * Run a dataset listing search against the GraphQL API, mapping the hits to
+ * cards and the facet buckets to the sidebar. One request returns the listing
+ * and every facet (labels already resolved server-side). Returns empty results
+ * (and logs) when the search fails – the SPARQL listing fallback is gone.
+ *
+ * `fetchImpl` is injected so a server-side caller (the RSS feed) can pass
+ * SvelteKit’s `event.fetch`, which resolves the same-origin `/graphql` URL; the
+ * browser omits it and uses the global `fetch`.
  */
 export async function fetchDatasets(
   searchFilters: SearchRequest,
   limit: number,
   offset = 0,
   orderBy: OrderBy = 'title',
+  fetchImpl?: typeof fetch,
 ): Promise<SearchResults> {
   const startTime = performance.now();
   const locale = getLocale() as SearchLocale;
 
-  if (!isSearchConfigured()) {
-    console.error(
-      'Search backend not configured: set PUBLIC_TYPESENSE_HOST and ' +
-        'PUBLIC_TYPESENSE_SEARCH_ONLY_API_KEY to enable the dataset listing.',
+  try {
+    const result = await runDatasetSearch(
+      searchFilters,
+      { limit, offset, orderBy, locale },
+      { fetchImpl },
     );
     return {
+      datasets: result.items.map((item) => cardFromItem(item)),
+      facets: mapFacets(result.facets),
+      total: result.total,
+      time: performance.now() - startTime,
+    };
+  } catch (error) {
+    // A search-backend failure degrades to an empty listing rather than
+    // stranding the page; the listing now requires the GraphQL backend.
+    console.error('Failed to load datasets:', error);
+    return {
       datasets: [],
-      facets: await fetchFacets(searchFilters),
+      facets: emptyFacets(),
       total: 0,
       time: performance.now() - startTime,
     };
   }
-
-  const [searchResponse, facets] = await Promise.all([
-    searchDatasets(searchFilters, { limit, offset, orderBy, locale }),
-    fetchFacets(searchFilters),
-  ]);
-
-  // Resolve the page’s publisher IRIs to labels once, for both locales (cheap:
-  // the labels collection is cached in memory).
-  const publisherIris = searchResponse.documents.flatMap((document) =>
-    stringArray(document.publisher),
-  );
-  const resolver = labelResolver();
-  const [publisherNl, publisherEn] = await Promise.all([
-    resolver.resolve(publisherIris, 'nl'),
-    resolver.resolve(publisherIris, 'en'),
-  ]);
-
-  const datasets = searchResponse.documents.map((document) =>
-    cardFromDocument(document, locale, { nl: publisherNl, en: publisherEn }),
-  );
-
-  return {
-    datasets,
-    facets,
-    total: searchResponse.total,
-    time: performance.now() - startTime,
-  };
 }
 
 // --- SPARQL query builders for the “Run SPARQL” button ----------------------

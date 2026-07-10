@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
-  cardFromDocument,
+  cardFromItem,
   conformsToSchemaApNde,
   iiifManifestCount,
   providesWorkingIiif,
   type DatasetCard,
 } from './datasets';
-import type { SearchHitDocument } from './search/datasets';
+import type { DatasetItem } from './search/datasets';
 
 // The boolean helpers only read the compatibility flags, so a minimal cast keeps
 // the fixtures focused on the behaviour under test.
@@ -14,10 +14,25 @@ function card(fields: Partial<DatasetCard>): DatasetCard {
   return fields as DatasetCard;
 }
 
-const noLabels = {
-  nl: new Map<string, string>(),
-  en: new Map<string, string>(),
-};
+// A GraphQL `Dataset` item with all-empty defaults; tests override the fields
+// under test.
+function item(fields: Partial<DatasetItem>): DatasetItem {
+  return {
+    id: 'https://example.org/dataset/x',
+    title: [],
+    description: [],
+    language: [],
+    publisher: [],
+    status: 'valid',
+    size: null,
+    date_posted: null,
+    format: [],
+    iiif: null,
+    iiif_manifest_count: null,
+    nde_schema_ap: null,
+    ...fields,
+  };
+}
 
 describe('providesWorkingIiif', () => {
   it('is true when the index flags working IIIF', () => {
@@ -49,73 +64,74 @@ describe('conformsToSchemaApNde', () => {
   });
 });
 
-describe('cardFromDocument', () => {
-  it('maps title/description with same-locale value', () => {
-    const document: SearchHitDocument = {
-      id: 'https://example.org/dataset/1',
-      title_nl: 'Titel',
-      title_en: 'Title',
-      description_nl: 'Beschrijving',
-    };
-    const result = cardFromDocument(document, 'nl', noLabels);
+describe('cardFromItem', () => {
+  it('reshapes the localized title and description into `{nl, en}` records', () => {
+    const result = cardFromItem(
+      item({
+        id: 'https://example.org/dataset/1',
+        title: [
+          { language: 'nl', value: 'Titel' },
+          { language: 'en', value: 'Title' },
+        ],
+        description: [{ language: 'nl', value: 'Beschrijving' }],
+      }),
+    );
     expect(result.$id).toBe('https://example.org/dataset/1');
     expect(result.title).toEqual({ nl: 'Titel', en: 'Title' });
     expect(result.description).toEqual({ nl: 'Beschrijving' });
   });
 
-  it('falls back to the other locale when the active one is missing', () => {
-    const document: SearchHitDocument = {
-      id: 'https://example.org/dataset/2',
-      title_en: 'English only',
-    };
-    const result = cardFromDocument(document, 'nl', noLabels);
+  it('keeps a single-locale title and leaves an empty description absent', () => {
+    const result = cardFromItem(
+      item({ title: [{ language: 'en', value: 'English only' }] }),
+    );
     expect(result.title).toEqual({ en: 'English only' });
     expect(result.description).toBeUndefined();
   });
 
-  it('converts the unix date_posted to a Date', () => {
-    const document: SearchHitDocument = {
-      id: 'https://example.org/dataset/3',
-      date_posted: 1700000000,
-    };
-    const result = cardFromDocument(document, 'nl', noLabels);
-    expect(result.datePosted).toEqual(new Date(1700000000 * 1000));
+  it('parses the ISO date_posted into a Date', () => {
+    const result = cardFromItem(
+      item({ date_posted: '2023-11-14T22:13:20.000Z' }),
+    );
+    expect(result.datePosted).toEqual(new Date('2023-11-14T22:13:20.000Z'));
   });
 
-  it('resolves the publisher IRI to a localized label', () => {
-    const document: SearchHitDocument = {
-      id: 'https://example.org/dataset/4',
-      publisher: ['https://example.org/org/1'],
-    };
-    const labels = {
-      nl: new Map([['https://example.org/org/1', 'Organisatie']]),
-      en: new Map([['https://example.org/org/1', 'Organization']]),
-    };
-    const result = cardFromDocument(document, 'nl', labels);
+  it('carries the engine-resolved publisher label', () => {
+    const result = cardFromItem(
+      item({
+        publisher: [
+          {
+            id: 'https://example.org/org/1',
+            name: [
+              { language: 'nl', value: 'Organisatie' },
+              { language: 'en', value: 'Organization' },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(result.publisher?.$id).toBe('https://example.org/org/1');
     expect(result.publisher?.name).toEqual({
       nl: 'Organisatie',
       en: 'Organization',
     });
   });
 
-  it('falls back to the publisher IRI when no label exists', () => {
-    const document: SearchHitDocument = {
-      id: 'https://example.org/dataset/5',
-      publisher: ['https://example.org/org/2'],
-    };
-    const result = cardFromDocument(document, 'nl', noLabels);
+  it('falls back to the publisher IRI when no label was resolved', () => {
+    const result = cardFromItem(
+      item({ publisher: [{ id: 'https://example.org/org/2', name: [] }] }),
+    );
     expect(result.publisher?.name).toEqual({
       '': 'https://example.org/org/2',
     });
   });
 
-  it('reconstructs distribution badges from format and format_group', () => {
-    const document: SearchHitDocument = {
-      id: 'https://example.org/dataset/6',
-      format: ['text/turtle', 'text/csv'],
-      format_group: ['group:sparql', 'group:rdf'],
-    };
-    const result = cardFromDocument(document, 'nl', noLabels);
+  it('reconstructs distribution badges from the combined format field', () => {
+    const result = cardFromItem(
+      item({
+        format: ['text/turtle', 'text/csv', 'group:sparql', 'group:rdf'],
+      }),
+    );
     expect(
       result.distribution.some((distribution) =>
         distribution.conformsTo.includes(
@@ -131,13 +147,9 @@ describe('cardFromDocument', () => {
   });
 
   it('carries the IIIF flag, manifest count and compatibility boolean through', () => {
-    const document: SearchHitDocument = {
-      id: 'https://example.org/dataset/7',
-      iiif: true,
-      iiif_manifest_count: 5,
-      nde_schema_ap: true,
-    };
-    const result = cardFromDocument(document, 'nl', noLabels);
+    const result = cardFromItem(
+      item({ iiif: true, iiif_manifest_count: 5, nde_schema_ap: true }),
+    );
     expect(result.iiif).toBe(true);
     expect(result.iiif_manifest_count).toBe(5);
     expect(result.nde_schema_ap).toBe(true);

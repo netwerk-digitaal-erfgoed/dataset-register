@@ -34,10 +34,10 @@ import {
   STATUS_RANK,
   sumNumbers,
 } from './derivations.ts';
-// SEARCH_LOCALES has a single home in field-registry.ts (the browser query path
-// reads it too); the schema-driven projection imports it so the two sides cannot
+// SEARCH_LOCALES has a single home in collections.ts (a node-free module the
+// browser query path reads too); the schema imports it so the two sides cannot
 // declare a different locale set.
-import { SEARCH_LOCALES } from './field-registry.ts';
+import { SEARCH_LOCALES } from './collections.ts';
 
 /** schema.org and the register-internal IR predicate prefixes. */
 const SCHEMA = 'https://schema.org/';
@@ -50,7 +50,10 @@ const DR = 'urn:dr:';
  */
 const qualityByNode = new WeakMap<
   FramedNode,
-  { readonly quadsValidated: number | null; readonly conformant: boolean | null }
+  {
+    readonly quadsValidated: number | null;
+    readonly conformant: boolean | null;
+  }
 >();
 function qualityMeasurements(node: FramedNode): {
   readonly quadsValidated: number | null;
@@ -71,6 +74,20 @@ function qualityMeasurements(node: FramedNode): {
 
 /** The RDF class the dataset search documents are instances of. */
 export const DATASET_TYPE = 'http://www.w3.org/ns/dcat#Dataset';
+
+/** The number of logarithmic size bins the size histogram/slider renders. */
+const SIZE_BIN_COUNT = 10;
+
+/**
+ * Logarithmic `size` facet bins: bin n covers [10^n, 10^(n+1)); the top bin is
+ * open-ended (≥ 10^9). The bucket key is the bin index the browser’s size slider
+ * (`getBinLabel`) expects, so the query API returns the histogram directly.
+ */
+const SIZE_FACET_RANGES = Array.from({ length: SIZE_BIN_COUNT }, (_, bin) => ({
+  key: String(bin),
+  min: 10 ** bin,
+  ...(bin < SIZE_BIN_COUNT - 1 ? { max: 10 ** (bin + 1) } : {}),
+}));
 
 const dataset = defineSearchType({
   name: 'Dataset',
@@ -101,6 +118,7 @@ const dataset = defineSearchType({
       path: 'http://www.w3.org/ns/dcat#keyword',
       array: true,
       facetable: true,
+      filterable: true,
       searchable: { weight: 1 },
     },
     {
@@ -129,6 +147,7 @@ const dataset = defineSearchType({
       path: 'urn:dr:organization',
       array: true,
       facetable: true,
+      filterable: true,
       output: true,
       ref: { typeName: 'Agent', strategy: 'labelOnly' },
       labelSource: 'Organization',
@@ -143,14 +162,25 @@ const dataset = defineSearchType({
       filterable: true,
     },
     {
+      // Partition class IRIs plus the derived class-group tokens (`group:person`,
+      // …) folded into one field, so a facet selection mixing granular classes
+      // and group tokens UNIONs under the query API’s flat-AND `where` (a single
+      // `class in [...]`). Facet-only, not output: the mixed IRI/token values
+      // have no single reference shape, and the card never renders classes. The
+      // group tokens resolve to no label (they are absent from the Class
+      // collection); the browser renders them from its own translation table.
       name: 'class',
       kind: 'reference',
-      path: 'urn:dr:class',
       array: true,
       facetable: true,
-      output: true,
-      ref: { typeName: 'RdfClass', strategy: 'labelOnly' },
+      filterable: true,
       labelSource: 'Class',
+      derive: (node) => {
+        const classes = [...new Set(irisOf(node, `${DR}class`))];
+        const groups = deriveClassGroups(classes);
+        const combined = [...classes, ...groups];
+        return combined.length > 0 ? combined : undefined;
+      },
     },
     {
       name: 'terminology_source',
@@ -158,6 +188,7 @@ const dataset = defineSearchType({
       path: 'urn:dr:terminologySource',
       array: true,
       facetable: true,
+      filterable: true,
       output: true,
       ref: { typeName: 'Vocabulary', strategy: 'labelOnly' },
       labelSource: 'TerminologySource',
@@ -168,29 +199,51 @@ const dataset = defineSearchType({
       path: 'http://purl.org/dc/terms/language',
       array: true,
       facetable: true,
+      output: true,
     },
     {
-      // Media types, normalized to the bare `type/subtype` (the IANA IRI prefix
-      // stripped) so granular format buckets match across sources.
+      // Bare media types (the IANA IRI prefix stripped) plus the derived
+      // format-group tokens (`group:rdf`/`group:sparql`) folded into one field,
+      // so a facet selection mixing granular media types and group tokens UNIONs
+      // under the query API’s flat-AND `where` (a single `format in [...]`).
+      // Output so the card can rebuild its distribution badges from it.
       name: 'format',
       kind: 'keyword',
-      path: 'urn:dr:format',
       array: true,
       facetable: true,
-      transform: stripIanaPrefix,
+      filterable: true,
+      output: true,
+      derive: (node) => {
+        const mediaTypes = [
+          ...new Set(literalsOf(node, `${DR}format`).map(stripIanaPrefix)),
+        ];
+        const groups = formatGroups(
+          mediaTypes,
+          literalsOf(node, `${DR}conformsTo`),
+        );
+        const combined = [...mediaTypes, ...groups];
+        return combined.length > 0 ? combined : undefined;
+      },
     },
     {
       name: 'date_posted',
       kind: 'date',
       path: 'urn:dr:datePosted',
       sortable: true,
+      output: true,
     },
     {
       name: 'size',
       kind: 'integer',
       path: 'urn:dr:size',
       facetable: true,
+      filterable: true,
       sortable: true,
+      output: true,
+      // Logarithmic size bins (bin n covers [10^n, 10^(n+1)); bin 9 is open-ended
+      // ≥ 1e9), so the query API returns the histogram the size slider renders. The
+      // bucket key is the bin index the UI’s getBinLabel expects.
+      facetRanges: SIZE_FACET_RANGES,
     },
 
     // --- Derived fields (computed from several predicates / earlier fields) ---
@@ -198,7 +251,9 @@ const dataset = defineSearchType({
       name: 'status',
       kind: 'keyword',
       facetable: true,
+      filterable: true,
       required: true,
+      output: true,
       derive: (node) =>
         deriveStatus(
           irisOf(node, `${SCHEMA}additionalType`),
@@ -214,35 +269,11 @@ const dataset = defineSearchType({
         STATUS_RANK[document.status as DatasetStatus],
     },
     {
-      name: 'format_group',
-      kind: 'keyword',
-      array: true,
-      facetable: true,
-      derive: (node, document) => {
-        const groups = formatGroups(
-          (document.format as string[] | undefined) ?? [],
-          literalsOf(node, `${DR}conformsTo`),
-        );
-        return groups.length > 0 ? groups : undefined;
-      },
-    },
-    {
-      name: 'class_group',
-      kind: 'keyword',
-      array: true,
-      facetable: true,
-      derive: (_node, document) => {
-        const groups = deriveClassGroups(
-          (document.class as string[] | undefined) ?? [],
-        );
-        return groups.length > 0 ? groups : undefined;
-      },
-    },
-    {
       // Declared IIIF manifest count (sum of the IIIF subsets’ void:entities);
       // shown on the card when positive. Not a facet.
       name: 'iiif_manifest_count',
       kind: 'integer',
+      output: true,
       derive: (node) => {
         const count = sumNumbers(literalsOf(node, `${DR}iiifEntities`));
         return count > 0 ? count : undefined;
@@ -254,6 +285,7 @@ const dataset = defineSearchType({
       name: 'iiif',
       kind: 'boolean',
       facetable: true,
+      output: true,
       derive: (node, document) =>
         isIiifMet({
           declared: (document.iiif_manifest_count as number | undefined) ?? 0,
@@ -269,6 +301,7 @@ const dataset = defineSearchType({
       name: 'nde_schema_ap',
       kind: 'boolean',
       facetable: true,
+      output: true,
       derive: (node) =>
         isSchemaApNdeMet(qualityMeasurements(node)) ? true : undefined,
     },
@@ -308,14 +341,23 @@ const dataset = defineSearchType({
             firstLiteralOf(node, `${DR}subjectUrisResolved`),
           ),
           durable:
-            parseBoolean(firstLiteralOf(node, `${DR}subjectNamespaceDurable`)) !==
-            false,
+            parseBoolean(
+              firstLiteralOf(node, `${DR}subjectNamespaceDurable`),
+            ) !== false,
         })
           ? true
           : undefined,
     },
   ],
 });
+
+// The RDF classes the three label-source collections are instances of. Exported
+// so the indexer can pull each `SearchType` off SEARCH_SCHEMA by IRI and inject
+// the matching `rdf:type` when projecting the label quads into its collection.
+export const ORGANIZATION_TYPE = 'https://schema.org/Organization';
+export const CLASS_TYPE = 'http://www.w3.org/2000/01/rdf-schema#Class';
+export const TERMINOLOGY_SOURCE_TYPE =
+  'http://www.w3.org/2004/02/skos/core#ConceptScheme';
 
 /**
  * A label-source collection (ADR 0008): the referenced organizations, carrying
@@ -324,7 +366,7 @@ const dataset = defineSearchType({
  */
 const organization = defineSearchType({
   name: 'Organization',
-  type: 'https://schema.org/Organization',
+  type: ORGANIZATION_TYPE,
   fields: [
     {
       name: 'label',
@@ -340,7 +382,7 @@ const organization = defineSearchType({
 /** Label source for the `class` facet: the partition classes and their labels. */
 const rdfClass = defineSearchType({
   name: 'Class',
-  type: 'http://www.w3.org/2000/01/rdf-schema#Class',
+  type: CLASS_TYPE,
   fields: [
     {
       name: 'label',
@@ -356,7 +398,7 @@ const rdfClass = defineSearchType({
 /** Label source for the `terminology_source` facet: the linked vocabularies. */
 const terminologySource = defineSearchType({
   name: 'TerminologySource',
-  type: 'http://www.w3.org/2004/02/skos/core#ConceptScheme',
+  type: TERMINOLOGY_SOURCE_TYPE,
   fields: [
     {
       name: 'label',

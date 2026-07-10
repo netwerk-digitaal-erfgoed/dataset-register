@@ -1,4 +1,4 @@
-import { Client, Errors, type ImportResponse } from 'typesense';
+import { Client, Errors } from 'typesense';
 import { BlueGreenRebuild, RebuildAlreadyRunning } from '@lde/search-typesense';
 import {
   projectGraph,
@@ -9,22 +9,23 @@ import {
 import { Dataset } from '@lde/dataset';
 import type { RunContext } from '@lde/pipeline';
 import {
+  CLASS_COLLECTION_ALIAS,
+  CLASS_TYPE,
   DATASET_TYPE,
   DEFAULT_REGISTRATIONS_GRAPH,
   DEFAULT_SORTING_FIELD,
-  LABELS_COLLECTION_ALIAS,
+  ORGANIZATION_COLLECTION_ALIAS,
+  ORGANIZATION_TYPE,
   SEARCH_COLLECTION_ALIAS,
   SEARCH_SCHEMA,
   SEARCH_SYNONYM_SET,
   SEARCH_SYNONYMS,
   SparqlClient,
+  TERMINOLOGY_SOURCE_COLLECTION_ALIAS,
+  TERMINOLOGY_SOURCE_TYPE,
 } from '@dataset-register/core';
 import type { Quad } from '@rdfjs/types';
-import {
-  buildLabelCollectionSchema,
-  toLabelDocuments,
-  type LabelDocument,
-} from './labels.js';
+import { rebuildLabelCollection } from './label-collections.js';
 import { RegisterSource } from './register-source.js';
 import { DkgSource } from './dkg-source.js';
 import {
@@ -39,8 +40,12 @@ export interface RunIndexOptions {
   readonly knowledgeGraphEndpoint?: string;
   readonly typesense: TypesenseConnection;
   readonly collectionAlias?: string;
-  /** Override the sidecar label-collection alias (test isolation). */
-  readonly labelsAlias?: string;
+  /** Override the typed label-collection aliases (test isolation). */
+  readonly labelAliases?: {
+    readonly organization?: string;
+    readonly class?: string;
+    readonly terminologySource?: string;
+  };
   /** Optional sink for progress lines; defaults to silent. */
   readonly log?: (message: string) => void;
 }
@@ -54,9 +59,7 @@ export interface RunIndexOptions {
  * rather than replaced with an empty one (see {@link runIndex}).
  */
 export type SkipReason =
-  | 'concurrent-rebuild'
-  | 'empty-knowledge-graph'
-  | 'empty-projection';
+  'concurrent-rebuild' | 'empty-knowledge-graph' | 'empty-projection';
 
 export type RunIndexResult =
   | {
@@ -96,21 +99,17 @@ export async function runIndex(
     options.registrationsGraphIri ?? DEFAULT_REGISTRATIONS_GRAPH,
   );
 
-  // The dataset type drives both the collection schema and the projection. It is
-  // always present – SEARCH_SCHEMA is built over it – so a miss is a programmer
-  // error, not a runtime condition.
-  const datasetType = SEARCH_SCHEMA.get(DATASET_TYPE);
-  if (datasetType === undefined) {
-    throw new Error(
-      `SEARCH_SCHEMA does not declare the dataset type ${DATASET_TYPE}.`,
-    );
-  }
+  // The dataset type drives both the collection schema and the projection; the
+  // three label-source types drive the typed label collections. All are always
+  // present – SEARCH_SCHEMA is built over them – so a miss is a programmer error,
+  // not a runtime condition.
+  const datasetType = searchType(DATASET_TYPE);
 
   log(`Rebuilding search index ${alias}`);
 
   // Kick off every read/sync that does not depend on the writer up front so they
   // overlap instead of serializing on the critical path: the two main CONSTRUCTs
-  // (register + DKG, different endpoints), the sidecar label reads, and the
+  // (register + DKG, different endpoints), the typed-label reads, and the
   // synonym-set sync. The label reads and the synonym sync otherwise sit serially
   // – labels after commit, synonyms before the reads – adding their full
   // round-trip latency to the run; overlapping hides it behind the main reads and
@@ -118,12 +117,12 @@ export async function runIndex(
   // straight into the rebuild so only one document is held at a time; the
   // versioned collection name, alias swap and cross-pod lock are managed by
   // {@link BlueGreenRebuild}.
-  const labelDocumentsPromise = readLabelDocuments(source, options, log);
-  // readLabelDocuments can reject (the register org-label read has no fallback);
-  // mark it handled so an early skip-return below does not surface an unhandled
-  // rejection. rebuildLabels awaits the same promise and its catch handles a real
-  // failure by keeping the previous labels.
-  labelDocumentsPromise.catch(() => undefined);
+  const labelQuadsPromise = readLabelQuads(source, options, log);
+  // readLabelQuads can reject (the register org-label read has no fallback); mark
+  // it handled so an early skip-return below does not surface an unhandled
+  // rejection. The label rebuild awaits the same promise and keeps the previous
+  // label collections on a real failure.
+  labelQuadsPromise.catch(() => undefined);
   const synonymsPromise = syncSynonyms(client, log);
   const [registerQuads, dkgQuads] = await Promise.all([
     source.readQuads(),
@@ -223,14 +222,62 @@ export async function runIndex(
   const collection = (await aliasTarget(client, alias)) ?? alias;
   log(`Indexed ${upserted} datasets; alias ${alias} → ${collection}`);
 
-  // Sidecar IRI → label collection for facet-bucket display, rebuilt the same
-  // blue/green way. Non-critical: a label failure must never abort the
-  // user-facing dataset index (which is already live by now), so it degrades to
-  // the previous labels and self-heals next run.
-  const labelsAlias = options.labelsAlias ?? LABELS_COLLECTION_ALIAS;
-  await rebuildLabels(client, labelsAlias, log, labelDocumentsPromise);
+  // The typed label-source collections for facet-bucket + hit-reference display
+  // (ADR 0008), each rebuilt blue/green like the dataset index. Non-critical: a
+  // label failure must never abort the user-facing dataset index (already live
+  // by now), so each degrades to its previous collection and self-heals next run.
+  await rebuildLabelCollections(client, options, log, labelQuadsPromise);
 
   return { mode: 'rebuild', collection, upserted };
+}
+
+/**
+ * Rebuild the three typed label collections from the prefetched label quads.
+ * Awaits the shared read once (a rejection – the register org-label read has no
+ * fallback – keeps every current label collection) and rebuilds each type
+ * concurrently; each rebuild is independently defensive (see
+ * {@link rebuildLabelCollection}).
+ */
+async function rebuildLabelCollections(
+  client: Client,
+  options: RunIndexOptions,
+  log: (message: string) => void,
+  labelQuadsPromise: Promise<LabelQuadSets>,
+): Promise<void> {
+  let labelQuads: LabelQuadSets;
+  try {
+    labelQuads = await labelQuadsPromise;
+  } catch (error) {
+    log(
+      `Label read failed; keeping the current label collections: ${(error as Error).message}`,
+    );
+    return;
+  }
+
+  const aliases = options.labelAliases ?? {};
+  await Promise.all([
+    rebuildLabelCollection(
+      client,
+      searchType(ORGANIZATION_TYPE),
+      aliases.organization ?? ORGANIZATION_COLLECTION_ALIAS,
+      labelQuads.organization,
+      log,
+    ),
+    rebuildLabelCollection(
+      client,
+      searchType(CLASS_TYPE),
+      aliases.class ?? CLASS_COLLECTION_ALIAS,
+      labelQuads.class,
+      log,
+    ),
+    rebuildLabelCollection(
+      client,
+      searchType(TERMINOLOGY_SOURCE_TYPE),
+      aliases.terminologySource ?? TERMINOLOGY_SOURCE_COLLECTION_ALIAS,
+      labelQuads.terminologySource,
+      log,
+    ),
+  ]);
 }
 
 /**
@@ -250,6 +297,18 @@ const INDEX_SOURCE = new Dataset({
 function runContext(): RunContext {
   const startedAt = new Date().toISOString();
   return { runId: startedAt, startedAt, selectedSources: () => [] };
+}
+
+/**
+ * A declared SEARCH_SCHEMA type by IRI. The schema is built over these types, so
+ * a miss is a programmer error (a renamed/removed type), not a runtime condition.
+ */
+function searchType(typeIri: string): SearchType {
+  const type = SEARCH_SCHEMA.get(typeIri);
+  if (type === undefined) {
+    throw new Error(`SEARCH_SCHEMA does not declare the type ${typeIri}.`);
+  }
+  return type;
 }
 
 /**
@@ -302,113 +361,32 @@ async function aliasTarget(
   }
 }
 
+/** The raw label quads per label-source type, keyed to feed each typed
+ *  collection’s projection. */
+interface LabelQuadSets {
+  readonly organization: Quad[];
+  readonly class: Quad[];
+  readonly terminologySource: Quad[];
+}
+
 /**
- * Read the sidecar label documents: organization IRIs (`foaf:name`) from the
- * register plus terminology-source (`dct:title`) and class (`rdfs:label`) labels
+ * Read the label quads per label-source type: organization (`foaf:name`) from
+ * the register plus terminology-source (`dct:title`) and class (`rdfs:label`)
  * from the DKG, read concurrently. Prefetched at the start of a run so it
  * overlaps the main build rather than serializing after commit. Rejects only if
  * the register org-label read fails (the DKG labels degrade to none); the caller
- * treats a rejection as "keep the previous labels".
+ * treats a rejection as "keep the previous label collections".
  */
-async function readLabelDocuments(
+async function readLabelQuads(
   source: RegisterSource,
   options: RunIndexOptions,
   log: (message: string) => void,
-): Promise<LabelDocument[]> {
-  const [organizationQuads, knowledgeGraphLabels] = await Promise.all([
+): Promise<LabelQuadSets> {
+  const [organization, knowledgeGraph] = await Promise.all([
     source.readOrganizationLabelQuads(),
-    readKnowledgeGraphLabels(options, log),
+    readKnowledgeGraphLabelQuads(options, log),
   ]);
-  return [
-    ...toLabelDocuments(organizationQuads, 'organization'),
-    ...knowledgeGraphLabels,
-  ];
-}
-
-/**
- * Build the sidecar `labels` collection from the prefetched label documents.
- * Blue/green-swap its alias with a minimal inline rebuild (create
- * `${alias}_${timestamp}`, import the label docs, repoint the alias, drop the
- * previous collection) – the browser still reads this sidecar in PR 1, so the
- * typed label-source collections are deliberately not introduced here.
- * Defensive: a failure here (including a rejected `documents` read) is logged and
- * swallowed so it never fails an otherwise-good dataset rebuild; labels are
- * display-only and the browser falls back to a shortened IRI when one is missing.
- */
-async function rebuildLabels(
-  client: Client,
-  alias: string,
-  log: (message: string) => void,
-  documents: Promise<readonly LabelDocument[]>,
-): Promise<void> {
-  // The collection created below is orphaned if a later step throws before the
-  // alias is repointed; track it so the catch can drop it rather than leak it.
-  let orphan: string | undefined;
-  try {
-    const labelDocuments = await documents;
-
-    const collection = `${alias}_${Date.now()}`;
-    const previous = await aliasTarget(client, alias);
-    await client.collections().create(buildLabelCollectionSchema(collection));
-    orphan = collection;
-    await importLabels(client, collection, labelDocuments);
-    await client.aliases().upsert(alias, { collection_name: collection });
-    // Live now: the collection to reap is the superseded `previous`, not this one.
-    orphan = undefined;
-    if (previous !== undefined && previous !== collection) {
-      // Best-effort: dropping the superseded collection must not fail the swap
-      // that already made the new labels live.
-      await client
-        .collections(previous)
-        .delete()
-        .catch(() => undefined);
-    }
-    log(
-      `Indexed ${labelDocuments.length} labels; alias ${alias} → ${collection}`,
-    );
-  } catch (error) {
-    if (orphan !== undefined) {
-      // Drop the half-built collection we created but never swapped live, so a
-      // failed label run does not leak an orphaned Typesense collection.
-      await client
-        .collections(orphan)
-        .delete()
-        .catch(() => undefined);
-    }
-    log(`Label index skipped: ${(error as Error).message}`);
-  }
-}
-
-/**
- * Upsert the label documents into the fresh collection, throwing if any
- * individual document fails (Typesense’s bulk import otherwise reports
- * per-document failures without rejecting). An empty set skips the import –
- * Typesense rejects an empty import body – and the alias still swaps to the
- * (empty) collection.
- */
-async function importLabels(
-  client: Client,
-  collection: string,
-  documents: readonly LabelDocument[],
-): Promise<void> {
-  if (documents.length === 0) {
-    return;
-  }
-  const results = (await client
-    .collections(collection)
-    .documents()
-    .import(documents as LabelDocument[], {
-      action: 'upsert',
-      throwOnFail: false,
-    })) as ImportResponse[];
-  const failures = results.filter((result) => !result.success);
-  if (failures.length > 0) {
-    throw new Error(
-      `Typesense label import into “${collection}” failed for ${failures.length}/${results.length} documents: ${failures
-        .map((failure) => failure.error)
-        .join('; ')}`,
-    );
-  }
+  return { organization, ...knowledgeGraph };
 }
 
 /**
@@ -439,28 +417,26 @@ async function fromKnowledgeGraph<T>(
 }
 
 /**
- * Read the DKG-sourced facet labels (terminology sources, classes) as label
- * documents; degrades to register-only (organization) labels when the DKG is
- * absent or fails.
+ * Read the DKG-sourced facet label quads (terminology sources, classes);
+ * degrades to empty (register-only organization labels) when the DKG is absent
+ * or fails, so the class/terminology collections keep their previous labels
+ * rather than being stripped by a transient DKG gap.
  */
-function readKnowledgeGraphLabels(
+function readKnowledgeGraphLabelQuads(
   options: RunIndexOptions,
   log: (message: string) => void,
-): Promise<LabelDocument[]> {
-  return fromKnowledgeGraph<LabelDocument[]>(
+): Promise<{ class: Quad[]; terminologySource: Quad[] }> {
+  return fromKnowledgeGraph(
     options,
     log,
     'labels',
-    [],
+    { class: [], terminologySource: [] },
     async (dkg) => {
-      const [terminology, classes] = await Promise.all([
+      const [terminologySource, classes] = await Promise.all([
         dkg.readTerminologyLabelQuads(),
         dkg.readClassLabelQuads(),
       ]);
-      return [
-        ...toLabelDocuments(terminology, 'terminology_source'),
-        ...toLabelDocuments(classes, 'class'),
-      ];
+      return { class: classes, terminologySource };
     },
   );
 }

@@ -1,277 +1,256 @@
-import type {
-  SearchParams,
-  SearchResponse,
-} from 'typesense/lib/Typesense/Documents.js';
-import {
-  DEFAULT_SORTING_FIELD,
-  GROUP_PREFIX,
-  SEARCH_COLLECTION_ALIAS,
-  queryBy,
-  queryByWeights,
-} from '@dataset-register/core/search';
-import { fold } from '@lde/text-normalization';
 import type { OrderBy, SearchRequest } from '../datasets.js';
-import { searchCollection } from './client.js';
+import { queryGraphQL } from './client.js';
 
 /** The active UI locale, the locales the index carries per-locale fields for. */
 export type SearchLocale = 'nl' | 'en';
 
-/** One Typesense document, keyed by its `id` (the dataset IRI). */
-export type SearchHitDocument = { id: string } & Record<string, unknown>;
+/** A best-first localized value from the GraphQL API: `[0]` is the language
+ *  actually served for the request’s `Accept-Language`. */
+export interface LanguageString {
+  readonly language: string | null;
+  readonly value: string;
+}
 
-/** A single facet bucket: its raw value (an IRI or group token) and count. */
-export interface FacetCount {
+/** A resolved reference on a hit or facet bucket: its IRI and localized label. */
+export interface DatasetReference {
+  readonly id: string;
+  readonly name: readonly LanguageString[];
+}
+
+/** One dataset hit, as the GraphQL `Dataset` output type projects it. */
+export interface DatasetItem {
+  readonly id: string;
+  readonly title: readonly LanguageString[];
+  readonly description: readonly LanguageString[];
+  readonly language: readonly string[];
+  readonly publisher: readonly DatasetReference[];
+  readonly status: string;
+  readonly size: number | null;
+  readonly date_posted: string | null;
+  readonly format: readonly string[];
+  readonly iiif: boolean | null;
+  readonly iiif_manifest_count: number | null;
+  readonly nde_schema_ap: boolean | null;
+}
+
+/** A value facet bucket: its raw value (a token, keyword or IRI), count and
+ *  (for reference facets) resolved label; `label` is null for token/keyword
+ *  facets whose display the browser owns. */
+export interface ValueBucket {
   readonly value: string;
   readonly count: number;
+  readonly label: readonly LanguageString[] | null;
 }
 
-/**
- * The parsed result of a dataset search: the matched documents (verbatim, to be
- * mapped to cards by a later slice), the total match count for paging, and the
- * facet buckets keyed by index field name (to be turned into the facet UI by a
- * later slice).
- */
-export interface DatasetSearchResponse {
-  readonly documents: SearchHitDocument[];
+/** A range facet bucket: its count and half-open `[min, max)` bounds (`max` null
+ *  on the open-ended top bin). The bin is identified by its bounds, not a key. */
+export interface RangeBucket {
+  readonly count: number;
+  readonly min: number | null;
+  readonly max: number | null;
+}
+
+/** The facet buckets the sidebar renders, keyed by GraphQL facet field name. */
+export interface RawFacets {
+  readonly publisher: readonly ValueBucket[];
+  readonly keyword: readonly ValueBucket[];
+  readonly format: readonly ValueBucket[];
+  readonly class: readonly ValueBucket[];
+  readonly terminology_source: readonly ValueBucket[];
+  readonly status: readonly ValueBucket[];
+  readonly size: readonly RangeBucket[];
+}
+
+/** The parsed result of a dataset search: the matched items, the total match
+ *  count for paging, and the facet buckets. Items and facets come back in one
+ *  GraphQL request (the API computes each facet with its own filter removed). */
+export interface DatasetSearchResult {
   readonly total: number;
-  readonly facetCounts: Record<string, FacetCount[]>;
+  readonly items: readonly DatasetItem[];
+  readonly facets: RawFacets;
 }
 
-/** Paging, ordering, and locale for a {@link searchDatasets} call. */
+/** Paging, ordering, and locale for a {@link runDatasetSearch} call. */
 export interface SearchOptions {
   readonly limit: number;
   readonly offset: number;
   readonly orderBy: OrderBy;
   readonly locale: SearchLocale;
-  /**
-   * Apply the default `status:=valid` filter when no status is selected
-   * (default true). Set false when computing the status facet itself, so it
-   * counts across all statuses instead of only the valid ones.
-   */
-  readonly includeDefaultStatus?: boolean;
+}
+
+/** A GraphQL `where` clause per filterable field; membership (`in`) for the
+ *  keyword/reference facets, an inclusive `range` for size. */
+interface DatasetWhere {
+  status?: { in: readonly string[] };
+  publisher?: { in: readonly string[] };
+  keyword?: { in: readonly string[] };
+  format?: { in: readonly string[] };
+  class?: { in: readonly string[] };
+  terminology_source?: { in: readonly string[] };
+  catalog?: { in: readonly string[] };
+  size?: { min?: number; max?: number };
+}
+
+interface DatasetOrderBy {
+  readonly field: 'RELEVANCE' | 'TITLE' | 'DATE_POSTED';
+  readonly direction: 'ASC' | 'DESC';
 }
 
 /**
- * Run a dataset search against the Typesense `datasets` collection and parse the
- * response into a UI-agnostic shape. The searcher is injected so the function is
- * unit-testable against a mock; it defaults to the direct `fetch`-based
- * {@link searchCollection}. This is the seam a later GraphQL-backed
- * implementation slots into without touching the UI.
+ * Run a dataset search against the GraphQL API and return the matched items,
+ * total, and facet buckets. `fetchImpl` is injected so a server-side caller (the
+ * RSS feed) can pass SvelteKit’s `event.fetch`; the browser omits it.
  */
-export async function searchDatasets(
+export async function runDatasetSearch(
   request: SearchRequest,
   options: SearchOptions,
-  search: (
-    collection: string,
-    params: Record<string, unknown>,
-  ) => Promise<SearchResponse<SearchHitDocument>> = searchCollection,
-): Promise<DatasetSearchResponse> {
-  const response = await search(
-    SEARCH_COLLECTION_ALIAS,
-    // Typesense `SearchParams` is a well-known-property object with no index
-    // signature, so widen it to the searcher’s `Record<string, unknown>`.
-    buildSearchParams(request, options) as Record<string, unknown>,
-  );
-  return parseSearchResponse(response);
-}
-
-/**
- * Build the Typesense {@link SearchParams} for a request. Pure (no client, no
- * env), so the query mapping – `q` folding, `query_by`/weights, `filter_by`
- * clauses, `sort_by` – is asserted directly in tests. The listing does not
- * request facets (`fetchFacets` runs its own faceted searches), so no `facet_by`.
- */
-export function buildSearchParams(
-  request: SearchRequest,
-  options: SearchOptions,
-): SearchParams<SearchHitDocument> {
+  deps: { readonly fetchImpl?: typeof fetch } = {},
+): Promise<DatasetSearchResult> {
   const { limit, offset, orderBy, locale } = options;
-  // Folded query text, or undefined when browsing (no query). Drives both the
-  // `q` match-all sentinel and the relevance-vs-alphabetical sort choice.
-  const foldedQuery =
+  const text =
     request.query !== undefined && request.query.length > 0
-      ? fold(request.query)
+      ? request.query
       : undefined;
-  return {
-    q: foldedQuery ?? '*',
-    query_by: queryBy(),
-    query_by_weights: queryByWeights(locale),
-    per_page: limit,
+  const variables = {
+    query: text,
+    where: buildWhere(request),
+    orderBy: buildOrderBy(orderBy, text !== undefined),
     page: Math.floor(offset / limit) + 1,
-    filter_by: buildFilterBy(request, options.includeDefaultStatus ?? true),
-    sort_by: buildSortBy(orderBy, locale, foldedQuery !== undefined),
+    perPage: limit,
   };
+  const data = await queryGraphQL<{ datasets: DatasetSearchResult }>(
+    DATASET_SEARCH_QUERY,
+    variables,
+    { locale, fetchImpl: deps.fetchImpl },
+  );
+  return data.datasets;
 }
 
-// Group tokens (`group:rdf`/`group:sparql` for format, `group:*` for class)
-// select against the index’s `_group` companion field rather than the granular
-// field; everything else is a granular value (a media type or a class IRI).
+/**
+ * A `{nl, en}` display record from a best-first localized value, keyed by
+ * language code (an untagged value keys `''`), dropping empty values. Returns
+ * undefined when nothing remains, so optional text and unresolved references
+ * (a `null` label) stay absent. Shared by the card and facet mappers.
+ */
+export function localizedRecord(
+  values: readonly LanguageString[] | null,
+): Record<string, string> | undefined {
+  if (values === null) {
+    return undefined;
+  }
+  const record: Record<string, string> = {};
+  for (const { language, value } of values) {
+    if (value.length > 0) {
+      record[language ?? ''] = value;
+    }
+  }
+  return Object.keys(record).length > 0 ? record : undefined;
+}
 
 /**
- * AND-join the request’s filter clauses into a Typesense `filter_by` string.
- *
- * Status defaults to valid-only when the request carries no explicit status, so
- * archived/invalid/gone registrations stay out of the listing unless asked for.
+ * The GraphQL `where` for a request: one membership clause per active facet plus
+ * the size range. Format and class each carry both granular values and `group:*`
+ * tokens in a single field, so a mixed selection unions naturally in one `in`
+ * (no companion-field OR). Status is omitted when unset – the API’s
+ * `queryDefaults` then applies the valid-only default.
  */
-function buildFilterBy(
-  request: SearchRequest,
-  includeDefaultStatus: boolean,
-): string {
-  const clauses: string[] = [];
-
+export function buildWhere(request: SearchRequest): DatasetWhere {
+  const where: DatasetWhere = {};
   if (request.status.length > 0) {
-    clauses.push(`status:[${request.status.map(escapeFilterValue).join(',')}]`);
-  } else if (includeDefaultStatus) {
-    clauses.push('status:=valid');
+    where.status = { in: request.status };
   }
-
-  pushInClause(clauses, 'publisher', request.publisher);
-  pushInClause(clauses, 'keyword', request.keyword);
-  pushInClause(clauses, 'terminology_source', request.terminologySource);
-
-  // Format and class each mix granular values with `group:*` tokens (a coarser
-  // view of the same field, e.g. group:rdf covers the RDF media types). Within
-  // one facet the selections must UNION, so OR the granular field with its
-  // `_group` companion rather than AND-ing two separate clauses – otherwise
-  // ticking a value and a group in the same facet intersects to (near) nothing.
-  pushGroupedClause(clauses, 'format', 'format_group', request.format);
-  pushGroupedClause(clauses, 'class', 'class_group', request.class);
-
-  const sizeClause = buildSizeClause(request.size);
-  if (sizeClause !== undefined) {
-    clauses.push(sizeClause);
+  if (request.publisher.length > 0) {
+    where.publisher = { in: request.publisher };
   }
-
-  // `catalog` is a filter-only, non-facet (so tokenized) field, so it must use
-  // the exact `:=` operator – a non-exact `catalog:[…]` would partial-match IRIs
-  // on shared path segments.
+  if (request.keyword.length > 0) {
+    where.keyword = { in: request.keyword };
+  }
+  if (request.format.length > 0) {
+    where.format = { in: request.format };
+  }
+  if (request.class.length > 0) {
+    where.class = { in: request.class };
+  }
+  if (request.terminologySource.length > 0) {
+    where.terminology_source = { in: request.terminologySource };
+  }
   if (request.catalog.length > 0) {
-    clauses.push(
-      `catalog:=[${request.catalog.map(escapeFilterValue).join(',')}]`,
-    );
+    where.catalog = { in: request.catalog };
   }
-
-  return clauses.join(' && ');
-}
-
-/** Partition values into `group:*` tokens and everything else. */
-function splitGroupValues(values: readonly string[]): {
-  readonly groups: string[];
-  readonly values: string[];
-} {
-  const groups: string[] = [];
-  const granular: string[] = [];
-  for (const value of values) {
-    (value.startsWith(GROUP_PREFIX) ? groups : granular).push(value);
+  const { min, max } = request.size;
+  if (min !== undefined || max !== undefined) {
+    where.size = {
+      ...(min !== undefined ? { min } : {}),
+      ...(max !== undefined ? { max } : {}),
+    };
   }
-  return { groups, values: granular };
-}
-
-/** Append a `field:[a,b,…]` membership clause when `values` is non-empty. */
-function pushInClause(
-  clauses: string[],
-  field: string,
-  values: readonly string[],
-): void {
-  if (values.length > 0) {
-    clauses.push(`${field}:[${values.map(escapeFilterValue).join(',')}]`);
-  }
+  return where;
 }
 
 /**
- * Append a facet clause that ORs the granular field with its `_group` companion
- * – `(format:[…] || format_group:[…])` – so selecting a value and a group token
- * within one facet unions instead of intersecting. Emits a single unparenthesized
- * clause when only one side is present, and nothing when the facet is empty.
+ * The `orderBy` for a request. An explicit date order always wins (newest
+ * first). A text query then ranks by relevance; browse mode (no query) sorts by
+ * title. The previous status-rank tie-break is dropped – the GraphQL `orderBy` is
+ * a single dimension – so it no longer nudges valid datasets above the rest
+ * within an equal relevance/title (a minor ordering change, invisible under the
+ * default valid-only filter).
  */
-function pushGroupedClause(
-  clauses: string[],
-  field: string,
-  groupField: string,
-  values: readonly string[],
-): void {
-  const { groups, values: granular } = splitGroupValues(values);
-  const parts: string[] = [];
-  if (granular.length > 0) {
-    parts.push(`${field}:[${granular.map(escapeFilterValue).join(',')}]`);
-  }
-  if (groups.length > 0) {
-    parts.push(`${groupField}:[${groups.map(escapeFilterValue).join(',')}]`);
-  }
-  if (parts.length === 1) {
-    clauses.push(parts[0]!);
-  } else if (parts.length === 2) {
-    clauses.push(`(${parts.join(' || ')})`);
-  }
-}
-
-/**
- * A Typesense range clause for the size filter: `size:[min..max]`, or only the
- * provided bound when one side is missing. Returns undefined when neither bound
- * is set.
- */
-function buildSizeClause(size: SearchRequest['size']): string | undefined {
-  const { min, max } = size;
-  if (min !== undefined && max !== undefined) {
-    return `size:[${min}..${max}]`;
-  }
-  if (min !== undefined) {
-    return `size:>=${min}`;
-  }
-  if (max !== undefined) {
-    return `size:<=${max}`;
-  }
-  return undefined;
-}
-
-/**
- * The `sort_by` for a request. An explicit date order always wins (newest
- * first), so date sorting is honoured even while searching. A text query then
- * ranks by Typesense relevance (`_text_match`, fed by the per-field
- * `query_by_weights`) with status rank as the tie-breaker – without an explicit
- * `_text_match` sort those weights would not affect result order at all. Browse
- * mode (no query) sorts by the active-locale folded title key, falling back to
- * the default sort field.
- */
-function buildSortBy(
+export function buildOrderBy(
   orderBy: OrderBy,
-  locale: SearchLocale,
   hasQuery: boolean,
-): string {
+): DatasetOrderBy {
   if (orderBy === 'datePosted') {
-    return 'date_posted:desc';
+    return { field: 'DATE_POSTED', direction: 'DESC' };
   }
   if (hasQuery) {
-    return `_text_match:desc,status_rank:asc`;
+    return { field: 'RELEVANCE', direction: 'DESC' };
   }
-  if (orderBy === 'title') {
-    return `title_sort_${locale}:asc,status_rank:asc`;
-  }
-  return `${DEFAULT_SORTING_FIELD}:asc`;
+  return { field: 'TITLE', direction: 'ASC' };
 }
 
-/**
- * Backtick-wrap a Typesense filter value so reserved characters in IRIs and
- * media types (`:`, `/`, `&`, `,`, …) are taken literally instead of parsed as
- * filter syntax. An embedded backtick is escaped.
- */
-function escapeFilterValue(value: string): string {
-  return `\`${value.replace(/`/g, '\\`')}\``;
-}
-
-/** Map a Typesense search response onto the UI-agnostic {@link DatasetSearchResponse}. */
-function parseSearchResponse(
-  response: SearchResponse<SearchHitDocument>,
-): DatasetSearchResponse {
-  const documents = (response.hits ?? []).map((hit) => hit.document);
-
-  const facetCounts: Record<string, FacetCount[]> = {};
-  for (const facet of response.facet_counts ?? []) {
-    facetCounts[facet.field_name as string] = facet.counts.map((bucket) => ({
-      value: bucket.value,
-      count: bucket.count,
-    }));
+/** One request returns the listing page, the total, and every sidebar facet;
+ *  reference facets and hit references carry their engine-resolved labels.
+ *  Exported so a test can validate it against the generated GraphQL schema,
+ *  guarding against the query and the contract drifting apart. */
+export const DATASET_SEARCH_QUERY = `
+  query Datasets(
+    $query: String
+    $where: DatasetWhere
+    $orderBy: DatasetOrderBy
+    $page: Int
+    $perPage: Int
+  ) {
+    datasets(
+      query: $query
+      where: $where
+      orderBy: $orderBy
+      page: $page
+      perPage: $perPage
+    ) {
+      total
+      items {
+        id
+        title { language value }
+        description { language value }
+        language
+        publisher { id name { language value } }
+        status
+        size
+        date_posted
+        format
+        iiif
+        iiif_manifest_count
+        nde_schema_ap
+      }
+      facets {
+        publisher { value count label { language value } }
+        keyword { value count }
+        format { value count }
+        class { value count label { language value } }
+        terminology_source { value count label { language value } }
+        status { value count }
+        size { count min max }
+      }
+    }
   }
-
-  return { documents, total: response.found, facetCounts };
-}
+`;

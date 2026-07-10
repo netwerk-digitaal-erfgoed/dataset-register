@@ -1,0 +1,179 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`search GraphQL contract > emits a stable SDL for the dataset search schema 1`] = `
+"type Query {
+  datasets(query: String, where: DatasetWhere, orderBy: DatasetOrderBy, page: Int = 1, perPage: Int = 20): DatasetSearchResult!
+  organizations(query: String, orderBy: OrganizationOrderBy, page: Int = 1, perPage: Int = 20): OrganizationSearchResult!
+  classs(query: String, orderBy: ClassOrderBy, page: Int = 1, perPage: Int = 20): ClassSearchResult!
+  terminologySources(query: String, orderBy: TerminologySourceOrderBy, page: Int = 1, perPage: Int = 20): TerminologySourceSearchResult!
+}
+
+type DatasetSearchResult {
+  items: [Dataset!]!
+  total: Int!
+  page: Int!
+  perPage: Int!
+  facets: DatasetFacets!
+}
+
+type Dataset {
+  id: String!
+  title: [LanguageString!]!
+  description: [LanguageString!]!
+  publisher: [Agent!]!
+  terminology_source: [Vocabulary!]!
+  language: [String!]!
+  format: [String!]!
+  date_posted: String
+  size: Int
+  status: String!
+  iiif_manifest_count: Int
+  iiif: Boolean!
+  nde_schema_ap: Boolean!
+}
+
+type LanguageString {
+  language: String
+  value: String!
+}
+
+type Agent {
+  id: String!
+  name: [LanguageString!]!
+}
+
+type Vocabulary {
+  id: String!
+  name: [LanguageString!]!
+}
+
+type DatasetFacets {
+  keyword: [ValueBucket!]!
+  publisher: [ValueBucket!]!
+  class: [ValueBucket!]!
+  terminology_source: [ValueBucket!]!
+  language: [ValueBucket!]!
+  format: [ValueBucket!]!
+  size: [RangeBucket!]!
+  status: [ValueBucket!]!
+  iiif: [ValueBucket!]!
+  nde_schema_ap: [ValueBucket!]!
+  linked_data: [ValueBucket!]!
+  terms: [ValueBucket!]!
+  persistent_uris: [ValueBucket!]!
+}
+
+type ValueBucket {
+  value: String!
+  count: Int!
+  label: [LanguageString!]
+}
+
+type RangeBucket {
+  min: Float
+  max: Float
+  count: Int!
+}
+
+input DatasetWhere {
+  keyword: StringFilter
+  publisher: StringFilter
+  catalog: StringFilter
+  class: StringFilter
+  terminology_source: StringFilter
+  format: StringFilter
+  size: IntRange
+  status: StringFilter
+}
+
+input StringFilter {
+  in: [String!]
+}
+
+input IntRange {
+  min: Int
+  max: Int
+}
+
+input DatasetOrderBy {
+  field: DatasetSortField!
+  direction: SortDirection! = DESC
+}
+
+enum DatasetSortField {
+  RELEVANCE
+  TITLE
+  DATE_POSTED
+  SIZE
+  STATUS_RANK
+}
+
+enum SortDirection {
+  ASC
+  DESC
+}
+
+type OrganizationSearchResult {
+  items: [Organization!]!
+  total: Int!
+  page: Int!
+  perPage: Int!
+}
+
+type Organization {
+  id: String!
+  label: [LanguageString!]!
+}
+
+input OrganizationOrderBy {
+  field: OrganizationSortField!
+  direction: SortDirection! = DESC
+}
+
+enum OrganizationSortField {
+  RELEVANCE
+}
+
+type ClassSearchResult {
+  items: [Class!]!
+  total: Int!
+  page: Int!
+  perPage: Int!
+}
+
+type Class {
+  id: String!
+  label: [LanguageString!]!
+}
+
+input ClassOrderBy {
+  field: ClassSortField!
+  direction: SortDirection! = DESC
+}
+
+enum ClassSortField {
+  RELEVANCE
+}
+
+type TerminologySourceSearchResult {
+  items: [TerminologySource!]!
+  total: Int!
+  page: Int!
+  perPage: Int!
+}
+
+type TerminologySource {
+  id: String!
+  label: [LanguageString!]!
+}
+
+input TerminologySourceOrderBy {
+  field: TerminologySourceSortField!
+  direction: SortDirection! = DESC
+}
+
+enum TerminologySourceSortField {
+  RELEVANCE
+}
+"
+`;

@@ -600,7 +600,7 @@
     </svg>
     <span class="font-semibold">
       Filters
-      {#if Object.values(selectedValues).filter( (v) => (Array.isArray(v) ? v.length > 0 : v.min !== undefined || v.max !== undefined), ).length > 0}
+      {#if Object.values(selectedValues).filter( (v) => (Array.isArray(v) ? v.length > 0 : v.min !== undefined || v.max !== undefined) ).length > 0}
         <span class="ml-1"
           >({Object.values(selectedValues).filter((v) =>
             Array.isArray(v)
@@ -645,7 +645,7 @@
       <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
         Filters
       </h2>
-      {#if Object.values(selectedValues).filter( (v) => (Array.isArray(v) ? v.length > 0 : v.min !== undefined || v.max !== undefined), ).length > 0}
+      {#if Object.values(selectedValues).filter( (v) => (Array.isArray(v) ? v.length > 0 : v.min !== undefined || v.max !== undefined) ).length > 0}
         <p class="text-sm text-gray-600 dark:text-gray-400">
           {Object.values(selectedValues).filter((v) =>
             Array.isArray(v)

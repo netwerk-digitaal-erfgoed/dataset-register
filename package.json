@@ -20,6 +20,7 @@
     "@commitlint/cli": "^21.2.0",
     "@commitlint/config-conventional": "^21.0.2",
     "@eslint/js": "^10.0.1",
+    "@lde/search-typesense": "^0.6.0",
     "@nx/docker": "23.0.1",
     "@nx/esbuild": "23.0.1",
     "@nx/eslint": "23.0.1",
@@ -49,8 +50,7 @@
     "tslib": "^2.3.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "8.62.1",
-    "vitest": "^4.0.15",
-    "@lde/search-typesense": "^0.5.0"
+    "vitest": "^4.0.15"
   },
   "nx": {
     "includedScripts": [],

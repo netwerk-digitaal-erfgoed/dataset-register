@@ -16,7 +16,7 @@ const cacheTtl = 3600;
  * RSS feed endpoint for dataset search results.
  * Supports all search parameters from the main search page.
  */
-export async function GET({ url }: RequestEvent) {
+export async function GET({ url, fetch }: RequestEvent) {
   // Extract and set locale from URL path
   const locale = extractLocaleFromUrl(url.pathname) || 'en';
   setLocale(locale);
@@ -36,7 +36,14 @@ export async function GET({ url }: RequestEvent) {
     status: decodeDiscreteParam('status', url.searchParams),
   };
 
-  const results = await fetchDatasets(searchRequest, 20, 0, 'datePosted');
+  // Server-side: pass `event.fetch` so the same-origin `/graphql` URL resolves.
+  const results = await fetchDatasets(
+    searchRequest,
+    20,
+    0,
+    'datePosted',
+    fetch,
+  );
 
   // Calculate most recent date from results for feed's updated timestamp
   const mostRecentDate =

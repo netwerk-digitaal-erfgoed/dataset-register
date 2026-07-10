@@ -1,18 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { SearchResponse } from 'typesense/lib/Typesense/Documents.js';
-import { queryBy, queryByWeights } from '@dataset-register/core/search';
 import type { SearchRequest } from '../datasets';
 import {
-  buildSearchParams,
-  searchDatasets,
-  type SearchHitDocument,
+  buildOrderBy,
+  buildWhere,
+  type DatasetSearchResult,
+  runDatasetSearch,
 } from './datasets';
-
-/** A searcher double standing in for the `fetch`-based `searchCollection`. */
-type Searcher = (
-  collection: string,
-  params: Record<string, unknown>,
-) => Promise<SearchResponse<SearchHitDocument>>;
 
 /** An empty request: every multi-valued filter absent, no query, no size. */
 function emptyRequest(): SearchRequest {
@@ -35,275 +28,197 @@ const DEFAULT_OPTIONS = {
   locale: 'nl' as const,
 };
 
-describe('buildSearchParams', () => {
-  it('folds the query text and sets query_by with aligned weights', () => {
-    const params = buildSearchParams(
-      { ...emptyRequest(), query: 'Möhlmann' },
-      DEFAULT_OPTIONS,
-    );
-
-    // Folding strips diacritics and lower-cases (per @lde/text-normalization).
-    expect(params.q).toBe('mohlmann');
-    expect(params.q).not.toBe('Möhlmann');
-    expect(params.query_by).toBe(queryBy());
-    expect(params.query_by_weights).toBe(
-      queryByWeights(DEFAULT_OPTIONS.locale),
-    );
+describe('buildWhere', () => {
+  it('omits every clause for an empty request (the valid default is applied server-side)', () => {
+    expect(buildWhere(emptyRequest())).toEqual({});
   });
 
-  it('uses the match-all query when no text is given', () => {
-    const params = buildSearchParams(emptyRequest(), DEFAULT_OPTIONS);
-
-    expect(params.q).toBe('*');
-  });
-
-  it('translates limit/offset into per_page and a 1-based page', () => {
-    const params = buildSearchParams(emptyRequest(), {
-      ...DEFAULT_OPTIONS,
-      limit: 20,
-      offset: 40,
-    });
-
-    expect(params.per_page).toBe(20);
-    expect(params.page).toBe(3);
-  });
-
-  it('defaults to valid-only when no status is requested', () => {
-    const params = buildSearchParams(emptyRequest(), DEFAULT_OPTIONS);
-
-    expect(params.filter_by).toContain('status:=valid');
-    expect(params.filter_by).not.toContain('status:[');
-  });
-
-  it('omits the status clause entirely when includeDefaultStatus is false', () => {
-    // Used to compute the status facet itself, which must count across all
-    // statuses rather than being constrained to the default valid.
-    const params = buildSearchParams(emptyRequest(), {
-      ...DEFAULT_OPTIONS,
-      includeDefaultStatus: false,
-    });
-
-    expect(params.filter_by).not.toContain('status');
-  });
-
-  it('filters by the requested statuses instead of the default', () => {
-    const params = buildSearchParams(
-      { ...emptyRequest(), status: ['invalid', 'gone'] },
-      DEFAULT_OPTIONS,
-    );
-
-    expect(params.filter_by).toContain('status:[`invalid`,`gone`]');
-    expect(params.filter_by).not.toContain('status:=valid');
-  });
-
-  it('builds membership clauses for publisher, keyword and terminology source', () => {
-    const params = buildSearchParams(
-      {
+  it('builds membership clauses for the facets', () => {
+    expect(
+      buildWhere({
         ...emptyRequest(),
         publisher: ['https://example.org/org/kb'],
         keyword: ['kunst'],
         terminologySource: ['https://vocab.getty.edu/aat/'],
-      },
-      DEFAULT_OPTIONS,
-    );
-
-    expect(params.filter_by).toContain(
-      'publisher:[`https://example.org/org/kb`]',
-    );
-    expect(params.filter_by).toContain('keyword:[`kunst`]');
-    expect(params.filter_by).toContain(
-      'terminology_source:[`https://vocab.getty.edu/aat/`]',
-    );
+      }),
+    ).toMatchObject({
+      publisher: { in: ['https://example.org/org/kb'] },
+      keyword: { in: ['kunst'] },
+      terminology_source: { in: ['https://vocab.getty.edu/aat/'] },
+    });
   });
 
-  it('splits format values into granular media types and group companions', () => {
-    const params = buildSearchParams(
+  it('puts granular values and group tokens in one membership clause (format/class)', () => {
+    const where = buildWhere({
+      ...emptyRequest(),
+      format: ['application/ld+json', 'group:sparql', 'group:rdf'],
+      class: ['https://schema.org/Person', 'group:place'],
+    });
+
+    // Combined-token fields: a granular value and its group tokens UNION in one
+    // `in` (the query API’s flat-AND `where` cannot OR two separate fields).
+    expect(where.format).toEqual({
+      in: ['application/ld+json', 'group:sparql', 'group:rdf'],
+    });
+    expect(where.class).toEqual({
+      in: ['https://schema.org/Person', 'group:place'],
+    });
+  });
+
+  it('filters by the requested statuses', () => {
+    expect(
+      buildWhere({ ...emptyRequest(), status: ['invalid', 'gone'] }).status,
+    ).toEqual({ in: ['invalid', 'gone'] });
+  });
+
+  it('builds a size range from either or both bounds', () => {
+    expect(
+      buildWhere({ ...emptyRequest(), size: { min: 10, max: 1000 } }).size,
+    ).toEqual({
+      min: 10,
+      max: 1000,
+    });
+    expect(buildWhere({ ...emptyRequest(), size: { min: 10 } }).size).toEqual({
+      min: 10,
+    });
+    expect(buildWhere({ ...emptyRequest(), size: { max: 1000 } }).size).toEqual(
       {
-        ...emptyRequest(),
-        format: ['application/ld+json', 'group:sparql', 'group:rdf'],
+        max: 1000,
       },
-      DEFAULT_OPTIONS,
-    );
-
-    // A granular value and group tokens in the same facet UNION (OR), not
-    // intersect: a dataset matching either the media type or a group qualifies.
-    expect(params.filter_by).toContain(
-      '(format:[`application/ld+json`] || format_group:[`group:sparql`,`group:rdf`])',
     );
   });
 
-  it('splits class values into granular IRIs and group companions', () => {
-    const params = buildSearchParams(
-      {
+  it('filters by catalog', () => {
+    expect(
+      buildWhere({
         ...emptyRequest(),
-        class: ['https://schema.org/Person', 'group:place'],
-      },
-      DEFAULT_OPTIONS,
-    );
-
-    expect(params.filter_by).toContain(
-      '(class:[`https://schema.org/Person`] || class_group:[`group:place`])',
-    );
-  });
-
-  it('builds a closed size range when both bounds are set', () => {
-    const params = buildSearchParams(
-      { ...emptyRequest(), size: { min: 10, max: 1000 } },
-      DEFAULT_OPTIONS,
-    );
-
-    expect(params.filter_by).toContain('size:[10..1000]');
-  });
-
-  it('builds a half-open size clause when only one bound is set', () => {
-    const minOnly = buildSearchParams(
-      { ...emptyRequest(), size: { min: 10 } },
-      DEFAULT_OPTIONS,
-    );
-    const maxOnly = buildSearchParams(
-      { ...emptyRequest(), size: { max: 1000 } },
-      DEFAULT_OPTIONS,
-    );
-
-    expect(minOnly.filter_by).toContain('size:>=10');
-    expect(maxOnly.filter_by).toContain('size:<=1000');
-  });
-
-  it('filters the catalog with the exact operator (non-facet, tokenized field)', () => {
-    const params = buildSearchParams(
-      { ...emptyRequest(), catalog: ['https://example.org/catalog/1'] },
-      DEFAULT_OPTIONS,
-    );
-
-    // Exact `:=` so the tokenized IRI does not partial-match on path segments.
-    expect(params.filter_by).toContain(
-      'catalog:=[`https://example.org/catalog/1`]',
-    );
-  });
-
-  it('AND-joins multiple filter clauses', () => {
-    const params = buildSearchParams(
-      { ...emptyRequest(), keyword: ['kunst'], publisher: ['https://a'] },
-      DEFAULT_OPTIONS,
-    );
-
-    expect(params.filter_by).toContain(' && ');
-  });
-
-  it('sorts by post date descending for the datePosted order', () => {
-    const params = buildSearchParams(emptyRequest(), {
-      ...DEFAULT_OPTIONS,
-      orderBy: 'datePosted',
-    });
-
-    expect(params.sort_by).toBe('date_posted:desc');
-  });
-
-  it('sorts by the active-locale title key then status rank for the title order', () => {
-    const dutch = buildSearchParams(emptyRequest(), {
-      ...DEFAULT_OPTIONS,
-      orderBy: 'title',
-      locale: 'nl',
-    });
-    const english = buildSearchParams(emptyRequest(), {
-      ...DEFAULT_OPTIONS,
-      orderBy: 'title',
-      locale: 'en',
-    });
-
-    expect(dutch.sort_by).toBe('title_sort_nl:asc,status_rank:asc');
-    expect(english.sort_by).toBe('title_sort_en:asc,status_rank:asc');
-  });
-
-  it('ranks by relevance for a text query instead of alphabetically', () => {
-    const params = buildSearchParams(
-      { ...emptyRequest(), query: 'fietsen' },
-      DEFAULT_OPTIONS,
-    );
-
-    // _text_match (driven by query_by_weights) ranks; status rank breaks ties.
-    expect(params.sort_by).toBe('_text_match:desc,status_rank:asc');
-  });
-
-  it('keeps an explicit date order even with a text query', () => {
-    const params = buildSearchParams(
-      { ...emptyRequest(), query: 'fietsen' },
-      { ...DEFAULT_OPTIONS, orderBy: 'datePosted' },
-    );
-
-    expect(params.sort_by).toBe('date_posted:desc');
+        catalog: ['https://example.org/catalog/1'],
+      }).catalog,
+    ).toEqual({ in: ['https://example.org/catalog/1'] });
   });
 });
 
-describe('searchDatasets', () => {
-  it('parses hits, total and facet counts from the Typesense response', async () => {
-    const searchSpy = vi.fn(async () => ({
-      found: 42,
-      hits: [
-        { document: { id: 'https://example.org/dataset/1', title_nl: 'Een' } },
-        { document: { id: 'https://example.org/dataset/2', title_nl: 'Twee' } },
-      ],
-      facet_counts: [
-        {
-          field_name: 'keyword',
-          counts: [
-            { value: 'kunst', count: 7 },
-            { value: 'geschiedenis', count: 3 },
-          ],
-        },
-      ],
-    }));
-
-    const result = await searchDatasets(
-      emptyRequest(),
-      DEFAULT_OPTIONS,
-      searchSpy as unknown as Searcher,
-    );
-
-    expect(result.total).toBe(42);
-    expect(result.documents.map((document) => document.id)).toEqual([
-      'https://example.org/dataset/1',
-      'https://example.org/dataset/2',
-    ]);
-    expect(result.facetCounts.keyword).toEqual([
-      { value: 'kunst', count: 7 },
-      { value: 'geschiedenis', count: 3 },
-    ]);
+describe('buildOrderBy', () => {
+  it('sorts by post date descending for the datePosted order', () => {
+    expect(buildOrderBy('datePosted', false)).toEqual({
+      field: 'DATE_POSTED',
+      direction: 'DESC',
+    });
   });
 
-  it('passes the built params to the search call', async () => {
-    const searchSpy = vi.fn(
-      async (
-        collection: string,
-        params: { q?: string; facet_by?: string | string[] },
-      ) => {
-        void collection;
-        void params;
-        return { found: 0, hits: [] };
+  it('ranks by relevance for a text query', () => {
+    expect(buildOrderBy('title', true)).toEqual({
+      field: 'RELEVANCE',
+      direction: 'DESC',
+    });
+  });
+
+  it('sorts by title for browse mode', () => {
+    expect(buildOrderBy('title', false)).toEqual({
+      field: 'TITLE',
+      direction: 'ASC',
+    });
+  });
+
+  it('keeps an explicit date order even with a text query', () => {
+    expect(buildOrderBy('datePosted', true)).toEqual({
+      field: 'DATE_POSTED',
+      direction: 'DESC',
+    });
+  });
+});
+
+const PAYLOAD: DatasetSearchResult = {
+  total: 42,
+  items: [
+    {
+      id: 'https://example.org/dataset/1',
+      title: [{ language: 'nl', value: 'Een' }],
+      description: [],
+      language: [],
+      publisher: [],
+      status: 'valid',
+      size: null,
+      date_posted: null,
+      format: [],
+      iiif: null,
+      iiif_manifest_count: null,
+      nde_schema_ap: null,
+    },
+  ],
+  facets: {
+    publisher: [],
+    keyword: [{ value: 'kunst', count: 7, label: null }],
+    format: [],
+    class: [],
+    terminology_source: [],
+    status: [],
+    size: [],
+  },
+};
+
+function fetchReturning(response: unknown): typeof fetch {
+  return vi.fn(
+    async () =>
+      new Response(JSON.stringify(response), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+  ) as unknown as typeof fetch;
+}
+
+describe('runDatasetSearch', () => {
+  it('posts the query + variables and parses the datasets payload', async () => {
+    const fetchSpy = fetchReturning({ data: { datasets: PAYLOAD } });
+
+    const result = await runDatasetSearch(
+      {
+        ...emptyRequest(),
+        query: 'kunst',
+        publisher: ['https://example.org/org/kb'],
       },
+      { ...DEFAULT_OPTIONS, offset: 40 },
+      { fetchImpl: fetchSpy },
     );
 
-    await searchDatasets(
-      { ...emptyRequest(), query: 'kunst' },
-      DEFAULT_OPTIONS,
-      searchSpy as unknown as Searcher,
+    expect(result).toEqual(PAYLOAD);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const [, init] = (fetchSpy as unknown as ReturnType<typeof vi.fn>).mock
+      .calls[0];
+    const body = JSON.parse(init.body as string);
+    expect(body.variables.query).toBe('kunst');
+    expect(body.variables.where.publisher).toEqual({
+      in: ['https://example.org/org/kb'],
+    });
+    // offset 40 / limit 20 → the 3rd 1-based page.
+    expect(body.variables.page).toBe(3);
+    expect(body.variables.perPage).toBe(20);
+    // The active UI locale rides in as Accept-Language.
+    expect((init.headers as Record<string, string>)['Accept-Language']).toBe(
+      'nl',
     );
-
-    expect(searchSpy).toHaveBeenCalledTimes(1);
-    const [, params] = searchSpy.mock.calls[0];
-    expect(params.q).toBe('kunst');
   });
 
-  it('returns empty facet counts when the response carries none', async () => {
-    const searchSpy = vi.fn(async () => ({ found: 0, hits: [] }));
+  it('omits the query variable when browsing (no text)', async () => {
+    const fetchSpy = fetchReturning({ data: { datasets: PAYLOAD } });
 
-    const result = await searchDatasets(
-      emptyRequest(),
-      DEFAULT_OPTIONS,
-      searchSpy as unknown as Searcher,
-    );
+    await runDatasetSearch(emptyRequest(), DEFAULT_OPTIONS, {
+      fetchImpl: fetchSpy,
+    });
 
-    expect(result.facetCounts).toEqual({});
-    expect(result.documents).toEqual([]);
+    const [, init] = (fetchSpy as unknown as ReturnType<typeof vi.fn>).mock
+      .calls[0];
+    const body = JSON.parse(init.body as string);
+    expect(body.variables.query).toBeUndefined();
+  });
+
+  it('throws on a GraphQL error response', async () => {
+    const fetchSpy = fetchReturning({ errors: [{ message: 'boom' }] });
+
+    await expect(
+      runDatasetSearch(emptyRequest(), DEFAULT_OPTIONS, {
+        fetchImpl: fetchSpy,
+      }),
+    ).rejects.toThrow('boom');
   });
 });
