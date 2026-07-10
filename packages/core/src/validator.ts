@@ -11,17 +11,31 @@ import { standardizeSchemaOrgPrefix } from './transform.ts';
 import type {
   DistributionProbeStage,
   ProbeProgressListener,
+  ProbeTiming,
 } from './distribution-probe/probe.ts';
+
+/**
+ * Optional timing sink a caller (the crawler) can pass to {@link Validator.validate} to attribute
+ * how long a validation spent in SHACL versus the distribution probe's network fan-out versus its
+ * health/validity store writes. Extends {@link ProbeTiming} with the SHACL phase; every field is
+ * optional and populated only by validators that run that phase.
+ */
+export interface ValidationTiming extends ProbeTiming {
+  /** Wall-clock spent in SHACL validation, in whole milliseconds. */
+  shaclMs?: number;
+}
 
 export interface Validator {
   /**
    * Validate the dataset(s). `onProgress`, when given, is forwarded to the distribution probe
    * stage so a caller can report progress while many distributions are checked; validators that
-   * do no probing (e.g. {@link ShaclEngineValidator}) ignore it.
+   * do no probing (e.g. {@link ShaclEngineValidator}) ignore it. `timing`, when given, is populated
+   * with per-phase durations (see {@link ValidationTiming}); validators fill only the phases they run.
    */
   validate(
     datasets: DatasetCore,
     onProgress?: ProbeProgressListener,
+    timing?: ValidationTiming,
   ): Promise<ValidationResult>;
 }
 
@@ -80,13 +94,17 @@ export class CompositeValidator implements Validator {
   public async validate(
     input: DatasetCore,
     onProgress?: ProbeProgressListener,
+    timing?: ValidationTiming,
   ): Promise<ValidationResult> {
+    const shaclStart = performance.now();
     const shaclResult = await this.shacl.validate(input);
+    if (timing) timing.shaclMs = Math.round(performance.now() - shaclStart);
     if (shaclResult.state !== 'valid') return shaclResult;
 
     const probeQuads = await this.probeStage.run(
       standardizeSchemaOrgPrefix(input),
       onProgress,
+      timing,
     );
     if (probeQuads.length === 0) return shaclResult;
 

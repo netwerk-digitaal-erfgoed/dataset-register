@@ -17,6 +17,7 @@ import {
   collectDistributions,
   DistributionProbeStage,
   readProbeSeverities,
+  type ProbeTiming,
 } from '../src/distribution-probe/probe.js';
 import { dcat, dct, rdf } from '../src/query.js';
 import { shacl } from '../src/validator.js';
@@ -336,6 +337,67 @@ describe('DistributionProbeStage', () => {
       quad.predicate.equals(shacl('resultPath')),
     );
     expect(resultPath?.object.equals(dcat('accessURL'))).toBe(true);
+  });
+
+  it('populates the timing sink with network, store-write and endpoint counts', async () => {
+    nock('https://example.org').head('/broken').replyWithError('ENOTFOUND');
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d1');
+    const distributionNode = factory.blankNode();
+    const url = factory.namedNode('https://example.org/broken');
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    dataset.add(
+      factory.quad(distributionNode, rdf('type'), dcat('Distribution')),
+    );
+    dataset.add(factory.quad(distributionNode, dcat('accessURL'), url));
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('mediaType'),
+        factory.literal('text/turtle'),
+      ),
+    );
+
+    const timing: ProbeTiming = {};
+    await new DistributionProbeStage().run(dataset, undefined, timing);
+
+    expect(timing.endpointsProbed).toBe(1);
+    expect(timing.endpointsFailed).toBe(1);
+    expect(timing.endpointsSkippedBeyondCap).toBe(0);
+    expect(typeof timing.networkMs).toBe('number');
+    expect(typeof timing.storeWriteMs).toBe('number');
+  });
+
+  it('excludes an unparsable access URL from both endpointsProbed and endpointsFailed', async () => {
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d2');
+    const distributionNode = factory.blankNode();
+    const url = factory.namedNode('not-a-url');
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    dataset.add(
+      factory.quad(distributionNode, rdf('type'), dcat('Distribution')),
+    );
+    dataset.add(factory.quad(distributionNode, dcat('accessURL'), url));
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('mediaType'),
+        factory.literal('text/turtle'),
+      ),
+    );
+
+    const timing: ProbeTiming = {};
+    await new DistributionProbeStage().run(dataset, undefined, timing);
+
+    // The URL never reaches the network, so it is counted in neither field —
+    // endpointsFailed can never exceed endpointsProbed.
+    expect(timing.endpointsProbed).toBe(0);
+    expect(timing.endpointsFailed).toBe(0);
   });
 
   it('forwards probe progress, announcing the total before the first probe', async () => {

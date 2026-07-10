@@ -8,13 +8,22 @@ import {
   RequestTimeout,
 } from '@dataset-register/core';
 import pino from 'pino';
-import { Valid, Validator } from '@dataset-register/core';
+import { Valid, Validator, ValidationTiming } from '@dataset-register/core';
 import { crawlCounter } from '@dataset-register/core';
 import { rate, RatingStore } from '@dataset-register/core';
 import {
   countWarnings,
   ValidationReportStore,
 } from '@dataset-register/core';
+
+// Only emit a per-registration timing line when a registration is slow, so healthy fast
+// registrations stay quiet. A slow registration is what a stalled crawl is made of, and the
+// line attributes its time across dereference / SHACL / probe-network / store-writes so a stall
+// can be diagnosed from the logs alone (no metrics infrastructure yet). See dataset-register#2233.
+const SLOW_REGISTRATION_TIMING_THRESHOLD_MS = 5000;
+
+// How many of the slowest registrations to name in the per-round summary.
+const ROUND_SUMMARY_SLOWEST_COUNT = 5;
 
 export interface CrawlerOptions {
   /**
@@ -58,8 +67,19 @@ export class Crawler {
   public async crawl(dateLastRead: Date) {
     const registrations =
       await this.registrationStore.findRegistrationsReadBefore(dateLastRead);
+    const roundStart = performance.now();
+    const roundTimings: Array<{ url: string; totalMs: number }> = [];
     for (const registration of registrations) {
       this.logger.info(`Crawling registration URL ${registration.url}...`);
+      const registrationStart = performance.now();
+      // Populated by validate() with the SHACL / probe-network / store-write split,
+      // then logged for slow registrations to attribute a stall (see #2233).
+      const timing: ValidationTiming = {};
+      const phases: {
+        dereferenceMs?: number;
+        validateMs?: number;
+        storeLoopMs?: number;
+      } = {};
       let statusCode: number | undefined = undefined;
       let isValid = false;
       let datasetIris = registration.datasets;
@@ -70,11 +90,21 @@ export class Crawler {
       let warningCount: number | undefined = undefined;
 
       try {
+        const dereferenceStart = performance.now();
         const data = await dereference(
           registration.url,
           this.httpRequestTimeoutMs,
         );
-        const validationResult = await this.validator.validate(data);
+        phases.dereferenceMs = Math.round(
+          performance.now() - dereferenceStart,
+        );
+        const validateStart = performance.now();
+        const validationResult = await this.validator.validate(
+          data,
+          undefined,
+          timing,
+        );
+        phases.validateMs = Math.round(performance.now() - validateStart);
         if (
           validationResult.state === 'valid' ||
           validationResult.state === 'invalid'
@@ -90,6 +120,7 @@ export class Crawler {
           isValid = true;
           this.logger.info(`${registration.url} passes validation`);
           datasetIris = []; // Start with a fresh list.
+          const storeLoopStart = performance.now();
           for await (const dataset of fetch(
             registration.url,
             data,
@@ -101,6 +132,9 @@ export class Crawler {
             const rating = rate(dcatValidationResult as Valid);
             await this.ratingStore.store(extractIri(dataset), rating);
           }
+          phases.storeLoopMs = Math.round(
+            performance.now() - storeLoopStart,
+          );
         } else if (validationResult.state === 'invalid') {
           statusCode = 200;
           this.logger.info(`${registration.url} does not pass validation`);
@@ -121,6 +155,13 @@ export class Crawler {
             valid: false,
             timedOut: true,
           });
+          this.recordRegistrationTiming(
+            registration.url,
+            registrationStart,
+            phases,
+            timing,
+            roundTimings,
+          );
           continue;
         } else if (e instanceof HttpError) {
           statusCode = e.statusCode;
@@ -150,6 +191,82 @@ export class Crawler {
         warningCount,
       );
       await this.registrationStore.store(updatedRegistration);
+
+      this.recordRegistrationTiming(
+        registration.url,
+        registrationStart,
+        phases,
+        timing,
+        roundTimings,
+      );
     }
+
+    this.logRoundSummary(registrations.length, roundStart, roundTimings);
+  }
+
+  /**
+   * Record a registration's wall-clock in `roundTimings` (for the round summary) and, when it was
+   * slow, log a structured `crawl.registration.timing` line attributing the time across dereference,
+   * SHACL, the distribution probe's network fan-out, and its store writes – so a stalled crawl can be
+   * diagnosed from the logs (we have no metrics yet). The SHACL/probe split covers the
+   * registration-level validation; `storeLoopMs` covers the per-dataset store-and-validate loop
+   * (including its own probing), which the split does not break out. Fast registrations are recorded
+   * but not logged.
+   */
+  private recordRegistrationTiming(
+    url: URL | string,
+    registrationStart: number,
+    phases: {
+      dereferenceMs?: number;
+      validateMs?: number;
+      storeLoopMs?: number;
+    },
+    timing: ValidationTiming,
+    roundTimings: Array<{ url: string; totalMs: number }>,
+  ): void {
+    const urlValue = url.toString();
+    const totalMs = Math.round(performance.now() - registrationStart);
+    roundTimings.push({ url: urlValue, totalMs });
+    if (totalMs < SLOW_REGISTRATION_TIMING_THRESHOLD_MS) {
+      return;
+    }
+    this.logger.info(
+      {
+        event: 'crawl.registration.timing',
+        url: urlValue,
+        totalMs,
+        dereferenceMs: phases.dereferenceMs,
+        validateMs: phases.validateMs,
+        storeLoopMs: phases.storeLoopMs,
+        shaclMs: timing.shaclMs,
+        probeNetworkMs: timing.networkMs,
+        probeStoreWriteMs: timing.storeWriteMs,
+        endpointsProbed: timing.endpointsProbed,
+        endpointsSkippedBeyondCap: timing.endpointsSkippedBeyondCap,
+        endpointsFailed: timing.endpointsFailed,
+      },
+      `Slow registration crawl: ${urlValue} took ${totalMs}ms`,
+    );
+  }
+
+  /** Log a per-round summary: total duration, registration count, and the slowest registrations. */
+  private logRoundSummary(
+    registrationCount: number,
+    roundStart: number,
+    roundTimings: Array<{ url: string; totalMs: number }>,
+  ): void {
+    const totalMs = Math.round(performance.now() - roundStart);
+    const slowest = [...roundTimings]
+      .sort((first, second) => second.totalMs - first.totalMs)
+      .slice(0, ROUND_SUMMARY_SLOWEST_COUNT);
+    this.logger.info(
+      {
+        event: 'crawl.round.summary',
+        registrations: registrationCount,
+        totalMs,
+        slowest,
+      },
+      `Crawl round finished: ${registrationCount} registrations in ${totalMs}ms`,
+    );
   }
 }
