@@ -551,7 +551,7 @@
           </p>
           <div class="flex items-center gap-2">
             <RssButton />
-            <RunSparqlButton {searchRequest} />
+            <RunSparqlButton />
           </div>
         </div>
 

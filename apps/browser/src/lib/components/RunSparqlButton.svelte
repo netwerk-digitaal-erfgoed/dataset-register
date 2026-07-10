@@ -1,33 +1,55 @@
 <script lang="ts">
-  import type { SearchRequest } from '$lib/services/datasets';
-  import { datasetListingQuery } from '$lib/services/datasets';
-  import { cleanSparqlQuery } from '$lib/utils/sparql';
+  import { REGISTRATION_STATUS_BASE_URI } from '@dataset-register/core/constants';
   import * as m from '$lib/paraglide/messages';
-  import { getLocale } from '$lib/paraglide/runtime';
 
-  interface Props {
-    searchRequest: SearchRequest;
-  }
+  // The dataset listing is served by a full-text search index, whose ranking and
+  // fuzzy matching cannot be reproduced faithfully in SPARQL. Rather than fake it,
+  // the button links to a self-contained example that fetches comparable data –
+  // the fields a card shows – straight from the public SPARQL endpoint, so users
+  // can see the underlying Linked Data and adapt the query to their own needs.
+  const exampleQuery = `PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX schema: <https://schema.org/>
 
-  let { searchRequest }: Props = $props();
+# Example: list registered datasets with the fields shown on a card in the
+# Dataset Register. The search page itself is powered by a full-text index; this
+# query fetches comparable data directly from the SPARQL endpoint.
+CONSTRUCT {
+  ?dataset a dcat:Dataset ;
+    dct:title ?title ;
+    dct:description ?description ;
+    dct:language ?language ;
+    dct:license ?license ;
+    dct:publisher ?publisher .
+  ?publisher a foaf:Agent ;
+    foaf:name ?publisherName .
+}
+WHERE {
+  ?dataset a dcat:Dataset ;
+    schema:subjectOf ?registrationUrl ;
+    dct:title ?title ;
+    dct:publisher ?publisher .
+  ?publisher foaf:name ?publisherName .
 
-  const ITEMS_PER_PAGE = 24;
+  # Only datasets whose latest registration is valid.
+  ?registrationUrl schema:additionalType <${REGISTRATION_STATUS_BASE_URI}valid> .
 
-  // Generate SPARQL query from search request
-  const query = $derived(
-    datasetListingQuery(searchRequest, ITEMS_PER_PAGE, getLocale()),
-  );
+  OPTIONAL { ?dataset dct:description ?description }
+  OPTIONAL { ?dataset dct:language ?language }
+  OPTIONAL { ?dataset dct:license ?license }
+}
+LIMIT 24`;
 
-  // Clean and URL encode the query (preserving formatting)
-  const sparqlUrl = $derived(() => {
-    const cleanedQuery = cleanSparqlQuery(query);
-    const encodedQuery = encodeURIComponent(cleanedQuery);
-    return `https://qlever.netwerkdigitaalerfgoed.nl/?query=${encodedQuery}&exec=true`;
-  });
+  // The /datasetregister backend holds the register’s named graphs; the default
+  // backend does not, so link to it explicitly.
+  const sparqlUrl = `https://qlever.netwerkdigitaalerfgoed.nl/datasetregister?query=${encodeURIComponent(
+    exampleQuery,
+  )}&exec=true`;
 </script>
 
 <a
-  href={sparqlUrl()}
+  href={sparqlUrl}
   target="_blank"
   rel="noopener noreferrer"
   class="group relative inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
