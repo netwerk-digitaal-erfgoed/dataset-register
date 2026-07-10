@@ -69,6 +69,25 @@ export interface ProbeSeverities {
  */
 export type ProbeProgressListener = (completed: number, total: number) => void;
 
+/**
+ * Optional timing/counters sink populated by {@link DistributionProbeStage.run}. It lets a caller
+ * (the crawler) attribute how long a validation spent on the network (probeMany) versus the
+ * health/validity store writes, without the stage depending on a logger. Durations are whole
+ * milliseconds; fields are left unset when the stage does no probing (no distributions).
+ */
+export interface ProbeTiming {
+  /** Wall-clock spent in probeMany – the network fan-out across distribution endpoints. */
+  networkMs?: number;
+  /** Wall-clock spent evaluating results and writing the health/validity records. */
+  storeWriteMs?: number;
+  /** Distinct endpoints actually probed over the network (after dedup and the maxProbes cap). */
+  endpointsProbed?: number;
+  /** Distinct endpoints dropped because they exceeded the maxProbes cap. */
+  endpointsSkippedBeyondCap?: number;
+  /** Probed endpoints whose verdict was a failure. */
+  endpointsFailed?: number;
+}
+
 export interface DistributionProbeStageOptions {
   /**
    * When set, each failing probe is assessed against this store and emitted only once the
@@ -197,6 +216,7 @@ export class DistributionProbeStage {
   public async run(
     input: DatasetCore,
     onProgress?: ProbeProgressListener,
+    timing?: ProbeTiming,
   ): Promise<Quad[]> {
     const candidates = collectDistributions(input);
     if (candidates.length === 0) return [];
@@ -214,6 +234,7 @@ export class DistributionProbeStage {
     // thousands of distributions and probing every endpoint stalls a crawl pass for hours.
     const groups = allGroups.slice(0, this.maxProbes);
     const skipped = allGroups.length - groups.length;
+    if (timing) timing.endpointsSkippedBeyondCap = skipped;
     if (skipped > 0) {
       this.logger?.warn(
         `Probing ${groups.length} of ${allGroups.length} distinct distribution endpoints; skipped ${skipped} beyond the cap of ${this.maxProbes}`,
@@ -223,7 +244,18 @@ export class DistributionProbeStage {
     // Probe every distinct endpoint — bounding total fan-out and the per-host burst so a
     // catalogue with many distributions on one server does not trip its rate limiter — then
     // evaluate each result into a verdict (and health/validity records).
-    const evaluated = await this.probeGroups(groups, onProgress);
+    const evaluated = await this.probeGroups(groups, onProgress, timing);
+    if (timing) {
+      // Count failures only among network-probed endpoints (those with a parsable
+      // URL), so endpointsFailed can never exceed endpointsProbed. Groups whose
+      // access URL does not parse never reach the network and are excluded from
+      // both counts.
+      timing.endpointsFailed = evaluated.filter(
+        (entry, index) =>
+          groups[index].representative.distribution !== null &&
+          !entry.verdict.success,
+      ).length;
+    }
 
     const quads: Quad[] = [];
     for (let index = 0; index < groups.length; index++) {
@@ -258,6 +290,7 @@ export class DistributionProbeStage {
   private async probeGroups(
     groups: ProbeGroup[],
     onProgress?: ProbeProgressListener,
+    timing?: ProbeTiming,
   ): Promise<
     Array<{
       verdict: ProbeVerdict;
@@ -281,9 +314,11 @@ export class DistributionProbeStage {
         (entry): entry is { index: number; distribution: Distribution } =>
           entry.distribution !== null,
       );
+    if (timing) timing.endpointsProbed = probeable.length;
     // Announce the total up front — probeMany only reports after each probe settles — so a caller
     // can render a determinate indicator from 0 before the first endpoint responds.
     onProgress?.(0, probeable.length);
+    const networkStart = performance.now();
     const results = await probeMany(
       probeable.map((entry) => entry.distribution),
       {
@@ -294,6 +329,7 @@ export class DistributionProbeStage {
         onProgress,
       },
     );
+    if (timing) timing.networkMs = Math.round(performance.now() - networkStart);
     const resultByGroup: (ProbeResultType | null)[] = new Array(
       groups.length,
     ).fill(null);
@@ -305,9 +341,17 @@ export class DistributionProbeStage {
     // network fan-out; this bounds the post-probe store writes — our own stores, so a plain
     // global cap (probeConcurrency), not the per-host budget — keeping concurrent writes at the
     // same ceiling the combined worker pool enforced before.
-    return mapLimited(groups, this.probeConcurrency, (group, index) =>
-      this.evaluateProbe(group.representative, resultByGroup[index]),
+    const storeWriteStart = performance.now();
+    const evaluated = await mapLimited(
+      groups,
+      this.probeConcurrency,
+      (group, index) =>
+        this.evaluateProbe(group.representative, resultByGroup[index]),
     );
+    if (timing) {
+      timing.storeWriteMs = Math.round(performance.now() - storeWriteStart);
+    }
+    return evaluated;
   }
 
   private async evaluateProbe(

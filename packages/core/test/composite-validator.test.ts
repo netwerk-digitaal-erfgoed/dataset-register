@@ -5,6 +5,7 @@ import {
   InvalidDataset,
   shacl,
   Valid,
+  type ValidationTiming,
 } from '../src/validator.ts';
 import type { DistributionProbeStage } from '../src/distribution-probe/probe.ts';
 
@@ -62,6 +63,27 @@ describe('CompositeValidator', () => {
     const result = await composite.validate(factory.dataset());
 
     expect(result).toBe(shaclResult);
+  });
+
+  it('populates the timing sink with the SHACL phase and forwards it to the probe stage', async () => {
+    const shaclResult: Valid = { state: 'valid', errors: emptyDataset() };
+    const probeStage = {
+      run: async (
+        _input: DatasetCore,
+        _onProgress: unknown,
+        timing?: { networkMs?: number },
+      ): Promise<Quad[]> => {
+        if (timing) timing.networkMs = 42;
+        return [];
+      },
+    } as unknown as DistributionProbeStage;
+    const composite = new CompositeValidator(fakeShacl(shaclResult), probeStage);
+
+    const timing: ValidationTiming = {};
+    await composite.validate(factory.dataset(), undefined, timing);
+
+    expect(typeof timing.shaclMs).toBe('number');
+    expect(timing.networkMs).toBe(42);
   });
 
   it('merges probe quads but stays valid when no quad has Violation severity', async () => {
