@@ -561,6 +561,10 @@ describe('SPARQL', () => {
       expect(await distributionHealthStore.get(url)).toBeNull();
     });
 
+    it('returns an empty map for getMany with no urls', async () => {
+      expect((await distributionHealthStore.getMany([])).size).toBe(0);
+    });
+
     it('stores and retrieves a record with all optional fields populated', async () => {
       const probedAt = new Date('2026-05-01T10:00:00.000Z');
       const lastSuccessAt = new Date('2026-04-25T08:00:00.000Z');

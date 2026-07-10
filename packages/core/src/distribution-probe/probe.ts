@@ -340,13 +340,19 @@ export class DistributionProbeStage {
     // Evaluate each probe into a verdict (and health/validity records). probeMany bounds the
     // network fan-out; this bounds the post-probe store writes — our own stores, so a plain
     // global cap (probeConcurrency), not the per-host budget — keeping concurrent writes at the
-    // same ceiling the combined worker pool enforced before.
+    // same ceiling the combined worker pool enforced before. The existing health records are
+    // fetched once for the whole batch (one query) rather than per endpoint.
     const storeWriteStart = performance.now();
+    const existingHealth = await this.fetchExistingHealth(groups);
     const evaluated = await mapLimited(
       groups,
       this.probeConcurrency,
       (group, index) =>
-        this.evaluateProbe(group.representative, resultByGroup[index]),
+        this.evaluateProbe(
+          group.representative,
+          resultByGroup[index],
+          existingHealth,
+        ),
     );
     if (timing) {
       timing.storeWriteMs = Math.round(performance.now() - storeWriteStart);
@@ -354,9 +360,46 @@ export class DistributionProbeStage {
     return evaluated;
   }
 
+  /**
+   * Fetch the stored health records for every probeable group in one query, keyed by canonical
+   * probe URL. Returns an empty map when no health store is configured (the registration API path),
+   * so {@link evaluateProbe} treats every endpoint as unseen; returns null when the read itself
+   * failed, so {@link evaluateProbe} skips the health write rather than overwriting state it could
+   * not read.
+   */
+  private async fetchExistingHealth(
+    groups: ProbeGroup[],
+  ): Promise<Map<string, DistributionHealthRecord> | null> {
+    const store = this.healthStore;
+    if (store === null) return new Map();
+    const urls = new Map<string, URL>();
+    for (const group of groups) {
+      const { distribution } = group.representative;
+      if (distribution !== null) {
+        const probeUrl = canonicalProbeUrl(distribution.accessUrl);
+        urls.set(probeUrl.toString(), probeUrl);
+      }
+    }
+    if (urls.size === 0) return new Map();
+    try {
+      return await store.getMany([...urls.values()]);
+    } catch (error) {
+      // A health-store read outage must not fail the whole batch — nor corrupt state. Return null
+      // so evaluateProbe skips the health write: probe verdicts still emit, but a failing endpoint's
+      // persisted streak (firstFailureAt/consecutiveFailures) is left intact rather than overwritten
+      // with a reset record — which would also flip a broken distribution back to healthy through
+      // the grace window. The per-endpoint read this replaced threw before its write, same effect.
+      this.logger?.warn(
+        `Failed to read distribution health, skipping health writes this batch: ${String(error)}`,
+      );
+      return null;
+    }
+  }
+
   private async evaluateProbe(
     candidate: DistributionCandidate,
     result: ProbeResultType | null,
+    existingHealth: Map<string, DistributionHealthRecord> | null,
   ): Promise<{
     verdict: ProbeVerdict;
     record: DistributionHealthRecord | null;
@@ -393,15 +436,19 @@ export class DistributionProbeStage {
       // rail is best-effort enrichment recorded afterwards. recordValidity
       // isolates its own failures so a validity-store outage can never reject the
       // probe and corrupt the reachability verdict.
+      // Skip the health write when there is no store (registration API path) or the batched read
+      // failed (existingHealth === null) — in the latter case writing would reset streaks we could
+      // not read. The probe verdict below is still authoritative from the live probe.
       const healthStore = this.healthStore;
       const record =
-        healthStore === null
+        healthStore === null || existingHealth === null
           ? null
           : await this.updateHealth(
               healthStore,
               probeUrl,
               verdict,
               fingerprint,
+              existingHealth.get(probeUrl.toString()) ?? null,
             );
       // The validity rail is independent of the health-write dedup: a source can keep the same
       // reachability outcome and fingerprint (date|size) while its RDF body validity changes (e.g.
@@ -474,9 +521,9 @@ export class DistributionProbeStage {
     probeUrl: URL,
     verdict: ProbeVerdict,
     fingerprint: string | null,
+    existing: DistributionHealthRecord | null,
   ): Promise<DistributionHealthRecord> {
     const now = new Date();
-    const existing = await store.get(probeUrl);
 
     const record: DistributionHealthRecord = verdict.success
       ? {
