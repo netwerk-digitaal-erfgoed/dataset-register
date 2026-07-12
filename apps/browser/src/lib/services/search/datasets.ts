@@ -34,12 +34,13 @@ export interface DatasetItem {
 }
 
 /** A value facet bucket: its raw value (a token, keyword or IRI), count and
- *  (for reference facets) resolved label; `label` is null for token/keyword
- *  facets whose display the browser owns. */
+ *  (for reference facets) resolved label. `label` is absent for the token/keyword
+ *  facets whose display the browser owns – the query does not select it, so the
+ *  GraphQL response omits the field entirely (not `null`). */
 export interface ValueBucket {
   readonly value: string;
   readonly count: number;
-  readonly label: readonly LanguageString[] | null;
+  readonly label?: readonly LanguageString[] | null;
 }
 
 /** A range facet bucket: its count and half-open `[min, max)` bounds (`max` null
@@ -130,12 +131,13 @@ export async function runDatasetSearch(
  * A `{nl, en}` display record from a best-first localized value, keyed by
  * language code (an untagged value keys `''`), dropping empty values. Returns
  * undefined when nothing remains, so optional text and unresolved references
- * (a `null` label) stay absent. Shared by the card and facet mappers.
+ * (a `null` label) or unselected ones (an absent, `undefined` label on a
+ * token/keyword facet) stay absent. Shared by the card and facet mappers.
  */
 export function localizedRecord(
-  values: readonly LanguageString[] | null,
+  values: readonly LanguageString[] | null | undefined,
 ): Record<string, string> | undefined {
-  if (values === null) {
+  if (values === null || values === undefined) {
     return undefined;
   }
   const record: Record<string, string> = {};
