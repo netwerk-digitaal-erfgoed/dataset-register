@@ -326,14 +326,18 @@ function searchType(typeIri: string): SearchType {
  * reference fields name label sources it would omit), so the projection map is
  * built directly; `projectGraph` only reads `schema.values()`, never revalidating.
  */
-function projectDatasets(
+async function* projectDatasets(
   quads: readonly Quad[],
   datasetType: SearchType,
 ): AsyncIterable<SearchDocument> {
   const datasetOnly = new Map([
-    [datasetType.type, datasetType],
+    [datasetType.class, datasetType],
   ]) as unknown as SearchSchema;
-  return projectGraph(quads, datasetOnly);
+  // projectGraph yields the whole-schema {searchType, document} stream; the
+  // single-type map scopes it to datasets, so unwrap each document.
+  for await (const { document } of projectGraph(quads, datasetOnly)) {
+    yield document;
+  }
 }
 
 /**

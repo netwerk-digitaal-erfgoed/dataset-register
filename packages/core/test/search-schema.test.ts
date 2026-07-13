@@ -10,7 +10,9 @@ import { SPARQL_PROTOCOL_URI } from '../src/search/media-types.ts';
 async function project(turtle: string): Promise<SearchDocument[]> {
   const quads: Quad[] = new Parser().parse(turtle);
   const documents: SearchDocument[] = [];
-  for await (const document of projectGraph(quads, SEARCH_SCHEMA)) {
+  // projectGraph yields the whole-schema {searchType, document} stream; keep the
+  // projected document.
+  for await (const { document } of projectGraph(quads, SEARCH_SCHEMA)) {
     documents.push(document);
   }
   return documents;

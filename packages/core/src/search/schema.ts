@@ -91,7 +91,7 @@ const SIZE_FACET_RANGES = Array.from({ length: SIZE_BIN_COUNT }, (_, bin) => ({
 
 const dataset = defineSearchType({
   name: 'Dataset',
-  type: DATASET_TYPE,
+  class: DATASET_TYPE,
   fields: [
     {
       name: 'title',
@@ -366,7 +366,7 @@ export const TERMINOLOGY_SOURCE_TYPE =
  */
 const organization = defineSearchType({
   name: 'Organization',
-  type: ORGANIZATION_TYPE,
+  class: ORGANIZATION_TYPE,
   fields: [
     {
       name: 'label',
@@ -382,7 +382,7 @@ const organization = defineSearchType({
 /** Label source for the `class` facet: the partition classes and their labels. */
 const rdfClass = defineSearchType({
   name: 'Class',
-  type: CLASS_TYPE,
+  class: CLASS_TYPE,
   fields: [
     {
       name: 'label',
@@ -398,7 +398,7 @@ const rdfClass = defineSearchType({
 /** Label source for the `terminology_source` facet: the linked vocabularies. */
 const terminologySource = defineSearchType({
   name: 'TerminologySource',
-  type: TERMINOLOGY_SOURCE_TYPE,
+  class: TERMINOLOGY_SOURCE_TYPE,
   fields: [
     {
       name: 'label',

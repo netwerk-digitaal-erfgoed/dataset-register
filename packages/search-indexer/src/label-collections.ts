@@ -181,10 +181,10 @@ async function projectLabelDocuments(
   labelQuads: readonly Quad[],
   type: SearchType,
 ): Promise<SearchDocument[]> {
-  const prepared = prepareLabelQuads(labelQuads, type.type);
-  const singleType = new Map([[type.type, type]]) as unknown as SearchSchema;
+  const prepared = prepareLabelQuads(labelQuads, type.class);
+  const singleType = new Map([[type.class, type]]) as unknown as SearchSchema;
   const documents: SearchDocument[] = [];
-  for await (const document of projectGraph(prepared, singleType)) {
+  for await (const { document } of projectGraph(prepared, singleType)) {
     documents.push(document);
   }
   return documents;
