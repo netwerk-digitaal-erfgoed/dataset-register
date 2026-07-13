@@ -12,7 +12,7 @@ import {
   SEARCH_COLLECTION_ALIAS,
   SEARCH_SCHEMA,
   TERMINOLOGY_SOURCE_COLLECTION_ALIAS,
-} from '@dataset-register/core';
+} from '@dataset-register/core/search';
 
 /**
  * The server-side search engine + GraphQL schema behind the `/graphql` endpoint.

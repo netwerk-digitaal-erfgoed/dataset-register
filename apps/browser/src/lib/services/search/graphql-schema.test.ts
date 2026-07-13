@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { printGraphQLSchema } from '@lde/search-api-graphql';
 import { buildSchema, GraphQLInputObjectType, parse, validate } from 'graphql';
-import { SEARCH_SCHEMA } from '@dataset-register/core';
+import { SEARCH_SCHEMA } from '@dataset-register/core/search';
 import type { SearchRequest } from '../datasets';
 import { buildWhere, DATASET_SEARCH_QUERY } from './datasets';
 
