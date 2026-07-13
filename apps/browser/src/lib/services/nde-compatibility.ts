@@ -99,11 +99,7 @@ export const SUBJECT_RESOLUTION_OUTCOME_BASE_URI =
 // anchors the section regardless of analysis. Persistent identifiers follow, then
 // linked data and terms, then iiif, matching the order in NDE communication.
 export type CompatibilityCriterionKey =
-  | 'registration'
-  | 'persistent'
-  | 'linked-data'
-  | 'terms'
-  | 'iiif';
+  'registration' | 'persistent' | 'linked-data' | 'terms' | 'iiif';
 
 // Criteria that can only be assessed from the dataset’s analysis in the Dataset
 // Knowledge Graph, so they are shown only for an analyzed dataset. The
@@ -169,9 +165,7 @@ export type SchemaApNdeFailureReason = 'violations' | 'declared-but-empty';
 //                       the criterion could not be assessed — an error to fix,
 //                       not the neutral “not yet checked” of a never-sampled one.
 export type PersistentFailureReason =
-  | 'unresolved'
-  | 'non-durable'
-  | 'sampling-failed';
+  'unresolved' | 'non-durable' | 'sampling-failed';
 
 // A non-blocking advisory shown alongside a green (`met`) persistent-URI row.
 // 'no-html-landing-pages' — the subject URIs resolve, but none served an HTML

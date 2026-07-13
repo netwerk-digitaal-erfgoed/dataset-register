@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Parser } from 'n3';
 import type { Quad } from '@rdfjs/types';
 import { projectGraph, type SearchDocument } from '@lde/search';
-import { physicalFields, searchableFields } from '@lde/search/adapter';
-import { DATASET_TYPE, SEARCH_SCHEMA } from '../src/search/schema.ts';
-import { queryBy } from '../src/search/field-registry.ts';
+import { SEARCH_SCHEMA } from '../src/search/schema.ts';
 import { REGISTRATION_STATUS_BASE_URI } from '../src/constants.ts';
 import { SPARQL_PROTOCOL_URI } from '../src/search/media-types.ts';
 
@@ -12,7 +10,9 @@ import { SPARQL_PROTOCOL_URI } from '../src/search/media-types.ts';
 async function project(turtle: string): Promise<SearchDocument[]> {
   const quads: Quad[] = new Parser().parse(turtle);
   const documents: SearchDocument[] = [];
-  for await (const document of projectGraph(quads, SEARCH_SCHEMA)) {
+  // projectGraph yields the whole-schema {searchType, document} stream; keep the
+  // projected document.
+  for await (const { document } of projectGraph(quads, SEARCH_SCHEMA)) {
     documents.push(document);
   }
   return documents;
@@ -68,7 +68,9 @@ describe('dataset search schema projection', () => {
         dcat:keyword "Kunst", "Erfgoed" .
     `);
 
-    expect(document.keyword).toEqual(expect.arrayContaining(['Kunst', 'Erfgoed']));
+    expect(document.keyword).toEqual(
+      expect.arrayContaining(['Kunst', 'Erfgoed']),
+    );
     expect(document.keyword_search).toEqual(
       expect.arrayContaining(['kunst', 'erfgoed']),
     );
@@ -115,7 +117,9 @@ describe('dataset search schema projection', () => {
         'https://schema.org/CreativeWork',
       ]),
     );
-    expect(document.terminology_source).toEqual(['https://example.org/voc/aat']);
+    expect(document.terminology_source).toEqual([
+      'https://example.org/voc/aat',
+    ]);
   });
 
   it('projects language, normalized format, date, and size', async () => {
@@ -198,7 +202,11 @@ describe('dataset search schema projection', () => {
     expect(document.persistent_uris).toBeUndefined();
   });
 
-  it('derives format_group and class_group tokens', async () => {
+  it('folds group tokens into the format and class fields', async () => {
+    // The `format`/`class` facets carry both granular values and their coarse
+    // `group:*` tokens in one field, so a facet selection mixing the two UNIONs
+    // under the query API’s flat-AND `where`. The former `format_group`/
+    // `class_group` companion fields are gone.
     const [document] = await project(`${PREFIXES}
       <http://example.org/ds1> a dcat:Dataset ;
         <urn:dr:format> "text/turtle" ;
@@ -206,10 +214,14 @@ describe('dataset search schema projection', () => {
         <urn:dr:class> <https://schema.org/Person> .
     `);
 
-    expect(document.format_group).toEqual(
-      expect.arrayContaining(['group:rdf', 'group:sparql']),
+    expect(document.format).toEqual(
+      expect.arrayContaining(['text/turtle', 'group:rdf', 'group:sparql']),
     );
-    expect(document.class_group).toEqual(['group:person']);
+    expect(document.class).toEqual(
+      expect.arrayContaining(['https://schema.org/Person', 'group:person']),
+    );
+    expect(document.format_group).toBeUndefined();
+    expect(document.class_group).toBeUndefined();
   });
 
   it('derives the NDE compatibility vinkjes when their criteria are met', async () => {
@@ -232,28 +244,5 @@ describe('dataset search schema projection', () => {
     expect(document.linked_data).toBe(true);
     expect(document.terms).toBe(true);
     expect(document.persistent_uris).toBe(true);
-  });
-});
-
-describe('field-registry and schema parity', () => {
-  const datasetType = SEARCH_SCHEMA.get(DATASET_TYPE);
-  if (datasetType === undefined) {
-    throw new Error(`SEARCH_SCHEMA is missing the dataset type ${DATASET_TYPE}.`);
-  }
-
-  it('every browser query_by field is a physical search field the index writes', () => {
-    // The browser query path (field-registry.ts) and the index/collection
-    // (SEARCH_SCHEMA) are separate declarations until the query path moves onto
-    // the GraphQL API. Assert they cannot silently drift: a field the browser
-    // queries but the index never writes would be a zero-hit query, not a build
-    // error (this is what the publisher → publisherName reconciliation aligned).
-    const written = new Set(
-      searchableFields(datasetType).flatMap(
-        (field) => physicalFields(field).search,
-      ),
-    );
-    for (const queried of queryBy().split(',')) {
-      expect(written).toContain(queried);
-    }
   });
 });

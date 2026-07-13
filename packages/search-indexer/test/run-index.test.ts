@@ -4,11 +4,13 @@ import type { SearchParams } from 'typesense/lib/Typesense/Documents.js';
 import { fold } from '@lde/text-normalization';
 import { physicalFields, searchableFields } from '@lde/search/adapter';
 import {
+  CLASS_COLLECTION_ALIAS,
   DATASET_TYPE,
-  LABELS_COLLECTION_ALIAS,
+  ORGANIZATION_COLLECTION_ALIAS,
   SEARCH_COLLECTION_ALIAS,
   SEARCH_SCHEMA,
   SparqlClient,
+  TERMINOLOGY_SOURCE_COLLECTION_ALIAS,
 } from '@dataset-register/core';
 import {
   createTypesenseClient,
@@ -200,10 +202,9 @@ function dqvInsertQuery(slug: string): string {
   }`;
 }
 
-// Query the new index through the shared schema's physical field names – now
-// identical to the browser's `field-registry.queryBy()` after the
-// `publisher`→`publisherName` reconciliation (see field-registry.ts), so this
-// exercises exactly the fields the live browser query sends.
+// Query the new index through the shared schema's physical field names, derived
+// from SEARCH_SCHEMA exactly as the query engine derives them, so this exercises
+// the same fields a search sends.
 const DATASET_SEARCH_TYPE = SEARCH_SCHEMA.get(DATASET_TYPE);
 if (DATASET_SEARCH_TYPE === undefined) {
   throw new Error(
@@ -323,7 +324,9 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
     // keyword_search has no per-locale variant of its own, so its stemming
     // depends on the writer being given a defaultLocale; without it the field
     // ships folded-only and Dutch keyword queries under-recall.
-    const schema = (await client.collections(SEARCH_COLLECTION_ALIAS).retrieve()) as {
+    const schema = (await client
+      .collections(SEARCH_COLLECTION_ALIAS)
+      .retrieve()) as {
       fields: ReadonlyArray<Record<string, unknown>>;
     };
     const keywordSearch = schema.fields.find(
@@ -357,10 +360,12 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
       .collections(SEARCH_COLLECTION_ALIAS)
       .documents(base('mohlmann'))
       .retrieve()) as Record<string, unknown>;
-    expect(document.format).toEqual(['text/turtle']);
-    expect(document.format_group).toEqual(
-      expect.arrayContaining(['group:rdf', 'group:sparql']),
+    // The format facet folds the granular media types and the derived
+    // `group:*` tokens into one field (no separate `format_group`).
+    expect(document.format).toEqual(
+      expect.arrayContaining(['text/turtle', 'group:rdf', 'group:sparql']),
     );
+    expect(document.format_group).toBeUndefined();
     // The publisher facet merges dct:publisher and dct:creator organizations.
     expect(document.publisher).toEqual(
       expect.arrayContaining([
@@ -373,37 +378,39 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
     expect(document.status).toBe('valid');
   });
 
-  it('builds the sidecar labels collection from publisher and creator org names', async () => {
+  it('builds the typed Organization collection from publisher and creator org names', async () => {
+    // The org names are untagged; the projection re-tags them into both locales
+    // (nl → en → untagged fallback) so a facet bucket resolves in either locale.
     const publisher = (await client
-      .collections(LABELS_COLLECTION_ALIAS)
+      .collections(ORGANIZATION_COLLECTION_ALIAS)
       .documents('https://example.org/org/kb')
       .retrieve()) as Record<string, unknown>;
-    expect(publisher.label).toBe('Koninklijke Bibliotheek');
-    expect(publisher.type).toBe('organization');
+    expect(publisher.label_nl).toBe('Koninklijke Bibliotheek');
+    expect(publisher.label_en).toBe('Koninklijke Bibliotheek');
 
     // Creator organizations are labelled too, not just publishers.
     const creator = (await client
-      .collections(LABELS_COLLECTION_ALIAS)
+      .collections(ORGANIZATION_COLLECTION_ALIAS)
       .documents('https://example.org/org/na')
       .retrieve()) as Record<string, unknown>;
-    expect(creator.label).toBe('Nationaal Archief');
+    expect(creator.label_nl).toBe('Nationaal Archief');
   });
 
-  it('labels DKG terminology sources and classes in the sidecar collection', async () => {
+  it('builds the typed TerminologySource and Class collections from DKG labels', async () => {
     const terminologySource = (await client
-      .collections(LABELS_COLLECTION_ALIAS)
+      .collections(TERMINOLOGY_SOURCE_COLLECTION_ALIAS)
       .documents(AAT)
       .retrieve()) as Record<string, unknown>;
-    expect(terminologySource.label).toBe('Art & Architecture Thesaurus');
-    expect(terminologySource.type).toBe('terminology_source');
+    expect(terminologySource.label_nl).toBe('Art & Architecture Thesaurus');
 
+    // The Person class carries only an `@en` label; it resolves in en and falls
+    // back to the same value for nl.
     const personClass = (await client
-      .collections(LABELS_COLLECTION_ALIAS)
+      .collections(CLASS_COLLECTION_ALIAS)
       .documents(PERSON_CLASS)
       .retrieve()) as Record<string, unknown>;
-    expect(personClass.label).toBe('Person');
     expect(personClass.label_en).toBe('Person');
-    expect(personClass.type).toBe('class');
+    expect(personClass.label_nl).toBe('Person');
   });
 
   it('returns native facet counts', async () => {
@@ -428,15 +435,12 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
       .collections(SEARCH_COLLECTION_ALIAS)
       .documents(base('mohlmann'))
       .retrieve()) as Record<string, unknown>;
-    expect(document.class).toEqual([PERSON_CLASS]);
-  });
-
-  it('derives the class_group facet from DKG classes at index time', async () => {
-    const document = (await client
-      .collections(SEARCH_COLLECTION_ALIAS)
-      .documents(base('mohlmann'))
-      .retrieve()) as Record<string, unknown>;
-    expect(document.class_group).toEqual(['group:person']);
+    // The class facet folds the granular class IRI and its derived `group:*`
+    // token into one field (no separate `class_group`).
+    expect(document.class).toEqual(
+      expect.arrayContaining([PERSON_CLASS, 'group:person']),
+    );
+    expect(document.class_group).toBeUndefined();
   });
 
   it('enriches a document with DKG terminology sources (void:Linkset)', async () => {
@@ -480,11 +484,13 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
     expect(unmet.persistent_uris).toBeUndefined();
   });
 
-  it('sets the granular class but no class_group for an ungrouped class', async () => {
+  it('sets the granular class but no group token for an ungrouped class', async () => {
     const document = (await client
       .collections(SEARCH_COLLECTION_ALIAS)
       .documents(base('fietsen-title'))
       .retrieve()) as Record<string, unknown>;
+    // An ungrouped class contributes no `group:*` token, so the class facet
+    // holds only the granular IRI.
     expect(document.class).toEqual(['http://example.org/UngroupedThing']);
     expect(document.class_group).toBeUndefined();
   });
@@ -552,7 +558,7 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
       .collections(SEARCH_COLLECTION_ALIAS)
       .documents(base('mohlmann'))
       .retrieve()) as Record<string, unknown>;
-    expect(document.class).toEqual([PERSON_CLASS]);
+    expect(document.class).toEqual(expect.arrayContaining([PERSON_CLASS]));
   });
 
   // A cold start (no live index yet) with a configured but unreachable DKG still
@@ -565,7 +571,11 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
       knowledgeGraphEndpoint: 'http://127.0.0.1:1/',
       typesense: connection,
       collectionAlias: 'datasets_coldstart',
-      labelsAlias: 'labels_coldstart',
+      labelAliases: {
+        organization: 'organizations_coldstart',
+        class: 'classes_coldstart',
+        terminologySource: 'terminology-sources_coldstart',
+      },
     });
 
     expect(result.mode).toBe('rebuild');

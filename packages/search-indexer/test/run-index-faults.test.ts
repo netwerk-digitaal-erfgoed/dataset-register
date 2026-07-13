@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DataFactory } from 'n3';
-import { Errors, type Client, type ImportResponse } from 'typesense';
+import { Errors, type Client } from 'typesense';
+import { RebuildAlreadyRunning } from '@lde/search-typesense';
 import type { Quad } from '@rdfjs/types';
 import type { RunContext, RunWriter } from '@lde/pipeline';
-import type { SearchDocument } from '@lde/search';
+import type { SearchDocument, SearchType } from '@lde/search';
 
 const { namedNode, literal, quad } = DataFactory;
 
@@ -17,17 +18,18 @@ const REGISTER_QUADS: Quad[] = [
   quad(namedNode('urn:ex:d1'), namedNode(RDF_TYPE), namedNode(DCAT_DATASET)),
   quad(namedNode('urn:ex:d1'), namedNode(DCT_TITLE), literal('Titel', 'nl')),
 ];
-/** One organization label triple for the sidecar labels rebuild. */
+/** One organization label triple for the Organization collection rebuild. */
 const ORG_LABEL_QUADS: Quad[] = [
   quad(namedNode('urn:ex:org1'), namedNode(FOAF_NAME), literal('Voorbeeld')),
 ];
 
-// The faults injected here (a failing lock backend, a rejected commit, a
-// Typesense per-document label-import failure) cannot be provoked through the
-// real containers without contrivance, so the Typesense client, the register
-// reader and the blue/green writer are mocked. Every OTHER path stays on the
-// real code under test (projection, label-document building, the runIndex
-// control flow). Shared mutable handles the hoisted mock factories read.
+// The faults injected here (a failing lock backend, a rejected commit, a failing
+// label rebuild) cannot be provoked through the real containers without
+// contrivance, so the Typesense client, the register reader and the blue/green
+// writer are mocked. Every OTHER path stays on the real code under test (the
+// dataset + label projections and the runIndex control flow). The mocked writer
+// is used for both the dataset collection and the three typed label collections;
+// its `openRun` is handed the `SearchType` so a test can fail one and not another.
 const mocks = vi.hoisted(() => ({
   openRun: vi.fn(),
   client: undefined as unknown as Client,
@@ -54,14 +56,20 @@ vi.mock('../src/register-source.ts', () => ({
 }));
 
 // Replace only the blue/green writer; keep the real `RebuildAlreadyRunning` so
-// runIndex’s `instanceof` skip check still recognises the lock-held case.
+// runIndex’s `instanceof` skip check still recognises the lock-held case. The
+// captured `searchType` lets `openRun` distinguish the dataset rebuild from a
+// label-collection rebuild.
 vi.mock('@lde/search-typesense', async (importOriginal) => {
   const actual = await importOriginal<object>();
   return {
     ...actual,
     BlueGreenRebuild: class {
+      readonly #searchType: SearchType;
+      constructor(_client: unknown, searchType: SearchType) {
+        this.#searchType = searchType;
+      }
       openRun(context: RunContext): unknown {
-        return mocks.openRun(context);
+        return mocks.openRun(context, this.#searchType);
       }
     },
   };
@@ -80,19 +88,14 @@ const CONNECTION = {
 interface FakeClientConfig {
   /** Alias → collection it resolves to; an absent alias 404s (cold/unset). */
   readonly aliasTargets?: Readonly<Record<string, string>>;
-  /** The result the labels import returns (default: one success). */
-  readonly importResults?: readonly ImportResponse[];
-  /** Make the superseded-collection drop reject (best-effort cleanup path). */
-  readonly deleteRejects?: boolean;
   /** Fail an `aliases(alias).retrieve()` with a NON-404 error (transient blip),
    *  to prove the guards fail closed rather than treat it as a cold start. */
   readonly aliasRetrieveError?: boolean;
-  /** Collection names passed to `collections(name).delete()`, in call order. */
-  readonly deleted?: string[];
 }
 
-/** A minimal Typesense client covering only the calls runIndex makes directly
- *  (the blue/green writer is mocked, so its own client calls never run here). */
+/** A minimal Typesense client covering only the calls runIndex makes directly:
+ *  the synonym sync and the alias look-ups (the blue/green writer is mocked, so
+ *  its own collection/import/alias calls never run here). */
 function fakeClient(config: FakeClientConfig = {}): Client {
   return {
     synonymSets: () => ({ upsert: async () => ({}) }),
@@ -112,21 +115,6 @@ function fakeClient(config: FakeClientConfig = {}): Client {
       },
       upsert: async () => ({}),
     }),
-    collections: (name?: string) => ({
-      create: async () => ({}),
-      delete: async () => {
-        if (name !== undefined) {
-          config.deleted?.push(name);
-        }
-        if (config.deleteRejects) {
-          throw new Error('drop failed');
-        }
-        return {};
-      },
-      documents: () => ({
-        import: async () => config.importResults ?? [{ success: true }],
-      }),
-    }),
   } as unknown as Client;
 }
 
@@ -138,7 +126,7 @@ function fakeRun(
   return {
     write: async (_dataset, documents) => {
       for await (const _document of documents) {
-        // Drain so `projectDatasets` and the counting generator run.
+        // Drain so the projection and the counting generator run.
       }
     },
     commit: async () => undefined,
@@ -157,6 +145,8 @@ const baseOptions = {
 describe('runIndex fault handling', () => {
   beforeEach(() => {
     mocks.openRun.mockReset();
+    // Default: every rebuild (dataset + labels) opens a working run.
+    mocks.openRun.mockImplementation(async () => fakeRun());
     mocks.registerQuads = REGISTER_QUADS;
     mocks.orgLabelQuads = [];
     mocks.orgLabelError = false;
@@ -184,42 +174,86 @@ describe('runIndex fault handling', () => {
     expect(abort).toHaveBeenCalledOnce();
   });
 
-  it('keeps the dataset rebuild when the labels import fails', async () => {
-    mocks.orgLabelQuads = ORG_LABEL_QUADS;
-    // Datasets alias unset → the result collection falls back to the alias name.
-    mocks.client = fakeClient({
-      importResults: [{ success: false, error: 'bad field', code: 400 }],
-    });
+  it('exercises the RunContext selection accessor the writer is handed', async () => {
     mocks.openRun.mockImplementationOnce(async (context: RunContext) => {
-      // Exercise the RunContext selection accessor the writer is handed.
       expect([...context.selectedSources()]).toEqual([]);
       return fakeRun();
     });
 
-    const logs: string[] = [];
-    const result = await runIndex({ ...baseOptions, log: (message) => logs.push(message) });
+    const result = await runIndex(baseOptions);
 
-    // The user-facing dataset index still went live; only the sidecar degraded.
     expect(result).toMatchObject({ mode: 'rebuild', collection: 'datasets' });
-    expect(logs.some((line) => line.startsWith('Label index skipped'))).toBe(
-      true,
-    );
   });
 
-  it('swallows a failed drop of the superseded labels collection', async () => {
+  it('keeps the dataset rebuild when a label rebuild fails', async () => {
     mocks.orgLabelQuads = ORG_LABEL_QUADS;
-    mocks.client = fakeClient({
-      aliasTargets: { datasets: 'datasets_1', labels: 'labels_old' },
-      deleteRejects: true,
+    // The dataset rebuild succeeds; every label rebuild fails to open its run.
+    mocks.openRun.mockImplementation(async (_context, type: SearchType) => {
+      if (type.name !== 'Dataset') {
+        throw new Error('label writer boom');
+      }
+      return fakeRun();
     });
-    mocks.openRun.mockResolvedValueOnce(fakeRun());
 
     const logs: string[] = [];
-    const result = await runIndex({ ...baseOptions, log: (message) => logs.push(message) });
+    const result = await runIndex({
+      ...baseOptions,
+      log: (message) => logs.push(message),
+    });
 
-    expect(result).toMatchObject({ mode: 'rebuild', collection: 'datasets_1' });
-    // The swap logged success despite the best-effort drop rejecting.
-    expect(logs.some((line) => line.startsWith('Indexed 1 labels'))).toBe(true);
+    // The user-facing dataset index still went live; only the labels degraded.
+    expect(result).toMatchObject({ mode: 'rebuild', collection: 'datasets' });
+    expect(logs.some((line) => line.startsWith('Label index'))).toBe(true);
+    expect(logs.some((line) => line.includes('label writer boom'))).toBe(true);
+  });
+
+  it('skips a label rebuild whose lock is already held by another rebuild', async () => {
+    mocks.orgLabelQuads = ORG_LABEL_QUADS;
+    mocks.openRun.mockImplementation(async (_context, type: SearchType) => {
+      if (type.name !== 'Dataset') {
+        throw new RebuildAlreadyRunning(type.name);
+      }
+      return fakeRun();
+    });
+
+    const logs: string[] = [];
+    const result = await runIndex({
+      ...baseOptions,
+      log: (message) => logs.push(message),
+    });
+
+    expect(result.mode).toBe('rebuild');
+    expect(
+      logs.some((line) => line.includes('another rebuild is already running')),
+    ).toBe(true);
+  });
+
+  it('keeps the dataset index when a label rebuild commit fails, aborting its run', async () => {
+    mocks.orgLabelQuads = ORG_LABEL_QUADS;
+    const abort = vi.fn(async () => undefined);
+    mocks.openRun.mockImplementation(async (_context, type: SearchType) => {
+      if (type.name !== 'Dataset') {
+        return fakeRun({
+          commit: async () => {
+            throw new Error('label commit boom');
+          },
+          abort,
+        });
+      }
+      return fakeRun();
+    });
+
+    const logs: string[] = [];
+    const result = await runIndex({
+      ...baseOptions,
+      log: (message) => logs.push(message),
+    });
+
+    // The dataset index still went live; the failed label rebuild aborted its
+    // run and was logged, not rethrown.
+    expect(result.mode).toBe('rebuild');
+    expect(abort).toHaveBeenCalled();
+    expect(logs.some((line) => line.includes('label commit boom'))).toBe(true);
   });
 
   it('swallows a synonym-sync failure and still rebuilds', async () => {
@@ -231,10 +265,12 @@ describe('runIndex fault handling', () => {
         },
       }),
     } as unknown as Client;
-    mocks.openRun.mockResolvedValueOnce(fakeRun());
 
     const logs: string[] = [];
-    const result = await runIndex({ ...baseOptions, log: (message) => logs.push(message) });
+    const result = await runIndex({
+      ...baseOptions,
+      log: (message) => logs.push(message),
+    });
 
     expect(result.mode).toBe('rebuild');
     expect(logs.some((line) => line.startsWith('Synonym sync skipped'))).toBe(
@@ -242,25 +278,29 @@ describe('runIndex fault handling', () => {
     );
   });
 
-  it('skips the labels import when there are no label documents', async () => {
+  it('keeps the previous label collection when a rebuild would be empty', async () => {
+    // No organization labels this run, but the Organization collection already
+    // exists: swapping an empty collection over it would strip the labels, so
+    // the rebuild keeps the current one.
     mocks.orgLabelQuads = [];
     mocks.client = fakeClient({
-      // Force an import failure so, were it called, the run would log a skip;
-      // proving the empty set short-circuits before the import.
-      importResults: [{ success: false, error: 'unexpected', code: 400 }],
+      aliasTargets: { organizations: 'organizations_1' },
     });
-    mocks.openRun.mockResolvedValueOnce(fakeRun());
 
     const logs: string[] = [];
-    const result = await runIndex({ ...baseOptions, log: (message) => logs.push(message) });
+    const result = await runIndex({
+      ...baseOptions,
+      log: (message) => logs.push(message),
+    });
 
     expect(result.mode).toBe('rebuild');
-    // The empty set short-circuits the import (no skip logged) yet still swaps
-    // the labels alias to a fresh, empty collection.
-    expect(logs.some((line) => line.startsWith('Indexed 0 labels'))).toBe(true);
-    expect(logs.some((line) => line.startsWith('Label index skipped'))).toBe(
-      false,
-    );
+    expect(
+      logs.some(
+        (line) =>
+          line.startsWith('Label index organizations skipped') &&
+          line.includes('keeping the current collection'),
+      ),
+    ).toBe(true);
   });
 
   it('keeps the live index when the projection produces no documents', async () => {
@@ -302,35 +342,17 @@ describe('runIndex fault handling', () => {
     const abort = vi.fn(async () => undefined);
     mocks.openRun.mockResolvedValueOnce(fakeRun({ abort }));
 
-    await expect(runIndex(baseOptions)).rejects.toThrow('Typesense unavailable');
+    await expect(runIndex(baseOptions)).rejects.toThrow(
+      'Typesense unavailable',
+    );
     expect(abort).toHaveBeenCalledOnce();
   });
 
-  it('drops the half-built labels collection when the import fails', async () => {
-    mocks.orgLabelQuads = ORG_LABEL_QUADS;
-    const deleted: string[] = [];
-    mocks.client = fakeClient({
-      importResults: [{ success: false, error: 'bad field', code: 400 }],
-      // Even a rejecting drop must not throw out of the best-effort cleanup.
-      deleteRejects: true,
-      deleted,
-    });
-    mocks.openRun.mockResolvedValueOnce(fakeRun());
-
-    await runIndex({ ...baseOptions, labelsAlias: 'labels' });
-
-    // The created-but-never-swapped collection is reaped, not leaked.
-    expect(deleted.some((name) => name.startsWith('labels_'))).toBe(true);
-  });
-
-  it('keeps the previous labels when the prefetched label read fails', async () => {
+  it('keeps the current label collections when the prefetched label read fails', async () => {
     // The label read (prefetched at the start of the run) rejects. The dataset
-    // index still goes live; the sidecar is skipped so the previous labels stay,
-    // and no half-built collection is created to leak.
+    // index still goes live; the label rebuild is skipped so the previous label
+    // collections stay.
     mocks.orgLabelError = true;
-    const deleted: string[] = [];
-    mocks.client = fakeClient({ deleted });
-    mocks.openRun.mockResolvedValueOnce(fakeRun());
 
     const logs: string[] = [];
     const result = await runIndex({
@@ -339,10 +361,8 @@ describe('runIndex fault handling', () => {
     });
 
     expect(result.mode).toBe('rebuild');
-    expect(logs.some((line) => line.startsWith('Label index skipped'))).toBe(
+    expect(logs.some((line) => line.startsWith('Label read failed'))).toBe(
       true,
     );
-    // The read failed before any collection was created, so nothing to drop.
-    expect(deleted).toHaveLength(0);
   });
 });
