@@ -50,7 +50,7 @@
     "typescript": "~6.0.3",
     "typescript-eslint": "8.62.1",
     "vitest": "^4.0.15",
-    "@lde/search-typesense": "^0.5.0"
+    "@lde/search-typesense": "^0.7.1"
   },
   "nx": {
     "includedScripts": [],
