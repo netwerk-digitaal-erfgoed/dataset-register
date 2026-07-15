@@ -42,7 +42,6 @@ export function addDefaultLanguageTags(quads: Quad[], lang = 'nl'): DatasetExt {
 const languageTagPredicates = new Set([
   dct('title').value,
   dct('description').value,
-  dcat('keyword').value,
   foaf('name').value,
   vcard('fn').value,
 ]);
@@ -51,7 +50,7 @@ const languageTagPredicates = new Set([
  * Rewrite `dct:temporal` literal values into DCAT `dct:PeriodOfTime` blank
  * nodes with `dcat:startDate` / `dcat:endDate`. Literal values that do not
  * parse as ISO 8601 are left untouched (SHACL will have already flagged them).
- * IRI values pass through — they already reference a PeriodOfTime resource.
+ * IRI values pass through – they already reference a PeriodOfTime resource.
  */
 export function normalizeTemporalCoverage(quads: Quad[]): Quad[] {
   if (!quads.some(isTemporalCoverageLiteral)) return quads;

@@ -89,9 +89,9 @@
   }
 
   // Per-distribution health from the register's own probe, streamed in parallel
-  // with the page (see DatasetDetailResult.distributionHealth). It starts empty —
+  // with the page (see DatasetDetailResult.distributionHealth). It starts empty –
   // so every distribution classifies as “unknown” (no badge, nothing disabled)
-  // during the brief load window — and updates reactively once the query
+  // during the brief load window – and updates reactively once the query
   // resolves.
   let healthByUrl = $state(new Map<string, DistributionHealth>());
   $effect(() => {
@@ -134,7 +134,7 @@
   }
 
   // What the status badge shows: a green check when usable, or when reachable
-  // with validity not yet known (no applicable verdict — e.g. a SPARQL endpoint
+  // with validity not yet known (no applicable verdict – e.g. a SPARQL endpoint
   // or a large dump); an amber warning when unusable; nothing when the register
   // has never probed the distribution. Falling back to reachability for the
   // 'unknown' case preserves the positive signal a reachable distribution had
@@ -229,12 +229,11 @@
     ),
   );
 
-  // Extract keywords and subject matter for current locale. dcat:theme is the
-  // canonical target for subject/material classification; dct:type is kept for
-  // datasets registered before the schema:about → dcat:theme transition.
+  // Extract subject matter for current locale. dcat:theme is the canonical
+  // target for subject/material classification; dct:type is kept for datasets
+  // registered before the schema:about → dcat:theme transition.
   const EDUC_DEFAULT_THEME =
     'http://publications.europa.eu/resource/authority/data-theme/EDUC';
-  const localizedKeywords = $derived(getLocalizedArray(dataset.keyword));
   const localizedAbout = $derived([
     ...(dataset.theme?.filter((value) => value !== EDUC_DEFAULT_THEME) ?? []),
     ...getLocalizedArray(dataset.type),
@@ -277,7 +276,7 @@
   );
 
   // True when EVERY declared RDF distribution is reachable but currently serves
-  // invalid RDF (a fresh, fingerprint-matched invalid verdict — see invalidUrls),
+  // invalid RDF (a fresh, fingerprint-matched invalid verdict – see invalidUrls),
   // i.e. no still-valid RDF source remains that could account for a current
   // summary. Requiring `every` (not `some`) avoids falsely flagging a current
   // summary when one distribution is broken but another valid RDF source (e.g. a
@@ -294,7 +293,7 @@
       ),
   );
 
-  // When there is no summary, explain why — but only when a concrete cause is
+  // When there is no summary, explain why – but only when a concrete cause is
   // known: an RDF distribution that is reachable-but-invalid, or unreachable.
   // A dataset with no RDF at all, or one whose RDF is still reachable/unprobed
   // (merely pending or not yet processed), shows nothing rather than a false
@@ -376,8 +375,8 @@
 
   // The Knowledge Graph can emit more than one void:classPartition for the same
   // class (e.g. when that class’s instances are counted over separate subsets).
-  // Collapse them into a single partition per class — summing entities and
-  // merging their property partitions — so each class renders once. Without
+  // Collapse them into a single partition per class – summing entities and
+  // merging their property partitions – so each class renders once. Without
   // this, the keyed {#each} over classes hits a duplicate key and blanks the page.
   function mergeClassPartitions(
     partitions: ClassPartition[],
@@ -738,7 +737,7 @@
   </div>
 
   <!-- Dataset Details Section (compact) -->
-  {#if localizedKeywords.length > 0 || dataset.publisher?.name || dataset.license || (dataset.spatial && dataset.spatial.length > 0) || temporalCoverages.length > 0 || localizedAbout.length > 0 || (dataset.language && dataset.language.length > 0)}
+  {#if dataset.publisher?.name || dataset.license || (dataset.spatial && dataset.spatial.length > 0) || temporalCoverages.length > 0 || localizedAbout.length > 0 || (dataset.language && dataset.language.length > 0)}
     <div class="mb-8">
       <div
         class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
@@ -1307,44 +1306,6 @@
             </div>
           {/if}
 
-          <!-- Keywords -->
-          {#if localizedKeywords.length > 0}
-            <div
-              class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
-            >
-              <dt
-                class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"
-              >
-                <svg
-                  class="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                  />
-                </svg>
-                {m.detail_keywords()}
-              </dt>
-              <dd class="flex flex-wrap gap-1.5">
-                {#each localizedKeywords as keyword (keyword)}
-                  <a
-                    href={localizeHref(
-                      `/datasets?keywords=${encodeURIComponent(keyword)}`,
-                    )}
-                    class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 transition-colors hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:hover:bg-blue-900/50 no-underline"
-                  >
-                    {keyword}
-                  </a>
-                {/each}
-              </dd>
-            </div>
-          {/if}
-
           <!-- Issued -->
           {#if dataset.issued}
             <div
@@ -1703,8 +1664,8 @@
         {#if summarySourceInvalid}
           <!-- The figures are retained from an earlier crawl (the current source
                  no longer parses as valid RDF), so the Knowledge Graph kept its
-                 previous summary. A subtle orange warning next to the timestamp —
-                 with the reason in its tooltip — flags the figures as not current;
+                 previous summary. A subtle orange warning next to the timestamp –
+                 with the reason in its tooltip – flags the figures as not current;
                  the affected distribution is listed in the download section below. -->
           <span
             id="summary-outdated-warning"
@@ -1726,7 +1687,7 @@
       </h2>
       <!-- When no valid RDF source remains, the whole summary body below (figures,
            class/property tables, vocabularies, terminology links) is stale, so it
-           is faded to signal that. A soft opacity only — no grayscale — keeps the
+           is faded to signal that. A soft opacity only – no grayscale – keeps the
            terminology/vocabulary links legible and clickable and stays above WCAG
            AA in both themes (including the dark-mode gray-400 labels); the header
            and its warning icon stay crisp. -->

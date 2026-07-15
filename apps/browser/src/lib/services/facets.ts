@@ -28,7 +28,7 @@ export type SelectedFacetValues = FacetValueOptions | FacetValueRange;
  * A facet with counts for each value based on the current search query.
  *
  * `label` carries the per-locale display labels (`{nl, en}`) for IRI-valued
- * facets; keyword/status/group facets leave it unset and rely on the value
+ * facets; format/status/group facets leave it unset and rely on the value
  * itself or {@link facetDisplayValue}’s translation table.
  */
 export interface CountedFacetValue {
@@ -80,7 +80,6 @@ const GROUP_EVENT = 'group:event';
  */
 export type FacetKey =
   | 'publisher'
-  | 'keyword'
   | 'format'
   | 'class'
   | 'terminologySource'
@@ -90,7 +89,6 @@ export type FacetKey =
 
 export type Facets = {
   publisher: CountedFacetValue[];
-  keyword: CountedFacetValue[];
   format: CountedFacetValue[];
   class: CountedFacetValue[];
   terminologySource: CountedFacetValue[];
@@ -111,7 +109,6 @@ const SIZE_RANGE_FALLBACK: FacetValueRange = { min: 1, max: 1000000000 };
 export function mapFacets(facets: RawFacets): Facets {
   return {
     publisher: mapValueBuckets(facets.publisher),
-    keyword: mapValueBuckets(facets.keyword),
     format: mapValueBuckets(facets.format),
     class: mapValueBuckets(facets.class),
     terminologySource: mapValueBuckets(facets.terminology_source),
@@ -128,7 +125,6 @@ export function mapFacets(facets: RawFacets): Facets {
 export function emptyFacets(): Facets {
   return {
     publisher: [],
-    keyword: [],
     format: [],
     class: [],
     terminologySource: [],

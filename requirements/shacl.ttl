@@ -391,24 +391,6 @@ The value MUST be the canonical URI of a license. For example, use `https://crea
             sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
         ] ,
         [
-            sh:path schema:keywords ;
-            sh:minCount 1 ;
-            sh:severity sh:Info ;
-            sh:description """Woorden of geformaliseerde zinnen om een dataset te beschrijven. Trefwoorden zijn vrije tekst; gebruik `schema:about` voor URI’s die het onderwerp beschrijven."""@nl,
-                """Words or formalized phrases to describe the dataset. Keywords are free text; use `schema:about` for URIs describing the subject matter."""@en ;
-            sh:message "Voeg trefwoorden toe"@nl, "Add keywords"@en ;
-        ] ,
-        [
-            sh:path schema:keywords ;
-            sh:not [ sh:pattern "^https?://" ] ;
-            sh:severity sh:Warning ;
-            nde:futureChange [
-                nde:version "2.0" ;
-                sh:severity sh:Violation ;
-            ] ;
-            sh:message "Gebruik schema:about voor URI’s die het onderwerp beschrijven"@nl, "Use schema:about for URIs describing the subject matter"@en ;
-        ] ,
-        [
             sh:path schema:spatialCoverage ;
             sh:minCount 1 ;
             sh:severity sh:Info ;
@@ -946,7 +928,7 @@ nde-dataset:OrganizationIdentifierRequiredShape
 # PropertyValue identifiers (schema:identifier values that are typed as
 # schema:PropertyValue) carry their own internal structure that we want to
 # validate. The filter $this a schema:PropertyValue ensures string identifiers
-# are skipped — those are already covered by the property-level sh:or check.
+# are skipped – those are already covered by the property-level sh:or check.
 nde-dataset:IdentifierPropertyIDRequiredShape
     a sh:NodeShape ;
     sh:targetObjectsOf schema:identifier ;
@@ -1274,7 +1256,7 @@ dcat:DatasetShape
         sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
     ],
     nde-dataset:DcDescriptionLangStringProperty,
-    # No dc:license on Dataset — DCAT-AP-NL 3.0 only requires license on Distribution.
+    # No dc:license on Dataset – DCAT-AP-NL 3.0 only requires license on Distribution.
     [
         sh:path dc:created ;
         sh:minCount 1 ;
@@ -1373,13 +1355,6 @@ dcat:DatasetShape
             sh:severity sh:Violation ;
         ] ;
         sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
-    ],
-    [
-        sh:path dcat:keyword ;
-        sh:minCount 1 ;
-        sh:severity sh:Info ;
-        sh:description "Woorden of geformaliseerde zinnen om een dataset te beschrijven."@nl, "Words or formalized phrases to describe the dataset."@en ;
-        sh:message "Voeg trefwoorden toe"@nl, "Add keywords"@en ;
     ],
     [
         sh:path dc:spatial ;

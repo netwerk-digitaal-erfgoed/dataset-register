@@ -320,22 +320,6 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
     expect(await search('verhalen')).toContain(base('verhaal-utrecht'));
   });
 
-  it('Dutch-stems the folded keyword_search field via defaultLocale', async () => {
-    // keyword_search has no per-locale variant of its own, so its stemming
-    // depends on the writer being given a defaultLocale; without it the field
-    // ships folded-only and Dutch keyword queries under-recall.
-    const schema = (await client
-      .collections(SEARCH_COLLECTION_ALIAS)
-      .retrieve()) as {
-      fields: ReadonlyArray<Record<string, unknown>>;
-    };
-    const keywordSearch = schema.fields.find(
-      (field) => field.name === 'keyword_search',
-    );
-    expect(keywordSearch?.stem).toBe(true);
-    expect(keywordSearch?.locale).toBe('nl');
-  });
-
   it('treats persoon/person as synonyms (#1684)', async () => {
     expect(await search('person')).toContain(base('persoon'));
   });

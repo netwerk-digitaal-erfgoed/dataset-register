@@ -22,10 +22,10 @@ export default defineConfig(() => ({
       exclude: ['src/mock.ts'],
       thresholds: {
         autoUpdate: true,
-        lines: 97.86,
+        lines: 97.85,
         functions: 96.63,
         branches: 91.83,
-        statements: 97.37,
+        statements: 97.36,
       },
     },
   },

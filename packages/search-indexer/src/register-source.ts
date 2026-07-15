@@ -31,7 +31,7 @@ export class RegisterSource {
    * Split into **two** CONSTRUCTs, merged by dataset IRI, to avoid a
    * cross-product. The registration facts are single-valued but a dataset’s
    * properties are multi-valued, so emitting both in one query multiplied the
-   * facts (and the `a dcat:Dataset` constant) by every keyword × format × …,
+   * facts (and the `a dcat:Dataset` constant) by every format × language × …,
    * inflating the result ~4× on the full register. Keeping them apart also keeps
    * each query to a single graph: a UNION that mixes registration-graph and
    * dataset-graph branches makes QLever silently drop branches.
@@ -92,7 +92,7 @@ export class RegisterSource {
     return `
       ${PREFIXES}
       CONSTRUCT {
-        ?dataset dct:title ?title ; dct:description ?description ; dcat:keyword ?keyword ;
+        ?dataset dct:title ?title ; dct:description ?description ;
           dct:language ?language ; dr:organization ?organization ; dr:catalog ?catalog ;
           dr:publisherName ?publisherName ; dr:creatorName ?creatorName ;
           dr:format ?format ; dr:conformsTo ?conformsTo .
@@ -100,7 +100,6 @@ export class RegisterSource {
         {
           GRAPH ?dataset { ?dataset dct:title ?title }
         } UNION { GRAPH ?dataset { ?dataset dct:description ?description } }
-          UNION { GRAPH ?dataset { ?dataset dcat:keyword ?keyword } }
           UNION { GRAPH ?dataset { ?dataset dct:language ?languageValue } BIND(STR(?languageValue) AS ?language) }
           UNION { GRAPH ?dataset { ?dataset dct:publisher ?organization } FILTER(isIRI(?organization)) }
           UNION { GRAPH ?dataset { ?dataset dct:creator ?organization } FILTER(isIRI(?organization)) }

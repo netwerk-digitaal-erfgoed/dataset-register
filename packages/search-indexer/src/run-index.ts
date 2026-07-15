@@ -159,11 +159,11 @@ export async function runIndex(
   const writer = new BlueGreenRebuild<SearchDocument>(client, datasetType, {
     name: alias,
     defaultSortingField: DEFAULT_SORTING_FIELD,
-    // Dutch-stem the folded keyword/reference `*_search` companion fields. The
+    // Dutch-stem any folded, locale-less `*_search` companion field. The
     // per-locale text fields (title/description/...) carry their own nl/en
-    // locale, but `keyword_search` has none of its own, so without a default
-    // locale it ships unstemmed while the browser queries it stemmed (verhaal
-    // vs verhalen), silently narrowing keyword recall.
+    // locale and stem themselves; a locale-less folded companion would
+    // otherwise ship unstemmed while the browser queries it stemmed (verhaal
+    // vs verhalen), silently narrowing recall.
     defaultLocale: 'nl',
     // Reference the live synonym set; its items are synced separately each run.
     synonymSets: [SEARCH_SYNONYM_SET],

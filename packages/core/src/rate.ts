@@ -11,7 +11,7 @@ const penalties = new Map<NamedNode[], number>([
   [[dct('creator')], 10],
   [[dct('created'), dct('issued')], 10],
   [[dct('modified')], 5],
-  [[dcat('keyword'), dct('spatial'), dct('temporal')], 5],
+  [[dct('spatial'), dct('temporal')], 5],
   [[dct('language')], 5],
 ]);
 

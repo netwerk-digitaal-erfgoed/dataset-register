@@ -267,7 +267,7 @@ describe('Validator', () => {
 
   it('SPARQL-constrained Organization checks skip Person publishers/creators', async () => {
     // Person instances legitimately lack contactPoint and identifier, so the
-    // Organization-targeted SPARQL shapes must not fire against them — including
+    // Organization-targeted SPARQL shapes must not fire against them – including
     // when contactPoint is promoted to Violation at v2.0.
     const report = (await validate(
       'dataset-dcat-valid-minimal.jsonld',
@@ -482,41 +482,10 @@ describe('Validator', () => {
     }
   });
 
-  it('warns when schema:keywords contains an http(s) URI', async () => {
-    const report = (await validate(
-      'dataset-schema-org-keyword-uri.jsonld',
-    )) as Valid;
-    expect(report.state).toEqual('valid');
-    const keywordResults = [
-      ...report.errors.match(
-        null,
-        shacl('resultPath'),
-        rdf.namedNode('https://schema.org/keywords'),
-      ),
-    ].map((quad) => quad.subject);
-    expect(keywordResults).toHaveLength(1);
-    const [keywordResult] = keywordResults;
-    expect(
-      [...report.errors.match(keywordResult, shacl('resultSeverity'), null)][0]
-        ?.object.value,
-    ).toEqual('http://www.w3.org/ns/shacl#Warning');
-    const messages = [
-      ...report.errors.match(keywordResult, shacl('resultMessage'), null),
-    ]
-      .filter(
-        (quad) =>
-          quad.object.termType === 'Literal' && quad.object.language === 'en',
-      )
-      .map((quad) => quad.object.value);
-    expect(messages).toContain(
-      'Use schema:about for URIs describing the subject matter',
-    );
-  });
-
   it('validates PropertyValue identifier sub-constraints (propertyID, value, name)', async () => {
     // PropertyValue identifiers carry their own internal structure: propertyID
     // (must be IRI), value (must be xsd:string), name (must be string/langString
-    // if present). The fixture has a PropertyValue identifier missing all three —
+    // if present). The fixture has a PropertyValue identifier missing all three –
     // each constraint should fire as its own top-level result. String identifiers
     // would not match the SPARQL filter $this a schema:PropertyValue.
     const report = (await validate(
@@ -625,7 +594,7 @@ describe('Validator', () => {
     ]);
 
     // dateModified "2024-01-15": plain string literal (wrong datatype) but
-    // lexical form matches the ISO pattern — exactly one message expected.
+    // lexical form matches the ISO pattern – exactly one message expected.
     expect(messagesFor('https://schema.org/dateModified')).toEqual([
       'Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime',
     ]);
@@ -805,7 +774,7 @@ describe('Validator', () => {
 
   it('rejects a dcat:Dataset that is a blank node instead of an http(s) IRI', async () => {
     // The dcat:DatasetShape requires a web IRI as the dataset identifier, just
-    // like the schema.org DatasetShape — a blank-node dataset has no stable,
+    // like the schema.org DatasetShape – a blank-node dataset has no stable,
     // dereferenceable identifier the register can index.
     const report = (await validate(
       'dataset-dcat-blank-node.jsonld',
