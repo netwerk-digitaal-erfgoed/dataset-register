@@ -30,19 +30,19 @@ const LABEL_CACHE_TTL_MS = 5 * 60 * 1000;
 
 /**
  * Cap on the number of buckets returned per facet (Typesense `max_facet_values`).
- * Typesense defaults to 10, which truncated every sidebar facet – the class,
- * keyword and publisher facets each carry far more values than that, so the
- * sidebar could neither show nor search past the top 10. The browser filters the
- * facet search box client-side over the returned buckets, so the full list must
- * come back for search to cover it.
+ * Typesense defaults to 10, which truncated every sidebar facet – the class and
+ * publisher facets each carry far more values than that, so the sidebar could
+ * neither show nor search past the top 10. The browser filters the facet search
+ * box client-side over the returned buckets, so the full list must come back for
+ * search to cover it.
  *
  * This is a ceiling, not a fixed cost: a response carries only as many buckets as
  * the facet actually has, and facet queries are hit-less (`per_page: 0`) with
  * labels served from the in-memory cache, so raising it is free until a facet
  * grows past it. The highest-cardinality facet today is `class` at ~800 distinct
- * values (`keyword` ~680, `publisher` ~310); 2000 leaves comfortable headroom for
- * growth. A facet that ever approaches this wants server-side facet-value search
- * (Typesense `facet_query`) rather than a still-higher cap. */
+ * values (`publisher` ~310); 2000 leaves comfortable headroom for growth. A facet
+ * that ever approaches this wants server-side facet-value search (Typesense
+ * `facet_query`) rather than a still-higher cap. */
 const MAX_FACET_VALUES = 2000;
 
 let engineSingleton: SearchEngine | undefined;

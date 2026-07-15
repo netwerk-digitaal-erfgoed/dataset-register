@@ -111,17 +111,6 @@ const dataset = defineSearchType({
       searchable: { weight: 2 },
     },
     {
-      // A faceted tag list, not language-tagged prose: one folded, searchable
-      // value list (`keyword_search`) plus the facet (`keyword`).
-      name: 'keyword',
-      kind: 'keyword',
-      path: 'http://www.w3.org/ns/dcat#keyword',
-      array: true,
-      facetable: true,
-      filterable: true,
-      searchable: { weight: 1 },
-    },
-    {
       // Publisher/creator names kept per-locale searchable (nl “instituut” vs en
       // “institute”), so a query ranks matches in the user’s language higher.
       name: 'publisherName',

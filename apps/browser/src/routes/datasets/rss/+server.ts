@@ -24,7 +24,6 @@ export async function GET({ url, fetch }: RequestEvent) {
   const searchRequest: SearchRequest = {
     query: url.searchParams.get('search') || undefined,
     publisher: decodeDiscreteParam('publishers', url.searchParams),
-    keyword: decodeDiscreteParam('keywords', url.searchParams),
     format: decodeDiscreteParam('format', url.searchParams),
     class: decodeDiscreteParam('class', url.searchParams),
     terminologySource: decodeDiscreteParam(
@@ -59,7 +58,7 @@ export async function GET({ url, fetch }: RequestEvent) {
 
   // Create RSS feed
   const feed = new Feed({
-    title: `${m.header_title()} — ${m.header_tagline()}`,
+    title: `${m.header_title()} – ${m.header_tagline()}`,
     description: feedDescription,
     id: url.toString(),
     link: datasetsPageUrl,
@@ -132,10 +131,6 @@ function buildFeedDescription(
     parts.push(
       `${m.rss_filter_publishers()}: ${searchRequest.publisher.length}`,
     );
-  }
-
-  if (searchRequest.keyword.length > 0) {
-    parts.push(`${m.rss_filter_keywords()}: ${searchRequest.keyword.length}`);
   }
 
   if (searchRequest.format.length > 0) {

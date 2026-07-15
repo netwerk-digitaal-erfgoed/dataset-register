@@ -62,20 +62,6 @@ describe('dataset search schema projection', () => {
     expect(document.description_search_nl).toBe('een collectie');
   });
 
-  it('projects keywords into a facet list and a folded searchable list', async () => {
-    const [document] = await project(`${PREFIXES}
-      <http://example.org/ds1> a dcat:Dataset ;
-        dcat:keyword "Kunst", "Erfgoed" .
-    `);
-
-    expect(document.keyword).toEqual(
-      expect.arrayContaining(['Kunst', 'Erfgoed']),
-    );
-    expect(document.keyword_search).toEqual(
-      expect.arrayContaining(['kunst', 'erfgoed']),
-    );
-  });
-
   it('keeps publisher and creator names per-locale searchable', async () => {
     const [document] = await project(`${PREFIXES}
       <http://example.org/ds1> a dcat:Dataset ;

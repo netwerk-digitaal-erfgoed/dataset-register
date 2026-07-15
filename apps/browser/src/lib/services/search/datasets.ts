@@ -33,8 +33,8 @@ export interface DatasetItem {
   readonly nde_schema_ap: boolean | null;
 }
 
-/** A value facet bucket: its raw value (a token, keyword or IRI), count and
- *  (for reference facets) resolved label. `label` is absent for the token/keyword
+/** A value facet bucket: its raw value (a token or IRI), count and
+ *  (for reference facets) resolved label. `label` is absent for the token
  *  facets whose display the browser owns – the query does not select it, so the
  *  GraphQL response omits the field entirely (not `null`). */
 export interface ValueBucket {
@@ -54,7 +54,6 @@ export interface RangeBucket {
 /** The facet buckets the sidebar renders, keyed by GraphQL facet field name. */
 export interface RawFacets {
   readonly publisher: readonly ValueBucket[];
-  readonly keyword: readonly ValueBucket[];
   readonly format: readonly ValueBucket[];
   readonly class: readonly ValueBucket[];
   readonly terminology_source: readonly ValueBucket[];
@@ -80,11 +79,10 @@ export interface SearchOptions {
 }
 
 /** A GraphQL `where` clause per filterable field; membership (`in`) for the
- *  keyword/reference facets, an inclusive `range` for size. */
+ *  token/reference facets, an inclusive `range` for size. */
 interface DatasetWhere {
   status?: { in: readonly string[] };
   publisher?: { in: readonly string[] };
-  keyword?: { in: readonly string[] };
   format?: { in: readonly string[] };
   class?: { in: readonly string[] };
   terminology_source?: { in: readonly string[] };
@@ -132,7 +130,7 @@ export async function runDatasetSearch(
  * language code (an untagged value keys `''`), dropping empty values. Returns
  * undefined when nothing remains, so optional text and unresolved references
  * (a `null` label) or unselected ones (an absent, `undefined` label on a
- * token/keyword facet) stay absent. Shared by the card and facet mappers.
+ * token facet) stay absent. Shared by the card and facet mappers.
  */
 export function localizedRecord(
   values: readonly LanguageString[] | null | undefined,
@@ -163,9 +161,6 @@ export function buildWhere(request: SearchRequest): DatasetWhere {
   }
   if (request.publisher.length > 0) {
     where.publisher = { in: request.publisher };
-  }
-  if (request.keyword.length > 0) {
-    where.keyword = { in: request.keyword };
   }
   if (request.format.length > 0) {
     where.format = { in: request.format };
@@ -246,7 +241,6 @@ export const DATASET_SEARCH_QUERY = `
       }
       facets {
         publisher { value count label { language value } }
-        keyword { value count }
         format { value count }
         class { value count label { language value } }
         terminology_source { value count label { language value } }

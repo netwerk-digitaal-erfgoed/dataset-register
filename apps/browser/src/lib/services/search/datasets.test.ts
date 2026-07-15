@@ -11,7 +11,6 @@ import {
 function emptyRequest(): SearchRequest {
   return {
     publisher: [],
-    keyword: [],
     format: [],
     class: [],
     terminologySource: [],
@@ -38,12 +37,10 @@ describe('buildWhere', () => {
       buildWhere({
         ...emptyRequest(),
         publisher: ['https://example.org/org/kb'],
-        keyword: ['kunst'],
         terminologySource: ['https://vocab.getty.edu/aat/'],
       }),
     ).toMatchObject({
       publisher: { in: ['https://example.org/org/kb'] },
-      keyword: { in: ['kunst'] },
       terminology_source: { in: ['https://vocab.getty.edu/aat/'] },
     });
   });
@@ -148,7 +145,6 @@ const PAYLOAD: DatasetSearchResult = {
   ],
   facets: {
     publisher: [],
-    keyword: [{ value: 'kunst', count: 7, label: null }],
     format: [],
     class: [],
     terminology_source: [],

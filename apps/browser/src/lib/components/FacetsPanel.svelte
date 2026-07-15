@@ -13,7 +13,6 @@
     facets: Facets | undefined;
     selectedValues: {
       publisher: string[];
-      keyword: string[];
       format: string[];
       class: string[];
       terminologySource: string[];
@@ -40,15 +39,6 @@
       title={m.facets_publisher()}
       explanation={m.publisher_explanation()}
       onChange={(values) => onChange('publisher', values)}
-    />
-  {/if}
-  {#if (facets?.keyword ?? []).length > 0 || selectedValues.keyword.length > 0}
-    <SearchFacet
-      selectedValues={selectedValues.keyword}
-      values={facets?.keyword ?? []}
-      title={m.facets_keyword()}
-      explanation={m.keyword_explanation()}
-      onChange={(values) => onChange('keyword', values)}
     />
   {/if}
   {#if (facets?.format ?? []).length > 0 || selectedValues.format.length > 0}

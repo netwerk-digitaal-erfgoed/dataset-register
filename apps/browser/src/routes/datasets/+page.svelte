@@ -43,7 +43,6 @@
   let searchRequest: SearchRequest = $derived({
     query: page.url.searchParams.get('search') || undefined,
     publisher: decodeDiscreteParam('publishers'),
-    keyword: decodeDiscreteParam('keywords'),
     format: decodeDiscreteParam('format'),
     class: decodeDiscreteParam('class'),
     terminologySource: decodeDiscreteParam('terminologySource'),
@@ -64,7 +63,6 @@
     const currentSearchKey = getSearchKey({
       query: page.url.searchParams.get('search') || undefined,
       publisher: decodeDiscreteParam('publishers'),
-      keyword: decodeDiscreteParam('keywords'),
       format: decodeDiscreteParam('format'),
       class: decodeDiscreteParam('class'),
       terminologySource: decodeDiscreteParam('terminologySource'),
@@ -113,7 +111,6 @@
 
   let selectedValues: {
     publisher: SelectedFacetValue[];
-    keyword: SelectedFacetValue[];
     format: SelectedFacetValue[];
     class: SelectedFacetValue[];
     terminologySource: SelectedFacetValue[];
@@ -123,15 +120,6 @@
     publisher: searchRequest.publisher.map((value) => {
       const facet = searchResults?.facets.publisher.find(
         (publisher) => publisher.value === value,
-      );
-      return {
-        value,
-        label: facet?.label || { '': value },
-      };
-    }),
-    keyword: searchRequest.keyword.map((value) => {
-      const facet = searchResults?.facets.keyword.find(
-        (keyword) => keyword.value === value,
       );
       return {
         value,
@@ -255,12 +243,6 @@
       url.searchParams.set('publishers', params.publisher.join(','));
     } else {
       url.searchParams.delete('publishers');
-    }
-
-    if (params.keyword && params.keyword.length > 0) {
-      url.searchParams.set('keywords', params.keyword.join(','));
-    } else {
-      url.searchParams.delete('keywords');
     }
 
     if (params.format && params.format.length > 0) {
@@ -471,9 +453,6 @@
             (p) => p !== value,
           );
           updateURL(searchRequest, { publisher: newPublishers });
-        } else if (type === 'keyword') {
-          const newKeywords = searchRequest.keyword.filter((k) => k !== value);
-          updateURL(searchRequest, { keyword: newKeywords });
         } else if (type === 'format') {
           const newFormats = searchRequest.format.filter((f) => f !== value);
           updateURL(searchRequest, { format: newFormats });
@@ -504,7 +483,6 @@
         facets={searchResults?.facets}
         selectedValues={{
           publisher: searchRequest.publisher,
-          keyword: searchRequest.keyword,
           format: searchRequest.format,
           class: searchRequest.class,
           terminologySource: searchRequest.terminologySource,
@@ -682,7 +660,6 @@
       facets={searchResults?.facets}
       selectedValues={{
         publisher: searchRequest.publisher,
-        keyword: searchRequest.keyword,
         format: searchRequest.format,
         class: searchRequest.class,
         terminologySource: searchRequest.terminologySource,
@@ -710,7 +687,6 @@
       onclick={() => {
         updateURL(searchRequest, {
           publisher: [],
-          keyword: [],
           format: [],
           class: [],
           terminologySource: [],

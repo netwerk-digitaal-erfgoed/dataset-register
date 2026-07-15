@@ -22,7 +22,6 @@ const datePublished = 'datePublished';
 const dateModified = 'dateModified';
 const language = 'language';
 const source = 'source';
-const keyword = 'keyword';
 const spatialCoverage = 'spatialCoverage';
 const temporalCoverage = 'temporalCoverage';
 const genre = 'genre';
@@ -173,12 +172,6 @@ function schemaOrgMultiValuedUnions(prefix: string): string {
     multiValuedUnion(type, `${prefix}:isBasedOnUrl`, source),
     multiValuedUnion(
       type,
-      `${prefix}:keywords`,
-      keyword,
-      `FILTER(!REGEX(STR(?${keyword}), "^https?://"))`,
-    ),
-    multiValuedUnion(
-      type,
       `${prefix}:spatialCoverage`,
       spatialCoverage,
       `FILTER(!isBlank(?${spatialCoverage}))`,
@@ -203,12 +196,6 @@ function dcatMultiValuedUnions(): string {
   return [
     multiValuedUnion(type, `dct:description`, description),
     multiValuedUnion(type, `dct:source`, source),
-    multiValuedUnion(
-      type,
-      `dcat:keyword`,
-      keyword,
-      `FILTER(!REGEX(STR(?${keyword}), "^https?://"))`,
-    ),
     multiValuedUnion(
       type,
       `dct:spatial`,
@@ -247,7 +234,6 @@ export const constructQuery = `
       dct:modified ?${dateModified} ;
       dct:language ?${language} ;
       dct:source ?${source} ;
-      dcat:keyword ?${keyword} ;
       dcat:landingPage ?${mainEntityOfPage} ;
       dct:spatial ?${spatialCoverage} ;
       dct:temporal ?${temporalCoverage} ;
@@ -569,7 +555,7 @@ function schemaOrgQuery(prefix: string): string {
 /**
  * For download distributions (no known protocol in conformsTo), emit downloadURL,
  * mediaType, and compressFormat. For API distributions (conformsTo matches a known
- * protocol URL), suppress all three — they are meaningless for APIs.
+ * protocol URL), suppress all three – they are meaningless for APIs.
  */
 function downloadOnlyProperties(
   conformsToProtocolVariable: string,

@@ -87,7 +87,6 @@ export type OrderBy = 'title' | 'datePosted';
 export interface SearchRequest {
   query?: string;
   publisher: string[];
-  keyword: string[];
   format: string[];
   class: string[];
   terminologySource: string[];

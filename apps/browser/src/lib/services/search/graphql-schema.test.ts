@@ -45,7 +45,6 @@ describe('search GraphQL contract', () => {
     const fullRequest: SearchRequest = {
       query: 'x',
       publisher: ['p'],
-      keyword: ['k'],
       format: ['f'],
       class: ['c'],
       terminologySource: ['t'],

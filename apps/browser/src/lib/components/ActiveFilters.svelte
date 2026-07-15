@@ -14,7 +14,6 @@
   }: {
     selectedValues: {
       publisher: SelectedFacetValue[];
-      keyword: SelectedFacetValue[];
       format: SelectedFacetValue[];
       class: SelectedFacetValue[];
       terminologySource: SelectedFacetValue[];
@@ -49,10 +48,6 @@
   let allSelectedValues = $derived([
     ...selectedValues.publisher.map((facet: SelectedFacetValue) => ({
       type: 'publisher' as FacetKey,
-      facet,
-    })),
-    ...selectedValues.keyword.map((facet: SelectedFacetValue) => ({
-      type: 'keyword' as FacetKey,
       facet,
     })),
     ...selectedValues.format.map((facet: SelectedFacetValue) => ({
