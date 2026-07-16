@@ -490,6 +490,28 @@ describe('Fetch', () => {
     expect((literalTheme?.object as Literal).language).toEqual('nl');
   });
 
+  it('drops URI-shaped schema:keywords from dcat:keyword output', async () => {
+    const response = await file('dataset-schema-org-keyword-uri.jsonld');
+    nock('http://data.bibliotheken.nl')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/id/dataset/keyword-uri')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('http://data.bibliotheken.nl/id/dataset/keyword-uri'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const datasetUri = factory.namedNode(
+      'http://data.bibliotheken.nl/id/dataset/keyword-uri',
+    );
+    const keywordValues = [
+      ...dataset.match(datasetUri, dcat('keyword'), null),
+    ].map((quad) => quad.object.value);
+    expect(keywordValues).toEqual(['photographs']);
+  });
+
   it('preserves user-provided themes alongside default EDUC theme', async () => {
     const response = await file('dataset-dcat-valid-minimal.jsonld');
     const datasetWithTheme = response.replace(
@@ -632,9 +654,10 @@ describe('Fetch', () => {
     // Schema.org input now that the contactPoint is the canonical email channel).
     // Fetch also replaces the `dct:temporal "..."` literal with a PeriodOfTime
     // blank node (1 → 4 quads: dct:temporal link + rdf:type + startDate + endDate).
-    // Finally, the raw DCAT equivalent still carries one dcat:keyword quad, but
-    // keywords are no longer part of the model, so fetch emits none from the
-    // Schema.org input – one fewer quad than the DCAT baseline (#1412).
+    // Finally, the DCAT equivalent still carries one dcat:keyword quad, while the
+    // Schema.org example no longer advertises keywords (they are no longer part of
+    // the requirements, only echoed on the detail page when supplied) – one fewer
+    // quad than the DCAT baseline.
     expect(dataset.size).toEqual(dcatEquivalent.size + 8 - 10 + 3 - 1);
 
     // Check that SPARQL endpoint has conformsTo triple

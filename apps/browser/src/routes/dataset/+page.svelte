@@ -229,11 +229,12 @@
     ),
   );
 
-  // Extract subject matter for current locale. dcat:theme is the canonical
-  // target for subject/material classification; dct:type is kept for datasets
-  // registered before the schema:about → dcat:theme transition.
+  // Extract keywords and subject matter for current locale. dcat:theme is the
+  // canonical target for subject/material classification; dct:type is kept for
+  // datasets registered before the schema:about → dcat:theme transition.
   const EDUC_DEFAULT_THEME =
     'http://publications.europa.eu/resource/authority/data-theme/EDUC';
+  const localizedKeywords = $derived(getLocalizedArray(dataset.keyword));
   const localizedAbout = $derived([
     ...(dataset.theme?.filter((value) => value !== EDUC_DEFAULT_THEME) ?? []),
     ...getLocalizedArray(dataset.type),
@@ -737,7 +738,7 @@
   </div>
 
   <!-- Dataset Details Section (compact) -->
-  {#if dataset.publisher?.name || dataset.license || (dataset.spatial && dataset.spatial.length > 0) || temporalCoverages.length > 0 || localizedAbout.length > 0 || (dataset.language && dataset.language.length > 0)}
+  {#if localizedKeywords.length > 0 || dataset.publisher?.name || dataset.license || (dataset.spatial && dataset.spatial.length > 0) || temporalCoverages.length > 0 || localizedAbout.length > 0 || (dataset.language && dataset.language.length > 0)}
     <div class="mb-8">
       <div
         class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
@@ -1302,6 +1303,42 @@
                     {/if}
                   {/each}
                 {/await}
+              </dd>
+            </div>
+          {/if}
+
+          <!-- Keywords. Plain chips, not links: keywords are no longer indexed
+               or facetable, so there is no keyword filter to link them to. -->
+          {#if localizedKeywords.length > 0}
+            <div
+              class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
+            >
+              <dt
+                class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"
+              >
+                <svg
+                  class="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                  />
+                </svg>
+                {m.detail_keywords()}
+              </dt>
+              <dd class="flex flex-wrap gap-1.5">
+                {#each localizedKeywords as keyword (keyword)}
+                  <span
+                    class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                  >
+                    {keyword}
+                  </span>
+                {/each}
               </dd>
             </div>
           {/if}
