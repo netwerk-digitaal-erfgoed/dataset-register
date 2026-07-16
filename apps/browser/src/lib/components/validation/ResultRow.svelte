@@ -2,6 +2,7 @@
   import * as m from '$lib/paraglide/messages';
   import type { ShaclResult } from '$lib/services/shacl-report.js';
   import { selectShape, type ShapesIndex } from '$lib/services/shacl-shapes.js';
+  import { subjectLabel } from './subject-label.js';
   import { shortenUri } from '$lib/utils/prefix.js';
   import { lookupValues, type DataValue } from './lookup-values.js';
   import type { ContentType } from './detect-content-type.js';
@@ -32,6 +33,7 @@
   const focusType = $derived(
     result.focusNode ? focusNodeTypes?.get(result.focusNode) : undefined,
   );
+  const subject = $derived(subjectLabel(focusType));
   const shapeMeta = $derived(
     shapes
       ? selectShape(shapes, result.path, focusType, result.sourceShape)
@@ -62,7 +64,7 @@
     if (!sourceText) return null;
     const needle = result.value ?? result.focusNode;
     if (!needle) return null;
-    // Prefer the line where the focus node appears as a *subject* — it usually
+    // Prefer the line where the focus node appears as a *subject* – it usually
     // shows up earlier as an object reference (e.g. <catalog> schema:dataset
     // <dataset>), and indexOf would jump to that wrong place.
     if (!result.value && result.focusNode) {
@@ -135,7 +137,10 @@
         <h3 class="text-base font-semibold text-gray-900 dark:text-white">
           <span class="mr-2 inline-flex align-middle"
             ><SeverityBadge {tone}>{severityLabel}</SeverityBadge></span
-          ><span class="align-middle">{result.message}</span>
+          >{#if subject}<span
+              class="align-middle text-gray-600 dark:text-gray-300"
+              >{subject}<span class="mx-1" aria-hidden="true">·</span></span
+            >{/if}<span class="align-middle">{result.message}</span>
         </h3>
       {:else}
         <SeverityBadge {tone}>{severityLabel}</SeverityBadge>

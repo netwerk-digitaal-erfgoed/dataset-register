@@ -177,4 +177,36 @@ describe('resultGroupKey', () => {
       resultGroupKey({ ...base, focusNode: 'y' }),
     );
   });
+
+  it('collapses repeats across focus nodes of the same type', () => {
+    const base = {
+      severity: 'Warning' as const,
+      path: 'https://schema.org/description',
+      sourceConstraintComponent:
+        'http://www.w3.org/ns/shacl#MinCountConstraintComponent',
+      message: 'Add a description',
+    };
+    const dataset = 'https://schema.org/Dataset';
+    expect(resultGroupKey({ ...base, focusNode: '_:b1' }, dataset)).toBe(
+      resultGroupKey({ ...base, focusNode: '_:b2' }, dataset),
+    );
+  });
+
+  it('separates the same constraint on focus nodes of different types', () => {
+    const base = {
+      severity: 'Warning' as const,
+      path: 'https://schema.org/description',
+      sourceConstraintComponent:
+        'http://www.w3.org/ns/shacl#MinCountConstraintComponent',
+      message: 'Add a description',
+    };
+    expect(
+      resultGroupKey({ ...base, focusNode: '_:catalog' }, catalogType),
+    ).not.toBe(
+      resultGroupKey({ ...base, focusNode: '_:dataset' }, datasetType),
+    );
+  });
 });
+
+const catalogType = 'https://schema.org/DataCatalog';
+const datasetType = 'https://schema.org/Dataset';

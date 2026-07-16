@@ -9,11 +9,12 @@
   } from '$lib/services/shacl-report.js';
   import { fetchShapes, type ShapesIndex } from '$lib/services/shacl-shapes.js';
   import ResultRow from './ResultRow.svelte';
-  import { buildFocusNodeTypes } from './focus-node-types.js';
   import type { ContentType } from './detect-content-type.js';
 
   interface Props {
     report: ShaclReport;
+    /** Focus node -> rdf:type, built by the page so the summary counts match these rows. */
+    focusNodeTypes?: Map<string, string>;
     sourceText?: string;
     sourceContentType?: ContentType;
     onJump?: (line: number) => void;
@@ -23,6 +24,7 @@
 
   let {
     report,
+    focusNodeTypes = new Map(),
     sourceText,
     sourceContentType,
     onJump,
@@ -31,7 +33,6 @@
   }: Props = $props();
 
   let shapes = $state<ShapesIndex | null>(null);
-  let focusNodeTypes = $state<Map<string, string>>(new Map());
 
   $effect(() => {
     fetchShapes()
@@ -43,20 +44,13 @@
       });
   });
 
-  $effect(() => {
-    if (!sourceText || !sourceContentType) {
-      focusNodeTypes = new Map();
-      return;
-    }
-    void buildFocusNodeTypes(sourceText, sourceContentType).then((map) => {
-      focusNodeTypes = map;
-    });
-  });
-
   const grouped = $derived.by(() => {
     const buckets = new Map<string, ShaclResult[]>();
     for (const result of report.results) {
-      const key = resultGroupKey(result);
+      const key = resultGroupKey(
+        result,
+        result.focusNode ? focusNodeTypes.get(result.focusNode) : undefined,
+      );
       const list = buckets.get(key);
       if (list) list.push(result);
       else buckets.set(key, [result]);

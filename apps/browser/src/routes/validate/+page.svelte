@@ -10,6 +10,7 @@
     UrlValidationOutcome,
   } from '$lib/services/validation.js';
   import type { ContentType } from '$lib/components/validation/detect-content-type.js';
+  import { buildFocusNodeTypes } from '$lib/components/validation/focus-node-types.js';
   import { getLocale } from '$lib/paraglide/runtime';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
@@ -51,6 +52,22 @@
   const activeGoToLine = $derived(
     inlineSourceText ? inlineGoToLine : urlGoToLine,
   );
+
+  // Built once here rather than per component: the summary badges and the report
+  // rows must count the same groups, and resultGroupKey needs the focus node's
+  // type to tell a catalog's finding from a dataset's.
+  let focusNodeTypes = $state<Map<string, string>>(new Map());
+  $effect(() => {
+    if (!activeSourceText || !activeSourceContentType) {
+      focusNodeTypes = new Map();
+      return;
+    }
+    void buildFocusNodeTypes(activeSourceText, activeSourceContentType).then(
+      (map) => {
+        focusNodeTypes = map;
+      },
+    );
+  });
 
   function expandSection(section: 'warnings' | 'infos') {
     if (section === 'warnings') warningsOpen = true;
@@ -251,6 +268,7 @@
     {#if summaryState.kind !== 'empty'}
       <ValidationSummary
         state={summaryState}
+        {focusNodeTypes}
         {submitHref}
         onExpand={expandSection}
       />
@@ -259,6 +277,7 @@
     {#if summaryState.kind === 'report'}
       <ValidationReport
         report={summaryState.report}
+        {focusNodeTypes}
         sourceText={activeSourceText}
         sourceContentType={activeSourceContentType}
         onJump={activeSourceText ? handleJump : undefined}

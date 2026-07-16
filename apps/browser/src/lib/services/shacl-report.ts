@@ -34,12 +34,27 @@ export interface ShaclReport {
   results: ShaclResult[];
 }
 
-export function resultGroupKey(result: ShaclResult): string {
+/**
+ * Key that collapses repeats of one constraint into a single row.
+ *
+ * Deliberately keyed on the focus node's *type* rather than its identity: a
+ * catalog of 500 datasets that each lack a description stays one row, while a
+ * catalog and a dataset that both lack one stay apart. Their results are
+ * otherwise identical – same severity, path, constraint component and shared
+ * `sh:message` – so without the type they would merge and the report would show
+ * one problem where there are two. Callers that cannot resolve the type pass
+ * nothing, which restores the previous collapse-everything behaviour.
+ */
+export function resultGroupKey(
+  result: ShaclResult,
+  focusNodeType?: string,
+): string {
   return [
     result.severity,
     result.path ?? '',
     result.sourceConstraintComponent ?? '',
     result.message,
+    focusNodeType ?? '',
   ].join(String.fromCharCode(1));
 }
 
