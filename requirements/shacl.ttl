@@ -44,7 +44,26 @@ nde-dataset:DatacatalogShape
         nde-dataset:SchemaNameUniqueLangProperty,
         nde-dataset:SchemaNameLangStringProperty,
         nde-dataset:SchemaDescriptionPropertyShouldExist,
-        nde-dataset:SchemaDescriptionProperty,
+        # The datacatalog describes itself, not the datasets it lists, so it carries its own
+        # wording rather than reusing nde-dataset:SchemaDescriptionProperty, which is written
+        # for datasets. Mirrors dcat:CatalogShape, which already describes its own dc:description.
+        [
+            sh:path schema:description ;
+            sh:or (
+                [ sh:datatype xsd:string ]
+                [ sh:datatype rdf:langString ]
+            ) ;
+            sh:description """Een beschrijving van de inhoud van de datacatalogus.
+                Deze is bij voorkeur minimaal drie zinnen en maximaal één alinea lang (2000 karakters).
+                De vindbaarheid van de datacatalogus wordt onder andere bepaald door de kwaliteit van de beschrijving.
+                Denk hierbij aan verschillende gebruikers, vakgenoten maar ook anderen,
+                waarvoor de tekst begrijpelijk moet zijn."""@nl,
+                """A description of the contents of the data catalog.
+                Preferably at least three sentences and at most one paragraph (2,000 characters).
+                The discoverability of the data catalog depends in part on the quality of the description.
+                Consider different audiences – both domain experts and others –
+                for whom the text should be understandable."""@en ;
+        ] ,
         nde-dataset:SchemaDescriptionUniqueLangProperty,
         nde-dataset:SchemaDescriptionLangStringProperty,
         [
