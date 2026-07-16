@@ -42,6 +42,7 @@ export function addDefaultLanguageTags(quads: Quad[], lang = 'nl'): DatasetExt {
 const languageTagPredicates = new Set([
   dct('title').value,
   dct('description').value,
+  dcat('keyword').value,
   foaf('name').value,
   vcard('fn').value,
 ]);

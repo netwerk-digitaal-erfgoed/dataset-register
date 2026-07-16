@@ -110,6 +110,15 @@ const DetailContactPointSchema = {
 // Extended dataset schema for detail page
 export const DatasetDetailSchema = {
   ...BaseDatasetSchema,
+  // Keywords are no longer part of the dataset requirements and are neither
+  // indexed nor facetable, so they exist only here: a read-only echo of what a
+  // publisher happens to still supply, shown on the detail page alone.
+  keyword: {
+    '@id': dcat.keyword,
+    '@optional': true,
+    '@array': true,
+    '@multilang': true,
+  },
   theme: {
     '@id': dcat.theme,
     '@optional': true,

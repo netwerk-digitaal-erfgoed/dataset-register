@@ -110,6 +110,7 @@
   "rss_filter_size": "Size",
   "rss_triples": "triples",
   "dataset_status_archived": "Archived",
+  "detail_keywords": "Keywords",
   "detail_triples": "Triples",
   "detail_distributions": "Distributions",
   "detail_linked_data_summary": "Linked Data Summary",
