@@ -24,21 +24,31 @@
       | { kind: 'no-dataset'; details?: ApiErrorDetails }
       | { kind: 'fetch-failed'; details?: ApiErrorDetails }
       | { kind: 'error'; message: string };
+    /** Focus node -> rdf:type, built by the page so these counts match the report rows. */
+    focusNodeTypes?: Map<string, string>;
     submitHref?: string;
     onExpand?: (section: 'warnings' | 'infos') => void;
   }
 
-  const { state, submitHref, onExpand }: Props = $props();
+  const {
+    state,
+    focusNodeTypes = new Map(),
+    submitHref,
+    onExpand,
+  }: Props = $props();
 
   const counts = $derived.by(() => {
     if (state.kind !== 'report') {
       return { violations: 0, warnings: 0, infos: 0 };
     }
-    // Count distinct (severity, path, constraint, message) groups – the same
-    // grouping as ValidationReport so the summary badges match the row counts.
+    // Count distinct groups – the same grouping as ValidationReport, including
+    // the focus node's type, so the summary badges match the row counts.
     const seen = new Map<string, 'Violation' | 'Warning' | 'Info'>();
     for (const result of state.report.results) {
-      const key = resultGroupKey(result);
+      const key = resultGroupKey(
+        result,
+        result.focusNode ? focusNodeTypes.get(result.focusNode) : undefined,
+      );
       if (!seen.has(key)) seen.set(key, result.severity);
     }
     let violations = 0;
