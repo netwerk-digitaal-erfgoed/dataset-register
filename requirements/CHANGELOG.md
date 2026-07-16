@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.13.0...requirements-1.14.0) (2026-07-16)
+
+
+### Features
+
+* **requirements:** drop keywords from the dataset requirements ([#2256](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2256)) ([e787d17](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/e787d178422d6801b7c13d7bf6c326a29ab070a7))
+
 ## [1.13.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.12.0...requirements-1.13.0) (2026-07-10)
 
 
