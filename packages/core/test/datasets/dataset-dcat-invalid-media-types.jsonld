@@ -1,0 +1,43 @@
+{
+  "@context": {
+    "dcat": "http://www.w3.org/ns/dcat#",
+    "dct": "http://purl.org/dc/terms/",
+    "foaf": "http://xmlns.com/foaf/0.1/"
+  },
+  "@type": "dcat:Dataset",
+  "@id": "http://example.com/id/dataset/junk-media-types",
+  "dct:title": { "@value": "Dataset with unusable media type values", "@language": "en" },
+  "dct:description": { "@value": "Distributions whose media type and compress format are not media types", "@language": "en" },
+  "dct:identifier": "http://example.com/id/dataset/junk-media-types",
+  "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" },
+  "dct:publisher": {
+    "@id": "https://example.com/publisher",
+    "@type": "foaf:Organization",
+    "foaf:name": { "@value": "Test", "@language": "nl" }
+  },
+  "dcat:distribution": [
+    {
+      "@type": "dcat:Distribution",
+      "dct:title": "compressFormat that is not a media type",
+      "dcat:mediaType": { "@id": "https://www.iana.org/assignments/media-types/application/n-triples" },
+      "dcat:compressFormat": "ZIP file",
+      "dcat:accessURL": { "@id": "https://example.com/a.nt.zip" },
+      "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
+    },
+    {
+      "@type": "dcat:Distribution",
+      "dct:title": "bare compression name, not a media type",
+      "dcat:mediaType": { "@id": "https://www.iana.org/assignments/media-types/application/n-triples" },
+      "dcat:compressFormat": "gzip",
+      "dcat:accessURL": { "@id": "https://example.com/b.nt.gz" },
+      "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
+    },
+    {
+      "@type": "dcat:Distribution",
+      "dct:title": "mediaType that is not a media type",
+      "dcat:mediaType": "text turtle",
+      "dcat:accessURL": { "@id": "https://example.com/c.ttl" },
+      "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
+    }
+  ]
+}

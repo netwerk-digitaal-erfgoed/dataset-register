@@ -1,7 +1,7 @@
 import factory from 'rdf-ext';
 import {
   bindIriLicense,
-  compressFormatFromMediaType,
+  compressFormat,
   convertToIri,
   convertToXsdDate,
   normalizeLicense,
@@ -61,6 +61,8 @@ const distributionLicense = 'distribution_license';
 const distributionName = 'distribution_name';
 const distributionSize = 'distribution_size';
 const distributionCompressFormat = 'distribution_compressFormat';
+const distributionCompressFormatDeclared =
+  'distribution_compressFormat_declared';
 const distributionDownloadUrl = 'distribution_downloadUrl';
 const distributionMediaTypeForDownload = 'distribution_mediaType_download';
 const distributionCompressFormatForDownload =
@@ -363,6 +365,9 @@ export const constructQuery = `
           OPTIONAL {
             ?${distribution} dcat:mediaType ${normalizeMediaType(distributionMediaType)} .
           }
+          OPTIONAL {
+            ?${distribution} dcat:compressFormat ${normalizeMediaType(distributionCompressFormatDeclared)} .
+          }
           OPTIONAL { ?${distribution} dct:conformsTo ?${distributionConformsTo} . }
           OPTIONAL {
             ?${distribution} dct:conformsTo ?${distributionConformsToProtocol} .
@@ -379,7 +384,7 @@ export const constructQuery = `
               ?unbound
             ) AS ?${distributionConformsToSparql}
           )
-          ${compressFormatFromMediaType(distributionMediaType, distributionCompressFormat)}
+          ${compressFormat(distributionMediaType, distributionCompressFormat, distributionCompressFormatDeclared)}
           OPTIONAL { ?${distribution} dct:issued ${convertToXsdDate(
             distributionDatePublished,
           )} }
@@ -513,7 +518,9 @@ function schemaOrgQuery(prefix: string): string {
           ?unbound
         ) AS ?${distributionConformsToSparql}
       )
-      ${compressFormatFromMediaType(distributionMediaType, distributionCompressFormat)}
+      # schema.org has no compressFormat equivalent, so a +gzip/+zip suffix on
+      # encodingFormat is the only thing to go on here.
+      ${compressFormat(distributionMediaType, distributionCompressFormat)}
 
       OPTIONAL { ?${distribution} ${prefix}:datePublished ${convertToXsdDate(
         distributionDatePublished,

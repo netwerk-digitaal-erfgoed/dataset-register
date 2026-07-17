@@ -1563,6 +1563,14 @@ dcat:DistributionShape
         ] ;
         sh:message "Verwijder het SPARQL MIME-type uit dcat:mediaType; SPARQL-endpoints worden gedeclareerd via dct:conformsTo"@nl, "Remove the SPARQL MIME type from dcat:mediaType; SPARQL endpoints are declared via dct:conformsTo"@en ;
     ] ,
+    # Metadata-only property shape: dcat:compressFormat carries no constraints of
+    # its own, but publishers need to be told it is read and preferred over a
+    # +gzip/+zip suffix on dcat:mediaType.
+    [
+        sh:path dcat:compressFormat ;
+        sh:description "Het compressieformaat van de distributie, als mediatype uit de IANA media types-lijst (bijv. `application/gzip`). Dit is in DCAT de gebruikelijke manier om compressie aan te geven; een achtervoegsel op `dcat:mediaType` (bijv. `text/turtle+gzip`) wordt ook geaccepteerd. Zijn beide opgegeven, dan heeft `dcat:compressFormat` voorrang. Een waarde die geen mediatype is (bijv. `gzip` in plaats van `application/gzip`) wordt niet opgenomen."@nl ,
+                       "The compression format of the distribution, as a media type from the IANA media types list (such as `application/gzip`). This is the usual way to declare compression in DCAT; a suffix on `dcat:mediaType` (such as `text/turtle+gzip`) is accepted as well. If both are given, `dcat:compressFormat` takes precedence. A value that is not a media type (such as `gzip` rather than `application/gzip`) is not recorded."@en ;
+    ] ,
     # Metadata-only property shape so the UI can surface a description for the
     # dct:conformsTo path emitted by DistributionSparqlMediaTypeRequiresProtocolShape
     # (which is SPARQL-bound and therefore not indexed by sh:path).
