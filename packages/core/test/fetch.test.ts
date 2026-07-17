@@ -292,6 +292,61 @@ describe('Fetch', () => {
     ]);
   });
 
+  // A value that is not a media type cannot become an IANA URI. Minting one
+  // anyway yields an IRI with a space in it, which serializes to N-Triples that
+  // the store rejects – failing the whole registration over one bad value. Drop
+  // the property instead: lenient enough not to reject the dataset, strict
+  // enough to keep the stored IRI valid.
+  it('drops media type values that cannot become an IANA URI', async () => {
+    const response = await file('dataset-dcat-invalid-media-types.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/junk-media-types')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/junk-media-types'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+
+    // The dataset itself must still be ingested, distributions and all.
+    const distributions = [
+      ...dataset.match(
+        factory.namedNode('http://example.com/id/dataset/junk-media-types'),
+        dcat('distribution'),
+        null,
+      ),
+    ];
+    expect(distributions).toHaveLength(3);
+
+    // Nothing unusable is stored, under either property.
+    for (const predicate of [dcat('mediaType'), dcat('compressFormat')]) {
+      for (const quad of dataset.match(null, predicate, null)) {
+        expect(quad.object.termType).toBe('NamedNode');
+        expect(quad.object.value).not.toContain(' ');
+        expect(quad.object.value).toMatch(
+          /^https:\/\/www\.iana\.org\/assignments\/media-types\/[a-zA-Z]+\/|^(?!https:\/\/www\.iana\.org)/,
+        );
+      }
+    }
+
+    // Specifically: the three unusable values are gone, and the good one stays.
+    const compressFormats = [
+      ...dataset.match(null, dcat('compressFormat'), null),
+    ].map((quad) => quad.object.value);
+    expect(compressFormats).toEqual([]);
+
+    const mediaTypes = [...dataset.match(null, dcat('mediaType'), null)].map(
+      (quad) => quad.object.value,
+    );
+    expect(mediaTypes).toEqual([
+      'https://www.iana.org/assignments/media-types/application/n-triples',
+      'https://www.iana.org/assignments/media-types/application/n-triples',
+    ]);
+  });
+
   it('preserves ODRL policy on DCAT distributions', async () => {
     const response = await file('dataset-dcat-valid-with-policy.jsonld');
     nock('https://example.com')

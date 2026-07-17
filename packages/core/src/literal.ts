@@ -68,9 +68,19 @@ export const bindIriLicense = (rawVar: string, outVar: string) =>
       )`;
 
 /**
+ * A media type in `type/subtype` form. Mirrors the sh:pattern that shacl.ttl
+ * applies to schema:encodingFormat, so the query accepts exactly what the shapes
+ * describe as a media type.
+ */
+const mediaTypePattern = '^[a-zA-Z]+/[a-zA-Z0-9][a-zA-Z0-9!#$&\\\\-^_.+]*$';
+
+/**
  * Normalize mediaType to IANA URI format.
  *
- * DCAT-3 requires dcat:mediaType to be URIs pointing to the IANA media type registry.
+ * DCAT gives dcat:mediaType the range dcterms:MediaType and says the value SHOULD
+ * come from the IANA media types registry. DCAT-AP-NL narrows that to IANA only.
+ * We stay lenient about what publishers send but store the IANA URI form.
+ *
  * This function converts:
  * - Text literals like "application/ld+json" to https://www.iana.org/assignments/media-types/application/ld+json
  * - Already-formed IANA URIs pass through unchanged
@@ -80,25 +90,39 @@ export const bindIriLicense = (rawVar: string, outVar: string) =>
  *   "application/n-triples"); the compression format is captured separately by
  *   compressFormat()
  *
+ * A literal that is not a media type at all (e.g. "text turtle", "gzip") is left
+ * unbound rather than concatenated onto the IANA prefix. Minting an IRI from it
+ * produces either a space-bearing IRI, which serializes to N-Triples the store
+ * rejects – losing the whole registration over one bad value – or a well-formed
+ * URI into the IANA registry that denotes nothing. Dropping the one property is
+ * lenient enough to keep the dataset and strict enough to keep the store valid;
+ * the shapes are where a publisher gets told about it.
+ *
  * Also used to normalize dcat:compressFormat itself, whose values are media types
  * too (e.g. "application/gzip"). The +g?zip suffix strip is a no-op on those: it
  * only matches a "+"-separated suffix, which a bare compression media type lacks.
  */
-export const normalizeMediaType = (variable: string) =>
-  `?${variable}Raw ;
+export const normalizeMediaType = (variable: string) => {
+  const cleaned = `REPLACE(REPLACE(STR(?${variable}Raw), ";.*$", ""), "\\\\+g?zip$", "")`;
+  return `?${variable}Raw ;
         BIND(
           IF(
             isIRI(?${variable}Raw),
             IRI(REPLACE(REPLACE(STR(?${variable}Raw), "\\\\+g?zip$", ""), "^http://", "https://")),
-            IRI(
-              CONCAT(
-                "https://www.iana.org/assignments/media-types/",
-                REPLACE(REPLACE(STR(?${variable}Raw), ";.*$", ""), "\\\\+g?zip$", "")
-              )
+            IF(
+              REGEX(${cleaned}, "${mediaTypePattern}"),
+              IRI(
+                CONCAT(
+                  "https://www.iana.org/assignments/media-types/",
+                  ${cleaned}
+                )
+              ),
+              ?unbound
             )
           )
           AS ?${variable}
         )`;
+};
 
 /**
  * Bind the distribution’s compression format URI.
