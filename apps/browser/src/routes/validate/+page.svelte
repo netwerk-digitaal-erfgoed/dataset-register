@@ -92,6 +92,10 @@
       : base;
   });
 
+  // Only when the allow list actually answered ‘no’. An unanswered check stays
+  // undefined, and the Paste tab has no URL to judge – neither may claim this.
+  const domainNotAllowed = $derived(validatedUrlAllowed === false);
+
   function handleStart() {
     summaryState = { kind: 'running' };
   }
@@ -270,6 +274,7 @@
         state={summaryState}
         {focusNodeTypes}
         {submitHref}
+        {domainNotAllowed}
         onExpand={expandSection}
       />
     {/if}

@@ -27,6 +27,8 @@
     /** Focus node -> rdf:type, built by the page so these counts match the report rows. */
     focusNodeTypes?: Map<string, string>;
     submitHref?: string;
+    /** The domain is known to be off the allow list, so registration would be refused. */
+    domainNotAllowed?: boolean;
     onExpand?: (section: 'warnings' | 'infos') => void;
   }
 
@@ -34,6 +36,7 @@
     state,
     focusNodeTypes = new Map(),
     submitHref,
+    domainNotAllowed = false,
     onExpand,
   }: Props = $props();
 
@@ -151,6 +154,14 @@
           {m.validate_summary_submit_cta()}
           <span class="sr-only">({m.opens_in_new_tab()})</span>
         </a>
+      </p>
+    {:else if status !== 'invalid' && domainNotAllowed}
+      <p class="mt-3 text-sm">
+        {m.validate_summary_domain_not_allowed_before()}<a
+          href="mailto:tech@netwerkdigitaalerfgoed.nl"
+          class="text-blue-700 underline hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:text-blue-400"
+          >tech@netwerkdigitaalerfgoed.nl</a
+        >{m.validate_summary_domain_not_allowed_after()}
       </p>
     {/if}
   {:else if state.kind === 'parse-error'}
