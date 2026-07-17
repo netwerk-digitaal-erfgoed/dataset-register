@@ -1,4 +1,5 @@
 import * as m from '$lib/paraglide/messages';
+import { standardizeSchemaOrgPrefix } from './rdf-helpers.js';
 
 /**
  * Human-readable label for the class of a validation result's focus node.
@@ -41,9 +42,3 @@ const labelByClass: Record<string, () => string> = {
   [`${VCARD}Individual`]: m.validate_subject_contact_point,
   [`${SCHEMA}PropertyValue`]: m.validate_subject_identifier,
 };
-
-function standardizeSchemaOrgPrefix(classIri: string): string {
-  return classIri.startsWith('http://schema.org/')
-    ? classIri.replace('http://schema.org/', SCHEMA)
-    : classIri;
-}

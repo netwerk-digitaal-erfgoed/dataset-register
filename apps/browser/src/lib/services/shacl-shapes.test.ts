@@ -57,6 +57,52 @@ describe('selectShape', () => {
       selectShape(index, `${SCHEMA}name`, `${SCHEMA}ContactPoint`),
     ).toBeUndefined();
   });
+
+  it('ignores a sourceShape hit describing a different class than the focus node', () => {
+    // `SchemaDescriptionPropertyShouldExist` is owned by both the catalog and the
+    // dataset shape, so indexShapes keeps a single byId entry won by whichever was
+    // indexed last. Taking it would tell someone describing a catalog to describe
+    // the dataset instead.
+    const dataCatalogMeta = {
+      description: 'Een beschrijving van de inhoud van de datacatalogus.',
+      targetClass: `${SCHEMA}DataCatalog`,
+    };
+    const datasetMeta = {
+      description: 'Een beschrijving van de inhoud van de dataset.',
+      targetClass: `${SCHEMA}Dataset`,
+    };
+    const sharedShape = 'https://def.nde.nl/dataset#SchemaDescriptionProperty';
+    const index: ShapesIndex = {
+      byPath: new Map([
+        [`${SCHEMA}description`, [dataCatalogMeta, datasetMeta]],
+      ]),
+      byId: new Map([[sharedShape, datasetMeta]]),
+    };
+    expect(
+      selectShape(index, `${SCHEMA}description`, `${SCHEMA}DataCatalog`, sharedShape),
+    ).toEqual(dataCatalogMeta);
+  });
+
+  it('keeps a sourceShape hit that is bound to no class', () => {
+    // A distribution shape is targeted via sh:targetObjectsOf and carries no
+    // sh:class, so it constrains no particular class and contradicts nothing.
+    const distributionMeta = {
+      description: 'Beschrijving van de distributie',
+      targetClass: undefined,
+    };
+    const index: ShapesIndex = {
+      byPath: new Map([[`${SCHEMA}description`, [distributionMeta]]]),
+      byId: new Map([['_:df_15_191', distributionMeta]]),
+    };
+    expect(
+      selectShape(
+        index,
+        `${SCHEMA}description`,
+        `${SCHEMA}DataDownload`,
+        '_:df_15_191',
+      ),
+    ).toEqual(distributionMeta);
+  });
 });
 
 describe('indexShapes', () => {
