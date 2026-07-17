@@ -51,10 +51,7 @@
   let url = $state('');
   let submitting = $state(false);
   let progress = $state<ValidationProgress | null>(null);
-  let domainAllowed = $state<boolean | 'unknown'>('unknown');
   let submitController: AbortController | null = null;
-  let checkController: AbortController | null = null;
-  let checkTimer: ReturnType<typeof setTimeout> | undefined;
   let hasSubmitted = $state(false);
   let sourceOpen = $state(false);
   let hideFetched = $state(false);
@@ -76,9 +73,7 @@
 
   onDestroy(() => {
     submitController?.abort();
-    checkController?.abort();
     fetchController?.abort();
-    clearTimeout(checkTimer);
   });
 
   let fetchedText = $state<string | null>(null);
@@ -160,28 +155,6 @@
     });
   });
 
-  $effect(() => {
-    const current = url;
-    clearTimeout(checkTimer);
-    checkController?.abort();
-    const parsed = parseUrl(current);
-    if (!parsed) {
-      domainAllowed = 'unknown';
-      return;
-    }
-    checkTimer = setTimeout(() => {
-      const controller = new AbortController();
-      checkController = controller;
-      checkDomainAllowed(current, controller.signal)
-        .then((ok) => {
-          if (!controller.signal.aborted) domainAllowed = ok;
-        })
-        .catch(() => {
-          if (!controller.signal.aborted) domainAllowed = 'unknown';
-        });
-    }, 400);
-  });
-
   async function dereference(targetUrl: string) {
     fetchController?.abort();
     const controller = new AbortController();
@@ -232,12 +205,11 @@
     // while the SHACL validation runs.
     void dereference(url);
     const submittedUrl = url;
-    const allowedNow =
-      domainAllowed === true
-        ? true
-        : domainAllowed === false
-          ? false
-          : undefined;
+    // Only the outcome needs this, so ask alongside validation rather than
+    // before it. A failed check reads as ‘unknown’, never as ‘not allowed’.
+    const allowed = checkDomainAllowed(submittedUrl, controller.signal).catch(
+      () => undefined,
+    );
     try {
       const outcome = await validateByUrl(
         submittedUrl,
@@ -248,7 +220,7 @@
       );
       if (!controller.signal.aborted) {
         hideFetched = outcome.kind === 'no-dataset';
-        onOutcome(outcome, submittedUrl, allowedNow);
+        onOutcome(outcome, submittedUrl, await allowed);
       }
     } catch (error) {
       if (!controller.signal.aborted) {
@@ -259,7 +231,7 @@
               error instanceof Error ? error.message : 'Validation failed',
           },
           submittedUrl,
-          allowedNow,
+          await allowed,
         );
       }
     } finally {
