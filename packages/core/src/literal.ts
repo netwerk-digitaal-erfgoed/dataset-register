@@ -78,7 +78,11 @@ export const bindIriLicense = (rawVar: string, outVar: string) =>
  * - Strips parameters (e.g., "text/html; charset=utf-8" becomes "text/html")
  * - Strips +gzip or +zip suffix (e.g., "application/n-triples+gzip" becomes
  *   "application/n-triples"); the compression format is captured separately by
- *   compressFormatFromMediaType()
+ *   compressFormat()
+ *
+ * Also used to normalize dcat:compressFormat itself, whose values are media types
+ * too (e.g. "application/gzip"). The +g?zip suffix strip is a no-op on those: it
+ * only matches a "+"-separated suffix, which a bare compression media type lacks.
  */
 export const normalizeMediaType = (variable: string) =>
   `?${variable}Raw ;
@@ -97,19 +101,29 @@ export const normalizeMediaType = (variable: string) =>
         )`;
 
 /**
- * Detect +gzip or +zip in the raw media type and bind a compress format URI.
+ * Bind the distribution’s compression format URI.
  *
- * Returns a SPARQL BIND that sets the compress format variable to
- * <https://www.iana.org/assignments/media-types/application/gzip> for +gzip,
- * <https://www.iana.org/assignments/media-types/application/zip> for +zip,
- * or leaves it unbound otherwise.
+ * A publisher can express compression in two ways, and we accept both:
+ *
+ * 1. dcat:compressFormat, DCAT’s own property for it. Pass its (already
+ *    normalized) variable as declaredVariable; it takes precedence.
+ * 2. A +gzip or +zip suffix on the media type, e.g. "application/n-triples+gzip".
+ *    normalizeMediaType() strips that suffix, so we recover it from the raw value
+ *    here.
+ *
+ * Binds <https://www.iana.org/assignments/media-types/application/gzip> for +gzip,
+ * <https://www.iana.org/assignments/media-types/application/zip> for +zip, and is
+ * left unbound when neither source says anything – an unbound variable makes the
+ * surrounding COALESCE/IF raise an error, which leaves the BIND target unbound.
+ *
+ * https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2251
  */
-export const compressFormatFromMediaType = (
+export const compressFormat = (
   mediaTypeVariable: string,
   compressFormatVariable: string,
-) =>
-  `BIND(
-    IF(
+  declaredVariable?: string,
+) => {
+  const fromMediaTypeSuffix = `IF(
       REGEX(STR(?${mediaTypeVariable}Raw), "\\\\+gzip$"),
       <https://www.iana.org/assignments/media-types/application/gzip>,
       IF(
@@ -117,6 +131,14 @@ export const compressFormatFromMediaType = (
         <https://www.iana.org/assignments/media-types/application/zip>,
         ?unbound
       )
-    ) AS ?${compressFormatVariable}
+    )`;
+
+  return `BIND(
+    ${
+      declaredVariable === undefined
+        ? fromMediaTypeSuffix
+        : `COALESCE(?${declaredVariable}, ${fromMediaTypeSuffix})`
+    } AS ?${compressFormatVariable}
   )`;
+};
 

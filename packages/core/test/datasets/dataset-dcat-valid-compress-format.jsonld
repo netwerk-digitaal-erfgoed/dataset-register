@@ -1,0 +1,50 @@
+{
+  "@context": {
+    "dcat": "http://www.w3.org/ns/dcat#",
+    "dct": "http://purl.org/dc/terms/",
+    "foaf": "http://xmlns.com/foaf/0.1/"
+  },
+  "@type": "dcat:Dataset",
+  "@id": "http://data.bibliotheken.nl/id/dataset/persons",
+  "dct:title": { "@value": "Dataset with a declared compress format", "@language": "en" },
+  "dct:description": { "@value": "Dataset whose distribution declares dcat:compressFormat rather than a +gzip media type suffix", "@language": "en" },
+  "dct:identifier": "http://data.bibliotheken.nl/id/dataset/persons",
+  "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" },
+  "dct:publisher": {
+    "@id": "https://example.com/publisher",
+    "@type": "foaf:Organization",
+    "foaf:name": { "@value": "Koninklijke Bibliotheek", "@language": "nl" }
+  },
+  "dcat:distribution": [
+    {
+      "@type": "dcat:Distribution",
+      "dcat:mediaType": {
+        "@id": "https://www.iana.org/assignments/media-types/application/trig"
+      },
+      "dcat:compressFormat": {
+        "@id": "https://www.iana.org/assignments/media-types/application/gzip"
+      },
+      "dcat:accessURL": {
+        "@id": "https://data.bibliotheken.nl/id/dataset/persons.trig.gz"
+      },
+      "dcat:downloadURL": {
+        "@id": "https://data.bibliotheken.nl/id/dataset/persons.trig.gz"
+      },
+      "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
+    },
+    {
+      "@type": "dcat:Distribution",
+      "dcat:mediaType": {
+        "@id": "https://www.iana.org/assignments/media-types/application/n-triples"
+      },
+      "dcat:compressFormat": "application/zip",
+      "dcat:accessURL": {
+        "@id": "https://data.bibliotheken.nl/id/dataset/persons.nt.zip"
+      },
+      "dcat:downloadURL": {
+        "@id": "https://data.bibliotheken.nl/id/dataset/persons.nt.zip"
+      },
+      "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
+    }
+  ]
+}

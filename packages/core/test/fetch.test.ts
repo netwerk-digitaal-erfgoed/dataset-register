@@ -244,6 +244,54 @@ describe('Fetch', () => {
     ).toBe(true);
   });
 
+  it('reads a declared dcat:compressFormat and normalizes it to an IANA URI', async () => {
+    const response = await file('dataset-dcat-valid-compress-format.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/valid-dcat-dataset-compress-format')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/valid-dcat-dataset-compress-format'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const distributions = [
+      ...dataset.match(
+        factory.namedNode('http://data.bibliotheken.nl/id/dataset/persons'),
+        dcat('distribution'),
+        null,
+      ),
+    ];
+    expect(distributions).toHaveLength(2);
+
+    const compressFormatOf = (distribution: BlankNode) =>
+      [...dataset.match(distribution, dcat('compressFormat'))].map(
+        (quad) => quad.object.value,
+      );
+    const mediaTypeOf = (distribution: BlankNode) =>
+      [...dataset.match(distribution, dcat('mediaType'))].map(
+        (quad) => quad.object.value,
+      );
+
+    // An IRI compressFormat passes through, and the media type it accompanies
+    // must be left alone – it carries no +gzip suffix to strip.
+    const gzipDist = distributions[0].object as BlankNode;
+    expect(mediaTypeOf(gzipDist)).toEqual([
+      'https://www.iana.org/assignments/media-types/application/trig',
+    ]);
+    expect(compressFormatOf(gzipDist)).toEqual([
+      'https://www.iana.org/assignments/media-types/application/gzip',
+    ]);
+
+    // A literal compressFormat is normalized to its IANA URI, like mediaType.
+    const zipDist = distributions[1].object as BlankNode;
+    expect(compressFormatOf(zipDist)).toEqual([
+      'https://www.iana.org/assignments/media-types/application/zip',
+    ]);
+  });
+
   it('preserves ODRL policy on DCAT distributions', async () => {
     const response = await file('dataset-dcat-valid-with-policy.jsonld');
     nock('https://example.com')
