@@ -47,6 +47,12 @@ export function fetchShapes(signal?: AbortSignal): Promise<ShapesIndex> {
  * rdf:type when that is known: descriptions on shared paths like
  * `schema:name` belong to a specific class, and inheriting one from another
  * NodeShape would mislead the reader.
+ *
+ * A property shape reused across class shapes (`SchemaDescriptionPropertyShouldExist`
+ * is owned by both the catalog and the dataset) has a single `byId` entry, won by
+ * whichever NodeShape was indexed last. Taking that hit would attribute the last
+ * owner's description to every subject – exactly what the path lookup exists to
+ * prevent – so it is only trusted when it cannot belong to a different subject.
  */
 export function selectShape(
   index: ShapesIndex,
@@ -56,7 +62,7 @@ export function selectShape(
 ): ShapeMetadata | undefined {
   if (sourceShapeIri) {
     const direct = index.byId.get(sourceShapeIri);
-    if (direct) return direct;
+    if (direct && !contradictsFocusNode(direct, focusNodeType)) return direct;
   }
   if (!pathIri) return undefined;
   const candidates = index.byPath.get(pathIri);
@@ -66,6 +72,20 @@ export function selectShape(
   }
   if (candidates.length === 1) return candidates[0];
   return candidates.find((c) => c.description) ?? undefined;
+}
+
+/**
+ * Whether this metadata describes a different subject than the focus node.
+ *
+ * A shape without a `targetClass` (such as a distribution's, which is targeted via
+ * `sh:targetObjectsOf`) constrains no particular class and so contradicts nothing.
+ */
+function contradictsFocusNode(
+  metadata: ShapeMetadata,
+  focusNodeType: string | undefined,
+): boolean {
+  if (!focusNodeType || !metadata.targetClass) return false;
+  return metadata.targetClass !== focusNodeType;
 }
 
 export function indexShapes(json: unknown, locale: string): ShapesIndex {

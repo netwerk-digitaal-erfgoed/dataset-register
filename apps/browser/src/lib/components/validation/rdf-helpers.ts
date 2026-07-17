@@ -11,6 +11,19 @@ export function joinIri(base: string, suffix: string): string {
 }
 
 /**
+ * Convert the http://schema.org prefix to https://schema.org, mirroring what the
+ * Register does server-side before validating.
+ *
+ * Terms read from an unmodified source may use either prefix, while the shapes and
+ * the validation report only ever use https, so comparing the two needs one form.
+ */
+export function standardizeSchemaOrgPrefix(iri: string): string {
+  return iri.startsWith('http://schema.org/')
+    ? iri.replace('http://schema.org/', 'https://schema.org/')
+    : iri;
+}
+
+/**
  * Resolve a bare term, CURIE (`prefix:local`), or absolute IRI to its IRI
  * using the surrounding JSON-LD `@context`. Returns `null` when the term
  * cannot be resolved; callers that prefer the input back on miss can use
