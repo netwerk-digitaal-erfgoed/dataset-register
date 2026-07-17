@@ -27,8 +27,8 @@
     /** Focus node -> rdf:type, built by the page so these counts match the report rows. */
     focusNodeTypes?: Map<string, string>;
     submitHref?: string;
-    /** The domain is known to be off the allow list, so registration would be refused. */
-    domainNotAllowed?: boolean;
+    /** Host of the validated URL, set only when the allow list refused it. */
+    contactDomain?: string;
     onExpand?: (section: 'warnings' | 'infos') => void;
   }
 
@@ -36,9 +36,23 @@
     state,
     focusNodeTypes = new Map(),
     submitHref,
-    domainNotAllowed = false,
+    contactDomain,
     onExpand,
   }: Props = $props();
+
+  const contactEmail = 'tech@netwerkdigitaalerfgoed.nl';
+
+  // Name the domain in the subject: the reader has to add that specific one, and
+  // asking them to dig it out of the body wastes the one thing we already know.
+  const contactHref = $derived(
+    contactDomain
+      ? `mailto:${contactEmail}?subject=${encodeURIComponent(
+          m.validate_summary_domain_not_allowed_subject({
+            domain: contactDomain,
+          }),
+        )}`
+      : undefined,
+  );
 
   const counts = $derived.by(() => {
     if (state.kind !== 'report') {
@@ -155,12 +169,12 @@
           <span class="sr-only">({m.opens_in_new_tab()})</span>
         </a>
       </p>
-    {:else if status !== 'invalid' && domainNotAllowed}
+    {:else if status !== 'invalid' && contactHref}
       <p class="mt-3 text-sm">
         {m.validate_summary_domain_not_allowed_before()}<a
-          href="mailto:tech@netwerkdigitaalerfgoed.nl"
+          href={contactHref}
           class="text-blue-700 underline hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:text-blue-400"
-          >tech@netwerkdigitaalerfgoed.nl</a
+          >{contactEmail}</a
         >{m.validate_summary_domain_not_allowed_after()}
       </p>
     {/if}
