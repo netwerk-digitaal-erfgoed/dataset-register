@@ -225,6 +225,26 @@ export async function checkDomainAllowed(
 }
 
 /**
+ * Check whether a URL is already registered in the Dataset Register. A failed
+ * check reads as ‘unknown’ to the caller; only a definite 200/404 answers yes/no.
+ */
+export async function checkUrlRegistered(
+  url: string,
+  signal?: AbortSignal,
+): Promise<boolean> {
+  const params = new URLSearchParams({ url });
+  const response = await fetch(
+    `${PUBLIC_API_ENDPOINT}/datasets?${params.toString()}`,
+    { method: 'GET', signal },
+  );
+  if (response.status === 200) return true;
+  if (response.status === 404) return false;
+  throw new Error(
+    `Unexpected response ${response.status} from registration API`,
+  );
+}
+
+/**
  * Detect whether a JSON response is a SHACL report (array of nodes with typed
  * ValidationReport or ValidationResult). Plain error bodies from the API are
  * objects like `{ statusCode: 400, message: '…' }`.

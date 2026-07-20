@@ -25,6 +25,27 @@ tags:
     description: Operations restricted to NDE-issued Bearer tokens. Most integrators will not need these.
 paths:
   /datasets:
+    get:
+      summary: Check whether a URL is already registered
+      tags: [Registration]
+      description: |-
+        Check whether a registration already exists for the given URL. Use this
+        to avoid submitting a URL that is already in the Dataset Register.
+      parameters:
+        - name: url
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Registration URL to check
+          example: 'https://example.com/dataset'
+      responses:
+        200:
+          description: A registration already exists for the URL.
+        400:
+          description: Missing or invalid URL parameter.
+        404:
+          description: No registration exists for the URL.
     post:
       summary: Add dataset description to the Dataset Register
       tags: [Registration]

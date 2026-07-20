@@ -8,6 +8,7 @@
   import * as m from '$lib/paraglide/messages';
   import {
     checkDomainAllowed,
+    checkUrlRegistered,
     validateByUrl,
     type UrlValidationOutcome,
     type ValidationProgress,
@@ -31,6 +32,7 @@
       outcome: UrlValidationOutcome | null,
       url?: string,
       allowed?: boolean,
+      registered?: boolean,
     ) => void;
     onStart: () => void;
     onValidatorLink?: (hash: string) => void;
@@ -66,7 +68,7 @@
         copied = false;
       }, 1500);
     } catch {
-      // ignore — some browsers block clipboard without a user gesture on
+      // ignore – some browsers block clipboard without a user gesture on
       // certain origins; fallback to selection would be the next step.
     }
   }
@@ -185,7 +187,7 @@
         fetchedText = body;
       }
     } catch {
-      // Proxy failures are non-fatal — the main validation can still succeed.
+      // Proxy failures are non-fatal – the main validation can still succeed.
     }
   }
 
@@ -210,6 +212,12 @@
     const allowed = checkDomainAllowed(submittedUrl, controller.signal).catch(
       () => undefined,
     );
+    // Already-registered URLs must not offer a submit action. Asked alongside
+    // validation; a failed check reads as ‘unknown’, never as ‘registered’.
+    const registered = checkUrlRegistered(
+      submittedUrl,
+      controller.signal,
+    ).catch(() => undefined);
     try {
       const outcome = await validateByUrl(
         submittedUrl,
@@ -220,7 +228,7 @@
       );
       if (!controller.signal.aborted) {
         hideFetched = outcome.kind === 'no-dataset';
-        onOutcome(outcome, submittedUrl, await allowed);
+        onOutcome(outcome, submittedUrl, await allowed, await registered);
       }
     } catch (error) {
       if (!controller.signal.aborted) {
@@ -232,6 +240,7 @@
           },
           submittedUrl,
           await allowed,
+          await registered,
         );
       }
     } finally {

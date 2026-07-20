@@ -27,6 +27,8 @@
     /** Focus node -> rdf:type, built by the page so these counts match the report rows. */
     focusNodeTypes?: Map<string, string>;
     submitHref?: string;
+    /** Whether the validated URL is already in the Dataset Register. */
+    alreadyRegistered?: boolean;
     /** Host of the validated URL, set only when the allow list refused it. */
     contactDomain?: string;
     onExpand?: (section: 'warnings' | 'infos') => void;
@@ -36,6 +38,7 @@
     state,
     focusNodeTypes = new Map(),
     submitHref,
+    alreadyRegistered = false,
     contactDomain,
     onExpand,
   }: Props = $props();
@@ -168,6 +171,10 @@
           {m.validate_summary_submit_cta()}
           <span class="sr-only">({m.opens_in_new_tab()})</span>
         </a>
+      </p>
+    {:else if status !== 'invalid' && alreadyRegistered}
+      <p class="mt-3 text-sm">
+        {m.validate_summary_already_registered()}
       </p>
     {:else if status !== 'invalid' && contactHref}
       <p class="mt-3 text-sm">

@@ -231,7 +231,7 @@ describe('Server', () => {
         onProgress?.(1, 2);
         onProgress?.(2, 2);
         // `readUrl` yields a DatasetCore; cast to the report's richer Dataset
-        // type — the streaming path only iterates its quads.
+        // type – the streaming path only iterates its quads.
         return { state: 'valid', errors: shacl } as Valid;
       },
     };
@@ -608,6 +608,40 @@ describe('Server', () => {
     const response = await httpServer.inject({
       method: 'GET',
       url: '/allowed-domains?url=not-a-url',
+    });
+    expect(response.statusCode).toEqual(400);
+  });
+
+  it('returns 200 when a registration already exists for the URL', async () => {
+    const url = new URL('https://example.com/already-registered');
+    await registrationStore.store(new Registration(url, new Date()));
+    const response = await httpServer.inject({
+      method: 'GET',
+      url: `/datasets?url=${encodeURIComponent(url.toString())}`,
+    });
+    expect(response.statusCode).toEqual(200);
+  });
+
+  it('returns 404 when no registration exists for the URL', async () => {
+    const response = await httpServer.inject({
+      method: 'GET',
+      url: '/datasets?url=https://example.com/never-registered',
+    });
+    expect(response.statusCode).toEqual(404);
+  });
+
+  it('returns 400 when the url parameter is missing on the registration check', async () => {
+    const response = await httpServer.inject({
+      method: 'GET',
+      url: '/datasets',
+    });
+    expect(response.statusCode).toEqual(400);
+  });
+
+  it('returns 400 for an invalid url parameter on the registration check', async () => {
+    const response = await httpServer.inject({
+      method: 'GET',
+      url: '/datasets?url=not-a-url',
     });
     expect(response.statusCode).toEqual(400);
   });

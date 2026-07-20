@@ -40,6 +40,7 @@
   );
   let validatedUrl = $state<string | undefined>(undefined);
   let validatedUrlAllowed = $state<boolean | undefined>(undefined);
+  let validatedUrlRegistered = $state<boolean | undefined>(undefined);
   let inlineGoToLine = $state<((line: number) => void) | undefined>(undefined);
   let urlGoToLine = $state<((line: number) => void) | undefined>(undefined);
   let warningsOpen = $state(false);
@@ -84,13 +85,22 @@
   }
 
   const submitHref = $derived.by(() => {
-    if (validatedUrlAllowed !== true) return undefined;
+    // A URL that is already in the Dataset Register cannot be submitted again.
+    if (validatedUrlAllowed !== true || validatedUrlRegistered === true) {
+      return undefined;
+    }
     const locale = getLocale();
     const base = `https://datasetregister.netwerkdigitaalerfgoed.nl/viaurl.php?lang=${locale}`;
     return validatedUrl
       ? `${base}&url=${encodeURIComponent(validatedUrl)}`
       : base;
   });
+
+  // Only when the registration check actually answered ‘yes’ for a URL. The
+  // Paste tab has no URL to judge, and an unanswered check stays undefined.
+  const alreadyRegistered = $derived(
+    validatedUrlRegistered === true && !!validatedUrl,
+  );
 
   // Only when the allow list actually answered ‘no’. An unanswered check stays
   // undefined, and the Paste tab has no URL to judge – neither may claim this.
@@ -117,11 +127,13 @@
     outcome: UrlValidationOutcome | null,
     url?: string,
     allowed?: boolean,
+    registered?: boolean,
   ): void {
     inlineSourceText = undefined;
     inlineSourceContentType = undefined;
     validatedUrl = url;
     validatedUrlAllowed = allowed;
+    validatedUrlRegistered = registered;
     if (url) {
       const params = new URLSearchParams(page.url.search);
       const currentHash =
@@ -162,6 +174,7 @@
     urlSource = null;
     validatedUrl = undefined;
     validatedUrlAllowed = undefined;
+    validatedUrlRegistered = undefined;
     if (!outcome) {
       summaryState = { kind: 'empty' };
       return;
@@ -281,6 +294,7 @@
         state={summaryState}
         {focusNodeTypes}
         {submitHref}
+        {alreadyRegistered}
         contactDomain={notAllowedDomain}
         onExpand={expandSection}
       />
