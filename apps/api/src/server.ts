@@ -193,7 +193,7 @@ export async function server(
    *
    * Frames go through `@fastify/sse` (`reply.sse`), which formats them, manages
    * the `text/event-stream` headers, and closes the stream when the handler
-   * returns — all on the managed reply, so CORS and the other hooks still run.
+   * returns – all on the managed reply, so CORS and the other hooks still run.
    */
   async function validateStreaming(
     reply: FastifyReply,
@@ -247,7 +247,7 @@ export async function server(
     } catch (error) {
       // validator.validate threw, or a frame write failed (e.g. the client
       // disconnected). The response is already streaming, so surface the cause
-      // as an error frame instead of a silent close, and report 500 — what the
+      // as an error frame instead of a silent close, and report 500 – what the
       // non-streaming path's error handler would have recorded.
       reply.log.error(error, 'Streaming validation failed');
       try {
@@ -378,6 +378,26 @@ export async function server(
 
   server.get('/shacl', async (_request, reply) => {
     return reply.sendRdf(shacl);
+  });
+
+  server.get('/datasets', async (request, reply) => {
+    const { url: urlParam } = request.query as { url?: string };
+    if (!urlParam) {
+      return reply.code(400).send();
+    }
+
+    let url: URL;
+    try {
+      url = new URL(urlParam);
+    } catch {
+      return reply.code(400).send();
+    }
+
+    // Existence check for the validate page: a URL that is already registered
+    // should not offer a submit action. Returns 200 when a registration exists,
+    // 404 when it does not – mirroring GET /allowed-domains.
+    const registration = await registrationStore.findByUrl(url);
+    return reply.code(registration ? 200 : 404).send();
   });
 
   server.get('/allowed-domains', async (request, reply) => {

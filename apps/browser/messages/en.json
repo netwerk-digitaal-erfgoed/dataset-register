@@ -470,6 +470,7 @@
   "validate_summary_valid": "Valid",
   "validate_summary_valid_body": "Your dataset description meets the requirements.",
   "validate_summary_submit_cta": "Submit to the Dataset Register",
+  "validate_summary_already_registered": "This URL is already in the Dataset Register, so you don’t need to submit it again.",
   "validate_summary_domain_not_allowed_before": "Your domain name is not yet on the list of allowed domain names, so you cannot submit the dataset description yet. Contact ",
   "validate_summary_domain_not_allowed_after": " to have your domain name added.",
   "validate_summary_domain_not_allowed_subject": "Please add {domain} to the list of allowed domain names",
