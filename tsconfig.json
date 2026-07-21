@@ -15,5 +15,8 @@
     {
       "path": "./packages/search-indexer"
     }
-  ]
+  ],
+  "compilerOptions": {
+    "ignoreDeprecations": "6.0"
+  }
 }

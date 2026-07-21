@@ -17,6 +17,10 @@
     "strict": true,
     "target": "es2022",
     "customConditions": ["development"],
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "noUncheckedSideEffectImports": false,
+    "types": ["*"],
+    "esModuleInterop": false,
+    "ignoreDeprecations": "6.0"
   }
 }
