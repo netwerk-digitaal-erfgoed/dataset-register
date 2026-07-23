@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.14.1](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.14.0...requirements-1.14.1) (2026-07-23)
+
+
+### Bug Fixes
+
+* **core:** read a declared dcat:compressFormat on ingest ([#2270](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2270)) ([2793948](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/2793948216d5c4e9ddc294bcd03a1d6183d1add2))
+* **requirements:** describe the datacatalog description in its own words ([#2264](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2264)) ([46739d3](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/46739d368f7f8e0d83a8aba97dc19fc6b9556853))
+
 ## [1.14.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.13.0...requirements-1.14.0) (2026-07-16)
 
 
