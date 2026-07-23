@@ -58,8 +58,20 @@ export interface RawFacets {
   readonly class: readonly ValueBucket[];
   readonly terminology_source: readonly ValueBucket[];
   readonly status: readonly ValueBucket[];
+  readonly nde_schema_ap: readonly ValueBucket[];
   readonly size: readonly RangeBucket[];
 }
+
+/**
+ * The values of the sidebar’s automated-checks facet: one token per boolean
+ * check the Dataset Knowledge Graph performs. Each token names the index field
+ * it filters on, so {@link buildWhere} maps it back to a single boolean clause
+ * and {@link mapFacets} reads its count off that field’s `true` bucket. Only
+ * SCHEMA-AP-NDE conformance is offered for now – the same check the dataset card
+ * badges – but the shape is the one the remaining checks (IIIF, terms,
+ * persistent URIs) slot into.
+ */
+export const CHECK_SCHEMA_AP_NDE = 'nde_schema_ap';
 
 /** The parsed result of a dataset search: the matched items, the total match
  *  count for paging, and the facet buckets. Items and facets come back in one
@@ -88,6 +100,9 @@ interface DatasetWhere {
   terminology_source?: { in: readonly string[] };
   catalog?: { in: readonly string[] };
   size?: { min?: number; max?: number };
+  // Boolean checks take an `is` filter: set only when the check is selected, so
+  // an unselected check never narrows the listing to the failing datasets.
+  nde_schema_ap?: boolean;
 }
 
 interface DatasetOrderBy {
@@ -152,7 +167,8 @@ export function localizedRecord(
  * the size range. Format and class each carry both granular values and `group:*`
  * tokens in a single field, so a mixed selection unions naturally in one `in`
  * (no companion-field OR). Status is omitted when unset – the API’s
- * `queryDefaults` then applies the valid-only default.
+ * `queryDefaults` then applies the valid-only default. A selected automated
+ * check adds its own boolean `is` clause, so several checks AND together.
  */
 export function buildWhere(request: SearchRequest): DatasetWhere {
   const where: DatasetWhere = {};
@@ -173,6 +189,9 @@ export function buildWhere(request: SearchRequest): DatasetWhere {
   }
   if (request.catalog.length > 0) {
     where.catalog = { in: request.catalog };
+  }
+  if (request.checks.includes(CHECK_SCHEMA_AP_NDE)) {
+    where.nde_schema_ap = true;
   }
   const { min, max } = request.size;
   if (min !== undefined || max !== undefined) {
@@ -245,6 +264,7 @@ export const DATASET_SEARCH_QUERY = `
         class { value count label { language value } }
         terminology_source { value count label { language value } }
         status { value count }
+        nde_schema_ap { value count }
         size { count min max }
       }
     }

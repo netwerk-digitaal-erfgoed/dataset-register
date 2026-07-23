@@ -82,6 +82,7 @@ input DatasetWhere {
   format: StringFilter
   size: IntRange
   status: StringFilter
+  nde_schema_ap: Boolean
 }
 
 input StringFilter {

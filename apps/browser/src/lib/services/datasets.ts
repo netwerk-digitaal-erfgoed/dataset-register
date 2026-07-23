@@ -96,6 +96,9 @@ export interface SearchRequest {
     max?: number;
   };
   status: string[];
+  // The selected automated checks (see `CHECK_SCHEMA_AP_NDE`); each narrows the
+  // listing to the datasets that pass that check.
+  checks: string[];
 }
 
 /**

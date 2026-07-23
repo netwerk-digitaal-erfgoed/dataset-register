@@ -49,6 +49,7 @@
     catalog: decodeDiscreteParam('catalog'),
     size: decodeRangeParam('size'),
     status: decodeDiscreteParam('status'),
+    checks: decodeDiscreteParam('checks'),
   });
 
   // Check cache synchronously to initialize state without flash
@@ -69,6 +70,7 @@
       catalog: decodeDiscreteParam('catalog'),
       size: decodeRangeParam('size'),
       status: decodeDiscreteParam('status'),
+      checks: decodeDiscreteParam('checks'),
     });
 
     if (searchCache && searchCache.searchKey === currentSearchKey) {
@@ -115,6 +117,7 @@
     class: SelectedFacetValue[];
     terminologySource: SelectedFacetValue[];
     catalog: SelectedFacetValue[];
+    checks: SelectedFacetValue[];
     size: { min?: number; max?: number };
   } = $derived({
     publisher: searchRequest.publisher.map((value) => {
@@ -152,6 +155,9 @@
     // Catalogs have no facet counts (filter-only) and no titles, so the chip
     // falls back to the shortened catalog IRI.
     catalog: searchRequest.catalog.map((value) => ({ value })),
+    // Automated checks are named by a token the facet’s translation table
+    // renders, so the chip needs no label of its own.
+    checks: searchRequest.checks.map((value) => ({ value })),
     size: {
       min: searchRequest.size.min,
       max: searchRequest.size.max,
@@ -276,6 +282,12 @@
       url.searchParams.set('status', params.status.join(','));
     } else {
       url.searchParams.delete('status');
+    }
+
+    if (params.checks && params.checks.length > 0) {
+      url.searchParams.set('checks', params.checks.join(','));
+    } else {
+      url.searchParams.delete('checks');
     }
 
     if (params.size?.min !== undefined || params.size?.max !== undefined) {
@@ -467,6 +479,9 @@
         } else if (type === 'catalog') {
           const newCatalogs = searchRequest.catalog.filter((c) => c !== value);
           updateURL(searchRequest, { catalog: newCatalogs });
+        } else if (type === 'checks') {
+          const newChecks = searchRequest.checks.filter((c) => c !== value);
+          updateURL(searchRequest, { checks: newChecks });
         } else if (type === 'size') {
           updateURL(searchRequest, {
             size: { min: undefined, max: undefined },
@@ -488,6 +503,7 @@
           terminologySource: searchRequest.terminologySource,
           size: searchRequest.size,
           status: searchRequest.status,
+          checks: searchRequest.checks,
         }}
         loading={!searchResults?.facets}
         onChange={(facetKey, value) => {
@@ -665,6 +681,7 @@
         terminologySource: searchRequest.terminologySource,
         size: searchRequest.size,
         status: searchRequest.status,
+        checks: searchRequest.checks,
       }}
       loading={!searchResults?.facets}
       onChange={(facetKey, value) => {
@@ -693,6 +710,7 @@
           catalog: [],
           size: { min: undefined, max: undefined },
           status: [],
+          checks: [],
         });
       }}
       class="w-full px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-semibold rounded-lg transition-colors cursor-pointer"

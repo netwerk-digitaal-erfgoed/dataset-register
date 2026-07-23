@@ -17,6 +17,7 @@ function emptyRequest(): SearchRequest {
     catalog: [],
     size: {},
     status: [],
+    checks: [],
   };
 }
 
@@ -85,6 +86,19 @@ describe('buildWhere', () => {
     );
   });
 
+  it('narrows to the datasets passing a selected automated check', () => {
+    // The check facet's value names the boolean index field, which takes an `is`
+    // filter rather than a membership clause.
+    expect(
+      buildWhere({ ...emptyRequest(), checks: ['nde_schema_ap'] })
+        .nde_schema_ap,
+    ).toBe(true);
+  });
+
+  it('leaves an unselected check out, so it never narrows to the failing datasets', () => {
+    expect(buildWhere(emptyRequest())).not.toHaveProperty('nde_schema_ap');
+  });
+
   it('filters by catalog', () => {
     expect(
       buildWhere({
@@ -149,6 +163,7 @@ const PAYLOAD: DatasetSearchResult = {
     class: [],
     terminology_source: [],
     status: [],
+    nde_schema_ap: [],
     size: [],
   },
 };

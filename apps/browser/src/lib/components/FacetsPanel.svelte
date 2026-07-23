@@ -18,6 +18,7 @@
       terminologySource: string[];
       size: { min?: number; max?: number };
       status: string[];
+      checks: string[];
     };
     loading?: boolean;
     onChange: (
@@ -66,6 +67,15 @@
       title={m.facets_terminology_source()}
       explanation={m.terminology_source_explanation()}
       onChange={(values) => onChange('terminologySource', values)}
+    />
+  {/if}
+  {#if (facets?.checks ?? []).length > 0 || selectedValues.checks.length > 0}
+    <SearchFacet
+      selectedValues={selectedValues.checks}
+      values={facets?.checks ?? []}
+      title={m.facets_checks()}
+      explanation={m.facets_checks_explanation()}
+      onChange={(values) => onChange('checks', values)}
     />
   {/if}
   {#if facets?.size && (facets.size.bins ?? []).length > 0}
