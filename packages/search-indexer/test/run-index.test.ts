@@ -414,6 +414,32 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
     expect(valid?.count).toBe(SEEDS.length - 1);
   });
 
+  it('counts and filters the boolean check facets the sidebar reads', async () => {
+    // The browser’s “automated checks” facet reads the count off the `true`
+    // bucket of a boolean field and narrows with an `is` filter on that same
+    // field. Both only work because the field is indexed exclusively when the
+    // check is met, so assert the pair against a real Typesense.
+    const response = await client
+      .collections(SEARCH_COLLECTION_ALIAS)
+      .documents()
+      .search({
+        q: '*',
+        query_by: QUERY_BY,
+        facet_by: 'nde_schema_ap',
+        per_page: 0,
+      });
+    const checkFacet = response.facet_counts?.find(
+      (facet) => facet.field_name === 'nde_schema_ap',
+    );
+    expect(checkFacet?.counts).toEqual([
+      expect.objectContaining({ value: 'true', count: 1 }),
+    ]);
+
+    expect(await search('*', { filter_by: 'nde_schema_ap:=true' })).toEqual([
+      base('mohlmann'),
+    ]);
+  });
+
   it('enriches a document with the DKG class facet, joined by dataset IRI', async () => {
     const document = (await client
       .collections(SEARCH_COLLECTION_ALIAS)

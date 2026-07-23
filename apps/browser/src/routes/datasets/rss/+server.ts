@@ -33,6 +33,7 @@ export async function GET({ url, fetch }: RequestEvent) {
     catalog: decodeDiscreteParam('catalog', url.searchParams),
     size: decodeRangeParam('size', url.searchParams),
     status: decodeDiscreteParam('status', url.searchParams),
+    checks: decodeDiscreteParam('checks', url.searchParams),
   };
 
   // Server-side: pass `event.fetch` so the same-origin `/graphql` URL resolves.

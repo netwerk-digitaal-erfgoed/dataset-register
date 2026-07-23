@@ -290,6 +290,10 @@ const dataset = defineSearchType({
       name: 'nde_schema_ap',
       kind: 'boolean',
       facetable: true,
+      // Filterable so the browser’s “automated checks” facet can narrow the
+      // listing to the conforming datasets (`where: {nde_schema_ap: true}`), not
+      // just count them.
+      filterable: true,
       output: true,
       derive: (node) =>
         isSchemaApNdeMet(qualityMeasurements(node)) ? true : undefined,

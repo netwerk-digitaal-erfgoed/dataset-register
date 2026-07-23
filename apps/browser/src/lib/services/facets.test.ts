@@ -33,6 +33,9 @@ function rawFacets(): RawFacets {
       { value: 'valid', count: 100 },
       { value: 'invalid', count: 2 },
     ],
+    // A boolean check facet: the field is indexed only when the check is met, so
+    // Typesense returns a `true` bucket only.
+    nde_schema_ap: [{ value: 'true', count: 3 }],
     size: [{ count: 8, min: 1000, max: 10000 }],
   };
 }
@@ -61,6 +64,18 @@ describe('mapFacets', () => {
         label: { nl: 'Voorbeeld' },
       },
     ]);
+  });
+
+  it('folds the boolean check facets into one automated-checks facet', () => {
+    const facets = mapFacets(rawFacets());
+
+    expect(facets.checks).toEqual([{ value: 'nde_schema_ap', count: 3 }]);
+  });
+
+  it('leaves out a check no dataset passes', () => {
+    const facets = mapFacets({ ...rawFacets(), nde_schema_ap: [] });
+
+    expect(facets.checks).toEqual([]);
   });
 
   it('lists only the non-default statuses as toggles', () => {

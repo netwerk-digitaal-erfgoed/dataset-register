@@ -2,6 +2,7 @@ import { getLocalizedValue } from '$lib/utils/i18n';
 import { shortenUri } from '$lib/utils/prefix';
 import * as m from '$lib/paraglide/messages';
 import {
+  CHECK_SCHEMA_AP_NDE,
   localizedRecord,
   type RangeBucket,
   type RawFacets,
@@ -84,6 +85,7 @@ export type FacetKey =
   | 'class'
   | 'terminologySource'
   | 'status'
+  | 'checks'
   | 'catalog'
   | 'size';
 
@@ -93,6 +95,7 @@ export type Facets = {
   class: CountedFacetValue[];
   terminologySource: CountedFacetValue[];
   status: CountedFacetValue[];
+  checks: CountedFacetValue[];
   size: Histogram;
 };
 
@@ -117,6 +120,7 @@ export function mapFacets(facets: RawFacets): Facets {
     status: mapValueBuckets(
       facets.status.filter((bucket) => SELECTABLE_STATUSES.has(bucket.value)),
     ),
+    checks: mapCheckBuckets(facets),
     size: mapSizeHistogram(facets.size),
   };
 }
@@ -129,8 +133,26 @@ export function emptyFacets(): Facets {
     class: [],
     terminologySource: [],
     status: [],
+    checks: [],
     size: { range: SIZE_RANGE_FALLBACK, bins: [] },
   };
+}
+
+// Fold the index’s boolean check facets into the single “automated checks”
+// facet: one value per check, counting the datasets that pass it. The fields are
+// indexed only when the check is met, so only the `true` bucket carries a
+// meaningful count; a check nothing passes yields no bucket and is left out.
+function mapCheckBuckets(facets: RawFacets): CountedFacetValue[] {
+  const checks: CountedFacetValue[] = [];
+  for (const [check, buckets] of [
+    [CHECK_SCHEMA_AP_NDE, facets.nde_schema_ap],
+  ] as const) {
+    const count = buckets.find((bucket) => bucket.value === 'true')?.count ?? 0;
+    if (count > 0) {
+      checks.push({ value: check, count });
+    }
+  }
+  return checks;
 }
 
 // Map value/reference facet buckets to counted values, attaching the resolved
@@ -194,11 +216,13 @@ const valueTranslations = {
   [GROUP_DATE]: m['group:date'],
   [GROUP_PROVENANCE]: m['group:provenance'],
   [GROUP_EVENT]: m['group:event'],
+  [CHECK_SCHEMA_AP_NDE]: m['facets_checks_schema_ap_nde'],
 };
 
 const valueTooltips = {
   [VALUE_GONE]: m['facets_status_gone_tooltip'],
   [VALUE_INVALID]: m['facets_status_invalid_tooltip'],
+  [CHECK_SCHEMA_AP_NDE]: m['facets_checks_schema_ap_nde_tooltip'],
 };
 
 export function facetValueTooltip(

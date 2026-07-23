@@ -51,6 +51,7 @@ describe('search GraphQL contract', () => {
       catalog: ['cat'],
       size: { min: 1, max: 2 },
       status: ['valid'],
+      checks: ['nde_schema_ap'],
     };
     for (const field of Object.keys(buildWhere(fullRequest))) {
       expect(whereFields).toContain(field);
