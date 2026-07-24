@@ -20,7 +20,7 @@
     "@commitlint/cli": "^21.2.0",
     "@commitlint/config-conventional": "^21.0.2",
     "@eslint/js": "^10.0.1",
-    "@lde/search-typesense": "^0.10.0",
+    "@lde/search-typesense": "^0.15.1",
     "@nx/docker": "23.1.0",
     "@nx/esbuild": "23.1.0",
     "@nx/eslint": "23.1.0",
