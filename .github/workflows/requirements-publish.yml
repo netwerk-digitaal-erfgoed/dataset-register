@@ -36,7 +36,7 @@ jobs:
           fi
 
       - name: Build and validate
-        uses: w3c/spec-prod@v2
+        uses: w3c/spec-prod@v2.13.2
         with:
           VALIDATE_MARKUP: false
           SOURCE: requirements/index.bs
