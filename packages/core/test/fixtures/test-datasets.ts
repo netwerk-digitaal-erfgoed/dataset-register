@@ -69,7 +69,7 @@ export function createTestRegistration(
     new URL(url),
     datePosted || new Date('2025-01-01T00:00:00Z'),
     validUntil,
-    [],
+    datasets,
     dateCrawled,
   );
 

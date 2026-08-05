@@ -36,6 +36,19 @@ describe('Registration', () => {
       expect(registration.dateCrawled).toBeUndefined();
     });
 
+    it('does not leak back into the instance crawled() was called on', () => {
+      // Copy-on-write like read(): a Registration handed out by a store must not
+      // acquire a crawl date just because a caller derived one from it.
+      const stored = new Registration(
+        new URL('https://example.com/registration'),
+        new Date('2026-01-01T00:00:00Z'),
+      );
+
+      stored.crawled(new Date('2026-08-05T12:00:00Z'));
+
+      expect(stored.dateCrawled).toBeUndefined();
+    });
+
     it('is advanced by crawled() and serialised', () => {
       const dateCrawled = new Date('2026-08-05T12:00:00Z');
       const registration = new Registration(

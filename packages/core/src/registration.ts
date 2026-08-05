@@ -69,9 +69,20 @@ export class Registration {
    * due again and its probe state freezes indefinitely.
    */
   public crawled(date: Date = new Date()): Registration {
-    this._dateCrawled = date;
+    // Copy-on-write like read(), so crawled() on an instance handed out by a
+    // store cannot mutate the store's own copy.
+    const registration = new Registration(
+      this.url,
+      this.datePosted,
+      this.validUntil,
+      this._datasets,
+      date,
+    );
+    registration._statusCode = this._statusCode;
+    registration._dateRead = this._dateRead;
+    registration._warningCount = this._warningCount;
 
-    return this;
+    return registration;
   }
 
   get dateRead() {

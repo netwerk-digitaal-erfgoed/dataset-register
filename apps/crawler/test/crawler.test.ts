@@ -168,9 +168,7 @@ describe('Crawler', () => {
 
     const readRegistration = registrationStore.all()[0];
     expect(readRegistration.warningCount).toBe(2);
-    expect(
-      reportStore.reports.get('https://example.com/valid'),
-    ).toBeDefined();
+    expect(reportStore.reports.get('https://example.com/valid')).toBeDefined();
   });
 
   it('logs URLs that no longer validate', async () => {
