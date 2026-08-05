@@ -1,6 +1,7 @@
 import { URL } from 'node:url';
 import factory from 'rdf-ext';
 import {
+  REGISTRATION_DATE_CRAWLED_PREDICATE,
   REGISTRATION_STATUS_BASE_URI,
   REGISTRATION_WARNING_COUNT_PREDICATE,
 } from './constants.js';
@@ -8,6 +9,7 @@ import { sparqlIri } from './sparql-iri.js';
 
 export class Registration {
   private _dateRead?: Date;
+  private _dateCrawled?: Date;
   private _statusCode?: number;
   private _warningCount?: number;
   private _datasets: URL[];
@@ -23,15 +25,18 @@ export class Registration {
     datePosted: Date,
     validUntil?: Date,
     datasets: URL[] = [],
+    dateCrawled?: Date,
   ) {
     this.url = url;
     this.datePosted = datePosted;
     this.validUntil = validUntil;
     this._datasets = datasets;
+    this._dateCrawled = dateCrawled;
   }
 
   /**
-   * Mark the Registration as read at a date.
+   * Mark the Registration as read at a date. Carries the crawl date over
+   * unchanged: reading the URL is not crawling it, see {@link crawled}.
    */
   public read(
     datasets: URL[],
@@ -45,6 +50,7 @@ export class Registration {
       this.datePosted,
       valid ? undefined : (this.validUntil ?? date),
       datasets,
+      this._dateCrawled,
     );
     registration._statusCode = statusCode;
     registration._dateRead = date;
@@ -53,8 +59,27 @@ export class Registration {
     return registration;
   }
 
+  /**
+   * Mark the Registration as crawled at a date, which is also when its
+   * distributions were last probed.
+   *
+   * Only the crawler calls this. A manual re-registration through the API reads
+   * the URL and re-stores the description, but probes nothing – so it advances
+   * dateRead and must leave the crawl clock alone, or the registration is never
+   * due again and its probe state freezes indefinitely.
+   */
+  public crawled(date: Date = new Date()): Registration {
+    this._dateCrawled = date;
+
+    return this;
+  }
+
   get dateRead() {
     return this._dateRead;
+  }
+
+  get dateCrawled() {
+    return this._dateCrawled;
   }
 
   get statusCode() {
@@ -97,7 +122,10 @@ export interface RegistrationStore {
    * Store a {@link Registration}, replacing any Registrations with the same URL.
    */
   store(registration: Registration): Promise<void>;
-  findRegistrationsReadBefore(date: Date): Promise<Registration[]>;
+  /**
+   * Registrations due for a crawl: crawled before `date`, or never crawled.
+   */
+  findRegistrationsCrawledBefore(date: Date): Promise<Registration[]>;
   findByUrl(url: URL): Promise<Registration | undefined>;
   /**
    * Delete a Registration and all its linked datasets from the registrations graph.
@@ -180,6 +208,19 @@ export function toRdf(registration: Registration) {
         factory.namedNode('https://schema.org/dateRead'),
         factory.literal(
           registration.dateRead.toISOString(),
+          factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime'),
+        ),
+      ),
+    );
+  }
+
+  if (registration.dateCrawled !== undefined) {
+    quads.push(
+      factory.quad(
+        iri,
+        factory.namedNode(REGISTRATION_DATE_CRAWLED_PREDICATE),
+        factory.literal(
+          registration.dateCrawled.toISOString(),
           factory.namedNode('http://www.w3.org/2001/XMLSchema#dateTime'),
         ),
       ),

@@ -11,10 +11,7 @@ import pino from 'pino';
 import { Valid, Validator, ValidationTiming } from '@dataset-register/core';
 import { crawlCounter } from '@dataset-register/core';
 import { rate, RatingStore } from '@dataset-register/core';
-import {
-  countWarnings,
-  ValidationReportStore,
-} from '@dataset-register/core';
+import { countWarnings, ValidationReportStore } from '@dataset-register/core';
 
 // Only emit a per-registration timing line when a registration is slow, so healthy fast
 // registrations stay quiet. A slow registration is what a stalled crawl is made of, and the
@@ -60,7 +57,8 @@ export class Crawler {
   }
 
   /**
-   * Crawl all registered URLs that were last read before `dateLastRead`.
+   * Crawl all registered URLs that were last crawled before `dateLastCrawled`,
+   * or never crawled at all.
    *
    * Scenarios:
    * - if the registration URL is still valid, update the Registration with the
@@ -72,9 +70,11 @@ export class Crawler {
    *   an HTTP status code (schema:status), keeping references to the datasets
    *   that were previously found at the URL when it was still valid.
    */
-  public async crawl(dateLastRead: Date) {
+  public async crawl(dateLastCrawled: Date) {
     const registrations =
-      await this.registrationStore.findRegistrationsReadBefore(dateLastRead);
+      await this.registrationStore.findRegistrationsCrawledBefore(
+        dateLastCrawled,
+      );
     const roundStart = performance.now();
     const roundTimings: Array<{ url: string; totalMs: number }> = [];
     for (const registration of registrations) {
@@ -88,13 +88,13 @@ export class Crawler {
       let isValid = false;
       let datasetIris = registration.datasets;
       // Number of sh:Warning results in the registration's own description, taken
-      // from the raw-data validation below — the same report the /validate
+      // from the raw-data validation below – the same report the /validate
       // endpoint produces, so the dataset page and /validate stay consistent.
       // Left undefined when the URL yields no report (gone, no datasets).
       let warningCount: number | undefined = undefined;
 
-      // `finally` records the timing exactly once on every path — normal completion, the
-      // RequestTimeout `continue`, and the error branches — so there is a single call site.
+      // `finally` records the timing exactly once on every path – normal completion, the
+      // RequestTimeout `continue`, and the error branches – so there is a single call site.
       try {
         try {
           const dereferenceStart = performance.now();
@@ -140,9 +140,7 @@ export class Crawler {
               const rating = rate(dcatValidationResult as Valid);
               await this.ratingStore.store(extractIri(dataset), rating);
             }
-            phases.storeLoopMs = Math.round(
-              performance.now() - storeLoopStart,
-            );
+            phases.storeLoopMs = Math.round(performance.now() - storeLoopStart);
           } else if (validationResult.state === 'invalid') {
             statusCode = 200;
             this.logger.info(`${registration.url} does not pass validation`);
@@ -184,13 +182,9 @@ export class Crawler {
           valid: isValid,
         });
 
-        const updatedRegistration = registration.read(
-          datasetIris,
-          statusCode,
-          isValid,
-          undefined,
-          warningCount,
-        );
+        const updatedRegistration = registration
+          .read(datasetIris, statusCode, isValid, undefined, warningCount)
+          .crawled();
         await this.registrationStore.store(updatedRegistration);
       } finally {
         this.recordRegistrationTiming(

@@ -10,6 +10,7 @@ import {
   RegistrationStore,
   toRdf,
 } from './registration.js';
+import { REGISTRATION_DATE_CRAWLED_PREDICATE } from './constants.js';
 import { Rating, RatingStore } from './rate.js';
 import { SparqlDistributionHealthStore } from './distribution-health-store.js';
 import { SparqlDistributionValidityStore } from './distribution-validity-store.js';
@@ -144,19 +145,21 @@ export class SparqlRegistrationStore implements RegistrationStore {
     private readonly graphIri: string,
   ) {}
 
-  async findRegistrationsReadBefore(date: Date): Promise<Registration[]> {
+  async findRegistrationsCrawledBefore(date: Date): Promise<Registration[]> {
     const result = await this.client.query(`
       PREFIX schema: <https://schema.org/>
       PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-      SELECT ?s ?datePosted ?validUntil ?dataset WHERE {
+      SELECT ?s ?datePosted ?validUntil ?dataset ?dateCrawled WHERE {
         GRAPH <${this.graphIri}> {
           ?s a schema:EntryPoint ;
-            schema:datePosted ?datePosted ;
-            schema:dateRead ?dateRead .
+            schema:datePosted ?datePosted .
+          OPTIONAL { ?s <${REGISTRATION_DATE_CRAWLED_PREDICATE}> ?dateCrawled . }
           OPTIONAL { ?s schema:validUntil ?validUntil . }
           OPTIONAL { ?s schema:about ?dataset . }
-          FILTER (?dateRead < "${date.toISOString()}"^^xsd:dateTime)
+          # A registration that has never been crawled – newly submitted, or
+          # predating nde:dateCrawled – is due now rather than never.
+          FILTER (!BOUND(?dateCrawled) || ?dateCrawled < "${date.toISOString()}"^^xsd:dateTime)
         }
       }
     `);
@@ -166,7 +169,12 @@ export class SparqlRegistrationStore implements RegistrationStore {
     // Group by registration URL, collecting datasets
     const registrationMap = new Map<
       string,
-      { datePosted: string; validUntil?: string; datasets: URL[] }
+      {
+        datePosted: string;
+        validUntil?: string;
+        datasets: URL[];
+        dateCrawled?: string;
+      }
     >();
 
     for (const binding of bindings) {
@@ -176,6 +184,7 @@ export class SparqlRegistrationStore implements RegistrationStore {
           datePosted: binding.get('datePosted')!.value,
           validUntil: binding.get('validUntil')?.value,
           datasets: [],
+          dateCrawled: binding.get('dateCrawled')?.value,
         });
       }
       const dataset = binding.get('dataset');
@@ -191,6 +200,7 @@ export class SparqlRegistrationStore implements RegistrationStore {
           new Date(data.datePosted),
           data.validUntil ? new Date(data.validUntil) : undefined,
           data.datasets,
+          data.dateCrawled ? new Date(data.dateCrawled) : undefined,
         ),
     );
   }
@@ -200,12 +210,13 @@ export class SparqlRegistrationStore implements RegistrationStore {
     const result = await this.client.query(`
       PREFIX schema: <https://schema.org/>
 
-      SELECT ?datePosted ?validUntil ?dataset WHERE {
+      SELECT ?datePosted ?validUntil ?dataset ?dateCrawled WHERE {
         GRAPH <${this.graphIri}> {
           <${iri}> a schema:EntryPoint ;
             schema:datePosted ?datePosted .
           OPTIONAL { <${iri}> schema:validUntil ?validUntil . }
           OPTIONAL { <${iri}> schema:about ?dataset . }
+          OPTIONAL { <${iri}> <${REGISTRATION_DATE_CRAWLED_PREDICATE}> ?dateCrawled . }
         }
       }
     `);
@@ -220,6 +231,8 @@ export class SparqlRegistrationStore implements RegistrationStore {
       .filter((d): d is string => d !== undefined)
       .map((d) => new URL(d));
 
+    const dateCrawled = bindings[0]!.get('dateCrawled');
+
     return new Registration(
       url,
       new Date(bindings[0]!.get('datePosted')!.value),
@@ -227,6 +240,7 @@ export class SparqlRegistrationStore implements RegistrationStore {
         ? new Date(bindings[0]!.get('validUntil')!.value)
         : undefined,
       datasets,
+      dateCrawled ? new Date(dateCrawled.value) : undefined,
     );
   }
 

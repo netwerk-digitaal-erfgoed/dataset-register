@@ -270,31 +270,35 @@ describe('SPARQL', () => {
       );
     });
 
-    it('should find registrations read before a specific date', async () => {
+    it('should find registrations crawled before a specific date', async () => {
       const registration1 = createTestRegistration(
         'https://example.org/registration1.json',
         new Date('2025-01-01T10:00:00Z'),
         new Date('2025-01-10T08:00:00Z'),
-        new Date('2025-01-10T08:00:00Z'), // Old read date
+        new Date('2025-01-10T08:00:00Z'),
+        [],
+        new Date('2025-01-10T08:00:00Z'), // Old crawl date
       );
 
       const registration2 = createTestRegistration(
         'https://example.org/registration2.json',
         new Date('2025-01-02T10:00:00Z'),
         undefined,
-        new Date('2025-01-20T08:00:00Z'), // Recent read date
+        new Date('2025-01-20T08:00:00Z'),
+        [],
+        new Date('2025-01-20T08:00:00Z'), // Recent crawl date
       );
 
       await registrationStore.store(registration1);
       await registrationStore.store(registration2);
 
       const veryOldRegistrations =
-        await registrationStore.findRegistrationsReadBefore(
+        await registrationStore.findRegistrationsCrawledBefore(
           new Date('1900-01-01'),
         );
       expect(veryOldRegistrations).toHaveLength(0);
       const oldRegistrations =
-        await registrationStore.findRegistrationsReadBefore(
+        await registrationStore.findRegistrationsCrawledBefore(
           new Date('2025-01-15T00:00:00Z'),
         );
       expect(oldRegistrations).toHaveLength(1);
@@ -306,6 +310,46 @@ describe('SPARQL', () => {
       expect(oldRegistrations[0].validUntil).toEqual(
         new Date('2025-01-10T08:00:00Z'),
       );
+    });
+
+    it('should find a registration that has never been crawled', async () => {
+      // Newly submitted registrations, and those predating nde:dateCrawled, carry
+      // no crawl date. They are due now: skipping them would starve them forever.
+      const registration = createTestRegistration(
+        'https://example.org/never-crawled.json',
+        new Date('2025-01-01T10:00:00Z'),
+        undefined,
+        new Date('2025-01-20T08:00:00Z'), // Read recently, never crawled.
+      );
+      await registrationStore.store(registration);
+
+      const due = await registrationStore.findRegistrationsCrawledBefore(
+        new Date('2025-01-15T00:00:00Z'),
+      );
+
+      expect(due.map((r) => r.url.toString())).toContain(
+        'https://example.org/never-crawled.json',
+      );
+    });
+
+    it('should round-trip the crawl date, so re-registering cannot reset it', async () => {
+      const dateCrawled = new Date('2025-01-10T08:00:00Z');
+      await registrationStore.store(
+        createTestRegistration(
+          'https://example.org/recrawled.json',
+          new Date('2025-01-01T10:00:00Z'),
+          undefined,
+          new Date('2025-01-10T08:00:00Z'),
+          [],
+          dateCrawled,
+        ),
+      );
+
+      const found = await registrationStore.findByUrl(
+        new URL('https://example.org/recrawled.json'),
+      );
+
+      expect(found!.dateCrawled).toEqual(dateCrawled);
     });
 
     it('should find a registration by URL', async () => {
