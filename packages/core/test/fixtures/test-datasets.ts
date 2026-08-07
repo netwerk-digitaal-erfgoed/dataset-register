@@ -63,11 +63,14 @@ export function createTestRegistration(
   validUntil?: Date,
   dateRead?: Date,
   datasets: URL[] = [],
+  dateCrawled?: Date,
 ): Registration {
   const registration = new Registration(
     new URL(url),
     datePosted || new Date('2025-01-01T00:00:00Z'),
     validUntil,
+    datasets,
+    dateCrawled,
   );
 
   if (dateRead) {

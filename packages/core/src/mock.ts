@@ -18,11 +18,12 @@ export class MockRegistrationStore implements RegistrationStore {
     return [...this.registrations.values()];
   }
 
-  findRegistrationsReadBefore(date: Date): Promise<Registration[]> {
+  findRegistrationsCrawledBefore(date: Date): Promise<Registration[]> {
     return Promise.resolve(
       [...this.registrations.values()].filter(
         (registration: Registration) =>
-          registration.dateRead && registration.dateRead < date,
+          registration.dateCrawled === undefined ||
+          registration.dateCrawled < date,
       ),
     );
   }

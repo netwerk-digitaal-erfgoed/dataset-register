@@ -13,11 +13,20 @@ export const DEFAULT_REGISTRATIONS_GRAPH =
 // apart. The completeness rating carries no additionalType.
 export const VALIDATION_WARNINGS_RATING_TYPE = `${REGISTRATION_STATUS_BASE_URI}validation-warnings`;
 
+// Base IRI for register-specific annotations on a registration (nde:). These
+// live in the NDE namespace because they are not schema.org or DCAT terms.
+export const REGISTRATION_BASE_URI = 'https://def.nde.nl/registration#';
+
 // Predicate on a registration recording how many sh:Warning-severity results
-// its description produced at the last crawl. Lives in the NDE namespace since
-// it is a register-specific annotation, not a schema.org or DCAT term.
-export const REGISTRATION_WARNING_COUNT_PREDICATE =
-  'https://def.nde.nl/registration#warningCount';
+// its description produced at the last crawl.
+export const REGISTRATION_WARNING_COUNT_PREDICATE = `${REGISTRATION_BASE_URI}warningCount`;
+
+// Predicate on a registration recording when the crawler last crawled it, which
+// is also when its distributions were last probed. Distinct from
+// schema:dateRead, which records when the URL was last read by any path – a
+// manual re-registration through the API reads and re-stores the description
+// but probes nothing, so it must not defer the next crawl.
+export const REGISTRATION_DATE_CRAWLED_PREDICATE = `${REGISTRATION_BASE_URI}dateCrawled`;
 
 export const ALLOWED_DOMAIN_NAME_PREDICATE =
   'https://data.netwerkdigitaalerfgoed.nl/allowed_domain_names/def/domain_name';

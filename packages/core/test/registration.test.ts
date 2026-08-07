@@ -1,8 +1,73 @@
 import { Registration, toRdf } from '../src/registration.js';
-import { REGISTRATION_WARNING_COUNT_PREDICATE } from '../src/constants.js';
+import {
+  REGISTRATION_DATE_CRAWLED_PREDICATE,
+  REGISTRATION_WARNING_COUNT_PREDICATE,
+} from '../src/constants.js';
 import { URL } from 'url';
 
 describe('Registration', () => {
+  describe('crawl date', () => {
+    // Reading the URL is not crawling it: the API re-reads and re-stores the
+    // description on every re-registration but probes nothing, so letting that
+    // advance the crawl clock leaves the registration never due again and its
+    // distribution-health records frozen indefinitely.
+    it('is left alone by read()', () => {
+      const dateCrawled = new Date('2026-08-01T10:00:00Z');
+      const registration = new Registration(
+        new URL('https://example.com/registration'),
+        new Date('2026-01-01T00:00:00Z'),
+        undefined,
+        [],
+        dateCrawled,
+      );
+
+      const reRegistered = registration.read([], 200, true);
+
+      expect(reRegistered.dateCrawled).toEqual(dateCrawled);
+      expect(reRegistered.dateRead).not.toEqual(dateCrawled);
+    });
+
+    it('is undefined until the crawler sets it', () => {
+      const registration = new Registration(
+        new URL('https://example.com/registration'),
+        new Date('2026-01-01T00:00:00Z'),
+      ).read([], 200, true);
+
+      expect(registration.dateCrawled).toBeUndefined();
+    });
+
+    it('does not leak back into the instance crawled() was called on', () => {
+      // Copy-on-write like read(): a Registration handed out by a store must not
+      // acquire a crawl date just because a caller derived one from it.
+      const stored = new Registration(
+        new URL('https://example.com/registration'),
+        new Date('2026-01-01T00:00:00Z'),
+      );
+
+      stored.crawled(new Date('2026-08-05T12:00:00Z'));
+
+      expect(stored.dateCrawled).toBeUndefined();
+    });
+
+    it('is advanced by crawled() and serialised', () => {
+      const dateCrawled = new Date('2026-08-05T12:00:00Z');
+      const registration = new Registration(
+        new URL('https://example.com/registration'),
+        new Date('2026-01-01T00:00:00Z'),
+      )
+        .read([], 200, true)
+        .crawled(dateCrawled);
+
+      expect(registration.dateCrawled).toEqual(dateCrawled);
+
+      const quad = toRdf(registration).find(
+        (candidate) =>
+          candidate.predicate.value === REGISTRATION_DATE_CRAWLED_PREDICATE,
+      );
+      expect(quad?.object.value).toBe(dateCrawled.toISOString());
+    });
+  });
+
   it('must toggle from valid to invalid', () => {
     const registration = new Registration(
       new URL('https://example.com/registration'),

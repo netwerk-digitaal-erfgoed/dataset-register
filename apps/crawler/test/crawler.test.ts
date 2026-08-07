@@ -81,6 +81,25 @@ describe('Crawler', () => {
     ]);
   });
 
+  it('stamps the crawl date, which is what makes the registration due again', async () => {
+    // The crawl clock has to be advanced by the crawler and nothing else: the API
+    // re-reads and re-stores a description on every re-registration without
+    // probing, so if that counted as a crawl the registration would never come up
+    // again and its distribution-health records would freeze.
+    await storeRegistrationFixture(new URL('https://example.com/valid'));
+    expect(registrationStore.all()[0].dateCrawled).toBeUndefined();
+
+    const response = await validSchemaOrgDataset();
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/valid')
+      .times(2)
+      .reply(200, response);
+    await crawler.crawl(new Date('3000-01-01'));
+
+    expect(registrationStore.all()[0].dateCrawled).toBeInstanceOf(Date);
+  });
+
   it('crawls valid URL with minimal description', async () => {
     await storeRegistrationFixture(new URL('https://example.com/minimal'));
 
@@ -149,9 +168,7 @@ describe('Crawler', () => {
 
     const readRegistration = registrationStore.all()[0];
     expect(readRegistration.warningCount).toBe(2);
-    expect(
-      reportStore.reports.get('https://example.com/valid'),
-    ).toBeDefined();
+    expect(reportStore.reports.get('https://example.com/valid')).toBeDefined();
   });
 
   it('logs URLs that no longer validate', async () => {

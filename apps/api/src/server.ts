@@ -293,7 +293,15 @@ export async function server(
       // Keep original datePosted if re-registering an existing URL.
       const existingRegistration = await registrationStore.findByUrl(url);
       const datePosted = existingRegistration?.datePosted ?? new Date();
-      const registration = new Registration(url, datePosted);
+      // Carry the crawl clock over: re-registering reads the URL and re-stores the
+      // description, but probes nothing, so it must not defer the next crawl.
+      const registration = new Registration(
+        url,
+        datePosted,
+        undefined,
+        [],
+        existingRegistration?.dateCrawled,
+      );
       await registrationStore.store(registration);
 
       // Fetch dataset descriptions and store them.
