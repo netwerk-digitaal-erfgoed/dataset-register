@@ -21,7 +21,7 @@
     "@lde/search-typesense": "^0.10.0",
     "@rdfjs/types": "2.0.1",
     "env-schema": "^7.0.0",
-    "n3": "^2.0.4",
+    "n3": "^2.1.2",
     "pino": "^10.2.0",
     "tslib": "^2.3.0",
     "typesense": "^3.0.6"
