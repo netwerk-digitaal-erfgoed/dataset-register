@@ -199,6 +199,14 @@ export const DatasetDetailSchema = {
     '@id': dcterms.isPartOf,
     '@optional': true,
   },
+  // The dataset(s) this dataset is derived from. Harvested from dct:source for
+  // DCAT input and from schema:isBasedOn / schema:isBasedOnUrl for schema.org
+  // input, both of which the crawler stores as dct:source.
+  source: {
+    '@id': dcterms.source,
+    '@optional': true,
+    '@array': true,
+  },
   contentRating: {
     '@id': schema.contentRating,
     '@optional': true,

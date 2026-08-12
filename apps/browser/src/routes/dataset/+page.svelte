@@ -1012,6 +1012,62 @@
             </div>
           {/if}
 
+          <!-- Source (the dataset this one is derived from) -->
+          {#if dataset.source && dataset.source.length > 0}
+            <div
+              class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
+            >
+              <dt
+                class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"
+              >
+                <svg
+                  class="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5"
+                  />
+                </svg>
+                {m.detail_source()}
+                <span id="tooltip-source" class="cursor-pointer">
+                  <InfoCircleSolid
+                    class="h-4.5 w-4.5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+                  />
+                </span>
+                <Tooltip triggeredBy="#tooltip-source"
+                  >{m.detail_source_description()}</Tooltip
+                >
+              </dt>
+              <dd class="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                {#each dataset.source as source (source)}
+                  <div>
+                    {#if source.startsWith('http://') || source.startsWith('https://')}
+                      <a
+                        href={source}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="inline-flex items-center gap-1 break-all text-blue-600 hover:underline dark:text-blue-400"
+                      >
+                        {source}
+                        <ArrowUpRightFromSquareOutline
+                          class="h-3 w-3 shrink-0"
+                        />
+                        <span class="sr-only"> ({m.opens_in_new_tab()})</span>
+                      </a>
+                    {:else}
+                      <span class="break-all">{source}</span>
+                    {/if}
+                  </div>
+                {/each}
+              </dd>
+            </div>
+          {/if}
+
           <!-- Landing Page -->
           {#if dataset.landingPage}
             <div
