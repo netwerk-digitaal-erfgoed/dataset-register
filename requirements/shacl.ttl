@@ -1514,6 +1514,12 @@ dcat:DatasetShape
         sh:nodeKind sh:IRI ;
         sh:pattern "^https?://" ;
         sh:description """Een webpagina die toegang biedt tot de dataset, zijn distributies of aanvullende informatie. Niet nodig als de URI van de dataset zelf al naar een HTML-pagina leidt. De menselijk leesbare beschrijving MOET consistent zijn met en minstens alle details (zoals distributies) uit de RDF-datasetbeschrijving bevatten."""@nl, """A web page that provides access to the Dataset, its Distributions and/or additional information. Not needed when the dataset URI itself resolves to an HTML page. The human-readable description MUST be consistent with and include at least all details (such as distributions) from the RDF dataset description."""@en ;
+    ] ,
+    [
+        a sh:PropertyShape ;
+        sh:path dc:source ;
+        sh:minCount 0 ;
+        sh:description "De URI van een dataset waarop deze dataset is gebaseerd."@nl, "The URI of a dataset this dataset is based on."@en ;
     ] ;
     sh:targetClass dcat:Dataset ;
 .
