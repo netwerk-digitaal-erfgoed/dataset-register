@@ -233,6 +233,7 @@
   "detail_is_part_of": "Part of",
   "detail_is_part_of_description": "The data catalog this dataset belongs to.",
   "detail_browse_catalog": "Browse catalog",
+  "detail_browse_publisher_datasets": "More from this publisher",
   "detail_source": "Based on",
   "detail_source_description": "The dataset this dataset is derived from.",
   "license_cc0_1_0": "CC0 1.0 Universal",
