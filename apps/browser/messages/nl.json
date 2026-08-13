@@ -233,6 +233,7 @@
   "detail_is_part_of": "Onderdeel van",
   "detail_is_part_of_description": "De datacatalogus waar deze dataset bij hoort.",
   "detail_browse_catalog": "Doorzoek catalogus",
+  "detail_browse_publisher_datasets": "Meer van deze uitgever",
   "detail_source": "Gebaseerd op",
   "detail_source_description": "De dataset waarvan deze dataset is afgeleid.",
   "license_cc0_1_0": "CC0 1.0 Universeel",

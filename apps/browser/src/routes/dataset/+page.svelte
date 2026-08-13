@@ -240,6 +240,17 @@
     ...getLocalizedArray(dataset.type),
   ]);
 
+  // The publisher’s own web address: their sameAs when given, otherwise the
+  // publisher IRI itself when that is dereferenceable. Undefined when neither is
+  // an HTTP(S) URL, in which case the name is rendered as plain text.
+  const publisherUrl = $derived(
+    [dataset.publisher?.sameAs, dataset.publisher?.$id].find(
+      (value) =>
+        value?.startsWith('http://') === true ||
+        value?.startsWith('https://') === true,
+    ),
+  );
+
   // When the publisher and sole creator are the same entity, collapse into one row.
   const publisherIsCreator = $derived(
     dataset.publisher?.$id &&
@@ -716,14 +727,22 @@
             d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
           />
         </svg>
-        <a
-          href={localizeHref(
-            `/datasets?publishers=${encodeURIComponent(dataset.publisher.$id || '')}`,
-          )}
-          class="text-gray-700 hover:underline dark:text-gray-300"
-        >
-          {getLocalizedValue(dataset.publisher.name)}
-        </a>
+        {#if publisherUrl}
+          <a
+            href={publisherUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-1 text-gray-700 hover:underline dark:text-gray-300"
+          >
+            {getLocalizedValue(dataset.publisher.name)}
+            <ArrowUpRightFromSquareOutline class="h-3 w-3 shrink-0" />
+            <span class="sr-only"> ({m.opens_in_new_tab()})</span>
+          </a>
+        {:else}
+          <span class="text-gray-700 dark:text-gray-300"
+            >{getLocalizedValue(dataset.publisher.name)}</span
+          >
+        {/if}
       </div>
     {/if}
 
@@ -834,21 +853,43 @@
                 >
               </dt>
               <dd class="text-sm text-gray-700 dark:text-gray-300">
-                <a
-                  href={localizeHref(
-                    `/datasets?publishers=${encodeURIComponent(dataset.publisher.$id || '')}`,
-                  )}
-                  class="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  {getLocalizedValue(dataset.publisher.name)}
-                </a>
-                {#if dataset.publisher.nick}
-                  <span class="text-gray-500 dark:text-gray-400"
-                    >({getLocalizedValue(dataset.publisher.nick)})</span
-                  >
-                {/if}
-                <LanguageBadge values={dataset.publisher.name} />
-                {#if dataset.contactPoint?.email || dataset.publisher.sameAs}
+                <span class="flex flex-wrap items-center gap-2">
+                  <span>
+                    {#if publisherUrl}
+                      <a
+                        href={publisherUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="inline-flex items-center gap-1 text-blue-600 hover:underline dark:text-blue-400"
+                      >
+                        {getLocalizedValue(dataset.publisher.name)}
+                        <ArrowUpRightFromSquareOutline
+                          class="h-3 w-3 shrink-0"
+                        />
+                        <span class="sr-only"> ({m.opens_in_new_tab()})</span>
+                      </a>
+                    {:else}
+                      {getLocalizedValue(dataset.publisher.name)}
+                    {/if}
+                    {#if dataset.publisher.nick}
+                      <span class="text-gray-500 dark:text-gray-400"
+                        >({getLocalizedValue(dataset.publisher.nick)})</span
+                      >
+                    {/if}
+                    <LanguageBadge values={dataset.publisher.name} />
+                  </span>
+                  {#if dataset.publisher.$id}
+                    <a
+                      href={localizeHref(
+                        `/datasets?publishers=${encodeURIComponent(dataset.publisher.$id)}`,
+                      )}
+                      class="inline-flex items-center gap-1 rounded-full border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                    >
+                      {m.detail_browse_publisher_datasets()}
+                    </a>
+                  {/if}
+                </span>
+                {#if dataset.contactPoint?.email || (dataset.publisher.sameAs && dataset.publisher.sameAs !== publisherUrl)}
                   <div
                     class="mt-1.5 flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400"
                   >
@@ -878,7 +919,7 @@
                         >
                       </a>
                     {/if}
-                    {#if dataset.publisher.sameAs}
+                    {#if dataset.publisher.sameAs && dataset.publisher.sameAs !== publisherUrl}
                       <a
                         href={dataset.publisher.sameAs}
                         target="_blank"
