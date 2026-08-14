@@ -65,6 +65,8 @@ export type SkipReason =
 export type RunIndexResult =
   | {
       readonly mode: 'rebuild';
+      /** The live alias the rebuild swapped; the versioned collection behind it
+       *  is internal to the writer. */
       readonly collection: string;
       readonly upserted: number;
     }
@@ -219,10 +221,11 @@ export async function runIndex(
     throw error;
   }
 
-  // The writer manages the versioned collection name internally; read it back
-  // off the freshly swapped alias for the result and the log line.
-  const collection = (await aliasTarget(client, alias)) ?? alias;
-  log(`Indexed ${upserted} datasets; alias ${alias} → ${collection}`);
+  // The writer's own resolved alias, not a lookup: the versioned collections
+  // behind it are internal to BlueGreenRebuild, and `collectionName` is what it
+  // exposes for observability. Reporting it rather than re-reading the alias
+  // also drops a Typesense round trip from every run.
+  log(`Indexed ${upserted} datasets into ${writer.collectionName}`);
 
   // The typed label-source collections for facet-bucket + hit-reference display
   // (ADR 0008), each rebuilt blue/green like the dataset index. Non-critical: a
@@ -230,7 +233,7 @@ export async function runIndex(
   // by now), so each degrades to its previous collection and self-heals next run.
   await rebuildLabelCollections(client, options, log, labelQuadsPromise);
 
-  return { mode: 'rebuild', collection, upserted };
+  return { mode: 'rebuild', collection: writer.collectionName, upserted };
 }
 
 /**
@@ -332,9 +335,10 @@ function projectDatasets(
 
 
 /**
- * The collection an alias currently points at, or `undefined` when the alias is
- * unset. Distinguishes a cold start (no index yet) from a populated one and,
- * after a swap, reports which versioned collection went live.
+ * Whether the alias currently points at a collection: a cold start (no index
+ * yet) or a populated one. `BlueGreenRebuild` keeps its own private copy, so
+ * this stays ours – it answers a deployment-policy question (may a degraded
+ * build replace what is live?) rather than naming anything.
  *
  * Only a missing alias (Typesense 404) yields `undefined`; every other error
  * propagates. A transient failure must never be mistaken for a cold start, or
