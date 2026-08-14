@@ -75,7 +75,7 @@
       "sdl": {
         "executor": "nx:run-commands",
         "dependsOn": [
-          "build"
+          "schema-module"
         ],
         "cache": true,
         "inputs": [
@@ -86,7 +86,21 @@
           "{projectRoot}/search-schema.graphql"
         ],
         "options": {
-          "command": "node tools/print-graphql-sdl.mjs"
+          "command": "npx search-print-sdl --module packages/core/dist/search-schema.mjs --out packages/core/search-schema.graphql"
+        }
+      },
+      "schema-module": {
+        "executor": "nx:run-commands",
+        "cache": true,
+        "inputs": [
+          "production",
+          "^production"
+        ],
+        "outputs": [
+          "{projectRoot}/dist/search-schema.mjs"
+        ],
+        "options": {
+          "command": "npx esbuild packages/core/src/search/module.ts --bundle --format=esm --platform=neutral --alias:@lde/search=./packages/core/src/search/search-stub.mjs --outfile=packages/core/dist/search-schema.mjs"
         }
       }
     }
