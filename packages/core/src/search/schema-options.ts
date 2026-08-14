@@ -1,4 +1,4 @@
-import { filterOn, type SearchQuery } from '@lde/search';
+import type { SearchQuery } from '@lde/search';
 
 /**
  * The options the GraphQL surface is built with, alongside {@link SEARCH_SCHEMA}.
@@ -8,9 +8,14 @@ import { filterOn, type SearchQuery } from '@lde/search';
  * `queryDefaults` that lived only in the server would make the printed SDL a
  * description of a different API than the one running.
  *
- * Deliberately untyped here: annotating it would make `@lde/search-api-graphql`
- * part of this package's public type surface, and so a dependency of the API and
- * crawler images, which serve no GraphQL. It is checked where it is passed.
+ * Deliberately untyped here, and written without `@lde/search`'s `filterOn`
+ * helper: annotating it would make `@lde/search-api-graphql` part of this
+ * package's public type surface (and so a dependency of the API and crawler
+ * images, which serve no GraphQL), and the helper is a *value* import, which
+ * would keep this file out of the importless schema-declaration module. The
+ * `SearchQuery` annotation below is a type-only import, so it is erased before
+ * bundling. The options shape is still checked where they are passed, against
+ * `BuildGraphQLSchemaOptions`.
  */
 export const SEARCH_SCHEMA_OPTIONS = {
   types: {
@@ -31,7 +36,7 @@ export const SEARCH_SCHEMA_OPTIONS = {
               ...query,
               where: [
                 ...query.where,
-                filterOn({ field: 'status', in: ['valid'] }),
+                { or: [{ field: 'status', in: ['valid'] }] },
               ],
             },
     },
