@@ -17,8 +17,26 @@ import { searchGraphQLHandler } from '$lib/services/search/engine.server';
  * `Accept-Language` header, which the handler negotiates (q-values respected)
  * into the query’s output-language preference.
  */
-export const POST: RequestHandler = ({ request }) =>
-  searchGraphQLHandler()(request);
+/**
+ * Re-wrap the handler's response in the platform `Response`.
+ *
+ * graphql-yoga answers with `@whatwg-node/fetch`'s ponyfilled `Response`, which
+ * is a different class from the global one even where the shapes match.
+ * SvelteKit endpoint results are checked with `instanceof Response` against the
+ * global, so returning yoga's object directly fails that check and the route 500s
+ * with “handler should return a Response object” – for every request, including
+ * the playground. Copying it across the realm boundary is the whole fix; the body
+ * is passed through as a stream, so this buffers nothing.
+ */
+async function respond(request: Request): Promise<Response> {
+  const response = await searchGraphQLHandler()(request);
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers,
+  });
+}
 
-export const GET: RequestHandler = ({ request }) =>
-  searchGraphQLHandler()(request);
+export const POST: RequestHandler = ({ request }) => respond(request);
+
+export const GET: RequestHandler = ({ request }) => respond(request);
