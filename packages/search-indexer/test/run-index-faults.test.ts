@@ -65,8 +65,17 @@ vi.mock('@lde/search-typesense', async (importOriginal) => {
     ...actual,
     BlueGreenRebuild: class {
       readonly #searchType: SearchType;
-      constructor(_client: unknown, searchType: SearchType) {
+      /** The live alias, as the real writer resolves it at construction: the
+       *  explicit `options.name`, else derived from the type. What `runIndex`
+       *  reports rather than re-reading the alias from Typesense. */
+      readonly collectionName: string;
+      constructor(
+        _client: unknown,
+        searchType: SearchType,
+        options?: { readonly name?: string },
+      ) {
         this.#searchType = searchType;
+        this.collectionName = options?.name ?? searchType.name;
       }
       openRun(context: RunContext): unknown {
         return mocks.openRun(context, this.#searchType);
