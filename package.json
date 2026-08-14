@@ -22,6 +22,7 @@
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.0.2",
     "@eslint/js": "^10.0.1",
+    "@lde/search-api-graphql": "^0.20.3",
     "@lde/search-typesense": "^0.21.3",
     "@nx/docker": "23.1.0",
     "@nx/esbuild": "23.1.0",

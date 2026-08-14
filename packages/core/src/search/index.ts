@@ -3,4 +3,5 @@ export * from './collections.ts';
 export * from './compatibility.ts';
 export * from './media-types.ts';
 export * from './schema.ts';
+export * from './schema-options.ts';
 export * from './synonyms.ts';

@@ -4,12 +4,13 @@ import {
   createSearchGraphQLHandler,
   type SearchGraphQLHandler,
 } from '@lde/search-api-graphql';
-import { filterOn, type SearchEngine, type SearchQuery } from '@lde/search';
+import type { SearchEngine } from '@lde/search';
 import {
   CLASS_COLLECTION_ALIAS,
   ORGANIZATION_COLLECTION_ALIAS,
   SEARCH_COLLECTION_ALIAS,
   SEARCH_SCHEMA,
+  SEARCH_SCHEMA_OPTIONS,
   TERMINOLOGY_SOURCE_COLLECTION_ALIAS,
 } from '@dataset-register/core/search';
 
@@ -62,24 +63,7 @@ export function searchGraphQLHandler(): SearchGraphQLHandler {
   handlerSingleton ??= createSearchGraphQLHandler({
     searchSchema: SEARCH_SCHEMA,
     engine: engine(),
-    schemaOptions: {
-      types: {
-        Dataset: {
-          queryDefaults: (query: SearchQuery): SearchQuery =>
-            query.where.some((clause) =>
-              clause.or.some((criterion) => criterion.field === 'status'),
-            )
-              ? query
-              : {
-                  ...query,
-                  where: [
-                    ...query.where,
-                    filterOn({ field: 'status', in: ['valid'] }),
-                  ],
-                },
-        },
-      },
-    },
+    schemaOptions: SEARCH_SCHEMA_OPTIONS,
     // A facet that fails to resolve degrades that facet rather than the whole
     // search; log it so the cause is visible, matching `onLabelError` below.
     onFacetError: (error) => console.error('Facet resolution failed:', error),
