@@ -29,8 +29,8 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "dependencies": {
-    "@comunica/query-sparql": "^5.2.4",
-    "@comunica/types": "^5.2.3",
+    "@comunica/query-sparql": "^5.3.0",
+    "@comunica/types": "^5.3.0",
     "@lde/dataset": "^0.7.8",
     "@lde/distribution-health": "^0.2.0",
     "@lde/distribution-probe": "^0.2.2",
