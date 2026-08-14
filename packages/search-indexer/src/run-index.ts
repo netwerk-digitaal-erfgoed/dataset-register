@@ -26,6 +26,7 @@ import {
 import type { Quad } from '@rdfjs/types';
 import { rebuildLabelCollection } from './label-collections.js';
 import { rootsOfClass } from './roots.js';
+import { rootTypeOf } from './ir-alias.js';
 import { RegisterSource } from './register-source.js';
 import { DkgSource } from './dkg-source.js';
 import {
@@ -103,7 +104,7 @@ export async function runIndex(
   // three label-source types drive the typed label collections. All are always
   // present – SEARCH_SCHEMA is built over them – so a miss is a programmer error,
   // not a runtime condition.
-  const datasetType = searchType(DATASET_TYPE);
+  const datasetType = rootTypeOf(SEARCH_SCHEMA, DATASET_TYPE);
 
   log(`Rebuilding search index ${alias}`);
 
@@ -258,21 +259,21 @@ async function rebuildLabelCollections(
   await Promise.all([
     rebuildLabelCollection(
       client,
-      searchType(ORGANIZATION_TYPE),
+      rootTypeOf(SEARCH_SCHEMA, ORGANIZATION_TYPE),
       aliases.organization ?? ORGANIZATION_COLLECTION_ALIAS,
       labelQuads.organization,
       log,
     ),
     rebuildLabelCollection(
       client,
-      searchType(CLASS_TYPE),
+      rootTypeOf(SEARCH_SCHEMA, CLASS_TYPE),
       aliases.class ?? CLASS_COLLECTION_ALIAS,
       labelQuads.class,
       log,
     ),
     rebuildLabelCollection(
       client,
-      searchType(TERMINOLOGY_SOURCE_TYPE),
+      rootTypeOf(SEARCH_SCHEMA, TERMINOLOGY_SOURCE_TYPE),
       aliases.terminologySource ?? TERMINOLOGY_SOURCE_COLLECTION_ALIAS,
       labelQuads.terminologySource,
       log,
@@ -297,18 +298,6 @@ const INDEX_SOURCE = new Dataset({
 function runContext(): RunContext {
   const startedAt = new Date().toISOString();
   return { runId: startedAt, startedAt, selectedSources: () => [] };
-}
-
-/**
- * A declared SEARCH_SCHEMA type by IRI. The schema is built over these types, so
- * a miss is a programmer error (a renamed/removed type), not a runtime condition.
- */
-function searchType(typeIri: string): RootType {
-  const type = SEARCH_SCHEMA.get(typeIri);
-  if (type === undefined) {
-    throw new Error(`SEARCH_SCHEMA does not declare the type ${typeIri}.`);
-  }
-  return type;
 }
 
 /**

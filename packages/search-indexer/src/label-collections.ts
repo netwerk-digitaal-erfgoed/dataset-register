@@ -9,6 +9,7 @@ import {
 } from '@lde/search';
 import { Dataset } from '@lde/dataset';
 import { SEARCH_SCHEMA } from '@dataset-register/core';
+import { irAlias, labelFieldOf } from '@lde/search/adapter';
 import { RDF_TYPE, rootsOfClass } from './roots.js';
 import type { RunContext } from '@lde/pipeline';
 
@@ -111,10 +112,18 @@ export async function rebuildLabelCollection(
  */
 export function prepareLabelQuads(
   labelQuads: readonly Quad[],
-  typeIri: string,
+  type: RootType,
 ): Quad[] {
   const rdfType = namedNode(RDF_TYPE);
-  const typeNode = namedNode(typeIri);
+  const typeNode = namedNode(type.class);
+  // The projection reads a field back under its IR Alias, not under the source
+  // predicate the readers emit (`foaf:name`, `rdfs:label`, `dct:title`), so the
+  // re-tagged labels are minted onto the alias of this type’s label field.
+  const labelField = labelFieldOf(type);
+  if (labelField === undefined) {
+    throw new Error(`${type.name} declares no label field to project into.`);
+  }
+  const labelAlias = namedNode(irAlias(type, labelField));
 
   // Per subject: the first literal seen per language (`''` for untagged), and
   // the subject term to re-emit against, in first-seen order.
@@ -122,7 +131,6 @@ export function prepareLabelQuads(
     string,
     {
       subject: Quad['subject'];
-      predicate: Quad['predicate'];
       byLanguage: Map<string, string>;
     }
   >();
@@ -135,7 +143,6 @@ export function prepareLabelQuads(
     if (entry === undefined) {
       bySubject.set(key, {
         subject: labelQuad.subject,
-        predicate: labelQuad.predicate,
         byLanguage: new Map([
           [labelQuad.object.language, labelQuad.object.value],
         ]),
@@ -146,7 +153,7 @@ export function prepareLabelQuads(
   }
 
   const prepared: Quad[] = [];
-  for (const { subject, predicate, byLanguage } of bySubject.values()) {
+  for (const { subject, byLanguage } of bySubject.values()) {
     prepared.push(quad(subject, rdfType, typeNode));
     // The last-resort value for a missing locale, matching the previous sidecar’s
     // default (nl → en → first value of any language). Falling back to the
@@ -160,10 +167,10 @@ export function prepareLabelQuads(
     const nl = byLanguage.get('nl') ?? fallback;
     const en = byLanguage.get('en') ?? fallback;
     if (nl !== undefined) {
-      prepared.push(quad(subject, predicate, literal(nl, 'nl')));
+      prepared.push(quad(subject, labelAlias, literal(nl, 'nl')));
     }
     if (en !== undefined) {
-      prepared.push(quad(subject, predicate, literal(en, 'en')));
+      prepared.push(quad(subject, labelAlias, literal(en, 'en')));
     }
   }
   return prepared;
@@ -178,7 +185,7 @@ async function projectLabelDocuments(
   labelQuads: readonly Quad[],
   type: RootType,
 ): Promise<SearchDocument[]> {
-  const prepared = prepareLabelQuads(labelQuads, type.class);
+  const prepared = prepareLabelQuads(labelQuads, type);
   const documents: SearchDocument[] = [];
   for await (const document of projectRoots(
     prepared,

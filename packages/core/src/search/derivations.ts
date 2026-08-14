@@ -64,24 +64,18 @@ export function formatGroups(
   return groups;
 }
 
-/** Parse a numeric literal string to a number, or null when absent/unparseable. */
-export function parseNumber(value: string | undefined): number | null {
-  if (value === undefined) {
-    return null;
-  }
-  const parsed = Number(value);
-  return Number.isNaN(parsed) ? null : parsed;
-}
-
-/** Sum numeric literal strings (e.g. void:entities across several IIIF subsets). */
+/**
+ * Sum numeric literal strings (e.g. `void:entities` across several IIIF
+ * subsets), skipping any that do not parse.
+ *
+ * Still string-valued because the projection coerces only the *first* literal of
+ * a numeric field, so a field summing several values declares itself `keyword`
+ * and parses here. The single-valued measurements need no parsing at all – their
+ * fields declare a numeric `kind`, and the projection coerces them.
+ */
 export function sumNumbers(values: readonly string[]): number {
-  return values.reduce((total, value) => total + (parseNumber(value) ?? 0), 0);
-}
-
-/** Parse an `xsd:boolean` literal (`true`/`false`/`1`/`0`), or null when absent. */
-export function parseBoolean(value: string | undefined): boolean | null {
-  if (value === undefined) {
-    return null;
-  }
-  return value === 'true' || value === '1';
+  return values.reduce((total, value) => {
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? total : total + parsed;
+  }, 0);
 }

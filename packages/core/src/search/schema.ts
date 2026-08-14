@@ -34,9 +34,21 @@ import {
 // declare a different locale set.
 import { SEARCH_LOCALES } from './collections.ts';
 
-/** schema.org and the register-internal IR predicate prefixes. */
-const SCHEMA = 'https://schema.org/';
-const DR = 'urn:dr:';
+const DQV = 'http://www.w3.org/ns/dqv#';
+
+/**
+ * The `path` of a Dataset Knowledge Graph quality measurement: the hop from the
+ * dataset to a measurement’s value.
+ *
+ * A measurement hangs off the dataset as `dqv:hasQualityMeasurement [
+ * dqv:isMeasurementOf <metric> ; dqv:value ?v ]`, so selecting *one* metric
+ * means constraining a **sibling** property of the intermediate node – which a
+ * property path cannot express. This path states the hop only; which metric a
+ * field takes is named on the field itself, and the DKG reader applies it when
+ * it mints that field’s IR Alias. Every measurement field therefore shares this
+ * same path, and the reader is what tells them apart.
+ */
+const MEASUREMENT_PATH = `<${DQV}hasQualityMeasurement>/<${DQV}value>`;
 
 /**
  * Read a multi-valued field off the document as projected so far.
@@ -97,7 +109,7 @@ const dataset = defineSearchType({
     {
       name: 'title',
       kind: 'text',
-      path: 'http://purl.org/dc/terms/title',
+      path: '<http://purl.org/dc/terms/title>',
       locales: SEARCH_LOCALES,
       output: true,
       searchable: { weight: 5 },
@@ -106,7 +118,7 @@ const dataset = defineSearchType({
     {
       name: 'description',
       kind: 'text',
-      path: 'http://purl.org/dc/terms/description',
+      path: '<http://purl.org/dc/terms/description>',
       locales: SEARCH_LOCALES,
       output: true,
       searchable: { weight: 2 },
@@ -116,14 +128,14 @@ const dataset = defineSearchType({
       // “institute”), so a query ranks matches in the user’s language higher.
       name: 'publisherName',
       kind: 'text',
-      path: 'urn:dr:publisherName',
+      path: '<http://purl.org/dc/terms/publisher>/<http://xmlns.com/foaf/0.1/name>',
       locales: SEARCH_LOCALES,
       searchable: { weight: 3 },
     },
     {
       name: 'creator',
       kind: 'text',
-      path: 'urn:dr:creatorName',
+      path: '<http://purl.org/dc/terms/creator>/<http://xmlns.com/foaf/0.1/name>',
       locales: SEARCH_LOCALES,
       searchable: { weight: 2 },
     },
@@ -134,7 +146,7 @@ const dataset = defineSearchType({
       // its own – that is `publisherName` above.
       name: 'publisher',
       kind: 'reference',
-      path: 'urn:dr:organization',
+      path: '<http://purl.org/dc/terms/publisher>|<http://purl.org/dc/terms/creator>',
       array: true,
       facetable: true,
       filterable: true,
@@ -147,7 +159,7 @@ const dataset = defineSearchType({
       // shows catalog buckets): filterable, not faceted, id-only (no label).
       name: 'catalog',
       kind: 'reference',
-      path: 'urn:dr:catalog',
+      path: '<http://purl.org/dc/terms/isPartOf>',
       array: true,
       filterable: true,
     },
@@ -157,7 +169,7 @@ const dataset = defineSearchType({
       // combined field is faceted.
       name: 'class_iri',
       kind: 'reference',
-      path: `${DR}class`,
+      path: '<http://rdfs.org/ns/void#classPartition>/<http://rdfs.org/ns/void#class>',
       array: true,
     },
     {
@@ -183,7 +195,7 @@ const dataset = defineSearchType({
     {
       name: 'terminology_source',
       kind: 'reference',
-      path: 'urn:dr:terminologySource',
+      path: '^<http://rdfs.org/ns/void#subjectsTarget>/<http://rdfs.org/ns/void#objectsTarget>',
       array: true,
       facetable: true,
       filterable: true,
@@ -194,7 +206,7 @@ const dataset = defineSearchType({
     {
       name: 'language',
       kind: 'keyword',
-      path: 'http://purl.org/dc/terms/language',
+      path: '<http://purl.org/dc/terms/language>',
       array: true,
       facetable: true,
       output: true,
@@ -205,7 +217,7 @@ const dataset = defineSearchType({
       // derived group tokens, and only that combined field is faceted.
       name: 'format_media_type',
       kind: 'keyword',
-      path: `${DR}format`,
+      path: '<http://www.w3.org/ns/dcat#distribution>/<http://www.w3.org/ns/dcat#mediaType>',
       array: true,
       transform: stripIanaPrefix,
     },
@@ -214,7 +226,7 @@ const dataset = defineSearchType({
       // them). Internal: read only to derive the `group:sparql` format token.
       name: 'conforms_to',
       kind: 'keyword',
-      path: `${DR}conformsTo`,
+      path: '<http://www.w3.org/ns/dcat#distribution>/<http://purl.org/dc/terms/conformsTo>',
       array: true,
     },
     {
@@ -242,14 +254,14 @@ const dataset = defineSearchType({
     {
       name: 'date_posted',
       kind: 'date',
-      path: 'urn:dr:datePosted',
+      path: '<https://schema.org/datePosted>',
       sortable: true,
       output: true,
     },
     {
       name: 'size',
       kind: 'integer',
-      path: 'urn:dr:size',
+      path: '<http://rdfs.org/ns/void#triples>',
       facetable: true,
       filterable: true,
       sortable: true,
@@ -266,7 +278,7 @@ const dataset = defineSearchType({
       // Internal: `status` below reduces them to a single token.
       name: 'additional_type',
       kind: 'reference',
-      path: `${SCHEMA}additionalType`,
+      path: '<https://schema.org/additionalType>',
       array: true,
     },
     {
@@ -274,7 +286,7 @@ const dataset = defineSearchType({
       // and a `date` field would coerce it to Unix seconds for no purpose.
       name: 'valid_until',
       kind: 'keyword',
-      path: `${DR}validUntil`,
+      path: '<https://schema.org/validUntil>',
     },
     {
       name: 'status',
@@ -302,7 +314,7 @@ const dataset = defineSearchType({
       // `integer`, which would project only the first subset’s count.
       name: 'iiif_entities',
       kind: 'keyword',
-      path: `${DR}iiifEntities`,
+      path: '<http://rdfs.org/ns/void#subset>/<http://rdfs.org/ns/void#entities>',
       array: true,
     },
     {
@@ -321,12 +333,12 @@ const dataset = defineSearchType({
     {
       name: 'manifests_sampled',
       kind: 'integer',
-      path: `${DR}manifestsSampled`,
+      path: MEASUREMENT_PATH,
     },
     {
       name: 'manifests_validated',
       kind: 'integer',
-      path: `${DR}manifestsValidated`,
+      path: MEASUREMENT_PATH,
     },
     {
       name: 'iiif',
@@ -345,12 +357,12 @@ const dataset = defineSearchType({
     {
       name: 'quads_validated',
       kind: 'integer',
-      path: `${DR}quadsValidated`,
+      path: MEASUREMENT_PATH,
     },
     {
       name: 'schema_ap_nde_conformant',
       kind: 'boolean',
-      path: `${DR}schemaApNdeConformant`,
+      path: MEASUREMENT_PATH,
     },
     {
       name: 'nde_schema_ap',
@@ -388,17 +400,17 @@ const dataset = defineSearchType({
     {
       name: 'subject_uris_sampled',
       kind: 'integer',
-      path: `${DR}subjectUrisSampled`,
+      path: MEASUREMENT_PATH,
     },
     {
       name: 'subject_uris_resolved',
       kind: 'integer',
-      path: `${DR}subjectUrisResolved`,
+      path: MEASUREMENT_PATH,
     },
     {
       name: 'subject_namespace_durable',
       kind: 'boolean',
-      path: `${DR}subjectNamespaceDurable`,
+      path: MEASUREMENT_PATH,
     },
     {
       // Durable polarity: the DKG emits `false` only when the namespace is on
@@ -438,7 +450,7 @@ const organization = defineSearchType({
     {
       name: 'label',
       kind: 'text',
-      path: 'http://xmlns.com/foaf/0.1/name',
+      path: '<http://xmlns.com/foaf/0.1/name>',
       locales: SEARCH_LOCALES,
       output: true,
       searchable: { weight: 1 },
@@ -454,7 +466,7 @@ const rdfClass = defineSearchType({
     {
       name: 'label',
       kind: 'text',
-      path: 'http://www.w3.org/2000/01/rdf-schema#label',
+      path: '<http://www.w3.org/2000/01/rdf-schema#label>',
       locales: SEARCH_LOCALES,
       output: true,
       searchable: { weight: 1 },
@@ -470,7 +482,7 @@ const terminologySource = defineSearchType({
     {
       name: 'label',
       kind: 'text',
-      path: 'http://purl.org/dc/terms/title',
+      path: '<http://purl.org/dc/terms/title>',
       locales: SEARCH_LOCALES,
       output: true,
       searchable: { weight: 1 },
