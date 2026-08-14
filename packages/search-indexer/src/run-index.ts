@@ -189,7 +189,8 @@ export async function runIndex(
     // the imported total the writer does not itself report.
     const documents = (async function* () {
       for await (const document of projectDatasets(
-        [...registerQuads, ...dkgQuads],
+        registerQuads,
+        dkgQuads,
         datasetType,
       )) {
         upserted++;
@@ -311,15 +312,22 @@ function runContext(): RunContext {
  * used to discover them.
  */
 function projectDatasets(
-  quads: readonly Quad[],
+  registerQuads: readonly Quad[],
+  dkgQuads: readonly Quad[],
   datasetType: RootType,
 ): AsyncIterable<SearchDocument> {
-  return projectRoots(
-    quads,
-    rootsOfClass(quads, datasetType.class),
-    SEARCH_SCHEMA,
-    datasetType,
-  );
+  // Only the register asserts `a dcat:Dataset` (the facts CONSTRUCT), so the
+  // roots come from its quads alone – the DKG only enriches datasets the
+  // register already names.
+  const roots = rootsOfClass(registerQuads, datasetType.class);
+  // Chained rather than concatenated: `projectRoots` consumes the quads once, so
+  // a generator lets each source array become collectable during the import
+  // instead of being pinned behind a merged copy of both.
+  const quads = (function* () {
+    yield* registerQuads;
+    yield* dkgQuads;
+  })();
+  return projectRoots(quads, roots, SEARCH_SCHEMA, datasetType);
 }
 
 
