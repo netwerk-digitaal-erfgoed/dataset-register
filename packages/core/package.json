@@ -71,6 +71,23 @@
         "options": {
           "command": "tsc -b packages/core/tsconfig.lib.json"
         }
+      },
+      "sdl": {
+        "executor": "nx:run-commands",
+        "dependsOn": [
+          "build"
+        ],
+        "cache": true,
+        "inputs": [
+          "production",
+          "^production"
+        ],
+        "outputs": [
+          "{projectRoot}/search-schema.graphql"
+        ],
+        "options": {
+          "command": "node tools/print-graphql-sdl.mjs"
+        }
       }
     }
   }

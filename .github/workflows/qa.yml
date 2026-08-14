@@ -74,3 +74,107 @@ jobs:
       - name: Run E2E tests
         if: steps.e2e.outputs.affected == 'true'
         run: npx nx affected -t e2e
+
+  # The GraphQL surface consumers query is generated from SEARCH_SCHEMA by
+  # @lde/search-api-graphql, so nothing in the repository states it and the
+  # declaration tests cannot see what the generator turns them into. This job
+  # regenerates the committed contract and commits any drift to the branch, so a
+  # pull request that moves the published API shows the move in Files changed.
+  # See docs/graphql-contract.md.
+  graphql-contract:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # The head branch, not the merge ref, because this job pushes to it.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      # Skip changes that cannot move the GraphQL surface.
+      - id: relevant
+        run: |
+          set -euo pipefail
+          if git diff --quiet "origin/${{ github.base_ref }}...HEAD" -- \
+               packages/core/src/search package-lock.json; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+            echo 'Nothing here can change the GraphQL surface.'
+          else
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.relevant.outputs.changed == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: 'npm'
+
+      - if: steps.relevant.outputs.changed == 'true'
+        run: npm ci
+
+      - if: steps.relevant.outputs.changed == 'true'
+        run: npx nx run @dataset-register/core:sdl
+
+      - if: steps.relevant.outputs.changed == 'true'
+        name: Commit if the contract was out of date
+        env:
+          CONTRACT: packages/core/search-schema.graphql
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- "$CONTRACT"; then
+            echo 'The committed contract is already current.'
+            exit 0
+          fi
+          echo 'The committed contract was out of date:'
+          git --no-pager diff -- "$CONTRACT"
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add "$CONTRACT"
+          # --no-verify: the pre-commit hook runs `nx affected`, which defaults to
+          # --base=main, and this checkout has only the head branch.
+          git commit --no-verify -m 'build(core): update the GraphQL contract'
+          git push origin "HEAD:${{ github.head_ref }}"
+
+      # Whether this pull request changes the API, which is a different question
+      # from whether the file needed regenerating: an author who ran the target
+      # themselves leaves nothing for the step above to do, and their change would
+      # go unlabelled. Compare the committed surfaces instead, now that this
+      # branch's is known current.
+      - if: steps.relevant.outputs.changed == 'true'
+        id: surface
+        name: Does this change the published API?
+        env:
+          CONTRACT: packages/core/search-schema.graphql
+        run: |
+          set -euo pipefail
+          if git diff --quiet "origin/${{ github.base_ref }}" -- "$CONTRACT"; then
+            echo 'moved=false' >> "$GITHUB_OUTPUT"
+            echo 'No change to the published GraphQL surface.'
+          else
+            echo 'moved=true' >> "$GITHUB_OUTPUT"
+            echo 'This changes the published GraphQL surface:'
+            git --no-pager diff "origin/${{ github.base_ref }}" -- "$CONTRACT"
+          fi
+
+      # Visible in a listing without opening the pull request, and removed again
+      # if a later push takes the change back out - so the label always states
+      # what the branch currently does.
+      - if: steps.relevant.outputs.changed == 'true'
+        name: Label the pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LABEL: graphql-schema-change
+          MOVED: ${{ steps.surface.outputs.moved }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          gh label create "$LABEL" --color 1d76db \
+            --description 'Changes the published GraphQL surface consumers query' \
+            2>/dev/null || true
+          if [ "$MOVED" = 'true' ]; then
+            gh pr edit "$PR" --add-label "$LABEL"
+          else
+            gh pr edit "$PR" --remove-label "$LABEL"
+          fi

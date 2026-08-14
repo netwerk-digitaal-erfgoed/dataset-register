@@ -1,11 +1,32 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
-
-exports[`search GraphQL contract > emits a stable SDL for the dataset search schema 1`] = `
-"type Query {
-  datasets(query: String, where: DatasetWhere, orderBy: DatasetOrderBy, page: Int = 1, perPage: Int = 20): DatasetSearchResult!
-  organizations(query: String, where: OrganizationWhere, orderBy: OrganizationOrderBy, page: Int = 1, perPage: Int = 20): OrganizationSearchResult!
-  classs(query: String, where: ClassWhere, orderBy: ClassOrderBy, page: Int = 1, perPage: Int = 20): ClassSearchResult!
-  terminologySources(query: String, where: TerminologySourceWhere, orderBy: TerminologySourceOrderBy, page: Int = 1, perPage: Int = 20): TerminologySourceSearchResult!
+type Query {
+  datasets(
+    query: String
+    where: DatasetWhere
+    orderBy: DatasetOrderBy
+    page: Int = 1
+    perPage: Int = 20
+  ): DatasetSearchResult!
+  organizations(
+    query: String
+    where: OrganizationWhere
+    orderBy: OrganizationOrderBy
+    page: Int = 1
+    perPage: Int = 20
+  ): OrganizationSearchResult!
+  classs(
+    query: String
+    where: ClassWhere
+    orderBy: ClassOrderBy
+    page: Int = 1
+    perPage: Int = 20
+  ): ClassSearchResult!
+  terminologySources(
+    query: String
+    where: TerminologySourceWhere
+    orderBy: TerminologySourceOrderBy
+    page: Int = 1
+    perPage: Int = 20
+  ): TerminologySourceSearchResult!
 }
 
 type DatasetSearchResult {
@@ -84,7 +105,7 @@ type BooleanBucket {
 }
 
 """
-Sibling keys are combined with AND. Use \`or\` for a disjunction, and \`and\` when a query needs more than one of them.
+Sibling keys are combined with AND. Use `or` for a disjunction, and `and` when a query needs more than one of them.
 """
 input DatasetWhere {
   id: StringFilter
@@ -103,7 +124,7 @@ input DatasetWhere {
   or: [DatasetCriterion!]
 
   """
-  Further groups of conditions, all of which apply. The way to carry a second \`or\` disjunction alongside the first.
+  Further groups of conditions, all of which apply. The way to carry a second `or` disjunction alongside the first.
   """
   and: [DatasetWhere!]
 }
@@ -118,7 +139,7 @@ input IntRange {
 }
 
 """
-A condition on exactly one field. Used inside \`or\`, where the criteria are alternatives.
+A condition on exactly one field. Used inside `or`, where the criteria are alternatives.
 """
 input DatasetCriterion @oneOf {
   id: StringFilter
@@ -161,7 +182,7 @@ type Organization {
 }
 
 """
-Sibling keys are combined with AND. Use \`or\` for a disjunction, and \`and\` when a query needs more than one of them.
+Sibling keys are combined with AND. Use `or` for a disjunction, and `and` when a query needs more than one of them.
 """
 input OrganizationWhere {
   id: StringFilter
@@ -172,13 +193,13 @@ input OrganizationWhere {
   or: [OrganizationCriterion!]
 
   """
-  Further groups of conditions, all of which apply. The way to carry a second \`or\` disjunction alongside the first.
+  Further groups of conditions, all of which apply. The way to carry a second `or` disjunction alongside the first.
   """
   and: [OrganizationWhere!]
 }
 
 """
-A condition on exactly one field. Used inside \`or\`, where the criteria are alternatives.
+A condition on exactly one field. Used inside `or`, where the criteria are alternatives.
 """
 input OrganizationCriterion @oneOf {
   id: StringFilter
@@ -204,7 +225,7 @@ type Class {
 }
 
 """
-Sibling keys are combined with AND. Use \`or\` for a disjunction, and \`and\` when a query needs more than one of them.
+Sibling keys are combined with AND. Use `or` for a disjunction, and `and` when a query needs more than one of them.
 """
 input ClassWhere {
   id: StringFilter
@@ -215,13 +236,13 @@ input ClassWhere {
   or: [ClassCriterion!]
 
   """
-  Further groups of conditions, all of which apply. The way to carry a second \`or\` disjunction alongside the first.
+  Further groups of conditions, all of which apply. The way to carry a second `or` disjunction alongside the first.
   """
   and: [ClassWhere!]
 }
 
 """
-A condition on exactly one field. Used inside \`or\`, where the criteria are alternatives.
+A condition on exactly one field. Used inside `or`, where the criteria are alternatives.
 """
 input ClassCriterion @oneOf {
   id: StringFilter
@@ -247,7 +268,7 @@ type TerminologySource {
 }
 
 """
-Sibling keys are combined with AND. Use \`or\` for a disjunction, and \`and\` when a query needs more than one of them.
+Sibling keys are combined with AND. Use `or` for a disjunction, and `and` when a query needs more than one of them.
 """
 input TerminologySourceWhere {
   id: StringFilter
@@ -258,13 +279,13 @@ input TerminologySourceWhere {
   or: [TerminologySourceCriterion!]
 
   """
-  Further groups of conditions, all of which apply. The way to carry a second \`or\` disjunction alongside the first.
+  Further groups of conditions, all of which apply. The way to carry a second `or` disjunction alongside the first.
   """
   and: [TerminologySourceWhere!]
 }
 
 """
-A condition on exactly one field. Used inside \`or\`, where the criteria are alternatives.
+A condition on exactly one field. Used inside `or`, where the criteria are alternatives.
 """
 input TerminologySourceCriterion @oneOf {
   id: StringFilter
@@ -277,5 +298,4 @@ input TerminologySourceOrderBy {
 
 enum TerminologySourceSortField {
   RELEVANCE
-}"
-`;
+}

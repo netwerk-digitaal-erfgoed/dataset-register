@@ -6,15 +6,6 @@ import type { SearchRequest } from '../datasets';
 import { buildWhere, DATASET_SEARCH_QUERY } from './datasets';
 
 describe('search GraphQL contract', () => {
-  it('emits a stable SDL for the dataset search schema', () => {
-    // The public GraphQL contract is generated from SEARCH_SCHEMA at runtime, so
-    // nothing in the repo shows a contract change as a reviewable diff. This
-    // snapshot restores that: any change to the search schema – or to the
-    // generator in a new @lde/search-api-graphql – fails here with the SDL diff
-    // until it is consciously accepted (`vitest -u`) and reviewed.
-    expect(printGraphQLSchema(SEARCH_SCHEMA)).toMatchSnapshot();
-  });
-
   it('validates the browser listing query against the generated schema', () => {
     // The client query and the server contract are separate declarations; a
     // field the query selects but the schema does not expose (a typo, a dropped

@@ -1,0 +1,10 @@
+# The GraphQL contract this repository publishes, for editors and tooling.
+#
+# `search-schema.graphql` is generated from the declarations in
+# `@dataset-register/core` and committed – see docs/graphql-contract.md.
+# Pointing editors at the file rather than at a running endpoint means
+# validation works offline, and against the schema this branch would publish
+# rather than whatever is currently deployed.
+schema: packages/core/search-schema.graphql
+documents:
+  - 'apps/browser/src/lib/services/search/**/*.ts'
