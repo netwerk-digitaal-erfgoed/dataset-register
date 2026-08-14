@@ -1,33 +1,59 @@
 import { describe, expect, it } from 'vitest';
 import { Parser } from 'n3';
 import type { Quad } from '@rdfjs/types';
-import { projectGraph, type SearchDocument } from '@lde/search';
-import { SEARCH_SCHEMA } from '../src/search/schema.ts';
+import { projectRoots, type SearchDocument } from '@lde/search';
+import { DATASET_TYPE, SEARCH_SCHEMA } from '../src/search/schema.ts';
 import { REGISTRATION_STATUS_BASE_URI } from '../src/constants.ts';
 import { SPARQL_PROTOCOL_URI } from '../src/search/media-types.ts';
 
-/** Frame + project a Turtle fixture into search documents. */
+/**
+ * Frame + project a Turtle fixture into dataset search documents.
+ *
+ * `projectRoots` projects the one type it is handed over the roots the caller
+ * names, so the roots come from the fixture’s `a dcat:Dataset` subjects – the
+ * same typing the indexer’s register CONSTRUCT emits.
+ */
 async function project(turtle: string): Promise<SearchDocument[]> {
   const quads: Quad[] = new Parser().parse(turtle);
+  const roots = quads
+    .filter(
+      (quad) =>
+        quad.predicate.value === RDF_TYPE && quad.object.value === DATASET_TYPE,
+    )
+    .map((quad) => quad.subject.value);
+  const datasetType = SEARCH_SCHEMA.get(DATASET_TYPE)!;
   const documents: SearchDocument[] = [];
-  // projectGraph yields the whole-schema {searchType, document} stream; keep the
-  // projected document.
-  for await (const { document } of projectGraph(quads, SEARCH_SCHEMA)) {
+  for await (const document of projectRoots(
+    quads,
+    [...new Set(roots)],
+    SEARCH_SCHEMA,
+    datasetType,
+  )) {
     documents.push(document);
   }
   return documents;
 }
 
+const RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
+
+/**
+ * The fixtures are written in the projection’s **input** vocabulary, not the
+ * source one: `@lde/search` reads each field back under its IR Alias
+ * (`urn:lde:Dataset/‹field›`), which is what the indexer’s CONSTRUCTs emit. A
+ * field’s `path` states what the reader reads from the source graph; it is never
+ * what the projection sees. `a dcat:Dataset` stays a real type triple – it marks
+ * the roots, it is not a field.
+ */
 const PREFIXES = `
   @prefix dcat: <http://www.w3.org/ns/dcat#> .
-  @prefix dct: <http://purl.org/dc/terms/> .
+  @prefix ir: <urn:lde:Dataset/> .
 `;
 
 describe('dataset search schema projection', () => {
   it('projects a title into per-locale display, search, and sort fields', async () => {
     const [document] = await project(`${PREFIXES}
       <http://example.org/ds1> a dcat:Dataset ;
-        dct:title "Verhalen"@nl, "Stories"@en .
+        ir:title "Verhalen"@nl, "Stories"@en .
     `);
 
     expect(document.id).toBe('http://example.org/ds1');
@@ -41,7 +67,7 @@ describe('dataset search schema projection', () => {
   it('folds diacritics in the search and sort companions (regression #1661)', async () => {
     const [document] = await project(`${PREFIXES}
       <http://example.org/ds1> a dcat:Dataset ;
-        dct:title "Møhlmann"@nl .
+        ir:title "Møhlmann"@nl .
     `);
 
     // The display field keeps the original spelling; the folded companions strip
@@ -54,7 +80,7 @@ describe('dataset search schema projection', () => {
   it('projects a description into per-locale display and search fields', async () => {
     const [document] = await project(`${PREFIXES}
       <http://example.org/ds1> a dcat:Dataset ;
-        dct:description "Een collectie"@nl, "A collection"@en .
+        ir:description "Een collectie"@nl, "A collection"@en .
     `);
 
     expect(document.description_nl).toBe('Een collectie');
@@ -65,8 +91,8 @@ describe('dataset search schema projection', () => {
   it('keeps publisher and creator names per-locale searchable', async () => {
     const [document] = await project(`${PREFIXES}
       <http://example.org/ds1> a dcat:Dataset ;
-        <urn:dr:publisherName> "Rijksinstituut"@nl, "State Institute"@en ;
-        <urn:dr:creatorName> "Maker"@nl .
+        ir:publisherName "Rijksinstituut"@nl, "State Institute"@en ;
+        ir:creator "Maker"@nl .
     `);
 
     expect(document.publisherName_search_nl).toBe('rijksinstituut');
@@ -77,7 +103,7 @@ describe('dataset search schema projection', () => {
   it('projects publisher organization IRIs as a reference facet', async () => {
     const [document] = await project(`${PREFIXES}
       <http://example.org/ds1> a dcat:Dataset ;
-        <urn:dr:organization> <https://example.org/org/rijks>, <https://example.org/org/kb> .
+        ir:publisher <https://example.org/org/rijks>, <https://example.org/org/kb> .
     `);
 
     expect(document.publisher).toEqual(
@@ -91,9 +117,9 @@ describe('dataset search schema projection', () => {
   it('projects catalog, class, and terminology-source reference IRIs', async () => {
     const [document] = await project(`${PREFIXES}
       <http://example.org/ds1> a dcat:Dataset ;
-        <urn:dr:catalog> <https://example.org/cat/1> ;
-        <urn:dr:class> <https://schema.org/Person>, <https://schema.org/CreativeWork> ;
-        <urn:dr:terminologySource> <https://example.org/voc/aat> .
+        ir:catalog <https://example.org/cat/1> ;
+        ir:class_iri <https://schema.org/Person>, <https://schema.org/CreativeWork> ;
+        ir:terminology_source <https://example.org/voc/aat> .
     `);
 
     expect(document.catalog).toEqual(['https://example.org/cat/1']);
@@ -112,12 +138,12 @@ describe('dataset search schema projection', () => {
     const [document] = await project(`${PREFIXES}
       @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
       <http://example.org/ds1> a dcat:Dataset ;
-        dct:language "nl", "en" ;
-        <urn:dr:format>
+        ir:language "nl", "en" ;
+        ir:format_media_type
           "https://www.iana.org/assignments/media-types/application/ld+json",
           "text/turtle" ;
-        <urn:dr:datePosted> "2024-01-01T00:00:00Z"^^xsd:dateTime ;
-        <urn:dr:size> 1500 .
+        ir:date_posted "2024-01-01T00:00:00Z"^^xsd:dateTime ;
+        ir:size 1500 .
     `);
 
     expect(document.language).toEqual(expect.arrayContaining(['nl', 'en']));
@@ -131,7 +157,7 @@ describe('dataset search schema projection', () => {
 
   it('derives a valid status (rank 0) and no vinkjes for a bare dataset', async () => {
     const [document] = await project(`${PREFIXES}
-      <http://example.org/ds1> a dcat:Dataset ; dct:title "X"@nl .
+      <http://example.org/ds1> a dcat:Dataset ; ir:title "X"@nl .
     `);
 
     expect(document.status).toBe('valid');
@@ -147,7 +173,7 @@ describe('dataset search schema projection', () => {
     const [document] = await project(`${PREFIXES}
       @prefix schema: <https://schema.org/> .
       <http://example.org/ds1> a dcat:Dataset ;
-        schema:additionalType <${REGISTRATION_STATUS_BASE_URI}gone> .
+        ir:additional_type <${REGISTRATION_STATUS_BASE_URI}gone> .
     `);
 
     expect(document.status).toBe('gone');
@@ -158,7 +184,7 @@ describe('dataset search schema projection', () => {
     const [document] = await project(`${PREFIXES}
       @prefix schema: <https://schema.org/> .
       <http://example.org/ds1> a dcat:Dataset ;
-        schema:additionalType <${REGISTRATION_STATUS_BASE_URI}invalid> .
+        ir:additional_type <${REGISTRATION_STATUS_BASE_URI}invalid> .
     `);
 
     expect(document.status).toBe('invalid');
@@ -168,7 +194,7 @@ describe('dataset search schema projection', () => {
   it('derives an archived status (rank 1) from a validUntil marker', async () => {
     const [document] = await project(`${PREFIXES}
       <http://example.org/ds1> a dcat:Dataset ;
-        <urn:dr:validUntil> "2020-01-01T00:00:00Z" .
+        ir:valid_until "2020-01-01T00:00:00Z" .
     `);
 
     expect(document.status).toBe('archived');
@@ -178,9 +204,9 @@ describe('dataset search schema projection', () => {
   it('leaves size-less linked_data and unparseable measurements unmet', async () => {
     const [document] = await project(`${PREFIXES}
       <http://example.org/ds1> a dcat:Dataset ;
-        <urn:dr:quadsValidated> "not-a-number" ;
-        <urn:dr:schemaApNdeConformant> false ;
-        <urn:dr:subjectNamespaceDurable> false .
+        ir:quads_validated "not-a-number" ;
+        ir:schema_ap_nde_conformant false ;
+        ir:subject_namespace_durable false .
     `);
 
     expect(document.nde_schema_ap).toBeUndefined();
@@ -195,9 +221,9 @@ describe('dataset search schema projection', () => {
     // `class_group` companion fields are gone.
     const [document] = await project(`${PREFIXES}
       <http://example.org/ds1> a dcat:Dataset ;
-        <urn:dr:format> "text/turtle" ;
-        <urn:dr:conformsTo> "${SPARQL_PROTOCOL_URI}" ;
-        <urn:dr:class> <https://schema.org/Person> .
+        ir:format_media_type "text/turtle" ;
+        ir:conforms_to "${SPARQL_PROTOCOL_URI}" ;
+        ir:class_iri <https://schema.org/Person> .
     `);
 
     expect(document.format).toEqual(
@@ -210,18 +236,31 @@ describe('dataset search schema projection', () => {
     expect(document.class_group).toBeUndefined();
   });
 
+  it('sums the IIIF entity counts across subsets, skipping unparseable ones', async () => {
+    // `iiif_entities` is a keyword array, not an integer: the projection coerces
+    // only the FIRST literal of a numeric field, which would silently report one
+    // subset's count as the whole. A value that is not a number contributes
+    // nothing rather than turning the sum into NaN.
+    const [document] = await project(`${PREFIXES}
+      <http://example.org/ds1> a dcat:Dataset ;
+        ir:iiif_entities 3, 4, "many" .
+    `);
+
+    expect(document.iiif_manifest_count).toBe(7);
+  });
+
   it('derives the NDE compatibility vinkjes when their criteria are met', async () => {
     const [document] = await project(`${PREFIXES}
       <http://example.org/ds1> a dcat:Dataset ;
-        <urn:dr:iiifEntities> 3 ;
-        <urn:dr:manifestsSampled> 2 ;
-        <urn:dr:manifestsValidated> 2 ;
-        <urn:dr:quadsValidated> 100 ;
-        <urn:dr:schemaApNdeConformant> true ;
-        <urn:dr:size> 5000 ;
-        <urn:dr:terminologySource> <https://example.org/voc/aat> ;
-        <urn:dr:subjectUrisSampled> 10 ;
-        <urn:dr:subjectUrisResolved> 10 .
+        ir:iiif_entities 3 ;
+        ir:manifests_sampled 2 ;
+        ir:manifests_validated 2 ;
+        ir:quads_validated 100 ;
+        ir:schema_ap_nde_conformant true ;
+        ir:size 5000 ;
+        ir:terminology_source <https://example.org/voc/aat> ;
+        ir:subject_uris_sampled 10 ;
+        ir:subject_uris_resolved 10 .
     `);
 
     expect(document.iiif_manifest_count).toBe(3);

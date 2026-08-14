@@ -102,7 +102,7 @@ describe('cardFromItem', () => {
         publisher: [
           {
             id: 'https://example.org/org/1',
-            name: [
+            label: [
               { language: 'nl', value: 'Organisatie' },
               { language: 'en', value: 'Organization' },
             ],
@@ -119,7 +119,7 @@ describe('cardFromItem', () => {
 
   it('falls back to the publisher IRI when no label was resolved', () => {
     const result = cardFromItem(
-      item({ publisher: [{ id: 'https://example.org/org/2', name: [] }] }),
+      item({ publisher: [{ id: 'https://example.org/org/2', label: [] }] }),
     );
     expect(result.publisher?.name).toEqual({
       '': 'https://example.org/org/2',

@@ -3,12 +3,14 @@ import { DataFactory } from 'n3';
 import type { Quad } from '@rdfjs/types';
 import { BlueGreenRebuild, RebuildAlreadyRunning } from '@lde/search-typesense';
 import {
-  projectGraph,
+  projectRoots,
+  type RootType,
   type SearchDocument,
-  type SearchSchema,
-  type SearchType,
 } from '@lde/search';
 import { Dataset } from '@lde/dataset';
+import { SEARCH_SCHEMA } from '@dataset-register/core';
+import { irAlias, labelFieldOf } from '@lde/search/adapter';
+import { RDF_TYPE, rootsOfClass } from './roots.js';
 import type { RunContext } from '@lde/pipeline';
 
 /**
@@ -26,7 +28,6 @@ import type { RunContext } from '@lde/pipeline';
 
 const { literal, namedNode, quad } = DataFactory;
 
-const RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
 
 /**
  * The synthetic source each label document is stamped with. Blue/green stamps a
@@ -43,12 +44,9 @@ const LABEL_SOURCE = new Dataset({
  * Rebuild one typed label collection from its label quads.
  *
  * The source readers emit bare `?subject <labelPredicate> ?literal` pairs with
- * no `rdf:type`, but {@link projectGraph} frames roots by `rdf:type`, so a
- * `?subject a <type>` triple is injected per subject before projecting. The
- * projection is scoped to a single-type schema (`projectGraph` projects every
- * root type in the schema it is handed) built by the same direct-map cast the
- * dataset projection uses – `searchSchema` cannot mint a one-type schema whose
- * label field is resolvable in isolation.
+ * no `rdf:type`, so a `?subject a <type>` triple is injected per subject before
+ * projecting: it is what names this rebuild’s roots ({@link rootsOfClass}) and
+ * what frames each subject as an instance of its label-source type.
  *
  * Non-critical by design: labels are display-only, so any failure is logged and
  * swallowed rather than aborting the (already live) dataset index. An empty
@@ -58,7 +56,7 @@ const LABEL_SOURCE = new Dataset({
  */
 export async function rebuildLabelCollection(
   client: Client,
-  type: SearchType,
+  type: RootType,
   alias: string,
   labelQuads: readonly Quad[],
   log: (message: string) => void,
@@ -104,8 +102,8 @@ export async function rebuildLabelCollection(
  * `?subject <labelPredicate> ?literal` pairs while the label-source `SearchType`
  * frames by `rdf:type` and only projects its declared locales (`nl`/`en`):
  *
- * 1. Inject a `?subject rdf:type <typeIri>` triple per subject so
- *    {@link projectGraph}/`frameByType` finds the label roots.
+ * 1. Inject a `?subject rdf:type <typeIri>` triple per subject, which names the
+ *    label roots ({@link rootsOfClass}) and frames them.
  * 2. Re-tag each subject’s label into explicit `@nl` and `@en` values with the
  *    same locale fallback the previous sidecar applied (nl → en → first value of
  *    any language), so a label that is untagged or tagged only in some other
@@ -114,10 +112,18 @@ export async function rebuildLabelCollection(
  */
 export function prepareLabelQuads(
   labelQuads: readonly Quad[],
-  typeIri: string,
+  type: RootType,
 ): Quad[] {
   const rdfType = namedNode(RDF_TYPE);
-  const typeNode = namedNode(typeIri);
+  const typeNode = namedNode(type.class);
+  // The projection reads a field back under its IR Alias, not under the source
+  // predicate the readers emit (`foaf:name`, `rdfs:label`, `dct:title`), so the
+  // re-tagged labels are minted onto the alias of this type’s label field.
+  const labelField = labelFieldOf(type);
+  if (labelField === undefined) {
+    throw new Error(`${type.name} declares no label field to project into.`);
+  }
+  const labelAlias = namedNode(irAlias(type, labelField));
 
   // Per subject: the first literal seen per language (`''` for untagged), and
   // the subject term to re-emit against, in first-seen order.
@@ -125,7 +131,6 @@ export function prepareLabelQuads(
     string,
     {
       subject: Quad['subject'];
-      predicate: Quad['predicate'];
       byLanguage: Map<string, string>;
     }
   >();
@@ -138,7 +143,6 @@ export function prepareLabelQuads(
     if (entry === undefined) {
       bySubject.set(key, {
         subject: labelQuad.subject,
-        predicate: labelQuad.predicate,
         byLanguage: new Map([
           [labelQuad.object.language, labelQuad.object.value],
         ]),
@@ -149,7 +153,7 @@ export function prepareLabelQuads(
   }
 
   const prepared: Quad[] = [];
-  for (const { subject, predicate, byLanguage } of bySubject.values()) {
+  for (const { subject, byLanguage } of bySubject.values()) {
     prepared.push(quad(subject, rdfType, typeNode));
     // The last-resort value for a missing locale, matching the previous sidecar’s
     // default (nl → en → first value of any language). Falling back to the
@@ -163,10 +167,10 @@ export function prepareLabelQuads(
     const nl = byLanguage.get('nl') ?? fallback;
     const en = byLanguage.get('en') ?? fallback;
     if (nl !== undefined) {
-      prepared.push(quad(subject, predicate, literal(nl, 'nl')));
+      prepared.push(quad(subject, labelAlias, literal(nl, 'nl')));
     }
     if (en !== undefined) {
-      prepared.push(quad(subject, predicate, literal(en, 'en')));
+      prepared.push(quad(subject, labelAlias, literal(en, 'en')));
     }
   }
   return prepared;
@@ -179,12 +183,16 @@ export function prepareLabelQuads(
  */
 async function projectLabelDocuments(
   labelQuads: readonly Quad[],
-  type: SearchType,
+  type: RootType,
 ): Promise<SearchDocument[]> {
-  const prepared = prepareLabelQuads(labelQuads, type.class);
-  const singleType = new Map([[type.class, type]]) as unknown as SearchSchema;
+  const prepared = prepareLabelQuads(labelQuads, type);
   const documents: SearchDocument[] = [];
-  for await (const { document } of projectGraph(prepared, singleType)) {
+  for await (const document of projectRoots(
+    prepared,
+    rootsOfClass(prepared, type.class),
+    SEARCH_SCHEMA,
+    type,
+  )) {
     documents.push(document);
   }
   return documents;

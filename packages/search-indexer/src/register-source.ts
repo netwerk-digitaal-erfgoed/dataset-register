@@ -1,12 +1,19 @@
-import type { SparqlClient } from '@dataset-register/core';
+import { DATASET_TYPE, SEARCH_SCHEMA, type SparqlClient } from '@dataset-register/core';
+import type { RootType } from '@lde/search';
 import type { Quad } from '@rdfjs/types';
+import { irAliasOf, rootTypeOf } from './ir-alias.js';
+
+/** The dataset type the emitted IR Aliases are minted against. */
+const DATASET: RootType = rootTypeOf(SEARCH_SCHEMA, DATASET_TYPE);
+
+/** `‹field›` as the IR Alias predicate the projection reads it back under. */
+const ir = (field: string): string => irAliasOf(DATASET, field);
 
 const PREFIXES = `
   PREFIX schema: <https://schema.org/>
   PREFIX dcat: <http://www.w3.org/ns/dcat#>
   PREFIX dct: <http://purl.org/dc/terms/>
   PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-  PREFIX dr: <urn:dr:>
 `;
 
 /**
@@ -23,7 +30,7 @@ export class RegisterSource {
   /**
    * Read each dataset as a flat, frameable subgraph: its newest registration’s
    * facts plus its DCAT/DC content, every value hanging directly off the dataset
-   * node (`dr:publisherName`, `dr:format`, …) rather than nested – a deliberately
+   * node under its field’s IR Alias ({@link irAliasOf}) rather than nested – a deliberately
    * flat IR, because a CONSTRUCT template spanning two subjects
    * (`?dataset dcat:distribution ?dist . ?dist dcat:mediaType ?x`) drops the
    * `?dataset → ?dist` link on QLever; single-subject templates are reliable.
@@ -67,8 +74,9 @@ export class RegisterSource {
       ${PREFIXES}
       CONSTRUCT {
         ?dataset a dcat:Dataset ;
-          schema:additionalType ?additionalType ;
-          dr:dateRead ?dateRead ; dr:datePosted ?datePosted ; dr:validUntil ?validUntil .
+          ${ir('additional_type')} ?additionalType ;
+          ${ir('date_posted')} ?datePosted ;
+          ${ir('valid_until')} ?validUntil .
       } WHERE {
         {
           SELECT ?dataset (MAX(?read) AS ?dateRead) WHERE {
@@ -92,10 +100,15 @@ export class RegisterSource {
     return `
       ${PREFIXES}
       CONSTRUCT {
-        ?dataset dct:title ?title ; dct:description ?description ;
-          dct:language ?language ; dr:organization ?organization ; dr:catalog ?catalog ;
-          dr:publisherName ?publisherName ; dr:creatorName ?creatorName ;
-          dr:format ?format ; dr:conformsTo ?conformsTo .
+        ?dataset ${ir('title')} ?title ;
+          ${ir('description')} ?description ;
+          ${ir('language')} ?language ;
+          ${ir('publisher')} ?organization ;
+          ${ir('catalog')} ?catalog ;
+          ${ir('publisherName')} ?publisherName ;
+          ${ir('creator')} ?creatorName ;
+          ${ir('format_media_type')} ?format ;
+          ${ir('conforms_to')} ?conformsTo .
       } WHERE {
         {
           GRAPH ?dataset { ?dataset dct:title ?title }

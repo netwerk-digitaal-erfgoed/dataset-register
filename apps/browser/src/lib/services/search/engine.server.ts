@@ -1,11 +1,10 @@
 import { Client } from 'typesense';
 import { createTypesenseSearchEngine } from '@lde/search-typesense';
 import {
-  buildGraphQLSchema,
-  type SearchContext,
+  createSearchGraphQLHandler,
+  type SearchGraphQLHandler,
 } from '@lde/search-api-graphql';
-import type { SearchEngine, SearchQuery } from '@lde/search';
-import type { GraphQLSchema } from 'graphql';
+import { filterOn, type SearchEngine, type SearchQuery } from '@lde/search';
 import {
   CLASS_COLLECTION_ALIAS,
   ORGANIZATION_COLLECTION_ALIAS,
@@ -46,38 +45,46 @@ const LABEL_CACHE_TTL_MS = 5 * 60 * 1000;
 const MAX_FACET_VALUES = 2000;
 
 let engineSingleton: SearchEngine | undefined;
-let schemaSingleton: GraphQLSchema | undefined;
+let handlerSingleton: SearchGraphQLHandler | undefined;
 
 /**
- * The GraphQL schema built from `SEARCH_SCHEMA` (one root field per `SearchType`).
+ * The served GraphQL API: one `fetch` handler covering POST execution, the GET
+ * playground, the SDL (`?sdl`), CORS, `Accept-Language` negotiation and the
+ * depth/cost limits a public endpoint needs. Built once per server process,
+ * over the shared engine.
+ *
  * The dataset query defaults to the valid-status filter when the caller sends no
  * status clause; the API’s skip-own-filter then still counts the status facet
  * across every status (so the invalid/gone toggles have counts), replacing the
  * previous per-facet `includeDefaultStatus` bookkeeping.
  */
-export function searchGraphQLSchema(): GraphQLSchema {
-  schemaSingleton ??= buildGraphQLSchema(SEARCH_SCHEMA, {
-    types: {
-      Dataset: {
-        queryDefaults: (query: SearchQuery): SearchQuery =>
-          query.where.some((clause) => clause.field === 'status')
-            ? query
-            : {
-                ...query,
-                where: [...query.where, { field: 'status', in: ['valid'] }],
-              },
+export function searchGraphQLHandler(): SearchGraphQLHandler {
+  handlerSingleton ??= createSearchGraphQLHandler({
+    searchSchema: SEARCH_SCHEMA,
+    engine: engine(),
+    schemaOptions: {
+      types: {
+        Dataset: {
+          queryDefaults: (query: SearchQuery): SearchQuery =>
+            query.where.some((clause) =>
+              clause.or.some((criterion) => criterion.field === 'status'),
+            )
+              ? query
+              : {
+                  ...query,
+                  where: [
+                    ...query.where,
+                    filterOn({ field: 'status', in: ['valid'] }),
+                  ],
+                },
+        },
       },
     },
+    // A facet that fails to resolve degrades that facet rather than the whole
+    // search; log it so the cause is visible, matching `onLabelError` below.
+    onFacetError: (error) => console.error('Facet resolution failed:', error),
   });
-  return schemaSingleton;
-}
-
-/** The per-request GraphQL context: the shared engine plus the request’s
- *  language preference (the active UI locale, sent as `Accept-Language`). */
-export function searchContext(
-  acceptLanguage: readonly string[],
-): SearchContext {
-  return { engine: engine(), acceptLanguage };
+  return handlerSingleton;
 }
 
 /**

@@ -1,5 +1,17 @@
-import type { SparqlClient } from '@dataset-register/core';
+import {
+  DATASET_TYPE,
+  SEARCH_SCHEMA,
+  type SparqlClient,
+} from '@dataset-register/core';
+import type { RootType } from '@lde/search';
 import type { Quad } from '@rdfjs/types';
+import { irAliasOf, rootTypeOf } from './ir-alias.js';
+
+/** The dataset type the emitted IR Aliases are minted against. */
+const DATASET: RootType = rootTypeOf(SEARCH_SCHEMA, DATASET_TYPE);
+
+/** `‹field›` as the IR Alias predicate the projection reads it back under. */
+const ir = (field: string): string => irAliasOf(DATASET, field);
 
 const VOID = 'http://rdfs.org/ns/void#';
 const DCT = 'http://purl.org/dc/terms/';
@@ -18,7 +30,7 @@ export class DkgSource {
   constructor(private readonly client: SparqlClient) {}
 
   /**
-   * CONSTRUCT the DKG enrichment as dataset-keyed `urn:dr:` triples (facets plus
+   * CONSTRUCT the DKG enrichment as dataset-keyed IR Alias triples (facets plus
    * the NDE compatibility DQV measurements) so it merges, by dataset IRI, into
    * the same per-dataset subgraph the register CONSTRUCT produces – one unified
    * frame, no separate post-processing. Each multi-valued property is its own
@@ -33,19 +45,18 @@ export class DkgSource {
       PREFIX dct: <${DCT}>
       PREFIX dqv: <${DQV}>
       PREFIX metric: <${METRIC}>
-      PREFIX dr: <urn:dr:>
       CONSTRUCT {
-        ?dataset dr:class ?class ;
-          dr:terminologySource ?terminologySource ;
-          dr:size ?size ;
-          dr:iiifEntities ?iiifEntities ;
-          dr:manifestsSampled ?manifestsSampled ;
-          dr:manifestsValidated ?manifestsValidated ;
-          dr:quadsValidated ?quadsValidated ;
-          dr:schemaApNdeConformant ?schemaApNdeConformant ;
-          dr:subjectUrisSampled ?subjectUrisSampled ;
-          dr:subjectUrisResolved ?subjectUrisResolved ;
-          dr:subjectNamespaceDurable ?subjectNamespaceDurable .
+        ?dataset ${ir('class_iri')} ?class ;
+          ${ir('terminology_source')} ?terminologySource ;
+          ${ir('size')} ?size ;
+          ${ir('iiif_entities')} ?iiifEntities ;
+          ${ir('manifests_sampled')} ?manifestsSampled ;
+          ${ir('manifests_validated')} ?manifestsValidated ;
+          ${ir('quads_validated')} ?quadsValidated ;
+          ${ir('schema_ap_nde_conformant')} ?schemaApNdeConformant ;
+          ${ir('subject_uris_sampled')} ?subjectUrisSampled ;
+          ${ir('subject_uris_resolved')} ?subjectUrisResolved ;
+          ${ir('subject_namespace_durable')} ?subjectNamespaceDurable .
       } WHERE {
         { ?dataset void:classPartition/void:class ?class }
         UNION { [] a void:Linkset ; void:subjectsTarget ?dataset ; void:objectsTarget ?terminologySource }

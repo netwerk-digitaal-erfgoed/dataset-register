@@ -1,10 +1,9 @@
 import { Client, Errors } from 'typesense';
 import { BlueGreenRebuild, RebuildAlreadyRunning } from '@lde/search-typesense';
 import {
-  projectGraph,
+  projectRoots,
+  type RootType,
   type SearchDocument,
-  type SearchSchema,
-  type SearchType,
 } from '@lde/search';
 import { Dataset } from '@lde/dataset';
 import type { RunContext } from '@lde/pipeline';
@@ -26,6 +25,8 @@ import {
 } from '@dataset-register/core';
 import type { Quad } from '@rdfjs/types';
 import { rebuildLabelCollection } from './label-collections.js';
+import { rootsOfClass } from './roots.js';
+import { rootTypeOf } from './ir-alias.js';
 import { RegisterSource } from './register-source.js';
 import { DkgSource } from './dkg-source.js';
 import {
@@ -103,7 +104,7 @@ export async function runIndex(
   // three label-source types drive the typed label collections. All are always
   // present – SEARCH_SCHEMA is built over them – so a miss is a programmer error,
   // not a runtime condition.
-  const datasetType = searchType(DATASET_TYPE);
+  const datasetType = rootTypeOf(SEARCH_SCHEMA, DATASET_TYPE);
 
   log(`Rebuilding search index ${alias}`);
 
@@ -188,7 +189,8 @@ export async function runIndex(
     // the imported total the writer does not itself report.
     const documents = (async function* () {
       for await (const document of projectDatasets(
-        [...registerQuads, ...dkgQuads],
+        registerQuads,
+        dkgQuads,
         datasetType,
       )) {
         upserted++;
@@ -258,21 +260,21 @@ async function rebuildLabelCollections(
   await Promise.all([
     rebuildLabelCollection(
       client,
-      searchType(ORGANIZATION_TYPE),
+      rootTypeOf(SEARCH_SCHEMA, ORGANIZATION_TYPE),
       aliases.organization ?? ORGANIZATION_COLLECTION_ALIAS,
       labelQuads.organization,
       log,
     ),
     rebuildLabelCollection(
       client,
-      searchType(CLASS_TYPE),
+      rootTypeOf(SEARCH_SCHEMA, CLASS_TYPE),
       aliases.class ?? CLASS_COLLECTION_ALIAS,
       labelQuads.class,
       log,
     ),
     rebuildLabelCollection(
       client,
-      searchType(TERMINOLOGY_SOURCE_TYPE),
+      rootTypeOf(SEARCH_SCHEMA, TERMINOLOGY_SOURCE_TYPE),
       aliases.terminologySource ?? TERMINOLOGY_SOURCE_COLLECTION_ALIAS,
       labelQuads.terminologySource,
       log,
@@ -300,45 +302,34 @@ function runContext(): RunContext {
 }
 
 /**
- * A declared SEARCH_SCHEMA type by IRI. The schema is built over these types, so
- * a miss is a programmer error (a renamed/removed type), not a runtime condition.
- */
-function searchType(typeIri: string): SearchType {
-  const type = SEARCH_SCHEMA.get(typeIri);
-  if (type === undefined) {
-    throw new Error(`SEARCH_SCHEMA does not declare the type ${typeIri}.`);
-  }
-  return type;
-}
-
-/**
  * Project ONLY dataset documents from the merged register + DKG quads.
  *
- * `projectGraph` frames and projects EVERY root type in the schema it is handed,
- * so it is scoped here to a single-type schema holding just the dataset type: the
- * `datasets` collection must never receive Organization/Class/TerminologySource
- * label documents (those live in their own collections). The merged quads carry
- * no `rdf:type` other than `dcat:Dataset` today, so the full schema would also
- * emit dataset documents only – scoping the projection keeps that guarantee even
- * if a source later emits typed label nodes.
- *
- * A single-type schema cannot be minted by `searchSchema` (the dataset type’s
- * reference fields name label sources it would omit), so the projection map is
- * built directly; `projectGraph` only reads `schema.values()`, never revalidating.
+ * `projectRoots` projects the one type it is handed over the roots it is given,
+ * so the `datasets` collection can never receive Organization/Class/
+ * TerminologySource label documents (those live in their own collections) even
+ * if a source later emits typed label nodes. The roots are the subjects the
+ * merged graph types as `dcat:Dataset`, which is how the whole-schema projection
+ * used to discover them.
  */
-async function* projectDatasets(
-  quads: readonly Quad[],
-  datasetType: SearchType,
+function projectDatasets(
+  registerQuads: readonly Quad[],
+  dkgQuads: readonly Quad[],
+  datasetType: RootType,
 ): AsyncIterable<SearchDocument> {
-  const datasetOnly = new Map([
-    [datasetType.class, datasetType],
-  ]) as unknown as SearchSchema;
-  // projectGraph yields the whole-schema {searchType, document} stream; the
-  // single-type map scopes it to datasets, so unwrap each document.
-  for await (const { document } of projectGraph(quads, datasetOnly)) {
-    yield document;
-  }
+  // Only the register asserts `a dcat:Dataset` (the facts CONSTRUCT), so the
+  // roots come from its quads alone – the DKG only enriches datasets the
+  // register already names.
+  const roots = rootsOfClass(registerQuads, datasetType.class);
+  // Chained rather than concatenated: `projectRoots` consumes the quads once, so
+  // a generator lets each source array become collectable during the import
+  // instead of being pinned behind a merged copy of both.
+  const quads = (function* () {
+    yield* registerQuads;
+    yield* dkgQuads;
+  })();
+  return projectRoots(quads, roots, SEARCH_SCHEMA, datasetType);
 }
+
 
 /**
  * The collection an alias currently points at, or `undefined` when the alias is
