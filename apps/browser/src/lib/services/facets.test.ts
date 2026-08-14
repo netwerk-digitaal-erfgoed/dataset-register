@@ -34,8 +34,9 @@ function rawFacets(): RawFacets {
       { value: 'invalid', count: 2 },
     ],
     // A boolean check facet: the field is indexed only when the check is met, so
-    // Typesense returns a `true` bucket only.
-    nde_schema_ap: [{ value: 'true', count: 3 }],
+    // Typesense returns a `true` bucket only. The API buckets a boolean field by
+    // its real value, so this is `true`, not the string `'true'`.
+    nde_schema_ap: [{ value: true, count: 3 }],
     size: [{ count: 8, min: 1000, max: 10000 }],
   };
 }
@@ -68,6 +69,21 @@ describe('mapFacets', () => {
 
   it('folds the boolean check facets into one automated-checks facet', () => {
     const facets = mapFacets(rawFacets());
+
+    expect(facets.checks).toEqual([{ value: 'nde_schema_ap', count: 3 }]);
+  });
+
+  it('counts the boolean true bucket, not a stringified one', () => {
+    // Regression: the API buckets a boolean facet by its real value. Matching
+    // the string `'true'` silently counted zero, so the automated-checks facet
+    // disappeared from the sidebar rather than failing loudly.
+    const facets = mapFacets({
+      ...rawFacets(),
+      nde_schema_ap: [
+        { value: false, count: 97 },
+        { value: true, count: 3 },
+      ],
+    });
 
     expect(facets.checks).toEqual([{ value: 'nde_schema_ap', count: 3 }]);
   });

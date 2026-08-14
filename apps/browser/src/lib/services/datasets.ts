@@ -200,7 +200,7 @@ function cardPublisher(
   }
   return {
     $id: publisher.id,
-    name: localizedRecord(publisher.name) ?? { '': publisher.id },
+    name: localizedRecord(publisher.label) ?? { '': publisher.id },
   };
 }
 

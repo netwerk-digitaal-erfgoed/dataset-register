@@ -1,22 +1,40 @@
 import { describe, expect, it } from 'vitest';
 import { Parser } from 'n3';
 import type { Quad } from '@rdfjs/types';
-import { projectGraph, type SearchDocument } from '@lde/search';
-import { SEARCH_SCHEMA } from '../src/search/schema.ts';
+import { projectRoots, type SearchDocument } from '@lde/search';
+import { DATASET_TYPE, SEARCH_SCHEMA } from '../src/search/schema.ts';
 import { REGISTRATION_STATUS_BASE_URI } from '../src/constants.ts';
 import { SPARQL_PROTOCOL_URI } from '../src/search/media-types.ts';
 
-/** Frame + project a Turtle fixture into search documents. */
+/**
+ * Frame + project a Turtle fixture into dataset search documents.
+ *
+ * `projectRoots` projects the one type it is handed over the roots the caller
+ * names, so the roots come from the fixture’s `a dcat:Dataset` subjects – the
+ * same typing the indexer’s register CONSTRUCT emits.
+ */
 async function project(turtle: string): Promise<SearchDocument[]> {
   const quads: Quad[] = new Parser().parse(turtle);
+  const roots = quads
+    .filter(
+      (quad) =>
+        quad.predicate.value === RDF_TYPE && quad.object.value === DATASET_TYPE,
+    )
+    .map((quad) => quad.subject.value);
+  const datasetType = SEARCH_SCHEMA.get(DATASET_TYPE)!;
   const documents: SearchDocument[] = [];
-  // projectGraph yields the whole-schema {searchType, document} stream; keep the
-  // projected document.
-  for await (const { document } of projectGraph(quads, SEARCH_SCHEMA)) {
+  for await (const document of projectRoots(
+    quads,
+    [...new Set(roots)],
+    SEARCH_SCHEMA,
+    datasetType,
+  )) {
     documents.push(document);
   }
   return documents;
 }
+
+const RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
 
 const PREFIXES = `
   @prefix dcat: <http://www.w3.org/ns/dcat#> .

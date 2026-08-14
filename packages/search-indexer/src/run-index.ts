@@ -1,10 +1,9 @@
 import { Client, Errors } from 'typesense';
 import { BlueGreenRebuild, RebuildAlreadyRunning } from '@lde/search-typesense';
 import {
-  projectGraph,
+  projectRoots,
+  type RootType,
   type SearchDocument,
-  type SearchSchema,
-  type SearchType,
 } from '@lde/search';
 import { Dataset } from '@lde/dataset';
 import type { RunContext } from '@lde/pipeline';
@@ -26,6 +25,7 @@ import {
 } from '@dataset-register/core';
 import type { Quad } from '@rdfjs/types';
 import { rebuildLabelCollection } from './label-collections.js';
+import { rootsOfClass } from './roots.js';
 import { RegisterSource } from './register-source.js';
 import { DkgSource } from './dkg-source.js';
 import {
@@ -303,7 +303,7 @@ function runContext(): RunContext {
  * A declared SEARCH_SCHEMA type by IRI. The schema is built over these types, so
  * a miss is a programmer error (a renamed/removed type), not a runtime condition.
  */
-function searchType(typeIri: string): SearchType {
+function searchType(typeIri: string): RootType {
   const type = SEARCH_SCHEMA.get(typeIri);
   if (type === undefined) {
     throw new Error(`SEARCH_SCHEMA does not declare the type ${typeIri}.`);
@@ -314,31 +314,25 @@ function searchType(typeIri: string): SearchType {
 /**
  * Project ONLY dataset documents from the merged register + DKG quads.
  *
- * `projectGraph` frames and projects EVERY root type in the schema it is handed,
- * so it is scoped here to a single-type schema holding just the dataset type: the
- * `datasets` collection must never receive Organization/Class/TerminologySource
- * label documents (those live in their own collections). The merged quads carry
- * no `rdf:type` other than `dcat:Dataset` today, so the full schema would also
- * emit dataset documents only – scoping the projection keeps that guarantee even
- * if a source later emits typed label nodes.
- *
- * A single-type schema cannot be minted by `searchSchema` (the dataset type’s
- * reference fields name label sources it would omit), so the projection map is
- * built directly; `projectGraph` only reads `schema.values()`, never revalidating.
+ * `projectRoots` projects the one type it is handed over the roots it is given,
+ * so the `datasets` collection can never receive Organization/Class/
+ * TerminologySource label documents (those live in their own collections) even
+ * if a source later emits typed label nodes. The roots are the subjects the
+ * merged graph types as `dcat:Dataset`, which is how the whole-schema projection
+ * used to discover them.
  */
-async function* projectDatasets(
+function projectDatasets(
   quads: readonly Quad[],
-  datasetType: SearchType,
+  datasetType: RootType,
 ): AsyncIterable<SearchDocument> {
-  const datasetOnly = new Map([
-    [datasetType.class, datasetType],
-  ]) as unknown as SearchSchema;
-  // projectGraph yields the whole-schema {searchType, document} stream; the
-  // single-type map scopes it to datasets, so unwrap each document.
-  for await (const { document } of projectGraph(quads, datasetOnly)) {
-    yield document;
-  }
+  return projectRoots(
+    quads,
+    rootsOfClass(quads, datasetType.class),
+    SEARCH_SCHEMA,
+    datasetType,
+  );
 }
+
 
 /**
  * The collection an alias currently points at, or `undefined` when the alias is

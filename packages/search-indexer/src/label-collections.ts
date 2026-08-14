@@ -3,12 +3,13 @@ import { DataFactory } from 'n3';
 import type { Quad } from '@rdfjs/types';
 import { BlueGreenRebuild, RebuildAlreadyRunning } from '@lde/search-typesense';
 import {
-  projectGraph,
+  projectRoots,
+  type RootType,
   type SearchDocument,
-  type SearchSchema,
-  type SearchType,
 } from '@lde/search';
 import { Dataset } from '@lde/dataset';
+import { SEARCH_SCHEMA } from '@dataset-register/core';
+import { RDF_TYPE, rootsOfClass } from './roots.js';
 import type { RunContext } from '@lde/pipeline';
 
 /**
@@ -26,7 +27,6 @@ import type { RunContext } from '@lde/pipeline';
 
 const { literal, namedNode, quad } = DataFactory;
 
-const RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
 
 /**
  * The synthetic source each label document is stamped with. Blue/green stamps a
@@ -43,12 +43,9 @@ const LABEL_SOURCE = new Dataset({
  * Rebuild one typed label collection from its label quads.
  *
  * The source readers emit bare `?subject <labelPredicate> ?literal` pairs with
- * no `rdf:type`, but {@link projectGraph} frames roots by `rdf:type`, so a
- * `?subject a <type>` triple is injected per subject before projecting. The
- * projection is scoped to a single-type schema (`projectGraph` projects every
- * root type in the schema it is handed) built by the same direct-map cast the
- * dataset projection uses – `searchSchema` cannot mint a one-type schema whose
- * label field is resolvable in isolation.
+ * no `rdf:type`, so a `?subject a <type>` triple is injected per subject before
+ * projecting: it is what names this rebuild’s roots ({@link rootsOfClass}) and
+ * what frames each subject as an instance of its label-source type.
  *
  * Non-critical by design: labels are display-only, so any failure is logged and
  * swallowed rather than aborting the (already live) dataset index. An empty
@@ -58,7 +55,7 @@ const LABEL_SOURCE = new Dataset({
  */
 export async function rebuildLabelCollection(
   client: Client,
-  type: SearchType,
+  type: RootType,
   alias: string,
   labelQuads: readonly Quad[],
   log: (message: string) => void,
@@ -104,8 +101,8 @@ export async function rebuildLabelCollection(
  * `?subject <labelPredicate> ?literal` pairs while the label-source `SearchType`
  * frames by `rdf:type` and only projects its declared locales (`nl`/`en`):
  *
- * 1. Inject a `?subject rdf:type <typeIri>` triple per subject so
- *    {@link projectGraph}/`frameByType` finds the label roots.
+ * 1. Inject a `?subject rdf:type <typeIri>` triple per subject, which names the
+ *    label roots ({@link rootsOfClass}) and frames them.
  * 2. Re-tag each subject’s label into explicit `@nl` and `@en` values with the
  *    same locale fallback the previous sidecar applied (nl → en → first value of
  *    any language), so a label that is untagged or tagged only in some other
@@ -179,12 +176,16 @@ export function prepareLabelQuads(
  */
 async function projectLabelDocuments(
   labelQuads: readonly Quad[],
-  type: SearchType,
+  type: RootType,
 ): Promise<SearchDocument[]> {
   const prepared = prepareLabelQuads(labelQuads, type.class);
-  const singleType = new Map([[type.class, type]]) as unknown as SearchSchema;
   const documents: SearchDocument[] = [];
-  for await (const { document } of projectGraph(prepared, singleType)) {
+  for await (const document of projectRoots(
+    prepared,
+    rootsOfClass(prepared, type.class),
+    SEARCH_SCHEMA,
+    type,
+  )) {
     documents.push(document);
   }
   return documents;

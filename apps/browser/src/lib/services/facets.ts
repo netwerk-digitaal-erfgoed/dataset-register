@@ -147,7 +147,7 @@ function mapCheckBuckets(facets: RawFacets): CountedFacetValue[] {
   for (const [check, buckets] of [
     [CHECK_SCHEMA_AP_NDE, facets.nde_schema_ap],
   ] as const) {
-    const count = buckets.find((bucket) => bucket.value === 'true')?.count ?? 0;
+    const count = buckets.find((bucket) => bucket.value)?.count ?? 0;
     if (count > 0) {
       checks.push({ value: check, count });
     }

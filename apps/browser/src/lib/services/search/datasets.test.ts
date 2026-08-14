@@ -168,6 +168,13 @@ const PAYLOAD: DatasetSearchResult = {
   },
 };
 
+/** The wire shape for {@link PAYLOAD}: the API carries paging under
+ *  `pagination`, which `runDatasetSearch` flattens to the result’s `total`. */
+const WIRE_PAYLOAD = (({ total, ...rest }) => ({
+  ...rest,
+  pagination: { total },
+}))(PAYLOAD);
+
 function fetchReturning(response: unknown): typeof fetch {
   return vi.fn(
     async () =>
@@ -180,7 +187,7 @@ function fetchReturning(response: unknown): typeof fetch {
 
 describe('runDatasetSearch', () => {
   it('posts the query + variables and parses the datasets payload', async () => {
-    const fetchSpy = fetchReturning({ data: { datasets: PAYLOAD } });
+    const fetchSpy = fetchReturning({ data: { datasets: WIRE_PAYLOAD } });
 
     const result = await runDatasetSearch(
       {
@@ -211,7 +218,7 @@ describe('runDatasetSearch', () => {
   });
 
   it('omits the query variable when browsing (no text)', async () => {
-    const fetchSpy = fetchReturning({ data: { datasets: PAYLOAD } });
+    const fetchSpy = fetchReturning({ data: { datasets: WIRE_PAYLOAD } });
 
     await runDatasetSearch(emptyRequest(), DEFAULT_OPTIONS, {
       fetchImpl: fetchSpy,

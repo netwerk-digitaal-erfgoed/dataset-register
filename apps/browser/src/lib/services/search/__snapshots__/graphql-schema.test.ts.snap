@@ -3,16 +3,14 @@
 exports[`search GraphQL contract > emits a stable SDL for the dataset search schema 1`] = `
 "type Query {
   datasets(query: String, where: DatasetWhere, orderBy: DatasetOrderBy, page: Int = 1, perPage: Int = 20): DatasetSearchResult!
-  organizations(query: String, orderBy: OrganizationOrderBy, page: Int = 1, perPage: Int = 20): OrganizationSearchResult!
-  classs(query: String, orderBy: ClassOrderBy, page: Int = 1, perPage: Int = 20): ClassSearchResult!
-  terminologySources(query: String, orderBy: TerminologySourceOrderBy, page: Int = 1, perPage: Int = 20): TerminologySourceSearchResult!
+  organizations(query: String, where: OrganizationWhere, orderBy: OrganizationOrderBy, page: Int = 1, perPage: Int = 20): OrganizationSearchResult!
+  classs(query: String, where: ClassWhere, orderBy: ClassOrderBy, page: Int = 1, perPage: Int = 20): ClassSearchResult!
+  terminologySources(query: String, where: TerminologySourceWhere, orderBy: TerminologySourceOrderBy, page: Int = 1, perPage: Int = 20): TerminologySourceSearchResult!
 }
 
 type DatasetSearchResult {
   items: [Dataset!]!
-  total: Int!
-  page: Int!
-  perPage: Int!
+  pagination: Pagination!
   facets: DatasetFacets!
 }
 
@@ -39,12 +37,18 @@ type LanguageString {
 
 type Agent {
   id: String!
-  name: [LanguageString!]!
+  label: [LanguageString!]!
 }
 
 type Vocabulary {
   id: String!
-  name: [LanguageString!]!
+  label: [LanguageString!]!
+}
+
+type Pagination {
+  total: Int!
+  page: Int!
+  perPage: Int!
 }
 
 type DatasetFacets {
@@ -55,11 +59,11 @@ type DatasetFacets {
   format: [ValueBucket!]!
   size: [RangeBucket!]!
   status: [ValueBucket!]!
-  iiif: [ValueBucket!]!
-  nde_schema_ap: [ValueBucket!]!
-  linked_data: [ValueBucket!]!
-  terms: [ValueBucket!]!
-  persistent_uris: [ValueBucket!]!
+  iiif: [BooleanBucket!]!
+  nde_schema_ap: [BooleanBucket!]!
+  linked_data: [BooleanBucket!]!
+  terms: [BooleanBucket!]!
+  persistent_uris: [BooleanBucket!]!
 }
 
 type ValueBucket {
@@ -74,7 +78,16 @@ type RangeBucket {
   count: Int!
 }
 
+type BooleanBucket {
+  value: Boolean!
+  count: Int!
+}
+
+"""
+Sibling keys are combined with AND. Use \`or\` for a disjunction, and \`and\` when a query needs more than one of them.
+"""
 input DatasetWhere {
+  id: StringFilter
   publisher: StringFilter
   catalog: StringFilter
   class: StringFilter
@@ -83,6 +96,16 @@ input DatasetWhere {
   size: IntRange
   status: StringFilter
   nde_schema_ap: Boolean
+
+  """
+  A disjunction: a document matches when ANY of these criteria holds. Combined with the sibling keys by AND, so it widens across fields without widening the query as a whole.
+  """
+  or: [DatasetCriterion!]
+
+  """
+  Further groups of conditions, all of which apply. The way to carry a second \`or\` disjunction alongside the first.
+  """
+  and: [DatasetWhere!]
 }
 
 input StringFilter {
@@ -92,6 +115,21 @@ input StringFilter {
 input IntRange {
   min: Int
   max: Int
+}
+
+"""
+A condition on exactly one field. Used inside \`or\`, where the criteria are alternatives.
+"""
+input DatasetCriterion @oneOf {
+  id: StringFilter
+  publisher: StringFilter
+  catalog: StringFilter
+  class: StringFilter
+  terminology_source: StringFilter
+  format: StringFilter
+  size: IntRange
+  status: StringFilter
+  nde_schema_ap: Boolean
 }
 
 input DatasetOrderBy {
@@ -114,14 +152,36 @@ enum SortDirection {
 
 type OrganizationSearchResult {
   items: [Organization!]!
-  total: Int!
-  page: Int!
-  perPage: Int!
+  pagination: Pagination!
 }
 
 type Organization {
   id: String!
   label: [LanguageString!]!
+}
+
+"""
+Sibling keys are combined with AND. Use \`or\` for a disjunction, and \`and\` when a query needs more than one of them.
+"""
+input OrganizationWhere {
+  id: StringFilter
+
+  """
+  A disjunction: a document matches when ANY of these criteria holds. Combined with the sibling keys by AND, so it widens across fields without widening the query as a whole.
+  """
+  or: [OrganizationCriterion!]
+
+  """
+  Further groups of conditions, all of which apply. The way to carry a second \`or\` disjunction alongside the first.
+  """
+  and: [OrganizationWhere!]
+}
+
+"""
+A condition on exactly one field. Used inside \`or\`, where the criteria are alternatives.
+"""
+input OrganizationCriterion @oneOf {
+  id: StringFilter
 }
 
 input OrganizationOrderBy {
@@ -135,14 +195,36 @@ enum OrganizationSortField {
 
 type ClassSearchResult {
   items: [Class!]!
-  total: Int!
-  page: Int!
-  perPage: Int!
+  pagination: Pagination!
 }
 
 type Class {
   id: String!
   label: [LanguageString!]!
+}
+
+"""
+Sibling keys are combined with AND. Use \`or\` for a disjunction, and \`and\` when a query needs more than one of them.
+"""
+input ClassWhere {
+  id: StringFilter
+
+  """
+  A disjunction: a document matches when ANY of these criteria holds. Combined with the sibling keys by AND, so it widens across fields without widening the query as a whole.
+  """
+  or: [ClassCriterion!]
+
+  """
+  Further groups of conditions, all of which apply. The way to carry a second \`or\` disjunction alongside the first.
+  """
+  and: [ClassWhere!]
+}
+
+"""
+A condition on exactly one field. Used inside \`or\`, where the criteria are alternatives.
+"""
+input ClassCriterion @oneOf {
+  id: StringFilter
 }
 
 input ClassOrderBy {
@@ -156,14 +238,36 @@ enum ClassSortField {
 
 type TerminologySourceSearchResult {
   items: [TerminologySource!]!
-  total: Int!
-  page: Int!
-  perPage: Int!
+  pagination: Pagination!
 }
 
 type TerminologySource {
   id: String!
   label: [LanguageString!]!
+}
+
+"""
+Sibling keys are combined with AND. Use \`or\` for a disjunction, and \`and\` when a query needs more than one of them.
+"""
+input TerminologySourceWhere {
+  id: StringFilter
+
+  """
+  A disjunction: a document matches when ANY of these criteria holds. Combined with the sibling keys by AND, so it widens across fields without widening the query as a whole.
+  """
+  or: [TerminologySourceCriterion!]
+
+  """
+  Further groups of conditions, all of which apply. The way to carry a second \`or\` disjunction alongside the first.
+  """
+  and: [TerminologySourceWhere!]
+}
+
+"""
+A condition on exactly one field. Used inside \`or\`, where the criteria are alternatives.
+"""
+input TerminologySourceCriterion @oneOf {
+  id: StringFilter
 }
 
 input TerminologySourceOrderBy {
@@ -173,6 +277,5 @@ input TerminologySourceOrderBy {
 
 enum TerminologySourceSortField {
   RELEVANCE
-}
-"
+}"
 `;

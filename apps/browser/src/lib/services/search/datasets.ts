@@ -11,10 +11,11 @@ export interface LanguageString {
   readonly value: string;
 }
 
-/** A resolved reference on a hit or facet bucket: its IRI and localized label. */
+/** A resolved reference on a hit or facet bucket: its IRI and localized label.
+ *  The API surfaces the label under the label source’s `labelField` (`label`). */
 export interface DatasetReference {
   readonly id: string;
-  readonly name: readonly LanguageString[];
+  readonly label: readonly LanguageString[];
 }
 
 /** One dataset hit, as the GraphQL `Dataset` output type projects it. */
@@ -51,6 +52,14 @@ export interface RangeBucket {
   readonly max: number | null;
 }
 
+/** A boolean facet bucket. The API buckets a `boolean` field by its actual
+ *  value, so `value` is a real boolean here – not the `'true'` string a
+ *  {@link ValueBucket} would carry. */
+export interface BooleanBucket {
+  readonly value: boolean;
+  readonly count: number;
+}
+
 /** The facet buckets the sidebar renders, keyed by GraphQL facet field name. */
 export interface RawFacets {
   readonly publisher: readonly ValueBucket[];
@@ -58,7 +67,7 @@ export interface RawFacets {
   readonly class: readonly ValueBucket[];
   readonly terminology_source: readonly ValueBucket[];
   readonly status: readonly ValueBucket[];
-  readonly nde_schema_ap: readonly ValueBucket[];
+  readonly nde_schema_ap: readonly BooleanBucket[];
   readonly size: readonly RangeBucket[];
 }
 
@@ -132,12 +141,15 @@ export async function runDatasetSearch(
     page: Math.floor(offset / limit) + 1,
     perPage: limit,
   };
-  const data = await queryGraphQL<{ datasets: DatasetSearchResult }>(
-    DATASET_SEARCH_QUERY,
-    variables,
-    { locale, fetchImpl: deps.fetchImpl },
-  );
-  return data.datasets;
+  const data = await queryGraphQL<{
+    datasets: Omit<DatasetSearchResult, 'total'> & {
+      readonly pagination: { readonly total: number };
+    };
+  }>(DATASET_SEARCH_QUERY, variables, { locale, fetchImpl: deps.fetchImpl });
+  // The API carries paging under `pagination`; the listing only needs the total,
+  // and already knows the page it asked for.
+  const { pagination, ...result } = data.datasets;
+  return { ...result, total: pagination.total };
 }
 
 /**
@@ -243,13 +255,13 @@ export const DATASET_SEARCH_QUERY = `
       page: $page
       perPage: $perPage
     ) {
-      total
+      pagination { total }
       items {
         id
         title { language value }
         description { language value }
         language
-        publisher { id name { language value } }
+        publisher { id label { language value } }
         status
         size
         date_posted

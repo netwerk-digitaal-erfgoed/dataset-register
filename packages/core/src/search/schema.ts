@@ -10,10 +10,7 @@
 
 import {
   defineSearchType,
-  firstLiteralOf,
-  type FramedNode,
-  irisOf,
-  literalsOf,
+  type ProjectedNode,
   searchSchema,
 } from '@lde/search';
 import { stripIanaPrefix } from './media-types.ts';
@@ -29,8 +26,6 @@ import {
   type DatasetStatus,
   deriveStatus,
   formatGroups,
-  parseBoolean,
-  parseNumber,
   STATUS_RANK,
   sumNumbers,
 } from './derivations.ts';
@@ -44,32 +39,38 @@ const SCHEMA = 'https://schema.org/';
 const DR = 'urn:dr:';
 
 /**
- * The schema-AP and Linked-Data booleans both read `quadsValidated` and
- * `schemaApNdeConformant` off the same node. Memoize the pair per node so the
- * projection looks each predicate up once per dataset instead of twice.
+ * Read a multi-valued field off the document as projected so far.
+ *
+ * A `derive` never reads the graph: every predicate it needs is declared as an
+ * internal field above it (one with no role – see `isInternalField`), which the
+ * projection populates and then prunes before the document reaches Typesense.
+ * The projection already deduplicates and applies each field’s `transform`, so
+ * these accessors only widen `unknown` back to the kind the field declares.
  */
-const qualityByNode = new WeakMap<
-  FramedNode,
-  {
-    readonly quadsValidated: number | null;
-    readonly conformant: boolean | null;
-  }
->();
-function qualityMeasurements(node: FramedNode): {
+function valuesOf(document: ProjectedNode, field: string): readonly string[] {
+  return (document[field] as readonly string[] | undefined) ?? [];
+}
+
+/** Read a numeric field off the document; `null` when the predicate was absent. */
+function numberOf(document: ProjectedNode, field: string): number | null {
+  return (document[field] as number | undefined) ?? null;
+}
+
+/**
+ * The conformance sample both `nde_schema_ap` and `linked_data` judge. Reading
+ * it off the document needs no memo: the projection populates each internal
+ * field once per dataset, so the two derives share that one read rather than
+ * looking the predicates up again.
+ */
+function qualityMeasurements(document: ProjectedNode): {
   readonly quadsValidated: number | null;
   readonly conformant: boolean | null;
 } {
-  let quality = qualityByNode.get(node);
-  if (quality === undefined) {
-    quality = {
-      quadsValidated: parseNumber(firstLiteralOf(node, `${DR}quadsValidated`)),
-      conformant: parseBoolean(
-        firstLiteralOf(node, `${DR}schemaApNdeConformant`),
-      ),
-    };
-    qualityByNode.set(node, quality);
-  }
-  return quality;
+  return {
+    quadsValidated: numberOf(document, 'quads_validated'),
+    conformant:
+      (document.schema_ap_nde_conformant as boolean | undefined) ?? null,
+  };
 }
 
 /** The RDF class the dataset search documents are instances of. */
@@ -151,6 +152,15 @@ const dataset = defineSearchType({
       filterable: true,
     },
     {
+      // The partition class IRIs as the graph states them. Internal: `class`
+      // below folds them together with the derived group tokens, and only that
+      // combined field is faceted.
+      name: 'class_iri',
+      kind: 'reference',
+      path: `${DR}class`,
+      array: true,
+    },
+    {
       // Partition class IRIs plus the derived class-group tokens (`group:person`,
       // …) folded into one field, so a facet selection mixing granular classes
       // and group tokens UNIONs under the query API’s flat-AND `where` (a single
@@ -164,10 +174,9 @@ const dataset = defineSearchType({
       facetable: true,
       filterable: true,
       labelSource: 'Class',
-      derive: (node) => {
-        const classes = [...new Set(irisOf(node, `${DR}class`))];
-        const groups = deriveClassGroups(classes);
-        const combined = [...classes, ...groups];
+      derive: (document) => {
+        const classes = valuesOf(document, 'class_iri');
+        const combined = [...classes, ...deriveClassGroups(classes)];
         return combined.length > 0 ? combined : undefined;
       },
     },
@@ -191,6 +200,24 @@ const dataset = defineSearchType({
       output: true,
     },
     {
+      // The distributions’ media types, IANA IRI prefix stripped by the field’s
+      // own transform. Internal: `format` below folds them together with the
+      // derived group tokens, and only that combined field is faceted.
+      name: 'format_media_type',
+      kind: 'keyword',
+      path: `${DR}format`,
+      array: true,
+      transform: stripIanaPrefix,
+    },
+    {
+      // The conformance IRIs a distribution declares (the SPARQL protocol among
+      // them). Internal: read only to derive the `group:sparql` format token.
+      name: 'conforms_to',
+      kind: 'keyword',
+      path: `${DR}conformsTo`,
+      array: true,
+    },
+    {
       // Bare media types (the IANA IRI prefix stripped) plus the derived
       // format-group tokens (`group:rdf`/`group:sparql`) folded into one field,
       // so a facet selection mixing granular media types and group tokens UNIONs
@@ -202,13 +229,11 @@ const dataset = defineSearchType({
       facetable: true,
       filterable: true,
       output: true,
-      derive: (node) => {
-        const mediaTypes = [
-          ...new Set(literalsOf(node, `${DR}format`).map(stripIanaPrefix)),
-        ];
+      derive: (document) => {
+        const mediaTypes = valuesOf(document, 'format_media_type');
         const groups = formatGroups(
           mediaTypes,
-          literalsOf(node, `${DR}conformsTo`),
+          valuesOf(document, 'conforms_to'),
         );
         const combined = [...mediaTypes, ...groups];
         return combined.length > 0 ? combined : undefined;
@@ -237,16 +262,31 @@ const dataset = defineSearchType({
 
     // --- Derived fields (computed from several predicates / earlier fields) ---
     {
+      // The status markers the register stamps on a dataset (gone/invalid).
+      // Internal: `status` below reduces them to a single token.
+      name: 'additional_type',
+      kind: 'reference',
+      path: `${SCHEMA}additionalType`,
+      array: true,
+    },
+    {
+      // Kept a keyword rather than a date: `deriveStatus` only tests presence,
+      // and a `date` field would coerce it to Unix seconds for no purpose.
+      name: 'valid_until',
+      kind: 'keyword',
+      path: `${DR}validUntil`,
+    },
+    {
       name: 'status',
       kind: 'keyword',
       facetable: true,
       filterable: true,
       required: true,
       output: true,
-      derive: (node) =>
+      derive: (document) =>
         deriveStatus(
-          irisOf(node, `${SCHEMA}additionalType`),
-          firstLiteralOf(node, `${DR}validUntil`),
+          valuesOf(document, 'additional_type'),
+          document.valid_until as string | undefined,
         ),
     },
     {
@@ -254,8 +294,16 @@ const dataset = defineSearchType({
       kind: 'integer',
       sortable: true,
       required: true,
-      derive: (_node, document) =>
-        STATUS_RANK[document.status as DatasetStatus],
+      derive: (document) => STATUS_RANK[document.status as DatasetStatus],
+    },
+    {
+      // The IIIF subsets’ `void:entities` counts, one per subset. Internal:
+      // `iiif_manifest_count` sums them. A `keyword` array rather than an
+      // `integer`, which would project only the first subset’s count.
+      name: 'iiif_entities',
+      kind: 'keyword',
+      path: `${DR}iiifEntities`,
+      array: true,
     },
     {
       // Declared IIIF manifest count (sum of the IIIF subsets’ void:entities);
@@ -263,28 +311,46 @@ const dataset = defineSearchType({
       name: 'iiif_manifest_count',
       kind: 'integer',
       output: true,
-      derive: (node) => {
-        const count = sumNumbers(literalsOf(node, `${DR}iiifEntities`));
+      derive: (document) => {
+        const count = sumNumbers(valuesOf(document, 'iiif_entities'));
         return count > 0 ? count : undefined;
       },
     },
     // NDE compatibility (“vinkjes”): each set to true only when met, else absent
     // (so a faceted `field:=true` count is the number of compliant datasets).
     {
+      name: 'manifests_sampled',
+      kind: 'integer',
+      path: `${DR}manifestsSampled`,
+    },
+    {
+      name: 'manifests_validated',
+      kind: 'integer',
+      path: `${DR}manifestsValidated`,
+    },
+    {
       name: 'iiif',
       kind: 'boolean',
       facetable: true,
       output: true,
-      derive: (node, document) =>
+      derive: (document) =>
         isIiifMet({
-          declared: (document.iiif_manifest_count as number | undefined) ?? 0,
-          sampled: parseNumber(firstLiteralOf(node, `${DR}manifestsSampled`)),
-          validated: parseNumber(
-            firstLiteralOf(node, `${DR}manifestsValidated`),
-          ),
+          declared: numberOf(document, 'iiif_manifest_count') ?? 0,
+          sampled: numberOf(document, 'manifests_sampled'),
+          validated: numberOf(document, 'manifests_validated'),
         })
           ? true
           : undefined,
+    },
+    {
+      name: 'quads_validated',
+      kind: 'integer',
+      path: `${DR}quadsValidated`,
+    },
+    {
+      name: 'schema_ap_nde_conformant',
+      kind: 'boolean',
+      path: `${DR}schemaApNdeConformant`,
     },
     {
       name: 'nde_schema_ap',
@@ -295,17 +361,17 @@ const dataset = defineSearchType({
       // just count them.
       filterable: true,
       output: true,
-      derive: (node) =>
-        isSchemaApNdeMet(qualityMeasurements(node)) ? true : undefined,
+      derive: (document) =>
+        isSchemaApNdeMet(qualityMeasurements(document)) ? true : undefined,
     },
     {
       name: 'linked_data',
       kind: 'boolean',
       facetable: true,
-      derive: (node, document) =>
+      derive: (document) =>
         isLinkedDataMet({
-          triples: (document.size as number | undefined) ?? null,
-          ...qualityMeasurements(node),
+          triples: numberOf(document, 'size'),
+          ...qualityMeasurements(document),
         })
           ? true
           : undefined,
@@ -314,12 +380,25 @@ const dataset = defineSearchType({
       name: 'terms',
       kind: 'boolean',
       facetable: true,
-      derive: (_node, document) =>
-        isTermsMet(
-          (document.terminology_source as string[] | undefined)?.length ?? 0,
-        )
+      derive: (document) =>
+        isTermsMet(valuesOf(document, 'terminology_source').length)
           ? true
           : undefined,
+    },
+    {
+      name: 'subject_uris_sampled',
+      kind: 'integer',
+      path: `${DR}subjectUrisSampled`,
+    },
+    {
+      name: 'subject_uris_resolved',
+      kind: 'integer',
+      path: `${DR}subjectUrisResolved`,
+    },
+    {
+      name: 'subject_namespace_durable',
+      kind: 'boolean',
+      path: `${DR}subjectNamespaceDurable`,
     },
     {
       // Durable polarity: the DKG emits `false` only when the namespace is on
@@ -327,16 +406,11 @@ const dataset = defineSearchType({
       name: 'persistent_uris',
       kind: 'boolean',
       facetable: true,
-      derive: (node) =>
+      derive: (document) =>
         isPersistentUrisMet({
-          sampled: parseNumber(firstLiteralOf(node, `${DR}subjectUrisSampled`)),
-          resolved: parseNumber(
-            firstLiteralOf(node, `${DR}subjectUrisResolved`),
-          ),
-          durable:
-            parseBoolean(
-              firstLiteralOf(node, `${DR}subjectNamespaceDurable`),
-            ) !== false,
+          sampled: numberOf(document, 'subject_uris_sampled'),
+          resolved: numberOf(document, 'subject_uris_resolved'),
+          durable: document.subject_namespace_durable !== false,
         })
           ? true
           : undefined,
