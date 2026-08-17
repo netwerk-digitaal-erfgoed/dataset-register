@@ -1,30 +1,106 @@
 type Query {
   datasets(
+    """
+    Free-text query. Omit it to browse by filter alone.
+    """
     query: String
+
+    """
+    Conditions every result must satisfy.
+    """
     where: DatasetWhere
+
+    """
+    Sort order. Defaults to relevance for a free-text query.
+    """
     orderBy: DatasetOrderBy
+
+    """
+    1-based page number; at least 1.
+    """
     page: Int = 1
+
+    """
+    Results per page, between 0 and 100. Use 0 for a facet-only query: no results are fetched, and the facet counts still come back.
+    """
     perPage: Int = 20
   ): DatasetSearchResult!
   organizations(
+    """
+    Free-text query. Omit it to browse by filter alone.
+    """
     query: String
+
+    """
+    Conditions every result must satisfy.
+    """
     where: OrganizationWhere
+
+    """
+    Sort order. Defaults to relevance for a free-text query.
+    """
     orderBy: OrganizationOrderBy
+
+    """
+    1-based page number; at least 1.
+    """
     page: Int = 1
+
+    """
+    Results per page, between 0 and 100. Use 0 for a facet-only query: no results are fetched, and the facet counts still come back.
+    """
     perPage: Int = 20
   ): OrganizationSearchResult!
   classs(
+    """
+    Free-text query. Omit it to browse by filter alone.
+    """
     query: String
+
+    """
+    Conditions every result must satisfy.
+    """
     where: ClassWhere
+
+    """
+    Sort order. Defaults to relevance for a free-text query.
+    """
     orderBy: ClassOrderBy
+
+    """
+    1-based page number; at least 1.
+    """
     page: Int = 1
+
+    """
+    Results per page, between 0 and 100. Use 0 for a facet-only query: no results are fetched, and the facet counts still come back.
+    """
     perPage: Int = 20
   ): ClassSearchResult!
   terminologySources(
+    """
+    Free-text query. Omit it to browse by filter alone.
+    """
     query: String
+
+    """
+    Conditions every result must satisfy.
+    """
     where: TerminologySourceWhere
+
+    """
+    Sort order. Defaults to relevance for a free-text query.
+    """
     orderBy: TerminologySourceOrderBy
+
+    """
+    1-based page number; at least 1.
+    """
     page: Int = 1
+
+    """
+    Results per page, between 0 and 100. Use 0 for a facet-only query: no results are fetched, and the facet counts still come back.
+    """
     perPage: Int = 20
   ): TerminologySourceSearchResult!
 }
@@ -36,7 +112,7 @@ type DatasetSearchResult {
 }
 
 type Dataset {
-  id: String!
+  id: IRI!
   title: [LanguageString!]!
   description: [LanguageString!]!
   publisher: [Agent!]!
@@ -51,18 +127,23 @@ type Dataset {
   nde_schema_ap: Boolean!
 }
 
+"""
+An absolute IRI (RFC 3987), serialized as a string. Any scheme – `https:`, `urn:`, `doi:`, `ark:` – not only HTTP. A field or filter typed `IRI` keys on identity, never on a literal.
+"""
+scalar IRI @specifiedBy(url: "https://www.rfc-editor.org/rfc/rfc3987")
+
 type LanguageString {
   language: String
   value: String!
 }
 
 type Agent {
-  id: String!
+  id: IRI!
   label: [LanguageString!]!
 }
 
 type Vocabulary {
-  id: String!
+  id: IRI!
   label: [LanguageString!]!
 }
 
@@ -73,9 +154,9 @@ type Pagination {
 }
 
 type DatasetFacets {
-  publisher: [ValueBucket!]!
-  class: [ValueBucket!]!
-  terminology_source: [ValueBucket!]!
+  publisher: [IRIBucket!]!
+  class: [IRIBucket!]!
+  terminology_source: [IRIBucket!]!
   language: [ValueBucket!]!
   format: [ValueBucket!]!
   size: [RangeBucket!]!
@@ -85,6 +166,12 @@ type DatasetFacets {
   linked_data: [BooleanBucket!]!
   terms: [BooleanBucket!]!
   persistent_uris: [BooleanBucket!]!
+}
+
+type IRIBucket {
+  value: IRI!
+  count: Int!
+  label: [LanguageString!]
 }
 
 type ValueBucket {
@@ -108,14 +195,14 @@ type BooleanBucket {
 Sibling keys are combined with AND. Use `or` for a disjunction, and `and` when a query needs more than one of them.
 """
 input DatasetWhere {
-  id: StringFilter
-  publisher: StringFilter
-  catalog: StringFilter
-  class: StringFilter
-  terminology_source: StringFilter
-  format: StringFilter
+  id: DatasetFilter
+  publisher: AgentFilter
+  catalog: IRIFilter
+  class: IRIFilter
+  terminology_source: VocabularyFilter
+  format: KeywordFilter
   size: IntRange
-  status: StringFilter
+  status: KeywordFilter
   nde_schema_ap: Boolean
 
   """
@@ -129,7 +216,38 @@ input DatasetWhere {
   and: [DatasetWhere!]
 }
 
-input StringFilter {
+"""
+Matches a field holding IRIs of Dataset.
+"""
+input DatasetFilter {
+  in: [IRI!]
+}
+
+"""
+Matches a field holding IRIs of Agent.
+"""
+input AgentFilter {
+  in: [IRI!]
+}
+
+"""
+Matches a field holding IRIs that belong to no collection this API serves.
+"""
+input IRIFilter {
+  in: [IRI!]
+}
+
+"""
+Matches a field holding IRIs of Vocabulary.
+"""
+input VocabularyFilter {
+  in: [IRI!]
+}
+
+"""
+Matches a field holding literal values.
+"""
+input KeywordFilter {
   in: [String!]
 }
 
@@ -142,14 +260,14 @@ input IntRange {
 A condition on exactly one field. Used inside `or`, where the criteria are alternatives.
 """
 input DatasetCriterion @oneOf {
-  id: StringFilter
-  publisher: StringFilter
-  catalog: StringFilter
-  class: StringFilter
-  terminology_source: StringFilter
-  format: StringFilter
+  id: DatasetFilter
+  publisher: AgentFilter
+  catalog: IRIFilter
+  class: IRIFilter
+  terminology_source: VocabularyFilter
+  format: KeywordFilter
   size: IntRange
-  status: StringFilter
+  status: KeywordFilter
   nde_schema_ap: Boolean
 }
 
@@ -177,7 +295,7 @@ type OrganizationSearchResult {
 }
 
 type Organization {
-  id: String!
+  id: IRI!
   label: [LanguageString!]!
 }
 
@@ -185,7 +303,7 @@ type Organization {
 Sibling keys are combined with AND. Use `or` for a disjunction, and `and` when a query needs more than one of them.
 """
 input OrganizationWhere {
-  id: StringFilter
+  id: OrganizationFilter
 
   """
   A disjunction: a document matches when ANY of these criteria holds. Combined with the sibling keys by AND, so it widens across fields without widening the query as a whole.
@@ -199,10 +317,17 @@ input OrganizationWhere {
 }
 
 """
+Matches a field holding IRIs of Organization.
+"""
+input OrganizationFilter {
+  in: [IRI!]
+}
+
+"""
 A condition on exactly one field. Used inside `or`, where the criteria are alternatives.
 """
 input OrganizationCriterion @oneOf {
-  id: StringFilter
+  id: OrganizationFilter
 }
 
 input OrganizationOrderBy {
@@ -220,7 +345,7 @@ type ClassSearchResult {
 }
 
 type Class {
-  id: String!
+  id: IRI!
   label: [LanguageString!]!
 }
 
@@ -228,7 +353,7 @@ type Class {
 Sibling keys are combined with AND. Use `or` for a disjunction, and `and` when a query needs more than one of them.
 """
 input ClassWhere {
-  id: StringFilter
+  id: ClassFilter
 
   """
   A disjunction: a document matches when ANY of these criteria holds. Combined with the sibling keys by AND, so it widens across fields without widening the query as a whole.
@@ -242,10 +367,17 @@ input ClassWhere {
 }
 
 """
+Matches a field holding IRIs of Class.
+"""
+input ClassFilter {
+  in: [IRI!]
+}
+
+"""
 A condition on exactly one field. Used inside `or`, where the criteria are alternatives.
 """
 input ClassCriterion @oneOf {
-  id: StringFilter
+  id: ClassFilter
 }
 
 input ClassOrderBy {
@@ -263,7 +395,7 @@ type TerminologySourceSearchResult {
 }
 
 type TerminologySource {
-  id: String!
+  id: IRI!
   label: [LanguageString!]!
 }
 
@@ -271,7 +403,7 @@ type TerminologySource {
 Sibling keys are combined with AND. Use `or` for a disjunction, and `and` when a query needs more than one of them.
 """
 input TerminologySourceWhere {
-  id: StringFilter
+  id: TerminologySourceFilter
 
   """
   A disjunction: a document matches when ANY of these criteria holds. Combined with the sibling keys by AND, so it widens across fields without widening the query as a whole.
@@ -285,10 +417,17 @@ input TerminologySourceWhere {
 }
 
 """
+Matches a field holding IRIs of TerminologySource.
+"""
+input TerminologySourceFilter {
+  in: [IRI!]
+}
+
+"""
 A condition on exactly one field. Used inside `or`, where the criteria are alternatives.
 """
 input TerminologySourceCriterion @oneOf {
-  id: StringFilter
+  id: TerminologySourceFilter
 }
 
 input TerminologySourceOrderBy {

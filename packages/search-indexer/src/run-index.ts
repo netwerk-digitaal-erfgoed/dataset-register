@@ -160,7 +160,11 @@ export async function runIndex(
   await synonymsPromise;
 
   const writer = new BlueGreenRebuild<SearchDocument>(client, datasetType, {
-    name: alias,
+    // The alias this deployment keeps its live collection on, rather than the
+    // name derived from the type. A function because a writer also names the
+    // peer collections a joinable reference points at; ours resolves only this
+    // type, and every other name stays derived.
+    collectionNameFor: () => alias,
     defaultSortingField: DEFAULT_SORTING_FIELD,
     // Dutch-stem any folded, locale-less `*_search` companion field. The
     // per-locale text fields (title/description/...) carry their own nl/en

@@ -72,10 +72,13 @@ vi.mock('@lde/search-typesense', async (importOriginal) => {
       constructor(
         _client: unknown,
         searchType: SearchType,
-        options?: { readonly name?: string },
+        options?: {
+          readonly collectionNameFor?: (searchType: SearchType) => string;
+        },
       ) {
         this.#searchType = searchType;
-        this.collectionName = options?.name ?? searchType.name;
+        this.collectionName =
+          options?.collectionNameFor?.(searchType) ?? searchType.name;
       }
       openRun(context: RunContext): unknown {
         return mocks.openRun(context, this.#searchType);

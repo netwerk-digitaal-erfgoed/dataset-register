@@ -39,6 +39,43 @@ describe('/graphql', () => {
     });
   });
 
+  it('accepts the group tokens the sidebar filters by', async () => {
+    // `class` is an IRIFilter since @lde/search 0.21, so its values coerce
+    // against the IRI scalar — but the class facet deliberately carries
+    // `group:*` tokens beside real class IRIs, and `format` carries them beside
+    // bare media types. A scalar that rejected them would fail every grouped
+    // facet selection at coercion, before Typesense is ever reached, which is
+    // why this asserts on coercion rather than on results.
+    const response = await POST({
+      request: new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `query ($where: DatasetWhere) {
+            datasets(where: $where, perPage: 0) { pagination { total } }
+          }`,
+          variables: {
+            where: {
+              class: { in: ['group:person', 'https://schema.org/Person'] },
+              format: { in: ['group:rdf', 'application/ld+json'] },
+            },
+          },
+        }),
+      }),
+    } as Parameters<typeof POST>[0]);
+
+    expectPlatformResponse(response);
+    const body = (await response.json()) as {
+      errors?: readonly { readonly message: string }[];
+    };
+    // Typesense is a dummy host here, so a resolver error is expected and fine;
+    // what must not appear is a coercion failure on the values themselves.
+    const coercion = (body.errors ?? []).filter((error) =>
+      /IRI|expected type|cannot represent/i.test(error.message),
+    );
+    expect(coercion).toEqual([]);
+  });
+
   it('serves the SDL as a platform Response', async () => {
     const response = await GET({
       request: new Request('http://localhost/graphql?sdl'),
