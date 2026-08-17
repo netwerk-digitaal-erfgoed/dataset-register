@@ -3,8 +3,10 @@ import { searchGraphQLHandler } from '$lib/services/search/engine.server';
 
 /**
  * The GraphQL search endpoint. The browser’s dataset listing queries it
- * same-origin (`/graphql`); the same handler is also reachable at the public
- * search subdomain (an ingress alias to this pod) for external consumers.
+ * same-origin (`/graphql`), and it is the Register’s public search API: the
+ * ingress routes `/graphql` on the main host to this pod. (There is no separate
+ * search subdomain – the former `search.datasetregister…` served the retired
+ * client-direct-to-Typesense path, and Typesense now has no ingress at all.)
  *
  * The endpoint itself is `@lde/search-api-graphql`’s framework-agnostic `fetch`
  * handler, mounted as-is: `POST` executes, `GET` serves the self-contained

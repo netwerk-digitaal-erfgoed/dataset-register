@@ -7,8 +7,11 @@ interface GraphQLError {
 
 /**
  * The GraphQL search endpoint the browser posts to. Defaults to the same-origin
- * `/graphql` route (no CORS, resolvable server-side via `event.fetch`); a
- * deployment can point it at the dedicated search subdomain instead.
+ * `/graphql` route, which needs no CORS and which `event.fetch` resolves
+ * in-process server-side rather than over the network. Set
+ * `PUBLIC_SEARCH_GRAPHQL_ENDPOINT` to point a deployment at a dedicated endpoint
+ * instead – the seam for serving the API from its own pod, which would trade
+ * that in-process resolution for a network hop per server-rendered page.
  */
 function endpoint(): string {
   return env.PUBLIC_SEARCH_GRAPHQL_ENDPOINT || '/graphql';
