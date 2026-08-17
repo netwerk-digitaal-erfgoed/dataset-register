@@ -6,7 +6,7 @@
   "dependencies": {
     "@dataset-register/core": "*",
     "@dataset-register/search-indexer": "*",
-    "env-schema": "^7.0.0",
+    "env-schema": "^8.0.0",
     "pino": "^10.2.0"
   },
   "devDependencies": {
