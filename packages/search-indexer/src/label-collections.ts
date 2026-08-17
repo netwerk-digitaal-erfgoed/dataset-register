@@ -71,7 +71,9 @@ export async function rebuildLabelCollection(
     }
 
     const writer = new BlueGreenRebuild<SearchDocument>(client, type, {
-      name: alias,
+      // This label collection's configured alias, rather than the name derived
+      // from the type. See the dataset rebuild for why it is a function.
+      collectionNameFor: () => alias,
       // Dutch-stem the folded `label_search_*` companion fields, matching the
       // dataset collection; the label texts are per-locale (nl/en) but a folded
       // fallback with no locale of its own would otherwise ship unstemmed.
