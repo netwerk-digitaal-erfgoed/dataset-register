@@ -17,6 +17,26 @@ updates:
       default-days: 7
       exclude:
         - '@lde/*'
+    ignore:
+      # Two majors are blocked by a peer that has not caught up. Dependabot
+      # re-proposes them every cycle otherwise, and each one has to be split out
+      # of its group by hand — three times so far (#2297, #2319, #2326).
+      #
+      # Drop the entry, do not raise the version: the next major is only wanted
+      # once the blocker clears, and a bumped bound would silently let it in.
+      - dependency-name: 'graphql'
+        # @lde/search-api-graphql depends on graphql ^16.9.0 and graphql-yoga
+        # peers ^15 || ^16, so 17 nests a second copy beside the hoisted one.
+        # graphql-js does nominal checks across its schema and AST types, so two
+        # copies in one process fail them — the family of bug that took the
+        # search API down in #2306. Lift when @lde/search-api-graphql supports 17.
+        versions: ['>=17']
+      - dependency-name: 'typescript'
+        # No released typescript-eslint supports TypeScript 7: 8.67.0 still
+        # declares `typescript@>=4.8.4 <6.1.0`, so npm cannot resolve the tree at
+        # all. Lift when typescript-eslint widens its peer range.
+        versions: ['>=7']
+
     groups:
       lde: # Our own LDE packages; bump together and fast (no cooldown).
         patterns:
