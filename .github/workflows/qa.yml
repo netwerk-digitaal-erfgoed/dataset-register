@@ -169,12 +169,27 @@ jobs:
           MOVED: ${{ steps.surface.outputs.moved }}
           PR: ${{ github.event.pull_request.number }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           gh label create "$LABEL" --color 1d76db \
             --description 'Changes the published GraphQL surface consumers query' \
             2>/dev/null || true
           if [ "$MOVED" = 'true' ]; then
-            gh pr edit "$PR" --add-label "$LABEL"
+            action=--add-label
           else
-            gh pr edit "$PR" --remove-label "$LABEL"
+            action=--remove-label
           fi
+          # Retry: the label is a signal, and a GitHub blip is not news about
+          # this branch. #2320 went red purely because `gh pr edit` met a 503
+          # during an API incident, minutes after the contract itself had been
+          # written and found current.
+          for attempt in 1 2 3; do
+            if gh pr edit "$PR" "$action" "$LABEL"; then
+              exit 0
+            fi
+            sleep $((attempt * 10))
+          done
+          # Warn rather than fail. The committed contract is the substance of
+          # this job and it is already correct by here; a job that goes red on a
+          # transient API error teaches everyone to ignore it, which costs more
+          # than a stale label.
+          echo "::warning::Could not ${action#--} ${LABEL} on #${PR}; the committed contract is unaffected."
