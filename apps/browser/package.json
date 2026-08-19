@@ -53,7 +53,7 @@
     "typesense": "^3.0.6"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.12.1",
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/compat": "^2.1.0",
     "@eslint/js": "^10.0.1",
     "@flowbite-svelte-plugins/chart": "^0.2.4",
