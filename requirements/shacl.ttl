@@ -707,7 +707,10 @@ nde-dataset:DistributionShape
                 sh:severity sh:Violation ;
             ] ;
             sh:minCount 0 ;
-            sh:description "Een link naar de documentatie: voor downloads het applicatieprofiel, vocabulaire of ontologie; voor web-API’s (zoals SPARQL of OAI-PMH) de protocolspecificatie."@nl, "A link to the documentation: for downloads, the application profile, vocabulary or ontology; for web APIs (such as SPARQL or OAI-PMH), the protocol specification."@en ;
+            sh:description """Een link naar de documentatie: voor downloads het applicatieprofiel, vocabulaire of ontologie; voor web-API’s (zoals SPARQL of OAI-PMH) de protocolspecificatie.
+                Hiermee kunnen gebruikers een volledige dump onderscheiden van een API die maar een deel van de data ontsluit."""@nl,
+                """A link to the documentation: for downloads, the application profile, vocabulary or ontology; for web APIs (such as SPARQL or OAI-PMH), the protocol specification.
+                It lets consumers tell a full data dump from an API that exposes only part of the data."""@en ;
             sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
         ] ,
         [
