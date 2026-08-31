@@ -47,7 +47,7 @@
     "ldkit": "^2.7.2",
     "lz-string": "^1.5.0",
     "marked": "^18.0.10",
-    "n3": "^2.2.5",
+    "n3": "^2.3.0",
     "sparqljs": "^3.7.4",
     "svelte-range-slider-pips": "^4.1.1",
     "typesense": "^3.0.6"
