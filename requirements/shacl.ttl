@@ -523,19 +523,6 @@ nde-dataset:DistributionShape
             sh:message "Gebruik een geldige HTTPS-URL voor de distributie"@nl, "Use a valid HTTPS URL for the distribution"@en ;
         ] ,
         [
-            sh:or (
-                [ sh:property [
-                    sh:minCount 1 ;
-                    sh:path schema:encodingFormat ;
-                ] ]
-                [ sh:property [
-                    sh:minCount 1 ;
-                    sh:path schema:usageInfo ;
-                ] ]
-            ) ;
-            sh:message "Geef het MIME-type van de dataset op (bijv. application/n-triples) of het API-protocol (bijv. https://www.w3.org/TR/sparql11-protocol/)"@nl, "Specify the dataset format (such as application/n-triples) or the API protocol (such as https://www.w3.org/TR/sparql11-protocol/)"@en ;
-        ] ,
-        [
             sh:path schema:encodingFormat ;
             sh:pattern "^[a-zA-Z]+/[a-zA-Z0-9][a-zA-Z0-9!#$&\\-^_.+]*$" ;
             nde:futureChange [
@@ -760,6 +747,33 @@ nde-dataset:DistributionShape
             sh:message "Het Content-Type van contentUrl komt niet overeen met het opgegeven schema:encodingFormat."@nl ,
                        "The Content-Type of contentUrl does not match the declared schema:encodingFormat."@en ;
         ] .
+
+# A distribution must declare either its media type or a link to API usage documentation.
+# This used to live as an anonymous sh:or block directly inside DistributionShape's
+# sh:property list. That block had no sh:path of its own (it spans two properties at
+# once), which made it an ill-formed PropertyShape per the SHACL spec and crashed
+# spec-strict engines such as pySHACL and Apache Jena. Expressing it as its own
+# SPARQL-constrained NodeShape, the same pattern already used below for
+# DistributionSparqlEncodingRequiresProtocolShape, avoids the ill-formed shape and
+# keeps the specific sh:message intact (a plain sh:node here would work for parsing
+# but shacl-engine falls back to a generic "Value does not have shape" message for
+# node-level sh:node results, see the "not generic sh:node fallback" test below).
+nde-dataset:DistributionFormatOrProtocolShape
+    a sh:NodeShape ;
+    sh:targetObjectsOf schema:distribution ;
+    sh:severity sh:Violation ;
+    sh:message "Geef het MIME-type van de dataset op (bijv. application/n-triples) of het API-protocol (bijv. https://www.w3.org/TR/sparql11-protocol/)"@nl, "Specify the dataset format (such as application/n-triples) or the API protocol (such as https://www.w3.org/TR/sparql11-protocol/)"@en ;
+    sh:sparql [
+        sh:select """
+            PREFIX schema: <https://schema.org/>
+            SELECT $this ?path
+            WHERE {
+                FILTER NOT EXISTS { $this schema:encodingFormat ?format }
+                FILTER NOT EXISTS { $this schema:usageInfo ?usage }
+                BIND(schema:encodingFormat AS ?path)
+            }
+        """ ;
+    ] .
 
 # SPARQL endpoints must declare the SPARQL protocol URI in schema:usageInfo so the
 # Dataset Register can identify them as APIs. A SPARQL MIME type in schema:encodingFormat

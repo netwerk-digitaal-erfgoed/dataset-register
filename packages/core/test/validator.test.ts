@@ -669,6 +669,32 @@ describe('Validator', () => {
     ]);
   });
 
+  it('reports a distribution with neither encodingFormat nor usageInfo', async () => {
+    // Regression test for the DistributionFormatOrProtocolShape extraction: this
+    // constraint used to live as an anonymous sh:or block directly inside
+    // DistributionShape's sh:property list, without its own sh:path. That made it
+    // an ill-formed PropertyShape per the SHACL spec, which crashes spec-strict
+    // engines such as pySHACL and Apache Jena (shacl-engine tolerated it, which is
+    // why this case was not previously covered here). The constraint itself, one
+    // of encodingFormat or usageInfo is required, is unchanged; only its shape
+    // moved to sh:node so it is well-formed for every SHACL processor.
+    const report = await validate(
+      'dataset-schema-org-distribution-missing-format-or-usage.jsonld',
+    );
+    expect(report.state).toBe('invalid');
+    const results = [
+      ...(report as InvalidDataset).errors.match(
+        null,
+        shacl('resultMessage'),
+        rdf.literal(
+          'Specify the dataset format (such as application/n-triples) or the API protocol (such as https://www.w3.org/TR/sparql11-protocol/)',
+          'en',
+        ),
+      ),
+    ];
+    expect(results).toHaveLength(1);
+  });
+
   it('flags non-https documentation on a distribution', async () => {
     const jsonld = JSON.stringify({
       '@context': 'https://schema.org/',
