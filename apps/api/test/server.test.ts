@@ -588,6 +588,23 @@ describe('Server', () => {
     expect(response.statusCode).toEqual(200);
   });
 
+  it('returns 200 for a URL on a sub-subdomain whose intermediate parent is allowed', async () => {
+    // Only `allowed.parent.example` is on the list, not `parent.example`.
+    const response = await httpServer.inject({
+      method: 'GET',
+      url: '/allowed-domains?url=https://sub.allowed.parent.example/dataset',
+    });
+    expect(response.statusCode).toEqual(200);
+  });
+
+  it('returns 404 for a URL on the registrable parent of an allowed subdomain', async () => {
+    const response = await httpServer.inject({
+      method: 'GET',
+      url: '/allowed-domains?url=https://parent.example/dataset',
+    });
+    expect(response.statusCode).toEqual(404);
+  });
+
   it('returns 404 for a URL on a disallowed domain', async () => {
     const response = await httpServer.inject({
       method: 'GET',
@@ -812,6 +829,26 @@ describe('POST /allowed-domains', () => {
     expect(await allowedDomainStore.contains('sub.parent-allowed.com')).toBe(
       false,
     );
+  });
+
+  it('is a no-op for a sub-subdomain whose intermediate parent is already allowed', async () => {
+    await allowedDomainStore.add('mid.parent-allowed.org');
+
+    const response = await httpServerWithAuth.inject({
+      method: 'POST',
+      url: '/allowed-domains',
+      headers: {
+        Authorization: `Bearer ${testToken}`,
+        'Content-Type': 'application/json',
+        Accept: '*/*',
+      },
+      payload: JSON.stringify({ domain: 'sub.mid.parent-allowed.org' }),
+    });
+
+    expect(response.statusCode).toEqual(204);
+    expect(
+      await allowedDomainStore.contains('sub.mid.parent-allowed.org'),
+    ).toBe(false);
   });
 
   it('returns 204 and adds a registrable domain', async () => {
