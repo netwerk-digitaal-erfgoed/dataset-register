@@ -56,10 +56,15 @@ export class MockRegistrationStore implements RegistrationStore {
 }
 
 export class MockAllowedRegistrationDomainStore implements AllowedRegistrationDomainStore {
-  private readonly domainNames: Array<string> = ['netwerkdigitaalerfgoed.nl'];
+  private readonly domainNames: Array<string> = [
+    'netwerkdigitaalerfgoed.nl',
+    'allowed.parent.example',
+  ];
 
-  contains(domainName: string): Promise<boolean> {
-    return Promise.resolve(this.domainNames.includes(domainName));
+  contains(...domainNames: Array<string>): Promise<boolean> {
+    return Promise.resolve(
+      domainNames.some((domainName) => this.domainNames.includes(domainName)),
+    );
   }
 
   async add(domainName: string): Promise<void> {

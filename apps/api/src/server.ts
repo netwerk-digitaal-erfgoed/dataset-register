@@ -262,16 +262,32 @@ export async function server(
     }
   }
 
-  async function domainIsAllowed(url: URL): Promise<boolean> {
-    const result = psl.parse(url.hostname);
+  /**
+   * Every domain that, when allowed, covers `hostname`: the registrable domain
+   * and each intermediate parent, up to and including the hostname itself.
+   * For `nde.ciim.zetcom.group` that is `zetcom.group`, `ciim.zetcom.group`
+   * and `nde.ciim.zetcom.group`.
+   */
+  function coveringDomains(hostname: string): Array<string> | null {
+    const result = psl.parse(hostname);
     if (result.error || result.domain === null) {
+      return null;
+    }
+
+    const subdomainLabels = result.subdomain?.split('.') ?? [];
+    return subdomainLabels.reduceRight(
+      (domains, label) => [...domains, `${label}.${domains.at(-1)}`],
+      [result.domain],
+    );
+  }
+
+  async function domainIsAllowed(url: URL): Promise<boolean> {
+    const domains = coveringDomains(url.hostname);
+    if (domains === null) {
       return false;
     }
 
-    return await allowedRegistrationDomainStore.contains(
-      result.domain,
-      result.input,
-    );
+    return await allowedRegistrationDomainStore.contains(...domains);
   }
 
   server.post('/datasets', datasetsRequest, async (request, reply) => {
@@ -448,23 +464,24 @@ export async function server(
         },
         async (request, reply) => {
           const { domain } = request.body as { domain: string };
-          const result = psl.parse(domain);
-          if (result.error || result.domain === null) {
+          const domains = coveringDomains(domain);
+          if (domains === null) {
             return reply.code(400).send();
           }
 
-          // Skip subdomains whose registrable parent is already allowed:
+          // Skip subdomains one of whose parents is already allowed:
           // they are already covered transitively.
+          const parentDomains = domains.slice(0, -1);
           if (
-            result.input !== result.domain &&
-            (await allowedRegistrationDomainStore.contains(result.domain))
+            parentDomains.length > 0 &&
+            (await allowedRegistrationDomainStore.contains(...parentDomains))
           ) {
             return reply.code(204).send();
           }
 
-          await allowedRegistrationDomainStore.add(result.input);
+          await allowedRegistrationDomainStore.add(domain);
 
-          request.log.info(`Added ${result.input} to allowed domains`);
+          request.log.info(`Added ${domain} to allowed domains`);
 
           return reply.code(204).send();
         },
