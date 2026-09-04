@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.15.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.14.0...requirements-1.15.0) (2026-09-04)
+
+
+### Features
+
+* **requirements:** document dct:source on the DCAT dataset shape ([#2300](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2300)) ([ffaee41](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/ffaee4144317970bd7851684ec9dcd81521501b6))
+
+
+### Bug Fixes
+
+* **core:** read a declared dcat:compressFormat on ingest ([#2270](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2270)) ([2793948](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/2793948216d5c4e9ddc294bcd03a1d6183d1add2))
+* **requirements:** describe the datacatalog description in its own words ([#2264](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2264)) ([46739d3](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/46739d368f7f8e0d83a8aba97dc19fc6b9556853))
+
+
+### Documentation
+
+* recommend usageInfo IRIs for LDES, IIIF and Linked Art Search APIs ([5144c8b](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/5144c8b83158784e9243c72aea9ea9080f44f7e8))
+* replace the unresolvable N3 bibliography reference with TriG ([#2350](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2350)) ([43982a9](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/43982a9c2614e0c15d07244715579743fe885992))
+
 ## [1.14.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.13.0...requirements-1.14.0) (2026-07-16)
 
 
