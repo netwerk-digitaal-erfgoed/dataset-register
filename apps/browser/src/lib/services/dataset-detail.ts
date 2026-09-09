@@ -58,14 +58,18 @@ const DetailDistributionSchema = {
     '@optional': true,
     '@multilang': true,
   },
+  // Kept as the lexical form (the queries cast the literal with STR), because
+  // a date-only value such as "2024-01-15" is a calendar date, not an instant;
+  // decoded into a Date it would become UTC midnight and shift a day for some
+  // viewers. formatDate() tells the two apart.
   issued: {
     '@id': dcterms.issued,
-    '@type': xsd.dateTime,
+    '@type': xsd.string,
     '@optional': true,
   },
   modified: {
     '@id': dcterms.modified,
-    '@type': xsd.dateTime,
+    '@type': xsd.string,
     '@optional': true,
   },
   byteSize: {
@@ -140,14 +144,18 @@ export const DatasetDetailSchema = {
   // dct:PeriodOfTime blank node with dcat:startDate / dcat:endDate, or – for
   // unparseable inputs – a plain literal. ldkit cannot model this polymorphism
   // in a single schema.
+  // Kept as the lexical form (the queries cast the literal with STR), because
+  // a date-only value such as "2024-01-15" is a calendar date, not an instant;
+  // decoded into a Date it would become UTC midnight and shift a day for some
+  // viewers. formatDate() tells the two apart.
   issued: {
     '@id': dcterms.issued,
-    '@type': xsd.dateTime,
+    '@type': xsd.string,
     '@optional': true,
   },
   modified: {
     '@id': dcterms.modified,
-    '@type': xsd.dateTime,
+    '@type': xsd.string,
     '@optional': true,
   },
   landingPage: {
@@ -1230,7 +1238,9 @@ export async function fetchDatasetDetail(
     WHERE {
       GRAPH ?g {
         {
-          <${datasetUri}> ?p ?o .
+          <${datasetUri}> ?p ?raw .
+          # Keep dates in their lexical form (see DatasetDetailSchema).
+          BIND(IF(?p IN (dct:issued, dct:modified), STR(?raw), ?raw) AS ?o)
           BIND(<${datasetUri}> AS ?s)
         } UNION {
           <${datasetUri}> dct:publisher ?publisher .
@@ -1292,8 +1302,15 @@ export async function fetchDatasetDetail(
           ${normalizeMediaType('?rawMediaType', '?mediaType')}
         }
         OPTIONAL { ?distribution dct:format ?format }
-        OPTIONAL { ?distribution dct:issued ?issued }
-        OPTIONAL { ?distribution dct:modified ?modified }
+        # Keep dates in their lexical form (see DetailDistributionSchema).
+        OPTIONAL {
+          ?distribution dct:issued ?rawIssued .
+          BIND(STR(?rawIssued) AS ?issued)
+        }
+        OPTIONAL {
+          ?distribution dct:modified ?rawModified .
+          BIND(STR(?rawModified) AS ?modified)
+        }
         OPTIONAL { ?distribution dcat:byteSize ?byteSize }
         OPTIONAL { ?distribution dct:conformsTo ?conformsTo }
         OPTIONAL { ?distribution dct:license ?license }
