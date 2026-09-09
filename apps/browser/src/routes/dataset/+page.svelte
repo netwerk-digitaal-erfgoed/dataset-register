@@ -57,7 +57,7 @@
     isAnalyzed,
   } from '$lib/services/dataset-detail.js';
   import { getRelativeTimeString } from '$lib/utils/relative-time';
-  import { formatDate } from '$lib/utils/date';
+  import { formatDate, formatDateTime } from '$lib/utils/date';
   import ClassPropertiesWidget from '$lib/components/ClassPropertiesWidget.svelte';
   import NdeCompatibility from '$lib/components/NdeCompatibility.svelte';
 
@@ -1786,13 +1786,7 @@
             })}
           </span>
           <Tooltip triggeredBy="#summary-generated-relative">
-            {new Date(summaryGeneratedAt).toLocaleDateString(getLocale(), {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
+            {formatDateTime(summaryGeneratedAt)}
           </Tooltip>
         {/if}
         {#if summarySourceInvalid}
@@ -2209,16 +2203,7 @@
               >
             </dt>
             <dd class="text-sm text-gray-700 dark:text-gray-300">
-              {new Date(dataset.subjectOf.datePosted).toLocaleDateString(
-                getLocale(),
-                {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                },
-              )}
+              {formatDateTime(dataset.subjectOf.datePosted)}
             </dd>
           </div>
         {/if}
@@ -2245,16 +2230,7 @@
                 {getRelativeTimeString(dataset.subjectOf.dateRead)}
               </span>
               <Tooltip triggeredBy="#dateread-relative">
-                {new Date(dataset.subjectOf.dateRead).toLocaleDateString(
-                  getLocale(),
-                  {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  },
-                )}
+                {formatDateTime(dataset.subjectOf.dateRead)}
               </Tooltip>
             </dd>
           </div>
