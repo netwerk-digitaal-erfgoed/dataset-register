@@ -199,14 +199,6 @@ export const DatasetDetailSchema = {
     '@id': dcterms.isPartOf,
     '@optional': true,
   },
-  // The dataset(s) this dataset is derived from. Harvested from dct:source for
-  // DCAT input and from schema:isBasedOn / schema:isBasedOnUrl for schema.org
-  // input, both of which the crawler stores as dct:source.
-  source: {
-    '@id': dcterms.source,
-    '@optional': true,
-    '@array': true,
-  },
   contentRating: {
     '@id': schema.contentRating,
     '@optional': true,
@@ -406,6 +398,18 @@ export type DatasetSummary = SchemaInterface<typeof DatasetSummarySchema> & {
 };
 
 const DISTRIBUTION_LIMIT = 20;
+// Some aggregated datasets are based on dozens of others; the detail page shows
+// only the first few and says how many there are in total.
+const SOURCE_LIMIT = 10;
+
+// A dataset this dataset is derived from (see fetchSources). `title` is set only
+// when the source is itself registered, which is also what makes it linkable to
+// its own detail page rather than to the bare IRI.
+export interface DatasetSource {
+  iri: string;
+  registered: boolean;
+  title?: Record<string, string>;
+}
 
 export type TemporalCoverage =
   | { kind: 'iri'; iri: string }
@@ -436,6 +440,9 @@ export interface DatasetDetailResult {
   dataset: DatasetDetail;
   distributions: DistributionDetail[];
   totalDistributions: number;
+  // The first SOURCE_LIMIT datasets this one is derived from, plus the total.
+  sources: DatasetSource[];
+  totalSources: number;
   temporalCoverages: TemporalCoverage[];
   // The Knowledge Graph analysis, streamed off the critical path (see
   // DatasetAnalysis). The page renders the register record immediately and fills
@@ -1041,7 +1048,7 @@ function toValidityVerdict(
   return verdict;
 }
 
-async function fetchDistributionCount(query: string): Promise<number> {
+async function fetchCount(query: string): Promise<number> {
   const bindingsStream = await fetcher.fetchBindings(
     PUBLIC_SPARQL_ENDPOINT,
     query,
@@ -1106,6 +1113,53 @@ async function fetchTemporalCoverage(
     }
   }
   return [...byKey.values()];
+}
+
+// The datasets this dataset is derived from, harvested from dct:source for DCAT
+// input and from schema:isBasedOn / schema:isBasedOnUrl for schema.org input,
+// both of which the crawler stores as dct:source. Capped at SOURCE_LIMIT (ordered
+// by IRI so the cut is stable); a source that is itself registered comes with
+// its title, so the page can link to its detail page instead of the bare IRI.
+async function fetchSources(datasetUri: string): Promise<DatasetSource[]> {
+  const query = `
+    PREFIX dct: <http://purl.org/dc/terms/>
+    PREFIX dcat: <http://www.w3.org/ns/dcat#>
+    SELECT ?source ?title WHERE {
+      {
+        SELECT DISTINCT ?source WHERE {
+          GRAPH ?g { <${datasetUri}> dct:source ?source }
+        }
+        ORDER BY ?source
+        LIMIT ${SOURCE_LIMIT}
+      }
+      OPTIONAL {
+        GRAPH ?sourceGraph { ?source a dcat:Dataset ; dct:title ?title }
+      }
+    }
+  `;
+  const bindingsStream = await fetcher.fetchBindings(
+    PUBLIC_SPARQL_ENDPOINT,
+    query,
+  );
+
+  const byIri = new Map<string, DatasetSource>();
+  for await (const raw of bindingsStream) {
+    const binding = raw as unknown as {
+      source: { value: string };
+      title?: { value: string; language?: string };
+    };
+    const iri = binding.source.value;
+    const source = byIri.get(iri) ?? { iri, registered: false };
+    if (binding.title) {
+      source.registered = true;
+      source.title = {
+        ...source.title,
+        [binding.title.language ?? '']: binding.title.value,
+      };
+    }
+    byIri.set(iri, source);
+  }
+  return [...byIri.values()];
 }
 
 // Main function to fetch all dataset detail data
@@ -1246,29 +1300,46 @@ export async function fetchDatasetDetail(
     }
   `;
 
-  const [datasets, distributions, totalDistributions, temporalCoverages] =
-    await Promise.all([
-      detailLens.query(datasetQuery),
-      distributionLens.query(distributionQuery),
-      fetchDistributionCount(distributionCountQuery),
-      fetchTemporalCoverage(datasetUri),
-    ]).catch((e: unknown) => {
-      // The register lens queries hit the SPARQL endpoint directly and have no
-      // internal fallback (unlike the count/temporal fetches, which catch and
-      // return empty). If the endpoint is unreachable or returns a malformed
-      // response the Promise rejects here; surface it as a deliberate 503 so the
-      // route renders a handled “temporarily unavailable” page instead of
-      // crashing with an unhandled 500 (see issue #1860). A genuinely missing
-      // dataset comes back as an empty result set and is handled as 404 below.
-      console.error(
-        `Register queries failed for <${datasetUri}>:`,
-        e instanceof Error ? e.message : e,
-      );
-      error(
-        503,
-        'The dataset register is temporarily unavailable. Please try again shortly.',
-      );
-    });
+  const sourceCountQuery = `
+    SELECT (COUNT(DISTINCT ?source) AS ?count)
+    WHERE {
+      GRAPH ?g {
+        <${datasetUri}> <http://purl.org/dc/terms/source> ?source .
+      }
+    }
+  `;
+
+  const [
+    datasets,
+    distributions,
+    totalDistributions,
+    sources,
+    totalSources,
+    temporalCoverages,
+  ] = await Promise.all([
+    detailLens.query(datasetQuery),
+    distributionLens.query(distributionQuery),
+    fetchCount(distributionCountQuery),
+    fetchSources(datasetUri),
+    fetchCount(sourceCountQuery),
+    fetchTemporalCoverage(datasetUri),
+  ]).catch((e: unknown) => {
+    // The register lens queries hit the SPARQL endpoint directly and have no
+    // internal fallback (unlike the count/temporal fetches, which catch and
+    // return empty). If the endpoint is unreachable or returns a malformed
+    // response the Promise rejects here; surface it as a deliberate 503 so the
+    // route renders a handled “temporarily unavailable” page instead of
+    // crashing with an unhandled 500 (see issue #1860). A genuinely missing
+    // dataset comes back as an empty result set and is handled as 404 below.
+    console.error(
+      `Register queries failed for <${datasetUri}>:`,
+      e instanceof Error ? e.message : e,
+    );
+    error(
+      503,
+      'The dataset register is temporarily unavailable. Please try again shortly.',
+    );
+  });
 
   const dataset = datasets.find((d) => d.$id === datasetUri) ?? datasets[0];
   if (!dataset) {
@@ -1303,6 +1374,8 @@ export async function fetchDatasetDetail(
     dataset,
     distributions,
     totalDistributions,
+    sources,
+    totalSources,
     temporalCoverages,
     analysis,
     resolvedTerms,
