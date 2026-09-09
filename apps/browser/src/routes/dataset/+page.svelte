@@ -65,6 +65,8 @@
   const dataset = $derived(data.dataset);
   const distributions = $derived(data.distributions);
   const totalDistributions = $derived(data.totalDistributions);
+  const sources = $derived(data.sources);
+  const totalSources = $derived(data.totalSources);
   const temporalCoverages = $derived(data.temporalCoverages);
   // summary, summaryGeneratedAt, linksets, iiifManifests, persistentUris,
   // linkedData and terms now arrive via the streamed data.analysis promise (see
@@ -1054,7 +1056,7 @@
           {/if}
 
           <!-- Source (the dataset this one is derived from) -->
-          {#if dataset.source && dataset.source.length > 0}
+          {#if sources.length > 0}
             <div
               class="grid grid-cols-1 gap-1 px-4 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4"
             >
@@ -1085,26 +1087,42 @@
                 >
               </dt>
               <dd class="text-sm text-gray-700 dark:text-gray-300 space-y-1">
-                {#each dataset.source as source (source)}
+                {#each sources as source (source.iri)}
                   <div>
-                    {#if source.startsWith('http://') || source.startsWith('https://')}
+                    {#if source.registered}
+                      <!-- A registered source links to its own detail page. -->
                       <a
-                        href={source}
+                        href={localizeHref(datasetDetailHref(source.iri))}
+                        class="break-all text-blue-600 hover:underline dark:text-blue-400"
+                      >
+                        {getLocalizedValue(source.title) ?? source.iri}
+                      </a>
+                    {:else if source.iri.startsWith('http://') || source.iri.startsWith('https://')}
+                      <a
+                        href={source.iri}
                         target="_blank"
                         rel="noopener noreferrer"
                         class="inline-flex items-center gap-1 break-all text-blue-600 hover:underline dark:text-blue-400"
                       >
-                        {source}
+                        {source.iri}
                         <ArrowUpRightFromSquareOutline
                           class="h-3 w-3 shrink-0"
                         />
                         <span class="sr-only"> ({m.opens_in_new_tab()})</span>
                       </a>
                     {:else}
-                      <span class="break-all">{source}</span>
+                      <span class="break-all">{source.iri}</span>
                     {/if}
                   </div>
                 {/each}
+                {#if totalSources > sources.length}
+                  <p class="text-gray-500 dark:text-gray-400">
+                    {m.detail_sources_showing({
+                      shown: sources.length.toString(),
+                      total: totalSources.toString(),
+                    })}
+                  </p>
+                {/if}
               </dd>
             </div>
           {/if}
