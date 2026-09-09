@@ -1782,7 +1782,7 @@
             class="ml-auto cursor-default text-sm font-normal text-gray-600 dark:text-gray-400"
           >
             {m.detail_summary_updated({
-              time: getRelativeTimeString(new Date(summaryGeneratedAt)),
+              time: getRelativeTimeString(summaryGeneratedAt),
             })}
           </span>
           <Tooltip triggeredBy="#summary-generated-relative">

@@ -1,14 +1,9 @@
 import { getLocale } from '$lib/paraglide/runtime';
 
-const dateFormat: Intl.DateTimeFormatOptions = {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-};
-
 /**
- * Formats a date with its month spelled out (for example “3 February 2026”),
- * so day and month can never be confused, in the current locale.
+ * Formats a date with its month spelled out in the current locale (for example
+ * “3 februari 2026” or “February 3, 2026”), so day and month can never be
+ * confused.
  */
 export function formatDate(date: Date | string): string {
   return new Date(date).toLocaleDateString(getLocale(), dateFormat);
@@ -24,3 +19,9 @@ export function formatDateTime(date: Date | string): string {
     minute: '2-digit',
   });
 }
+
+const dateFormat: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+};

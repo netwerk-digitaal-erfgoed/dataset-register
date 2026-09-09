@@ -1,8 +1,10 @@
 import { getLocale } from '$lib/paraglide/runtime';
 
-export function getRelativeTimeString(date: Date): string {
+export function getRelativeTimeString(date: Date | string): string {
   const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  const diffInSeconds = Math.floor(
+    (now.getTime() - new Date(date).getTime()) / 1000,
+  );
 
   const units: { unit: Intl.RelativeTimeFormatUnit; seconds: number }[] = [
     { unit: 'year', seconds: 31536000 },
