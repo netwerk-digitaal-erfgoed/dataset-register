@@ -1048,7 +1048,7 @@ function toValidityVerdict(
   return verdict;
 }
 
-async function fetchCount(query: string): Promise<number> {
+async function fetchDistributionCount(query: string): Promise<number> {
   const bindingsStream = await fetcher.fetchBindings(
     PUBLIC_SPARQL_ENDPOINT,
     query,
@@ -1120,11 +1120,19 @@ async function fetchTemporalCoverage(
 // both of which the crawler stores as dct:source. Capped at SOURCE_LIMIT (ordered
 // by IRI so the cut is stable); a source that is itself registered comes with
 // its title, so the page can link to its detail page instead of the bare IRI.
-async function fetchSources(datasetUri: string): Promise<DatasetSource[]> {
+// The total (before the cap) rides along on every row, so one query serves both.
+async function fetchSources(
+  datasetUri: string,
+): Promise<{ sources: DatasetSource[]; total: number }> {
   const query = `
     PREFIX dct: <http://purl.org/dc/terms/>
     PREFIX dcat: <http://www.w3.org/ns/dcat#>
-    SELECT ?source ?title WHERE {
+    SELECT ?source ?title ?total WHERE {
+      {
+        SELECT (COUNT(DISTINCT ?any) AS ?total) WHERE {
+          GRAPH ?countGraph { <${datasetUri}> dct:source ?any }
+        }
+      }
       {
         SELECT DISTINCT ?source WHERE {
           GRAPH ?g { <${datasetUri}> dct:source ?source }
@@ -1143,11 +1151,14 @@ async function fetchSources(datasetUri: string): Promise<DatasetSource[]> {
   );
 
   const byIri = new Map<string, DatasetSource>();
+  let total = 0;
   for await (const raw of bindingsStream) {
     const binding = raw as unknown as {
       source: { value: string };
       title?: { value: string; language?: string };
+      total: { value: string };
     };
+    total = parseInt(binding.total.value, 10);
     const iri = binding.source.value;
     const source = byIri.get(iri) ?? { iri, registered: false };
     if (binding.title) {
@@ -1159,7 +1170,7 @@ async function fetchSources(datasetUri: string): Promise<DatasetSource[]> {
     }
     byIri.set(iri, source);
   }
-  return [...byIri.values()];
+  return { sources: [...byIri.values()], total };
 }
 
 // Main function to fetch all dataset detail data
@@ -1300,28 +1311,17 @@ export async function fetchDatasetDetail(
     }
   `;
 
-  const sourceCountQuery = `
-    SELECT (COUNT(DISTINCT ?source) AS ?count)
-    WHERE {
-      GRAPH ?g {
-        <${datasetUri}> <http://purl.org/dc/terms/source> ?source .
-      }
-    }
-  `;
-
   const [
     datasets,
     distributions,
     totalDistributions,
-    sources,
-    totalSources,
+    { sources, total: totalSources },
     temporalCoverages,
   ] = await Promise.all([
     detailLens.query(datasetQuery),
     distributionLens.query(distributionQuery),
-    fetchCount(distributionCountQuery),
+    fetchDistributionCount(distributionCountQuery),
     fetchSources(datasetUri),
-    fetchCount(sourceCountQuery),
     fetchTemporalCoverage(datasetUri),
   ]).catch((e: unknown) => {
     // The register lens queries hit the SPARQL endpoint directly and have no
