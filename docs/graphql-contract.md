@@ -42,6 +42,11 @@ It is a maintenance job. By the time it finishes the file always matches, so a
 comparison could never fail – there is no red mark to chase, and it never blocks
 a merge. It fails only if it cannot do its work, such as a rejected push.
 
+A pull request from a fork is the one case where it cannot push: the workflow
+token has no write access to another repository. There the job still
+regenerates the file, but an out-of-date contract fails it with a message
+asking the author to run the target and commit the result themselves.
+
 One consequence: pushing to a Dependabot branch marks that pull request as
 edited. Merge those rather than letting them sit.
 

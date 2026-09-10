@@ -87,11 +87,22 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      # The head branch, not the merge ref, because this job pushes to it.
+      # The head branch, not the merge ref, because this job pushes to it. Name
+      # the head repository too: for a pull request from a fork the branch does
+      # not exist in this repository, and checkout would fail looking for it.
       - uses: actions/checkout@v7
         with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
           fetch-depth: 0
+
+      # origin is the head repository, whose copy of the base branch may be
+      # stale or missing when it is a fork. Fetch the base from this repository
+      # so the diffs below always compare against the real thing.
+      - run: |
+          set -euo pipefail
+          git fetch "https://github.com/${{ github.repository }}.git" \
+            "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
 
       # Skip changes that cannot move the GraphQL surface.
       - id: relevant
@@ -121,6 +132,7 @@ jobs:
         name: Commit if the contract was out of date
         env:
           CONTRACT: packages/core/search-schema.graphql
+          FORK: ${{ github.event.pull_request.head.repo.fork }}
         run: |
           set -euo pipefail
           if git diff --quiet -- "$CONTRACT"; then
@@ -129,6 +141,10 @@ jobs:
           fi
           echo 'The committed contract was out of date:'
           git --no-pager diff -- "$CONTRACT"
+          if [ "$FORK" = 'true' ]; then
+            echo '::error::The committed GraphQL contract is out of date and this job cannot push to a fork. Run `npx nx run @dataset-register/core:sdl` and commit the result.'
+            exit 1
+          fi
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add "$CONTRACT"
@@ -168,6 +184,9 @@ jobs:
           LABEL: graphql-schema-change
           MOVED: ${{ steps.surface.outputs.moved }}
           PR: ${{ github.event.pull_request.number }}
+          # Explicit: with a fork checked out, gh would otherwise infer the fork
+          # from the origin remote.
+          GH_REPO: ${{ github.repository }}
         run: |
           set -uo pipefail
           gh label create "$LABEL" --color 1d76db \
