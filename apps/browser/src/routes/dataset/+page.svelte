@@ -57,6 +57,7 @@
     isAnalyzed,
   } from '$lib/services/dataset-detail.js';
   import { getRelativeTimeString } from '$lib/utils/relative-time';
+  import { formatDate, formatDateTime } from '$lib/utils/date';
   import ClassPropertiesWidget from '$lib/components/ClassPropertiesWidget.svelte';
   import NdeCompatibility from '$lib/components/NdeCompatibility.svelte';
 
@@ -473,10 +474,6 @@
   const splitBtnChevronClass =
     'inline-flex cursor-pointer items-center rounded-e-lg border-s border-blue-800 bg-blue-700 px-2 py-2 text-sm font-medium text-white hover:bg-blue-800 focus:z-10 focus:ring-2 focus:ring-blue-300 dark:border-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800';
 
-  function formatHealthDate(date: Date): string {
-    return date.toLocaleDateString(getLocale());
-  }
-
   // A localized sentence describing why a distribution is unreachable, keyed on
   // the nde-probe outcome's local name. (EmptyBody and RdfParseFailed migrated to
   // the validity rail, so they are no longer reachability outcomes here.)
@@ -537,7 +534,7 @@
       if (health?.firstFailureAt) {
         parts.push(
           m.detail_distribution_unavailable_since({
-            date: formatHealthDate(health.firstFailureAt),
+            date: formatDate(health.firstFailureAt),
           }),
         );
       }
@@ -553,7 +550,7 @@
     if (health?.lastProbedAt) {
       parts.push(
         m.detail_distribution_last_checked({
-          date: formatHealthDate(health.lastProbedAt),
+          date: formatDate(health.lastProbedAt),
         }),
       );
     }
@@ -674,17 +671,10 @@
         class="flex flex-wrap gap-x-3 text-xs text-gray-500 dark:text-gray-400"
       >
         {#if distribution.issued}
-          <span
-            >{m.detail_issued()}: {new Date(
-              distribution.issued,
-            ).toLocaleDateString(getLocale())}</span
-          >
+          <span>{m.detail_issued()}: {formatDate(distribution.issued)}</span>
         {/if}
         {#if distribution.modified}
-          <span
-            >{m.detail_modified()}: {new Date(
-              distribution.modified,
-            ).toLocaleDateString(getLocale())}</span
+          <span>{m.detail_modified()}: {formatDate(distribution.modified)}</span
           >
         {/if}
       </div>
@@ -1482,11 +1472,7 @@
                 {m.detail_issued()}
               </dt>
               <dd class="text-sm text-gray-700 dark:text-gray-300">
-                {new Date(dataset.issued).toLocaleDateString(getLocale(), {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
+                {formatDate(dataset.issued)}
               </dd>
             </div>
           {/if}
@@ -1515,11 +1501,7 @@
                 {m.detail_modified()}
               </dt>
               <dd class="text-sm text-gray-700 dark:text-gray-300">
-                {new Date(dataset.modified).toLocaleDateString(getLocale(), {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
+                {formatDate(dataset.modified)}
               </dd>
             </div>
           {/if}
@@ -1800,17 +1782,11 @@
             class="ml-auto cursor-default text-sm font-normal text-gray-600 dark:text-gray-400"
           >
             {m.detail_summary_updated({
-              time: getRelativeTimeString(new Date(summaryGeneratedAt)),
+              time: getRelativeTimeString(summaryGeneratedAt),
             })}
           </span>
           <Tooltip triggeredBy="#summary-generated-relative">
-            {new Date(summaryGeneratedAt).toLocaleDateString(getLocale(), {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
+            {formatDateTime(summaryGeneratedAt)}
           </Tooltip>
         {/if}
         {#if summarySourceInvalid}
@@ -2227,16 +2203,7 @@
               >
             </dt>
             <dd class="text-sm text-gray-700 dark:text-gray-300">
-              {new Date(dataset.subjectOf.datePosted).toLocaleDateString(
-                getLocale(),
-                {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                },
-              )}
+              {formatDateTime(dataset.subjectOf.datePosted)}
             </dd>
           </div>
         {/if}
@@ -2263,16 +2230,7 @@
                 {getRelativeTimeString(dataset.subjectOf.dateRead)}
               </span>
               <Tooltip triggeredBy="#dateread-relative">
-                {new Date(dataset.subjectOf.dateRead).toLocaleDateString(
-                  getLocale(),
-                  {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  },
-                )}
+                {formatDateTime(dataset.subjectOf.dateRead)}
               </Tooltip>
             </dd>
           </div>
