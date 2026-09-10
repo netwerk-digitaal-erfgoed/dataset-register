@@ -1,7 +1,17 @@
-import { metrics, ValueType } from '@opentelemetry/api';
+import {
+  diag,
+  DiagConsoleLogger,
+  type DiagLogger,
+  metrics,
+  ValueType,
+} from '@opentelemetry/api';
+import { diagLogLevelFromString, getStringFromEnv } from '@opentelemetry/core';
 import {
   defaultResource,
+  detectResources,
+  envDetector,
   resourceFromAttributes,
+  type Resource,
 } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import {
@@ -19,15 +29,36 @@ export function startInstrumentation(datasetStore: DatasetStore) {
     result.observe(await datasetStore.countOrganisations()),
   );
 }
+
+/**
+ * Same precedence as the OpenTelemetry NodeSDK: the environment
+ * (`OTEL_RESOURCE_ATTRIBUTES`, `OTEL_SERVICE_NAME`) overrides the defaults.
+ * Only the env detector runs: process and host attributes change per restart.
+ */
+export function detectResource(): Resource {
+  return defaultResource()
+    .merge(resourceFromAttributes({ [ATTR_SERVICE_NAME]: 'dataset-register' }))
+    .merge(detectResources({ detectors: [envDetector] }));
+}
+
+/** Log SDK diagnostics (e.g. failed exports) when `OTEL_LOG_LEVEL` is set. */
+export function configureDiagnosticLogging(
+  logLevelName = getStringFromEnv('OTEL_LOG_LEVEL'),
+  logger: DiagLogger = new DiagConsoleLogger(),
+): void {
+  const logLevel = diagLogLevelFromString(logLevelName);
+  if (logLevel === undefined) {
+    return;
+  }
+  diag.setLogger(logger, { logLevel });
+}
+
+configureDiagnosticLogging();
+
 const meterProvider = new MeterProvider({
-  resource: defaultResource().merge(
-    resourceFromAttributes({ [ATTR_SERVICE_NAME]: 'dataset-register' }),
-  ),
+  resource: detectResource(),
   readers: [
-    new PeriodicExportingMetricReader({
-      exporter: new OTLPMetricExporter(),
-      exportIntervalMillis: 60000,
-    }),
+    new PeriodicExportingMetricReader({ exporter: new OTLPMetricExporter() }),
   ],
 });
 
