@@ -116,6 +116,13 @@ You can configure the application through environment variables:
 - `KNOWLEDGE_GRAPH_URL`: SPARQL endpoint of the Dataset Knowledge Graph used to enrich the
   [search index](#search-index) (facets such as class, terminology source and size, and the NDE-compatibility flags).
   Defaults to the public NDE endpoint; a failed or unreachable read degrades to a register-only index.
+- `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS`: where metrics are exported to over OTLP, plus any
+  authentication headers; leave unset to run without a collector.
+- `OTEL_RESOURCE_ATTRIBUTES`, `OTEL_SERVICE_NAME`: extra [resource attributes](https://opentelemetry.io/docs/languages/js/resources/)
+  on exported metrics, or a different service name than the default `dataset-register`. `service.instance.id` defaults
+  to the hostname (the pod name in Kubernetes), which keeps the metrics of API replicas apart.
+- `OTEL_LOG_LEVEL`: print OpenTelemetry SDK diagnostics, such as failed exports, to the console (for example `info` or
+  `debug`); off by default.
 
 ## Run the tests
 
