@@ -669,6 +669,27 @@ describe('Validator', () => {
     ]);
   });
 
+  it('reports a distribution with neither encodingFormat nor usageInfo', async () => {
+    // Guards the specific message of the node-level sh:or on DistributionShape.
+    // It does not guard the shape’s well-formedness: shacl-engine also accepted
+    // the earlier path-less variant that pySHACL and Jena rejected.
+    const report = await validate(
+      'dataset-schema-org-distribution-missing-format-or-usage.jsonld',
+    );
+    expect(report.state).toBe('invalid');
+    const results = [
+      ...(report as InvalidDataset).errors.match(
+        null,
+        shacl('resultMessage'),
+        rdf.literal(
+          'Specify the dataset format in schema:encodingFormat (such as application/n-triples) or the API protocol in schema:usageInfo (such as https://www.w3.org/TR/sparql11-protocol/)',
+          'en',
+        ),
+      ),
+    ];
+    expect(results).toHaveLength(1);
+  });
+
   it('flags non-https documentation on a distribution', async () => {
     const jsonld = JSON.stringify({
       '@context': 'https://schema.org/',

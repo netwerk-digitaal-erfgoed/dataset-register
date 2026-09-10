@@ -494,6 +494,20 @@ The value MUST be the canonical URI of a license. For example, use `https://crea
 nde-dataset:DistributionShape
     a sh:NodeShape ;
     sh:targetObjectsOf schema:distribution ;
+    # A distribution must declare either its media type or a link to API usage documentation.
+    # This is a node-level constraint (it spans two properties), so it hangs off the NodeShape
+    # rather than off a PropertyShape, which would be ill-formed without an sh:path.
+    sh:or (
+        [ sh:property [
+            sh:minCount 1 ;
+            sh:path schema:encodingFormat ;
+        ] ]
+        [ sh:property [
+            sh:minCount 1 ;
+            sh:path schema:usageInfo ;
+        ] ]
+    ) ;
+    sh:message "Geef in schema:encodingFormat het MIME-type van de dataset op (bijv. application/n-triples) of in schema:usageInfo het API-protocol (bijv. https://www.w3.org/TR/sparql11-protocol/)"@nl, "Specify the dataset format in schema:encodingFormat (such as application/n-triples) or the API protocol in schema:usageInfo (such as https://www.w3.org/TR/sparql11-protocol/)"@en ;
     sh:property
         # Required properties
         [
@@ -521,19 +535,6 @@ nde-dataset:DistributionShape
                 sh:severity sh:Violation ;
             ] ;
             sh:message "Gebruik een geldige HTTPS-URL voor de distributie"@nl, "Use a valid HTTPS URL for the distribution"@en ;
-        ] ,
-        [
-            sh:or (
-                [ sh:property [
-                    sh:minCount 1 ;
-                    sh:path schema:encodingFormat ;
-                ] ]
-                [ sh:property [
-                    sh:minCount 1 ;
-                    sh:path schema:usageInfo ;
-                ] ]
-            ) ;
-            sh:message "Geef het MIME-type van de dataset op (bijv. application/n-triples) of het API-protocol (bijv. https://www.w3.org/TR/sparql11-protocol/)"@nl, "Specify the dataset format (such as application/n-triples) or the API protocol (such as https://www.w3.org/TR/sparql11-protocol/)"@en ;
         ] ,
         [
             sh:path schema:encodingFormat ;
