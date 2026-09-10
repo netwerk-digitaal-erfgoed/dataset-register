@@ -1,7 +1,17 @@
-import { metrics, ValueType } from '@opentelemetry/api';
+import {
+  diag,
+  DiagConsoleLogger,
+  type DiagLogger,
+  metrics,
+  ValueType,
+} from '@opentelemetry/api';
+import { diagLogLevelFromString, getStringFromEnv } from '@opentelemetry/core';
 import {
   defaultResource,
+  detectResources,
+  envDetector,
   resourceFromAttributes,
+  type Resource,
 } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import {
@@ -19,10 +29,44 @@ export function startInstrumentation(datasetStore: DatasetStore) {
     result.observe(await datasetStore.countOrganisations()),
   );
 }
+
+/**
+ * Build the metrics resource the way the OpenTelemetry NodeSDK does: start
+ * from the SDK defaults and the application’s own service name, then let the
+ * environment (`OTEL_SERVICE_NAME`, `OTEL_RESOURCE_ATTRIBUTES`) take
+ * precedence. That is how the deployment tells replicas apart – it injects
+ * `service.instance.id` and `k8s.pod.name` from the pod name – so two API pods
+ * no longer export identical series that overwrite each other in the
+ * collector. Only the env detector runs: the NodeSDK’s process and host
+ * detectors would add per-restart attributes (`process.pid`, `host.id`), which
+ * break series continuity just like a random instance id would.
+ */
+export function detectResource(): Resource {
+  return defaultResource()
+    .merge(resourceFromAttributes({ [ATTR_SERVICE_NAME]: 'dataset-register' }))
+    .merge(detectResources({ detectors: [envDetector] }));
+}
+
+/**
+ * Surface SDK diagnostics (failed exports, detected resources) when
+ * `OTEL_LOG_LEVEL` is set, as the NodeSDK does. Without a registered logger
+ * the SDK swallows export failures silently.
+ */
+export function configureDiagnosticLogging(
+  logLevelName = getStringFromEnv('OTEL_LOG_LEVEL'),
+  logger: DiagLogger = new DiagConsoleLogger(),
+): void {
+  const logLevel = diagLogLevelFromString(logLevelName);
+  if (logLevel === undefined) {
+    return;
+  }
+  diag.setLogger(logger, { logLevel });
+}
+
+configureDiagnosticLogging();
+
 const meterProvider = new MeterProvider({
-  resource: defaultResource().merge(
-    resourceFromAttributes({ [ATTR_SERVICE_NAME]: 'dataset-register' }),
-  ),
+  resource: detectResource(),
   readers: [
     new PeriodicExportingMetricReader({
       exporter: new OTLPMetricExporter(),
