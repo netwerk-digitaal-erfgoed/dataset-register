@@ -109,24 +109,37 @@ export async function* fetch(
   }
 }
 
+export interface DereferenceResult {
+  data: DatasetExt;
+
+  /**
+   * The media type the registration was served as, as reported by rdf-dereference.
+   * Undefined when the source did not state one.
+   */
+  mediaType?: string;
+}
+
 /**
  * Fetch dataset description(s) by dereferencing the registration URL.
  */
 export async function dereference(
   url: URL,
   timeoutMs: number = DEFAULT_HTTP_REQUEST_TIMEOUT_MS,
-): Promise<DatasetExt> {
+): Promise<DereferenceResult> {
   try {
-    const { data } = await rdfDereferencer.dereference(url.toString(), {
-      fetch: createRdfFetch(timeoutMs),
-    });
+    const { data, mediaType } = await rdfDereferencer.dereference(
+      url.toString(),
+      {
+        fetch: createRdfFetch(timeoutMs),
+      },
+    );
     const stream = pipeline(
       data,
       new StandardizeSchemaOrgPrefixToHttps(),
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       () => {}, // Noop because errors are caught below.
     );
-    return await factory.dataset().import(stream);
+    return { data: await factory.dataset().import(stream), mediaType };
   } catch (e) {
     handleComunicaError(e, url);
   }
@@ -302,7 +315,7 @@ export async function discoverDatacatalog(
 ): Promise<{ url: URL; data: DatasetExt } | null> {
   const wellKnownUrl = new URL('/.well-known/datacatalog', url.origin);
   try {
-    const data = await dereference(wellKnownUrl);
+    const { data } = await dereference(wellKnownUrl);
     if (data.size === 0) {
       return null;
     }

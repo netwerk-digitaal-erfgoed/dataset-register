@@ -1325,6 +1325,35 @@ describe('discoverDatacatalog', () => {
   });
 });
 
+describe('dereference media type', () => {
+  it('reports the media type the registration was served as', async () => {
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'text/turtle' })
+      .get('/dataset.ttl')
+      .replyWithFile(200, 'test/datasets/dataset-http-schema-org-valid.ttl');
+
+    const { mediaType } = await fetchDereference(
+      new URL('https://example.com/dataset.ttl'),
+    );
+
+    expect(mediaType).toEqual('text/turtle');
+  });
+
+  it('reports the media type for JSON-LD as well', async () => {
+    const response = await file('dataset-schema-org-valid-minimal.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/dataset.jsonld')
+      .reply(200, response);
+
+    const { mediaType } = await fetchDereference(
+      new URL('https://example.com/dataset.jsonld'),
+    );
+
+    expect(mediaType).toEqual('application/ld+json');
+  });
+});
+
 describe('CONSTRUCT query cross-product', () => {
   it('does not produce excessive duplicate quads for catalogs with a shared publisher', async () => {
     const response = await file('catalog-schema-org-valid.jsonld');
@@ -1333,7 +1362,9 @@ describe('CONSTRUCT query cross-product', () => {
       .get('/catalog')
       .reply(200, response);
 
-    const data = await fetchDereference(new URL('https://example.com/catalog'));
+    const { data } = await fetchDereference(
+      new URL('https://example.com/catalog'),
+    );
     const datasets = [];
     for await (const dataset of fetch(
       new URL('https://example.com/catalog'),
@@ -1442,7 +1473,7 @@ describe('Request timeout', () => {
         'Content-Type': 'application/ld+json',
       });
 
-    const data = await fetchDereference(
+    const { data } = await fetchDereference(
       new URL('https://slow.example/datasets/hydra-page1.jsonld'),
     );
     const datasets = [];
@@ -1476,7 +1507,7 @@ describe('Request timeout', () => {
 });
 
 const fetchDatasetsAsArray = async (url: URL) => {
-  const data = await fetchDereference(url);
+  const { data } = await fetchDereference(url);
   const datasets = [];
   for await (const dataset of fetch(url, data)) {
     datasets.push(dataset);

@@ -92,18 +92,31 @@ export class Crawler {
       // endpoint produces, so the dataset page and /validate stay consistent.
       // Left undefined when the URL yields no report (gone, no datasets).
       let warningCount: number | undefined = undefined;
+      // The serialization the registration was served as. Recorded because how a value was
+      // written – `<https://…>` or `"https://…"`, `"2025-12-01"^^xsd:date` or a bare string –
+      // does not survive parsing, so the logs are the only place that distinction exists.
+      let mediaType: string | undefined = undefined;
 
       // `finally` records the timing exactly once on every path – normal completion, the
       // RequestTimeout `continue`, and the error branches – so there is a single call site.
       try {
         try {
           const dereferenceStart = performance.now();
-          const data = await dereference(
+          const { data, mediaType: dereferencedMediaType } = await dereference(
             registration.url,
             this.httpRequestTimeoutMs,
           );
+          mediaType = dereferencedMediaType;
           phases.dereferenceMs = Math.round(
             performance.now() - dereferenceStart,
+          );
+          this.logger.info(
+            {
+              event: 'crawl.registration.source',
+              url: registration.url.toString(),
+              mediaType,
+            },
+            `Dereferenced ${registration.url}`,
           );
           const validateStart = performance.now();
           const validationResult = await this.validator.validate(
@@ -180,6 +193,7 @@ export class Crawler {
         crawlCounter.add(1, {
           status: statusCode,
           valid: isValid,
+          mediaType,
         });
 
         const updatedRegistration = registration
