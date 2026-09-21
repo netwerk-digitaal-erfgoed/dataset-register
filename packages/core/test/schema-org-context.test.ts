@@ -86,6 +86,24 @@ describe('withSchemaOrgContext', () => {
     expect(response.headers.get('content-type')).toBe('application/ld+json');
   });
 
+  /**
+   * `validator.ts` and `test-utils.ts` take the default, so the fallback to the global
+   * fetch is the path they run on – not a convenience nobody uses.
+   */
+  it('falls back to the global fetch when given no base fetch', async () => {
+    const globalFetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response('{}'));
+
+    await withSchemaOrgContext()('https://example.org/context.jsonld');
+
+    expect(globalFetch).toHaveBeenCalledWith(
+      'https://example.org/context.jsonld',
+      undefined,
+    );
+    globalFetch.mockRestore();
+  });
+
   it('passes every other request through untouched', async () => {
     const baseFetch = vi.fn().mockResolvedValue(new Response('{}'));
     const init = { headers: { accept: 'application/ld+json' } };

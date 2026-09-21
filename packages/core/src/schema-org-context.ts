@@ -48,7 +48,8 @@ export function isSchemaOrgContextUrl(url: string): boolean {
  * timeout and abort behaviour is preserved.
  */
 export function withSchemaOrgContext(
-  baseFetch: typeof globalThis.fetch,
+  baseFetch: typeof globalThis.fetch = (input, init) =>
+    globalThis.fetch(input, init),
 ): typeof globalThis.fetch {
   return (input, init) => {
     if (isSchemaOrgContextUrl(requestUrl(input))) {
@@ -70,17 +71,19 @@ export function withSchemaOrgContext(
  */
 export function createJsonLdParser(): Transform {
   return new JsonLdParser({
-    documentLoader: new FetchDocumentLoader((input, init) =>
-      withSchemaOrgContext((url, options) => globalThis.fetch(url, options))(
-        input,
-        init,
-      ),
-    ),
+    documentLoader: new FetchDocumentLoader(withSchemaOrgContext()),
   }) as unknown as Transform;
 }
 
+/**
+ * Read the URL out of whatever `fetch` was handed: Comunica and rdf-dereference pass a
+ * string, a `URL` or a `Request` depending on the path taken. Only `Request` carries a
+ * `url` property, and testing for it rather than for `instanceof` keeps this working on a
+ * ponyfilled object from another realm, which would fail the instance check and silently
+ * stop the interception – see the `@whatwg-node/fetch` Response problem.
+ */
 function requestUrl(input: Parameters<typeof globalThis.fetch>[0]): string {
-  if (typeof input === 'string') return input;
-  if (input instanceof URL) return input.toString();
-  return input.url;
+  return typeof input === 'object' && 'url' in input
+    ? input.url
+    : String(input);
 }

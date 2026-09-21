@@ -123,7 +123,7 @@ export class CompositeValidator implements Validator {
 export async function readUrl(url: string): Promise<DatasetCore> {
   const { data } = await rdfDereferencer.dereference(url.toString(), {
     localFiles: true,
-    fetch: withSchemaOrgContext((input, init) => globalThis.fetch(input, init)),
+    fetch: withSchemaOrgContext(),
   });
 
   return await factory.dataset().import(data);

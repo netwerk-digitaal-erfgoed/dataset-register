@@ -21,7 +21,7 @@ export const validSchemaOrgDataset = () =>
 export const dereference = async (file: string): Promise<DatasetExt> => {
   const { data } = await rdfDereferencer.dereference(file, {
     localFiles: true,
-    fetch: withSchemaOrgContext((input, init) => globalThis.fetch(input, init)),
+    fetch: withSchemaOrgContext(),
   });
   const stream = pipeline(
     data,
