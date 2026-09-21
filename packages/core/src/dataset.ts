@@ -1,10 +1,10 @@
 import rdf from 'rdf-ext';
 import { URL } from 'node:url';
 import { datasetType } from './query.ts';
-import { Readable, Transform } from 'node:stream';
+import { Readable } from 'node:stream';
 import { DataFactory, StreamParser } from 'n3';
-import { JsonLdParser } from 'jsonld-streaming-parser';
 import { StandardizeSchemaOrgPrefixToHttps } from './transform.ts';
+import { createJsonLdParser } from './schema-org-context.ts';
 import type { DatasetCore } from '@rdfjs/types';
 
 export interface DatasetStore {
@@ -40,7 +40,7 @@ export async function load(
 ) {
   const parser =
     contentType === 'application/ld+json'
-      ? (new JsonLdParser() as unknown as Transform)
+      ? createJsonLdParser()
       : new StreamParser();
 
   return new Promise((resolve, reject) =>

@@ -853,6 +853,36 @@ Tools {#tools}
 Developers can use the [NDE Register API](https://datasetregister.netwerkdigitaalerfgoed.nl/api/) to validate datasets and catalogs against the requirements described in this document.
 The [[SHACL]] shape graph used to validate datasets and catalogs is available at [/shacl](https://datasetregister.netwerkdigitaalerfgoed.nl/api/shacl).
 
+## Running the shapes yourself ## {#validating-yourself}
+
+The shapes target Schema.org properties in the `https://schema.org/` namespace.
+Schema.org’s own JSON-LD context maps its terms to `http://schema.org/`,
+so a [=dataset description=] validated against that context matches no shape at all
+and the report comes back `sh:conforms true` without anything having been checked.
+Since Schema.org release 30.1 that context also no longer types `mainEntityOfPage`, `license`
+and the date properties, which turns values that should be IRIs and dates into plain strings.
+
+To validate your own file, point its `@context` at [https://def.nde.nl/context.jsonld](https://def.nde.nl/context.jsonld).
+That context declares the same prefixes as Schema.org’s
+and restores the typings the shapes rely on,
+so you get the report the [Register API](https://datasetregister.netwerkdigitaalerfgoed.nl/api/) gives you.
+
+<div class="example">
+    <xmp highlight=json>
+        {
+          "@context": "https://def.nde.nl/context.jsonld",
+          "@id": "https://example.org/dataset",
+          "@type": "Dataset",
+          "name": {"@value": "My dataset", "@language": "nl"},
+          "mainEntityOfPage": "https://example.org/about-this-dataset"
+        }
+    </xmp>
+</div>
+
+Substitute the context when you validate, not when you publish:
+keep serving your [=dataset description=] with `"@context": "https://schema.org/"`.
+The Register substitutes the context on its side when it reads your description.
+
 Google's [Rich Results Test](https://search.google.com/test/rich-results) (previously Structured Data Testing Tool)
 can help with testing RDF metadata in general.
 

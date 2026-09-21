@@ -10,6 +10,7 @@ import {
   StandardizeSchemaOrgPrefixToHttps,
 } from './transform.ts';
 import { rdfDereferencer } from 'rdf-dereference';
+import { withSchemaOrgContext } from './schema-org-context.ts';
 import type DatasetExt from 'rdf-ext/lib/Dataset.js';
 
 /**
@@ -107,7 +108,7 @@ export async function dereference(
 ): Promise<DatasetExt> {
   try {
     const { data } = await rdfDereferencer.dereference(url.toString(), {
-      fetch: fetchWithTimeout(timeoutMs),
+      fetch: withSchemaOrgContext(fetchWithTimeout(timeoutMs)),
     });
     const stream = pipeline(
       data,
@@ -139,7 +140,7 @@ async function* query(url: URL, data: DatasetExt, timeoutMs: number) {
   const source = hasHydraPagination(data) ? url.toString() : toN3Store(data);
   const quadStream = await engine.queryQuads(constructQuery, {
     sources: [source],
-    fetch: fetchWithTimeout(timeoutMs),
+    fetch: withSchemaOrgContext(fetchWithTimeout(timeoutMs)),
   });
 
   // Collect quads grouped by dataset subject. UNION branches in the CONSTRUCT
