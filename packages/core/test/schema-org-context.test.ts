@@ -2,8 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { Readable } from 'node:stream';
 import type { DatasetCore, Quad } from '@rdfjs/types';
 import { load } from '../src/dataset.ts';
+import { dereference } from '../src/test-utils.ts';
 import {
   isSchemaOrgContextUrl,
+  PUBLISHED_CONTEXT_URL,
   withSchemaOrgContext,
 } from '../src/schema-org-context.ts';
 
@@ -36,8 +38,18 @@ describe('isSchemaOrgContextUrl', () => {
     'https://schema.org/',
     'https://schema.org/docs/jsonldcontext.jsonld',
     'https://schema.org/docs/jsonldcontext.json',
+    'https://schema.org/version/latest/schemaorg-current-https.jsonld',
+    'http://schema.org/version/latest/schemaorg-current-http.jsonld',
+    // Our own published copy: answer it from disk rather than fetching what we already have.
+    PUBLISHED_CONTEXT_URL,
+    // Normalized, so the host’s case does not decide whether a registration parses.
+    'https://Schema.org/',
   ])('recognizes %s', (url) => {
     expect(isSchemaOrgContextUrl(url)).toBe(true);
+  });
+
+  it('does not throw on a value that is not a URL', () => {
+    expect(isSchemaOrgContextUrl('not a url')).toBe(false);
   });
 
   it.each([
@@ -172,5 +184,23 @@ describe('parsing a registration that cites schema.org', () => {
         (quad) => quad.predicate.value === 'http://purl.org/dc/terms/source',
       ),
     ).toBe(true);
+  });
+});
+
+/**
+ * The crawler does not use `load()`: it goes through `rdf-dereference`, which hands our
+ * `fetch` to Comunica, which is expected to pass it on to the JSON-LD document loader. That
+ * hand-off is internal to `@comunica/actor-http-fetch` and `@comunica/actor-rdf-parse-jsonld`,
+ * both on caret ranges, and nothing else in the suite would notice if a minor bump dropped
+ * it – every crawled registration would quietly go back to the live context.
+ */
+describe('dereferencing a registration, as the crawler does', () => {
+  it('resolves schema.org’s context to ours', async () => {
+    const data = await dereference(
+      'test/datasets/schema-org-context-crawl.jsonld',
+    );
+
+    expect(objectOf(data, 'mainEntityOfPage').termType).toBe('NamedNode');
+    expect(objectOf(data, 'license').termType).toBe('NamedNode');
   });
 });

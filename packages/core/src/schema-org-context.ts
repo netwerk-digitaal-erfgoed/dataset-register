@@ -11,6 +11,13 @@
  * are asked for nothing. The same file is published at https://def.nde.nl/context.jsonld,
  * so a third party pointing their `@context` at it gets the verdict we get.
  *
+ * It restores 11 of the 125 typings schema.org last published, NOT all of them: every term
+ * the shapes and the CONSTRUCT reference, and nothing else. That is deliberate – three of
+ * the rest admit a non-date, which is the bug schema.org was right to fix. The cost is that
+ * adding a schema.org term to `requirements/shacl.ttl` or to `query.ts` means checking
+ * whether it used to be typed: `url`, `image` and `logo` were `@id`, and would otherwise
+ * arrive as literals with nothing to warn you.
+ *
  * This reaches JSON-LD only, which is why `StandardizeSchemaOrgPrefixToHttps` stays: a
  * Turtle document written against `http://schema.org/` has no context to correct it, and
  * a quoted string in Turtle is a literal because its author chose one.
@@ -22,24 +29,45 @@ import schemaOrgContext from './schema-org-context.json' with { type: 'json' };
 
 const contextDocument = JSON.stringify(schemaOrgContext);
 
+/** Where the same file is published, for third parties to point their `@context` at. */
+export const PUBLISHED_CONTEXT_URL = 'https://def.nde.nl/context.jsonld';
+
 /**
- * Every URL a document can name to mean “schema.org’s context”. Schema.org serves the
- * context from its apex and from `docs/jsonldcontext.jsonld`; registrations in the wild
- * use both, over either scheme, with and without the trailing slash.
+ * Every URL a document can name to mean a context we answer ourselves. Schema.org serves
+ * its context from the apex, from `docs/jsonldcontext.jsonld` and from the versioned
+ * `version/latest/` files, over either scheme. Our own published URL is here too: a
+ * description that cites it is one we can answer from disk, which saves a network round
+ * trip and means the hosted copy can never disagree with the bundled one.
+ *
+ * Compared as normalized hrefs, so the host’s case and a missing trailing slash do not
+ * decide whether a registration parses correctly.
  */
-const schemaOrgContextUrls = new Set([
-  'http://schema.org',
-  'http://schema.org/',
-  'https://schema.org',
-  'https://schema.org/',
-  'http://schema.org/docs/jsonldcontext.json',
-  'http://schema.org/docs/jsonldcontext.jsonld',
-  'https://schema.org/docs/jsonldcontext.json',
-  'https://schema.org/docs/jsonldcontext.jsonld',
-]);
+const contextUrls = new Set(
+  [
+    'http://schema.org/',
+    'https://schema.org/',
+    'http://schema.org/docs/jsonldcontext.json',
+    'https://schema.org/docs/jsonldcontext.json',
+    'http://schema.org/docs/jsonldcontext.jsonld',
+    'https://schema.org/docs/jsonldcontext.jsonld',
+    'http://schema.org/version/latest/schemaorg-current-http.jsonld',
+    'https://schema.org/version/latest/schemaorg-current-http.jsonld',
+    'http://schema.org/version/latest/schemaorg-current-https.jsonld',
+    'https://schema.org/version/latest/schemaorg-current-https.jsonld',
+    PUBLISHED_CONTEXT_URL,
+  ].map(normalizeUrl),
+);
 
 export function isSchemaOrgContextUrl(url: string): boolean {
-  return schemaOrgContextUrls.has(url);
+  return contextUrls.has(normalizeUrl(url));
+}
+
+/**
+ * `URL.parse` returns null rather than throwing, so a value that is not a URL at all
+ * simply never matches instead of taking down the parse.
+ */
+function normalizeUrl(url: string): string {
+  return URL.parse(url)?.href ?? url;
 }
 
 /**

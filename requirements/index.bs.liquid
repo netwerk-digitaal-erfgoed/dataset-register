@@ -862,7 +862,8 @@ and the report comes back `sh:conforms true` without anything having been checke
 Since Schema.org release 30.1 that context also no longer types `mainEntityOfPage`, `license`
 and the date properties, which turns values that should be IRIs and dates into plain strings.
 
-To validate your own file, point its `@context` at [https://def.nde.nl/context.jsonld](https://def.nde.nl/context.jsonld).
+To validate your own file – and only to validate it, not to publish it –
+point its `@context` at [https://def.nde.nl/context.jsonld](https://def.nde.nl/context.jsonld).
 That context declares the same prefixes as Schema.org’s
 and restores the typings the shapes rely on,
 so you get the report the [Register API](https://datasetregister.netwerkdigitaalerfgoed.nl/api/) gives you.
@@ -879,9 +880,9 @@ so you get the report the [Register API](https://datasetregister.netwerkdigitaal
     </xmp>
 </div>
 
-Substitute the context when you validate, not when you publish:
-keep serving your [=dataset description=] with `"@context": "https://schema.org/"`.
-The Register substitutes the context on its side when it reads your description.
+Keep serving your [=dataset description=] itself with `"@context": "https://schema.org/"`:
+the Register substitutes the context on its side when it reads your description,
+so there is nothing to change in what you publish.
 
 Google's [Rich Results Test](https://search.google.com/test/rich-results) (previously Structured Data Testing Tool)
 can help with testing RDF metadata in general.
