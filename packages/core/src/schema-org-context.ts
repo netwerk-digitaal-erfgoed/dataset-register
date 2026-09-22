@@ -30,41 +30,33 @@ const contextDocument = JSON.stringify(schemaOrgContext);
 export const PUBLISHED_CONTEXT_URL = 'https://def.nde.nl/context.jsonld';
 
 /**
- * Every URL a document can name to mean a context we answer ourselves. Schema.org serves
- * its context from the apex, from `docs/jsonldcontext.jsonld` and from the versioned
- * `version/latest/` files, over either scheme. Our own published URL is here too: a
- * description that cites it is one we can answer from disk, which saves a network round
- * trip and means the hosted copy can never disagree with the bundled one.
+ * Whether a URL names a context we answer ourselves.
  *
- * Compared as normalized hrefs, so the host’s case and a missing trailing slash do not
- * decide whether a registration parses correctly.
+ * Schema.org serves the same context from its apex, from `docs/jsonldcontext.json(ld)`
+ * and from `version/<release>/schemaorg-{current,all}-http(s).jsonld` – which is why this
+ * matches the SHAPE of those paths rather than enumerating them. An enumeration went
+ * stale twice while this change was being written, and each gap is invisible: a
+ * registration citing the variant we missed keeps failing while a byte-identical one
+ * citing the apex passes.
+ *
+ * The path still has to look like a context. This `fetch` also retrieves the registration
+ * itself, so matching the whole host would hand the context back to anyone who registered
+ * a `schema.org` URL.
+ *
+ * Our own published URL is here too: a description citing it is one we can answer from
+ * disk, which saves a round trip and means the hosted copy can never disagree with the
+ * bundled one.
  */
-const contextUrls = new Set(
-  [
-    'http://schema.org/',
-    'https://schema.org/',
-    'http://schema.org/docs/jsonldcontext.json',
-    'https://schema.org/docs/jsonldcontext.json',
-    'http://schema.org/docs/jsonldcontext.jsonld',
-    'https://schema.org/docs/jsonldcontext.jsonld',
-    'http://schema.org/version/latest/schemaorg-current-http.jsonld',
-    'https://schema.org/version/latest/schemaorg-current-http.jsonld',
-    'http://schema.org/version/latest/schemaorg-current-https.jsonld',
-    'https://schema.org/version/latest/schemaorg-current-https.jsonld',
-    PUBLISHED_CONTEXT_URL,
-  ].map(normalizeUrl),
-);
+const schemaOrgContextPath =
+  /^\/(?:|docs\/jsonldcontext\.json(?:ld)?|version\/[^/]+\/[^/]+\.jsonld)$/;
 
 export function isBundledContextUrl(url: string): boolean {
-  return contextUrls.has(normalizeUrl(url));
-}
-
-/**
- * `URL.parse` returns null rather than throwing, so a value that is not a URL at all
- * simply never matches instead of taking down the parse.
- */
-function normalizeUrl(url: string): string {
-  return URL.parse(url)?.href ?? url;
+  const parsed = URL.parse(url);
+  if (parsed === null) return false;
+  return (
+    parsed.href === PUBLISHED_CONTEXT_URL ||
+    (parsed.host === 'schema.org' && schemaOrgContextPath.test(parsed.pathname))
+  );
 }
 
 /**
@@ -77,6 +69,12 @@ export function withSchemaOrgContext(
 ): typeof globalThis.fetch {
   return (input, init) => {
     if (isBundledContextUrl(requestUrl(input))) {
+      // Serving from memory must not make an aborted request look like it succeeded:
+      // Comunica cancels a traversal by signalling every request it has in flight, and a
+      // context load that ignored that would let the document loader carry on alone.
+      if (init?.signal?.aborted) {
+        return Promise.reject(init.signal.reason as Error);
+      }
       return Promise.resolve(
         new Response(contextDocument, {
           headers: { 'content-type': 'application/ld+json' },

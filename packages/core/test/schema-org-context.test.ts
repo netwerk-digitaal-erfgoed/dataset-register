@@ -40,6 +40,9 @@ describe('isBundledContextUrl', () => {
     'https://schema.org/docs/jsonldcontext.json',
     'https://schema.org/version/latest/schemaorg-current-https.jsonld',
     'http://schema.org/version/latest/schemaorg-current-http.jsonld',
+    'https://schema.org/version/latest/schemaorg-all-https.jsonld',
+    // A pinned release, which a cautious publisher is the most likely to cite.
+    'https://schema.org/version/30.1/schemaorg-current-https.jsonld',
     // Our own published copy: answer it from disk rather than fetching what we already have.
     PUBLISHED_CONTEXT_URL,
     // Normalized, so the host’s case does not decide whether a registration parses.
@@ -56,6 +59,10 @@ describe('isBundledContextUrl', () => {
     'https://schema.org/Dataset',
     'https://example.org/context.jsonld',
     'https://schema.org.example.org/',
+    // The same fetch retrieves the registration itself, so a schema.org URL that is not
+    // a context must still go to the network.
+    'https://schema.org/docs/gs.html',
+    'https://schema.org/version/latest/schemaorg-current-https.ttl',
   ])('leaves %s alone', (url) => {
     expect(isBundledContextUrl(url)).toBe(false);
   });
@@ -96,6 +103,18 @@ describe('withSchemaOrgContext', () => {
 
     expect(baseFetch).not.toHaveBeenCalled();
     expect(response.headers.get('content-type')).toBe('application/ld+json');
+  });
+
+  it('rejects an already-aborted request instead of serving it', async () => {
+    const controller = new AbortController();
+    controller.abort(new Error('cancelled'));
+
+    await expect(
+      withSchemaOrgContext(vi.fn() as unknown as typeof globalThis.fetch)(
+        'https://schema.org/',
+        { signal: controller.signal },
+      ),
+    ).rejects.toThrow('cancelled');
   });
 
   it('passes every other request through untouched', async () => {

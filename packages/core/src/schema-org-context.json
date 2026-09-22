@@ -1,6 +1,5 @@
 {
   "@context": {
-    "@version": 1.1,
     "@vocab": "https://schema.org/",
     "bibo": "http://purl.org/ontology/bibo/",
     "brick": "https://brickschema.org/schema/Brick#",
