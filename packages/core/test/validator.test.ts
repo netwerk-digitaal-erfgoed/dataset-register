@@ -11,7 +11,7 @@ import { RdfaParser } from 'rdfa-streaming-parser/lib/RdfaParser.js';
 import rdf from 'rdf-ext';
 import type { Dataset } from '@rdfjs/types';
 import { file } from '../src/test-utils.js';
-import { createJsonLdParser } from '../src/schema-org-context.js';
+import { createJsonLdParser } from '../src/dataset.js';
 import { Readable } from 'node:stream';
 
 const validator = await ShaclEngineValidator.fromUrl(

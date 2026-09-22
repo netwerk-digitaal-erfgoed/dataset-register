@@ -4,7 +4,7 @@ import type { DatasetCore, Quad } from '@rdfjs/types';
 import { load } from '../src/dataset.ts';
 import { dereference } from '../src/test-utils.ts';
 import {
-  isSchemaOrgContextUrl,
+  isBundledContextUrl,
   PUBLISHED_CONTEXT_URL,
   withSchemaOrgContext,
 } from '../src/schema-org-context.ts';
@@ -31,7 +31,7 @@ function objectOf(data: DatasetCore, property: string): Quad['object'] {
   return quad.object;
 }
 
-describe('isSchemaOrgContextUrl', () => {
+describe('isBundledContextUrl', () => {
   it.each([
     'http://schema.org',
     'https://schema.org',
@@ -45,11 +45,11 @@ describe('isSchemaOrgContextUrl', () => {
     // Normalized, so the host’s case does not decide whether a registration parses.
     'https://Schema.org/',
   ])('recognizes %s', (url) => {
-    expect(isSchemaOrgContextUrl(url)).toBe(true);
+    expect(isBundledContextUrl(url)).toBe(true);
   });
 
   it('does not throw on a value that is not a URL', () => {
-    expect(isSchemaOrgContextUrl('not a url')).toBe(false);
+    expect(isBundledContextUrl('not a url')).toBe(false);
   });
 
   it.each([
@@ -57,7 +57,7 @@ describe('isSchemaOrgContextUrl', () => {
     'https://example.org/context.jsonld',
     'https://schema.org.example.org/',
   ])('leaves %s alone', (url) => {
-    expect(isSchemaOrgContextUrl(url)).toBe(false);
+    expect(isBundledContextUrl(url)).toBe(false);
   });
 });
 
@@ -96,24 +96,6 @@ describe('withSchemaOrgContext', () => {
 
     expect(baseFetch).not.toHaveBeenCalled();
     expect(response.headers.get('content-type')).toBe('application/ld+json');
-  });
-
-  /**
-   * `validator.ts` and `test-utils.ts` take the default, so the fallback to the global
-   * fetch is the path they run on – not a convenience nobody uses.
-   */
-  it('falls back to the global fetch when given no base fetch', async () => {
-    const globalFetch = vi
-      .spyOn(globalThis, 'fetch')
-      .mockResolvedValue(new Response('{}'));
-
-    await withSchemaOrgContext()('https://example.org/context.jsonld');
-
-    expect(globalFetch).toHaveBeenCalledWith(
-      'https://example.org/context.jsonld',
-      undefined,
-    );
-    globalFetch.mockRestore();
   });
 
   it('passes every other request through untouched', async () => {

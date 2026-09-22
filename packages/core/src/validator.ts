@@ -3,7 +3,7 @@
 
 import factory from 'rdf-ext';
 import { rdfDereferencer } from 'rdf-dereference';
-import { withSchemaOrgContext } from './schema-org-context.ts';
+import { createRdfFetch } from './fetch.ts';
 import type { Dataset, DatasetCore, Quad } from '@rdfjs/types';
 import type { ValidationReport } from 'shacl-engine';
 import { Validator as ShaclValidator } from 'shacl-engine';
@@ -123,7 +123,7 @@ export class CompositeValidator implements Validator {
 export async function readUrl(url: string): Promise<DatasetCore> {
   const { data } = await rdfDereferencer.dereference(url.toString(), {
     localFiles: true,
-    fetch: withSchemaOrgContext(),
+    fetch: createRdfFetch(),
   });
 
   return await factory.dataset().import(data);

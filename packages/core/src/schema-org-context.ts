@@ -22,9 +22,6 @@
  * Turtle document written against `http://schema.org/` has no context to correct it, and
  * a quoted string in Turtle is a literal because its author chose one.
  */
-import { FetchDocumentLoader } from 'jsonld-context-parser';
-import { JsonLdParser } from 'jsonld-streaming-parser';
-import type { Transform } from 'node:stream';
 import schemaOrgContext from './schema-org-context.json' with { type: 'json' };
 
 const contextDocument = JSON.stringify(schemaOrgContext);
@@ -58,7 +55,7 @@ const contextUrls = new Set(
   ].map(normalizeUrl),
 );
 
-export function isSchemaOrgContextUrl(url: string): boolean {
+export function isBundledContextUrl(url: string): boolean {
   return contextUrls.has(normalizeUrl(url));
 }
 
@@ -76,11 +73,10 @@ function normalizeUrl(url: string): string {
  * timeout and abort behaviour is preserved.
  */
 export function withSchemaOrgContext(
-  baseFetch: typeof globalThis.fetch = (input, init) =>
-    globalThis.fetch(input, init),
+  baseFetch: typeof globalThis.fetch,
 ): typeof globalThis.fetch {
   return (input, init) => {
-    if (isSchemaOrgContextUrl(requestUrl(input))) {
+    if (isBundledContextUrl(requestUrl(input))) {
       return Promise.resolve(
         new Response(contextDocument, {
           headers: { 'content-type': 'application/ld+json' },
@@ -89,18 +85,6 @@ export function withSchemaOrgContext(
     }
     return baseFetch(input, init);
   };
-}
-
-/**
- * A JSON-LD parser that resolves schema.org’s context to ours. Callers that parse JSON-LD
- * directly – rather than through `rdf-dereference`, which takes a `fetch` – must use this
- * instead of constructing a bare `JsonLdParser`, or they fetch the live context and read a
- * registration under different semantics than the crawler does.
- */
-export function createJsonLdParser(): Transform {
-  return new JsonLdParser({
-    documentLoader: new FetchDocumentLoader(withSchemaOrgContext()),
-  }) as unknown as Transform;
 }
 
 /**
