@@ -4,7 +4,7 @@ import {
   dereference as fetchDereference,
   discoverDatacatalog,
   fetch,
-  fetchWithTimeout,
+  createRdfFetch,
   HttpError,
   NoDatasetFoundAtUrl,
   RequestTimeout,
@@ -1466,7 +1466,7 @@ describe('Request timeout', () => {
     // The timeout is generous, so the caller's own signal must still abort the
     // request – proving the timeout signal is merged with, not substituted for, it.
     const controller = new AbortController();
-    const timedFetch = fetchWithTimeout(10_000);
+    const timedFetch = createRdfFetch(10_000);
     const pending = timedFetch('https://slow.example/merge', {
       signal: controller.signal,
     });

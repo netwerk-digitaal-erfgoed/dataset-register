@@ -10,6 +10,7 @@ import {
   StandardizeSchemaOrgPrefixToHttps,
 } from './transform.ts';
 import { rdfDereferencer } from 'rdf-dereference';
+import { withSchemaOrgContext } from './schema-org-context.ts';
 import type DatasetExt from 'rdf-ext/lib/Dataset.js';
 
 /**
@@ -20,13 +21,23 @@ import type DatasetExt from 'rdf-ext/lib/Dataset.js';
 const DEFAULT_HTTP_REQUEST_TIMEOUT_MS = 30_000;
 
 /**
- * Build a `fetch` that aborts each request after `timeoutMs`. The deadline is created
- * per call, so a paginated traversal gives every page its own fresh timeout instead of
- * sharing one total budget – a large healthy catalogue is never cut off mid-traversal.
- * Any caller-supplied signal (e.g. the one Comunica passes) is merged in, not clobbered.
+ * The `fetch` every RDF retrieval in the register goes through. It does two things that
+ * must not be separable: it aborts each request after `timeoutMs`, and it answers
+ * schema.org’s context from the bundled file (see `schema-org-context.ts`).
+ *
+ * They are one function because there is no retrieval that wants one without the other,
+ * and a retrieval that skipped the substitution would read a registration under different
+ * semantics than the crawler does – silently, and only for JSON-LD.
+ *
+ * The deadline is created per call, so a paginated traversal gives every page its own
+ * fresh timeout instead of sharing one total budget; a large healthy catalogue is never
+ * cut off mid-traversal. Any caller-supplied signal (e.g. the one Comunica passes) is
+ * merged in, not clobbered.
  */
-export function fetchWithTimeout(timeoutMs: number): typeof globalThis.fetch {
-  return (input, init) => {
+export function createRdfFetch(
+  timeoutMs: number = DEFAULT_HTTP_REQUEST_TIMEOUT_MS,
+): typeof globalThis.fetch {
+  return withSchemaOrgContext((input, init) => {
     const timeout = AbortSignal.timeout(timeoutMs);
     const signal = init?.signal
       ? AbortSignal.any([init.signal, timeout])
@@ -38,7 +49,7 @@ export function fetchWithTimeout(timeoutMs: number): typeof globalThis.fetch {
     // original promise, so a caller that does await it still observes the rejection.
     void response.catch(() => undefined);
     return response;
-  };
+  });
 }
 
 export class FetchError extends Error {}
@@ -107,7 +118,7 @@ export async function dereference(
 ): Promise<DatasetExt> {
   try {
     const { data } = await rdfDereferencer.dereference(url.toString(), {
-      fetch: fetchWithTimeout(timeoutMs),
+      fetch: createRdfFetch(timeoutMs),
     });
     const stream = pipeline(
       data,
@@ -139,7 +150,7 @@ async function* query(url: URL, data: DatasetExt, timeoutMs: number) {
   const source = hasHydraPagination(data) ? url.toString() : toN3Store(data);
   const quadStream = await engine.queryQuads(constructQuery, {
     sources: [source],
-    fetch: fetchWithTimeout(timeoutMs),
+    fetch: createRdfFetch(timeoutMs),
   });
 
   // Collect quads grouped by dataset subject. UNION branches in the CONSTRUCT

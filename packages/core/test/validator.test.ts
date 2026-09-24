@@ -1,4 +1,3 @@
-import { JsonLdParser } from 'jsonld-streaming-parser';
 import {
   InvalidDataset,
   shacl,
@@ -12,6 +11,7 @@ import { RdfaParser } from 'rdfa-streaming-parser/lib/RdfaParser.js';
 import rdf from 'rdf-ext';
 import type { Dataset } from '@rdfjs/types';
 import { file } from '../src/test-utils.js';
+import { createJsonLdParser } from '../src/dataset.js';
 import { Readable } from 'node:stream';
 
 const validator = await ShaclEngineValidator.fromUrl(
@@ -393,9 +393,7 @@ describe('Validator', () => {
     const input = (await rdf
       .dataset()
       .import(
-        Readable.from(withPeriod).pipe(
-          new JsonLdParser() as unknown as Transform,
-        ),
+        Readable.from(withPeriod).pipe(createJsonLdParser()),
       )) as unknown as Dataset;
     const report = (await validator.validate(input)) as Valid;
     expect(report.state).toEqual('valid');
@@ -458,9 +456,7 @@ describe('Validator', () => {
     const input = (await rdf
       .dataset()
       .import(
-        Readable.from(literalAboutJson).pipe(
-          new JsonLdParser() as unknown as Transform,
-        ),
+        Readable.from(literalAboutJson).pipe(createJsonLdParser()),
       )) as unknown as Dataset;
     const report = (await validator.validate(input)) as InvalidDataset;
     expect(report.state).toEqual('invalid');
@@ -714,7 +710,7 @@ describe('Validator', () => {
     const input = (await rdf
       .dataset()
       .import(
-        Readable.from(jsonld).pipe(new JsonLdParser() as unknown as Transform),
+        Readable.from(jsonld).pipe(createJsonLdParser()),
       )) as unknown as Dataset;
     const report = (await validator.validate(input)) as InvalidDataset;
     expect(report.state).toEqual('invalid');
@@ -821,9 +817,7 @@ const dataset = async (filename: string, parser?: Transform) => {
 
   return (await rdf
     .dataset()
-    .import(
-      stream.pipe(parser ?? (new JsonLdParser() as unknown as Transform)),
-    )) as unknown as Dataset;
+    .import(stream.pipe(parser ?? createJsonLdParser()))) as unknown as Dataset;
 };
 
 const formatReport = (report: InvalidDataset | Valid): string => {

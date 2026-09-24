@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { join, dirname } from 'node:path';
 import { readFile } from 'fs/promises';
 import { rdfDereferencer } from 'rdf-dereference';
+import { createRdfFetch } from './fetch.ts';
 import type DatasetExt from 'rdf-ext/lib/Dataset.js';
 import { pipeline } from 'stream';
 import { StandardizeSchemaOrgPrefixToHttps } from './transform.js';
@@ -20,6 +21,7 @@ export const validSchemaOrgDataset = () =>
 export const dereference = async (file: string): Promise<DatasetExt> => {
   const { data } = await rdfDereferencer.dereference(file, {
     localFiles: true,
+    fetch: createRdfFetch(),
   });
   const stream = pipeline(
     data,
