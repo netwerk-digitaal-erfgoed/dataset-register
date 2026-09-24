@@ -402,19 +402,19 @@ but it identifies that website, server or page, not the organization.
 > Therefore, the organization’s HTTP IRI *MUST* identify the organization itself.
 > Publishers *SHOULD* use the same IRI in all their dataset descriptions, keep it stable over time, and make sure it resolves.
 
-Use one of:
+Publishers *SHOULD* use one of:
 
-- a persistent identifier, such as an [ARK](https://arks.org) or a Wikidata entity IRI (`http://www.wikidata.org/entity/Q1526131`);
+- a persistent HTTP URI, such as an [ARK](https://arks.org) or a Wikidata entity IRI (`http://www.wikidata.org/entity/Q1526131`);
 - an IRI that the organization mints on a domain it controls, such as `https://www.example.org/id/organization`;
 - the organization’s homepage (`https://www.example.org`). This is acceptable, but a homepage identifies the website as much as the organization, so prefer one of the above.
 
-Avoid:
+The organization’s IRI *MUST NOT* be:
 
-- a software supplier’s hosting server (such as `https://museum.hosting.supplier.example/`) or the supplier’s homepage;
+- an address of the collection software or its supplier, such as a hosting server (`https://museum.hosting.supplier.example/`) or the supplier’s homepage;
 - a Wikidata web page (`https://www.wikidata.org/wiki/Q1526131`) instead of the Wikidata entity IRI;
 - a URL that identifies one collection website of the organization.
 
-The validator warns about supplier hosting servers and Wikidata web pages.
+The validator warns about known software supplier addresses and Wikidata web pages.
 Publishers *MAY* link to other identifiers of the organization, such as its Wikidata entity, with `sameAs`.
 
 ### ISIL identifier ### {#isil}
@@ -757,7 +757,7 @@ which improves discoverability.
           },
           "publisher": {
             "@type": "Organization",
-            "@id": "https://www.kb.nl/",
+            "@id": "http://www.wikidata.org/entity/Q1526131",
             "name": {
               "@value": "Koninklijke Bibliotheek",
               "@language": "nl"

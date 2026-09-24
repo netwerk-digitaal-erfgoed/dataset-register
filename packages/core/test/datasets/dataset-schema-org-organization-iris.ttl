@@ -5,7 +5,13 @@
     schema:name "Test" ;
     schema:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
     schema:publisher <https://valk.hosting.deventit.net/> ;
-    schema:creator <https://www.wikidata.org/wiki/Q474563> ,
+    schema:creator <https://LITtest.hosting.deventit.net:443/> ,
+        <https://kleksi.com/> ,
+        <https://www.example.org/Atlantispubliek/organisatie> ,
+        <https://www.deventit.nl.example.org/> ,
+        <https://www.wikidata.org/wiki/Q474563> ,
+        <https://m.wikidata.org/wiki/Q12013217> ,
+        <https://www.wikidata.org/entity/Q17190029> ,
         <http://www.wikidata.org/entity/Q190804> ;
     schema:distribution [
         a schema:DataDownload ;
@@ -17,9 +23,33 @@
     a schema:Organization ;
     schema:name "Valkhof Museum"@nl .
 
+<https://LITtest.hosting.deventit.net:443/>
+    a schema:Organization ;
+    schema:name "Test organization on a port"@en .
+
+<https://kleksi.com/>
+    a schema:Organization ;
+    schema:name "Kleksi homepage"@en .
+
+<https://www.example.org/Atlantispubliek/organisatie>
+    a schema:Organization ;
+    schema:name "Self-hosted collection software"@en .
+
+<https://www.deventit.nl.example.org/>
+    a schema:Organization ;
+    schema:name "Look-alike host"@en .
+
 <https://www.wikidata.org/wiki/Q474563>
     a schema:Organization ;
     schema:name "Teylers Museum"@nl .
+
+<https://m.wikidata.org/wiki/Q12013217>
+    a schema:Organization ;
+    schema:name "Noordbrabants Museum"@nl .
+
+<https://www.wikidata.org/entity/Q17190029>
+    a schema:Organization ;
+    schema:name "Museum Slager"@nl .
 
 <http://www.wikidata.org/entity/Q190804>
     a schema:Organization ;
