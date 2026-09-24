@@ -11,6 +11,8 @@ import {
 } from './transform.ts';
 import { rdfDereferencer } from 'rdf-dereference';
 import { withSchemaOrgContext } from './schema-org-context.ts';
+import { getMediaTypeFromExtension } from '@comunica/bus-dereference';
+import { mediaMappings } from 'rdf-parse/lib/mediaMappings.js';
 import type DatasetExt from 'rdf-ext/lib/Dataset.js';
 
 /**
@@ -90,10 +92,14 @@ export class RequestTimeout extends FetchError {
 }
 
 export class InvalidContentType extends FetchError {
+  /** The unrecognized media type, so callers can record it without re-parsing the message. */
+  public readonly mediaType: string;
+
   constructor(url: URL, mediaType: string) {
     super(`Invalid Content-Type at ${url.toString()}`, {
       cause: `URL returned an unrecognized or invalid Content-Type header: ${mediaType}. Please ensure the URL returns a valid RDF content type such as text/turtle or application/ld+json.`,
     });
+    this.mediaType = mediaType;
   }
 }
 
@@ -113,8 +119,11 @@ export interface DereferenceResult {
   data: DatasetExt;
 
   /**
-   * The media type the registration was served as, as reported by rdf-dereference.
-   * Undefined when the source did not state one.
+   * The media type the registration was actually parsed as: the `Content-Type` header
+   * when it named a serialization rdf-dereference recognizes, else the one its URL
+   * extension implies. Undefined when neither yields one – note that a header-less
+   * response reaches us as the empty string, which is normalized away here so “unknown”
+   * is a single value rather than two.
    */
   mediaType?: string;
 }
@@ -127,12 +136,22 @@ export async function dereference(
   timeoutMs: number = DEFAULT_HTTP_REQUEST_TIMEOUT_MS,
 ): Promise<DereferenceResult> {
   try {
-    const { data, mediaType } = await rdfDereferencer.dereference(
-      url.toString(),
-      {
-        fetch: createRdfFetch(timeoutMs),
-      },
-    );
+    const {
+      data,
+      mediaType: declaredMediaType,
+      url: dereferencedUrl,
+    } = await rdfDereferencer.dereference(url.toString(), {
+      fetch: createRdfFetch(timeoutMs),
+    });
+    // Mirror how Comunica picks the parser (ActorDereferenceParse): the declared type
+    // first, then the URL extension. Reporting the declared type alone would record a
+    // Turtle file served as `text/plain` as unknown, understating what we really parsed.
+    // `dereferencedUrl` is the post-redirect URL Comunica itself maps the extension from,
+    // and `mediaMappings` is rdf-parse's own table, so the two stay in step.
+    const mediaType =
+      declaredMediaType ||
+      getMediaTypeFromExtension(dereferencedUrl, mediaMappings) ||
+      undefined;
     const stream = pipeline(
       data,
       new StandardizeSchemaOrgPrefixToHttps(),

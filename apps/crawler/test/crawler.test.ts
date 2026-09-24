@@ -245,15 +245,49 @@ describe('Crawler', () => {
   });
 
   it('marks registration gone when content type is unrecognized', async () => {
+    // image/jpeg trips rdf-dereferencer's "Unrecognized media type" path, which surfaces as
+    // InvalidContentType – the one outcome where we know the media type but never parsed it,
+    // so it is taken from the error rather than from a dereference that never returned.
+    const messages: string[] = [];
+    crawler = new Crawler(
+      registrationStore,
+      new MockDatasetStore(),
+      new MockRatingStore(),
+      reportStore,
+      validator(true),
+      {
+        info: (first: unknown, second?: string) =>
+          messages.push(typeof first === 'string' ? first : (second ?? '')),
+        warn: () => undefined,
+      } as unknown as pino.Logger,
+    );
     await storeRegistrationFixture(new URL('https://example.com/wrong-type'));
 
-    // image/jpeg trips rdf-dereferencer's "Unrecognized media type" path,
-    // which surfaces as InvalidContentType – neither HttpError nor
-    // NoDatasetFoundAtUrl, so it exercises the catch-all warn log.
     nock('https://example.com')
       .defaultReplyHeaders({ 'Content-Type': 'image/jpeg' })
       .get('/wrong-type')
       .reply(200, '');
+    await crawler.crawl(new Date('3000-01-01'));
+
+    const readRegistration = registrationStore.all()[0];
+    expect(readRegistration.statusCode).toBeUndefined();
+    expect(readRegistration.registrationStatus).toBe('gone');
+    expect(messages).toContainEqual(
+      expect.stringContaining('unrecognized media type image/jpeg'),
+    );
+  });
+
+  it('marks registration gone when the host cannot be reached', async () => {
+    // A transport failure surfaces as CouldNotFetchUrl, which none of the specific
+    // branches match – it is what the catch-all warn is there for, and it leaves the
+    // media type unknown because the response never arrived.
+    await storeRegistrationFixture(new URL('https://example.com/unreachable'));
+
+    nock('https://example.com')
+      .get('/unreachable')
+      .replyWithError(
+        new TypeError('fetch failed', { cause: new Error('ECONNREFUSED') }),
+      );
     await crawler.crawl(new Date('3000-01-01'));
 
     const readRegistration = registrationStore.all()[0];
@@ -321,6 +355,8 @@ describe('Crawler', () => {
       throw new Error('expected a crawl.registration.timing log line');
     }
     expect(timingLine.fields).toMatchObject({
+      // The serialization rides along because it often explains the time.
+      mediaType: 'application/ld+json',
       probeNetworkMs: 900,
       probeStoreWriteMs: 3_600_000,
       endpointsProbed: 100,

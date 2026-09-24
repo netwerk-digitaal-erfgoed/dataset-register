@@ -1352,6 +1352,47 @@ describe('dereference media type', () => {
 
     expect(mediaType).toEqual('application/ld+json');
   });
+
+  it('falls back to the URL extension when the response declares no media type', async () => {
+    // A missing Content-Type reaches us as the empty string, not undefined. Comunica still
+    // parses the body by mapping the .ttl extension, so reporting the declared type alone
+    // would record a Turtle file as unknown.
+    nock('https://example.com')
+      .get('/dataset.ttl')
+      .replyWithFile(200, 'test/datasets/dataset-http-schema-org-valid.ttl');
+
+    const { mediaType } = await fetchDereference(
+      new URL('https://example.com/dataset.ttl'),
+    );
+
+    expect(mediaType).toEqual('text/turtle');
+  });
+
+  it('falls back to the URL extension when the response declares text/plain', async () => {
+    // Comunica maps text/plain and application/octet-stream to “no media type”, so these
+    // take the extension path as well – a very common way for hosts to serve .ttl files.
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'text/plain' })
+      .get('/dataset.ttl')
+      .replyWithFile(200, 'test/datasets/dataset-http-schema-org-valid.ttl');
+
+    const { mediaType } = await fetchDereference(
+      new URL('https://example.com/dataset.ttl'),
+    );
+
+    expect(mediaType).toEqual('text/turtle');
+  });
+
+  it('carries the unrecognized media type on the thrown error', async () => {
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'image/jpeg' })
+      .get('/photo')
+      .reply(200, '');
+
+    await expect(
+      fetchDereference(new URL('https://example.com/photo')),
+    ).rejects.toMatchObject({ mediaType: 'image/jpeg' });
+  });
 });
 
 describe('CONSTRUCT query cross-product', () => {
