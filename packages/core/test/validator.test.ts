@@ -285,6 +285,24 @@ describe('Validator', () => {
     expectViolations(report, ['http://purl.org/dc/terms/publisher'], 0);
   });
 
+  it('warns on publisher/creator IRIs that identify something other than the organization', async () => {
+    // A supplier’s hosting server and a Wikidata wiki page both resolve, but
+    // neither identifies the organization; the Wikidata entity IRI does.
+    const report = (await validate(
+      'dataset-schema-org-organization-iris.ttl',
+      new StreamParser(),
+    )) as Valid;
+    expect(report.state).toEqual('valid');
+
+    const nodeLevelResults = formatReport(report)
+      .split('\n')
+      .filter((line) => line.includes(']  on <'));
+    expect(nodeLevelResults).toEqual([
+      '[Warning]  on <https://valk.hosting.deventit.net/>: Use a URI that identifies the organization itself, not the software supplier’s hosting server',
+      '[Warning]  on <https://www.wikidata.org/wiki/Q474563>: Use the Wikidata entity URI (such as http://www.wikidata.org/entity/Q474563), not the Wikidata web page',
+    ]);
+  });
+
   it('captures full SHACL feedback for Gouda Tijdmachine fixture', async () => {
     const report = (await validate(
       'dataset-schema-org-gouda-tijdmachine.ttl',

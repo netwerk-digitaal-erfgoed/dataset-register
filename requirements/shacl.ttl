@@ -907,6 +907,26 @@ nde-dataset:AgentUriPatternShape
     sh:pattern "^https?://" ;
     sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en .
 
+# Agent IRIs that resolve but identify something other than the agent itself
+# (see #organization-iri in the requirements). Targets both vocabularies so each
+# failure mode reports once per agent.
+nde-dataset:AgentNotSupplierHostShape
+    a sh:NodeShape ;
+    sh:targetObjectsOf schema:publisher, schema:creator, dc:publisher, dc:creator ;
+    sh:not [ sh:pattern "^https?://([^/]+\\.)?deventit\\.(net|nl)(/|$)" ] ;
+    sh:severity sh:Warning ;
+    sh:message "Gebruik een URI die de organisatie zelf identificeert, niet de hostingserver van de softwareleverancier"@nl, "Use a URI that identifies the organization itself, not the software supplier’s hosting server"@en .
+
+nde-dataset:AgentWikidataEntityShape
+    a sh:NodeShape ;
+    sh:targetObjectsOf schema:publisher, schema:creator, dc:publisher, dc:creator ;
+    sh:or (
+        [ sh:not [ sh:pattern "^https?://(www\\.)?wikidata\\.org" ] ]
+        [ sh:pattern "^http://www\\.wikidata\\.org/entity/Q[0-9]+$" ]
+    ) ;
+    sh:severity sh:Warning ;
+    sh:message "Gebruik de Wikidata-entiteit-URI (zoals http://www.wikidata.org/entity/Q474563), niet de Wikidata-webpagina"@nl, "Use the Wikidata entity URI (such as http://www.wikidata.org/entity/Q474563), not the Wikidata web page"@en .
+
 # Separate node shapes for Organization-specific constraints that must fire only on
 # schema:Organization instances (not on Person publishers/creators). Each carries its own
 # sh:severity and sh:message at node level, because shacl-engine's sparql validations

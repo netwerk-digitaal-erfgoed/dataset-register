@@ -1,0 +1,26 @@
+@prefix schema: <https://schema.org/> .
+
+<https://data.example.org/id/dataset/organization-iris>
+    a schema:Dataset ;
+    schema:name "Test" ;
+    schema:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
+    schema:publisher <https://valk.hosting.deventit.net/> ;
+    schema:creator <https://www.wikidata.org/wiki/Q474563> ,
+        <http://www.wikidata.org/entity/Q190804> ;
+    schema:distribution [
+        a schema:DataDownload ;
+        schema:encodingFormat "application/ld+json" ;
+        schema:contentUrl <https://data.example.org/test-data.jsonld>
+    ] .
+
+<https://valk.hosting.deventit.net/>
+    a schema:Organization ;
+    schema:name "Valkhof Museum"@nl .
+
+<https://www.wikidata.org/wiki/Q474563>
+    a schema:Organization ;
+    schema:name "Teylers Museum"@nl .
+
+<http://www.wikidata.org/entity/Q190804>
+    a schema:Organization ;
+    schema:name "Rijksmuseum"@nl .
