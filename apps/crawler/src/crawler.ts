@@ -4,6 +4,7 @@ import {
   dereference,
   fetch,
   HttpError,
+  InvalidContentType,
   NoDatasetFoundAtUrl,
   RequestTimeout,
 } from '@dataset-register/core';
@@ -92,16 +93,26 @@ export class Crawler {
       // endpoint produces, so the dataset page and /validate stay consistent.
       // Left undefined when the URL yields no report (gone, no datasets).
       let warningCount: number | undefined = undefined;
+      // The serialization the registration was served as. Recorded because how a value was
+      // written – `<https://…>` or `"https://…"`, `"2025-12-01"^^xsd:date` or a bare string –
+      // does not survive parsing, so the crawl counter – and, for a slow registration, the
+      // timing line – is the only place that distinction exists. Deliberately not a log line
+      // of its own: that would double the per-registration log volume for an aggregate the
+      // counter already answers. For a paginated catalogue this is the first page only; the
+      // Hydra follow-up pages fetched inside fetch() can be served differently. Left undefined
+      // when the URL never got far enough to have one (HTTP error, timeout, transport failure).
+      let mediaType: string | undefined = undefined;
 
       // `finally` records the timing exactly once on every path – normal completion, the
       // RequestTimeout `continue`, and the error branches – so there is a single call site.
       try {
         try {
           const dereferenceStart = performance.now();
-          const data = await dereference(
+          const { data, mediaType: dereferencedMediaType } = await dereference(
             registration.url,
             this.httpRequestTimeoutMs,
           );
+          mediaType = dereferencedMediaType;
           phases.dereferenceMs = Math.round(
             performance.now() - dereferenceStart,
           );
@@ -160,12 +171,21 @@ export class Crawler {
               status: undefined,
               valid: false,
               timedOut: true,
+              mediaType: undefined,
             });
             continue;
           } else if (e instanceof HttpError) {
             statusCode = e.statusCode;
             this.logger.info(
               `${registration.url} returned HTTP error ${statusCode}`,
+            );
+          } else if (e instanceof InvalidContentType) {
+            // The one bucket the counter would otherwise miss: served as something we do
+            // not recognize. Without this it is indistinguishable from a transport failure.
+            mediaType = e.mediaType;
+            this.logger.info(
+              { err: e },
+              `${registration.url} returned an unrecognized media type ${e.mediaType}`,
             );
           } else if (e instanceof NoDatasetFoundAtUrl) {
             this.logger.info({ err: e }, `${registration.url} has no datasets`);
@@ -180,6 +200,8 @@ export class Crawler {
         crawlCounter.add(1, {
           status: statusCode,
           valid: isValid,
+          timedOut: false,
+          mediaType,
         });
 
         const updatedRegistration = registration
@@ -192,6 +214,7 @@ export class Crawler {
           registrationStart,
           phases,
           timing,
+          mediaType,
           roundTimings,
         );
       }
@@ -206,14 +229,16 @@ export class Crawler {
    * SHACL, the distribution probe's network fan-out, and its store writes – so a stalled crawl can be
    * diagnosed from the logs (we have no metrics yet). The SHACL/probe split covers the
    * registration-level validation; `storeLoopMs` covers the per-dataset store-and-validate loop
-   * (including its own probing), which the split does not break out. Fast registrations are recorded
-   * but not logged.
+   * (including its own probing), which the split does not break out. `mediaType` rides along because
+   * the serialization often explains the time (a multi-megabyte JSON-LD parse is slow for a reason).
+   * Fast registrations are recorded but not logged.
    */
   private recordRegistrationTiming(
     url: URL | string,
     registrationStart: number,
     phases: CrawlPhaseTimings,
     timing: ValidationTiming,
+    mediaType: string | undefined,
     roundTimings: Array<{ url: string; totalMs: number }>,
   ): void {
     const urlValue = url.toString();
@@ -227,6 +252,7 @@ export class Crawler {
         event: 'crawl.registration.timing',
         url: urlValue,
         totalMs,
+        mediaType,
         dereferenceMs: phases.dereferenceMs,
         validateMs: phases.validateMs,
         storeLoopMs: phases.storeLoopMs,

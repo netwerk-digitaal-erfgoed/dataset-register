@@ -121,7 +121,7 @@ export async function server(
     reply: FastifyReply,
   ): Promise<{ url: URL; data: DatasetExt } | null> {
     try {
-      const data = await dereference(url);
+      const { data } = await dereference(url);
 
       if (data.size === 0) {
         reply.log.info(
