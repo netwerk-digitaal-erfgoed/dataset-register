@@ -3,10 +3,12 @@ import {
   DistributionProbeStage,
   readUrl,
   ShaclEngineValidator,
+  shutdownInstrumentation,
   startInstrumentation,
   stores,
 } from '@dataset-register/core';
 import { runIndex } from '@dataset-register/search-indexer';
+import closeWithGrace from 'close-with-grace';
 import { server } from './server.js';
 import { config } from './config.js';
 
@@ -44,7 +46,7 @@ await (async () => {
   startInstrumentation(datasetStore);
   const shacl = await readUrl('requirements/shacl.ttl');
   // Strict mode for the API. The DistributionProbeStage omits `severities`, so it falls back to
-  // emitting every probe failure at sh:Violation regardless of the shapes' declared severity —
+  // emitting every probe failure at sh:Violation regardless of the shapes' declared severity –
   // except an HTTP 429, which stays a sh:Warning because it means the Register was rate-limited
   // while probing, not that the distribution is faulty (see ProbeSeverities.rateLimited):
   // a faulty distribution invalidates the dataset, so it is rejected at registration and shown
@@ -80,6 +82,16 @@ await (async () => {
       config.API_ACCESS_TOKEN,
       buildSearchIndexTrigger(),
     );
+    // On SIGTERM, finish in-flight requests and export the last metrics before exiting.
+    // Without a handler, Node as the container’s PID 1 ignores SIGTERM until Kubernetes
+    // kills it after the grace period, losing what was recorded since the last export.
+    closeWithGrace(async ({ err }) => {
+      if (err) {
+        console.error(err);
+      }
+      await httpServer.close();
+      await shutdownInstrumentation();
+    });
     await httpServer.listen({ port: 3000, host: '0.0.0.0' });
   } catch (err) {
     console.error(err);
