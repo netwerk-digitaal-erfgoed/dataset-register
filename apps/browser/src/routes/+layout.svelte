@@ -7,6 +7,7 @@
   import favicon16 from '$lib/assets/favicon-16x16.png';
   import appleTouchIcon from '$lib/assets/apple-touch-icon.png';
   import LanguageToggle from '$lib/components/LanguageToggle.svelte';
+  import StatusAnnouncements from '$lib/components/StatusAnnouncements.svelte';
   import * as m from '$lib/paraglide/messages';
   import { getLocale, localizeHref } from '$lib/paraglide/runtime';
   import { page } from '$app/state';
@@ -281,7 +282,12 @@
     {/if}
   </header>
 
-  <main class="container mx-auto px-4 py-8 pt-28 lg:pt-32">
-    {@render children()}
-  </main>
+  <!-- Offset by the fixed header's height (h-15 lg:h-20), so the announcements
+       sit directly below it. -->
+  <div class="pt-15 lg:pt-20">
+    <StatusAnnouncements announcements={data?.statusAnnouncements ?? []} />
+    <main class="container mx-auto px-4 pt-13 pb-8 lg:pt-12">
+      {@render children()}
+    </main>
+  </div>
 </div>

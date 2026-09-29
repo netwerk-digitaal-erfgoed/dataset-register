@@ -537,5 +537,7 @@
   "validate_report_blank_node": "blank node",
   "severity_Violation": "Fout",
   "severity_Warning": "Waarschuwing",
-  "severity_Info": "Suggestie"
+  "severity_Info": "Suggestie",
+  "status_announcements_label": "Servicemeldingen",
+  "status_announcements_link": "Meer op de statuspagina"
 }
