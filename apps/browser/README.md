@@ -7,6 +7,9 @@ A faceted search app for finding datasets from the Netwerk Digitaal Erfgoed (NDE
 - This app retrieves data from both the NDE [Dataset Register SPARQL endpoint](../../README.md#search-dataset-descriptions)
   and [Dataset Knowledge Graph SPARQL endpoint](https://github.com/netwerk-digitaal-erfgoed/dataset-knowledge-graph).
 - Search state is kept in the URL, so users can bookmark and share search results.
+- Announcements on the [NDE status page](https://status.netwerkdigitaalerfgoed.nl) whose title starts with `[DR]` show
+  as a banner at the top of every page, except the prerendered changelog. Set `UPTIMEROBOT_STATUS_PAGE_ID` and
+  `UPTIMEROBOT_API_KEY` (a read-only UptimeRobot API key) to enable it; without them there is no banner.
 
 ## Tech stack
 
