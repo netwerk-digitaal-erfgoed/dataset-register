@@ -1767,7 +1767,9 @@
         id="linked-data-summary"
         class="mb-4 flex scroll-mt-20 flex-wrap items-center gap-2 text-xl font-semibold text-gray-900 lg:scroll-mt-24 dark:text-white"
       >
-        {m.detail_linked_data_summary()}
+        <a href="#linked-data-summary" class="hover:underline"
+          >{m.detail_linked_data_summary()}</a
+        >
         <span id="tooltip-linked-data-summary" class="cursor-pointer">
           <InfoCircleSolid
             class="h-5 w-5 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
@@ -2089,7 +2091,9 @@
           id="linked-data-summary"
           class="mb-4 flex scroll-mt-20 items-center gap-2 text-xl font-semibold text-gray-900 lg:scroll-mt-24 dark:text-white"
         >
-          {m.detail_linked_data_summary()}
+          <a href="#linked-data-summary" class="hover:underline"
+            >{m.detail_linked_data_summary()}</a
+          >
         </h2>
         <Alert border color="yellow" class="mb-6">
           {#snippet icon()}
