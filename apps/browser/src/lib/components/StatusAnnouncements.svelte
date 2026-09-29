@@ -26,8 +26,8 @@
         class={[
           'text-sm',
           announcement.kind === 'issue'
-            ? 'bg-yellow-300 text-gray-900'
-            : 'bg-blue-700 text-white',
+            ? 'bg-yellow-300 text-gray-900 dark:bg-amber-500'
+            : 'bg-blue-700 text-white dark:bg-blue-800',
         ]}
       >
         <div class="container mx-auto flex gap-3 px-4 py-3">
