@@ -150,7 +150,7 @@ Schema.org is [[#examples|recommended]].
               {
                 "@context": "https://schema.org/",
                 "@type": "Organization",
-                "@id": "https://www.kb.nl",
+                "@id": "http://www.wikidata.org/entity/Q1526131",
                 "name": {
                   "@value": "Koninklijke Bibliotheek",
                   "@language": "nl"
@@ -361,7 +361,7 @@ Providing information about the person/organization behind the dataset answers u
       {
         "@context": "https://schema.org/",
         "@type": "Organization",
-        "@id": "https://www.kb.nl",
+        "@id": "http://www.wikidata.org/entity/Q1526131",
         "name": {
           "@value": "Koninklijke Bibliotheek",
           "@language": "nl"
@@ -392,6 +392,31 @@ See [[#organization-attributes]] for a full overview of organization attributes.
     </pre>
 </div>
 
+### Organization IRI ### {#organization-iri}
+
+[=Consumers=] use the organization’s IRI to tell which datasets come from the same organization.
+That only works if a publisher uses one IRI for itself across all its dataset descriptions, and if no two organizations share an IRI.
+A URL of a collection website, a software supplier’s server or a web page about the organization may resolve,
+but it identifies that website, server or page, not the organization.
+
+> Therefore, the organization’s HTTP IRI *MUST* identify the organization itself.
+> Publishers *SHOULD* use the same IRI in all their dataset descriptions, keep it stable over time, and make sure it resolves.
+
+Publishers *SHOULD* use one of:
+
+- a persistent HTTP URI, such as an [ARK](https://arks.org) or a Wikidata entity IRI (`http://www.wikidata.org/entity/Q1526131`);
+- an IRI that the organization mints on a domain it controls, such as `https://www.example.org/id/organization`;
+- the organization’s homepage (`https://www.example.org`). This is acceptable, but a homepage identifies the website as much as the organization, so prefer one of the above.
+
+The organization’s IRI *MUST NOT* be:
+
+- an address of the collection software or its supplier, such as a hosting server (`https://museum.hosting.supplier.example/`) or the supplier’s homepage;
+- a Wikidata web page (`https://www.wikidata.org/wiki/Q1526131`) instead of the Wikidata entity IRI;
+- a URL that identifies one collection website of the organization.
+
+The validator warns about known software supplier addresses and Wikidata web pages.
+Publishers *MAY* link to other identifiers of the organization, such as its Wikidata entity, with `sameAs`.
+
 ### ISIL identifier ### {#isil}
 
 > Publishers *SHOULD* include the organization's [ISIL code](https://www.nationaalarchief.nl/archiveren/kennisbank/isil-codes).
@@ -403,7 +428,7 @@ See [[#organization-attributes]] for a full overview of organization attributes.
       {
         "@context": "https://schema.org/",
         "@type": "Organization",
-        "@id": "https://www.kb.nl",
+        "@id": "http://www.wikidata.org/entity/Q1526131",
         "identifier": "NL-HaKB"
       }
     </pre>
@@ -424,7 +449,7 @@ The e-mail address *SHOULD* be an organizational or departmental address rather 
           "@type": "Dataset",
           "publisher": {
             "@type": "Organization",
-            "@id": "https://www.kb.nl",
+            "@id": "http://www.wikidata.org/entity/Q1526131",
             "name": "Koninklijke Bibliotheek",
             "alternateName": "KB",
             "contactPoint": {
@@ -454,7 +479,7 @@ The person/organization data is then included as the dataset's publisher:
           "@type": "Dataset",
           "publisher": {
             "@type": "Organization",
-            "@id": "https://www.kb.nl",
+            "@id": "http://www.wikidata.org/entity/Q1526131",
             "identifier": "NL-HaKB"
             "name": {
                 "@value": "Koninklijke Bibliotheek",
@@ -732,7 +757,7 @@ which improves discoverability.
           },
           "publisher": {
             "@type": "Organization",
-            "@id": "https://www.kb.nl/",
+            "@id": "http://www.wikidata.org/entity/Q1526131",
             "name": {
               "@value": "Koninklijke Bibliotheek",
               "@language": "nl"
