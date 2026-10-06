@@ -171,6 +171,36 @@ describe('Crawler', () => {
     expect(reportStore.reports.get('https://example.com/valid')).toBeDefined();
   });
 
+  it('records the media type on the stored registration', async () => {
+    // The serialization does not survive parsing, so the registration is the only place
+    // it can be queried back from – the crawl counter is an aggregate, not a per-URL fact.
+    await storeRegistrationFixture(new URL('https://example.com/valid'));
+
+    const response = await validSchemaOrgDataset();
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/valid')
+      .times(2)
+      .reply(200, response);
+    await crawler.crawl(new Date('3000-01-01'));
+
+    expect(registrationStore.all()[0].mediaType).toBe('application/ld+json');
+  });
+
+  it('records the unrecognized media type on the stored registration', async () => {
+    // Taken from InvalidContentType: we know what it was served as even though we
+    // never parsed it, and that is exactly the bucket worth querying for.
+    await storeRegistrationFixture(new URL('https://example.com/wrong-type'));
+
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'image/jpeg' })
+      .get('/wrong-type')
+      .reply(200, '');
+    await crawler.crawl(new Date('3000-01-01'));
+
+    expect(registrationStore.all()[0].mediaType).toBe('image/jpeg');
+  });
+
   it('logs URLs that no longer validate', async () => {
     crawler = new Crawler(
       registrationStore,

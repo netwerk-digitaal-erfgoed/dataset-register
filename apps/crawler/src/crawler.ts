@@ -95,10 +95,10 @@ export class Crawler {
       let warningCount: number | undefined = undefined;
       // The serialization the registration was served as. Recorded because how a value was
       // written – `<https://…>` or `"https://…"`, `"2025-12-01"^^xsd:date` or a bare string –
-      // does not survive parsing, so the crawl counter – and, for a slow registration, the
-      // timing line – is the only place that distinction exists. Deliberately not a log line
-      // of its own: that would double the per-registration log volume for an aggregate the
-      // counter already answers. For a paginated catalogue this is the first page only; the
+      // does not survive parsing, so it is written onto the registration (nde:mediaType) and
+      // put on the crawl counter and, for a slow registration, the timing line. Deliberately
+      // not a log line of its own: that would double the per-registration log volume for an
+      // aggregate the counter already answers. For a paginated catalogue this is the first page only; the
       // Hydra follow-up pages fetched inside fetch() can be served differently. Left undefined
       // when the URL never got far enough to have one (HTTP error, timeout, transport failure).
       let mediaType: string | undefined = undefined;
@@ -205,7 +205,14 @@ export class Crawler {
         });
 
         const updatedRegistration = registration
-          .read(datasetIris, statusCode, isValid, undefined, warningCount)
+          .read(
+            datasetIris,
+            statusCode,
+            isValid,
+            undefined,
+            warningCount,
+            mediaType,
+          )
           .crawled();
         await this.registrationStore.store(updatedRegistration);
       } finally {

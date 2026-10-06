@@ -129,6 +129,14 @@ export interface DereferenceResult {
 }
 
 /**
+ * A dereferenced source: the dereference result plus the URL it actually came from,
+ * which is not the requested URL when discovery fell back to /.well-known/datacatalog.
+ */
+export interface ResolvedSource extends DereferenceResult {
+  url: URL;
+}
+
+/**
  * Fetch dataset description(s) by dereferencing the registration URL.
  */
 export async function dereference(
@@ -331,14 +339,14 @@ function toN3Store(data: DatasetExt): Store {
  */
 export async function discoverDatacatalog(
   url: URL,
-): Promise<{ url: URL; data: DatasetExt } | null> {
+): Promise<ResolvedSource | null> {
   const wellKnownUrl = new URL('/.well-known/datacatalog', url.origin);
   try {
-    const { data } = await dereference(wellKnownUrl);
+    const { data, mediaType } = await dereference(wellKnownUrl);
     if (data.size === 0) {
       return null;
     }
-    return { url: wellKnownUrl, data };
+    return { url: wellKnownUrl, data, mediaType };
   } catch {
     return null;
   }
