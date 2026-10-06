@@ -406,7 +406,13 @@ describe('SPARQL', () => {
       const registration = createTestRegistration(
         'https://example.org/with-warnings.json',
         new Date('2025-01-01T10:00:00Z'),
-      ).read([], 200, true, new Date('2025-01-15T08:30:00Z'), 3);
+      ).read({
+        datasets: [],
+        statusCode: 200,
+        valid: true,
+        date: new Date('2025-01-15T08:30:00Z'),
+        warningCount: 3,
+      });
       await registrationStore.store(registration);
 
       const found = await registrationStore.findByUrl(

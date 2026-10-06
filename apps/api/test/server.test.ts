@@ -954,11 +954,11 @@ describe('DELETE /datasets', () => {
     // First delete if exists
     await deleteRegistrationStore.delete(testUrl);
     // Then add fresh registration with linked datasets to cover the delete loop
-    const registration = new Registration(testUrl, new Date()).read(
-      [new URL('https://example.com/dataset1')],
-      200,
-      true,
-    );
+    const registration = new Registration(testUrl, new Date()).read({
+      datasets: [new URL('https://example.com/dataset1')],
+      statusCode: 200,
+      valid: true,
+    });
     await deleteRegistrationStore.store(registration);
   });
 
@@ -1058,11 +1058,11 @@ describe('DELETE /datasets reindex trigger', () => {
   beforeEach(async () => {
     onDatasetsChanged.mockClear();
     await triggerStore.delete(testUrl);
-    const registration = new Registration(testUrl, new Date()).read(
-      [new URL('https://example.com/dataset1')],
-      200,
-      true,
-    );
+    const registration = new Registration(testUrl, new Date()).read({
+      datasets: [new URL('https://example.com/dataset1')],
+      statusCode: 200,
+      valid: true,
+    });
     await triggerStore.store(registration);
   });
 

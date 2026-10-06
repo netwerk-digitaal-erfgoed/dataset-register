@@ -339,14 +339,13 @@ export async function server(
       // Update registration with dataset descriptions that we found.
       // Pass the media type so a manual re-registration records it too, and does not
       // blank out what the last crawl recorded.
-      const updatedRegistration = registration.read(
-        datasetIris,
-        200,
-        true,
-        undefined,
-        existingRegistration?.warningCount,
+      const updatedRegistration = registration.read({
+        datasets: datasetIris,
+        statusCode: 200,
+        valid: true,
+        warningCount: existingRegistration?.warningCount,
         mediaType,
-      );
+      });
       await registrationStore.store(updatedRegistration);
     }
 

@@ -205,14 +205,13 @@ export class Crawler {
         });
 
         const updatedRegistration = registration
-          .read(
-            datasetIris,
+          .read({
+            datasets: datasetIris,
             statusCode,
-            isValid,
-            undefined,
+            valid: isValid,
             warningCount,
             mediaType,
-          )
+          })
           .crawled();
         await this.registrationStore.store(updatedRegistration);
       } finally {
