@@ -74,7 +74,12 @@ export function createTestRegistration(
   );
 
   if (dateRead) {
-    return registration.read(datasets, 200, false, dateRead);
+    return registration.read({
+      datasets,
+      statusCode: 200,
+      valid: false,
+      date: dateRead,
+    });
   }
 
   return registration;

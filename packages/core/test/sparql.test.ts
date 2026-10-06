@@ -399,6 +399,45 @@ describe('SPARQL', () => {
       );
     });
 
+    it('reads the warning count back, so a re-registration can carry it forward', async () => {
+      // nde:warningCount used to be write-only. The API re-reads a registration before
+      // re-storing it, so without this the count was blanked on every re-registration
+      // and the dataset page read “no warnings” until the next crawl.
+      const registration = createTestRegistration(
+        'https://example.org/with-warnings.json',
+        new Date('2025-01-01T10:00:00Z'),
+      ).read({
+        datasets: [],
+        statusCode: 200,
+        valid: true,
+        date: new Date('2025-01-15T08:30:00Z'),
+        warningCount: 3,
+      });
+      await registrationStore.store(registration);
+
+      const found = await registrationStore.findByUrl(
+        new URL('https://example.org/with-warnings.json'),
+      );
+
+      expect(found?.warningCount).toBe(3);
+    });
+
+    it('leaves the warning count undefined when none was recorded', async () => {
+      // Absent is not zero: it means no validation report was produced at all, and a
+      // caller carrying it forward must not turn that into “validated cleanly”.
+      const registration = createTestRegistration(
+        'https://example.org/no-warnings.json',
+        new Date('2025-01-01T10:00:00Z'),
+      );
+      await registrationStore.store(registration);
+
+      const found = await registrationStore.findByUrl(
+        new URL('https://example.org/no-warnings.json'),
+      );
+
+      expect(found?.warningCount).toBeUndefined();
+    });
+
     it('should return undefined for non-existent URL', async () => {
       const found = await registrationStore.findByUrl(
         new URL('https://example.org/nonexistent.json'),
