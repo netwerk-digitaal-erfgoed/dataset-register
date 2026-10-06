@@ -28,12 +28,17 @@ export class Registration {
     validUntil?: Date,
     datasets: URL[] = [],
     dateCrawled?: Date,
+    // Reconstructed by a store so a caller that re-reads a registration can carry the
+    // last crawl's warning count forward instead of blanking it. read() overwrites it
+    // with what the caller observed, so only a caller that observed nothing passes it on.
+    warningCount?: number,
   ) {
     this.url = url;
     this.datePosted = datePosted;
     this.validUntil = validUntil;
     this._datasets = datasets;
     this._dateCrawled = dateCrawled;
+    this._warningCount = warningCount;
   }
 
   /**
