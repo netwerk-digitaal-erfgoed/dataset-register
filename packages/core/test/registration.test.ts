@@ -1,6 +1,7 @@
 import { Registration, toRdf } from '../src/registration.js';
 import {
   REGISTRATION_DATE_CRAWLED_PREDICATE,
+  REGISTRATION_MEDIA_TYPE_PREDICATE,
   REGISTRATION_WARNING_COUNT_PREDICATE,
 } from '../src/constants.js';
 import { URL } from 'url';
@@ -123,6 +124,51 @@ describe('Registration', () => {
             quad.predicate.value === REGISTRATION_WARNING_COUNT_PREDICATE,
         ),
       ).toBeUndefined();
+    });
+
+    it('emits nde:mediaType as a plain literal when one was recorded', () => {
+      // A plain literal, not an IRI: the value is a media type string, and the
+      // register has no vocabulary of media-type IRIs to point at.
+      const registration = new Registration(
+        new URL('https://example.com/registration'),
+        new Date(),
+      ).read([], 200, true, new Date(), undefined, 'text/turtle');
+
+      const quad = toRdf(registration).find(
+        (candidate) =>
+          candidate.predicate.value === REGISTRATION_MEDIA_TYPE_PREDICATE,
+      );
+
+      expect(quad?.object.value).toBe('text/turtle');
+      expect(quad?.object.termType).toBe('Literal');
+    });
+
+    it('omits nde:mediaType when the URL never got far enough to have one', () => {
+      // An HTTP error, timeout or transport failure yields no media type, and the
+      // absent triple is what distinguishes that from “served as something odd”.
+      const registration = new Registration(
+        new URL('https://example.com/registration'),
+        new Date(),
+      ).read([], undefined, false);
+
+      expect(
+        toRdf(registration).find(
+          (quad) => quad.predicate.value === REGISTRATION_MEDIA_TYPE_PREDICATE,
+        ),
+      ).toBeUndefined();
+    });
+
+    it('carries nde:mediaType through crawled()', () => {
+      // crawled() only advances the clock, so everything read() observed must survive it
+      // or the stored registration loses the media type on every crawl.
+      const registration = new Registration(
+        new URL('https://example.com/registration'),
+        new Date(),
+      )
+        .read([], 200, true, new Date(), undefined, 'application/ld+json')
+        .crawled(new Date('2026-08-05T12:00:00Z'));
+
+      expect(registration.mediaType).toBe('application/ld+json');
     });
   });
 

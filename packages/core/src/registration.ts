@@ -2,6 +2,7 @@ import { URL } from 'node:url';
 import factory from 'rdf-ext';
 import {
   REGISTRATION_DATE_CRAWLED_PREDICATE,
+  REGISTRATION_MEDIA_TYPE_PREDICATE,
   REGISTRATION_STATUS_BASE_URI,
   REGISTRATION_WARNING_COUNT_PREDICATE,
 } from './constants.js';
@@ -12,6 +13,7 @@ export class Registration {
   private _dateCrawled?: Date;
   private _statusCode?: number;
   private _warningCount?: number;
+  private _mediaType?: string;
   private _datasets: URL[];
   public readonly url: URL;
   public readonly datePosted: Date;
@@ -44,6 +46,7 @@ export class Registration {
     valid: boolean,
     date: Date = new Date(),
     warningCount?: number,
+    mediaType?: string,
   ): Registration {
     const registration = new Registration(
       this.url,
@@ -55,6 +58,7 @@ export class Registration {
     registration._statusCode = statusCode;
     registration._dateRead = date;
     registration._warningCount = warningCount;
+    registration._mediaType = mediaType;
 
     return registration;
   }
@@ -81,6 +85,7 @@ export class Registration {
     registration._statusCode = this._statusCode;
     registration._dateRead = this._dateRead;
     registration._warningCount = this._warningCount;
+    registration._mediaType = this._mediaType;
 
     return registration;
   }
@@ -104,6 +109,15 @@ export class Registration {
    */
   get warningCount() {
     return this._warningCount;
+  }
+
+  /**
+   * The media type the description was served and parsed as at the last read, or
+   * undefined when the URL never got far enough to have one (HTTP error, timeout,
+   * transport failure). For a paginated catalogue this is the first page only.
+   */
+  get mediaType() {
+    return this._mediaType;
   }
 
   get datasets() {
@@ -273,6 +287,16 @@ export function toRdf(registration: Registration) {
           registration.warningCount.toString(),
           factory.namedNode('http://www.w3.org/2001/XMLSchema#integer'),
         ),
+      ),
+    );
+  }
+
+  if (registration.mediaType !== undefined) {
+    quads.push(
+      factory.quad(
+        iri,
+        factory.namedNode(REGISTRATION_MEDIA_TYPE_PREDICATE),
+        factory.literal(registration.mediaType),
       ),
     );
   }

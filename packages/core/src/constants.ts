@@ -28,6 +28,12 @@ export const REGISTRATION_WARNING_COUNT_PREDICATE = `${REGISTRATION_BASE_URI}war
 // but probes nothing, so it must not defer the next crawl.
 export const REGISTRATION_DATE_CRAWLED_PREDICATE = `${REGISTRATION_BASE_URI}dateCrawled`;
 
+// Predicate on a registration recording the media type its description was
+// served and parsed as at the last read. Recorded because the serialization does
+// not survive parsing – a bare JSON-LD string and an untyped Turtle literal
+// produce the identical RDF term – so unless we write it down here it is lost.
+export const REGISTRATION_MEDIA_TYPE_PREDICATE = `${REGISTRATION_BASE_URI}mediaType`;
+
 export const ALLOWED_DOMAIN_NAME_PREDICATE =
   'https://data.netwerkdigitaalerfgoed.nl/allowed_domain_names/def/domain_name';
 

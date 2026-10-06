@@ -11,6 +11,7 @@ import {
   DatasetStore,
   dereference,
   discoverDatacatalog,
+  type ResolvedSource,
   extractIri,
   fetch,
   FetchError,
@@ -25,7 +26,6 @@ import {
   validationsCounter,
   Validator,
 } from '@dataset-register/core';
-import DatasetExt from 'rdf-ext/lib/Dataset.js';
 import { fileURLToPath, URL } from 'url';
 import { Server } from 'http';
 import * as psl from 'psl';
@@ -119,9 +119,9 @@ export async function server(
   async function resolveDataset(
     url: URL,
     reply: FastifyReply,
-  ): Promise<{ url: URL; data: DatasetExt } | null> {
+  ): Promise<ResolvedSource | null> {
     try {
-      const data = await dereference(url);
+      const { data, mediaType } = await dereference(url);
 
       if (data.size === 0) {
         reply.log.info(
@@ -133,7 +133,7 @@ export async function server(
         }
       }
 
-      return { url, data };
+      return { url, data, mediaType };
     } catch (e) {
       if (e instanceof HttpError) {
         reply.log.info(
@@ -302,7 +302,7 @@ export async function server(
       ? await validate(resolved.data, reply.code(202), resolved.url)
       : false;
     if (resolved && valid) {
-      const { url, data } = resolved;
+      const { url, data, mediaType } = resolved;
       // The URL has validated, so any problems with processing the dataset are now ours. Therefore, make sure to
       // store the registration so we can come back to that when crawling, even if fetching the datasets fails.
       // Store first rather than wrapping in a try/catch to cope with OOMs.
@@ -332,7 +332,16 @@ export async function server(
       );
 
       // Update registration with dataset descriptions that we found.
-      const updatedRegistration = registration.read(datasetIris, 200, true);
+      // Pass the media type so a manual re-registration records it too, and does not
+      // blank out what the last crawl recorded.
+      const updatedRegistration = registration.read(
+        datasetIris,
+        200,
+        true,
+        undefined,
+        undefined,
+        mediaType,
+      );
       await registrationStore.store(updatedRegistration);
     }
 

@@ -16,8 +16,7 @@
     "close-with-grace": "2.5.0",
     "env-schema": "^8.0.0",
     "fastify": "^5.11.3",
-    "psl": "1.15.0",
-    "rdf-ext": "2.6.0"
+    "psl": "1.15.0"
   },
   "nx": {
     "projectType": "application",
