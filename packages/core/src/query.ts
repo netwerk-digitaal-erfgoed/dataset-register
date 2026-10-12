@@ -360,8 +360,16 @@ export const constructQuery = `
         OPTIONAL {
           ?${dataset} dcat:distribution ?${distribution} .
           ?${distribution} a dcat:Distribution .
-          ?${distribution} dcat:accessURL ${convertToIri(distributionUrl)} .
-          ?${distribution} dct:license ${normalizeLicense(distributionLicense)} .
+          # The shapes accept a distribution with only dcat:downloadURL, so fall
+          # back to it when there is no dcat:accessURL.
+          OPTIONAL { ?${distribution} dcat:accessURL ?${distributionUrl}AccessRaw . }
+          OPTIONAL { ?${distribution} dcat:downloadURL ?${distributionUrl}DownloadRaw . }
+          BIND(IRI(COALESCE(?${distributionUrl}AccessRaw, ?${distributionUrl}DownloadRaw)) AS ?${distributionUrl})
+          FILTER(BOUND(?${distributionUrl}))
+          # A missing distribution license is only a warning in the shapes, so
+          # keep the distribution and inherit the dataset’s own license.
+          OPTIONAL { ?${distribution} dct:license ${normalizeLicense(distributionLicense + 'Provided')} }
+          BIND(COALESCE(?${distributionLicense}Provided, ?datasetLicenseExplicit) AS ?${distributionLicense})
           OPTIONAL {
             ?${distribution} dcat:mediaType ${normalizeMediaType(distributionMediaType)} .
           }

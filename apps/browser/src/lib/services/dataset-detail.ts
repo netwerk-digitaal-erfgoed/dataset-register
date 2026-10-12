@@ -1294,7 +1294,12 @@ export async function fetchDatasetDetail(
     WHERE {
       GRAPH ?g {
         <${datasetUri}> dcat:distribution ?distribution .
-        ?distribution dcat:accessURL ?accessURL .
+        # Distributions loaded outside the crawler may carry only a
+        # dcat:downloadURL, so fall back to it.
+        OPTIONAL { ?distribution dcat:accessURL ?declaredAccessURL }
+        OPTIONAL { ?distribution dcat:downloadURL ?downloadURL }
+        BIND(COALESCE(?declaredAccessURL, ?downloadURL) AS ?accessURL)
+        FILTER(BOUND(?accessURL))
         OPTIONAL { ?distribution foaf:page ?landingPage }
         OPTIONAL { ?distribution dct:description ?description }
         OPTIONAL {
@@ -1324,6 +1329,9 @@ export async function fetchDatasetDetail(
     WHERE {
       GRAPH ?g {
         <${datasetUri}> <http://www.w3.org/ns/dcat#distribution> ?distribution .
+        # Count only what distributionQuery can list, so the total exceeds the
+        # shown distributions on DISTRIBUTION_LIMIT alone.
+        ?distribution <http://www.w3.org/ns/dcat#accessURL>|<http://www.w3.org/ns/dcat#downloadURL> ?url .
       }
     }
   `;

@@ -1186,6 +1186,73 @@ describe('Fetch', () => {
     );
   });
 
+  it('keeps a DCAT distribution that has only a dcat:downloadURL', async () => {
+    const response = await file('dataset-dcat-download-url-only.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/dcat-download-url-only')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/dcat-download-url-only'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const distributions = [
+      ...dataset.match(
+        factory.namedNode(
+          'http://data.bibliotheken.nl/id/dataset/download-url-only',
+        ),
+        dcat('distribution'),
+        null,
+      ),
+    ];
+    expect(distributions).toHaveLength(1);
+
+    const distribution = distributions[0].object;
+    for (const property of ['accessURL', 'downloadURL']) {
+      const urls = [...dataset.match(distribution, dcat(property), null)];
+      expect(urls).toHaveLength(1);
+      expect(urls[0].object.value).toBe('https://example.com/dataset.ttl');
+    }
+  });
+
+  it('keeps a DCAT distribution without a license and inherits the dataset license', async () => {
+    const response = await file(
+      'dataset-dcat-distribution-without-license.jsonld',
+    );
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/dcat-distribution-without-license')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/dcat-distribution-without-license'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const distributions = [
+      ...dataset.match(
+        factory.namedNode(
+          'http://data.bibliotheken.nl/id/dataset/distribution-without-license',
+        ),
+        dcat('distribution'),
+        null,
+      ),
+    ];
+    expect(distributions).toHaveLength(1);
+
+    const licenses = [
+      ...dataset.match(distributions[0].object, dct('license'), null),
+    ];
+    expect(licenses).toHaveLength(1);
+    expect(licenses[0].object.value).toBe(
+      'https://creativecommons.org/publicdomain/zero/1.0/',
+    );
+  });
+
   it('skips a literal dct:license on a DCAT dataset and samples one from distributions', async () => {
     // KB-style data: dataset has a free-text dct:license placeholder
     // ("see distributions") and the actual license lives on the distribution.

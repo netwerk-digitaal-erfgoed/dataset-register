@@ -735,6 +735,11 @@ describe('Validator', () => {
     expect(report.state).toEqual('valid');
   });
 
+  it('accepts a DCAT distribution that has only a dcat:downloadURL', async () => {
+    const report = await validate('dataset-dcat-download-url-only.jsonld');
+    expect(report.state).toEqual('valid');
+  });
+
   it('does not warn when dataset license is absent but distribution carries one', async () => {
     // DCAT-AP-NL places license on the distribution. The schema.org
     // DatasetShape requires schema:license, but this fixture is pure DCAT
