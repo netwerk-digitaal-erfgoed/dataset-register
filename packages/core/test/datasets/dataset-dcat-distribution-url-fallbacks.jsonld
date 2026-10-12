@@ -1,0 +1,37 @@
+{
+  "@context": {
+    "dcat": "http://www.w3.org/ns/dcat#",
+    "dct": "http://purl.org/dc/terms/",
+    "foaf": "http://xmlns.com/foaf/0.1/"
+  },
+  "@type": "dcat:Dataset",
+  "@id": "http://data.bibliotheken.nl/id/dataset/distribution-url-fallbacks",
+  "dct:title": "Dataset with distributions whose URLs need a fallback",
+  "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" },
+  "dct:publisher": {
+    "@id": "https://example.com/publisher",
+    "@type": "foaf:Organization",
+    "foaf:name": "Example Publisher"
+  },
+  "dcat:distribution": [
+    {
+      "@id": "https://example.com/distribution/relative-download-url",
+      "@type": "dcat:Distribution",
+      "dcat:downloadURL": "data.ttl",
+      "dcat:mediaType": "text/turtle"
+    },
+    {
+      "@id": "https://example.com/distribution/unusable-access-url",
+      "@type": "dcat:Distribution",
+      "dcat:accessURL": { "@id": "_:unusable" },
+      "dcat:downloadURL": { "@id": "https://example.com/file.ttl" },
+      "dcat:mediaType": "text/turtle"
+    },
+    {
+      "@id": "https://example.com/distribution/download-only-sparql",
+      "@type": "dcat:Distribution",
+      "dcat:downloadURL": { "@id": "https://example.com/sparql" },
+      "dct:conformsTo": { "@id": "https://www.w3.org/TR/sparql11-protocol/" }
+    }
+  ]
+}

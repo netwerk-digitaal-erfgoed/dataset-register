@@ -1218,6 +1218,52 @@ describe('Fetch', () => {
     }
   });
 
+  it('falls back per DCAT distribution when a URL is unusable', async () => {
+    const response = await file(
+      'dataset-dcat-distribution-url-fallbacks.jsonld',
+    );
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/dcat-distribution-url-fallbacks')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/dcat-distribution-url-fallbacks'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const urls = (distributionName: string, property: string) =>
+      [
+        ...dataset.match(
+          factory.namedNode(
+            `https://example.com/distribution/${distributionName}`,
+          ),
+          dcat(property),
+          null,
+        ),
+      ].map((quad) => quad.object.value);
+
+    // A relative literal cannot become an IRI: the distribution is dropped
+    // and the dataset survives.
+    expect(urls('relative-download-url', 'accessURL')).toEqual([]);
+    expect(
+      [...dataset.match(null, dcat('distribution'), null)].map(
+        (quad) => quad.object.value,
+      ),
+    ).not.toContain('https://example.com/distribution/relative-download-url');
+
+    expect(urls('unusable-access-url', 'accessURL')).toEqual([
+      'https://example.com/file.ttl',
+    ]);
+
+    // APIs get no dcat:downloadURL, even when that is where the URL came from.
+    expect(urls('download-only-sparql', 'accessURL')).toEqual([
+      'https://example.com/sparql',
+    ]);
+    expect(urls('download-only-sparql', 'downloadURL')).toEqual([]);
+  });
+
   it('keeps a DCAT distribution without a license and inherits the dataset license', async () => {
     const response = await file(
       'dataset-dcat-distribution-without-license.jsonld',

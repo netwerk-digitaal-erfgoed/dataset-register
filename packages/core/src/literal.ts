@@ -19,6 +19,15 @@ export const convertToIri = (variable: string) =>
         BIND(IRI(?${variable}Raw) AS ?${variable})`;
 
 /**
+ * SPARQL expression that yields ?variable as an IRI when it is one, or a
+ * literal holding an absolute IRI, and raises an error otherwise. Wrap it in
+ * COALESCE or BIND so the error leaves the target unbound: a bare IRI() on a
+ * relative literal such as "data.ttl" aborts the whole CONSTRUCT.
+ */
+export const absoluteIri = (variable: string) =>
+  `IF(isIRI(?${variable}) || REGEX(STR(?${variable}), "^[a-zA-Z][a-zA-Z0-9+.-]*:"), IRI(?${variable}), ?unbound)`;
+
+/**
  * Normalize a license value. If the raw value is an IRI, strip the "deed.nl"
  * suffix and upgrade http://creativecommons.org to https://. If the raw value
  * is a literal, pass it through unchanged so that a non-IRI license (allowed
@@ -52,7 +61,7 @@ export const normalizeLicense = (variable: string) =>
  * URL-shaped literal to an IRI here to keep the indexed dct:license populated.
  * https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1997
  *
- * IRI() is only invoked inside the IF true-branch — a bare FILTER(isIRI(...))
+ * IRI() is only invoked inside the IF true-branch – a bare FILTER(isIRI(...))
  * does not prevent Comunica from eagerly evaluating IRI() on a literal. The
  * "^https?://" anchor keeps the true-branch limited to values that are already
  * valid URLs, so a placeholder like "zie distributies" (or prose merely
@@ -165,4 +174,3 @@ export const compressFormat = (
     } AS ?${compressFormatVariable}
   )`;
 };
-
