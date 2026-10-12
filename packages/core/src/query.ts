@@ -1,5 +1,6 @@
 import factory from 'rdf-ext';
 import {
+  absoluteIri,
   bindIriLicense,
   compressFormat,
   convertToIri,
@@ -360,8 +361,13 @@ export const constructQuery = `
         OPTIONAL {
           ?${dataset} dcat:distribution ?${distribution} .
           ?${distribution} a dcat:Distribution .
-          ?${distribution} dcat:accessURL ${convertToIri(distributionUrl)} .
-          ?${distribution} dct:license ${normalizeLicense(distributionLicense)} .
+          # The shapes accept a distribution with only dcat:downloadURL, so fall
+          # back to it when there is no dcat:accessURL.
+          OPTIONAL { ?${distribution} dcat:accessURL ?${distributionUrl}AccessRaw . }
+          OPTIONAL { ?${distribution} dcat:downloadURL ?${distributionUrl}DownloadRaw . }
+          BIND(COALESCE(${absoluteIri(distributionUrl + 'AccessRaw')}, ${absoluteIri(distributionUrl + 'DownloadRaw')}) AS ?${distributionUrl})
+          FILTER(BOUND(?${distributionUrl}))
+          OPTIONAL { ?${distribution} dct:license ${normalizeLicense(distributionLicense + 'Provided')} }
           OPTIONAL {
             ?${distribution} dcat:mediaType ${normalizeMediaType(distributionMediaType)} .
           }
@@ -411,6 +417,10 @@ export const constructQuery = `
             ${odrlRuleWhere('policy', 'obligation', 'obligation', 'oblig')}
           }
         }
+        # A missing distribution license is only a warning in the shapes, so
+        # keep the distribution and inherit the dataset’s own license. Bound
+        # outside the OPTIONAL, where ?datasetLicenseExplicit is in scope.
+        BIND(COALESCE(?${distributionLicense}Provided, ?datasetLicenseExplicit) AS ?${distributionLicense})
         ${downloadOnlyProperties(distributionConformsToProtocol, distributionConformsToSparql, distributionUrl, distributionMediaType, distributionCompressFormat, distributionDownloadUrl, distributionMediaTypeForDownload, distributionCompressFormatForDownload)}
 
         BIND(STR(?${dataset}) AS ?${identifier})

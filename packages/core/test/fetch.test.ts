@@ -1186,6 +1186,119 @@ describe('Fetch', () => {
     );
   });
 
+  it('keeps a DCAT distribution that has only a dcat:downloadURL', async () => {
+    const response = await file('dataset-dcat-download-url-only.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/dcat-download-url-only')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/dcat-download-url-only'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const distributions = [
+      ...dataset.match(
+        factory.namedNode(
+          'http://data.bibliotheken.nl/id/dataset/download-url-only',
+        ),
+        dcat('distribution'),
+        null,
+      ),
+    ];
+    expect(distributions).toHaveLength(1);
+
+    const distribution = distributions[0].object;
+    for (const property of ['accessURL', 'downloadURL']) {
+      const urls = [...dataset.match(distribution, dcat(property), null)];
+      expect(urls).toHaveLength(1);
+      expect(urls[0].object.value).toBe('https://example.com/dataset.ttl');
+    }
+  });
+
+  it('falls back per DCAT distribution when a URL is unusable', async () => {
+    const response = await file(
+      'dataset-dcat-distribution-url-fallbacks.jsonld',
+    );
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/dcat-distribution-url-fallbacks')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/dcat-distribution-url-fallbacks'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const urls = (distributionName: string, property: string) =>
+      [
+        ...dataset.match(
+          factory.namedNode(
+            `https://example.com/distribution/${distributionName}`,
+          ),
+          dcat(property),
+          null,
+        ),
+      ].map((quad) => quad.object.value);
+
+    // A relative literal cannot become an IRI: the distribution is dropped
+    // and the dataset survives.
+    expect(urls('relative-download-url', 'accessURL')).toEqual([]);
+    expect(
+      [...dataset.match(null, dcat('distribution'), null)].map(
+        (quad) => quad.object.value,
+      ),
+    ).not.toContain('https://example.com/distribution/relative-download-url');
+
+    expect(urls('unusable-access-url', 'accessURL')).toEqual([
+      'https://example.com/file.ttl',
+    ]);
+
+    // APIs get no dcat:downloadURL, even when that is where the URL came from.
+    expect(urls('download-only-sparql', 'accessURL')).toEqual([
+      'https://example.com/sparql',
+    ]);
+    expect(urls('download-only-sparql', 'downloadURL')).toEqual([]);
+  });
+
+  it('keeps a DCAT distribution without a license and inherits the dataset license', async () => {
+    const response = await file(
+      'dataset-dcat-distribution-without-license.jsonld',
+    );
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/dcat-distribution-without-license')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/dcat-distribution-without-license'),
+    );
+
+    expect(datasets).toHaveLength(1);
+    const dataset = datasets[0];
+    const distributions = [
+      ...dataset.match(
+        factory.namedNode(
+          'http://data.bibliotheken.nl/id/dataset/distribution-without-license',
+        ),
+        dcat('distribution'),
+        null,
+      ),
+    ];
+    expect(distributions).toHaveLength(1);
+
+    const licenses = [
+      ...dataset.match(distributions[0].object, dct('license'), null),
+    ];
+    expect(licenses).toHaveLength(1);
+    expect(licenses[0].object.value).toBe(
+      'https://creativecommons.org/publicdomain/zero/1.0/',
+    );
+  });
+
   it('skips a literal dct:license on a DCAT dataset and samples one from distributions', async () => {
     // KB-style data: dataset has a free-text dct:license placeholder
     // ("see distributions") and the actual license lives on the distribution.
