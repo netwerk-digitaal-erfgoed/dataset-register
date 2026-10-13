@@ -92,7 +92,7 @@ await (async () => {
       await httpServer.close();
       await shutdownInstrumentation();
     });
-    await httpServer.listen({ port: 3000, host: '0.0.0.0' });
+    await httpServer.listen({ port: config.PORT, host: '0.0.0.0' });
   } catch (err) {
     console.error(err);
   }
