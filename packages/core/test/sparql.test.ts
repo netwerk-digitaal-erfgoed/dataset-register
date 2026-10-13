@@ -1,4 +1,12 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import { QLeverContainer } from './qlever-container.js';
 import {
   SparqlAllowedRegistrationDomainStore,
@@ -871,6 +879,60 @@ describe('SPARQL', () => {
       await distributionHealthStore.delete(url);
       expect(await distributionHealthStore.get(url)).toBeNull();
     });
+
+    it('replaces the records of many URLs in one update', async () => {
+      const otherUrl = new URL('https://example.com/other.nt.gz');
+      const untouchedUrl = new URL('https://example.com/untouched.nt.gz');
+      const failing = (recordUrl: URL) => ({
+        url: recordUrl,
+        lastProbedAt: new Date('2026-05-01T10:00:00.000Z'),
+        lastOutcome: factory.namedNode('https://def.nde.nl/probe#NetworkError'),
+        lastSuccessAt: null,
+        firstFailureAt: new Date('2026-05-01T10:00:00.000Z'),
+        consecutiveFailures: 1,
+        sourceFingerprint: null,
+      });
+      await distributionHealthStore.storeMany([
+        failing(url),
+        failing(otherUrl),
+        failing(untouchedUrl),
+      ]);
+
+      const updateSpy = vi.spyOn(SparqlClient.prototype, 'update');
+      await distributionHealthStore.storeMany(
+        [url, otherUrl].map((recordUrl) => ({
+          url: recordUrl,
+          lastProbedAt: new Date('2026-05-02T10:00:00.000Z'),
+          lastOutcome: null,
+          lastSuccessAt: new Date('2026-05-02T10:00:00.000Z'),
+          firstFailureAt: null,
+          consecutiveFailures: 0,
+          sourceFingerprint: null,
+        })),
+      );
+      expect(updateSpy).toHaveBeenCalledTimes(1);
+      updateSpy.mockRestore();
+
+      const fetched = await distributionHealthStore.getMany([
+        url,
+        otherUrl,
+        untouchedUrl,
+      ]);
+      for (const replacedUrl of [url, otherUrl]) {
+        const record = fetched.get(replacedUrl.toString())!;
+        expect(record.consecutiveFailures).toBe(0);
+        expect(record.lastOutcome).toBeNull();
+        expect(record.firstFailureAt).toBeNull();
+      }
+      expect(fetched.get(untouchedUrl.toString())!.consecutiveFailures).toBe(1);
+    });
+
+    it('sends no update for storeMany with no records', async () => {
+      const updateSpy = vi.spyOn(SparqlClient.prototype, 'update');
+      await distributionHealthStore.storeMany([]);
+      expect(updateSpy).not.toHaveBeenCalled();
+      updateSpy.mockRestore();
+    });
   });
 
   describe('SparqlClient.constructQuads', () => {
@@ -985,6 +1047,55 @@ describe('SPARQL', () => {
 
       await distributionValidityStore.delete(url);
       expect(await countTriples()).toBe(0);
+    });
+
+    it('replaces and deletes the measurements of many distributions in one update each', async () => {
+      const otherUrl = new URL('https://example.com/other.ttl');
+      const measurement = (accessUrl: URL, valid: boolean) => ({
+        accessUrl,
+        quads: distributionValidityQuads(
+          valid
+            ? { valid, validatedFingerprint: 'fp-2', depth: 'shallow' }
+            : {
+                valid,
+                reason: 'parse-error',
+                message: 'Unexpected token',
+                validatedFingerprint: 'fp-1',
+                depth: 'shallow',
+              },
+          {
+            distributionUrl: accessUrl.toString(),
+            generatedAt,
+            producer: 'urn:test',
+          },
+        ),
+      });
+      await distributionValidityStore.storeMany([
+        measurement(url, false),
+        measurement(otherUrl, false),
+      ]);
+      const invalidTriples = await countTriples();
+
+      const updateSpy = vi.spyOn(SparqlClient.prototype, 'update');
+      await distributionValidityStore.storeMany([
+        measurement(url, true),
+        measurement(otherUrl, true),
+      ]);
+      expect(updateSpy).toHaveBeenCalledTimes(1);
+
+      // Both invalid measurements are gone, with their activity and usage nodes.
+      expect(await askMeasurementValue('true')).toBe(true);
+      expect(await askMeasurementValue('false')).toBe(false);
+      expect(await countTriples()).toBeLessThan(invalidTriples);
+
+      await distributionValidityStore.deleteMany([url, otherUrl]);
+      expect(updateSpy).toHaveBeenCalledTimes(2);
+      expect(await countTriples()).toBe(0);
+
+      await distributionValidityStore.storeMany([]);
+      await distributionValidityStore.deleteMany([]);
+      expect(updateSpy).toHaveBeenCalledTimes(2);
+      updateSpy.mockRestore();
     });
   });
 });

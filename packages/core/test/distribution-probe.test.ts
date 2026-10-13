@@ -25,7 +25,10 @@ import type {
   DistributionHealthRecord,
   DistributionHealthStore,
 } from '../src/distribution-health-store.js';
-import type { DistributionValidityStore } from '../src/distribution-validity-store.js';
+import type {
+  DistributionValidityMeasurement,
+  DistributionValidityStore,
+} from '../src/distribution-validity-store.js';
 
 /**
  * Wraps a dataset to count how it is read: every `match()` (the indexed lookup we rely on)
@@ -636,7 +639,9 @@ describe('DistributionProbeStage', () => {
     nock('https://example.org')
       .get('/reachable')
       .times(2)
-      .reply(200, '<urn:a> <urn:b> <urn:c> .', { 'Content-Type': 'text/turtle' });
+      .reply(200, '<urn:a> <urn:b> <urn:c> .', {
+        'Content-Type': 'text/turtle',
+      });
 
     const dataset = factory.dataset();
     const datasetNode = factory.namedNode('https://example.org/d-reachable');
@@ -655,7 +660,7 @@ describe('DistributionProbeStage', () => {
     );
 
     const healthStore = new InMemoryHealthStore();
-    const storeSpy = vi.spyOn(healthStore, 'store');
+    const storeSpy = vi.spyOn(healthStore, 'storeMany');
     const stage = new DistributionProbeStage({ healthStore });
 
     await stage.run(dataset); // First reachable probe → write.
@@ -679,7 +684,7 @@ describe('DistributionProbeStage', () => {
     dataset.add(factory.quad(distributionNode, dcat('accessURL'), url));
 
     const healthStore = new InMemoryHealthStore();
-    const storeSpy = vi.spyOn(healthStore, 'store');
+    const storeSpy = vi.spyOn(healthStore, 'storeMany');
     const stage = new DistributionProbeStage({ healthStore });
     const key = new URL('https://example.org/dedup');
 
@@ -700,7 +705,8 @@ describe('DistributionProbeStage', () => {
     expect(storeSpy).toHaveBeenCalledTimes(3);
 
     // A changed source fingerprint is new signal → write.
-    (await healthStore.get(key))!.sourceFingerprint = 'changed-source-fingerprint';
+    (await healthStore.get(key))!.sourceFingerprint =
+      'changed-source-fingerprint';
     await stage.run(dataset);
     expect(storeSpy).toHaveBeenCalledTimes(4);
   });
@@ -732,6 +738,57 @@ describe('DistributionProbeStage', () => {
     expect(getManySpy).toHaveBeenCalledTimes(1);
     expect(getManySpy.mock.calls[0]![0]).toHaveLength(3);
     expect(getSpy).not.toHaveBeenCalled();
+  });
+
+  it('writes the health records and validity measurements of all endpoints in one update each', async () => {
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-batch-write');
+    for (const path of ['a', 'b', 'c']) {
+      nock('https://example.org').head(`/${path}`).reply(200, '', {
+        'Content-Type': 'text/turtle',
+        'Content-Length': '20',
+      });
+      nock('https://example.org')
+        .get(`/${path}`)
+        .reply(200, '<a> <b> <c> .', { 'Content-Type': 'text/turtle' });
+      const distributionNode = factory.blankNode();
+      dataset.add(
+        factory.quad(datasetNode, dcat('distribution'), distributionNode),
+      );
+      dataset.add(
+        factory.quad(
+          distributionNode,
+          dcat('accessURL'),
+          factory.namedNode(`https://example.org/${path}`),
+        ),
+      );
+      dataset.add(
+        factory.quad(
+          distributionNode,
+          dcat('mediaType'),
+          factory.literal('text/turtle'),
+        ),
+      );
+    }
+
+    const healthStore = new InMemoryHealthStore();
+    const validityStore = new InMemoryValidityStore();
+    const storeHealthSpy = vi.spyOn(healthStore, 'store');
+    const storeManyHealthSpy = vi.spyOn(healthStore, 'storeMany');
+    const storeValiditySpy = vi.spyOn(validityStore, 'store');
+    const storeManyValiditySpy = vi.spyOn(validityStore, 'storeMany');
+
+    await new DistributionProbeStage({ healthStore, validityStore }).run(
+      dataset,
+    );
+
+    expect(storeManyHealthSpy).toHaveBeenCalledTimes(1);
+    expect(storeManyHealthSpy.mock.calls[0]![0]).toHaveLength(3);
+    expect(storeHealthSpy).not.toHaveBeenCalled();
+    expect(storeManyValiditySpy).toHaveBeenCalledTimes(1);
+    expect(storeManyValiditySpy.mock.calls[0]![0]).toHaveLength(3);
+    expect(storeValiditySpy).not.toHaveBeenCalled();
+    expect(validityStore.quadsByUrl.size).toBe(3);
   });
 
   it('records an empty data-dump body as an invalid validity measurement, not a reachability failure', async () => {
@@ -927,7 +984,9 @@ describe('DistributionProbeStage', () => {
     const healthStore = new InMemoryHealthStore();
     const throwingValidityStore: DistributionValidityStore = {
       store: () => Promise.reject(new Error('validity store down')),
+      storeMany: () => Promise.reject(new Error('validity store down')),
       delete: () => Promise.resolve(),
+      deleteMany: () => Promise.resolve(),
     };
 
     const stage = new DistributionProbeStage({
@@ -1414,10 +1473,13 @@ describe('DistributionProbeStage', () => {
       get: async () => {
         throw new Error('store unavailable');
       },
-      // The batched read succeeds (nothing stored); the per-endpoint write is what throws, and
-      // evaluateProbe must isolate it into a NetworkError verdict rather than reject the batch.
+      // The batched read succeeds (nothing stored); the batched write is what throws, and the
+      // stage must isolate it into a NetworkError verdict rather than reject the batch.
       getMany: async () => new Map(),
       store: async () => {
+        throw new Error('store unavailable');
+      },
+      storeMany: async () => {
         throw new Error('store unavailable');
       },
       delete: async () => {
@@ -1427,7 +1489,7 @@ describe('DistributionProbeStage', () => {
     const stage = new DistributionProbeStage({ healthStore: throwingStore });
     const quads = await stage.run(dataset);
 
-    // The worker should catch the error and still emit a NetworkError violation.
+    // The stage should catch the error and still emit a NetworkError violation.
     const outcome = quads.find((quad) =>
       quad.predicate.equals(factory.namedNode(`${ndeProbePrefix}probeOutcome`)),
     );
@@ -1454,6 +1516,7 @@ describe('DistributionProbeStage', () => {
         throw new Error('read outage');
       },
       store: vi.fn(async () => undefined),
+      storeMany: vi.fn(async () => undefined),
       delete: async () => undefined,
     };
     const quads = await new DistributionProbeStage({ healthStore: store }).run(
@@ -1462,6 +1525,7 @@ describe('DistributionProbeStage', () => {
 
     // No write on a read outage, so a persisted failure streak is left intact.
     expect(store.store).not.toHaveBeenCalled();
+    expect(store.storeMany).not.toHaveBeenCalled();
     // The probe verdict is still emitted from the live probe.
     const outcome = quads.find((quad) =>
       quad.predicate.equals(factory.namedNode(`${ndeProbePrefix}probeOutcome`)),
@@ -1786,6 +1850,12 @@ class InMemoryHealthStore implements DistributionHealthStore {
     this.records.set(record.url.toString(), record);
   }
 
+  public async storeMany(records: DistributionHealthRecord[]): Promise<void> {
+    for (const record of records) {
+      this.records.set(record.url.toString(), record);
+    }
+  }
+
   public async delete(url: URL): Promise<void> {
     this.records.delete(url.toString());
   }
@@ -1798,8 +1868,22 @@ class InMemoryValidityStore implements DistributionValidityStore {
     this.quadsByUrl.set(accessUrl.toString(), quads);
   }
 
+  public async storeMany(
+    measurements: DistributionValidityMeasurement[],
+  ): Promise<void> {
+    for (const { accessUrl, quads } of measurements) {
+      this.quadsByUrl.set(accessUrl.toString(), quads);
+    }
+  }
+
   public async delete(accessUrl: URL): Promise<void> {
     this.quadsByUrl.delete(accessUrl.toString());
+  }
+
+  public async deleteMany(accessUrls: URL[]): Promise<void> {
+    for (const accessUrl of accessUrls) {
+      this.quadsByUrl.delete(accessUrl.toString());
+    }
   }
 }
 

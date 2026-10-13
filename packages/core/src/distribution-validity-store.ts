@@ -4,7 +4,21 @@ import { quadsToNTriples } from './rdf-serialize.js';
 
 export interface DistributionValidityStore {
   store(accessUrl: URL, quads: Quad[]): Promise<void>;
+  /**
+   * Replace the measurements of many distributions in one update. The store’s cost is per update
+   * request, so the crawler writes the measurements of all distributions it probed together.
+   * Each access URL must occur once.
+   */
+  storeMany(measurements: DistributionValidityMeasurement[]): Promise<void>;
   delete(accessUrl: URL): Promise<void>;
+  /** Clear the measurements of many distributions in one update. */
+  deleteMany(accessUrls: URL[]): Promise<void>;
+}
+
+/** The quads of one distribution’s validity measurement, keyed by its access URL. */
+export interface DistributionValidityMeasurement {
+  accessUrl: URL;
+  quads: Quad[];
 }
 
 /**
@@ -26,9 +40,22 @@ export class SparqlDistributionValidityStore implements DistributionValidityStor
   ) {}
 
   public async store(accessUrl: URL, quads: Quad[]): Promise<void> {
-    const triples = await quadsToNTriples(quads);
+    await this.storeMany([{ accessUrl, quads }]);
+  }
+
+  public async storeMany(
+    measurements: DistributionValidityMeasurement[],
+  ): Promise<void> {
+    if (measurements.length === 0) return;
+
+    const triples = await quadsToNTriples(
+      measurements.flatMap((measurement) => measurement.quads),
+    );
     await this.client.update(`
-      ${deleteMeasurementFor(accessUrl, this.graphIri)}
+      ${deleteMeasurementsFor(
+        measurements.map((measurement) => measurement.accessUrl),
+        this.graphIri,
+      )}
 
       INSERT DATA {
         GRAPH <${this.graphIri}> {
@@ -38,17 +65,25 @@ export class SparqlDistributionValidityStore implements DistributionValidityStor
   }
 
   public async delete(accessUrl: URL): Promise<void> {
-    await this.client.update(deleteMeasurementFor(accessUrl, this.graphIri));
+    await this.deleteMany([accessUrl]);
+  }
+
+  public async deleteMany(accessUrls: URL[]): Promise<void> {
+    if (accessUrls.length === 0) return;
+
+    await this.client.update(deleteMeasurementsFor(accessUrls, this.graphIri));
   }
 }
 
-// Clears the validity measurement computed on a distribution's access URL,
+// Clears the validity measurements computed on distributions' access URLs,
 // following the forward path measurement -> prov:Activity -> prov:Usage so the
 // activity and usage nodes are removed with it. Anchored on dqv:computedOn +
 // the validity metric so a graph shared with other measurements stays
 // untouched.
-function deleteMeasurementFor(accessUrl: URL, graphIri: string): string {
-  const iri = accessUrl.toString();
+function deleteMeasurementsFor(accessUrls: URL[], graphIri: string): string {
+  const values = accessUrls
+    .map((accessUrl) => `<${accessUrl.toString()}>`)
+    .join(' ');
   // One UNION branch per structural node so each binds ?subject/?p/?o on its
   // own. OPTIONAL with three independent ?p/?o triples would instead form a
   // Cartesian product of the measurement's, activity's, and usage's triples.
@@ -61,7 +96,8 @@ function deleteMeasurementFor(accessUrl: URL, graphIri: string): string {
         ?subject ?p ?o .
       }
       WHERE {
-        ?measurement dqv:computedOn <${iri}> ;
+        VALUES ?distribution { ${values} }
+        ?measurement dqv:computedOn ?distribution ;
           dqv:isMeasurementOf <https://def.nde.nl/metric#distribution-rdf-valid> .
         {
           ?measurement ?p ?o .
