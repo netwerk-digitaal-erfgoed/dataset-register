@@ -62,21 +62,6 @@ this document is based on broader, international best practices for publishing d
 These requirements incorporate a previous [publication model](https://github.com/netwerk-digitaal-erfgoed/project-organisations-datasets/tree/master/publication-model),
 which provides more background on choices made here.
 
-Version 2.0 {#v2}
------------------
-
-Version 2.0 takes effect on Monday 3 May 2027.
-From that date, the [NDE Dataset Register](https://datasetregister.netwerkdigitaalerfgoed.nl/?lang=en)
-rejects [=dataset descriptions=] that break a rule it now only reports as a warning.
-A dataset without a `creator`, for example, is registered with a warning today and will be refused then.
-Version 2.0 adds no rules beyond those warnings.
-
-The changes follow DCAT-AP-NL 3.0, the format into which the Register converts every dataset description.
-The attribute tables in [[#overview]] mark each affected attribute with a label such as ‘v2.0: becomes required’.
-Run your datasets through the [validator](https://datasetregister.netwerkdigitaalerfgoed.nl/validate):
-the warnings it gives are the changes that apply to you.
-The [announcement](https://docs.nde.nl/blog/2026/04/15/dataset-requirements-v2) gives the reasons.
-
 Code examples {#examples}
 -------------------------
 
@@ -85,6 +70,26 @@ RDF code examples are in the [[SCHEMA-ORG]] vocabulary, serialized as [[JSON-LD]
 While other vocabularies, such as [[VOCAB-DCAT-3]] can also be used,
 Schema.org has the advantage that it's [better picked up by search engines](https://github.com/netwerk-digitaal-erfgoed/project-organisations-datasets/tree/master/publication-model#considerations),
 improving findability, one of the main goals of publishing datasets on the web.
+
+Version 2.0 {#v2}
+===========
+
+Version 2.0 takes effect on Monday 3 May 2027.
+Until that date, the [NDE Dataset Register](https://datasetregister.netwerkdigitaalerfgoed.nl/?lang=en)
+accepts [=dataset descriptions=] that break a version 2.0 rule and reports most of those rules as warnings.
+From that date, it rejects new and updated dataset descriptions that break one.
+A dataset without a `creator`, for example, is registered with a warning before that date and refused from it.
+
+A dataset that is already registered is not removed on that date.
+If its description breaks a version 2.0 rule, the Register marks it as invalid the next time it reads the description.
+
+The changes follow DCAT-AP-NL 3.0, the format into which the Register converts every dataset description.
+The attribute tables in [[#overview]] mark each affected attribute with a label such as ‘v2.0: becomes required’.
+Run your datasets through the [validator](https://datasetregister.netwerkdigitaalerfgoed.nl/en/validate)
+to see the warnings that apply to you, then check the tables:
+a few version 2.0 rules give no warning yet.
+A distribution with more than one `encodingFormat`, for example, validates without one.
+The [announcement](https://docs.nde.nl/blog/2026/04/15/dataset-requirements-v2) gives the reasons.
 
 Definitions {#definitions}
 ===========
@@ -603,8 +608,8 @@ The distributions are then included under the `distribution` attribute with the 
 See [[#distribution-attributes]] for a full overview.
 
 <div class="advisement">
-    In v2.0 of this specification, <code>contentUrl</code> *MUST* be an <code>xsd:anyURI</code> literal.
-    IRIs will no longer be accepted.
+    In v2.0 of this specification, <code>contentUrl</code> *MUST* be an IRI.
+    Plain strings and <code>xsd:anyURI</code> literals will no longer be accepted.
 </div>
 
 ### Creation and modification dates ### {#distribution-date}
