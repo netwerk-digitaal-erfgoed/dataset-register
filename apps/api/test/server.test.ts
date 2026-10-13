@@ -53,6 +53,7 @@ describe('Server', () => {
     httpServer = await server(
       new MockDatasetStore(),
       registrationStore,
+      new MockValidationReportStore(),
       new MockAllowedRegistrationDomainStore(),
       new ShaclEngineValidator(shacl),
       shacl,
@@ -240,6 +241,7 @@ describe('Server', () => {
     const streamingServer = await server(
       new MockDatasetStore(),
       registrationStore,
+      new MockValidationReportStore(),
       new MockAllowedRegistrationDomainStore(),
       progressingValidator,
       shacl,
@@ -288,6 +290,7 @@ describe('Server', () => {
     const streamingServer = await server(
       new MockDatasetStore(),
       registrationStore,
+      new MockValidationReportStore(),
       new MockAllowedRegistrationDomainStore(),
       noDatasetValidator,
       shacl,
@@ -331,6 +334,7 @@ describe('Server', () => {
     const streamingServer = await server(
       new MockDatasetStore(),
       registrationStore,
+      new MockValidationReportStore(),
       new MockAllowedRegistrationDomainStore(),
       failingValidator,
       shacl,
@@ -375,6 +379,7 @@ describe('Server', () => {
     const streamingServer = await server(
       new MockDatasetStore(),
       registrationStore,
+      new MockValidationReportStore(),
       new MockAllowedRegistrationDomainStore(),
       invalidValidator,
       shacl,
@@ -762,6 +767,7 @@ describe('POST /allowed-domains', () => {
     httpServerWithAuth = await server(
       new MockDatasetStore(),
       new MockRegistrationStore(),
+      new MockValidationReportStore(),
       allowedDomainStore,
       new ShaclEngineValidator(shacl),
       shacl,
@@ -941,6 +947,7 @@ describe('DELETE /datasets', () => {
     httpServerWithAuth = await server(
       new MockDatasetStore(),
       deleteRegistrationStore,
+      deleteValidationReportStore,
       new MockAllowedRegistrationDomainStore(),
       new ShaclEngineValidator(shacl),
       shacl,
@@ -948,8 +955,6 @@ describe('DELETE /datasets', () => {
       { logger: false },
       new MockRatingStore(),
       testToken,
-      undefined,
-      deleteValidationReportStore,
     );
   });
 
@@ -1093,6 +1098,7 @@ describe('DELETE /datasets reindex trigger', () => {
     httpServerWithAuth = await server(
       new MockDatasetStore(),
       triggerStore,
+      new MockValidationReportStore(),
       new MockAllowedRegistrationDomainStore(),
       new ShaclEngineValidator(shacl),
       shacl,
