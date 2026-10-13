@@ -22,7 +22,11 @@ describe('Registration', () => {
         dateCrawled,
       );
 
-      const reRegistered = registration.read([], 200, true);
+      const reRegistered = registration.read({
+        datasets: [],
+        statusCode: 200,
+        valid: true,
+      });
 
       expect(reRegistered.dateCrawled).toEqual(dateCrawled);
       expect(reRegistered.dateRead).not.toEqual(dateCrawled);
@@ -32,7 +36,7 @@ describe('Registration', () => {
       const registration = new Registration(
         new URL('https://example.com/registration'),
         new Date('2026-01-01T00:00:00Z'),
-      ).read([], 200, true);
+      ).read({ datasets: [], statusCode: 200, valid: true });
 
       expect(registration.dateCrawled).toBeUndefined();
     });
@@ -56,7 +60,7 @@ describe('Registration', () => {
         new URL('https://example.com/registration'),
         new Date('2026-01-01T00:00:00Z'),
       )
-        .read([], 200, true)
+        .read({ datasets: [], statusCode: 200, valid: true })
         .crawled(dateCrawled);
 
       expect(registration.dateCrawled).toEqual(dateCrawled);
@@ -75,17 +79,34 @@ describe('Registration', () => {
       new Date(),
     );
 
-    const updatedRegistration = registration.read([], 200, true);
+    const updatedRegistration = registration.read({
+      datasets: [],
+      statusCode: 200,
+      valid: true,
+    });
     expect(updatedRegistration.validUntil).toBeUndefined();
 
     const dateRead = new Date();
-    const becameInvalid = updatedRegistration.read([], 200, false, dateRead);
+    const becameInvalid = updatedRegistration.read({
+      datasets: [],
+      statusCode: 200,
+      valid: false,
+      date: dateRead,
+    });
     expect(becameInvalid.validUntil).toEqual(dateRead);
 
-    const stillInvalid = becameInvalid.read([], 200, false);
+    const stillInvalid = becameInvalid.read({
+      datasets: [],
+      statusCode: 200,
+      valid: false,
+    });
     expect(stillInvalid.validUntil).toEqual(dateRead);
 
-    const becameValidAgain = stillInvalid.read([], 200, true);
+    const becameValidAgain = stillInvalid.read({
+      datasets: [],
+      statusCode: 200,
+      valid: true,
+    });
     expect(becameValidAgain.validUntil).toBeUndefined();
   });
 
@@ -94,7 +115,7 @@ describe('Registration', () => {
       const registration = new Registration(
         new URL('https://example.com/registration'),
         new Date(),
-      ).read([], 200, true, new Date(), 3);
+      ).read({ datasets: [], statusCode: 200, valid: true, warningCount: 3 });
 
       const quads = toRdf(registration);
       const warningCountQuad = quads.find(
@@ -114,7 +135,7 @@ describe('Registration', () => {
       const registration = new Registration(
         new URL('https://example.com/registration'),
         new Date(),
-      ).read([], 200, true);
+      ).read({ datasets: [], statusCode: 200, valid: true });
 
       const quads = toRdf(registration);
 
@@ -132,7 +153,12 @@ describe('Registration', () => {
       const registration = new Registration(
         new URL('https://example.com/registration'),
         new Date(),
-      ).read([], 200, true, new Date(), undefined, 'text/turtle');
+      ).read({
+        datasets: [],
+        statusCode: 200,
+        valid: true,
+        mediaType: 'text/turtle',
+      });
 
       const quad = toRdf(registration).find(
         (candidate) =>
@@ -149,7 +175,7 @@ describe('Registration', () => {
       const registration = new Registration(
         new URL('https://example.com/registration'),
         new Date(),
-      ).read([], undefined, false);
+      ).read({ datasets: [], statusCode: undefined, valid: false });
 
       expect(
         toRdf(registration).find(
@@ -165,7 +191,12 @@ describe('Registration', () => {
         new URL('https://example.com/registration'),
         new Date(),
       )
-        .read([], 200, true, new Date(), undefined, 'application/ld+json')
+        .read({
+          datasets: [],
+          statusCode: 200,
+          valid: true,
+          mediaType: 'application/ld+json',
+        })
         .crawled(new Date('2026-08-05T12:00:00Z'));
 
       expect(registration.mediaType).toBe('application/ld+json');
@@ -177,7 +208,7 @@ describe('Registration', () => {
       const registration = new Registration(
         new URL('https://example.com/registration'),
         new Date(),
-      ).read([], 200, true);
+      ).read({ datasets: [], statusCode: 200, valid: true });
 
       expect(registration.registrationStatus).toBe('valid');
     });
@@ -186,7 +217,7 @@ describe('Registration', () => {
       const registration = new Registration(
         new URL('https://example.com/registration'),
         new Date(),
-      ).read([], 200, false);
+      ).read({ datasets: [], statusCode: 200, valid: false });
 
       expect(registration.registrationStatus).toBe('invalid');
     });
@@ -195,7 +226,7 @@ describe('Registration', () => {
       const registration = new Registration(
         new URL('https://example.com/registration'),
         new Date(),
-      ).read([], 404, true);
+      ).read({ datasets: [], statusCode: 404, valid: true });
 
       expect(registration.registrationStatus).toBe('gone');
     });
@@ -206,7 +237,7 @@ describe('Registration', () => {
       const registration = new Registration(
         new URL('https://example.com/registration'),
         new Date(),
-      ).read([], 404, false);
+      ).read({ datasets: [], statusCode: 404, valid: false });
 
       expect(registration.registrationStatus).toBe('gone');
     });
@@ -217,7 +248,7 @@ describe('Registration', () => {
       const registration = new Registration(
         new URL('https://example.com/registration'),
         new Date(),
-      ).read([], undefined, false);
+      ).read({ datasets: [], statusCode: undefined, valid: false });
 
       expect(registration.registrationStatus).toBe('gone');
       expect(registration.validUntil).not.toBeUndefined();
@@ -229,7 +260,7 @@ describe('Registration', () => {
       const registration = new Registration(
         new URL('https://example.com/registration'),
         new Date(),
-      ).read([], undefined, true);
+      ).read({ datasets: [], statusCode: undefined, valid: true });
 
       expect(registration.registrationStatus).toBe('gone');
     });

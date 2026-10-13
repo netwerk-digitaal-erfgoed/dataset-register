@@ -10,7 +10,10 @@ import {
   RegistrationStore,
   toRdf,
 } from './registration.js';
-import { REGISTRATION_DATE_CRAWLED_PREDICATE } from './constants.js';
+import {
+  REGISTRATION_DATE_CRAWLED_PREDICATE,
+  REGISTRATION_WARNING_COUNT_PREDICATE,
+} from './constants.js';
 import { Rating, RatingStore } from './rate.js';
 import { SparqlDistributionHealthStore } from './distribution-health-store.js';
 import { SparqlDistributionValidityStore } from './distribution-validity-store.js';
@@ -210,13 +213,14 @@ export class SparqlRegistrationStore implements RegistrationStore {
     const result = await this.client.query(`
       PREFIX schema: <https://schema.org/>
 
-      SELECT ?datePosted ?validUntil ?dataset ?dateCrawled WHERE {
+      SELECT ?datePosted ?validUntil ?dataset ?dateCrawled ?warningCount WHERE {
         GRAPH <${this.graphIri}> {
           <${iri}> a schema:EntryPoint ;
             schema:datePosted ?datePosted .
           OPTIONAL { <${iri}> schema:validUntil ?validUntil . }
           OPTIONAL { <${iri}> schema:about ?dataset . }
           OPTIONAL { <${iri}> <${REGISTRATION_DATE_CRAWLED_PREDICATE}> ?dateCrawled . }
+          OPTIONAL { <${iri}> <${REGISTRATION_WARNING_COUNT_PREDICATE}> ?warningCount . }
         }
       }
     `);
@@ -232,6 +236,7 @@ export class SparqlRegistrationStore implements RegistrationStore {
       .map((d) => new URL(d));
 
     const dateCrawled = bindings[0]!.get('dateCrawled');
+    const warningCount = bindings[0]!.get('warningCount');
 
     return new Registration(
       url,
@@ -241,6 +246,7 @@ export class SparqlRegistrationStore implements RegistrationStore {
         : undefined,
       datasets,
       dateCrawled ? new Date(dateCrawled.value) : undefined,
+      warningCount ? parseInt(warningCount.value) : undefined,
     );
   }
 

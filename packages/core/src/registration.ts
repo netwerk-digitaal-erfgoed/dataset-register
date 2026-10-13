@@ -8,6 +8,36 @@ import {
 } from './constants.js';
 import { sparqlIri } from './sparql-iri.js';
 
+/**
+ * What a single read of a registration URL observed. Passed to {@link Registration.read},
+ * which records exactly this and nothing more – see its note on omitted fields.
+ */
+export interface RegistrationObservation {
+  /** The datasets found at the URL. Empty when none were found. */
+  datasets: URL[];
+
+  /** The HTTP status last encountered, or undefined when there was no usable response. */
+  statusCode: number | undefined;
+
+  /** Whether the description passed SHACL validation. */
+  valid: boolean;
+
+  /** When the URL was read. Defaults to now. */
+  date?: Date;
+
+  /**
+   * The number of sh:Warning-severity results the description produced, or undefined
+   * when no validation report was produced at all. Absent is not zero.
+   */
+  warningCount?: number;
+
+  /**
+   * The media type the description was served and parsed as, or undefined when the URL
+   * never got far enough to have one.
+   */
+  mediaType?: string;
+}
+
 export class Registration {
   private _dateRead?: Date;
   private _dateCrawled?: Date;
@@ -28,26 +58,32 @@ export class Registration {
     validUntil?: Date,
     datasets: URL[] = [],
     dateCrawled?: Date,
+    // Reconstructed by a store so a caller that re-reads a registration can carry the
+    // last crawl's warning count forward instead of blanking it. read() overwrites it
+    // with what the caller observed, so only a caller that observed nothing passes it on.
+    warningCount?: number,
   ) {
     this.url = url;
     this.datePosted = datePosted;
     this.validUntil = validUntil;
     this._datasets = datasets;
     this._dateCrawled = dateCrawled;
+    this._warningCount = warningCount;
   }
 
   /**
    * Mark the Registration as read at a date. Carries the crawl date over
    * unchanged: reading the URL is not crawling it, see {@link crawled}.
+   *
+   * Every observation is named rather than positional, because read() replaces the
+   * whole set: an omitted field is recorded as “not observed”, not “unchanged”. A
+   * caller that wants to keep a value it did not observe itself has to pass it on,
+   * and with positional arguments that intent was invisible at the call site.
    */
-  public read(
-    datasets: URL[],
-    statusCode: number | undefined,
-    valid: boolean,
-    date: Date = new Date(),
-    warningCount?: number,
-    mediaType?: string,
-  ): Registration {
+  public read(observation: RegistrationObservation): Registration {
+    const { datasets, statusCode, valid, warningCount, mediaType } =
+      observation;
+    const date = observation.date ?? new Date();
     const registration = new Registration(
       this.url,
       this.datePosted,

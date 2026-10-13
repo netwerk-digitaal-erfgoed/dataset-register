@@ -550,6 +550,43 @@ describe('Server', () => {
     expect(response.payload).not.toEqual('');
   });
 
+  it('keeps the warning count when re-registering an existing URL', async () => {
+    // The API stores no validation report, so it cannot produce a count the report graph
+    // would agree with. Blanking it is worse than keeping the last crawl's: the dataset
+    // page would read “no warnings” until the next crawl.
+    const url = new URL('https://demo.netwerkdigitaalerfgoed.nl/re-registered');
+    await registrationStore.store(
+      new Registration(
+        url,
+        new Date('2025-01-01T00:00:00Z'),
+        undefined,
+        [],
+        new Date('2025-01-02T00:00:00Z'),
+        3,
+      ),
+    );
+
+    const datasetContent = await file('dataset-dcat-valid-minimal.jsonld');
+    nock('https://demo.netwerkdigitaalerfgoed.nl')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/re-registered')
+      .times(2)
+      .reply(200, datasetContent);
+
+    const response = await httpServer.inject({
+      method: 'POST',
+      url: '/datasets',
+      headers: { 'Content-Type': 'application/ld+json' },
+      payload: JSON.stringify({ '@id': url.toString() }),
+    });
+
+    expect(response.statusCode).toEqual(202);
+    const stored = await registrationStore.findByUrl(url);
+    expect(stored?.warningCount).toBe(3);
+    // The crawl clock is carried over for the same reason: reading is not crawling.
+    expect(stored?.dateCrawled).toEqual(new Date('2025-01-02T00:00:00Z'));
+  });
+
   it('discovers and registers datasets via well-known datacatalog', async () => {
     // The original URL has no dataset.
     nock('https://demo.netwerkdigitaalerfgoed.nl')
@@ -917,11 +954,11 @@ describe('DELETE /datasets', () => {
     // First delete if exists
     await deleteRegistrationStore.delete(testUrl);
     // Then add fresh registration with linked datasets to cover the delete loop
-    const registration = new Registration(testUrl, new Date()).read(
-      [new URL('https://example.com/dataset1')],
-      200,
-      true,
-    );
+    const registration = new Registration(testUrl, new Date()).read({
+      datasets: [new URL('https://example.com/dataset1')],
+      statusCode: 200,
+      valid: true,
+    });
     await deleteRegistrationStore.store(registration);
   });
 
@@ -1021,11 +1058,11 @@ describe('DELETE /datasets reindex trigger', () => {
   beforeEach(async () => {
     onDatasetsChanged.mockClear();
     await triggerStore.delete(testUrl);
-    const registration = new Registration(testUrl, new Date()).read(
-      [new URL('https://example.com/dataset1')],
-      200,
-      true,
-    );
+    const registration = new Registration(testUrl, new Date()).read({
+      datasets: [new URL('https://example.com/dataset1')],
+      statusCode: 200,
+      valid: true,
+    });
     await triggerStore.store(registration);
   });
 

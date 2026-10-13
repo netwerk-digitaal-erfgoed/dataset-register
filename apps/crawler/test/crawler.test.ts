@@ -415,11 +415,11 @@ describe('Crawler', () => {
 
 async function storeRegistrationFixture(url: URL) {
   const registration = new Registration(url, new Date());
-  const updatedRegistration = registration.read(
-    [new URL('https://example.com/dataset1')],
-    200,
-    true,
-    new Date('2000-01-01'),
-  );
+  const updatedRegistration = registration.read({
+    datasets: [new URL('https://example.com/dataset1')],
+    statusCode: 200,
+    valid: true,
+    date: new Date('2000-01-01'),
+  });
   await registrationStore.store(updatedRegistration);
 }

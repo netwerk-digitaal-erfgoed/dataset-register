@@ -311,12 +311,17 @@ export async function server(
       const datePosted = existingRegistration?.datePosted ?? new Date();
       // Carry the crawl clock over: re-registering reads the URL and re-stores the
       // description, but probes nothing, so it must not defer the next crawl.
+      // Carry the warning count over too: re-registering stores no validation report, so
+      // claiming a fresh count the report graph cannot back up would make the dataset page
+      // and /validate disagree. Blanking it is worse still – the page would read “no
+      // warnings” until the next crawl.
       const registration = new Registration(
         url,
         datePosted,
         undefined,
         [],
         existingRegistration?.dateCrawled,
+        existingRegistration?.warningCount,
       );
       await registrationStore.store(registration);
 
@@ -334,14 +339,13 @@ export async function server(
       // Update registration with dataset descriptions that we found.
       // Pass the media type so a manual re-registration records it too, and does not
       // blank out what the last crawl recorded.
-      const updatedRegistration = registration.read(
-        datasetIris,
-        200,
-        true,
-        undefined,
-        undefined,
+      const updatedRegistration = registration.read({
+        datasets: datasetIris,
+        statusCode: 200,
+        valid: true,
+        warningCount: existingRegistration?.warningCount,
         mediaType,
-      );
+      });
       await registrationStore.store(updatedRegistration);
     }
 
