@@ -63,13 +63,10 @@
       "distribution": [
         {
           "@type": "DataDownload",
-          "encodingFormat": [
-            "application/rdf+xml",
-            "text/turtle"
-          ],
+          "encodingFormat": "application/rdf+xml",
           "contentUrl": "https://data.bibliotheken.nl/id/dataset/rise-alba.rdf",
           "contentSize": 12582912,
-          "description": "Turtle dump"
+          "description": "RDF/XML dump"
         },
         {
           "@type": "DataDownload",

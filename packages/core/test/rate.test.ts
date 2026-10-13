@@ -12,6 +12,8 @@ describe('Rate', () => {
   });
 
   it('rates complete dataset description', async () => {
+    // The description’s dct:language values are language codes, which give a
+    // warning; a property that is present but ill-formed costs no points.
     const validationResult = (await validate(
       'dataset-dcat-valid.jsonld',
     )) as Valid;

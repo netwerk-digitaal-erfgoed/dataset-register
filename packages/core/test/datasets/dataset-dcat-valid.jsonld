@@ -76,14 +76,9 @@
   "dcat:distribution": [
     {
       "@type": "dcat:Distribution",
-      "dcat:mediaType": [
-        {
-          "@id": "https://www.iana.org/assignments/media-types/application/rdf+xml"
-        },
-        {
-          "@id": "https://www.iana.org/assignments/media-types/text/turtle"
-        }
-      ],
+      "dcat:mediaType": {
+        "@id": "https://www.iana.org/assignments/media-types/application/rdf+xml"
+      },
       "dcat:accessURL": {
         "@id": "https://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
       },
@@ -91,7 +86,7 @@
         "@id": "https://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
       },
       "dcat:byteSize": "12 MB",
-      "dct:description": "Turtle dump",
+      "dct:description": "RDF/XML dump",
       "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
     },
     {

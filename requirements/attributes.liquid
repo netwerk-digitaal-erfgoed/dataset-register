@@ -24,7 +24,7 @@
             <th scope="row">@id</th>
             <td>The HTTP [[IRI]] of the {{ name }}.</td>
             <td>1</td>
-            <td>Recommended<br><small>v{{ nodeShape['nde:futureChange']['nde:version'] }}: must be IRI</small></td>
+            <td>Recommended<br><small><a href="#v{{ nodeShape['nde:futureChange']['nde:version'] | split: '.' | first }}">v{{ nodeShape['nde:futureChange']['nde:version'] }}</a>: must be IRI</small></td>
         </tr>
         {% endif %}
         {% assign merged_properties = nodeShape.property | mergePropertiesByPath -%}
@@ -105,7 +105,7 @@
                         {%- capture future_card %}{{ future_min }}..{{ future_max }}{% endcapture -%}
                     {%- endif -%}
                     {%- if future_card != current_card -%}
-                        <br><small><a href="#v2">v{{ change['nde:version'] }}</a>: {{ future_card }}</small>
+                        <br><small><a href="#v{{ change['nde:version'] | split: '.' | first }}">v{{ change['nde:version'] }}</a>: {{ future_card }}</small>
                     {%- endif -%}
                 {%- endif -%}
             </td>
@@ -171,7 +171,7 @@
                         {% assign future_text = "becomes required" -%}
                     {% endif -%}
                     {% if future_text != "" -%}
-                        <br><small><a href="#v2">v{{ change['nde:version'] }}</a>: {{ future_text }}</small>
+                        <br><small><a href="#v{{ change['nde:version'] | split: '.' | first }}">v{{ change['nde:version'] }}</a>: {{ future_text }}</small>
                     {% endif -%}
                 {% endif -%}
             </td>

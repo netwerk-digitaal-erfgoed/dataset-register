@@ -1,7 +1,7 @@
 import { shacl } from './validator.ts';
 import type { Valid } from './validator.ts';
 import { dcat, dct } from './query.ts';
-import type { NamedNode } from '@rdfjs/types';
+import type { NamedNode, Quad_Subject } from '@rdfjs/types';
 
 // If at least one of the properties in the map’s key is missing (e.g. either created or issued), apply the penalty
 // specified in the map’s value (e.g. 10) is applied.
@@ -23,7 +23,10 @@ const worstRating = [...penalties].reduce(
 export function rate(validationResult: Valid): Rating {
   const violations: Map<string, string> = [...validationResult.errors].reduce(
     (map, quad) => {
-      if (quad.predicate.equals(shacl('resultPath'))) {
+      if (
+        quad.predicate.equals(shacl('resultPath')) &&
+        isMissingProperty(validationResult, quad.subject)
+      ) {
         map.set(
           quad.object.value,
           [
@@ -95,3 +98,15 @@ export interface RatingStore {
    */
   delete(datasetUri: URL): Promise<void>;
 }
+
+// A property that is present but ill-formed also yields a result on its path;
+// only a failed sh:minCount means the property is missing.
+const isMissingProperty = (
+  validationResult: Valid,
+  result: Quad_Subject,
+): boolean =>
+  validationResult.errors.match(
+    result,
+    shacl('sourceConstraintComponent'),
+    shacl('MinCountConstraintComponent'),
+  ).size > 0;
