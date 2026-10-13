@@ -1045,15 +1045,35 @@ describe('DELETE /datasets', () => {
       true,
     );
 
-    await httpServerWithAuth.inject({
+    const response = await httpServerWithAuth.inject({
       method: 'DELETE',
       url: `/datasets?url=${testUrl.toString()}`,
       headers: { Authorization: `Bearer ${testToken}`, Accept: '*/*' },
     });
 
+    expect(response.statusCode).toEqual(204);
     expect(deleteValidationReportStore.reports.has(testUrl.toString())).toBe(
       false,
     );
+  });
+
+  it('keeps the registration when deleting its validation report fails', async () => {
+    const testUrl = new URL(
+      'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html',
+    );
+    vi.spyOn(deleteValidationReportStore, 'delete').mockRejectedValueOnce(
+      new Error('SPARQL endpoint unavailable'),
+    );
+
+    const response = await httpServerWithAuth.inject({
+      method: 'DELETE',
+      url: `/datasets?url=${testUrl.toString()}`,
+      headers: { Authorization: `Bearer ${testToken}`, Accept: '*/*' },
+    });
+
+    expect(response.statusCode).toEqual(500);
+    // Still registered, so the delete can be retried.
+    expect(deleteRegistrationStore.isRegistered(testUrl)).toBe(true);
   });
 });
 

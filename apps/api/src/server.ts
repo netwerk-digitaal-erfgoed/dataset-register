@@ -526,9 +526,11 @@ export async function server(
           await datasetStore.delete(datasetIri);
         }
 
+        // Before the registration, so a failure here leaves it in place for a retry.
+        await validationReportStore?.delete(url);
+
         // Delete the registration (including linked dataset entries in registrations graph)
         await registrationStore.delete(url);
-        await validationReportStore?.delete(url);
 
         request.log.info(
           `Deleted registration ${url.toString()} with ${registration.datasets.length} datasets`,
