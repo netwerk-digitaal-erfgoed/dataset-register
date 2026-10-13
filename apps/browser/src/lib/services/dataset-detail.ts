@@ -42,7 +42,7 @@ import {
 import {
   PUBLIC_SPARQL_ENDPOINT,
   PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
-} from '$env/static/public';
+} from '$app/env/public';
 // Extended distribution schema with additional fields for detail view
 const DetailDistributionSchema = {
   ...BaseDistributionSchema,

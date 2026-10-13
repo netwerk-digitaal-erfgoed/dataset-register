@@ -305,9 +305,8 @@
     }
 
     goto(url, {
-      noScroll: true,
-      replaceState: true,
-      keepFocus: true,
+      reset: false,
+      replace: true,
     });
   }
 

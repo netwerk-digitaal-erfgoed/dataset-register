@@ -1,4 +1,4 @@
-import { env } from '$env/dynamic/public';
+import { PUBLIC_SEARCH_GRAPHQL_ENDPOINT } from '$app/env/public';
 
 /** One GraphQL error entry from the endpoint’s `errors` array. */
 interface GraphQLError {
@@ -14,7 +14,7 @@ interface GraphQLError {
  * that in-process resolution for a network hop per server-rendered page.
  */
 function endpoint(): string {
-  return env.PUBLIC_SEARCH_GRAPHQL_ENDPOINT || '/graphql';
+  return PUBLIC_SEARCH_GRAPHQL_ENDPOINT || '/graphql';
 }
 
 /**

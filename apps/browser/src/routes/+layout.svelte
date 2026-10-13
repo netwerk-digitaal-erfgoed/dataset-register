@@ -11,7 +11,7 @@
   import * as m from '$lib/paraglide/messages';
   import { getLocale, localizeHref } from '$lib/paraglide/runtime';
   import { page } from '$app/state';
-  import { browser, dev } from '$app/environment';
+  import { browser, dev } from '$app/env';
 
   let { children, data } = $props();
   const locale = $derived(data?.locale || getLocale());

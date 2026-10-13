@@ -1,3 +1,5 @@
+import adapter from '@sveltejs/adapter-node';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import tailwindcss from '@tailwindcss/vite';
 import { paraglideVitePlugin } from '@inlang/paraglide-js';
 import { defineConfig } from 'vitest/config';
@@ -7,7 +9,21 @@ export default defineConfig({
   root: __dirname,
   plugins: [
     tailwindcss(),
-    sveltekit(),
+    sveltekit({
+      // Consult https://svelte.dev/docs/kit/integrations
+      // for more information about preprocessors
+      preprocess: vitePreprocess(),
+      adapter: adapter(),
+      // SvelteKit 3 no longer generates the $lib alias.
+      alias: { $lib: 'src/lib' },
+      prerender: {
+        // The /changes page renders changelog entries sourced from commit history;
+        // a broken link in one entry shouldn't fail the entire site build.
+        handleHttpError: ({ message }) => {
+          console.warn(message);
+        },
+      },
+    }),
     paraglideVitePlugin({
       project: './project.inlang',
       // URL-only locale: the prefix (/en/…) or its absence (base locale nl)
@@ -24,7 +40,11 @@ export default defineConfig({
   ssr: {
     // lz-string is a CommonJS module; let Vite bundle it during SSR so its
     // named exports (compressToEncodedURIComponent, …) resolve under Vite 8.
-    noExternal: ['lz-string'],
+    //
+    // adapter-node 6 leaves every production dependency out of the server bundle
+    // unless it is listed here. @dataset-register/core is a workspace package
+    // that the Docker image does not install, so it has to stay bundled.
+    noExternal: ['lz-string', '@dataset-register/core'],
   },
   optimizeDeps: {
     // flowbite-svelte-icons exposes each icon as a deep .svelte subpath whose

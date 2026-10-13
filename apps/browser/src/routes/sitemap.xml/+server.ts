@@ -1,6 +1,6 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { SparqlEndpointFetcher } from 'fetch-sparql-endpoint';
-import { PUBLIC_SPARQL_ENDPOINT } from '$env/static/public';
+import { PUBLIC_SPARQL_ENDPOINT } from '$app/env/public';
 import { datasetDetailHref } from '$lib/url';
 
 const fetcher = new SparqlEndpointFetcher();

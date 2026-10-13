@@ -2,7 +2,7 @@ import { page } from '$app/state';
 
 export function decodeRangeParam(
   name: string,
-  urlSearchParams: URLSearchParams = page.url.searchParams,
+  urlSearchParams: Pick<URLSearchParams, 'get'> = page.url.searchParams,
 ): { min?: number; max?: number } {
   const param = urlSearchParams.get(name);
   const [min, max] = param
@@ -14,7 +14,7 @@ export function decodeRangeParam(
 
 export function decodeDiscreteParam(
   name: string,
-  urlSearchParams: URLSearchParams = page.url.searchParams,
+  urlSearchParams: Pick<URLSearchParams, 'get'> = page.url.searchParams,
 ) {
   return urlSearchParams.get(name)?.split(',').filter(Boolean) || [];
 }
