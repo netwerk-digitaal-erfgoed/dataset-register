@@ -544,7 +544,6 @@ function schemaOrgQuery(prefix: string): string {
         ${normalizeLanguage(`?${distributionLanguage}Raw`, distributionLanguage)}
       }
       OPTIONAL { ?${distribution} ${prefix}:license ${normalizeLicense(distributionLicense + 'Provided')} }
-      BIND(COALESCE(?${distributionLicense}Provided, ?${license}) AS ?${distributionLicense})
       OPTIONAL { ?${distribution} ${prefix}:name ?${distributionName} }
       OPTIONAL { ?${distribution} ${prefix}:contentSize ?${distributionSize} }
       OPTIONAL {
@@ -560,6 +559,9 @@ function schemaOrgQuery(prefix: string): string {
         VALUES ?${distributionConformsToProtocol} { ${apiProtocolValues} }
       }
     }
+    # Inherit the dataset’s own license when the distribution has none. Bound
+    # outside the OPTIONAL, where ?${license} is in scope.
+    BIND(COALESCE(?${distributionLicense}Provided, ?${license}) AS ?${distributionLicense})
     ${downloadOnlyProperties(distributionConformsToProtocol, distributionConformsToSparql, distributionUrl, distributionMediaType, distributionCompressFormat, distributionDownloadUrl, distributionMediaTypeForDownload, distributionCompressFormatForDownload)}
 
     BIND(STR(?${dataset}) AS ?${identifier})
