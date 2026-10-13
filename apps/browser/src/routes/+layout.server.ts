@@ -1,4 +1,4 @@
-import { building } from '$app/environment';
+import { building } from '$app/env';
 import { getStatusAnnouncements } from '$lib/services/status-announcements.server';
 
 export const load = async ({ url }) => {

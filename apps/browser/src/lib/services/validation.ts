@@ -1,4 +1,4 @@
-import { PUBLIC_API_ENDPOINT } from '$env/static/public';
+import { PUBLIC_API_ENDPOINT } from '$app/env/public';
 import { COULD_NOT_FETCH_URL_PREFIX } from '@dataset-register/core/constants';
 import { parseShaclReport, type ShaclReport } from './shacl-report.js';
 
