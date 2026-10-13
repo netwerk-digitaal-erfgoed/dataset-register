@@ -840,7 +840,7 @@ describe('Validator', () => {
     expect(nodeKindViolations).toHaveLength(1);
   });
 
-  it('warns about every version 2.0 rule on a Schema.org description', async () => {
+  it('warns about the version 2.0 rules that tighten an existing property on a Schema.org description', async () => {
     // Version 2.0 rejects these; until then each must surface as a warning so
     // publishers can prepare, rather than pass silently.
     const report = await validateTurtle(`
@@ -870,7 +870,7 @@ describe('Validator', () => {
 
     expect(report.state).toEqual('valid');
     const messages = warningMessages(report as Valid);
-    expect(messages).toContain('Give the data catalog a web URI');
+    expect(messages).toContain('Give the data catalog a URI');
     expect(messages).toContain('Use at most one MIME type per distribution');
     expect(
       messages.filter(
@@ -886,7 +886,7 @@ describe('Validator', () => {
     ).toHaveLength(3);
   });
 
-  it('warns about every version 2.0 rule on a DCAT description', async () => {
+  it('warns about the version 2.0 rules for media type and language on a DCAT description', async () => {
     const report = await validateTurtle(`
       @prefix dcat: <http://www.w3.org/ns/dcat#> .
       @prefix dct: <http://purl.org/dc/terms/> .
@@ -903,14 +903,10 @@ describe('Validator', () => {
         dct:language <https://example.com/language/nl> .
     `);
 
+    expect(report.state).toEqual('valid');
     const messages = warningMessages(report as Valid);
     expect(messages).toContain('Use at most one media type per distribution');
-    expect(
-      messages.filter(
-        (message) =>
-          message === 'Use a value of type URI (RDF resource), not text',
-      ),
-    ).toHaveLength(1);
+    // One per dct:language value: the language code and the IRI outside the list.
     expect(
       messages.filter((message) =>
         message.startsWith('Use a language URI from the EU list'),

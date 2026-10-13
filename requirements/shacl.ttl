@@ -113,7 +113,7 @@ nde-dataset:DatacatalogIriShape
         nde:version "2.0" ;
         sh:severity sh:Violation ;
     ] ;
-    sh:message "Geef de datacatalogus een web-URI"@nl, "Give the data catalog a web URI"@en .
+    sh:message "Geef de datacatalogus een URI"@nl, "Give the data catalog a URI"@en .
 
 nde-dataset:DatasetShape
     a sh:NodeShape ;
@@ -170,16 +170,7 @@ The DERA requires metadata to be published openly, so this value SHOULD be an op
 The value MUST be the canonical URI of a license. For example, use `https://creativecommons.org/publicdomain/zero/1.0/` instead of `https://creativecommons.org/publicdomain/zero/1.0/deed.nl`."""@en ;
             sh:message "Voeg een licentie toe"@nl, "Add a license"@en ;
         ] ,
-        [
-            sh:path schema:license ;
-            sh:nodeKind sh:IRI ;
-            sh:severity sh:Warning ;
-            nde:futureChange [
-                nde:version "2.0" ;
-                sh:severity sh:Violation ;
-            ] ;
-            sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
-        ] ,
+        nde-dataset:SchemaLicenseIriProperty ,
         [
             sh:path schema:license ;
             sh:maxCount 1 ;
@@ -706,23 +697,12 @@ nde-dataset:DistributionShape
             sh:description "Taal of talen waarin de distributie beschikbaar is. Gebruik een BCP 47-taalcode, bijv. `nl`."@nl, "Language or languages in which the distribution is available. Use a BCP 47 language code, such as `nl`."@en ;
             sh:message "Gebruik een BCP 47-taalcode, bijv. nl of en"@nl, "Use a BCP 47 language code, such as nl or en"@en ;
         ] ,
+        nde-dataset:SchemaLicenseIriProperty ,
         [
             sh:path schema:license ;
-            sh:nodeKind sh:IRI ;
-            sh:severity sh:Warning ;
-            nde:futureChange [
-                nde:version "2.0" ;
-                sh:severity sh:Violation ;
-            ] ;
-            sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
-        ] ,
-        [
-            sh:path schema:license ;
-            sh:nodeKind sh:IRIOrLiteral ;
             sh:minCount 0 ;
             sh:description """Licentie die van toepassing is op deze distributie en die de licentie van de bovenliggende dataset overschrijft. Optioneel; gebruik dit alleen wanneer de distributie een andere licentie heeft dan de dataset."""@nl,
                 """License applicable to this distribution, overriding the parent dataset's license. Optional; only set this when the distribution carries a different license from the dataset."""@en ;
-            sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
         ] ,
         [
             sh:path schema:license ;
@@ -1299,8 +1279,8 @@ nde-dataset:AccessRightsProperty a sh:PropertyShape ;
     sh:message "Kies toegangsrechten uit de lijst (EU Access Rights)"@nl, "Select access rights from the EU Access Rights list"@en ;
 .
 
-nde-dataset:DcLanguageIriProperty a sh:PropertyShape ;
-    sh:path dc:language ;
+nde-dataset:SchemaLicenseIriProperty a sh:PropertyShape ;
+    sh:path schema:license ;
     sh:nodeKind sh:IRI ;
     sh:severity sh:Warning ;
     nde:futureChange [
@@ -1310,9 +1290,14 @@ nde-dataset:DcLanguageIriProperty a sh:PropertyShape ;
     sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
 .
 
+# sh:node rather than two constraints on the property shape, so that a language
+# code such as "nl", which is neither an IRI nor in the list, gives one result.
 nde-dataset:DcLanguageAuthorityProperty a sh:PropertyShape ;
     sh:path dc:language ;
-    sh:pattern "^http://publications\\.europa\\.eu/resource/authority/language/" ;
+    sh:node [
+        sh:nodeKind sh:IRI ;
+        sh:pattern "^http://publications\\.europa\\.eu/resource/authority/language/" ;
+    ] ;
     sh:severity sh:Warning ;
     nde:futureChange [
         nde:version "2.0" ;
@@ -1529,7 +1514,6 @@ dcat:DatasetShape
         sh:description "De natuurlijke taal van de tekstuele waarden in de dataset. Gebruik een waarde uit de <a href=\"https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language\">EU Vocabularies Languages Named Authority List</a>."@nl, "The natural language of the textual values in the dataset. Use a value from the <a href=\"https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language\">EU Vocabularies Languages Named Authority List</a>."@en ;
         sh:message "Vul de taal of talen in"@nl, "Enter the language or languages of the dataset"@en ;
     ],
-    nde-dataset:DcLanguageIriProperty,
     nde-dataset:DcLanguageAuthorityProperty,
     [
         sh:path dc:publisher ;
@@ -1749,7 +1733,6 @@ dcat:DistributionShape
         sh:description "De natuurlijke taal van de tekstuele waarden in de distributie. Gebruik een waarde uit de <a href=\"https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language\">EU Vocabularies Languages Named Authority List</a>."@nl, "The natural language of the textual values in the distribution. Use a value from the <a href=\"https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language\">EU Vocabularies Languages Named Authority List</a>."@en ;
         sh:message "Vul de taal of talen in waarin de distributie beschikbaar is"@nl, "Enter the language or languages of the distribution"@en ;
     ] ,
-    nde-dataset:DcLanguageIriProperty ,
     nde-dataset:DcLanguageAuthorityProperty ,
     [
         sh:path dcat:accessURL ;
