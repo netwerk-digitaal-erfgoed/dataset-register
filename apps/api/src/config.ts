@@ -18,6 +18,8 @@ interface Env {
   // facets. Defaults to the public NDE endpoint; a failed read degrades to a
   // register-only index.
   KNOWLEDGE_GRAPH_URL: string;
+
+  PORT: number;
 }
 
 const schema: JSONSchemaType<Env> = {
@@ -66,6 +68,10 @@ const schema: JSONSchemaType<Env> = {
       type: 'string',
       default:
         'https://sparql.netwerkdigitaalerfgoed.nl/dataset-knowledge-graph',
+    },
+    PORT: {
+      type: 'number',
+      default: 3000,
     },
   },
 };
