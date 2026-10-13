@@ -72,6 +72,7 @@ await (async () => {
       datasetStore,
       registrationStore,
       allowedRegistrationDomainStore,
+      validationReportStore,
       validator,
       shacl,
       config.DOCS_URL,
@@ -82,7 +83,6 @@ await (async () => {
       ratingStore,
       config.API_ACCESS_TOKEN,
       buildSearchIndexTrigger(),
-      validationReportStore,
     );
     // On SIGTERM, finish in-flight requests and export the last metrics before exiting.
     // Without a handler, Node as the container’s PID 1 ignores SIGTERM until Kubernetes
