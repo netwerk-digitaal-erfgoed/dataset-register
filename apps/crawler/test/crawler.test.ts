@@ -131,6 +131,18 @@ describe('Crawler', () => {
     expect(readRegistration.datasets).toHaveLength(1); // Any references to datasets are kept.
   });
 
+  it('deletes the validation report when the URL no longer yields one', async () => {
+    const url = new URL('https://example.com/registered-url');
+    await storeRegistrationFixture(url);
+    await reportStore.store(url, reportWithWarnings(2));
+
+    nock('https://example.com').get('/registered-url').reply(404);
+    await crawler.crawl(new Date('3000-01-01'));
+
+    expect(registrationStore.all()[0].warningCount).toBeUndefined();
+    expect(reportStore.reports.has(url.toString())).toBe(false);
+  });
+
   it('marks registration gone when URL no longer serves a dataset', async () => {
     await storeRegistrationFixture(
       new URL('https://example.com/no-more-datasets'),
@@ -258,7 +270,9 @@ describe('Crawler', () => {
       pino({ enabled: false }),
       { httpRequestTimeoutMs: 20 },
     );
-    await storeRegistrationFixture(new URL('https://slow.example/stalls'));
+    const url = new URL('https://slow.example/stalls');
+    await storeRegistrationFixture(url);
+    await reportStore.store(url, reportWithWarnings(2));
 
     const response = await validSchemaOrgDataset();
     nock('https://slow.example')
@@ -272,6 +286,7 @@ describe('Crawler', () => {
     // so the next pass retries it instead of recording a bogus crawl result.
     const readRegistration = registrationStore.all()[0];
     expect(readRegistration.dateRead).toEqual(new Date('2000-01-01'));
+    expect(reportStore.reports.has(url.toString())).toBe(true);
   });
 
   it('marks registration gone when content type is unrecognized', async () => {
