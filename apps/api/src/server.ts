@@ -48,7 +48,6 @@ export async function server(
   registrationStore: RegistrationStore,
   validationReportStore: ValidationReportStore,
   allowedRegistrationDomainStore: AllowedRegistrationDomainStore,
-  validationReportStore: ValidationReportStore,
   validator: Validator,
   shacl: DatasetCore,
   docsUrl = '/',

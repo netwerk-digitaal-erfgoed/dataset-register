@@ -73,7 +73,6 @@ await (async () => {
       registrationStore,
       validationReportStore,
       allowedRegistrationDomainStore,
-      validationReportStore,
       validator,
       shacl,
       config.DOCS_URL,
