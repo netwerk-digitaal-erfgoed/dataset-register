@@ -147,8 +147,7 @@ const dataset = defineSearchType({
       facetable: true,
       filterable: true,
       output: true,
-      ref: { typeName: 'Agent', strategy: 'labelOnly' },
-      labelSource: 'Organization',
+      ref: { strategy: 'lookup', target: 'Organization' },
     },
     {
       // Filter-only IRI (the UI filters by catalog with an exact match but never
@@ -196,8 +195,7 @@ const dataset = defineSearchType({
       facetable: true,
       filterable: true,
       output: true,
-      ref: { typeName: 'Vocabulary', strategy: 'labelOnly' },
-      labelSource: 'TerminologySource',
+      ref: { strategy: 'lookup', target: 'TerminologySource' },
     },
     {
       name: 'language',
