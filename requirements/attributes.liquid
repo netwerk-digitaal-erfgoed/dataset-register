@@ -105,7 +105,7 @@
                         {%- capture future_card %}{{ future_min }}..{{ future_max }}{% endcapture -%}
                     {%- endif -%}
                     {%- if future_card != current_card -%}
-                        <br><small>v{{ change['nde:version'] }}: {{ future_card }}</small>
+                        <br><small><a href="#v2">v{{ change['nde:version'] }}</a>: {{ future_card }}</small>
                     {%- endif -%}
                 {%- endif -%}
             </td>
@@ -171,7 +171,7 @@
                         {% assign future_text = "becomes required" -%}
                     {% endif -%}
                     {% if future_text != "" -%}
-                        <br><small>v{{ change['nde:version'] }}: {{ future_text }}</small>
+                        <br><small><a href="#v2">v{{ change['nde:version'] }}</a>: {{ future_text }}</small>
                     {% endif -%}
                 {% endif -%}
             </td>
