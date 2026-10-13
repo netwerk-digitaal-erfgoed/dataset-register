@@ -1,4 +1,4 @@
-import { PUBLIC_API_ENDPOINT } from '$env/static/public';
+import { PUBLIC_API_ENDPOINT } from '$app/env/public';
 import { getLocale } from '$lib/paraglide/runtime';
 import { normalizeNodes, pickIri, pickLocalized } from './jsonld-helpers.js';
 

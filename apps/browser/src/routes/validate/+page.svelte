@@ -141,9 +141,8 @@
       if (params.get('url') !== url || currentHash) {
         params.set('url', url);
         void goto(`?${params.toString()}`, {
-          replaceState: true,
-          keepFocus: true,
-          noScroll: true,
+          replace: true,
+          reset: false,
         });
       }
     }
