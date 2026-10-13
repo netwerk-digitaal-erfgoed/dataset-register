@@ -285,6 +285,34 @@ describe('Validator', () => {
     expectViolations(report, ['http://purl.org/dc/terms/publisher'], 0);
   });
 
+  it('warns on publisher/creator IRIs that identify something other than the organization', async () => {
+    // Collection software addresses and Wikidata wiki pages resolve, but neither
+    // identifies the organization; the canonical Wikidata entity IRI does, and a
+    // look-alike host is not a supplier’s.
+    const report = (await validate(
+      'dataset-schema-org-organization-iris.ttl',
+      new StreamParser(),
+    )) as Valid;
+    expect(report.state).toEqual('valid');
+
+    const nonDurable =
+      'Use a URI that identifies the organization itself, not an address of its collection software or software supplier';
+    const wikidataPage =
+      'Use the Wikidata entity URI (such as http://www.wikidata.org/entity/Q474563), not the Wikidata web page';
+    const nodeLevelResults = formatReport(report)
+      .split('\n')
+      .filter((line) => line.includes(']  on <'));
+    expect(nodeLevelResults).toEqual([
+      `[Warning]  on <https://LITtest.hosting.deventit.net:443/>: ${nonDurable}`,
+      `[Warning]  on <https://kleksi.com/>: ${nonDurable}`,
+      `[Warning]  on <https://m.wikidata.org/wiki/Q12013217>: ${wikidataPage}`,
+      `[Warning]  on <https://valk.hosting.deventit.net/>: ${nonDurable}`,
+      `[Warning]  on <https://www.example.org/Atlantispubliek/organisatie>: ${nonDurable}`,
+      '[Warning]  on <https://www.wikidata.org/entity/Q17190029>: Use http:// (not https://) in the Wikidata entity URI',
+      `[Warning]  on <https://www.wikidata.org/wiki/Q474563>: ${wikidataPage}`,
+    ]);
+  });
+
   it('captures full SHACL feedback for Gouda Tijdmachine fixture', async () => {
     const report = (await validate(
       'dataset-schema-org-gouda-tijdmachine.ttl',
