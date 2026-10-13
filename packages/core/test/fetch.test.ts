@@ -1342,8 +1342,8 @@ describe('Fetch', () => {
 
   it('coerces a URL-shaped literal schema:license to an indexed IRI', async () => {
     // Atlantis-style data: the export publishes schema:license as a plain
-    // literal holding a URL rather than as an IRI resource. SHACL accepts it
-    // (sh:IRIOrLiteral), so the dataset stays valid, but #1959 only indexed
+    // literal holding a URL rather than as an IRI resource. SHACL only warns
+    // about it until version 2.0, so the dataset stays valid, but #1959 only indexed
     // IRI licenses, dropping the license from the index. We now coerce the
     // URL-shaped literal to its canonical IRI so dct:license stays populated.
     // https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1997

@@ -101,6 +101,20 @@ nde-dataset:DatacatalogShape
         ]
 .
 
+# Warns today about the node kind that DatacatalogShape’s nde:futureChange announces.
+# A separate node shape, because a shape carries a single sh:severity and
+# DatacatalogShape’s own node-level constraint (sh:class) is a Violation.
+nde-dataset:DatacatalogIriShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf schema:dataset ;
+    sh:nodeKind sh:IRI ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "Geef de datacatalogus een web-URI"@nl, "Give the data catalog a web URI"@en .
+
 nde-dataset:DatasetShape
     a sh:NodeShape ;
     sh:targetClass schema:Dataset ;
@@ -158,12 +172,12 @@ The value MUST be the canonical URI of a license. For example, use `https://crea
         ] ,
         [
             sh:path schema:license ;
-            sh:nodeKind sh:IRIOrLiteral ;
+            sh:nodeKind sh:IRI ;
+            sh:severity sh:Warning ;
             nde:futureChange [
                 nde:version "2.0" ;
-                sh:nodeKind sh:IRI ;
+                sh:severity sh:Violation ;
             ] ;
-            sh:severity sh:Warning ;
             sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
         ] ,
         [
@@ -348,12 +362,16 @@ The value MUST be the canonical URI of a license. For example, use `https://crea
         [
             a sh:PropertyShape ;
             sh:path schema:inLanguage ;
+            sh:pattern "^[a-zA-Z]{2,3}(-[a-zA-Z0-9]+)*$" ;
+            sh:severity sh:Warning ;
             nde:futureChange [
                 nde:version "2.0" ;
                 sh:pattern "^[a-zA-Z]{2,3}(-[a-zA-Z0-9]+)*$" ;
+                sh:severity sh:Violation ;
             ] ;
             sh:minCount 0 ;
             sh:description """De natuurlijke taal van de tekstuele waardes in de dataset – dus van de metadata-records zelf (titels, omschrijvingen enzovoort). Gebruik een BCP 47-taalcode, bijv. `nl` of `en`."""@nl, """The natural language of the textual values within the dataset – that is, of the metadata records themselves (titles, descriptions, and so on). Use a BCP 47 language code, such as `nl` or `en`."""@en ;
+            sh:message "Gebruik een BCP 47-taalcode, bijv. nl of en"@nl, "Use a BCP 47 language code, such as nl or en"@en ;
         ] ,
         [
             a sh:PropertyShape ;
@@ -523,15 +541,20 @@ nde-dataset:DistributionShape
         ] ,
         [
             sh:path schema:contentUrl ;
-            sh:or (
-                [ sh:nodeKind sh:IRI ]          # schema.org’s JSON-LD context coerces contentUrl to @id, so values land as IRIs
-                [ sh:datatype xsd:anyURI ]      # xsd:anyURI literal accepted for Turtle / custom-context submissions
-            ) ;
+            sh:nodeKind sh:IRI ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
+        ] ,
+        [
+            sh:path schema:contentUrl ;
             sh:pattern "^https://" ;
             sh:severity sh:Warning ;
             nde:futureChange [
                 nde:version "2.0" ;
-                sh:nodeKind sh:IRI ;
                 sh:severity sh:Violation ;
             ] ;
             sh:message "Gebruik een geldige HTTPS-URL voor de distributie"@nl, "Use a valid HTTPS URL for the distribution"@en ;
@@ -539,12 +562,19 @@ nde-dataset:DistributionShape
         [
             sh:path schema:encodingFormat ;
             sh:pattern "^[a-zA-Z]+/[a-zA-Z0-9][a-zA-Z0-9!#$&\\-^_.+]*$" ;
+            sh:description """Het mediatype van het downloadbare bestand. Gebruik een waarde uit de IANA media types-lijst. De waarde geeft het mediatype aan van de response van schema:contentUrl wanneer er geen Accept-header wordt meegestuurd. Bij gecomprimeerde distributies moet het compressieformaat (bijv. zip, gzip) worden toegevoegd (bijv. text/turtle+gzip)."""@nl, """The media type of the downloadable file. Use a value from the IANA media types list. The value should indicate the media type of the response of schema:contentUrl when no Accept header is included in the request. When the distribution is compressed, the compression format (such as `zip`, `gzip`) must be included (such as `text/turtle+gzip`)."""@en ;
+            sh:message "Vul een geldig MIME-type in, bijv. application/n-triples"@nl, "Enter a valid MIME type, such as application/n-triples"@en ;
+        ] ,
+        [
+            sh:path schema:encodingFormat ;
+            sh:maxCount 1 ;
+            sh:severity sh:Warning ;
             nde:futureChange [
                 nde:version "2.0" ;
                 sh:maxCount 1 ;
+                sh:severity sh:Violation ;
             ] ;
-            sh:description """Het mediatype van het downloadbare bestand. Gebruik een waarde uit de IANA media types-lijst. De waarde geeft het mediatype aan van de response van schema:contentUrl wanneer er geen Accept-header wordt meegestuurd. Bij gecomprimeerde distributies moet het compressieformaat (bijv. zip, gzip) worden toegevoegd (bijv. text/turtle+gzip)."""@nl, """The media type of the downloadable file. Use a value from the IANA media types list. The value should indicate the media type of the response of schema:contentUrl when no Accept header is included in the request. When the distribution is compressed, the compression format (such as `zip`, `gzip`) must be included (such as `text/turtle+gzip`)."""@en ;
-            sh:message "Vul een geldig MIME-type in, bijv. application/n-triples"@nl, "Enter a valid MIME type, such as application/n-triples"@en ;
+            sh:message "Gebruik maximaal één MIME-type per distributie"@nl, "Use at most one MIME type per distribution"@en ;
         ] ,
         [
             sh:path schema:encodingFormat ;
@@ -665,9 +695,12 @@ nde-dataset:DistributionShape
         ] ,
         [
             sh:path schema:inLanguage ;
+            sh:pattern "^[a-zA-Z]{2,3}(-[a-zA-Z0-9]+)*$" ;
+            sh:severity sh:Warning ;
             nde:futureChange [
                 nde:version "2.0" ;
                 sh:pattern "^[a-zA-Z]{2,3}(-[a-zA-Z0-9]+)*$" ;
+                sh:severity sh:Violation ;
             ] ;
             sh:minCount 0 ;
             sh:description "Taal of talen waarin de distributie beschikbaar is. Gebruik een BCP 47-taalcode, bijv. `nl`."@nl, "Language or languages in which the distribution is available. Use a BCP 47 language code, such as `nl`."@en ;
@@ -675,12 +708,18 @@ nde-dataset:DistributionShape
         ] ,
         [
             sh:path schema:license ;
-            sh:nodeKind sh:IRIOrLiteral ;
-            sh:minCount 0 ;
+            sh:nodeKind sh:IRI ;
+            sh:severity sh:Warning ;
             nde:futureChange [
                 nde:version "2.0" ;
-                sh:nodeKind sh:IRI ;
+                sh:severity sh:Violation ;
             ] ;
+            sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
+        ] ,
+        [
+            sh:path schema:license ;
+            sh:nodeKind sh:IRIOrLiteral ;
+            sh:minCount 0 ;
             sh:description """Licentie die van toepassing is op deze distributie en die de licentie van de bovenliggende dataset overschrijft. Optioneel; gebruik dit alleen wanneer de distributie een andere licentie heeft dan de dataset."""@nl,
                 """License applicable to this distribution, overriding the parent dataset's license. Optional; only set this when the distribution carries a different license from the dataset."""@en ;
             sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
@@ -1260,6 +1299,28 @@ nde-dataset:AccessRightsProperty a sh:PropertyShape ;
     sh:message "Kies toegangsrechten uit de lijst (EU Access Rights)"@nl, "Select access rights from the EU Access Rights list"@en ;
 .
 
+nde-dataset:DcLanguageIriProperty a sh:PropertyShape ;
+    sh:path dc:language ;
+    sh:nodeKind sh:IRI ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
+.
+
+nde-dataset:DcLanguageAuthorityProperty a sh:PropertyShape ;
+    sh:path dc:language ;
+    sh:pattern "^http://publications\\.europa\\.eu/resource/authority/language/" ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "Gebruik een taal-URI uit de EU-lijst (bijvoorbeeld http://publications.europa.eu/resource/authority/language/NLD) in plaats van een taalcode zoals ‘nl’"@nl, "Use a language URI from the EU list (such as http://publications.europa.eu/resource/authority/language/NLD) instead of a language code such as ‘nl’"@en ;
+.
+
 ##
 ## DCAT
 ##
@@ -1465,14 +1526,11 @@ dcat:DatasetShape
         sh:path dc:language ;
         sh:minCount 1 ;
         sh:severity sh:Info ;
-        nde:futureChange [
-            nde:version "2.0" ;
-            sh:nodeKind sh:IRI ;
-            sh:pattern "^http://publications\\.europa\\.eu/resource/authority/language/" ;
-        ] ;
         sh:description "De natuurlijke taal van de tekstuele waarden in de dataset. Gebruik een waarde uit de <a href=\"https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language\">EU Vocabularies Languages Named Authority List</a>."@nl, "The natural language of the textual values in the dataset. Use a value from the <a href=\"https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language\">EU Vocabularies Languages Named Authority List</a>."@en ;
         sh:message "Vul de taal of talen in"@nl, "Enter the language or languages of the dataset"@en ;
     ],
+    nde-dataset:DcLanguageIriProperty,
+    nde-dataset:DcLanguageAuthorityProperty,
     [
         sh:path dc:publisher ;
         sh:minCount 1 ;
@@ -1594,10 +1652,6 @@ dcat:DistributionShape
         [ sh:property [
             sh:minCount 1 ;
             sh:path dcat:mediaType ;
-            nde:futureChange [
-                nde:version "2.0" ;
-                sh:maxCount 1 ;
-            ] ;
             sh:description "Het mediatype van de distributie conform de IANA-indeling."@nl, "The media type of the distribution according to the IANA classification."@en ;
         ] ]
         [ sh:property [
@@ -1615,6 +1669,16 @@ dcat:DistributionShape
             sh:severity sh:Violation ;
         ] ;
         sh:message "Verwijder het SPARQL MIME-type uit dcat:mediaType; SPARQL-endpoints worden gedeclareerd via dct:conformsTo"@nl, "Remove the SPARQL MIME type from dcat:mediaType; SPARQL endpoints are declared via dct:conformsTo"@en ;
+    ] ,
+    [
+        sh:path dcat:mediaType ;
+        sh:maxCount 1 ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Gebruik maximaal één mediatype per distributie"@nl, "Use at most one media type per distribution"@en ;
     ] ,
     # Metadata-only property shape: dcat:compressFormat carries no constraints of
     # its own, but publishers need to be told it is read and preferred over a
@@ -1682,14 +1746,11 @@ dcat:DistributionShape
         sh:path dc:language ;
         sh:minCount 0 ;
         sh:severity sh:Info ;
-        nde:futureChange [
-            nde:version "2.0" ;
-            sh:nodeKind sh:IRI ;
-            sh:pattern "^http://publications\\.europa\\.eu/resource/authority/language/" ;
-        ] ;
         sh:description "De natuurlijke taal van de tekstuele waarden in de distributie. Gebruik een waarde uit de <a href=\"https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language\">EU Vocabularies Languages Named Authority List</a>."@nl, "The natural language of the textual values in the distribution. Use a value from the <a href=\"https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/language\">EU Vocabularies Languages Named Authority List</a>."@en ;
         sh:message "Vul de taal of talen in waarin de distributie beschikbaar is"@nl, "Enter the language or languages of the distribution"@en ;
     ] ,
+    nde-dataset:DcLanguageIriProperty ,
+    nde-dataset:DcLanguageAuthorityProperty ,
     [
         sh:path dcat:accessURL ;
         nde-probe:probeReachable true ;

@@ -839,6 +839,84 @@ describe('Validator', () => {
     ];
     expect(nodeKindViolations).toHaveLength(1);
   });
+
+  it('warns about every version 2.0 rule on a Schema.org description', async () => {
+    // Version 2.0 rejects these; until then each must surface as a warning so
+    // publishers can prepare, rather than pass silently.
+    const report = await validateTurtle(`
+      @prefix schema: <https://schema.org/> .
+      @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+      [] a schema:DataCatalog ;
+        schema:name "Catalog"@en ;
+        schema:dataset <https://example.com/dataset> .
+
+      <https://example.com/dataset> a schema:Dataset ;
+        schema:name "Dataset"@en ;
+        schema:license "CC0" ;
+        schema:inLanguage "Dutch" ;
+        schema:publisher <https://example.com/publisher> ;
+        schema:distribution <https://example.com/distribution> .
+
+      <https://example.com/publisher> a schema:Organization ;
+        schema:name "Publisher"@en .
+
+      <https://example.com/distribution> a schema:DataDownload ;
+        schema:contentUrl "https://example.com/dataset.ttl"^^xsd:anyURI ;
+        schema:encodingFormat "text/turtle", "application/n-triples" ;
+        schema:license "CC0" ;
+        schema:inLanguage "Dutch" .
+    `);
+
+    expect(report.state).toEqual('valid');
+    const messages = warningMessages(report as Valid);
+    expect(messages).toContain('Give the data catalog a web URI');
+    expect(messages).toContain('Use at most one MIME type per distribution');
+    expect(
+      messages.filter(
+        (message) => message === 'Use a BCP 47 language code, such as nl or en',
+      ),
+    ).toHaveLength(2);
+    // The dataset license, the distribution license and the contentUrl.
+    expect(
+      messages.filter(
+        (message) =>
+          message === 'Use a value of type URI (RDF resource), not text',
+      ),
+    ).toHaveLength(3);
+  });
+
+  it('warns about every version 2.0 rule on a DCAT description', async () => {
+    const report = await validateTurtle(`
+      @prefix dcat: <http://www.w3.org/ns/dcat#> .
+      @prefix dct: <http://purl.org/dc/terms/> .
+
+      <https://example.com/dataset> a dcat:Dataset ;
+        dct:title "Dataset"@en ;
+        dct:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
+        dct:language "nl" ;
+        dcat:distribution <https://example.com/distribution> .
+
+      <https://example.com/distribution> a dcat:Distribution ;
+        dcat:accessURL <https://example.com/dataset.ttl> ;
+        dcat:mediaType "text/turtle", "application/n-triples" ;
+        dct:language <https://example.com/language/nl> .
+    `);
+
+    const messages = warningMessages(report as Valid);
+    expect(messages).toContain('Use at most one media type per distribution');
+    expect(
+      messages.filter(
+        (message) =>
+          message === 'Use a value of type URI (RDF resource), not text',
+      ),
+    ).toHaveLength(1);
+    expect(
+      messages.filter((message) =>
+        message.startsWith('Use a language URI from the EU list'),
+      ),
+    ).toHaveLength(2);
+  });
 });
 
 export const validate = async (filename: string, parser?: Transform) =>
@@ -852,6 +930,26 @@ const dataset = async (filename: string, parser?: Transform) => {
     .dataset()
     .import(stream.pipe(parser ?? createJsonLdParser()))) as unknown as Dataset;
 };
+
+const validateTurtle = async (turtle: string) =>
+  validator.validate(
+    (await rdf
+      .dataset()
+      .import(
+        Readable.from(turtle).pipe(new StreamParser()),
+      )) as unknown as Dataset,
+  );
+
+const warningMessages = (report: InvalidDataset | Valid): string[] =>
+  [...report.errors.match(null, shacl('resultSeverity'), shacl('Warning'))]
+    .flatMap((quad) => [
+      ...report.errors.match(quad.subject, shacl('resultMessage'), null),
+    ])
+    .filter(
+      (quad) =>
+        quad.object.termType === 'Literal' && quad.object.language === 'en',
+    )
+    .map((quad) => quad.object.value);
 
 const formatReport = (report: InvalidDataset | Valid): string => {
   const literal = (subject: unknown, predicate: ReturnType<typeof shacl>) =>
