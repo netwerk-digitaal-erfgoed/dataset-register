@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.15.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.14.0...requirements-1.15.0) (2026-10-13)
+
+
+### Features
+
+* **requirements:** document dct:source on the DCAT dataset shape ([#2300](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2300)) ([ffaee41](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/ffaee4144317970bd7851684ec9dcd81521501b6))
+
+
+### Bug Fixes
+
+* **core:** read registrations with our own Schema.org JSON-LD context ([#2384](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2384)) ([f154e31](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/f154e31c83362055fa1febe7a41b69f2c8cc528d))
+* **requirements:** describe the data catalog description in its own words ([#2264](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2264)) ([46739d3](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/46739d368f7f8e0d83a8aba97dc19fc6b9556853))
+
+
+### Documentation
+
+* recommend usageInfo IRIs for LDES, IIIF and Linked Art Search APIs ([5144c8b](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/5144c8b83158784e9243c72aea9ea9080f44f7e8))
+
+
 ## [1.14.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.13.0...requirements-1.14.0) (2026-07-16)
 
 
