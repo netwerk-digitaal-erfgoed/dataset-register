@@ -77,6 +77,9 @@ npx nx serve api
 
 # Run the crawler app:
 npx nx serve crawler
+
+# Run the browser app:
+npx nx dev browser
 ```
 
 ### Run in production
