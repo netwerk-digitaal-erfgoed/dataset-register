@@ -10,12 +10,15 @@
   import InfoCircleSolid from 'flowbite-svelte-icons/InfoCircleSolid.svelte';
   import {
     compatibilityCriteria,
+    conformanceIssueMessage,
     IIIF_URL,
     NDE_VINKJES_URL,
     NETWORK_OF_TERMS_URL,
     type CompatibilityCriterion,
     type CompatibilityFailureReason,
     type CompatibilityState,
+    type ConformanceIssue,
+    type ConformanceIssueSeverity,
     type IiifManifests,
     type LinkedData,
     type PersistentUriFailureReason,
@@ -23,6 +26,8 @@
     type RegistrationFailureReason,
     type TermLinks,
   } from '$lib/services/nde-compatibility';
+  import SeverityBadge from '$lib/components/validation/SeverityBadge.svelte';
+  import { shortenUri } from '$lib/utils/prefix';
   import { replaceState } from '$app/navigation';
   import { page } from '$app/state';
 
@@ -375,6 +380,43 @@
     }
   }
 
+  const conformanceIssues = $derived(linkedData.conformanceIssues ?? []);
+
+  // What a rule asks for: the message in the visitor’s language, or the failed
+  // constraint when the rule has no message.
+  function issueDescription(issue: ConformanceIssue): string {
+    return (
+      conformanceIssueMessage(issue, getLocale()) ??
+      m.nde_compat_linked_data_issues_unnamed({
+        constraint: shortenUri(issue.constraint),
+      })
+    );
+  }
+
+  function severityLabel(severity: ConformanceIssueSeverity): string {
+    switch (severity) {
+      case 'violation':
+        return m.severity_Violation();
+      case 'warning':
+        return m.severity_Warning();
+      case 'info':
+        return m.severity_Info();
+    }
+  }
+
+  function severityTone(
+    severity: ConformanceIssueSeverity,
+  ): 'red' | 'yellow' | 'blue' {
+    switch (severity) {
+      case 'violation':
+        return 'red';
+      case 'warning':
+        return 'yellow';
+      case 'info':
+        return 'blue';
+    }
+  }
+
   // The provider-facing label for a single failing URI’s reason, listed beside
   // the URI so the cause is conveyed as text (not by colour alone).
   function failureReasonLabel(reason: PersistentUriFailureReason): string {
@@ -673,6 +715,68 @@
                     {/if}
                   </p>
                 {/if}
+              {/if}
+              <!-- The SCHEMA-AP-NDE validation results behind the linked-data
+                   row, for a provider who wants to know what to fix. They are
+                   technical, so the fold-out stays closed and its summary is
+                   deliberately subdued, so that it does not distract other
+                   visitors. Shown only while the row reports current linked-data
+                   content and its conformance was measured: in any other state
+                   (none, empty, pending, the live data invalid, or no
+                   conformance measurement) a report left in the Knowledge Graph
+                   describes an earlier version of the source. Severity is
+                   conveyed as text (not colour alone) for accessibility. -->
+              {#if criterion.key === 'linked-data' && (criterion.state === 'met' || criterion.state === 'warning') && criterion.reason !== 'invalid-linked-data' && linkedData.quadsValidated !== null && conformanceIssues.length > 0}
+                <details class="group mt-1 text-xs">
+                  <summary
+                    class="flex cursor-pointer list-none items-center gap-1 text-gray-500 hover:text-gray-700 [&::-webkit-details-marker]:hidden dark:text-gray-400 dark:hover:text-gray-300"
+                  >
+                    <ChevronRightOutline
+                      class="h-3 w-3 flex-shrink-0 transition-transform group-open:rotate-90"
+                      aria-hidden="true"
+                    />
+                    {m.nde_compat_linked_data_issues_summary()}
+                  </summary>
+                  <div class="ps-4 text-gray-600 dark:text-gray-400">
+                    <p class="mt-2">
+                      {m.nde_compat_linked_data_issues_intro()}
+                    </p>
+                    <ul class="mt-2 space-y-2">
+                      {#each conformanceIssues as issue, index (index)}
+                        <li>
+                          <SeverityBadge tone={severityTone(issue.severity)}
+                            >{severityLabel(issue.severity)}</SeverityBadge
+                          >
+                          <span
+                            class="font-medium text-gray-700 dark:text-gray-300"
+                            >{issue.count.toLocaleString(getLocale())}×</span
+                          >
+                          {#if issue.path}<code class="font-mono break-all"
+                              >{shortenUri(issue.path)}</code
+                            ><span class="mx-1" aria-hidden="true">·</span>{/if}
+                          <span>{issueDescription(issue)}</span>
+                          {#if issue.example}
+                            <span class="block"
+                              >{m.nde_compat_linked_data_issues_example()}
+                              <a
+                                href={issue.example}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="break-all text-blue-600 hover:underline dark:text-blue-400"
+                                >{issue.example}<ArrowUpRightFromSquareOutline
+                                  class="ms-0.5 inline-block h-3 w-3 align-[-0.1em]"
+                                  aria-hidden="true"
+                                /><span class="sr-only">
+                                  ({m.opens_in_new_tab()})</span
+                                ></a
+                              ></span
+                            >
+                          {/if}
+                        </li>
+                      {/each}
+                    </ul>
+                  </div>
+                </details>
               {/if}
               <!-- A non-blocking advisory on the green persistent row: the URIs
                    resolve (so the criterion is met), but to RDF only — no HTML
