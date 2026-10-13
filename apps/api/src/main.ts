@@ -42,6 +42,7 @@ await (async () => {
     registrationStore,
     allowedRegistrationDomainStore,
     ratingStore,
+    validationReportStore,
   } = stores(config.SPARQL_URL, config.SPARQL_ACCESS_TOKEN);
   startInstrumentation(datasetStore);
   const shacl = await readUrl('requirements/shacl.ttl');
@@ -81,6 +82,7 @@ await (async () => {
       ratingStore,
       config.API_ACCESS_TOKEN,
       buildSearchIndexTrigger(),
+      validationReportStore,
     );
     // On SIGTERM, finish in-flight requests and export the last metrics before exiting.
     // Without a handler, Node as the container’s PID 1 ignores SIGTERM until Kubernetes
