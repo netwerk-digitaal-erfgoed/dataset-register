@@ -24,4 +24,4 @@ We use SHACL severity levels for progressive tightening of requirements:
 |----------------|----------|-------------------------------------------------------------|
 | `sh:Violation` | `MUST`   | Requirements that make validation fail                      |
 | `sh:Warning`   | `MUST`   | Requirements that display as warnings in validation reports |
-| `sh:Info`      | `SHOULD` | Recommendedations                                           |
+| `sh:Info`      | `SHOULD` | Recommendations                                              |
