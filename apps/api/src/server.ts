@@ -46,6 +46,7 @@ function wantsEventStream(accept: string | undefined): boolean {
 export async function server(
   datasetStore: DatasetStore,
   registrationStore: RegistrationStore,
+  validationReportStore: ValidationReportStore,
   allowedRegistrationDomainStore: AllowedRegistrationDomainStore,
   validationReportStore: ValidationReportStore,
   validator: Validator,

@@ -71,6 +71,7 @@ await (async () => {
     const httpServer = await server(
       datasetStore,
       registrationStore,
+      validationReportStore,
       allowedRegistrationDomainStore,
       validationReportStore,
       validator,
