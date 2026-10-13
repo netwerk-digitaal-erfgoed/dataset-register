@@ -204,6 +204,12 @@ export class Crawler {
           mediaType,
         });
 
+        if (warningCount === undefined) {
+          // No report this crawl (gone, no datasets): drop the previous one, so it
+          // cannot outlive the warning count that is reset below.
+          await this.validationReportStore.delete(registration.url);
+        }
+
         const updatedRegistration = registration
           .read({
             datasets: datasetIris,
