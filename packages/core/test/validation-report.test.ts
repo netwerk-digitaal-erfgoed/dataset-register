@@ -70,4 +70,19 @@ describe('validationReportGraphIri', () => {
         encodeURIComponent('https://example.com/catalog'),
     );
   });
+
+  it('derives the same graph IRI for a URL as submitted and as stored', () => {
+    // The registration store percent-encodes IRI-illegal characters such as
+    // braces, so the crawler reads the URL back in its encoded form.
+    const submittedUrl = new URL(
+      'https://example.com/sparql?query=CONSTRUCT { ?s ?p ?o }',
+    );
+    const storedUrl = new URL(
+      'https://example.com/sparql?query=CONSTRUCT%20%7B%20?s%20?p%20?o%20%7D',
+    );
+
+    expect(validationReportGraphIri(submittedUrl).toString()).toBe(
+      validationReportGraphIri(storedUrl).toString(),
+    );
+  });
 });

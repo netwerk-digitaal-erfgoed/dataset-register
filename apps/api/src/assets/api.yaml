@@ -89,8 +89,8 @@ paths:
       tags: [Administration]
       description: |-
         Delete a registration from the Dataset Register, including all dataset descriptions
-        that were fetched from the registered URL. This operation requires authentication
-        via a Bearer token.
+        that were fetched from the registered URL, their ratings and the registration’s
+        SHACL validation report. This operation requires authentication via a Bearer token.
       security:
         - bearerAuth: []
       parameters:

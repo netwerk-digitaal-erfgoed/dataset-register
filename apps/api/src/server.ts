@@ -24,6 +24,7 @@ import {
   RegistrationStore,
   serializeQuads,
   validationsCounter,
+  ValidationReportStore,
   Validator,
 } from '@dataset-register/core';
 import { fileURLToPath, URL } from 'url';
@@ -59,6 +60,7 @@ export async function server(
    * unit-testable. `main.ts` wires it to the single-flight rebuild.
    */
   onDatasetsChanged?: () => void,
+  validationReportStore?: ValidationReportStore,
 ): Promise<FastifyInstance<Server>> {
   const server = fastify(options);
 
@@ -523,6 +525,9 @@ export async function server(
           await ratingStore?.delete(datasetIri);
           await datasetStore.delete(datasetIri);
         }
+
+        // Before the registration, so a failure here leaves it in place for a retry.
+        await validationReportStore?.delete(url);
 
         // Delete the registration (including linked dataset entries in registrations graph)
         await registrationStore.delete(url);

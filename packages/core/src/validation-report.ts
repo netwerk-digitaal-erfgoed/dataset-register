@@ -1,6 +1,7 @@
 import type { DatasetCore } from '@rdfjs/types';
 import { shacl } from './validator.ts';
 import { REGISTRATION_STATUS_BASE_URI } from './constants.ts';
+import { sparqlIri } from './sparql-iri.ts';
 
 const VALIDATION_REPORT_GRAPH_BASE = `${REGISTRATION_STATUS_BASE_URI}shacl-validation/`;
 
@@ -9,11 +10,15 @@ const VALIDATION_REPORT_GRAPH_BASE = `${REGISTRATION_STATUS_BASE_URI}shacl-valid
  * the registration URL. One graph per registration, replaced on each crawl, so
  * the report (and its warnings) can be queried without parsing files. Mirrors
  * the Dataset Knowledge Graph's per-dataset `shacl-validation` graph scheme.
+ *
+ * The URL is keyed in the form the registration store holds it ({@link sparqlIri}),
+ * so a URL as submitted and the same URL as read back from the store name the
+ * same graph.
  */
 export function validationReportGraphIri(registrationUrl: URL): URL {
   return new URL(
     VALIDATION_REPORT_GRAPH_BASE +
-      encodeURIComponent(registrationUrl.toString()),
+      encodeURIComponent(sparqlIri(registrationUrl)),
   );
 }
 

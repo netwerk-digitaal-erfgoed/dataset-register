@@ -16,8 +16,10 @@ import {
   MockDatasetStore,
   MockRatingStore,
   MockRegistrationStore,
+  MockValidationReportStore,
 } from '@dataset-register/core/test-utils';
 import { Registration } from '@dataset-register/core';
+import type { DatasetCore } from '@rdfjs/types';
 import { fileURLToPath, URL } from 'url';
 import { dirname } from 'path';
 
@@ -928,11 +930,14 @@ describe('POST /allowed-domains', () => {
 describe('DELETE /datasets', () => {
   let httpServerWithAuth: FastifyInstance<Server>;
   let deleteRegistrationStore: MockRegistrationStore;
+  let deleteValidationReportStore: MockValidationReportStore;
+  let shacl: DatasetCore;
   const testToken = 'test-api-token';
 
   beforeAll(async () => {
-    const shacl = await readUrl('../../requirements/shacl.ttl');
+    shacl = await readUrl('../../requirements/shacl.ttl');
     deleteRegistrationStore = new MockRegistrationStore();
+    deleteValidationReportStore = new MockValidationReportStore();
     httpServerWithAuth = await server(
       new MockDatasetStore(),
       deleteRegistrationStore,
@@ -943,6 +948,8 @@ describe('DELETE /datasets', () => {
       { logger: false },
       new MockRatingStore(),
       testToken,
+      undefined,
+      deleteValidationReportStore,
     );
   });
 
@@ -960,6 +967,8 @@ describe('DELETE /datasets', () => {
       valid: true,
     });
     await deleteRegistrationStore.store(registration);
+    // Any dataset stands in for the report; only its presence is asserted.
+    await deleteValidationReportStore.store(testUrl, shacl);
   });
 
   it('returns 401 without Authorization header', async () => {
@@ -1025,6 +1034,46 @@ describe('DELETE /datasets', () => {
 
     // Verify registration was deleted
     expect(deleteRegistrationStore.isRegistered(testUrl)).toBe(false);
+  });
+
+  it('deletes the registration’s validation report', async () => {
+    const testUrl = new URL(
+      'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html',
+    );
+
+    expect(deleteValidationReportStore.reports.has(testUrl.toString())).toBe(
+      true,
+    );
+
+    const response = await httpServerWithAuth.inject({
+      method: 'DELETE',
+      url: `/datasets?url=${testUrl.toString()}`,
+      headers: { Authorization: `Bearer ${testToken}`, Accept: '*/*' },
+    });
+
+    expect(response.statusCode).toEqual(204);
+    expect(deleteValidationReportStore.reports.has(testUrl.toString())).toBe(
+      false,
+    );
+  });
+
+  it('keeps the registration when deleting its validation report fails', async () => {
+    const testUrl = new URL(
+      'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html',
+    );
+    vi.spyOn(deleteValidationReportStore, 'delete').mockRejectedValueOnce(
+      new Error('SPARQL endpoint unavailable'),
+    );
+
+    const response = await httpServerWithAuth.inject({
+      method: 'DELETE',
+      url: `/datasets?url=${testUrl.toString()}`,
+      headers: { Authorization: `Bearer ${testToken}`, Accept: '*/*' },
+    });
+
+    expect(response.statusCode).toEqual(500);
+    // Still registered, so the delete can be retried.
+    expect(deleteRegistrationStore.isRegistered(testUrl)).toBe(true);
   });
 });
 
