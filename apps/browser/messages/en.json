@@ -348,6 +348,10 @@
   "nde_compat_linked_data_explanation_pending": "This dataset provides linked data. Its content has not been assessed yet.",
   "nde_compat_linked_data_explanation_none": "This dataset provides no linked data, which makes the data harder to reuse.",
   "nde_compat_linked_data_explanation_empty": "This dataset declares linked data, but its content could not be retrieved.",
+  "nde_compat_linked_data_issues_summary": "Technical details",
+  "nde_compat_linked_data_issues_intro": "A sample of this dataset’s resources was validated against the NDE Schema.org Application Profile. These are the rules the sample broke, with how often.",
+  "nde_compat_linked_data_issues_unnamed": "Does not satisfy {constraint}",
+  "nde_compat_linked_data_issues_example": "Example:",
   "nde_compat_linked_data_count": [
     {
       "declarations": [

@@ -325,6 +325,124 @@ export interface SchemaApNdeConformance {
   declaresProfile: boolean;
 }
 
+// How severe a SCHEMA-AP-NDE validation result is, mirroring `sh:resultSeverity`.
+export type ConformanceIssueSeverity = 'violation' | 'warning' | 'info';
+
+// One rule of SCHEMA-AP-NDE that sampled resources of the dataset broke, with how
+// often. The Knowledge Graph stores one `sh:ValidationResult` per offending
+// value, hundreds per dataset, so the results are grouped per rule:
+// 'path'       – the property the rule constrains (`sh:resultPath`), or null for
+//                a rule on the resource as a whole.
+// 'constraint' – the IRI of the SHACL constraint component that failed. Shown
+//                when the rule has no message at all (the validator emits none
+//                for `sh:or` unless the shape brings its own).
+// 'messages'   – what the rule asks for (`sh:resultMessage`), keyed by language
+//                tag; the validator’s own untagged messages sit under ''. All
+//                languages are kept, because the analysis is cached per dataset
+//                and not per visitor locale (see conformanceIssueMessage).
+// 'count'      – how many validation results the rule produced.
+// 'example'    – the web address of one resource that broke the rule
+//                (`sh:focusNode`), or null when there is none to link to.
+export interface ConformanceIssue {
+  severity: ConformanceIssueSeverity;
+  path: string | null;
+  constraint: string;
+  messages: Record<string, string>;
+  count: number;
+  example: string | null;
+}
+
+// One row of the grouped validation-results query, as plain strings.
+export interface ConformanceIssueRow {
+  severity?: string;
+  path?: string;
+  constraint?: string;
+  message?: string;
+  messageNl?: string;
+  messageEn?: string;
+  count?: string;
+  example?: string;
+}
+
+// Builds the rule-by-rule list behind the linked-data criterion’s fold-out from
+// the grouped query rows: violations first, then warnings, then suggestions, and
+// within a severity the most frequent rule first. Rows with a severity outside
+// SHACL’s three, or without a constraint, are skipped.
+export function conformanceIssues(
+  rows: ConformanceIssueRow[],
+): ConformanceIssue[] {
+  return rows
+    .flatMap((row) => {
+      const severity = parseConformanceIssueSeverity(row.severity);
+      if (severity === null || row.constraint === undefined) return [];
+      return [
+        {
+          severity,
+          path: row.path ?? null,
+          constraint: row.constraint,
+          messages: {
+            ...(row.message !== undefined && { '': row.message }),
+            ...(row.messageNl !== undefined && { nl: row.messageNl }),
+            ...(row.messageEn !== undefined && { en: row.messageEn }),
+          },
+          count: row.count ? parseInt(row.count, 10) : 0,
+          // The example is rendered as a link and comes from the dataset’s own
+          // content, so only web addresses pass: no `javascript:` or `urn:`.
+          example:
+            row.example !== undefined && /^https?:\/\//.test(row.example)
+              ? row.example
+              : null,
+        },
+      ];
+    })
+    .sort(
+      (first, second) =>
+        CONFORMANCE_ISSUE_SEVERITIES.indexOf(first.severity) -
+          CONFORMANCE_ISSUE_SEVERITIES.indexOf(second.severity) ||
+        second.count - first.count,
+    );
+}
+
+// Picks the message to show a visitor: in their language when the profile has
+// one, otherwise the validator’s untagged message, otherwise English, otherwise
+// whichever language there is. Null when the rule has no message.
+export function conformanceIssueMessage(
+  issue: ConformanceIssue,
+  locale: string,
+): string | null {
+  return (
+    issue.messages[locale] ??
+    issue.messages[''] ??
+    issue.messages.en ??
+    Object.values(issue.messages)[0] ??
+    null
+  );
+}
+
+// In display order: most severe first.
+const CONFORMANCE_ISSUE_SEVERITIES: readonly ConformanceIssueSeverity[] = [
+  'violation',
+  'warning',
+  'info',
+];
+
+const SHACL_NAMESPACE = 'http://www.w3.org/ns/shacl#';
+
+function parseConformanceIssueSeverity(
+  severityIri: string | undefined,
+): ConformanceIssueSeverity | null {
+  switch (severityIri) {
+    case `${SHACL_NAMESPACE}Violation`:
+      return 'violation';
+    case `${SHACL_NAMESPACE}Warning`:
+      return 'warning';
+    case `${SHACL_NAMESPACE}Info`:
+      return 'info';
+    default:
+      return null;
+  }
+}
+
 // The signals behind the Linked data criterion:
 // 'declared'       — the register lists a linked-data distribution (a SPARQL
 //                    endpoint or RDF download).
@@ -353,6 +471,9 @@ export interface SchemaApNdeConformance {
 //                    any (necessarily stale) extracted content: the summary is
 //                    outdated and the criterion warns rather than passing.
 //                    Optional: absent reads as not invalid.
+// 'conformanceIssues' – the SCHEMA-AP-NDE rules the conformance sample broke,
+//                    for the criterion’s fold-out. Evidence only: it never
+//                    drives the state. Optional: absent reads as none.
 export interface LinkedData {
   declared: boolean;
   hasVoidDataset: boolean;
@@ -361,6 +482,7 @@ export interface LinkedData {
   quadsValidated: number | null;
   triples: number | null;
   sourceInvalid?: boolean;
+  conformanceIssues?: ConformanceIssue[];
 }
 
 // Term-usage figures for a dataset. `links` is the total number of link

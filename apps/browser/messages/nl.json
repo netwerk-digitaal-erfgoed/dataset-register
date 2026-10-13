@@ -348,6 +348,10 @@
   "nde_compat_linked_data_explanation_pending": "Deze dataset biedt linked data. De inhoud is nog niet beoordeeld.",
   "nde_compat_linked_data_explanation_none": "Deze dataset biedt geen linked data, waardoor de gegevens minder goed herbruikbaar zijn.",
   "nde_compat_linked_data_explanation_empty": "Deze dataset geeft linked data op, maar de inhoud kon niet worden opgehaald.",
+  "nde_compat_linked_data_issues_summary": "Technische details",
+  "nde_compat_linked_data_issues_intro": "Een steekproef van de resources in deze dataset is gevalideerd tegen het NDE Schema.org-applicatieprofiel. Dit zijn de regels waaraan de steekproef niet voldeed, met het aantal keren.",
+  "nde_compat_linked_data_issues_unnamed": "Voldoet niet aan {constraint}",
+  "nde_compat_linked_data_issues_example": "Voorbeeld:",
   "nde_compat_linked_data_count": [
     {
       "declarations": [

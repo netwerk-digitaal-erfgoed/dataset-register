@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   compatibilityCriteria,
+  conformanceIssueMessage,
+  conformanceIssues,
   iiifState,
   linkedDataState,
   normalizePersistentUris,
@@ -366,6 +368,154 @@ describe('parsePersistentUriFailureReason', () => {
     expect(parsePersistentUriFailureReason(`${OUTCOME}made-up`)).toBeNull();
     expect(parsePersistentUriFailureReason('https://example.org/x')).toBeNull();
     expect(parsePersistentUriFailureReason(undefined)).toBeNull();
+  });
+});
+
+describe('conformanceIssues', () => {
+  const SH = 'http://www.w3.org/ns/shacl#';
+
+  it('maps a grouped query row to an issue', () => {
+    expect(
+      conformanceIssues([
+        {
+          severity: `${SH}Violation`,
+          path: 'https://schema.org/name',
+          constraint: `${SH}MinCountConstraintComponent`,
+          message: 'Less than 1 values',
+          count: '9',
+          example: 'https://example.org/id/1',
+        },
+      ]),
+    ).toEqual([
+      {
+        severity: 'violation',
+        path: 'https://schema.org/name',
+        constraint: `${SH}MinCountConstraintComponent`,
+        messages: { '': 'Less than 1 values' },
+        count: 9,
+        example: 'https://example.org/id/1',
+      },
+    ]);
+  });
+
+  it('keeps a row without path, message or example', () => {
+    // The validator emits no message for sh:or, and a rule on the resource as a
+    // whole has no path.
+    expect(
+      conformanceIssues([
+        {
+          severity: `${SH}Violation`,
+          constraint: `${SH}OrConstraintComponent`,
+          count: '3',
+        },
+      ]),
+    ).toEqual([
+      {
+        severity: 'violation',
+        path: null,
+        constraint: `${SH}OrConstraintComponent`,
+        messages: {},
+        count: 3,
+        example: null,
+      },
+    ]);
+  });
+
+  it('drops an example that is not a web address', () => {
+    // The example becomes a link, and its IRI comes from the dataset’s content.
+    const [issue] = conformanceIssues([
+      {
+        severity: `${SH}Violation`,
+        constraint: `${SH}MinCountConstraintComponent`,
+        count: '4',
+        example: 'javascript:alert(1)',
+      },
+    ]);
+    expect(issue.example).toBeNull();
+  });
+
+  it('keeps the messages of every language and picks the visitor’s', () => {
+    const [issue] = conformanceIssues([
+      {
+        severity: `${SH}Violation`,
+        constraint: `${SH}OrConstraintComponent`,
+        messageNl: 'Gebruik een DefinedTerm als onderwerp',
+        messageEn: 'Use a DefinedTerm as subject',
+        count: '250',
+      },
+    ]);
+    expect(conformanceIssueMessage(issue, 'nl')).toBe(
+      'Gebruik een DefinedTerm als onderwerp',
+    );
+    expect(conformanceIssueMessage(issue, 'en')).toBe(
+      'Use a DefinedTerm as subject',
+    );
+  });
+
+  it('shows a message in another language rather than none', () => {
+    const [issue] = conformanceIssues([
+      {
+        severity: `${SH}Violation`,
+        constraint: `${SH}OrConstraintComponent`,
+        messageNl: 'Gebruik een DefinedTerm als onderwerp',
+        count: '250',
+      },
+    ]);
+    expect(conformanceIssueMessage(issue, 'en')).toBe(
+      'Gebruik een DefinedTerm als onderwerp',
+    );
+  });
+
+  it('falls back to the untagged message, then to none', () => {
+    const [untagged, without] = conformanceIssues([
+      {
+        severity: `${SH}Violation`,
+        constraint: `${SH}MinCountConstraintComponent`,
+        message: 'Less than 1 values',
+        count: '9',
+      },
+      {
+        severity: `${SH}Violation`,
+        constraint: `${SH}OrConstraintComponent`,
+        count: '3',
+      },
+    ]);
+    expect(conformanceIssueMessage(untagged, 'nl')).toBe('Less than 1 values');
+    expect(conformanceIssueMessage(without, 'nl')).toBeNull();
+  });
+
+  it('orders by severity, then by how often the rule was broken', () => {
+    const row = (severity: string, count: string) => ({
+      severity: `${SH}${severity}`,
+      constraint: `${SH}DatatypeConstraintComponent`,
+      count,
+    });
+    expect(
+      conformanceIssues([
+        row('Info', '500'),
+        row('Warning', '50'),
+        row('Violation', '4'),
+        row('Violation', '120'),
+      ]).map((issue) => [issue.severity, issue.count]),
+    ).toEqual([
+      ['violation', 120],
+      ['violation', 4],
+      ['warning', 50],
+      ['info', 500],
+    ]);
+  });
+
+  it('skips rows with an unknown severity or without a constraint', () => {
+    expect(
+      conformanceIssues([
+        {
+          severity: 'https://example.org/Fatal',
+          constraint: `${SH}MinCountConstraintComponent`,
+          count: '1',
+        },
+        { severity: `${SH}Violation`, count: '1' },
+      ]),
+    ).toEqual([]);
   });
 });
 

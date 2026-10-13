@@ -14,6 +14,9 @@ import { BaseDatasetSchema, BaseDistributionSchema } from './datasets.js';
 import { shortenUri } from '$lib/utils/prefix';
 import { isUri, lookupTermLabels } from './network-of-terms.js';
 import {
+  conformanceIssues,
+  type ConformanceIssue,
+  type ConformanceIssueRow,
   IIIF_PRESENTATION_API,
   PID_SCHEME_BASE_URI,
   SUBJECT_RESOLUTION_FAILURE_BASE_URI,
@@ -801,6 +804,106 @@ async function fetchSchemaApNdeConformance(
   return none;
 }
 
+// The Dataset Knowledge Graph writes the SCHEMA-AP-NDE validation reports of a
+// dataset’s conformance sample to one named graph per dataset. This mirrors
+// dataset-knowledge-graph graphIri.ts, which encodes the IRI as normalized by
+// URL (so `https://example.org` becomes `https://example.org/`).
+const DKG_SHACL_VALIDATION_GRAPH_BASE =
+  'https://data.netwerkdigitaalerfgoed.nl/dkg/shacl-validation/';
+
+// A profile has a few dozen rules, so this only bounds a report whose results
+// do not group, for instance because a message quotes the offending value.
+const CONFORMANCE_ISSUE_LIMIT = 50;
+
+function shaclValidationGraphIri(datasetUri: string): string {
+  return (
+    DKG_SHACL_VALIDATION_GRAPH_BASE +
+    encodeURIComponent(new URL(datasetUri).toString())
+  );
+}
+
+// Reads the SCHEMA-AP-NDE rules that the dataset’s conformance sample broke, for
+// the Linked data criterion’s fold-out. The reports hold one result per
+// offending value (hundreds per dataset), so the query groups them per rule and
+// returns a count with one example resource: a dozen rows instead of the lot.
+// Returns [] when the dataset has no report, nothing failed, or on error.
+async function fetchConformanceIssues(
+  datasetUri: string,
+): Promise<ConformanceIssue[]> {
+  const rows: ConformanceIssueRow[] = [];
+  try {
+    // A message is read once per language rather than as one variable, so that
+    // a rule whose shape carries a Dutch and an English message stays one row.
+    // The Knowledge Graph skolemizes blank nodes to `.well-known` IRIs, which
+    // lead nowhere. They are left out of the sample here, so that a rule broken
+    // by both blank nodes and named resources still gets a named example.
+    const query = `
+      PREFIX sh: <http://www.w3.org/ns/shacl#>
+      SELECT ?severity ?path ?constraint ?message ?messageNl ?messageEn
+        (COUNT(DISTINCT ?result) AS ?count) (SAMPLE(?focusNode) AS ?example)
+      WHERE {
+        GRAPH <${shaclValidationGraphIri(datasetUri)}> {
+          ?result a sh:ValidationResult ;
+            sh:resultSeverity ?severity ;
+            sh:sourceConstraintComponent ?constraint .
+          # A path that is not a plain property is a blank node, skolemized per
+          # result: left unbound, so that it cannot split a rule into one row
+          # per result.
+          OPTIONAL {
+            ?result sh:resultPath ?path .
+            FILTER(!CONTAINS(STR(?path), "/.well-known/"))
+          }
+          OPTIONAL {
+            ?result sh:resultMessage ?message .
+            FILTER(LANG(?message) = "")
+          }
+          OPTIONAL {
+            ?result sh:resultMessage ?messageNl .
+            FILTER(LANG(?messageNl) = "nl")
+          }
+          OPTIONAL {
+            ?result sh:resultMessage ?messageEn .
+            FILTER(LANG(?messageEn) = "en")
+          }
+          OPTIONAL {
+            ?result sh:focusNode ?focusNode .
+            FILTER(!CONTAINS(STR(?focusNode), "/.well-known/"))
+          }
+        }
+      }
+      GROUP BY ?severity ?path ?constraint ?message ?messageNl ?messageEn
+      ORDER BY DESC(?count)
+      LIMIT ${CONFORMANCE_ISSUE_LIMIT}
+    `;
+    const bindingsStream = await fetcher.fetchBindings(
+      PUBLIC_KNOWLEDGE_GRAPH_ENDPOINT,
+      query,
+    );
+    for await (const raw of bindingsStream) {
+      const binding = raw as unknown as Record<
+        keyof ConformanceIssueRow,
+        { value: string } | undefined
+      >;
+      rows.push({
+        severity: binding.severity?.value,
+        path: binding.path?.value,
+        constraint: binding.constraint?.value,
+        message: binding.message?.value,
+        messageNl: binding.messageNl?.value,
+        messageEn: binding.messageEn?.value,
+        count: binding.count?.value,
+        example: binding.example?.value,
+      });
+    }
+  } catch (queryError: unknown) {
+    console.error(
+      'SCHEMA-AP-NDE validation results query failed:',
+      queryError instanceof Error ? queryError.message : queryError,
+    );
+  }
+  return conformanceIssues(rows);
+}
+
 // Reads when the Knowledge Graph last generated this dataset's summary, from the
 // PROV-O provenance the DKG records. The DKG runs many analysis steps, each
 // emitting its own prov:Activity (linked via prov:wasGeneratedBy) with a
@@ -1485,6 +1588,7 @@ export async function fetchDatasetAnalysis(
     persistentUris,
     persistentUriFailures,
     schemaApNdeConformance,
+    schemaApNdeIssues,
   ] = await Promise.all([
     summaryLens
       .query(datasetSummaryQuery)
@@ -1524,6 +1628,7 @@ export async function fetchDatasetAnalysis(
     fetchPersistentUris(datasetUri),
     fetchPersistentUriFailures(datasetUri),
     fetchSchemaApNdeConformance(datasetUri),
+    fetchConformanceIssues(datasetUri),
   ]);
 
   // Merge the separately-fetched per-URI failures into the persistent-URI
@@ -1556,6 +1661,7 @@ export async function fetchDatasetAnalysis(
     conformant: schemaApNdeConformance.conformant,
     quadsValidated: schemaApNdeConformance.quadsValidated,
     triples: summaryWithClassPartition?.triples ?? null,
+    conformanceIssues: schemaApNdeIssues,
   };
 
   // Term-usage figures for the NDE compatibility criterion, reusing the data
