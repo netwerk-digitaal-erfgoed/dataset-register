@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.1](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.15.0...requirements-1.15.1) (2026-10-13)
+
+
+### Documentation
+
+* **requirements:** announce version 2.0 and its effective date ([#2413](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2413)) ([13f75be](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/13f75bec03f169f4cf2a9b429522897239420c7d))
+
 ## [1.15.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.14.0...requirements-1.15.0) (2026-10-13)
 
 
