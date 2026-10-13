@@ -67,10 +67,7 @@
   "dcat:theme": {
     "@id": "http://publications.europa.eu/resource/authority/data-theme/EDUC"
   },
-  "dct:language": [
-    { "@id": "http://publications.europa.eu/resource/authority/language/NLD" },
-    { "@id": "http://publications.europa.eu/resource/authority/language/ENG" }
-  ],
+  "dct:language": ["nl-NL", "en-GB"],
   "dct:spatial": {
     "@id": "https://sws.geonames.org/2750405/"
   },
