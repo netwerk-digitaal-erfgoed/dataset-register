@@ -183,6 +183,42 @@ describe('Crawler', () => {
     expect(reportStore.reports.get('https://example.com/valid')).toBeDefined();
   });
 
+  it('does not re-create a registration deleted during its crawl', async () => {
+    const url = new URL('https://example.com/valid');
+    const datasetStore = new MockDatasetStore();
+    const ratingStore = new MockRatingStore();
+    crawler = new Crawler(
+      registrationStore,
+      datasetStore,
+      ratingStore,
+      reportStore,
+      validator(true, reportWithWarnings(1)),
+      pino({ enabled: false }),
+    );
+    await storeRegistrationFixture(url);
+    // The API deletes the registration while the crawler is storing its datasets.
+    vi.spyOn(datasetStore, 'store').mockImplementation(() =>
+      registrationStore.delete(url),
+    );
+    const deleteDataset = vi.spyOn(datasetStore, 'delete');
+    const deleteRating = vi.spyOn(ratingStore, 'delete');
+
+    const response = await validSchemaOrgDataset();
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/valid')
+      .times(2)
+      .reply(200, response);
+    await crawler.crawl(new Date('3000-01-01'));
+
+    expect(registrationStore.isRegistered(url)).toBe(false);
+    // What the crawl wrote before the delete is cleaned up too.
+    const datasetIri = new URL('http://data.bibliotheken.nl/id/dataset/rise-alba');
+    expect(deleteDataset).toHaveBeenCalledWith(datasetIri);
+    expect(deleteRating).toHaveBeenCalledWith(datasetIri);
+    expect(reportStore.reports.has(url.toString())).toBe(false);
+  });
+
   it('records the media type on the stored registration', async () => {
     // The serialization does not survive parsing, so the registration is the only place
     // it can be queried back from – the crawl counter is an aggregate, not a per-URL fact.
