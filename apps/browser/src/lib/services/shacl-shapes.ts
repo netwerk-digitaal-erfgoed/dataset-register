@@ -51,7 +51,10 @@ export function fetchShapes(signal?: AbortSignal): Promise<ShapesIndex> {
  * A property shape reused across NodeShapes (`SchemaLicenseIriProperty` is owned by
  * both the dataset and the distribution) has one `byId` entry per owner. The owner
  * bound to the focus node's class wins; otherwise the hit is only trusted when a
- * single owner cannot belong to a different subject.
+ * single owner cannot belong to a different subject. The path lookup falls back the
+ * same way, so an organisation's `schema:contactPoint` result, raised by a SPARQL
+ * shape without a path, takes the description from the agent shape, which is bound
+ * to no class.
  */
 export function selectShape(
   index: ShapesIndex,
@@ -74,7 +77,12 @@ export function selectShape(
   const candidates = index.byPath.get(pathIri);
   if (!candidates?.length) return undefined;
   if (focusNodeType) {
-    return candidates.find((c) => c.targetClass === focusNodeType);
+    const direct = candidates.find((c) => c.targetClass === focusNodeType);
+    if (direct) return direct;
+    const compatible = candidates.filter(
+      (candidate) => !contradictsFocusNode(candidate, focusNodeType),
+    );
+    return compatible.length === 1 ? compatible[0] : undefined;
   }
   if (candidates.length === 1) return candidates[0];
   return candidates.find((c) => c.description) ?? undefined;

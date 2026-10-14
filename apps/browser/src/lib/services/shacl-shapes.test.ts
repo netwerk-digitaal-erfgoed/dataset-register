@@ -58,6 +58,50 @@ describe('selectShape', () => {
     ).toBeUndefined();
   });
 
+  it('falls back to the one path candidate bound to no class', () => {
+    // An organisation’s missing contact point is reported by a SPARQL-based
+    // NodeShape, whose sourceShape has no description. The description lives on
+    // the agent shape, which is targeted via sh:targetObjectsOf and has no class.
+    const datasetMeta = {
+      description: 'Contactinformatie voor vragen over de dataset.',
+      targetClass: `${SCHEMA}Dataset`,
+    };
+    const agentMeta = {
+      description: 'Contactinformatie voor vragen over de organisatie.',
+      targetClass: undefined,
+    };
+    const index: ShapesIndex = {
+      byPath: new Map([[`${SCHEMA}contactPoint`, [datasetMeta, agentMeta]]]),
+      byId: new Map(),
+    };
+    expect(
+      selectShape(
+        index,
+        `${SCHEMA}contactPoint`,
+        `${SCHEMA}Organization`,
+        'https://def.nde.nl/dataset#OrganizationContactPointRequiredShape',
+      ),
+    ).toEqual(agentMeta);
+  });
+
+  it('gives no path description when several candidates are bound to no class', () => {
+    const agentMeta = {
+      description: 'De naam van de organisatie.',
+      targetClass: undefined,
+    };
+    const distributionMeta = {
+      description: 'De naam van de distributie.',
+      targetClass: undefined,
+    };
+    const index: ShapesIndex = {
+      byPath: new Map([[`${SCHEMA}name`, [agentMeta, distributionMeta]]]),
+      byId: new Map(),
+    };
+    expect(
+      selectShape(index, `${SCHEMA}name`, `${SCHEMA}Organization`),
+    ).toBeUndefined();
+  });
+
   it('ignores a sourceShape hit describing a different class than the focus node', () => {
     // Taking it would tell someone describing a catalog to describe the dataset
     // instead.
