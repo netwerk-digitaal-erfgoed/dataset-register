@@ -119,7 +119,7 @@
     {
       "@type": "foaf:Organization",
       "@id": "https://example.com",
-      "dct:identifier": "test",
+      "dct:identifier": "NL-HaKB",
       "foaf:name": {
         "@value": "Koninklijke Bibliotheek",
         "@language": "nl"

@@ -87,7 +87,7 @@
     {
       "@type": "Organization",
       "@id": "https://example.com",
-      "identifier": "test",
+      "identifier": "NL-HaKB",
       "name": {
         "@value": "Koninklijke Bibliotheek",
         "@language": "nl"

@@ -125,7 +125,13 @@ td, th {
 
     // The tab bars added height above a deep link’s target.
     if (location.hash) {
-      document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
+      let id = location.hash.slice(1);
+      try {
+        id = decodeURIComponent(id);
+      } catch {
+        // A malformed escape such as #100% is not a valid ID either way.
+      }
+      document.getElementById(id)?.scrollIntoView();
     }
   });
 })();
@@ -270,8 +276,9 @@ RDF formats include [[JSON-LD]], [[Turtle]] and [[TriG]].
 Publishers *MAY* use either the Schema.org [[!SCHEMA-ORG]] or the DCAT-AP-NL 3.0 [[!DCAT-AP-NL]] vocabulary (see [[#examples]]).
 
 <div class="example">
-    <a href="https://developers.google.com/search/docs/guides/intro-structured-data#structured-data">Google recommends</a>
-    including the JSON-LD directly in the HTML source of web pages.
+    You can include the JSON-LD directly in the HTML source of web pages,
+    as <a href="https://developers.google.com/search/docs/guides/intro-structured-data#structured-data">Google recommends</a> for Schema.org.
+    Google does not read DCAT, so only the Schema.org version makes the organization known to search engines.
 
     So, on your organization's web page, for instance <a href="https://www.kb.nl">www.kb.nl</a>, include:
 
