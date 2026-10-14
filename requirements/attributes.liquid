@@ -1,8 +1,13 @@
-### {{ name }} attributes ### {#{{ name | downcase }}-attributes}
-
+{%- comment -%}
+    Renders the attribute table of one node shape. The caller writes the heading,
+    so that a Schema.org and a DCAT table can share it.
+    oneOf: space-separated paths of which one is required, for an sh:or that
+    JSON-LD framing cannot represent because the shape has a second sh:or
+    (https://github.com/ldelements/lde/issues/893).
+{%- endcomment -%}
 <table>
     {% assign class = nodeShape.targetClass | default: nodeShape.class | default: targetClass -%}
-    <caption>[{{ class }}]({{ class }}) properties</caption>
+    <caption>[{{ class }}]({% render 'expand-iri', curie: class %}) properties</caption>
     <thead>
         <tr>
             <th>Property</th>
@@ -27,9 +32,18 @@
             <td>Recommended<br><small><a href="#v{{ nodeShape['nde:futureChange']['nde:version'] | split: '.' | first }}">v{{ nodeShape['nde:futureChange']['nde:version'] }}</a>: must be IRI</small></td>
         </tr>
         {% endif %}
-        {% assign merged_properties = nodeShape.property | mergePropertiesByPath -%}
+        {% assign or_paths = nodeShape.or | map: 'property' | map: 'path' -%}
+        {% assign framed_out_paths = oneOf | default: '' | split: ' ' -%}
+        {% assign or_properties = nodeShape.or | map: 'property' -%}
+        {% assign merged_properties = nodeShape.property | concat: or_properties | mergePropertiesByPath -%}
         {% for property in merged_properties %}
         {% unless property.path %}{% continue %}{% endunless %}
+        {%- assign alternatives = '' -%}
+        {%- if or_paths contains property.path -%}
+            {%- assign alternatives = or_paths -%}
+        {%- elsif framed_out_paths contains property.path -%}
+            {%- assign alternatives = framed_out_paths -%}
+        {%- endif -%}
         {%- assign pattern_str = property.pattern | default: "" -%}
         {%- assign is_date_shape = pattern_str contains "[0-9]{4}" -%}
         {%- assign description = property.description | lang: "en"
@@ -42,46 +56,43 @@
             | replace: "SHOULD", "*SHOULD*"
         -%}
         <tr>
-            <th scope="row">[{{ property.path }}]({{ property.path }})</th>
+            <th scope="row">[{{ property.path }}]({% render 'expand-iri', curie: property.path %})</th>
             <td>
                 {%- if is_date_shape -%}
                     {%- if description != "" -%}{{ description }} {% endif -%}
                     {%- if name == 'Distribution' -%}See [[#distribution-date]].{%- else -%}See [[#dataset-date]].{%- endif -%}
-                {%- elsif property.path == "schema:publisher" or property.path == "schema:creator" -%}
-                    {{ description }} See [[#creator-publisher-information]].
-                {%- elsif property.path == "schema:contactPoint" -%}
-                    {{ description }} See [[#contact]].
-                {%- elsif property.path == "schema:mainEntityOfPage" -%}
-                    {{ description }} See [[#resolvable-iris]].
-                {%- elsif property.path == "schema:usageInfo" -%}
-                    {{ description }} See [[#usage-information]].
-                {%- elsif name == 'Dataset' -%}
-                    {%- if property.path == "schema:name" -%}
-                        {{ description }} See [[#dataset-basic]].
-                    {%- elsif property.path == "schema:description" -%}
-                        {{ description }} See [[#dataset-basic]].
-                    {%- elsif property.path == "schema:license" -%}
+                {%- else -%}
+                    {%- case property.path -%}
+                    {%- when "schema:publisher", "schema:creator", "dct:publisher", "dct:creator" -%}
+                        {{ description }} See [[#creator-publisher-information]].
+                    {%- when "schema:contactPoint", "dcat:contactPoint" -%}
+                        {{ description }} See [[#contact]].
+                    {%- when "schema:mainEntityOfPage", "dcat:landingPage" -%}
+                        {{ description }} See [[#resolvable-iris]].
+                    {%- when "schema:usageInfo", "dct:conformsTo" -%}
+                        {{ description }} See [[#usage-information]].
+                    {%- when "schema:license", "dct:license" -%}
                         {{ description }} See [[#dataset-license]].
-                    {%- elsif property.path == "schema:distribution" -%}
+                    {%- when "schema:distribution", "dcat:distribution" -%}
                         {{ description }} See [[#dataset-distributions]].
-                    {%- elsif property.path == "schema:version" -%}
+                    {%- when "schema:version", "dcat:version" -%}
                         {{ description }} See [[#dataset-versions]].
-                    {%- elsif is_date_shape -%}
-                        See [[#dataset-date]].
+                    {%- when "schema:name", "schema:description", "dct:title", "dct:description" -%}
+                        {{ description }}{% if name == 'Dataset' %} See [[#dataset-basic]].{% endif %}
                     {%- else -%}
                         {{ description }}
-                    {%- endif -%}
-                {%- else -%}
-                    {{ description }}
+                    {%- endcase -%}
                 {%- endif -%}
             </td>
             <td>
-                {%- assign current_min = property.minCount | default: 0 -%}
+                {%- assign min_count = property.minCount -%}
+                {%- if alternatives != '' -%}{%- assign min_count = 0 -%}{%- endif -%}
+                {%- assign current_min = min_count | default: 0 -%}
                 {%- assign current_max = property.maxCount | default: "n" -%}
                 {%- if property.maxCount == 0 -%}
                     {%- assign current_card = "0" -%}
-                {%- elsif property.minCount and property.minCount == property.maxCount -%}
-                    {%- capture current_card %}{{ property.minCount }}{% endcapture -%}
+                {%- elsif min_count and min_count == property.maxCount -%}
+                    {%- capture current_card %}{{ min_count }}{% endcapture -%}
                 {%- else -%}
                     {%- capture current_card %}{{ current_min }}..{{ current_max }}{% endcapture -%}
                 {%- endif -%}
@@ -93,7 +104,7 @@
                     {%- if change.minCount -%}{%- assign future_min = change.minCount -%}{%- endif -%}
                     {%- if change.maxCount -%}{%- assign future_max = change.maxCount -%}{%- endif -%}
                     {%- if change.severity == "Violation" and current_min == 0 and property.maxCount != 0 -%}
-                        {%- unless change.datatype or change.pattern or change.nodeKind or property.datatype or property.pattern or property.nodeKind or property.or or property.not -%}
+                        {%- unless change.datatype or change.pattern or change.nodeKind or property.datatype or property.pattern or property.nodeKind or property.or or property.not or property.node.pattern -%}
                             {%- assign future_min = 1 -%}
                         {%- endunless -%}
                     {%- endif -%}
@@ -113,6 +124,9 @@
                 {% assign is_required = false -%}
                 {% if property.maxCount == 0 -%}
                     Discouraged
+                {% elsif alternatives != '' -%}
+                    Required: {{ alternatives | join: ' or ' }}
+                    {% assign is_required = true -%}
                 {% elsif property.minCount > 0 -%}
                     {% assign severity = property.severity | default: "Violation" -%}
                     {% if severity == "Violation" -%}
@@ -141,6 +155,8 @@
                         {% assign future_text = "must be IRI" -%}
                     {% elsif change.severity == "Violation" and property.datatype -%}
                         {% assign future_text = property.datatype | replace: 'http://www.w3.org/2001/XMLSchema#', 'xsd:' | replace: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'rdf:' | prepend: 'must be ' -%}
+                    {% elsif change.severity == "Violation" and property.node.pattern -%}
+                        {% capture future_text %}must match <code>{{ property.node.pattern }}</code>{% endcapture -%}
                     {% elsif change.severity == "Violation" and is_date_shape -%}
                         {% assign future_text = "must be valid ISO 8601" -%}
                     {% elsif change.severity == "Violation" and property.or -%}
@@ -160,7 +176,7 @@
                             {% assign future_text = "IRIs not allowed" -%}
                         {%- endif -%}
                     {% endif -%}
-                    {% if property.minCount > 0 and property.severity == "Warning" and change.severity == "Violation" -%}
+                    {% if min_count > 0 and property.severity == "Warning" and change.severity == "Violation" -%}
                         {% if future_text == "" -%}
                             {% assign future_text = "becomes required" -%}
                         {% elsif future_text != "becomes required" -%}

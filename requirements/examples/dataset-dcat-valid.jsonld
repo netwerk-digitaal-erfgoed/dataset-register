@@ -1,0 +1,130 @@
+{
+  "@context": {
+    "dcat": "http://www.w3.org/ns/dcat#",
+    "dct": "http://purl.org/dc/terms/",
+    "foaf": "http://xmlns.com/foaf/0.1/",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "vcard": "http://www.w3.org/2006/vcard/ns#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "@graph": [
+    {
+      "@type": "dcat:Dataset",
+      "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
+      "dct:title": [
+        {
+          "@value": "Alba amicorum van de Koninklijke Bibliotheek",
+          "@language": "nl"
+        },
+        {
+          "@value": "Alba amicorum of the Dutch Royal Library",
+          "@language": "en"
+        }
+      ],
+      "dct:description": {
+        "@value": "Description only in English",
+        "@language": "en"
+      },
+      "dcat:theme": { "@id": "http://vocab.getty.edu/aat/300026680" },
+      "dcat:landingPage": {
+        "@id": "https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum"
+      },
+      "dct:language": [
+        { "@id": "http://publications.europa.eu/resource/authority/language/NLD" },
+        { "@id": "http://publications.europa.eu/resource/authority/language/ENG" }
+      ],
+      "dct:spatial": { "@id": "https://sws.geonames.org/2750405/" },
+      "dct:temporal": "1939/1945",
+      "dct:publisher": { "@id": "https://example.com" },
+      "dct:creator": [
+        {
+          "@type": "foaf:Person",
+          "@id": "https://example.com/creator1",
+          "foaf:name": { "@value": "Creator 1", "@language": "en" }
+        },
+        {
+          "@type": "foaf:Person",
+          "@id": "https://example.com/creator2",
+          "foaf:name": { "@value": "Creator 2", "@language": "en" }
+        },
+        { "@id": "https://example.com" }
+      ],
+      "dcat:contactPoint": {
+        "@type": "vcard:Kind",
+        "vcard:fn": { "@value": "Datasets Manager", "@language": "en" },
+        "vcard:hasEmail": { "@id": "mailto:datasets@example.com" }
+      },
+      "dct:created": { "@value": "2021-05-27", "@type": "xsd:date" },
+      "dct:issued": { "@value": "2021-05-28", "@type": "xsd:date" },
+      "dct:modified": {
+        "@value": "2021-05-27T09:56:21.370767",
+        "@type": "xsd:dateTime"
+      },
+      "dcat:distribution": [
+        {
+          "@type": "dcat:Distribution",
+          "dcat:mediaType": {
+            "@id": "https://www.iana.org/assignments/media-types/application/rdf+xml"
+          },
+          "dcat:accessURL": {
+            "@id": "https://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
+          },
+          "dcat:downloadURL": {
+            "@id": "https://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
+          },
+          "dcat:byteSize": { "@value": "12582912", "@type": "xsd:nonNegativeInteger" },
+          "dct:description": "RDF/XML dump",
+          "dct:license": {
+            "@id": "https://creativecommons.org/publicdomain/zero/1.0/"
+          }
+        },
+        {
+          "@type": "dcat:Distribution",
+          "dcat:mediaType": {
+            "@id": "https://www.iana.org/assignments/media-types/application/ld+json"
+          },
+          "dcat:accessURL": {
+            "@id": "https://data.bibliotheken.nl/id/dataset/rise-alba.jsonld"
+          },
+          "dcat:downloadURL": {
+            "@id": "https://data.bibliotheken.nl/id/dataset/rise-alba.jsonld"
+          },
+          "dct:conformsTo": { "@id": "https://docs.nde.nl/schema-profile/" },
+          "dct:description": "JSON-LD dump",
+          "dct:license": {
+            "@id": "https://creativecommons.org/publicdomain/zero/1.0/"
+          }
+        },
+        {
+          "@type": "dcat:Distribution",
+          "dcat:accessURL": {
+            "@id": "https://data.bibliotheken.nl/id/dataset/sparql"
+          },
+          "foaf:page": {
+            "@id": "https://data.bibliotheken.nl/KB/Production/sparql"
+          },
+          "dct:conformsTo": {
+            "@id": "https://www.w3.org/TR/sparql11-protocol/"
+          },
+          "dct:format": {
+            "@id": "http://publications.europa.eu/resource/authority/file-type/SPARQLQ"
+          },
+          "dct:description": "SPARQL endpoint",
+          "dct:license": {
+            "@id": "https://creativecommons.org/publicdomain/zero/1.0/"
+          }
+        }
+      ]
+    },
+    {
+      "@type": "foaf:Organization",
+      "@id": "https://example.com",
+      "dct:identifier": "test",
+      "foaf:name": {
+        "@value": "Koninklijke Bibliotheek",
+        "@language": "nl"
+      },
+      "owl:sameAs": { "@id": "https://ror.org/02w4jbg70" }
+    }
+  ]
+}
