@@ -1666,8 +1666,9 @@ dcat:DistributionShape
         ] ;
         sh:message "Gebruik maximaal één mediatype per distributie"@nl, "Use at most one media type per distribution"@en ;
     ] ,
-    # Metadata-only property shapes: the descriptions live outside the sh:or above,
-    # which JSON-LD framing for the spec cannot represent next to the second sh:or.
+    # Metadata-only property shapes: they describe the paths of the first sh:or
+    # above, for the spec and for the reachability-probe results, which look up a
+    # description by path.
     [
         sh:path dcat:accessURL ;
         sh:description "De URL die toegang verschaft tot een distributie van de dataset."@nl, "The URL that provides access to a distribution of the dataset."@en ;
