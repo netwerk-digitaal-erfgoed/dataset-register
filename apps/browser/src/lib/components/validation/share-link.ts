@@ -46,6 +46,13 @@ export async function decodeFromShareUrl(
   return legacy || undefined;
 }
 
+// The encoded `rdf` payload of a validate-page fragment (`#rdf=…&ct=…`), with
+// or without the leading `#`. Every reader of the fragment goes through this,
+// so whether a link counts as a shared paste is decided in one place.
+export function sharedRdfPayload(hash: string): string | undefined {
+  return new URLSearchParams(hash.replace(/^#/, '')).get('rdf') || undefined;
+}
+
 async function deflateRaw(bytes: Uint8Array): Promise<Uint8Array> {
   const stream = new Blob([bytes as BlobPart])
     .stream()

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { compressToEncodedURIComponent } from 'lz-string';
-import { decodeFromShareUrl, encodeForShareUrl } from './share-link.js';
+import {
+  decodeFromShareUrl,
+  encodeForShareUrl,
+  sharedRdfPayload,
+} from './share-link.js';
 
 const LIMA_TURTLE = `@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix schema:<http://schema.org/> .
@@ -79,4 +83,22 @@ describe('share-link', () => {
   it('returns undefined for garbage in the current format', async () => {
     expect(await decodeFromShareUrl('~1!!!not-base64!!!')).toBeUndefined();
   });
+});
+
+describe('sharedRdfPayload', () => {
+  it.each([
+    ['#rdf=~1abc', '~1abc'],
+    ['rdf=~1abc', '~1abc'],
+    ['#ct=text%2Fturtle&rdf=~1abc', '~1abc'],
+    ['#rdf=~1abc&ct=text%2Fturtle', '~1abc'],
+  ])('reads the payload from %s', (hash, expected) => {
+    expect(sharedRdfPayload(hash)).toBe(expected);
+  });
+
+  it.each(['', '#', '#rdf=', '#ct=text%2Fturtle', '#notrdf=~1abc'])(
+    'finds no payload in %j',
+    (hash) => {
+      expect(sharedRdfPayload(hash)).toBeUndefined();
+    },
+  );
 });

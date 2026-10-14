@@ -11,6 +11,7 @@
   } from '$lib/services/validation.js';
   import type { ContentType } from '$lib/components/validation/detect-content-type.js';
   import { buildFocusNodeTypes } from '$lib/components/validation/focus-node-types.js';
+  import { sharedRdfPayload } from '$lib/components/validation/share-link.js';
   import { getLocale } from '$lib/paraglide/runtime';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
@@ -194,7 +195,8 @@
   }
 
   let hasInlineHash = $state(
-    typeof window !== 'undefined' && /(?:^|&)rdf=/.test(window.location.hash),
+    typeof window !== 'undefined' &&
+      sharedRdfPayload(window.location.hash) !== undefined,
   );
   // Bumping this key forces InlineValidationForm to remount so its `onMount`
   // re-reads the freshly written `window.location.hash`.

@@ -20,6 +20,7 @@
     type ContentType,
   } from './detect-content-type.js';
   import { formatRdf } from './format-rdf.js';
+  import { sharedRdfPayload } from './share-link.js';
   import {
     summarizeDescription,
     type DescriptionSummary,
@@ -149,7 +150,7 @@
   $effect(() => {
     const current = url;
     const parsed = parseUrl(current);
-    if (!parsed || !/(?:^|#|&)rdf=/.test(parsed.hash)) return;
+    if (!parsed || sharedRdfPayload(parsed.hash) === undefined) return;
     const hashValue = parsed.hash.replace(/^#/, '');
     untrack(() => {
       url = '';
