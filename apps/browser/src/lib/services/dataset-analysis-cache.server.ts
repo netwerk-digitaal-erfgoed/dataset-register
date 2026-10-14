@@ -33,7 +33,7 @@ import {
 // which are runtime values we can hash directly. The remaining fields
 // (linkedData/terms/iiifManifests/persistentUris) are plain interfaces, erased
 // at runtime — bump CACHE_VERSION by hand when you change one of those.
-const CACHE_VERSION = 2;
+const CACHE_VERSION = 3;
 const SCHEMA_VERSION = createHash('sha256')
   .update(
     JSON.stringify([

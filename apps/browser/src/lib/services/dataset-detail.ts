@@ -805,22 +805,14 @@ async function fetchSchemaApNdeConformance(
 }
 
 // The Dataset Knowledge Graph writes the SCHEMA-AP-NDE validation reports of a
-// dataset’s conformance sample to one named graph per dataset. This mirrors
-// dataset-knowledge-graph graphIri.ts, which encodes the IRI as normalized by
-// URL (so `https://example.org` becomes `https://example.org/`).
+// dataset’s conformance sample to one named graph per dataset (see
+// dkgGraphIri).
 const DKG_SHACL_VALIDATION_GRAPH_BASE =
   'https://data.netwerkdigitaalerfgoed.nl/dkg/shacl-validation/';
 
 // A profile has a few dozen rules, so this only bounds a report whose results
 // do not group, for instance because a message quotes the offending value.
 const CONFORMANCE_ISSUE_LIMIT = 50;
-
-function shaclValidationGraphIri(datasetUri: string): string {
-  return (
-    DKG_SHACL_VALIDATION_GRAPH_BASE +
-    encodeURIComponent(new URL(datasetUri).toString())
-  );
-}
 
 // Reads the SCHEMA-AP-NDE rules that the dataset’s conformance sample broke, for
 // the Linked data criterion’s fold-out. The reports hold one result per
@@ -832,47 +824,71 @@ async function fetchConformanceIssues(
 ): Promise<ConformanceIssue[]> {
   const rows: ConformanceIssueRow[] = [];
   try {
-    // A message is read once per language rather than as one variable, so that
-    // a rule whose shape carries a Dutch and an English message stays one row.
-    // The Knowledge Graph skolemizes blank nodes to `.well-known` IRIs, which
-    // lead nowhere. They are left out of the sample here, so that a rule broken
-    // by both blank nodes and named resources still gets a named example.
+    // The inner query reduces each result to one row: one path, one message per
+    // language and one focus node, so that a result with two messages in the
+    // same language cannot count twice. A message is read once per language
+    // rather than as one variable, so that a rule whose shape carries a Dutch
+    // and an English message stays one row. The Knowledge Graph skolemizes
+    // blank nodes to `.well-known` IRIs, which lead nowhere. They, and anything
+    // else that is not a web address, are left out of the example, so that a
+    // rule broken by both those and web resources still gets a link: MAX,
+    // unlike SAMPLE, skips unbound values. Rules are ranked by severity before
+    // the limit, so that frequent warnings cannot push a violation out.
     const query = `
       PREFIX sh: <http://www.w3.org/ns/shacl#>
       SELECT ?severity ?path ?constraint ?message ?messageNl ?messageEn
-        (COUNT(DISTINCT ?result) AS ?count) (SAMPLE(?focusNode) AS ?example)
+        (COUNT(?result) AS ?count) (MAX(?focusNode) AS ?example)
       WHERE {
-        GRAPH <${shaclValidationGraphIri(datasetUri)}> {
-          ?result a sh:ValidationResult ;
-            sh:resultSeverity ?severity ;
-            sh:sourceConstraintComponent ?constraint .
-          # A path that is not a plain property is a blank node, skolemized per
-          # result: left unbound, so that it cannot split a rule into one row
-          # per result.
-          OPTIONAL {
-            ?result sh:resultPath ?path .
-            FILTER(!CONTAINS(STR(?path), "/.well-known/"))
+        {
+          SELECT ?result ?severity ?constraint (MIN(?anyPath) AS ?path)
+            (MIN(?untaggedMessage) AS ?message)
+            (MIN(?dutchMessage) AS ?messageNl)
+            (MIN(?englishMessage) AS ?messageEn)
+            (MAX(?namedFocusNode) AS ?focusNode)
+          WHERE {
+            GRAPH <${dkgGraphIri(DKG_SHACL_VALIDATION_GRAPH_BASE, datasetUri)}> {
+              ?result a sh:ValidationResult ;
+                sh:resultSeverity ?severity ;
+                sh:sourceConstraintComponent ?constraint .
+              # A path that is not a plain property is a blank node, skolemized
+              # per result: left unbound, so that it cannot split a rule into
+              # one row per result.
+              OPTIONAL {
+                ?result sh:resultPath ?anyPath .
+                FILTER(!CONTAINS(STR(?anyPath), "/.well-known/"))
+              }
+              OPTIONAL {
+                ?result sh:resultMessage ?untaggedMessage .
+                FILTER(LANG(?untaggedMessage) = "")
+              }
+              OPTIONAL {
+                ?result sh:resultMessage ?dutchMessage .
+                FILTER(LANGMATCHES(LANG(?dutchMessage), "nl"))
+              }
+              OPTIONAL {
+                ?result sh:resultMessage ?englishMessage .
+                FILTER(LANGMATCHES(LANG(?englishMessage), "en"))
+              }
+              OPTIONAL {
+                ?result sh:focusNode ?namedFocusNode .
+                FILTER(
+                  isIRI(?namedFocusNode)
+                  && (STRSTARTS(STR(?namedFocusNode), "http://")
+                    || STRSTARTS(STR(?namedFocusNode), "https://"))
+                  && !CONTAINS(STR(?namedFocusNode), "/.well-known/")
+                )
+              }
+            }
           }
-          OPTIONAL {
-            ?result sh:resultMessage ?message .
-            FILTER(LANG(?message) = "")
-          }
-          OPTIONAL {
-            ?result sh:resultMessage ?messageNl .
-            FILTER(LANG(?messageNl) = "nl")
-          }
-          OPTIONAL {
-            ?result sh:resultMessage ?messageEn .
-            FILTER(LANG(?messageEn) = "en")
-          }
-          OPTIONAL {
-            ?result sh:focusNode ?focusNode .
-            FILTER(!CONTAINS(STR(?focusNode), "/.well-known/"))
-          }
+          GROUP BY ?result ?severity ?constraint
+        }
+        VALUES (?severity ?severityRank) {
+          (sh:Violation 0) (sh:Warning 1) (sh:Info 2)
         }
       }
-      GROUP BY ?severity ?path ?constraint ?message ?messageNl ?messageEn
-      ORDER BY DESC(?count)
+      GROUP BY ?severityRank ?severity ?path ?constraint ?message ?messageNl
+        ?messageEn
+      ORDER BY ?severityRank DESC(?count)
       LIMIT ${CONFORMANCE_ISSUE_LIMIT}
     `;
     const bindingsStream = await fetcher.fetchBindings(
@@ -1040,15 +1056,22 @@ interface ValidityBinding {
 }
 
 // The Dataset Knowledge Graph writes RDF-validity verdicts to one named graph per
-// dataset, keyed by the dataset IRI, and stores no dcat:distribution metadata
-// alongside them. This mirrors dataset-knowledge-graph graphIri.ts:
-// base + encodeURIComponent(datasetIri). Kept here so the deep validity query can
-// scope to a dataset without a dcat join the DKG cannot satisfy.
+// dataset (see dkgGraphIri) and stores no dcat:distribution metadata alongside
+// them. Kept here so the deep validity query can scope to a dataset without a
+// dcat join the DKG cannot satisfy.
 const DKG_DISTRIBUTION_VALIDITY_GRAPH_BASE =
   'https://data.netwerkdigitaalerfgoed.nl/dkg/distribution-validity/';
 
-function deepValidityGraphIri(datasetUri: string): string {
-  return DKG_DISTRIBUTION_VALIDITY_GRAPH_BASE + encodeURIComponent(datasetUri);
+// The named graph in which the Dataset Knowledge Graph keeps one kind of output
+// for a dataset. This mirrors dataset-knowledge-graph graphIri.ts, which
+// encodes the IRI as normalized by URL (so `https://example.org` becomes
+// `https://example.org/`). An IRI that URL cannot parse is used as is, so that
+// building a query never throws.
+function dkgGraphIri(base: string, datasetUri: string): string {
+  const normalizedUri = URL.canParse(datasetUri)
+    ? new URL(datasetUri).toString()
+    : datasetUri;
+  return base + encodeURIComponent(normalizedUri);
 }
 
 async function fetchValidityVerdicts(
@@ -1065,7 +1088,7 @@ async function fetchValidityVerdicts(
   // metadata, so that same dcat join matches zero rows there. The deep query
   // instead scopes to the per-dataset graph and reads the distribution URL
   // directly from dqv:computedOn (which equals the access URL). See
-  // deepValidityGraphIri.
+  // dkgGraphIri.
   const datasetPattern = `
       <${datasetUri}> dcat:distribution ?distribution .
       ?distribution dcat:accessURL ?accessURL .`;
@@ -1086,7 +1109,7 @@ async function fetchValidityVerdicts(
       }
       GRAPH ?validityGraph {${measurementPattern}
       }`
-      : `GRAPH <${deepValidityGraphIri(datasetUri)}> {${measurementPattern}
+      : `GRAPH <${dkgGraphIri(DKG_DISTRIBUTION_VALIDITY_GRAPH_BASE, datasetUri)}> {${measurementPattern}
       }`;
   const query = `
     PREFIX dcat: <http://www.w3.org/ns/dcat#>

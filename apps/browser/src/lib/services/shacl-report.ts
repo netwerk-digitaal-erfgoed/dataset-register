@@ -11,11 +11,18 @@ export interface ParseOptions {
   locale?: string;
 }
 
-const SH = 'http://www.w3.org/ns/shacl#';
+export const SH = 'http://www.w3.org/ns/shacl#';
 const VALIDATION_REPORT = `${SH}ValidationReport`;
 const VALIDATION_RESULT = `${SH}ValidationResult`;
 
 export type Severity = 'Violation' | 'Warning' | 'Info';
+
+export function parseSeverity(iri: string | undefined): Severity | null {
+  if (iri === `${SH}Violation`) return 'Violation';
+  if (iri === `${SH}Warning`) return 'Warning';
+  if (iri === `${SH}Info`) return 'Info';
+  return null;
+}
 
 export interface ShaclResult {
   severity: Severity;
@@ -114,11 +121,4 @@ export function parseShaclReport(
     conforms: conforms ?? results.every((r) => r.severity !== 'Violation'),
     results,
   };
-}
-
-function parseSeverity(iri: string | undefined): Severity | null {
-  if (iri === `${SH}Violation`) return 'Violation';
-  if (iri === `${SH}Warning`) return 'Warning';
-  if (iri === `${SH}Info`) return 'Info';
-  return null;
 }

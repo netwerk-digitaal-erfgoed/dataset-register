@@ -7,6 +7,7 @@
   import { lookupValues, type DataValue } from './lookup-values.js';
   import type { ContentType } from './detect-content-type.js';
   import SeverityBadge from './SeverityBadge.svelte';
+  import { severityLabel, severityTone } from './severity.js';
 
   interface Props {
     result: ShaclResult;
@@ -45,20 +46,8 @@
       '<code class="font-mono">$1</code>',
     ),
   );
-  const tone = $derived(
-    result.severity === 'Violation'
-      ? 'red'
-      : result.severity === 'Warning'
-        ? 'yellow'
-        : 'blue',
-  );
-  const severityLabel = $derived(
-    result.severity === 'Violation'
-      ? m.severity_Violation()
-      : result.severity === 'Warning'
-        ? m.severity_Warning()
-        : m.severity_Info(),
-  );
+  const tone = $derived(severityTone(result.severity));
+  const label = $derived(severityLabel(result.severity));
 
   const valueSourceLine = $derived.by(() => {
     if (!sourceText) return null;
@@ -136,14 +125,14 @@
       {#if result.message}
         <h3 class="text-base font-semibold text-gray-900 dark:text-white">
           <span class="mr-2 inline-flex align-middle"
-            ><SeverityBadge {tone}>{severityLabel}</SeverityBadge></span
+            ><SeverityBadge {tone}>{label}</SeverityBadge></span
           >{#if subject}<span
               class="align-middle text-gray-600 dark:text-gray-300"
               >{subject}<span class="mx-1" aria-hidden="true">·</span></span
             >{/if}<span class="align-middle">{result.message}</span>
         </h3>
       {:else}
-        <SeverityBadge {tone}>{severityLabel}</SeverityBadge>
+        <SeverityBadge {tone}>{label}</SeverityBadge>
       {/if}
       {#if shapeMeta?.description || result.path}
         <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">

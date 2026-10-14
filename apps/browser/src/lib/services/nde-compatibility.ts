@@ -3,6 +3,8 @@
 // what state each is in — so it can be unit-tested without the UI. The component
 // maps each criterion to its translated heading, explanation and count.
 
+import { parseSeverity, type Severity } from './shacl-report.js';
+
 // Version-less IIIF Presentation API namespace used as the discriminator of the
 // `void:subset` that records detected IIIF Presentation manifests in the
 // Dataset Knowledge Graph.
@@ -325,9 +327,6 @@ export interface SchemaApNdeConformance {
   declaresProfile: boolean;
 }
 
-// How severe a SCHEMA-AP-NDE validation result is, mirroring `sh:resultSeverity`.
-export type ConformanceIssueSeverity = 'violation' | 'warning' | 'info';
-
 // One rule of SCHEMA-AP-NDE that sampled resources of the dataset broke, with how
 // often. The Knowledge Graph stores one `sh:ValidationResult` per offending
 // value, hundreds per dataset, so the results are grouped per rule:
@@ -336,20 +335,26 @@ export type ConformanceIssueSeverity = 'violation' | 'warning' | 'info';
 // 'constraint' – the IRI of the SHACL constraint component that failed. Shown
 //                when the rule has no message at all (the validator emits none
 //                for `sh:or` unless the shape brings its own).
-// 'messages'   – what the rule asks for (`sh:resultMessage`), keyed by language
-//                tag; the validator’s own untagged messages sit under ''. All
-//                languages are kept, because the analysis is cached per dataset
-//                and not per visitor locale (see conformanceIssueMessage).
+// 'messages'   – what the rule asks for (`sh:resultMessage`), in Dutch and
+//                English; the validator’s own untagged messages sit under ''.
+//                Both languages are kept, because the analysis is cached per
+//                dataset and not per visitor locale (see conformanceIssueMessage).
 // 'count'      – how many validation results the rule produced.
 // 'example'    – the web address of one resource that broke the rule
 //                (`sh:focusNode`), or null when there is none to link to.
 export interface ConformanceIssue {
-  severity: ConformanceIssueSeverity;
+  severity: Severity;
   path: string | null;
   constraint: string;
-  messages: Record<string, string>;
+  messages: ConformanceIssueMessages;
   count: number;
   example: string | null;
+}
+
+export interface ConformanceIssueMessages {
+  ''?: string;
+  nl?: string;
+  en?: string;
 }
 
 // One row of the grouped validation-results query, as plain strings.
@@ -373,7 +378,7 @@ export function conformanceIssues(
 ): ConformanceIssue[] {
   return rows
     .flatMap((row) => {
-      const severity = parseConformanceIssueSeverity(row.severity);
+      const severity = parseSeverity(row.severity);
       if (severity === null || row.constraint === undefined) return [];
       return [
         {
@@ -405,43 +410,26 @@ export function conformanceIssues(
 
 // Picks the message to show a visitor: in their language when the profile has
 // one, otherwise the validator’s untagged message, otherwise English, otherwise
-// whichever language there is. Null when the rule has no message.
+// Dutch. Null when the rule has no message.
 export function conformanceIssueMessage(
   issue: ConformanceIssue,
   locale: string,
 ): string | null {
   return (
-    issue.messages[locale] ??
+    (locale === 'nl' || locale === 'en' ? issue.messages[locale] : undefined) ??
     issue.messages[''] ??
     issue.messages.en ??
-    Object.values(issue.messages)[0] ??
+    issue.messages.nl ??
     null
   );
 }
 
 // In display order: most severe first.
-const CONFORMANCE_ISSUE_SEVERITIES: readonly ConformanceIssueSeverity[] = [
-  'violation',
-  'warning',
-  'info',
+const CONFORMANCE_ISSUE_SEVERITIES: readonly Severity[] = [
+  'Violation',
+  'Warning',
+  'Info',
 ];
-
-const SHACL_NAMESPACE = 'http://www.w3.org/ns/shacl#';
-
-function parseConformanceIssueSeverity(
-  severityIri: string | undefined,
-): ConformanceIssueSeverity | null {
-  switch (severityIri) {
-    case `${SHACL_NAMESPACE}Violation`:
-      return 'violation';
-    case `${SHACL_NAMESPACE}Warning`:
-      return 'warning';
-    case `${SHACL_NAMESPACE}Info`:
-      return 'info';
-    default:
-      return null;
-  }
-}
 
 // The signals behind the Linked data criterion:
 // 'declared'       — the register lists a linked-data distribution (a SPARQL
