@@ -15,3 +15,9 @@ $(NDE_MK):
 	mkdir -p $(NDE_DIR).download
 	curl -fsSL https://github.com/netwerk-digitaal-erfgoed/workflows/archive/$(NDE_REF).tar.gz | tar -xz -C $(NDE_DIR).download --strip-components=1
 	mv $(NDE_DIR).download $(NDE_DIR)
+
+# Downloads the boilerplate again, for a spec that follows a branch such as main.
+.PHONY: update
+update:
+	rm -rf .nde
+	$(MAKE) $(NDE_MK)
