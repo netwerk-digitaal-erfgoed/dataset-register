@@ -2,5 +2,10 @@
   "dera": {
     "href": "https://dera.netwerkdigitaalerfgoed.nl",
     "title": "Digital Heritage Reference Architecture"
+  },
+  "dcat-ap-nl": {
+    "href": "https://docs.geostandaarden.nl/dcat/dcat-ap-nl30/",
+    "title": "DCAT-AP-NL 3.0",
+    "publisher": "Geonovum"
   }
 }

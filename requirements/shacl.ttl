@@ -1091,6 +1091,7 @@ nde-dataset:ContactPointShape
     sh:property [
         sh:path schema:name ;
         sh:minCount 1 ;
+        sh:severity sh:Violation ;
         sh:description "Naam van het contactpunt, bij voorkeur een afdeling (“Afdeling datasets”) in plaats van een individuele medewerker. Geef de waarde een taaltag, zodat een meertalige afdelingsnaam of een niet-Latijnse persoonsnaam in de juiste taal getoond kan worden."@nl, "Name of the contact point, preferably a department (“Datasets department”) rather than an individual employee. Tag the value with a language so that a multilingual department name or a non-Latin personal name can be shown in the appropriate language."@en ;
         sh:message "Vul een naam in voor het contactpunt"@nl, "Enter a name for the contact point"@en ;
     ] ,
@@ -1119,6 +1120,7 @@ nde-dataset:ContactPointShape
     [
         sh:path schema:email ;
         sh:minCount 1 ;
+        sh:description "Het e-mailadres van het contactpunt, bij voorkeur een functioneel adres van de organisatie of afdeling."@nl, "The email address of the contact point, preferably a functional address of the organization or department."@en ;
         sh:message "Vul een e-mailadres in voor het contactpunt"@nl, "Enter an email address for the contact point"@en ;
     ] .
 
@@ -1322,6 +1324,7 @@ dcat:DatasetShape
     sh:property [
         sh:minCount 1 ;
         sh:path dc:title ;
+        sh:severity sh:Violation ;
         sh:or (
             [ sh:datatype xsd:string ]
             [ sh:datatype rdf:langString ]
@@ -1621,14 +1624,12 @@ dcat:DistributionShape
             sh:minCount 1 ;
             sh:maxCount 1 ;
             sh:path dcat:accessURL ;
-            sh:description "De URL die toegang verschaft tot een distributie van de dataset."@nl, "The URL that provides access to a distribution of the dataset."@en ;
             ]
         ]
         [ sh:property [
             sh:minCount 1 ;
             sh:maxCount 1 ;
             sh:path dcat:downloadURL ;
-            sh:description "De URL van het downloadbare bestand in een bepaald formaat."@nl, "The URL of the downloadable file in a specific format."@en ;
             ]
         ]
     ) ;
@@ -1663,6 +1664,16 @@ dcat:DistributionShape
             sh:severity sh:Violation ;
         ] ;
         sh:message "Gebruik maximaal één mediatype per distributie"@nl, "Use at most one media type per distribution"@en ;
+    ] ,
+    # Metadata-only property shapes: the descriptions live outside the sh:or above,
+    # which JSON-LD framing for the spec cannot represent next to the second sh:or.
+    [
+        sh:path dcat:accessURL ;
+        sh:description "De URL die toegang verschaft tot een distributie van de dataset."@nl, "The URL that provides access to a distribution of the dataset."@en ;
+    ] ,
+    [
+        sh:path dcat:downloadURL ;
+        sh:description "De URL van het downloadbare bestand in een bepaald formaat."@nl, "The URL of the downloadable file in a specific format."@en ;
     ] ,
     # Metadata-only property shape: dcat:compressFormat carries no constraints of
     # its own, but publishers need to be told it is read and preferred over a
@@ -1770,6 +1781,7 @@ dcat:CatalogShape
     sh:property [
         sh:path dc:title ;
         sh:minCount 1 ;
+        sh:severity sh:Violation ;
         sh:or (
             [ sh:datatype xsd:string ]
             [ sh:datatype rdf:langString ]
@@ -1860,12 +1872,14 @@ dcat:ContactPointShape
     sh:property [
         sh:path vcard:fn ;
         sh:minCount 1 ;
+        sh:description "Naam van het contactpunt, bij voorkeur een afdeling (“Afdeling datasets”) in plaats van een individuele medewerker."@nl, "Name of the contact point, preferably a department (“Datasets department”) rather than an individual employee."@en ;
         sh:message "Vul een naam in voor het contactpunt"@nl, "Enter a name for the contact point"@en ;
     ] ,
     [
         sh:path vcard:hasEmail ;
         sh:minCount 1 ;
         sh:nodeKind sh:IRI ;
+        sh:description "Het e-mailadres van het contactpunt als mailto:-URL, bij voorkeur een functioneel adres van de organisatie of afdeling."@nl, "The email address of the contact point as a mailto: URL, preferably a functional address of the organization or department."@en ;
         sh:pattern "^mailto:" ;
         sh:severity sh:Warning ;
         nde:futureChange [
@@ -1883,6 +1897,7 @@ dcat:AgentShape
     sh:property [
         sh:path foaf:name ;
         sh:minCount 1 ;
+        sh:severity sh:Violation ;
         sh:or (
             [ sh:datatype xsd:string ]
             [ sh:datatype rdf:langString ]

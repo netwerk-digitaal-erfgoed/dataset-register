@@ -17,7 +17,109 @@ Abstract: This document describes requirements for publishing dataset descriptio
 td, th {
     vertical-align: top;
 }
+
+/* Schema.org and DCAT alternatives, shown as tabs that switch together. */
+.vocab-tablist {
+    display: flex;
+    gap: 0.25em;
+    margin-bottom: 0.5em;
+    border-bottom: 1px solid var(--example-border);
+}
+.vocab-tablist [role="tab"] {
+    margin-bottom: -1px;
+    padding: 0.25em 0.75em;
+    border: none;
+    border-bottom: 3px solid transparent;
+    background: none;
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+}
+.vocab-tablist [role="tab"][aria-selected="true"] {
+    border-bottom-color: var(--a-normal-text);
+    color: var(--a-normal-text);
+    font-weight: bold;
+}
+.vocab-tablist [role="tab"]:focus-visible,
+.vocab-tabs > [role="tabpanel"]:focus-visible {
+    outline: 2px solid var(--a-normal-text);
+    outline-offset: 2px;
+}
+:root[data-vocab="schema"] .vocab-tabs > [data-vocab="dcat"],
+:root[data-vocab="dcat"] .vocab-tabs > [data-vocab="schema"] {
+    /* Beats Bikeshed’s display: grid on line-numbered code blocks. */
+    display: none !important;
+}
 </style>
+
+<script>
+// Turns each .vocab-tabs group into tabs. Picking a vocabulary in one group
+// switches every group on the page, and the choice is remembered.
+document.addEventListener('DOMContentLoaded', () => {
+  const vocabularies = { schema: 'Schema.org', dcat: 'DCAT' };
+  const storageKey = 'nde-datasets-vocabulary';
+  const tabs = [];
+
+  const select = (vocabulary) => {
+    document.documentElement.dataset.vocab = vocabulary;
+    for (const tab of tabs) {
+      const selected = tab.dataset.vocab === vocabulary;
+      tab.setAttribute('aria-selected', String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+    }
+    try {
+      localStorage.setItem(storageKey, vocabulary);
+    } catch {}
+  };
+
+  document.querySelectorAll('.vocab-tabs').forEach((group, groupIndex) => {
+    const tablist = document.createElement('div');
+    tablist.className = 'vocab-tablist';
+    tablist.setAttribute('role', 'tablist');
+    tablist.setAttribute('aria-label', 'Vocabulary');
+
+    for (const panel of group.querySelectorAll(':scope > [data-vocab]')) {
+      const vocabulary = panel.dataset.vocab;
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.id = `vocab-tab-${groupIndex}-${vocabulary}`;
+      tab.dataset.vocab = vocabulary;
+      tab.textContent = vocabularies[vocabulary];
+      tab.setAttribute('role', 'tab');
+      panel.id ||= `vocab-panel-${groupIndex}-${vocabulary}`;
+      panel.tabIndex = 0;
+      panel.setAttribute('role', 'tabpanel');
+      panel.setAttribute('aria-labelledby', tab.id);
+      tab.setAttribute('aria-controls', panel.id);
+
+      tab.addEventListener('click', () => {
+        // Keep the clicked tab in place while groups above it change height.
+        const topBefore = tab.getBoundingClientRect().top;
+        select(vocabulary);
+        window.scrollBy(0, tab.getBoundingClientRect().top - topBefore);
+      });
+      tab.addEventListener('keydown', (event) => {
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+        const siblings = [...tablist.children];
+        const step = event.key === 'ArrowRight' ? 1 : -1;
+        const next = siblings[(siblings.indexOf(tab) + step + siblings.length) % siblings.length];
+        next.click();
+        next.focus();
+      });
+
+      tablist.append(tab);
+      tabs.push(tab);
+    }
+    group.prepend(tablist);
+  });
+
+  let stored = null;
+  try {
+    stored = localStorage.getItem(storageKey);
+  } catch {}
+  select(Object.hasOwn(vocabularies, stored ?? '') ? stored : 'schema');
+});
+</script>
 
 Introduction {#introduction}
 ============
@@ -65,11 +167,15 @@ which provides more background on choices made here.
 Code examples {#examples}
 -------------------------
 
-RDF code examples are in the [[SCHEMA-ORG]] vocabulary, serialized as [[JSON-LD]].
+[=Publishers=] can describe their datasets in either of two vocabularies:
+Schema.org [[!SCHEMA-ORG]] or DCAT-AP-NL 3.0 [[!DCAT-AP-NL]], the Dutch application profile of [[VOCAB-DCAT-3]].
+The [NDE Dataset Register](https://datasetregister.netwerkdigitaalerfgoed.nl/?lang=en) accepts both
+and converts every [=dataset description=] to DCAT-AP-NL 3.0.
+Search engines such as Google Dataset Search read Schema.org;
+DCAT-AP-NL 3.0 is the standard for Dutch government data catalogs.
 
-While other vocabularies, such as [[VOCAB-DCAT-3]] can also be used,
-Schema.org has the advantage that it's [better picked up by search engines](https://github.com/netwerk-digitaal-erfgoed/project-organisations-datasets/tree/master/publication-model#considerations),
-improving findability, one of the main goals of publishing datasets on the web.
+Every RDF code example is given in both vocabularies, serialized as [[JSON-LD]].
+Use the tabs above an example to switch between them; all examples and attribute tables switch together.
 
 Version 2.0 {#v2}
 ===========
@@ -78,7 +184,7 @@ Version 2.0 takes effect on Monday 3 May 2027.
 Until that date, the [NDE Dataset Register](https://datasetregister.netwerkdigitaalerfgoed.nl/?lang=en)
 accepts [=dataset descriptions=] that break a version 2.0 rule and reports each broken rule as a warning.
 From that date, it rejects new and updated dataset descriptions that break one.
-A dataset without a `creator`, for example, is registered with a warning before that date and refused from it.
+A dataset without a creator (`schema:creator` or `dct:creator`), for example, is registered with a warning before that date and refused from it.
 
 A dataset that is already registered is not removed on that date.
 If its description breaks a version 2.0 rule, the Register marks it as invalid the next time it reads the description.
@@ -151,8 +257,7 @@ RDF formats include [[JSON-LD]], [[Turtle]] and [[TriG]].
 
 > [=Publishers=] *MUST* make their [=dataset description=] available in RDF.
 
-Both the Schema.org and DCAT vocabularies *MAY* be used;
-Schema.org is [[#examples|recommended]].
+Publishers *MAY* use either the Schema.org [[!SCHEMA-ORG]] or the DCAT-AP-NL 3.0 [[!DCAT-AP-NL]] vocabulary (see [[#examples]]).
 
 <div class="example">
     <a href="https://developers.google.com/search/docs/guides/intro-structured-data#structured-data">Google recommends</a>
@@ -160,7 +265,8 @@ Schema.org is [[#examples|recommended]].
 
     So, on your organization's web page, for instance <a href="https://www.kb.nl">www.kb.nl</a>, include:
 
-    <xmp highlight=html>
+    <div class="vocab-tabs">
+    <xmp highlight=html data-vocab="schema">
         <html>
           <head>
             <title>Koninklijke Bibliotheek</title>
@@ -181,6 +287,30 @@ Schema.org is [[#examples|recommended]].
           </body>
         </html>
     </xmp>
+    <xmp highlight=html data-vocab="dcat">
+        <html>
+          <head>
+            <title>Koninklijke Bibliotheek</title>
+            <script type="application/ld+json">
+              {
+                "@context": {
+                  "foaf": "http://xmlns.com/foaf/0.1/"
+                },
+                "@type": "foaf:Organization",
+                "@id": "http://www.wikidata.org/entity/Q1526131",
+                "foaf:name": {
+                  "@value": "Koninklijke Bibliotheek",
+                  "@language": "nl"
+                }
+              }
+            </script>
+          </head>
+          <body>
+            Here continues the web page of the organization...
+          </body>
+        </html>
+    </xmp>
+    </div>
 </div>
 
 See also [[DWBP-UCR#R-FormatMachineRead]].
@@ -216,7 +346,7 @@ and a human-readable HTML page without needing a separate landing page URL.
 > and serves both an RDF representation (the [=dataset description=]) and an HTML representation.
 > The HTML representation *MUST* be consistent with and include at least all details (such as distributions) from the RDF representation.
 
-When the dataset IRI resolves to an HTML page, a separate `mainEntityOfPage` is not needed (see [[#more-information]]).
+When the dataset IRI resolves to an HTML page, a separate `schema:mainEntityOfPage` or `dcat:landingPage` is not needed (see [[#more-information]]).
 
 ### Information remains available ### {#available}
 
@@ -244,7 +374,8 @@ Publishers *MUST* include basic information about the dataset, at the very minim
 <div class="example">
     Basic dataset information:
 
-    <pre highlight=json-ld>
+    <div class="vocab-tabs">
+    <pre highlight=json-ld data-vocab="schema">
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
@@ -261,6 +392,27 @@ Publishers *MUST* include basic information about the dataset, at the very minim
           ]
         }
     </pre>
+    <pre highlight=json-ld data-vocab="dcat">
+        {
+          "@context": {
+            "dcat": "http://www.w3.org/ns/dcat#",
+            "dct": "http://purl.org/dc/terms/"
+          },
+          "@type": "dcat:Dataset",
+          "@id": "http://data.bibliotheken.nl/doc/dataset/rise-alba",
+          "dct:title": [
+            {
+              "@value": "Alba amicorum van de Koninklijke Bibliotheek",
+              "@language": "nl"
+            },
+            {
+              "@value": "Alba amicorum of the Dutch Royal Library",
+              "@language": "en"
+            }
+          ]
+        }
+    </pre>
+    </div>
 </div>
 
 {% assign dataset = nodeShapes | where: 'targetClass', 'schema:Dataset' | first -%}
@@ -272,18 +424,36 @@ Publishers *MUST* include basic information about the dataset, at the very minim
 {{ license.description | lang: 'en' | replace: "MUST", "*MUST*" | replace: "SHOULD", "*SHOULD*" }}
 
 <div class="example">
-    Specify a license for the dataset:
+    Specify a license for the dataset.
+    In DCAT-AP-NL 3.0, the license belongs to each distribution rather than to the dataset:
 
-    <pre highlight=json-ld>
+    <div class="vocab-tabs">
+    <pre highlight=json-ld data-vocab="schema">
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
           "license": "https://creativecommons.org/publicdomain/zero/1.0/"
         }
     </pre>
+    <pre highlight=json-ld data-vocab="dcat">
+        {
+          "@context": {
+            "dcat": "http://www.w3.org/ns/dcat#",
+            "dct": "http://purl.org/dc/terms/"
+          },
+          "@type": "dcat:Dataset",
+          "dcat:distribution": {
+            "@type": "dcat:Distribution",
+            "dct:license": {
+              "@id": "https://creativecommons.org/publicdomain/zero/1.0/"
+            }
+          }
+        }
+    </pre>
+    </div>
 </div>
 
-[DCAT-AP-NL 3.0](https://docs.geostandaarden.nl/dcat/dcat-ap-nl30/) requires the use of Creative Commons licences
+DCAT-AP-NL 3.0 [[!DCAT-AP-NL]] requires the use of Creative Commons licences
 and defines a [value list](https://definities.geostandaarden.nl/dcat-ap-nl/id/waardelijst/licenties/) for licences.
 The default *SHOULD* be [CC0](https://creativecommons.org/publicdomain/zero/1.0/) (`https://creativecommons.org/publicdomain/zero/1.0/`).
 The following table lists the recommended canonical license IRIs.
@@ -301,7 +471,7 @@ Creative Commons IRIs *MUST* use `https://` and end with a trailing slash.
 </table>
 
 <div class="advisement">
-    In v2.0 of this specification, the license *MUST* be one of the IRIs listed above.
+    In [[#v2|v2.0]] of this specification, the license *MUST* be one of the IRIs listed above.
 </div>
 
 See also [[DWBP-UCR#R-LicenseAvailable]].
@@ -314,7 +484,8 @@ The dates *MUST* be valid according to [[!ISO8601]].
 <div class="example">
     Specify dataset description dates:
 
-    <pre highlight=json-ld>
+    <div class="vocab-tabs">
+    <pre highlight=json-ld data-vocab="schema">
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
@@ -323,6 +494,20 @@ The dates *MUST* be valid according to [[!ISO8601]].
           "dateModified": "2019-08-15"
         }
     </pre>
+    <pre highlight=json-ld data-vocab="dcat">
+        {
+          "@context": {
+            "dcat": "http://www.w3.org/ns/dcat#",
+            "dct": "http://purl.org/dc/terms/",
+            "xsd": "http://www.w3.org/2001/XMLSchema#"
+          },
+          "@type": "dcat:Dataset",
+          "dct:created": { "@value": "2019-04-14", "@type": "xsd:date" },
+          "dct:issued": { "@value": "2019-05-21", "@type": "xsd:date" },
+          "dct:modified": { "@value": "2019-08-15", "@type": "xsd:date" }
+        }
+    </pre>
+    </div>
 </div>
 
 ### Versions ### {#dataset-versions}
@@ -344,7 +529,8 @@ If more information is available, publishers *SHOULD* add it.
 <div class="example">
     More information about the dataset.
 
-    <pre highlight=json-ld line-numbers>
+    <div class="vocab-tabs">
+    <pre highlight=json-ld line-numbers data-vocab="schema">
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
@@ -355,6 +541,23 @@ If more information is available, publishers *SHOULD* add it.
           "mainEntityOfPage": "https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum"
         }
     </pre>
+    <pre highlight=json-ld line-numbers data-vocab="dcat">
+        {
+          "@context": {
+            "dcat": "http://www.w3.org/ns/dcat#",
+            "dct": "http://purl.org/dc/terms/"
+          },
+          "@type": "dcat:Dataset",
+          "dct:description": {
+            "@value": "Alba amicorum van de Koninklijke Bibliotheek, een dataset gedefinieerd voor het Europeana Rise of Literacy project.",
+            "@language": "nl"
+          },
+          "dcat:landingPage": {
+            "@id": "https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum"
+          }
+        }
+    </pre>
+    </div>
 </div>
 
 See [[#dataset-attributes]] for an overview of attributes.
@@ -375,21 +578,40 @@ Providing information about the person/organization behind the dataset answers u
 <div class="example">
     An organization description:
 
-    <pre highlight=json-ld>
-      {
-        "@context": "https://schema.org/",
-        "@type": "Organization",
-        "@id": "http://www.wikidata.org/entity/Q1526131",
-        "name": {
-          "@value": "Koninklijke Bibliotheek",
-          "@language": "nl"
-        },
-        "alternateName": {
-          "@value": "KB",
-          "@language": "nl"
+    <div class="vocab-tabs">
+    <pre highlight=json-ld data-vocab="schema">
+        {
+          "@context": "https://schema.org/",
+          "@type": "Organization",
+          "@id": "http://www.wikidata.org/entity/Q1526131",
+          "name": {
+            "@value": "Koninklijke Bibliotheek",
+            "@language": "nl"
+          },
+          "alternateName": {
+            "@value": "KB",
+            "@language": "nl"
+          }
         }
-      }
     </pre>
+    <pre highlight=json-ld data-vocab="dcat">
+        {
+          "@context": {
+            "foaf": "http://xmlns.com/foaf/0.1/"
+          },
+          "@type": "foaf:Organization",
+          "@id": "http://www.wikidata.org/entity/Q1526131",
+          "foaf:name": {
+            "@value": "Koninklijke Bibliotheek",
+            "@language": "nl"
+          },
+          "foaf:nick": {
+            "@value": "KB",
+            "@language": "nl"
+          }
+        }
+    </pre>
+    </div>
 </div>
 
 See [[#organization-attributes]] for a full overview of organization attributes.
@@ -397,17 +619,32 @@ See [[#organization-attributes]] for a full overview of organization attributes.
 <div class="example">
     A person description:
 
-    <pre highlight=json-ld>
-      {
-        "@context": "https://schema.org/",
-        "@type": "Person",
-        "@id": "https://example.com",
-        "name": {
+    <div class="vocab-tabs">
+    <pre highlight=json-ld data-vocab="schema">
+        {
+          "@context": "https://schema.org/",
+          "@type": "Person",
+          "@id": "https://example.com",
+          "name": {
             "@value": "Jan Jansen",
             "@language": "nl"
+          }
         }
-      }
     </pre>
+    <pre highlight=json-ld data-vocab="dcat">
+        {
+          "@context": {
+            "foaf": "http://xmlns.com/foaf/0.1/"
+          },
+          "@type": "foaf:Person",
+          "@id": "https://example.com",
+          "foaf:name": {
+            "@value": "Jan Jansen",
+            "@language": "nl"
+          }
+        }
+    </pre>
+    </div>
 </div>
 
 ### Organization IRI ### {#organization-iri}
@@ -433,7 +670,7 @@ The organization’s IRI *MUST NOT* be:
 - a URL that identifies one collection website of the organization.
 
 The validator warns about known software supplier addresses and Wikidata web pages.
-Publishers *MAY* link to other identifiers of the organization, such as its Wikidata entity, with `sameAs`.
+Publishers *MAY* link to other identifiers of the organization, such as its Wikidata entity, with `schema:sameAs` or `owl:sameAs`.
 
 ### ISIL identifier ### {#isil}
 
@@ -442,14 +679,27 @@ Publishers *MAY* link to other identifiers of the organization, such as its Wiki
 <div class="example">
     An organization with an ISIL code:
 
-    <pre highlight=json-ld>
-      {
-        "@context": "https://schema.org/",
-        "@type": "Organization",
-        "@id": "http://www.wikidata.org/entity/Q1526131",
-        "identifier": "NL-HaKB"
-      }
+    <div class="vocab-tabs">
+    <pre highlight=json-ld data-vocab="schema">
+        {
+          "@context": "https://schema.org/",
+          "@type": "Organization",
+          "@id": "http://www.wikidata.org/entity/Q1526131",
+          "identifier": "NL-HaKB"
+        }
     </pre>
+    <pre highlight=json-ld data-vocab="dcat">
+        {
+          "@context": {
+            "dct": "http://purl.org/dc/terms/",
+            "foaf": "http://xmlns.com/foaf/0.1/"
+          },
+          "@type": "foaf:Organization",
+          "@id": "http://www.wikidata.org/entity/Q1526131",
+          "dct:identifier": "NL-HaKB"
+        }
+    </pre>
+    </div>
 </div>
 
 ### Contact information ### {#contact}
@@ -458,10 +708,15 @@ Publishers *SHOULD* include contact information so [=consumers=] can reach them 
 If contact information is provided, it *MUST* include a name and e-mail address.
 The e-mail address *SHOULD* be an organizational or departmental address rather than a personal one for GDPR compliance.
 
-<div class="example">
-    A publisher with contact information.
+In Schema.org, the contact point belongs to the publisher (`schema:contactPoint`).
+In DCAT-AP-NL 3.0, it belongs to the dataset or catalog (`dcat:contactPoint`),
+and the e-mail address is a `mailto:` IRI.
 
-    <pre highlight=json-ld line-numbers line-highlight="9-17">
+<div class="example">
+    A dataset with contact information.
+
+    <div class="vocab-tabs">
+    <pre highlight=json-ld line-numbers line-highlight="9-17" data-vocab="schema">
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
@@ -482,6 +737,26 @@ The e-mail address *SHOULD* be an organizational or departmental address rather 
           }
         }
     </pre>
+    <pre highlight=json-ld line-numbers line-highlight="7-16" data-vocab="dcat">
+        {
+          "@context": {
+            "dcat": "http://www.w3.org/ns/dcat#",
+            "vcard": "http://www.w3.org/2006/vcard/ns#"
+          },
+          "@type": "dcat:Dataset",
+          "dcat:contactPoint": {
+            "@type": "vcard:Kind",
+            "vcard:fn": {
+              "@value": "Datasets Department",
+              "@language": "en"
+            },
+            "vcard:hasEmail": {
+              "@id": "mailto:datasets@kb.nl"
+            }
+          }
+        }
+    </pre>
+    </div>
 </div>
 
 ### Dataset publisher ### {#dataset-publisher}
@@ -491,21 +766,22 @@ The person/organization data is then included as the dataset's publisher:
 <div class="example">
     A dataset with an organization as publisher.
 
-    <pre highlight=json-ld>
+    <div class="vocab-tabs">
+    <pre highlight=json-ld data-vocab="schema">
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
           "publisher": {
             "@type": "Organization",
             "@id": "http://www.wikidata.org/entity/Q1526131",
-            "identifier": "NL-HaKB"
+            "identifier": "NL-HaKB",
             "name": {
-                "@value": "Koninklijke Bibliotheek",
-                "language": "nl"
+              "@value": "Koninklijke Bibliotheek",
+              "@language": "nl"
             },
             "alternateName": {
-                "@value": "KB",
-                "@language": "nl"
+              "@value": "KB",
+              "@language": "nl"
             },
             "contactPoint": {
               "@type": "ContactPoint",
@@ -519,12 +795,48 @@ The person/organization data is then included as the dataset's publisher:
           }
         }
     </pre>
+    <pre highlight=json-ld data-vocab="dcat">
+        {
+          "@context": {
+            "dcat": "http://www.w3.org/ns/dcat#",
+            "dct": "http://purl.org/dc/terms/",
+            "foaf": "http://xmlns.com/foaf/0.1/",
+            "vcard": "http://www.w3.org/2006/vcard/ns#"
+          },
+          "@type": "dcat:Dataset",
+          "dct:publisher": {
+            "@type": "foaf:Organization",
+            "@id": "http://www.wikidata.org/entity/Q1526131",
+            "dct:identifier": "NL-HaKB",
+            "foaf:name": {
+              "@value": "Koninklijke Bibliotheek",
+              "@language": "nl"
+            },
+            "foaf:nick": {
+              "@value": "KB",
+              "@language": "nl"
+            }
+          },
+          "dcat:contactPoint": {
+            "@type": "vcard:Kind",
+            "vcard:fn": {
+              "@value": "Datasets Department",
+              "@language": "en"
+            },
+            "vcard:hasEmail": {
+              "@id": "mailto:datasets@kb.nl"
+            }
+          }
+        }
+    </pre>
+    </div>
 </div>
 
 <div class="example">
     A dataset with a person as publisher.
 
-    <pre highlight=json-ld>
+    <div class="vocab-tabs">
+    <pre highlight=json-ld data-vocab="schema">
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
@@ -538,6 +850,25 @@ The person/organization data is then included as the dataset's publisher:
           }
         }
     </pre>
+    <pre highlight=json-ld data-vocab="dcat">
+        {
+          "@context": {
+            "dcat": "http://www.w3.org/ns/dcat#",
+            "dct": "http://purl.org/dc/terms/",
+            "foaf": "http://xmlns.com/foaf/0.1/"
+          },
+          "@type": "dcat:Dataset",
+          "dct:publisher": {
+            "@type": "foaf:Person",
+            "@id": "https://example.com",
+            "foaf:name": {
+              "@value": "Jan Jansen",
+              "@language": "nl"
+            }
+          }
+        }
+    </pre>
+    </div>
 </div>
 
 ## Distributions ## {#dataset-distributions}
@@ -552,16 +883,24 @@ Examples of distributions are data dumps in one or more RDF serializations, such
 CSV files, SPARQL endpoints, OAI-PMH endpoints or other [=web APIs=].
 All distributions of a dataset *MUST* contain broadly the same data.
 
-`schema:contentUrl` is the URL of the distribution itself: the data file, or the endpoint of the [=web API=].
+The URL of the distribution itself – the data file, or the endpoint of the [=web API=] – goes in
+`schema:contentUrl` (Schema.org) or `dcat:accessURL` (DCAT-AP-NL 3.0).
+For a download, DCAT-AP-NL 3.0 also puts the file URL in `dcat:downloadURL`.
 If a documentation page describes or provides access to the distribution alongside it – for example a SPARQL query editor for the endpoint, or a download landing page –
-add it on the distribution with `schema:documentation`.
+add it on the distribution with `schema:documentation` or `foaf:page`.
+
+The format of the distribution goes in `schema:encodingFormat` or `dcat:mediaType`.
+A [=web API=] identifies its protocol instead (see [[#usage-information]]):
+in Schema.org with `schema:usageInfo`;
+in DCAT-AP-NL 3.0 with `dct:conformsTo`, next to a `dct:format` from the [EU file type list](https://op.europa.eu/en/web/eu-vocabularies/concept-scheme/-/resource?uri=http://publications.europa.eu/resource/authority/file-type).
 
 <div class="example">
     A minimal definition of a SPARQL endpoint distribution.
     In the Schema.org vocabulary, each type of distribution is called a [DataDownload](https://schema.org/DataDownload),
     even if it is a query endpoint.
 
-    <pre highlight=json-ld>
+    <div class="vocab-tabs">
+    <pre highlight=json-ld data-vocab="schema">
         {
           "@context": "https://schema.org/",
           "@type": "DataDownload",
@@ -569,15 +908,31 @@ add it on the distribution with `schema:documentation`.
           "usageInfo": "https://www.w3.org/TR/sparql11-protocol/"
         }
     </pre>
+    <pre highlight=json-ld data-vocab="dcat">
+        {
+          "@context": {
+            "dcat": "http://www.w3.org/ns/dcat#",
+            "dct": "http://purl.org/dc/terms/"
+          },
+          "@type": "dcat:Distribution",
+          "dcat:accessURL": { "@id": "http://vocab.getty.edu/sparql" },
+          "dct:conformsTo": { "@id": "https://www.w3.org/TR/sparql11-protocol/" },
+          "dct:format": { "@id": "http://publications.europa.eu/resource/authority/file-type/SPARQLQ" },
+          "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
+        }
+    </pre>
+    </div>
 </div>
 
-The distributions are then included under the `distribution` attribute with the dataset.
+The distributions are then included under the `schema:distribution` or `dcat:distribution` attribute with the dataset.
 
 <div class="example">
     A dataset with one SPARQL and two download distributions.
-    The SPARQL endpoint separates the endpoint URL (`contentUrl`) from its query UI (`documentation`).
+    The SPARQL endpoint separates the endpoint URL (`schema:contentUrl` or `dcat:accessURL`)
+    from its query UI (`schema:documentation` or `foaf:page`).
 
-    <pre highlight=json-ld>
+    <div class="vocab-tabs">
+    <pre highlight=json-ld data-vocab="schema">
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
@@ -601,19 +956,56 @@ The distributions are then included under the `distribution` attribute with the 
           ]
         }
     </pre>
+    <pre highlight=json-ld data-vocab="dcat">
+        {
+          "@context": {
+            "dcat": "http://www.w3.org/ns/dcat#",
+            "dct": "http://purl.org/dc/terms/",
+            "foaf": "http://xmlns.com/foaf/0.1/"
+          },
+          "@type": "dcat:Dataset",
+          "dcat:distribution": [
+            {
+              "@type": "dcat:Distribution",
+              "dcat:accessURL": { "@id": "https://service.archief.nl/sparql" },
+              "foaf:page": { "@id": "https://www.nationaalarchief.nl/onderzoeken/sparql" },
+              "dct:conformsTo": { "@id": "https://www.w3.org/TR/sparql11-protocol/" },
+              "dct:format": { "@id": "http://publications.europa.eu/resource/authority/file-type/SPARQLQ" },
+              "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
+            },
+            {
+              "@type": "dcat:Distribution",
+              "dcat:mediaType": { "@id": "https://www.iana.org/assignments/media-types/application/ld+json" },
+              "dcat:accessURL": { "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.json" },
+              "dcat:downloadURL": { "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.json" },
+              "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
+            },
+            {
+              "@type": "dcat:Distribution",
+              "dcat:mediaType": { "@id": "https://www.iana.org/assignments/media-types/text/csv" },
+              "dcat:compressFormat": { "@id": "https://www.iana.org/assignments/media-types/application/gzip" },
+              "dcat:accessURL": { "@id": "https://example.com/data.csv.gz" },
+              "dcat:downloadURL": { "@id": "https://example.com/data.csv.gz" },
+              "dct:license": { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
+            }
+          ]
+        }
+    </pre>
+    </div>
 </div>
 
 See [[#distribution-attributes]] for a full overview.
 
 <div class="advisement">
-    In v2.0 of this specification, <code>contentUrl</code> *MUST* be an IRI.
+    In [[#v2|v2.0]] of this specification, <code>schema:contentUrl</code> *MUST* be an IRI.
     String and <code>xsd:anyURI</code> literals will no longer be accepted.
     A <code>contentUrl</code> written as a JSON string in JSON-LD with the Schema.org context, as in the example above, is read as an IRI and stays valid.
+    In DCAT-AP-NL 3.0, write <code>dcat:accessURL</code> and <code>dcat:downloadURL</code> as IRIs, with <code>@id</code> in JSON-LD.
 </div>
 
 ### Creation and modification dates ### {#distribution-date}
 
-Publishers *SHOULD* make known when the [=distribution=] was originally created and when it was last updated,
+Publishers *SHOULD* make known when the [=distribution=] was first published and when it was last updated,
 so [=consumers=] can efficiently stay up-to-date with the latest changes.
 Please note that this is different from the [[#dataset-date|dataset description’s dates]].
 Datetimes (`2019-08-15T08:05:00Z`) are preferred because they offer greater precision,
@@ -622,19 +1014,34 @@ but simple dates (`2019-04-14`) are also allowed.
 <div class="example">
     Specify distribution dates:
 
-    <pre highlight=json-ld>
+    <div class="vocab-tabs">
+    <pre highlight=json-ld data-vocab="schema">
         {
           "@context": "https://schema.org/",
-          "@type": "Distribution",
-          "dateCreated": "2019-04-14",
+          "@type": "DataDownload",
+          "datePublished": "2019-04-14",
           "dateModified": "2019-08-15T08:05:00"
         }
     </pre>
+    <pre highlight=json-ld data-vocab="dcat">
+        {
+          "@context": {
+            "dcat": "http://www.w3.org/ns/dcat#",
+            "dct": "http://purl.org/dc/terms/",
+            "xsd": "http://www.w3.org/2001/XMLSchema#"
+          },
+          "@type": "dcat:Distribution",
+          "dct:issued": { "@value": "2019-04-14", "@type": "xsd:date" },
+          "dct:modified": { "@value": "2019-08-15T08:05:00", "@type": "xsd:dateTime" }
+        }
+    </pre>
+    </div>
 </div>
 
 ### Usage information ### {#usage-information}
 
-Each distribution *SHOULD* include one or more [schema:usageInfo](https://schema.org/usageInfo) IRIs
+Each distribution *SHOULD* include one or more [schema:usageInfo](https://schema.org/usageInfo) (Schema.org)
+or [dct:conformsTo](http://purl.org/dc/terms/conformsTo) (DCAT-AP-NL 3.0) IRIs
 that describe what the distribution provides.
 
 For [=web APIs=], this *MUST* be the IRI of the protocol specification (such as SPARQL or OAI-PMH).
@@ -725,7 +1132,8 @@ For downloads as well as APIs, this *MUST* be the IRI of the application profile
 <div class="example">
     A download distribution that conforms to [[SCHEMA-AP-NDE]]:
 
-    <pre highlight=json-ld>
+    <div class="vocab-tabs">
+    <pre highlight=json-ld data-vocab="schema">
         {
           "@context": "https://schema.org/",
           "@type": "DataDownload",
@@ -734,12 +1142,27 @@ For downloads as well as APIs, this *MUST* be the IRI of the application profile
           "usageInfo": "https://docs.nde.nl/schema-profile/"
         }
     </pre>
+    <pre highlight=json-ld data-vocab="dcat">
+        {
+          "@context": {
+            "dcat": "http://www.w3.org/ns/dcat#",
+            "dct": "http://purl.org/dc/terms/"
+          },
+          "@type": "dcat:Distribution",
+          "dcat:mediaType": { "@id": "https://www.iana.org/assignments/media-types/application/ld+json" },
+          "dcat:accessURL": { "@id": "https://example.com/data.jsonld" },
+          "dcat:downloadURL": { "@id": "https://example.com/data.jsonld" },
+          "dct:conformsTo": { "@id": "https://docs.nde.nl/schema-profile/" }
+        }
+    </pre>
+    </div>
 </div>
 
 <div class="example">
     A SPARQL distribution that returns RDF conforming to [[SCHEMA-AP-NDE]]:
 
-    <pre highlight=json-ld>
+    <div class="vocab-tabs">
+    <pre highlight=json-ld data-vocab="schema">
         {
           "@context": "https://schema.org/",
           "@type": "DataDownload",
@@ -747,6 +1170,22 @@ For downloads as well as APIs, this *MUST* be the IRI of the application profile
           "usageInfo": [ "https://www.w3.org/TR/sparql11-protocol/", "https://docs.nde.nl/schema-profile/" ]
         }
     </pre>
+    <pre highlight=json-ld data-vocab="dcat">
+        {
+          "@context": {
+            "dcat": "http://www.w3.org/ns/dcat#",
+            "dct": "http://purl.org/dc/terms/"
+          },
+          "@type": "dcat:Distribution",
+          "dcat:accessURL": { "@id": "https://example.com/sparql" },
+          "dct:format": { "@id": "http://publications.europa.eu/resource/authority/file-type/SPARQLQ" },
+          "dct:conformsTo": [
+            { "@id": "https://www.w3.org/TR/sparql11-protocol/" },
+            { "@id": "https://docs.nde.nl/schema-profile/" }
+          ]
+        }
+    </pre>
+    </div>
 </div>
 
 See also [[DWBP-UCR#R-APIDocumented]].
@@ -761,7 +1200,8 @@ which improves discoverability.
 <div class="example">
     A catalog of available datasets:
 
-    <pre highlight=json-ld>
+    <div class="vocab-tabs">
+    <pre highlight=json-ld data-vocab="schema">
         {
           "@context": "https://schema.org/",
           "@type": "DataCatalog",
@@ -794,6 +1234,53 @@ which improves discoverability.
           ]
         }
     </pre>
+    <pre highlight=json-ld data-vocab="dcat">
+        {
+          "@context": {
+            "dcat": "http://www.w3.org/ns/dcat#",
+            "dct": "http://purl.org/dc/terms/",
+            "foaf": "http://xmlns.com/foaf/0.1/",
+            "vcard": "http://www.w3.org/2006/vcard/ns#"
+          },
+          "@type": "dcat:Catalog",
+          "@id": "http://data.bibliotheken.nl/id/datacatalog",
+          "dct:title": {
+            "@value": "Linked Data van de KB",
+            "@language": "nl"
+          },
+          "dct:description": {
+            "@value": "Alle linked data zoals beschikbaar gesteld door de Koninklijke Bibliotheek.",
+            "@language": "nl"
+          },
+          "dct:publisher": {
+            "@type": "foaf:Organization",
+            "@id": "http://www.wikidata.org/entity/Q1526131",
+            "foaf:name": {
+              "@value": "Koninklijke Bibliotheek",
+              "@language": "nl"
+            }
+          },
+          "dcat:contactPoint": {
+            "@type": "vcard:Kind",
+            "vcard:fn": {
+              "@value": "Datasets Department",
+              "@language": "en"
+            },
+            "vcard:hasEmail": { "@id": "mailto:datasets@kb.nl" }
+          },
+          "dcat:dataset": [
+            {
+              "@type": "dcat:Dataset",
+              "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
+              ...
+            },
+            {
+              ...
+            }
+          ]
+        }
+    </pre>
+    </div>
 </div>
 
 See [[#datacatalog-attributes]] for a full overview of catalog attributes.
@@ -812,7 +1299,8 @@ even if that resource is the same on all pages.
 <div class="example">
     A paginated catalog:
 
-    <pre highlight=json-ld line-numbers line-highlight="4,6,16-23">
+    <div class="vocab-tabs">
+    <pre highlight=json-ld line-numbers line-highlight="4,6,24-30" data-vocab="schema">
         {
           "@context": [
             "https://schema.org/",
@@ -858,35 +1346,150 @@ even if that resource is the same on all pages.
           ]
         }
     </pre>
+    <pre highlight=json-ld line-numbers line-highlight="6,8,26-32" data-vocab="dcat">
+        {
+          "@context": {
+            "dcat": "http://www.w3.org/ns/dcat#",
+            "dct": "http://purl.org/dc/terms/",
+            "foaf": "http://xmlns.com/foaf/0.1/",
+            "hydra": "http://www.w3.org/ns/hydra/core#"
+          },
+          "@type": ["dcat:Catalog", "hydra:Collection"],
+          "@id": "https://example.com/catalog",
+          "dct:title": {
+            "@value": "Paginated catalog of datasets",
+            "@language": "en"
+          },
+          "dct:description": {
+            "@value": "This catalog is paginated using the Hydra Core Vocabulary.",
+            "@language": "en"
+          },
+          "dct:publisher": {
+            "@type": "foaf:Organization",
+            "@id": "https://example.com/publisher",
+            "foaf:name": {
+              "@value": "Example Publisher",
+              "@language": "en"
+            }
+          },
+          "hydra:view": {
+            "@id": "/catalog?page=1",
+            "@type": "hydra:PartialCollectionView",
+            "hydra:first": {"@id": "/catalog?page=1"},
+            "hydra:next": {"@id": "/catalog?page=2"},
+            "hydra:last": {"@id": "/catalog?page=498"}
+          },
+          "dcat:dataset": [
+            {
+              "@type": "dcat:Dataset",
+              "@id": "https://example.com/dataset/1",
+              ...
+            },
+            {
+              "@type": "dcat:Dataset",
+              "@id": "https://example.com/dataset/2",
+              ...
+            },
+            ...
+          ]
+        }
+    </pre>
+    </div>
 </div>
 
 ## Overview of attributes ## {#overview}
 
 This is an overview of required and recommended attributes.
 
-{% assign datasetShape = nodeShapes | where: 'targetClass', 'schema:Dataset' | first -%}
-{% render 'attributes', name: 'Dataset', nodeShape: datasetShape %}
-
 {% for shape in nodeShapes -%}
-{%- if shape['@id'] == 'nde-dataset:AgentShape' %}{% assign organizationShape = shape %}{% endif -%}
-{%- if shape['@id'] == 'nde-dataset:DistributionShape' %}{% assign distributionShape = shape %}{% endif -%}
+{%- case shape['@id'] -%}
+{%- when 'nde-dataset:DatasetShape' %}{% assign datasetShape = shape -%}
+{%- when 'dcat:DatasetShape' %}{% assign dcatDatasetShape = shape -%}
+{%- when 'nde-dataset:AgentShape' %}{% assign organizationShape = shape -%}
+{%- when 'dcat:AgentShape' %}{% assign dcatAgentShape = shape -%}
+{%- when 'nde-dataset:ContactPointShape' %}{% assign contactPointShape = shape -%}
+{%- when 'dcat:ContactPointShape' %}{% assign dcatContactPointShape = shape -%}
+{%- when 'nde-dataset:DistributionShape' %}{% assign distributionShape = shape -%}
+{%- when 'dcat:DistributionShape' %}{% assign dcatDistributionShape = shape -%}
+{%- when 'nde-dataset:DatacatalogShape' %}{% assign catalogShape = shape -%}
+{%- when 'dcat:CatalogShape' %}{% assign dcatCatalogShape = shape -%}
+{%- endcase -%}
 {%- endfor %}
+
+### Dataset attributes ### {#dataset-attributes}
+
+<div class="vocab-tabs">
+<div data-vocab="schema">
+{% render 'attributes', name: 'Dataset', nodeShape: datasetShape %}
+</div>
+<div data-vocab="dcat">
+{% render 'attributes', name: 'Dataset', nodeShape: dcatDatasetShape %}
+</div>
+</div>
+
+### Organization attributes ### {#organization-attributes}
+
+<div class="vocab-tabs">
+<div data-vocab="schema">
 {% render 'attributes', name: 'Organization', nodeShape: organizationShape, targetClass: 'schema:Organization' %}
+</div>
+<div data-vocab="dcat">
+{% render 'attributes', name: 'Organization', nodeShape: dcatAgentShape, targetClass: 'foaf:Organization' %}
+</div>
+</div>
 
+### Contact point attributes ### {#contactpoint-attributes}
+
+<div class="vocab-tabs">
+<div data-vocab="schema">
+{% render 'attributes', name: 'ContactPoint', nodeShape: contactPointShape, targetClass: 'schema:ContactPoint' %}
+</div>
+<div data-vocab="dcat">
+{% render 'attributes', name: 'ContactPoint', nodeShape: dcatContactPointShape, targetClass: 'vcard:Kind' %}
+</div>
+</div>
+
+### Distribution attributes ### {#distribution-attributes}
+
+<div class="vocab-tabs">
+<div data-vocab="schema">
 {% render 'attributes', name: 'Distribution', nodeShape: distributionShape, targetClass: 'schema:DataDownload' %}
+</div>
+<div data-vocab="dcat">
+{% render 'attributes', name: 'Distribution', nodeShape: dcatDistributionShape, targetClass: 'dcat:Distribution', oneOf: 'dcat:accessURL dcat:downloadURL' %}
+</div>
+</div>
 
-{% assign catalogShape = nodeShapes | where: 'class', 'schema:DataCatalog' | first -%}
+### DataCatalog attributes ### {#datacatalog-attributes}
+
+<div class="vocab-tabs">
+<div data-vocab="schema">
 {% render 'attributes', name: 'DataCatalog', nodeShape: catalogShape %}
+</div>
+<div data-vocab="dcat">
+{% render 'attributes', name: 'DataCatalog', nodeShape: dcatCatalogShape %}
+</div>
+</div>
 
 ### Full example ### {#dataset-example}
 
 <div class="example">
     A full [=dataset description=] that includes [[#dataset-attributes|required and recommended attributes]].
 
+    <div class="vocab-tabs">
+    <div data-vocab="schema">
     <pre class=include-code>
     path: examples/dataset-schema-org-valid.jsonld
     highlight: json-ld
     </pre>
+    </div>
+    <div data-vocab="dcat">
+    <pre class=include-code>
+    path: examples/dataset-dcat-valid.jsonld
+    highlight: json-ld
+    </pre>
+    </div>
+    </div>
 </div>
 
 Tools {#tools}
@@ -899,9 +1502,9 @@ The [[SHACL]] shape graph used to validate datasets and catalogs is available at
 
 ## Running the shapes yourself ## {#validating-yourself}
 
-The shapes target Schema.org properties in the `https://schema.org/` namespace.
+The Schema.org shapes target properties in the `https://schema.org/` namespace.
 Schema.org’s own JSON-LD context maps its terms to `http://schema.org/`,
-so a [=dataset description=] validated against that context matches no shape at all
+so a Schema.org [=dataset description=] validated against that context matches no shape at all
 and the report comes back `sh:conforms true` without anything having been checked.
 Since Schema.org release 30.1 that context also no longer types `mainEntityOfPage`, `license`
 and the date properties, which turns values that should be IRIs and dates into plain strings.
@@ -927,6 +1530,10 @@ so you get the report the [Register API](https://datasetregister.netwerkdigitaal
 Keep serving your [=dataset description=] itself with `"@context": "https://schema.org/"`:
 the Register substitutes the context on its side when it reads your description,
 so there is nothing to change in what you publish.
+
+DCAT-AP-NL 3.0 descriptions need no such step.
+Their JSON-LD declares the namespaces itself, as in the examples in this document,
+so you can validate them as they are.
 
 Google's [Rich Results Test](https://search.google.com/test/rich-results) (previously Structured Data Testing Tool)
 can help with testing RDF metadata in general.

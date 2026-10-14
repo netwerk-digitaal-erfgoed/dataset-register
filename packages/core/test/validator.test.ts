@@ -131,6 +131,18 @@ describe('Validator', () => {
     expect(report.state).toEqual('valid');
   });
 
+  it('accepts the full DCAT example from the requirements without any results', async () => {
+    const report = (await validate(
+      '../../../../requirements/examples/dataset-dcat-valid.jsonld',
+    )) as Valid;
+
+    expect(report.state).toEqual('valid');
+    expect(
+      report.errors.match(null, shacl('result')).size,
+      report.errors.toCanonical(),
+    ).toBe(0);
+  });
+
   it('accepts valid DCAT dataset with untagged organization name', async () => {
     const report = await validate('dataset-dcat-valid-no-lang-tag.jsonld');
     expect(report.state).toEqual('valid');
