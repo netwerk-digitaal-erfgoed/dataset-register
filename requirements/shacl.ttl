@@ -1690,6 +1690,35 @@ dcat:DistributionShape
         sh:path dc:conformsTo ;
         sh:description "Standaarden of specificaties waaraan de distributie voldoet. Voor SPARQL-endpoints moet dit de SPARQL protocol-URI bevatten."@nl, "Standards or specifications the distribution conforms to. For SPARQL endpoints, this must include the SPARQL protocol URI."@en ;
     ] ,
+    # Metadata-only property shapes for the optional properties the Register reads,
+    # so that the spec lists them. They add no constraints.
+    [
+        sh:path dc:title ;
+        sh:description "De naam van de distributie."@nl, "The name of the distribution."@en ;
+    ] ,
+    [
+        sh:path dc:description ;
+        sh:description "Beschrijving van de distributie"@nl, "Distribution description"@en ;
+    ] ,
+    [
+        sh:path dc:issued ;
+        sh:description "De datum van formele uitgifte (bijvoorbeeld publicatie) van de distributie."@nl, "The date of formal issuance (such as publication) of the distribution."@en ;
+    ] ,
+    [
+        sh:path dc:modified ;
+        sh:description "De meest recente datum waarop de distributie is gewijzigd of aangepast."@nl, "The most recent date on which the distribution was changed or modified."@en ;
+    ] ,
+    [
+        sh:path dcat:byteSize ;
+        sh:description "Bestandsgrootte van de distributie in bytes."@nl, "Distribution file size in bytes."@en ;
+    ] ,
+    [
+        sh:path foaf:page ;
+        sh:description """Een documentatiepagina die deze distributie beschrijft of ontsluit, zoals een SPARQL-UI of een downloadlandingspagina.
+            `dcat:accessURL` en `dcat:downloadURL` wijzen naar de distributie zelf (het API-endpoint of het databestand)."""@nl,
+            """A documentation page that describes or provides access to this distribution, such as a SPARQL UI or a download landing page.
+            `dcat:accessURL` and `dcat:downloadURL` point to the distribution itself (the API endpoint or the data file)."""@en ;
+    ] ,
     [
         sh:path dc:license ;
         sh:minCount 1 ;
