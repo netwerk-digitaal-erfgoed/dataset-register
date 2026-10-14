@@ -18,7 +18,6 @@
     type CompatibilityFailureReason,
     type CompatibilityState,
     type ConformanceIssue,
-    type ConformanceIssueSeverity,
     type IiifManifests,
     type LinkedData,
     type PersistentUriFailureReason,
@@ -27,6 +26,10 @@
     type TermLinks,
   } from '$lib/services/nde-compatibility';
   import SeverityBadge from '$lib/components/validation/SeverityBadge.svelte';
+  import {
+    severityLabel,
+    severityTone,
+  } from '$lib/components/validation/severity';
   import { shortenUri } from '$lib/utils/prefix';
   import { replaceState } from '$app/navigation';
   import { page } from '$app/state';
@@ -393,30 +396,6 @@
     );
   }
 
-  function severityLabel(severity: ConformanceIssueSeverity): string {
-    switch (severity) {
-      case 'violation':
-        return m.severity_Violation();
-      case 'warning':
-        return m.severity_Warning();
-      case 'info':
-        return m.severity_Info();
-    }
-  }
-
-  function severityTone(
-    severity: ConformanceIssueSeverity,
-  ): 'red' | 'yellow' | 'blue' {
-    switch (severity) {
-      case 'violation':
-        return 'red';
-      case 'warning':
-        return 'yellow';
-      case 'info':
-        return 'blue';
-    }
-  }
-
   // The provider-facing label for a single failing URI’s reason, listed beside
   // the URI so the cause is conveyed as text (not by colour alone).
   function failureReasonLabel(reason: PersistentUriFailureReason): string {
@@ -721,12 +700,12 @@
                    technical, so the fold-out stays closed and its summary is
                    deliberately subdued, so that it does not distract other
                    visitors. Shown only while the row reports current linked-data
-                   content and its conformance was measured: in any other state
-                   (none, empty, pending, the live data invalid, or no
-                   conformance measurement) a report left in the Knowledge Graph
+                   content and its conformance was measured over validated quads:
+                   in any other state (none, empty, pending, the live data
+                   invalid, or no quads validated) a report left in the Knowledge Graph
                    describes an earlier version of the source. Severity is
                    conveyed as text (not colour alone) for accessibility. -->
-              {#if criterion.key === 'linked-data' && (criterion.state === 'met' || criterion.state === 'warning') && criterion.reason !== 'invalid-linked-data' && linkedData.quadsValidated !== null && conformanceIssues.length > 0}
+              {#if criterion.key === 'linked-data' && (criterion.state === 'met' || criterion.state === 'warning') && criterion.reason !== 'invalid-linked-data' && (linkedData.quadsValidated ?? 0) > 0 && conformanceIssues.length > 0}
                 <details class="group mt-1 text-xs">
                   <summary
                     class="flex cursor-pointer list-none items-center gap-1 text-gray-500 hover:text-gray-700 [&::-webkit-details-marker]:hidden dark:text-gray-400 dark:hover:text-gray-300"

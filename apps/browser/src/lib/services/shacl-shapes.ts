@@ -1,8 +1,7 @@
 import { PUBLIC_API_ENDPOINT } from '$app/env/public';
 import { getLocale } from '$lib/paraglide/runtime';
 import { normalizeNodes, pickIri, pickLocalized } from './jsonld-helpers.js';
-
-const SH = 'http://www.w3.org/ns/shacl#';
+import { SH } from './shacl-report.js';
 
 export interface ShapeMetadata {
   description?: string;

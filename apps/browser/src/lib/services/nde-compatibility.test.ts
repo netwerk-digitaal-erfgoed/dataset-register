@@ -388,7 +388,7 @@ describe('conformanceIssues', () => {
       ]),
     ).toEqual([
       {
-        severity: 'violation',
+        severity: 'Violation',
         path: 'https://schema.org/name',
         constraint: `${SH}MinCountConstraintComponent`,
         messages: { '': 'Less than 1 values' },
@@ -411,7 +411,7 @@ describe('conformanceIssues', () => {
       ]),
     ).toEqual([
       {
-        severity: 'violation',
+        severity: 'Violation',
         path: null,
         constraint: `${SH}OrConstraintComponent`,
         messages: {},
@@ -434,7 +434,7 @@ describe('conformanceIssues', () => {
     expect(issue.example).toBeNull();
   });
 
-  it('keeps the messages of every language and picks the visitor’s', () => {
+  it('keeps the messages of both languages and picks the visitor’s', () => {
     const [issue] = conformanceIssues([
       {
         severity: `${SH}Violation`,
@@ -498,10 +498,10 @@ describe('conformanceIssues', () => {
         row('Violation', '120'),
       ]).map((issue) => [issue.severity, issue.count]),
     ).toEqual([
-      ['violation', 120],
-      ['violation', 4],
-      ['warning', 50],
-      ['info', 500],
+      ['Violation', 120],
+      ['Violation', 4],
+      ['Warning', 50],
+      ['Info', 500],
     ]);
   });
 
