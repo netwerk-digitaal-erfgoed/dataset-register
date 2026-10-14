@@ -48,11 +48,11 @@ export function fetchShapes(signal?: AbortSignal): Promise<ShapesIndex> {
  * `schema:name` belong to a specific class, and inheriting one from another
  * NodeShape would mislead the reader.
  *
- * A property shape reused across class shapes (`SchemaDescriptionPropertyShouldExist`
- * is owned by both the catalog and the dataset) has a single `byId` entry, won by
- * whichever NodeShape was indexed last. Taking that hit would attribute the last
- * owner's description to every subject – exactly what the path lookup exists to
- * prevent – so it is only trusted when it cannot belong to a different subject.
+ * A property shape reused across NodeShapes (`SchemaLicenseIriProperty` is owned
+ * by both the dataset and the distribution) has no `byId` entry, because its
+ * description depends on which NodeShape the result came from. The path lookup
+ * then picks the candidate bound to the focus node's class, or else the one
+ * candidate bound to no class, such as a distribution's.
  */
 export function selectShape(
   index: ShapesIndex,
@@ -68,7 +68,10 @@ export function selectShape(
   const candidates = index.byPath.get(pathIri);
   if (!candidates?.length) return undefined;
   if (focusNodeType) {
-    return candidates.find((c) => c.targetClass === focusNodeType);
+    const classBound = candidates.find((c) => c.targetClass === focusNodeType);
+    if (classBound) return classBound;
+    const unbound = candidates.filter((c) => !c.targetClass);
+    return unbound.length === 1 ? unbound[0] : undefined;
   }
   if (candidates.length === 1) return candidates[0];
   return candidates.find((c) => c.description) ?? undefined;
@@ -98,6 +101,9 @@ export function indexShapes(json: unknown, locale: string): ShapesIndex {
 
   const byPath = new Map<string, ShapeMetadata[]>();
   const shapeById = new Map<string, ShapeMetadata>();
+  // Property shapes owned by more than one NodeShape, whose description
+  // depends on the owner and so cannot be looked up by ID alone.
+  const sharedShapeIds = new Set<string>();
 
   for (const node of nodes) {
     const types = node['@type'];
@@ -138,16 +144,25 @@ export function indexShapes(json: unknown, locale: string): ShapesIndex {
       }
     }
 
+    // One candidate per path for this NodeShape, shared by all its siblings.
+    const metadataByPath = new Map<string, ShapeMetadata>();
     for (const sibling of siblings) {
       const description = descriptionByPath.get(sibling.pathIri);
       if (!description) continue;
-      const metadata: ShapeMetadata = { description, targetClass };
-      const list = byPath.get(sibling.pathIri);
-      if (list) list.push(metadata);
-      else byPath.set(sibling.pathIri, [metadata]);
+      let metadata = metadataByPath.get(sibling.pathIri);
+      if (!metadata) {
+        metadata = { description, targetClass };
+        metadataByPath.set(sibling.pathIri, metadata);
+        const list = byPath.get(sibling.pathIri);
+        if (list) list.push(metadata);
+        else byPath.set(sibling.pathIri, [metadata]);
+      }
+      if (shapeById.has(sibling.refId)) sharedShapeIds.add(sibling.refId);
       shapeById.set(sibling.refId, metadata);
     }
   }
+
+  for (const id of sharedShapeIds) shapeById.delete(id);
 
   return { byPath, byId: shapeById };
 }

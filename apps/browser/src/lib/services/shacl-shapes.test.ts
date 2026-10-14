@@ -79,7 +79,12 @@ describe('selectShape', () => {
       byId: new Map([[sharedShape, datasetMeta]]),
     };
     expect(
-      selectShape(index, `${SCHEMA}description`, `${SCHEMA}DataCatalog`, sharedShape),
+      selectShape(
+        index,
+        `${SCHEMA}description`,
+        `${SCHEMA}DataCatalog`,
+        sharedShape,
+      ),
     ).toEqual(dataCatalogMeta);
   });
 
@@ -102,6 +107,73 @@ describe('selectShape', () => {
         '_:df_15_191',
       ),
     ).toEqual(distributionMeta);
+  });
+});
+
+describe('selectShape with a property shape shared by a class-bound and an unbound NodeShape', () => {
+  // Mirrors `nde-dataset:SchemaLicenseIriProperty` in requirements/shacl.ttl:
+  // owned by the dataset shape (sh:targetClass) and by the distribution shape
+  // (sh:targetObjectsOf, no class), which is indexed last.
+  const sharedShape = 'https://def.nde.nl/dataset#SchemaLicenseIriProperty';
+  const json = [
+    {
+      '@id': 'https://example.org/DatasetShape',
+      '@type': [`${SH}NodeShape`],
+      [`${SH}targetClass`]: [{ '@id': `${SCHEMA}Dataset` }],
+      [`${SH}property`]: [
+        { '@id': '_:dataset-license' },
+        { '@id': sharedShape },
+      ],
+    },
+    {
+      '@id': 'https://example.org/DistributionShape',
+      '@type': [`${SH}NodeShape`],
+      [`${SH}targetObjectsOf`]: [{ '@id': `${SCHEMA}distribution` }],
+      [`${SH}property`]: [
+        { '@id': '_:distribution-license' },
+        { '@id': sharedShape },
+      ],
+    },
+    {
+      '@id': '_:dataset-license',
+      [`${SH}path`]: [{ '@id': `${SCHEMA}license` }],
+      [`${SH}description`]: [
+        { '@value': 'License applicable to the dataset.', '@language': 'en' },
+      ],
+    },
+    {
+      '@id': '_:distribution-license',
+      [`${SH}path`]: [{ '@id': `${SCHEMA}license` }],
+      [`${SH}description`]: [
+        {
+          '@value': 'License applicable to this distribution.',
+          '@language': 'en',
+        },
+      ],
+    },
+    {
+      '@id': sharedShape,
+      [`${SH}path`]: [{ '@id': `${SCHEMA}license` }],
+    },
+  ];
+  const index = indexShapes(json, 'en');
+
+  it('describes a dataset result with the dataset’s description', () => {
+    expect(
+      selectShape(index, `${SCHEMA}license`, `${SCHEMA}Dataset`, sharedShape)
+        ?.description,
+    ).toBe('License applicable to the dataset.');
+  });
+
+  it('describes a distribution result with the distribution’s description', () => {
+    expect(
+      selectShape(
+        index,
+        `${SCHEMA}license`,
+        `${SCHEMA}DataDownload`,
+        sharedShape,
+      )?.description,
+    ).toBe('License applicable to this distribution.');
   });
 });
 
