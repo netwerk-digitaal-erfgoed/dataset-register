@@ -26,14 +26,11 @@ jobs:
         with:
           node-version: lts/*
           cache: 'npm'
-      - run: npx --yes @lde/docgen@latest from-shacl -f shacl.frame.jsonld shacl.ttl index.bs.liquid > index.bs
-
-      - name: Verify no '[object Object]' in rendered output
-        run: |
-          if grep -nF '[object Object]' index.bs; then
-            echo "::error::index.bs contains '[object Object]' — Liquid template stringified an object."
-            exit 1
-          fi
+      # Renders the templates and adds the NDE logo and house style; requirements/Makefile
+      # reads this version, so a local build matches.
+      - uses: netwerk-digitaal-erfgoed/workflows/spec-boilerplate@61ac4efb3073b4e9832b70c634d9c87ba453674f
+        with:
+          working-directory: requirements
 
       - name: Build and validate
         uses: w3c/spec-prod@v2.14.1
@@ -70,7 +67,7 @@ jobs:
           rm -rf static/requirements-datasets/
           mkdir -p static/requirements-datasets/
           cp -r artifacts/* static/requirements-datasets/
-          rm -f static/requirements-datasets/.gitignore static/requirements-datasets/index.bs static/requirements-datasets/Makefile
+          rm -f static/requirements-datasets/.gitignore static/requirements-datasets/index.bs static/requirements-datasets/Makefile static/requirements-datasets/logo.include static/requirements-datasets/nde.include
           rm -rf static/requirements-datasets/.github
           rm -rf artifacts/
         working-directory: .

@@ -4,7 +4,7 @@
     nodeShape.or holds every sh:or of the shape, each a list of alternatives
     of which one is required.
 {%- endcomment -%}
-<table>
+<table class="attributes">
     {% assign class = nodeShape.targetClass | default: nodeShape.class | default: targetClass -%}
     <caption>[{{ class }}]({% render 'expand-iri', curie: class %}) properties</caption>
     <thead>
