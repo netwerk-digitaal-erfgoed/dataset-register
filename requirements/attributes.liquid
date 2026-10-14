@@ -60,7 +60,7 @@
         <tr>
             <th scope="row">[{{ property.path }}]({% render 'expand-iri', curie: property.path %})</th>
             <td>
-                {%- if is_date_shape -%}
+                {%- if is_date_shape or property.path == "dct:issued" or property.path == "dct:modified" -%}
                     {%- if description != "" -%}{{ description }} {% endif -%}
                     {%- if name == 'Distribution' -%}See [[#distribution-date]].{%- else -%}See [[#dataset-date]].{%- endif -%}
                 {%- else -%}
