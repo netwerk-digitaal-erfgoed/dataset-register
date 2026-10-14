@@ -1186,30 +1186,69 @@ describe('Fetch', () => {
     );
   });
 
-  it('harmonises an https:// RightsStatements.org license to http://', async () => {
+  it.each([
+    [
+      'https://rightsstatements.org/vocab/NoC-NC/1.0/',
+      'http://rightsstatements.org/vocab/NoC-NC/1.0/',
+    ],
+    [
+      'https://creativecommons.org/licenses/by/4.0/deed.en',
+      'http://creativecommons.org/licenses/by/4.0/',
+    ],
+    [
+      'https://creativecommons.org/publicdomain/zero/1.0',
+      'http://creativecommons.org/publicdomain/zero/1.0/',
+    ],
+    [
+      'https://creativecommons.org/licenses/by/4.0//',
+      'http://creativecommons.org/licenses/by/4.0/',
+    ],
+    [
+      'http://rightsstatements.org/vocab/InC/1.0',
+      'http://rightsstatements.org/vocab/InC/1.0/',
+    ],
+    [
+      'https://creativecommons.org/licenses/by/3.0/deed.pt_BR',
+      'http://creativecommons.org/licenses/by/3.0/',
+    ],
+    [
+      'http://creativecommons.org/publicdomain/zero/1.0/deed.nl/',
+      'http://creativecommons.org/publicdomain/zero/1.0/',
+    ],
+    [
+      'https://creativecommons.org/licenses/by/4.0/deed',
+      'http://creativecommons.org/licenses/by/4.0/',
+    ],
+    [
+      'https://creativecommons.org/licenses/by/4.0/legalcode',
+      'http://creativecommons.org/licenses/by/4.0/legalcode',
+    ],
+    [
+      'http://rightsstatements.org/page/InC/1.0/?language=nl',
+      'http://rightsstatements.org/page/InC/1.0/?language=nl',
+    ],
+    ['https://example.org/indeed.html', 'https://example.org/indeed.html'],
+    ['https://example.org/license/1.0', 'https://example.org/license/1.0'],
+  ])('normalises license %s to %s', async (license, expected) => {
     const response = (await validSchemaOrgDataset()).replace(
       '"license": "http://creativecommons.org/publicdomain/zero/1.0/"',
-      '"license": "https://rightsstatements.org/vocab/NoC-NC/1.0/"',
+      `"license": "${license}"`,
     );
-    expect(response).toContain('https://rightsstatements.org/');
+    expect(response).toContain(license);
     nock('https://example.com')
       .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
-      .get('/rightsstatements-license')
+      .get('/normalised-license')
       .reply(200, response);
 
     const datasets = await fetchDatasetsAsArray(
-      new URL('https://example.com/rightsstatements-license'),
+      new URL('https://example.com/normalised-license'),
     );
 
     const licenses = [...datasets[0]].filter((quad) =>
       quad.predicate.equals(dct('license')),
     );
     expect(licenses).not.toHaveLength(0);
-    licenses.forEach((quad) =>
-      expect(quad.object.value).toBe(
-        'http://rightsstatements.org/vocab/NoC-NC/1.0/',
-      ),
-    );
+    licenses.forEach((quad) => expect(quad.object.value).toBe(expected));
   });
 
   it('keeps a DCAT distribution that has only a dcat:downloadURL', async () => {
