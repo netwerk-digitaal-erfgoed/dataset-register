@@ -829,11 +829,11 @@ async function fetchConformanceIssues(
     // same language cannot count twice. A message is read once per language
     // rather than as one variable, so that a rule whose shape carries a Dutch
     // and an English message stays one row. The Knowledge Graph skolemizes
-    // blank nodes to `.well-known` IRIs, which lead nowhere. They are left out
-    // of the example, so that a rule broken by both blank nodes and named
-    // resources still gets a named one: MAX, unlike SAMPLE, skips unbound
-    // values. Rules are ranked by severity before the limit, so that frequent
-    // warnings cannot push a violation out.
+    // blank nodes to `.well-known` IRIs, which lead nowhere. They, and anything
+    // else that is not a web address, are left out of the example, so that a
+    // rule broken by both those and web resources still gets a link: MAX,
+    // unlike SAMPLE, skips unbound values. Rules are ranked by severity before
+    // the limit, so that frequent warnings cannot push a violation out.
     const query = `
       PREFIX sh: <http://www.w3.org/ns/shacl#>
       SELECT ?severity ?path ?constraint ?message ?messageNl ?messageEn
@@ -871,7 +871,12 @@ async function fetchConformanceIssues(
               }
               OPTIONAL {
                 ?result sh:focusNode ?namedFocusNode .
-                FILTER(!CONTAINS(STR(?namedFocusNode), "/.well-known/"))
+                FILTER(
+                  isIRI(?namedFocusNode)
+                  && (STRSTARTS(STR(?namedFocusNode), "http://")
+                    || STRSTARTS(STR(?namedFocusNode), "https://"))
+                  && !CONTAINS(STR(?namedFocusNode), "/.well-known/")
+                )
               }
             }
           }
@@ -1060,9 +1065,13 @@ const DKG_DISTRIBUTION_VALIDITY_GRAPH_BASE =
 // The named graph in which the Dataset Knowledge Graph keeps one kind of output
 // for a dataset. This mirrors dataset-knowledge-graph graphIri.ts, which
 // encodes the IRI as normalized by URL (so `https://example.org` becomes
-// `https://example.org/`).
+// `https://example.org/`). An IRI that URL cannot parse is used as is, so that
+// building a query never throws.
 function dkgGraphIri(base: string, datasetUri: string): string {
-  return base + encodeURIComponent(new URL(datasetUri).toString());
+  const normalizedUri = URL.canParse(datasetUri)
+    ? new URL(datasetUri).toString()
+    : datasetUri;
+  return base + encodeURIComponent(normalizedUri);
 }
 
 async function fetchValidityVerdicts(
@@ -1601,7 +1610,8 @@ export async function fetchDatasetAnalysis(
     iiifManifests,
     persistentUris,
     persistentUriFailures,
-    { conformance: schemaApNdeConformance, issues: schemaApNdeIssues },
+    schemaApNdeConformance,
+    schemaApNdeIssues,
   ] = await Promise.all([
     summaryLens
       .query(datasetSummaryQuery)
@@ -1640,15 +1650,8 @@ export async function fetchDatasetAnalysis(
     fetchIiifManifests(datasetUri),
     fetchPersistentUris(datasetUri),
     fetchPersistentUriFailures(datasetUri),
-    // The fold-out lists broken rules only over validated quads, so the issues
-    // are not queried for a dataset without any.
-    fetchSchemaApNdeConformance(datasetUri).then(async (conformance) => ({
-      conformance,
-      issues:
-        (conformance.quadsValidated ?? 0) > 0
-          ? await fetchConformanceIssues(datasetUri)
-          : [],
-    })),
+    fetchSchemaApNdeConformance(datasetUri),
+    fetchConformanceIssues(datasetUri),
   ]);
 
   // Merge the separately-fetched per-URI failures into the persistent-URI

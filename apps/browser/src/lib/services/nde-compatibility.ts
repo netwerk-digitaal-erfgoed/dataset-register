@@ -416,7 +416,7 @@ export function conformanceIssueMessage(
   locale: string,
 ): string | null {
   return (
-    issue.messages[locale as keyof ConformanceIssueMessages] ??
+    (locale === 'nl' || locale === 'en' ? issue.messages[locale] : undefined) ??
     issue.messages[''] ??
     issue.messages.en ??
     issue.messages.nl ??
