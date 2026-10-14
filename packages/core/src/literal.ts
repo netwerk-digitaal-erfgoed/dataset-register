@@ -29,21 +29,21 @@ export const absoluteIri = (variable: string) =>
 
 /**
  * Normalize a license value. If the raw value is an IRI, strip the "deed.nl"
- * suffix and upgrade http://creativecommons.org to https://. If the raw value
- * is a literal, pass it through unchanged so that a non-IRI license (allowed
- * by SHACL with sh:nodeKind sh:IRIOrLiteral) does not crash the CONSTRUCT
- * with an invalid-IRI error.
+ * suffix and harmonise https://creativecommons.org and
+ * https://rightsstatements.org to http://. If the raw value is a literal, pass
+ * it through unchanged so that a non-IRI license (allowed by SHACL with
+ * sh:nodeKind sh:IRIOrLiteral) does not crash the CONSTRUCT with an
+ * invalid-IRI error.
  *
  * https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/1141
+ * https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2303
  */
 export const normalizeLicense = (variable: string) =>
   `?${variable}Raw ;
         BIND(
           IF(
             isIRI(?${variable}Raw),
-            IRI(
-              REPLACE(REPLACE(STR(?${variable}Raw), "deed.nl", ""), "http://creativecommons.org", "https://creativecommons.org")
-            ),
+            IRI(${canonicalLicense(variable + 'Raw')}),
             ?${variable}Raw
           )
           AS ?${variable}
@@ -71,10 +71,20 @@ export const bindIriLicense = (rawVar: string, outVar: string) =>
   `BIND(
         IF(
           isIRI(?${rawVar}) || REGEX(STR(?${rawVar}), "^https?://"),
-          IRI(REPLACE(REPLACE(STR(?${rawVar}), "deed.nl", ""), "http://creativecommons.org", "https://creativecommons.org")),
+          IRI(${canonicalLicense(rawVar)}),
           ?unbound
         ) AS ?${outVar}
       )`;
+
+/**
+ * The canonical lexical form of license ?variable: without a "deed.nl" suffix,
+ * and with Creative Commons and RightsStatements.org IRIs on http://, the form
+ * both publish in their RDF. Publishers may use either scheme.
+ *
+ * https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2303
+ */
+const canonicalLicense = (variable: string) =>
+  `REPLACE(REPLACE(STR(?${variable}), "deed.nl", ""), "^https://(creativecommons|rightsstatements)\\\\.org/", "http://$1.org/")`;
 
 /**
  * A media type in `type/subtype` form. Mirrors the sh:pattern that shacl.ttl

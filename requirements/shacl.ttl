@@ -166,9 +166,9 @@ nde-dataset:DatasetShape
 
 This license specifies the conditions under which the metadata records in the dataset may be accessed and reused. It does not cover the heritage objects (either physical or digital) that the metadata describes. Access conditions for these objects should be specified in their own descriptions within the dataset.
 
-The DERA requires metadata to be published openly, so this value SHOULD be an open license that allows consumers to reuse the data, such as `https://creativecommons.org/publicdomain/zero/1.0/` (CC0), `https://creativecommons.org/licenses/by/4.0/` (CC BY 4.0), or `https://creativecommons.org/licenses/by-sa/4.0/` (CC BY-SA 4.0). Adopting a non-open license will severely limit reuse and does not comply with the DERA principles.
+The DERA requires metadata to be published openly, so this value SHOULD be an open license that allows consumers to reuse the data, such as `http://creativecommons.org/publicdomain/zero/1.0/` (CC0), `http://creativecommons.org/licenses/by/4.0/` (CC BY 4.0), or `http://creativecommons.org/licenses/by-sa/4.0/` (CC BY-SA 4.0). Adopting a non-open license will severely limit reuse and does not comply with the DERA principles.
 
-The value MUST be the canonical URI of a license. For example, use `https://creativecommons.org/publicdomain/zero/1.0/` instead of `https://creativecommons.org/publicdomain/zero/1.0/deed.nl`."""@en ;
+The value MUST be the canonical URI of a license. For example, use `http://creativecommons.org/publicdomain/zero/1.0/` instead of `http://creativecommons.org/publicdomain/zero/1.0/deed.nl`."""@en ;
             sh:message "Voeg een licentie toe"@nl, "Add a license"@en ;
         ] ,
         nde-dataset:SchemaLicenseIriProperty ,
@@ -186,6 +186,14 @@ The value MUST be the canonical URI of a license. For example, use `https://crea
                 sh:severity sh:Violation ;
             ] ;
             sh:in (
+                <http://creativecommons.org/publicdomain/zero/1.0/>
+                <http://creativecommons.org/publicdomain/mark/1.0/>
+                <http://creativecommons.org/licenses/by/4.0/>
+                <http://creativecommons.org/licenses/by-sa/4.0/>
+                <http://creativecommons.org/licenses/by-nc/4.0/>
+                <http://creativecommons.org/licenses/by-nc-sa/4.0/>
+                <http://creativecommons.org/licenses/by-nd/4.0/>
+                <http://creativecommons.org/licenses/by-nc-nd/4.0/>
                 <https://creativecommons.org/publicdomain/zero/1.0/>
                 <https://creativecommons.org/publicdomain/mark/1.0/>
                 <https://creativecommons.org/licenses/by/4.0/>
@@ -195,13 +203,7 @@ The value MUST be the canonical URI of a license. For example, use `https://crea
                 <https://creativecommons.org/licenses/by-nd/4.0/>
                 <https://creativecommons.org/licenses/by-nc-nd/4.0/>
             ) ;
-            sh:message "Gebruik een van de Creative Commons-licenties, zoals https://creativecommons.org/publicdomain/zero/1.0/ (CC0) of https://creativecommons.org/licenses/by/4.0/ (CC BY 4.0)"@nl, "Use one of the Creative Commons licenses, such as https://creativecommons.org/publicdomain/zero/1.0/ (CC0) or https://creativecommons.org/licenses/by/4.0/ (CC BY 4.0)"@en ;
-        ] ,
-        [
-            sh:path schema:license ;
-            sh:node nde-dataset:LicenseCreativeCommonsHttpsShape ;
-            sh:severity sh:Warning ;
-            sh:message "Gebruik https:// (niet http://) in de Creative Commons-licentie-URL"@nl, "Use https:// (not http://) in the Creative Commons license URL"@en ;
+            sh:message "Gebruik een van de Creative Commons-licenties, zoals http://creativecommons.org/publicdomain/zero/1.0/ (CC0) of http://creativecommons.org/licenses/by/4.0/ (CC BY 4.0)"@nl, "Use one of the Creative Commons licenses, such as http://creativecommons.org/publicdomain/zero/1.0/ (CC0) or http://creativecommons.org/licenses/by/4.0/ (CC BY 4.0)"@en ;
         ] ,
         [
             sh:path schema:license ;
@@ -1232,16 +1234,13 @@ nde-dataset:SchemaDescriptionPropertyShouldExist a sh:PropertyShape ;
 .
 
 # Reusable constraint shapes for license canonicality, referenced via sh:node
-# from every license property path. Even the DCAT-AP-NL 3.0 examples incorrectly
-# use http://creativecommons.org/publicdomain/zero/1.0/deed.nl as a license URI
-# (see https://docs.geostandaarden.nl/dcat/dcat-ap-nl30/#distribution-licence).
-nde-dataset:LicenseCreativeCommonsHttpsShape a sh:NodeShape ;
-    sh:not [ sh:pattern "^http://creativecommons\\.org/" ] .
-
+# from every license property path. Creative Commons IRIs may use http:// or
+# https://; the canonical RDF form is http:// (see
+# https://github.com/creativecommons/cc-legal-tools-app/blob/main/docs/rdf.md#rdf-canonical-url).
 nde-dataset:LicenseCreativeCommonsTrailingSlashShape a sh:NodeShape ;
     sh:or (
-        [ sh:not [ sh:pattern "^https://creativecommons\\.org/" ] ]
-        [ sh:pattern "^https://creativecommons\\.org/.+/$" ]
+        [ sh:not [ sh:pattern "^https?://creativecommons\\.org/" ] ]
+        [ sh:pattern "^https?://creativecommons\\.org/.+/$" ]
     ) .
 
 nde-dataset:LicenseNotOpenDefinitionShape a sh:NodeShape ;
@@ -1714,12 +1713,6 @@ dcat:DistributionShape
             sh:severity sh:Violation ;
         ] ;
         sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
-    ] ,
-    [
-        sh:path dc:license ;
-        sh:node nde-dataset:LicenseCreativeCommonsHttpsShape ;
-        sh:severity sh:Warning ;
-        sh:message "Gebruik https:// (niet http://) in de Creative Commons-licentie-URL"@nl, "Use https:// (not http://) in the Creative Commons license URL"@en ;
     ] ,
     [
         sh:path dc:license ;

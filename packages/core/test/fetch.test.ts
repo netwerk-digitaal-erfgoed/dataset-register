@@ -805,7 +805,7 @@ describe('Fetch', () => {
           factory.namedNode('http://data.bibliotheken.nl/id/dataset/rise-alba'),
           dct('license'),
           factory.namedNode(
-            'https://creativecommons.org/publicdomain/zero/1.0/',
+            'http://creativecommons.org/publicdomain/zero/1.0/',
           ),
         ),
       ),
@@ -1143,7 +1143,7 @@ describe('Fetch', () => {
     expect(distributionLicenses).toHaveLength(3);
     distributionLicenses.forEach((quad) =>
       expect(quad.object.value).toBe(
-        'https://creativecommons.org/publicdomain/zero/1.0/',
+        'http://creativecommons.org/publicdomain/zero/1.0/',
       ),
     );
   });
@@ -1172,7 +1172,7 @@ describe('Fetch', () => {
     ];
     expect(datasetLicenses).toHaveLength(1);
     expect(datasetLicenses[0].object.value).toBe(
-      'https://creativecommons.org/publicdomain/zero/1.0/',
+      'http://creativecommons.org/publicdomain/zero/1.0/',
     );
 
     const distributionLicenses = [...dataset].filter(
@@ -1182,7 +1182,33 @@ describe('Fetch', () => {
     );
     expect(distributionLicenses).toHaveLength(1);
     expect(distributionLicenses[0].object.value).toBe(
-      'https://creativecommons.org/publicdomain/zero/1.0/',
+      'http://creativecommons.org/publicdomain/zero/1.0/',
+    );
+  });
+
+  it('harmonises an https:// RightsStatements.org license to http://', async () => {
+    const response = (await validSchemaOrgDataset()).replace(
+      '"license": "http://creativecommons.org/publicdomain/zero/1.0/"',
+      '"license": "https://rightsstatements.org/vocab/NoC-NC/1.0/"',
+    );
+    expect(response).toContain('https://rightsstatements.org/');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/rightsstatements-license')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/rightsstatements-license'),
+    );
+
+    const licenses = [...datasets[0]].filter((quad) =>
+      quad.predicate.equals(dct('license')),
+    );
+    expect(licenses).not.toHaveLength(0);
+    licenses.forEach((quad) =>
+      expect(quad.object.value).toBe(
+        'http://rightsstatements.org/vocab/NoC-NC/1.0/',
+      ),
     );
   });
 
@@ -1295,7 +1321,7 @@ describe('Fetch', () => {
     ];
     expect(licenses).toHaveLength(1);
     expect(licenses[0].object.value).toBe(
-      'https://creativecommons.org/publicdomain/zero/1.0/',
+      'http://creativecommons.org/publicdomain/zero/1.0/',
     );
   });
 
@@ -1326,7 +1352,7 @@ describe('Fetch', () => {
     expect(datasetLicenses).toHaveLength(1);
     expect(datasetLicenses[0].object.termType).toBe('NamedNode');
     expect(datasetLicenses[0].object.value).toBe(
-      'https://creativecommons.org/publicdomain/zero/1.0/',
+      'http://creativecommons.org/publicdomain/zero/1.0/',
     );
 
     const distributionLicenses = [...dataset].filter(
@@ -1336,7 +1362,7 @@ describe('Fetch', () => {
     );
     expect(distributionLicenses).toHaveLength(1);
     expect(distributionLicenses[0].object.value).toBe(
-      'https://creativecommons.org/publicdomain/zero/1.0/',
+      'http://creativecommons.org/publicdomain/zero/1.0/',
     );
   });
 
@@ -1371,7 +1397,7 @@ describe('Fetch', () => {
     expect(datasetLicenses).toHaveLength(1);
     expect(datasetLicenses[0].object.termType).toBe('NamedNode');
     expect(datasetLicenses[0].object.value).toBe(
-      'https://creativecommons.org/publicdomain/zero/1.0/',
+      'http://creativecommons.org/publicdomain/zero/1.0/',
     );
   });
 });

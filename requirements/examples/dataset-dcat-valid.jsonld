@@ -75,7 +75,7 @@
           "dcat:byteSize": { "@value": "12582912", "@type": "xsd:nonNegativeInteger" },
           "dct:description": "RDF/XML dump",
           "dct:license": {
-            "@id": "https://creativecommons.org/publicdomain/zero/1.0/"
+            "@id": "http://creativecommons.org/publicdomain/zero/1.0/"
           }
         },
         {
@@ -92,7 +92,7 @@
           "dct:conformsTo": { "@id": "https://docs.nde.nl/schema-profile/" },
           "dct:description": "JSON-LD dump",
           "dct:license": {
-            "@id": "https://creativecommons.org/publicdomain/zero/1.0/"
+            "@id": "http://creativecommons.org/publicdomain/zero/1.0/"
           }
         },
         {
@@ -111,7 +111,7 @@
           },
           "dct:description": "SPARQL endpoint",
           "dct:license": {
-            "@id": "https://creativecommons.org/publicdomain/zero/1.0/"
+            "@id": "http://creativecommons.org/publicdomain/zero/1.0/"
           }
         }
       ]
