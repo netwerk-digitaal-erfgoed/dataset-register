@@ -10,6 +10,7 @@
 @prefix nde: <https://def.nde.nl#> .
 @prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
 
 ##
 ## Schema.org
@@ -1906,7 +1907,21 @@ dcat:AgentShape
         sh:description "De naam van de uitgever of maker."@nl, "The name of the publisher or creator."@en ;
         sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
     ] ,
-    nde-dataset:FoafNameLangStringProperty .
+    nde-dataset:FoafNameLangStringProperty ,
+    # Metadata-only property shapes: the Register reads these properties, so
+    # publishers need to be told about them, but they carry no constraints.
+    [
+        sh:path foaf:nick ;
+        sh:description "Alternatieve namen, zoals een afkorting waaronder de organisatie bekendstaat."@nl, "Alternative names such as an abbreviation that the organization is known under."@en ;
+    ] ,
+    [
+        sh:path dc:identifier ;
+        sh:description "Identificatie(s) van de organisatie, minimaal de <a href=\"https://www.nationaalarchief.nl/archiveren/kennisbank/isil-codes\">ISIL-code</a>."@nl, "Identifier(s) of the organization, at least its <a href=\"https://www.nationaalarchief.nl/archiveren/kennisbank/isil-codes\">ISIL code</a>."@en ;
+    ] ,
+    [
+        sh:path owl:sameAs ;
+        sh:description "Verwijzingen naar de organisatie in andere databases."@nl, "Links to the organization in other databases."@en ;
+    ] .
 
 # Publisher/creator validation is consolidated into dcat:AgentShape above, which covers
 # foaf:Organization, foaf:Person, and foaf:Agent instances. Separate Organization and Person
