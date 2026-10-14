@@ -310,7 +310,7 @@
   "nde_compat_persistent_explanation_persistent": "This dataset’s URIs resolve to a web page or to linked data.",
   "nde_compat_persistent_explanation_resolves": "The URIs resolve, but on a domain that may change, such as a software vendor’s.",
   "nde_compat_persistent_explanation_unresolved": "Some of this dataset’s sampled URIs do not resolve to a web page or to linked data.",
-  "nde_compat_persistent_explanation_pending": "The Knowledge Graph found no URIs in this dataset that it could check for persistence. It samples URIs from the namespace with the most subjects, and skips IIIF manifests and media files.",
+  "nde_compat_persistent_explanation_pending": "We found no URIs in this dataset that we could check for persistence. We sample URIs from the namespace with the most subjects, and skip IIIF manifests and media files.",
   "nde_compat_persistent_explanation_sampling_failed": "We tried to sample this dataset’s URIs, but its source could not be queried this time, so persistence could not be assessed. The check runs again automatically on the next analysis.",
   "nde_compat_persistent_count_unresolved": [
     {

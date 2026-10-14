@@ -310,7 +310,7 @@
   "nde_compat_persistent_explanation_persistent": "De persistente URI’s van deze dataset leiden naar een webpagina of naar linked data.",
   "nde_compat_persistent_explanation_resolves": "De URI’s werken nu, maar gebruiken een domein dat kan veranderen, bijvoorbeeld dat van een software-leverancier.",
   "nde_compat_persistent_explanation_unresolved": "Sommige URI’s uit de steekproef leiden niet naar een webpagina of naar linked data.",
-  "nde_compat_persistent_explanation_pending": "De Knowledge Graph vond in deze dataset geen URI’s die hij op persistentie kon controleren. Hij neemt een steekproef uit de namespace met de meeste subjecten en slaat IIIF-manifesten en mediabestanden over.",
+  "nde_compat_persistent_explanation_pending": "We vonden in deze dataset geen URI’s die we op persistentie konden controleren. We nemen een steekproef uit de namespace met de meeste subjecten en slaan IIIF-manifesten en mediabestanden over.",
   "nde_compat_persistent_explanation_sampling_failed": "We hebben geprobeerd de URI’s van deze dataset te bemonsteren, maar de bron kon deze keer niet worden bevraagd, waardoor de persistentie niet kon worden beoordeeld. De controle wordt automatisch opnieuw uitgevoerd bij de volgende analyse.",
   "nde_compat_persistent_count_unresolved": [
     {
