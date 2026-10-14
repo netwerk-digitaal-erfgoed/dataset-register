@@ -678,11 +678,11 @@ export function normalizePersistentUris(
 //
 // With no ratio, the sampling-failed marker splits the two no-measurement cases:
 // a sample that was attempted and failed this run is a `warning` (🟠,
-// 'sampling-failed') — an error to surface — whereas no marker means the
-// resolution step has not run, or the DKG found no self-minted namespace to
-// sample, so the criterion is neutral pending (⚪): a grey row signalling “this
-// will still be checked”, unlike terms it keeps its place rather than being
-// omitted.
+// 'sampling-failed') — an error to surface — whereas no marker means the DKG
+// found no namespace to sample (for example, when its largest namespaces hold
+// only IIIF manifests or media), so the criterion is neutral (⚪): a grey row
+// saying “no URIs found to check”; unlike terms it keeps its place rather than
+// being omitted.
 export function persistentUrisState(persistent: PersistentUris): {
   state: CompatibilityState;
   reason?: PersistentFailureReason;
