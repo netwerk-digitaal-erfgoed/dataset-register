@@ -17,21 +17,20 @@ Local Boilerplate: logo yes
 <pre class=include>path: nde.include</pre>
 
 <style>
-td, th {
-    vertical-align: top;
-}
-
-/* Attribute tables: the house style stripes them; keep property names and
-   cardinalities on one line, and cap the usage column so a long pattern cannot widen it. */
+/* Attribute tables: the house style stripes them and wraps long patterns. On
+   wider screens, keep property names and cardinalities on one line, and give
+   the usage column a preferred 30% so the description keeps most of the width. */
 table.attributes {
     width: 100%;
 }
-table.attributes tbody th,
-table.attributes td:nth-child(3) {
-    white-space: nowrap;
-}
-table.attributes td:last-child {
-    width: 30%;
+@media (min-width: 40em) {
+    table.attributes tbody th,
+    table.attributes td:nth-child(3) {
+        white-space: nowrap;
+    }
+    table.attributes td:last-child {
+        width: 30%;
+    }
 }
 
 /* Schema.org and DCAT alternatives, shown as tabs that switch together. */

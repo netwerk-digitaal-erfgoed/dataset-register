@@ -25,10 +25,10 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: lts/*
-          cache: 'npm'
+
       # Renders the templates and adds the NDE logo and house style; requirements/Makefile
       # reads this version, so a local build matches.
-      - uses: netwerk-digitaal-erfgoed/workflows/spec-boilerplate@61ac4efb3073b4e9832b70c634d9c87ba453674f
+      - uses: netwerk-digitaal-erfgoed/workflows/spec-boilerplate@b2bd67265cf7576dfc334d2e1a046cef8aa576f4
         with:
           working-directory: requirements
 
