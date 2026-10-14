@@ -1,6 +1,10 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
-  import { decodeFromShareUrl, encodeForShareUrl } from './share-link.js';
+  import {
+    decodeFromShareUrl,
+    encodeForShareUrl,
+    sharedRdfPayload,
+  } from './share-link.js';
   import { Label, Select, Tooltip } from 'flowbite-svelte';
   import AlignLeftOutline from 'flowbite-svelte-icons/AlignLeftOutline.svelte';
   import ClipboardOutline from 'flowbite-svelte-icons/ClipboardOutline.svelte';
@@ -66,12 +70,10 @@
     contentType?: ContentType;
   }> {
     if (typeof window === 'undefined') return {};
-    const hash = window.location.hash.replace(/^#/, '');
-    if (!hash) return {};
-    const params = new URLSearchParams(hash);
-    const encoded = params.get('rdf');
-    const ct = params.get('ct') as ContentType | null;
+    const encoded = sharedRdfPayload(window.location.hash);
     if (!encoded) return {};
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const ct = params.get('ct') as ContentType | null;
     const decoded = await decodeFromShareUrl(encoded);
     return decoded
       ? {
