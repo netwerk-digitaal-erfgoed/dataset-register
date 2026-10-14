@@ -28,9 +28,8 @@ export const absoluteIri = (variable: string) =>
   `IF(isIRI(?${variable}) || REGEX(STR(?${variable}), "^[a-zA-Z][a-zA-Z0-9+.-]*:"), IRI(?${variable}), ?unbound)`;
 
 /**
- * Normalize a license value. If the raw value is an IRI, strip the "deed.nl"
- * suffix and harmonise https://creativecommons.org and
- * https://rightsstatements.org to http://. If the raw value is a literal, pass
+ * Normalize a license value. If the raw value is an IRI, bring it to its
+ * canonical form (see canonicalLicense). If the raw value is a literal, pass
  * it through unchanged so that a non-IRI license (allowed by SHACL with
  * sh:nodeKind sh:IRIOrLiteral) does not crash the CONSTRUCT with an
  * invalid-IRI error.
@@ -77,14 +76,25 @@ export const bindIriLicense = (rawVar: string, outVar: string) =>
       )`;
 
 /**
- * The canonical lexical form of license ?variable: without a "deed.nl" suffix,
- * and with Creative Commons and RightsStatements.org IRIs on http://, the form
- * both publish in their RDF. Publishers may use either scheme.
+ * The canonical lexical form of license ?variable:
+ *
+ * 1. Creative Commons IRIs without a trailing deed segment, such as `/deed.nl`,
+ *    `/deed.pt_BR` or a bare `/deed`;
+ * 2. Creative Commons and RightsStatements.org IRIs on http://, the form both
+ *    publish in their RDF (publishers may use either scheme);
+ * 3. exactly one trailing slash after the version segment of those IRIs, so
+ *    …/zero/1.0 and …/by/4.0// match the canonical …/zero/1.0/ and …/by/4.0/.
+ *
+ * Other IRIs, and these hosts’ IRIs with a query, fragment or further path
+ * (such as `legalcode`), keep their path as is.
  *
  * https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2303
  */
-const canonicalLicense = (variable: string) =>
-  `REPLACE(REPLACE(STR(?${variable}), "deed.nl", ""), "^https://(creativecommons|rightsstatements)\\\\.org/", "http://$1.org/")`;
+const canonicalLicense = (variable: string) => {
+  const withoutDeed = `REPLACE(STR(?${variable}), "^(https?://creativecommons\\\\.org/.*/)deed(\\\\.[a-zA-Z_-]+)?/?$", "$1")`;
+  const onHttp = `REPLACE(${withoutDeed}, "^https://(creativecommons|rightsstatements)\\\\.org/", "http://$1.org/")`;
+  return `REPLACE(${onHttp}, "^(http://(creativecommons|rightsstatements)\\\\.org/[^?#]*/[0-9]+\\\\.[0-9]+)/*$", "$1/")`;
+};
 
 /**
  * A media type in `type/subtype` form. Mirrors the sh:pattern that shacl.ttl
