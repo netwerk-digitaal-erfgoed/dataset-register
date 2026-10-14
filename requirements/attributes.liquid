@@ -46,6 +46,28 @@
                 {%- assign alternatives = or_paths -%}
             {%- endif -%}
         {%- endfor -%}
+        {%- comment -%}
+            The merged row takes each key from the first shape on the path that has it,
+            so its severity can belong to a sibling (such as a langString warning).
+            Whether the property is required comes from the shape with the sh:minCount.
+        {%- endcomment -%}
+        {%- assign requirement = nil -%}
+        {%- for shape in nodeShape.property -%}
+            {%- if shape.path == property.path and shape.minCount > 0 -%}
+                {%- assign requirement = shape -%}
+                {%- break -%}
+            {%- endif -%}
+        {%- endfor -%}
+        {%- assign is_enforced = false -%}
+        {%- assign becomes_required = false -%}
+        {%- if requirement -%}
+            {%- assign requirement_severity = requirement.severity | default: "Violation" -%}
+            {%- if requirement_severity == "Violation" -%}
+                {%- assign is_enforced = true -%}
+            {%- elsif requirement['nde:futureChange'].severity == "Violation" -%}
+                {%- assign becomes_required = true -%}
+            {%- endif -%}
+        {%- endif -%}
         {%- assign pattern_str = property.pattern | default: "" -%}
         {%- assign is_date_shape = pattern_str contains "[0-9]{4}" -%}
         {%- assign description = property.description | lang: "en"
@@ -87,8 +109,8 @@
                 {%- endif -%}
             </td>
             <td>
-                {%- assign min_count = property.minCount -%}
-                {%- if alternatives != '' -%}{%- assign min_count = 0 -%}{%- endif -%}
+                {%- assign min_count = 0 -%}
+                {%- if is_enforced and alternatives == '' -%}{%- assign min_count = requirement.minCount -%}{%- endif -%}
                 {%- assign current_min = min_count | default: 0 -%}
                 {%- assign current_max = property.maxCount | default: "n" -%}
                 {%- if property.maxCount == 0 -%}
@@ -105,6 +127,7 @@
                     {%- assign future_max = current_max -%}
                     {%- if change.minCount -%}{%- assign future_min = change.minCount -%}{%- endif -%}
                     {%- if change.maxCount -%}{%- assign future_max = change.maxCount -%}{%- endif -%}
+                    {%- if becomes_required -%}{%- assign future_min = requirement.minCount -%}{%- endif -%}
                     {%- if change.severity == "Violation" and current_min == 0 and property.maxCount != 0 -%}
                         {%- unless change.datatype or change.pattern or change.nodeKind or property.datatype or property.pattern or property.nodeKind or property.or or property.not or property.node.pattern -%}
                             {%- assign future_min = 1 -%}
@@ -129,14 +152,9 @@
                 {% elsif alternatives != '' -%}
                     Required: {{ alternatives | join: ' or ' }}
                     {% assign is_required = true -%}
-                {% elsif property.minCount > 0 -%}
-                    {% assign severity = property.severity | default: "Violation" -%}
-                    {% if severity == "Violation" -%}
-                        Required
-                        {% assign is_required = true -%}
-                    {% else -%}
-                        Recommended
-                    {% endif -%}
+                {% elsif is_enforced -%}
+                    Required
+                    {% assign is_required = true -%}
                 {% else -%}
                     Recommended
                 {% endif -%}
@@ -180,7 +198,7 @@
                             {% assign future_text = "IRIs not allowed" -%}
                         {%- endif -%}
                     {% endif -%}
-                    {% if min_count > 0 and property.severity == "Warning" and change.severity == "Violation" -%}
+                    {% if becomes_required -%}
                         {% if future_text == "" -%}
                             {% assign future_text = "becomes required" -%}
                         {% elsif future_text != "becomes required" -%}

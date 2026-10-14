@@ -1092,7 +1092,6 @@ nde-dataset:ContactPointShape
     sh:property [
         sh:path schema:name ;
         sh:minCount 1 ;
-        sh:severity sh:Violation ;
         sh:description "Naam van het contactpunt, bij voorkeur een afdeling (“Afdeling datasets”) in plaats van een individuele medewerker. Geef de waarde een taaltag, zodat een meertalige afdelingsnaam of een niet-Latijnse persoonsnaam in de juiste taal getoond kan worden."@nl, "Name of the contact point, preferably a department (“Datasets department”) rather than an individual employee. Tag the value with a language so that a multilingual department name or a non-Latin personal name can be shown in the appropriate language."@en ;
         sh:message "Vul een naam in voor het contactpunt"@nl, "Enter a name for the contact point"@en ;
     ] ,
@@ -1325,7 +1324,6 @@ dcat:DatasetShape
     sh:property [
         sh:minCount 1 ;
         sh:path dc:title ;
-        sh:severity sh:Violation ;
         sh:or (
             [ sh:datatype xsd:string ]
             [ sh:datatype rdf:langString ]
@@ -1783,7 +1781,6 @@ dcat:CatalogShape
     sh:property [
         sh:path dc:title ;
         sh:minCount 1 ;
-        sh:severity sh:Violation ;
         sh:or (
             [ sh:datatype xsd:string ]
             [ sh:datatype rdf:langString ]
@@ -1899,7 +1896,6 @@ dcat:AgentShape
     sh:property [
         sh:path foaf:name ;
         sh:minCount 1 ;
-        sh:severity sh:Violation ;
         sh:or (
             [ sh:datatype xsd:string ]
             [ sh:datatype rdf:langString ]
