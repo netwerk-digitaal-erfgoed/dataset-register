@@ -7,7 +7,7 @@
 {%- endcomment -%}
 <table>
     {% assign class = nodeShape.targetClass | default: nodeShape.class | default: targetClass -%}
-    <caption>[{{ class }}]({{ class | replace_first: 'schema:', 'https://schema.org/' | replace_first: 'dcat:', 'http://www.w3.org/ns/dcat#' | replace_first: 'foaf:', 'http://xmlns.com/foaf/0.1/' | replace_first: 'vcard:', 'http://www.w3.org/2006/vcard/ns#' }}) properties</caption>
+    <caption>[{{ class }}]({% render 'expand-iri', curie: class %}) properties</caption>
     <thead>
         <tr>
             <th>Property</th>
@@ -56,7 +56,7 @@
             | replace: "SHOULD", "*SHOULD*"
         -%}
         <tr>
-            <th scope="row">[{{ property.path }}]({{ property.path | replace_first: 'schema:', 'https://schema.org/' | replace_first: 'dcat:', 'http://www.w3.org/ns/dcat#' | replace_first: 'dct:', 'http://purl.org/dc/terms/' | replace_first: 'foaf:', 'http://xmlns.com/foaf/0.1/' | replace_first: 'vcard:', 'http://www.w3.org/2006/vcard/ns#' }})</th>
+            <th scope="row">[{{ property.path }}]({% render 'expand-iri', curie: property.path %})</th>
             <td>
                 {%- if is_date_shape -%}
                     {%- if description != "" -%}{{ description }} {% endif -%}

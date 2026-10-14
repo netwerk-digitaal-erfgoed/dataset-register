@@ -55,7 +55,7 @@ td, th {
 <script>
 // Turns each .vocab-tabs group into tabs. Picking a vocabulary in one group
 // switches every group on the page, and the choice is remembered.
-document.addEventListener('DOMContentLoaded', () => {
+(() => {
   const vocabularies = { schema: 'Schema.org', dcat: 'DCAT' };
   const storageKey = 'nde-datasets-vocabulary';
   const tabs = [];
@@ -67,58 +67,68 @@ document.addEventListener('DOMContentLoaded', () => {
       tab.setAttribute('aria-selected', String(selected));
       tab.tabIndex = selected ? 0 : -1;
     }
-    try {
-      localStorage.setItem(storageKey, vocabulary);
-    } catch {}
   };
 
-  document.querySelectorAll('.vocab-tabs').forEach((group, groupIndex) => {
-    const tablist = document.createElement('div');
-    tablist.className = 'vocab-tablist';
-    tablist.setAttribute('role', 'tablist');
-    tablist.setAttribute('aria-label', 'Vocabulary');
-
-    for (const panel of group.querySelectorAll(':scope > [data-vocab]')) {
-      const vocabulary = panel.dataset.vocab;
-      const tab = document.createElement('button');
-      tab.type = 'button';
-      tab.id = `vocab-tab-${groupIndex}-${vocabulary}`;
-      tab.dataset.vocab = vocabulary;
-      tab.textContent = vocabularies[vocabulary];
-      tab.setAttribute('role', 'tab');
-      panel.id ||= `vocab-panel-${groupIndex}-${vocabulary}`;
-      panel.tabIndex = 0;
-      panel.setAttribute('role', 'tabpanel');
-      panel.setAttribute('aria-labelledby', tab.id);
-      tab.setAttribute('aria-controls', panel.id);
-
-      tab.addEventListener('click', () => {
-        // Keep the clicked tab in place while groups above it change height.
-        const topBefore = tab.getBoundingClientRect().top;
-        select(vocabulary);
-        window.scrollBy(0, tab.getBoundingClientRect().top - topBefore);
-      });
-      tab.addEventListener('keydown', (event) => {
-        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-        const siblings = [...tablist.children];
-        const step = event.key === 'ArrowRight' ? 1 : -1;
-        const next = siblings[(siblings.indexOf(tab) + step + siblings.length) % siblings.length];
-        next.click();
-        next.focus();
-      });
-
-      tablist.append(tab);
-      tabs.push(tab);
-    }
-    group.prepend(tablist);
-  });
-
+  // Hide the other vocabulary before the page renders, so a deep link
+  // does not land on content that is about to disappear.
   let stored = null;
   try {
     stored = localStorage.getItem(storageKey);
   } catch {}
   select(Object.hasOwn(vocabularies, stored ?? '') ? stored : 'schema');
-});
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.vocab-tabs').forEach((group, groupIndex) => {
+      const tablist = document.createElement('div');
+      tablist.className = 'vocab-tablist';
+      tablist.setAttribute('role', 'tablist');
+      tablist.setAttribute('aria-label', 'Vocabulary');
+
+      for (const panel of group.querySelectorAll(':scope > [data-vocab]')) {
+        const vocabulary = panel.dataset.vocab;
+        const tab = document.createElement('button');
+        tab.type = 'button';
+        tab.id = `vocab-tab-${groupIndex}-${vocabulary}`;
+        tab.dataset.vocab = vocabulary;
+        tab.textContent = vocabularies[vocabulary];
+        tab.setAttribute('role', 'tab');
+        panel.id ||= `vocab-panel-${groupIndex}-${vocabulary}`;
+        panel.tabIndex = 0;
+        panel.setAttribute('role', 'tabpanel');
+        panel.setAttribute('aria-labelledby', tab.id);
+        tab.setAttribute('aria-controls', panel.id);
+
+        tab.addEventListener('click', () => {
+          // Keep the clicked tab in place while groups above it change height.
+          const topBefore = tab.getBoundingClientRect().top;
+          select(vocabulary);
+          window.scrollBy(0, tab.getBoundingClientRect().top - topBefore);
+          try {
+            localStorage.setItem(storageKey, vocabulary);
+          } catch {}
+        });
+        tab.addEventListener('keydown', (event) => {
+          if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+          const siblings = [...tablist.children];
+          const step = event.key === 'ArrowRight' ? 1 : -1;
+          const next = siblings[(siblings.indexOf(tab) + step + siblings.length) % siblings.length];
+          next.click();
+          next.focus();
+        });
+
+        tablist.append(tab);
+        tabs.push(tab);
+      }
+      group.prepend(tablist);
+    });
+    select(document.documentElement.dataset.vocab);
+
+    // The tab bars added height above a deep link’s target.
+    if (location.hash) {
+      document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
+    }
+  });
+})();
 </script>
 
 Introduction {#introduction}
