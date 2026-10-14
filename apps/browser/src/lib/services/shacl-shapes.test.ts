@@ -16,7 +16,7 @@ describe('selectShape', () => {
     };
     const index: ShapesIndex = {
       byPath: new Map([[`${SCHEMA}name`, [contactPointMeta]]]),
-      byId: new Map([['_:df_13_226', contactPointMeta]]),
+      byId: new Map([['_:df_13_226', [contactPointMeta]]]),
     };
     expect(
       selectShape(index, `${SCHEMA}name`, undefined, '_:df_13_226'),
@@ -59,10 +59,8 @@ describe('selectShape', () => {
   });
 
   it('ignores a sourceShape hit describing a different class than the focus node', () => {
-    // `SchemaDescriptionPropertyShouldExist` is owned by both the catalog and the
-    // dataset shape, so indexShapes keeps a single byId entry won by whichever was
-    // indexed last. Taking it would tell someone describing a catalog to describe
-    // the dataset instead.
+    // Taking it would tell someone describing a catalog to describe the dataset
+    // instead.
     const dataCatalogMeta = {
       description: 'Een beschrijving van de inhoud van de datacatalogus.',
       targetClass: `${SCHEMA}DataCatalog`,
@@ -76,10 +74,15 @@ describe('selectShape', () => {
       byPath: new Map([
         [`${SCHEMA}description`, [dataCatalogMeta, datasetMeta]],
       ]),
-      byId: new Map([[sharedShape, datasetMeta]]),
+      byId: new Map([[sharedShape, [datasetMeta]]]),
     };
     expect(
-      selectShape(index, `${SCHEMA}description`, `${SCHEMA}DataCatalog`, sharedShape),
+      selectShape(
+        index,
+        `${SCHEMA}description`,
+        `${SCHEMA}DataCatalog`,
+        sharedShape,
+      ),
     ).toEqual(dataCatalogMeta);
   });
 
@@ -92,7 +95,7 @@ describe('selectShape', () => {
     };
     const index: ShapesIndex = {
       byPath: new Map([[`${SCHEMA}description`, [distributionMeta]]]),
-      byId: new Map([['_:df_15_191', distributionMeta]]),
+      byId: new Map([['_:df_15_191', [distributionMeta]]]),
     };
     expect(
       selectShape(
@@ -100,6 +103,36 @@ describe('selectShape', () => {
         `${SCHEMA}description`,
         `${SCHEMA}DataDownload`,
         '_:df_15_191',
+      ),
+    ).toEqual(distributionMeta);
+  });
+
+  it('picks the owner of a shared sourceShape that fits the focus node', () => {
+    // `SchemaLicenseIriProperty` is owned by both the dataset and the distribution
+    // shape. A dataset’s result must not be explained with the distribution’s
+    // description, nor the other way round.
+    const datasetMeta = {
+      description: 'De licentie van de dataset.',
+      targetClass: `${SCHEMA}Dataset`,
+    };
+    const distributionMeta = {
+      description: 'De licentie van de distributie.',
+      targetClass: undefined,
+    };
+    const sharedShape = 'https://def.nde.nl/dataset#SchemaLicenseIriProperty';
+    const index: ShapesIndex = {
+      byPath: new Map([[`${SCHEMA}license`, [datasetMeta, distributionMeta]]]),
+      byId: new Map([[sharedShape, [datasetMeta, distributionMeta]]]),
+    };
+    expect(
+      selectShape(index, `${SCHEMA}license`, `${SCHEMA}Dataset`, sharedShape),
+    ).toEqual(datasetMeta);
+    expect(
+      selectShape(
+        index,
+        `${SCHEMA}license`,
+        `${SCHEMA}DataDownload`,
+        sharedShape,
       ),
     ).toEqual(distributionMeta);
   });
@@ -133,12 +166,67 @@ describe('indexShapes', () => {
       },
     ];
     const index = indexShapes(json, 'nl');
-    expect(index.byId.get('_:main')?.description).toBe(
+    expect(index.byId.get('_:main')?.[0]?.description).toBe(
       'Naam van het contactpunt.',
     );
-    expect(index.byId.get('_:sibling')?.description).toBe(
+    expect(index.byId.get('_:sibling')?.[0]?.description).toBe(
       'Naam van het contactpunt.',
     );
+  });
+
+  it('keeps every owner of a property shape shared across NodeShapes', () => {
+    // Mirrors `SchemaLicenseIriProperty`: a named sibling shape referenced by both
+    // the dataset and the distribution shape, each with its own main shape.
+    const json = [
+      {
+        '@id': 'https://example.org/DatasetShape',
+        '@type': [`${SH}NodeShape`],
+        [`${SH}targetClass`]: [{ '@id': `${SCHEMA}Dataset` }],
+        [`${SH}property`]: [
+          { '@id': '_:dataset-license' },
+          { '@id': 'https://example.org/LicenseIri' },
+        ],
+      },
+      {
+        '@id': 'https://example.org/DistributionShape',
+        '@type': [`${SH}NodeShape`],
+        [`${SH}targetObjectsOf`]: [{ '@id': `${SCHEMA}distribution` }],
+        [`${SH}property`]: [
+          { '@id': '_:distribution-license' },
+          { '@id': 'https://example.org/LicenseIri' },
+        ],
+      },
+      {
+        '@id': '_:dataset-license',
+        [`${SH}path`]: [{ '@id': `${SCHEMA}license` }],
+        [`${SH}description`]: [
+          { '@value': 'De licentie van de dataset.', '@language': 'nl' },
+        ],
+      },
+      {
+        '@id': '_:distribution-license',
+        [`${SH}path`]: [{ '@id': `${SCHEMA}license` }],
+        [`${SH}description`]: [
+          { '@value': 'De licentie van de distributie.', '@language': 'nl' },
+        ],
+      },
+      {
+        '@id': 'https://example.org/LicenseIri',
+        [`${SH}path`]: [{ '@id': `${SCHEMA}license` }],
+        [`${SH}nodeKind`]: [{ '@id': `${SH}IRI` }],
+      },
+    ];
+    const index = indexShapes(json, 'nl');
+    expect(index.byId.get('https://example.org/LicenseIri')).toEqual([
+      {
+        description: 'De licentie van de dataset.',
+        targetClass: `${SCHEMA}Dataset`,
+      },
+      {
+        description: 'De licentie van de distributie.',
+        targetClass: undefined,
+      },
+    ]);
   });
 
   it('binds metadata to the NodeShape’s class via sh:class as well as sh:targetClass', () => {
