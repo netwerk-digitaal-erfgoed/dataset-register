@@ -999,6 +999,7 @@ See [[#distribution-attributes]] for a full overview.
 <div class="advisement">
     In [[#v2|v2.0]] of this specification, <code>schema:contentUrl</code> *MUST* be an IRI.
     String and <code>xsd:anyURI</code> literals will no longer be accepted.
+    Versions up to 1.15.1 of this specification said the reverse here – that <code>contentUrl</code> must become an <code>xsd:anyURI</code> literal – which was a mistake.
     A <code>contentUrl</code> written as a JSON string in JSON-LD with the Schema.org context, as in the example above, is read as an IRI and stays valid.
     In DCAT-AP-NL 3.0, write <code>dcat:accessURL</code> and <code>dcat:downloadURL</code> as IRIs, with <code>@id</code> in JSON-LD.
 </div>
