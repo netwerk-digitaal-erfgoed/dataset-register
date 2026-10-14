@@ -439,6 +439,18 @@ describe('Server', () => {
     expect(response.statusCode).toEqual(400);
   });
 
+  it('parses a schema.org JSON-LD request body against the bundled context', async () => {
+    // The live schema.org context no longer coerces `license` to an IRI,
+    // so parsing against it would report it as a literal.
+    const response = await httpServer.inject({
+      method: 'POST',
+      url: '/datasets/validate',
+      headers: { 'Content-Type': 'application/ld+json' },
+      payload: await file('dataset-schema-org-valid-minimal.jsonld'),
+    });
+    expect(response.statusCode).toEqual(200);
+  });
+
   it('validates http://schema.org dataset description in request body', async () => {
     const response = await httpServer.inject({
       method: 'POST',

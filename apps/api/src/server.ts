@@ -8,6 +8,7 @@ import fastify, {
 import bearerAuth from '@fastify/bearer-auth';
 import {
   AllowedRegistrationDomainStore,
+  createRdfFetch,
   DatasetStore,
   dereference,
   discoverDatacatalog,
@@ -86,6 +87,8 @@ export async function server(
     })
     .register(fastifyRdf, {
       defaultContentType: 'application/ld+json',
+      // Parse pasted JSON-LD against the bundled schema.org context, as dereferencing does.
+      fetch: createRdfFetch(),
     })
     .register(fastifyCors, {
       methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE'],
