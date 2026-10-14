@@ -219,7 +219,18 @@ export class Crawler {
             mediaType,
           })
           .crawled();
-        await this.registrationStore.store(updatedRegistration);
+        if (!(await this.registrationStore.update(updatedRegistration))) {
+          // Deleted while this crawl ran: the delete removed what was stored before
+          // it, so remove what this crawl stored, or it outlives the registration.
+          for (const datasetIri of datasetIris) {
+            await this.ratingStore.delete(datasetIri);
+            await this.datasetStore.delete(datasetIri);
+          }
+          await this.validationReportStore.delete(registration.url);
+          this.logger.info(
+            `${registration.url} was deleted during its crawl; discarded the crawl result`,
+          );
+        }
       } finally {
         this.recordRegistrationTiming(
           registration.url,

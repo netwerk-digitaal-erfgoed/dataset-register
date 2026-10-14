@@ -523,6 +523,56 @@ describe('SPARQL', () => {
       );
       expect(deleted).toBeUndefined();
     });
+
+    it('updates a stored registration, replacing its datasets', async () => {
+      const url = 'https://example.org/to-update.json';
+      await registrationStore.store(
+        createTestRegistration(url, undefined, undefined, undefined, [
+          new URL('https://example.org/dataset/old'),
+        ]),
+      );
+
+      const updated = await registrationStore.update(
+        createTestRegistration(
+          url,
+          undefined,
+          undefined,
+          new Date('2025-01-15T08:30:00Z'),
+          [new URL('https://example.org/dataset/new')],
+        ),
+      );
+
+      expect(updated).toBe(true);
+      const found = await registrationStore.findByUrl(new URL(url));
+      expect(found!.datasets.map((dataset) => dataset.toString())).toEqual([
+        'https://example.org/dataset/new',
+      ]);
+    });
+
+    it('does not re-create a registration deleted before the update', async () => {
+      // A crawl that was in flight when the registration was deleted must not
+      // bring it back.
+      const url = 'https://example.org/deleted-mid-crawl.json';
+      await registrationStore.store(createTestRegistration(url));
+      await registrationStore.delete(new URL(url));
+
+      const updated = await registrationStore.update(
+        createTestRegistration(
+          url,
+          undefined,
+          undefined,
+          new Date('2025-01-15T08:30:00Z'),
+          [new URL('https://example.org/dataset/1')],
+        ),
+      );
+
+      expect(updated).toBe(false);
+      expect(await registrationStore.findByUrl(new URL(url))).toBeUndefined();
+      const leftovers = await sparqlClient.query(`
+        SELECT * WHERE { GRAPH <${registrationsGraphIri}> { ?s ?p ?o } }
+      `);
+      expect(await leftovers.toArray()).toHaveLength(0);
+    });
   });
 
   describe('SparqlAllowedDomainStore', () => {

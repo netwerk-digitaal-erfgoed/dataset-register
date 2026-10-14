@@ -38,6 +38,15 @@ export class MockRegistrationStore implements RegistrationStore {
     this.registrations.set(registration.url, registration);
   }
 
+  async update(registration: Registration): Promise<boolean> {
+    if (!this.isRegistered(registration.url)) {
+      return false;
+    }
+    await this.delete(registration.url);
+    await this.store(registration);
+    return true;
+  }
+
   findByUrl(url: URL): Promise<Registration | undefined> {
     const found = [...this.registrations.values()].find(
       (registration) => registration.url.toString() === url.toString(),

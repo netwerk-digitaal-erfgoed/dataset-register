@@ -286,6 +286,62 @@ export class SparqlRegistrationStore implements RegistrationStore {
     await this.client.update(sparqlUpdate);
   }
 
+  async update(registration: Registration): Promise<boolean> {
+    const iri = sparqlIri(registration.url);
+    const quads = toRdf(registration);
+    const triples = await quadsToNTriples(quads);
+
+    // Like store(), but the type triple is kept until the insert, which runs only while
+    // it is still there. A delete that lands between the two operations removes it, so
+    // the insert finds no match and the registration stays deleted.
+    await this.client.update(`
+      PREFIX schema: <https://schema.org/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+      WITH <${this.graphIri}>
+      DELETE {
+        <${iri}> ?p ?o .
+        ?dataset ?dp ?do .
+      }
+      WHERE {
+        {
+          <${iri}> ?p ?o .
+          FILTER (?p != rdf:type)
+        } UNION {
+          ?dataset schema:subjectOf <${iri}> .
+          ?dataset ?dp ?do .
+        } UNION {
+          <${iri}> schema:about ?dataset .
+          ?dataset ?dp ?do .
+        }
+      };
+
+      INSERT {
+        GRAPH <${this.graphIri}> {
+          ${triples}
+        }
+      }
+      WHERE {
+        GRAPH <${this.graphIri}> {
+          <${iri}> a schema:EntryPoint .
+        }
+      }`);
+
+    // Asked afterwards, so a delete that lands after the update is reported too.
+    const result = await this.client.query(`
+      PREFIX schema: <https://schema.org/>
+
+      SELECT * WHERE {
+        GRAPH <${this.graphIri}> {
+          <${iri}> a schema:EntryPoint .
+        }
+      }
+      LIMIT 1
+    `);
+
+    return (await result.toArray()).length > 0;
+  }
+
   async delete(url: URL): Promise<void> {
     const iri = sparqlIri(url);
     await this.client.update(`

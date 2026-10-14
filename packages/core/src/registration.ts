@@ -184,6 +184,13 @@ export interface RegistrationStore {
    */
   store(registration: Registration): Promise<void>;
   /**
+   * Replace a stored {@link Registration}, but only while one with the same URL is
+   * still stored, so a write that raced a delete cannot re-create it.
+   *
+   * @returns whether the Registration is still stored; false when it was deleted.
+   */
+  update(registration: Registration): Promise<boolean>;
+  /**
    * Registrations due for a crawl: crawled before `date`, or never crawled.
    */
   findRegistrationsCrawledBefore(date: Date): Promise<Registration[]>;
