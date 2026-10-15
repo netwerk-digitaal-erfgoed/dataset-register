@@ -6,17 +6,19 @@ on:
       - main
     paths:
       - 'requirements/**'
+      - '.github/workflows/requirements-publish.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'requirements/**'
+      - '.github/workflows/requirements-publish.yml'
 
 jobs:
   # Renders the templates, adds the NDE logo and house style, and builds the spec;
   # requirements/Makefile reads this version, so a local build matches.
   build:
-    uses: netwerk-digitaal-erfgoed/workflows/.github/workflows/spec.yml@v1.1.0
+    uses: netwerk-digitaal-erfgoed/workflows/.github/workflows/spec.yml@v1.2.2
     with:
       working-directory: requirements
 
