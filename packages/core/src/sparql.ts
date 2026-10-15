@@ -293,7 +293,8 @@ export class SparqlRegistrationStore implements RegistrationStore {
 
     // Like store(), but the type triple is kept until the insert, which runs only while
     // it is still there. A delete that lands between the two operations removes it, so
-    // the insert finds no match and the registration stays deleted.
+    // the insert finds no match and the registration stays deleted. A dataset described
+    // at the registration’s own URL shares its subject, so its triples keep that type too.
     await this.client.update(`
       PREFIX schema: <https://schema.org/>
       PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -310,9 +311,11 @@ export class SparqlRegistrationStore implements RegistrationStore {
         } UNION {
           ?dataset schema:subjectOf <${iri}> .
           ?dataset ?dp ?do .
+          FILTER (?dataset != <${iri}> || ?dp != rdf:type)
         } UNION {
           <${iri}> schema:about ?dataset .
           ?dataset ?dp ?do .
+          FILTER (?dataset != <${iri}> || ?dp != rdf:type)
         }
       };
 

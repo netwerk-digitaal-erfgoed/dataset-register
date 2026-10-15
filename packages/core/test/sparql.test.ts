@@ -549,6 +549,33 @@ describe('SPARQL', () => {
       ]);
     });
 
+    it('updates a registration whose URL is also its dataset IRI', async () => {
+      // A dataset described at its own URL: the dataset triples share the
+      // registration’s subject, so clearing them must not remove its type.
+      const url = 'https://example.org/dataset/self-described';
+      await registrationStore.store(
+        createTestRegistration(url, undefined, undefined, undefined, [
+          new URL(url),
+        ]),
+      );
+
+      const updated = await registrationStore.update(
+        createTestRegistration(
+          url,
+          undefined,
+          undefined,
+          new Date('2025-01-15T08:30:00Z'),
+          [new URL(url)],
+        ),
+      );
+
+      expect(updated).toBe(true);
+      const found = await registrationStore.findByUrl(new URL(url));
+      expect(found!.datasets.map((dataset) => dataset.toString())).toEqual([
+        url,
+      ]);
+    });
+
     it('does not re-create a registration deleted before the update', async () => {
       // A crawl that was in flight when the registration was deleted must not
       // bring it back.
