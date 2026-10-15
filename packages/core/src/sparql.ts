@@ -291,31 +291,38 @@ export class SparqlRegistrationStore implements RegistrationStore {
     const quads = toRdf(registration);
     const triples = await quadsToNTriples(quads);
 
-    // Like store(), but one operation whose WHERE requires the registration to exist.
-    // The WHERE is evaluated before anything is deleted or inserted, so a deleted
-    // registration is neither cleared nor re-created.
+    // Like store(), but only while the registration exists: both operations require
+    // its `a schema:EntryPoint` triple, which the clear spares, also when a dataset
+    // shares the registration’s IRI. QLever runs the operations of one request
+    // atomically, so a delete cannot land between them. They are separate because a
+    // combined DELETE/INSERT instantiates the insert once per cleared triple.
     await this.client.update(`
       PREFIX schema: <https://schema.org/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
       WITH <${this.graphIri}>
       DELETE {
-        <${iri}> ?p ?o .
-        ?dataset ?dp ?do .
+        ?subject ?predicate ?object .
       }
+      WHERE {
+        <${iri}> a schema:EntryPoint .
+        {
+          VALUES ?subject { <${iri}> }
+        } UNION {
+          ?subject schema:subjectOf <${iri}> .
+        } UNION {
+          <${iri}> schema:about ?subject .
+        }
+        ?subject ?predicate ?object .
+        FILTER (!(?subject = <${iri}> && ?predicate = rdf:type && ?object = schema:EntryPoint))
+      };
+
+      WITH <${this.graphIri}>
       INSERT {
         ${triples}
       }
       WHERE {
         <${iri}> a schema:EntryPoint .
-        {
-          <${iri}> ?p ?o .
-        } UNION {
-          ?dataset schema:subjectOf <${iri}> .
-          ?dataset ?dp ?do .
-        } UNION {
-          <${iri}> schema:about ?dataset .
-          ?dataset ?dp ?do .
-        }
       }`);
 
     // Asked afterwards, so a delete that lands after the update is reported too.

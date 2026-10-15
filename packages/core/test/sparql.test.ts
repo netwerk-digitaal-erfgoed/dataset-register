@@ -589,6 +589,7 @@ describe('SPARQL', () => {
     it('does not re-create a deleted registration that another one lists as a dataset', async () => {
       // The catalog’s dataset triples remain at the deleted registration’s URL.
       const url = 'https://example.org/dataset/deleted-but-listed';
+      const catalogUrl = 'https://example.org/listing-catalog.json';
       await registrationStore.store(
         createTestRegistration(url, undefined, undefined, undefined, [
           new URL(url),
@@ -596,13 +597,9 @@ describe('SPARQL', () => {
       );
       await registrationStore.delete(new URL(url));
       await registrationStore.store(
-        createTestRegistration(
-          'https://example.org/listing-catalog.json',
-          undefined,
-          undefined,
-          undefined,
-          [new URL(url)],
-        ),
+        createTestRegistration(catalogUrl, undefined, undefined, undefined, [
+          new URL(url),
+        ]),
       );
 
       const updated = await registrationStore.update(
@@ -617,6 +614,16 @@ describe('SPARQL', () => {
 
       expect(updated).toBe(false);
       expect(await registrationStore.findByUrl(new URL(url))).toBeUndefined();
+      // Nor clear what the catalog stored at that URL.
+      const catalogDataset = await sparqlClient.query(`
+        SELECT * WHERE {
+          GRAPH <${registrationsGraphIri}> {
+            <${url}> a <https://schema.org/Dataset> ;
+              <https://schema.org/subjectOf> <${catalogUrl}> .
+          }
+        }
+      `);
+      expect(await catalogDataset.toArray()).toHaveLength(1);
     });
 
     it('does not re-create a registration deleted before the update', async () => {
