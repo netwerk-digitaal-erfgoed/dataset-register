@@ -16,7 +16,7 @@ jobs:
   # Renders the templates, adds the NDE logo and house style, and builds the spec;
   # requirements/Makefile reads this version, so a local build matches.
   build:
-    uses: netwerk-digitaal-erfgoed/workflows/.github/workflows/spec.yml@66ba476b4622833548e2203a56996cd20a9cdd7d
+    uses: netwerk-digitaal-erfgoed/workflows/.github/workflows/spec.yml@v1.1.0
     with:
       working-directory: requirements
 
