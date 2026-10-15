@@ -28,7 +28,7 @@ jobs:
 
       # Renders the templates and adds the NDE logo and house style; requirements/Makefile
       # reads this version, so a local build matches.
-      - uses: netwerk-digitaal-erfgoed/workflows/spec-boilerplate@babc5aa5ed679c7c875c55f1b956758ecfbd0aa0
+      - uses: netwerk-digitaal-erfgoed/workflows/spec-boilerplate@v1.0.0
         with:
           working-directory: requirements
 
