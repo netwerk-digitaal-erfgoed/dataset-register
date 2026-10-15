@@ -291,39 +291,30 @@ export class SparqlRegistrationStore implements RegistrationStore {
     const quads = toRdf(registration);
     const triples = await quadsToNTriples(quads);
 
-    // Like store(), but the registration’s type triple is kept until the insert, which
-    // runs only while it is still there. A delete that lands between the two operations
-    // removes it, so the insert finds no match and the registration stays deleted.
-    // The type is excluded by subject, not by branch: a dataset described at the
-    // registration’s own URL shares that subject.
+    // Like store(), but one operation whose WHERE requires the registration to exist.
+    // The WHERE is evaluated before anything is deleted or inserted, so a deleted
+    // registration is neither cleared nor re-created.
     await this.client.update(`
       PREFIX schema: <https://schema.org/>
-      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
       WITH <${this.graphIri}>
       DELETE {
-        ?subject ?predicate ?object .
+        <${iri}> ?p ?o .
+        ?dataset ?dp ?do .
       }
-      WHERE {
-        {
-          VALUES ?subject { <${iri}> }
-        } UNION {
-          ?subject schema:subjectOf <${iri}> .
-        } UNION {
-          <${iri}> schema:about ?subject .
-        }
-        ?subject ?predicate ?object .
-        FILTER (?subject != <${iri}> || ?predicate != rdf:type)
-      };
-
       INSERT {
-        GRAPH <${this.graphIri}> {
-          ${triples}
-        }
+        ${triples}
       }
       WHERE {
-        GRAPH <${this.graphIri}> {
-          <${iri}> a schema:EntryPoint .
+        <${iri}> a schema:EntryPoint .
+        {
+          <${iri}> ?p ?o .
+        } UNION {
+          ?dataset schema:subjectOf <${iri}> .
+          ?dataset ?dp ?do .
+        } UNION {
+          <${iri}> schema:about ?dataset .
+          ?dataset ?dp ?do .
         }
       }`);
 

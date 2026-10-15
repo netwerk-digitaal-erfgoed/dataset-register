@@ -558,6 +558,12 @@ describe('SPARQL', () => {
           new URL(url),
         ]),
       );
+      // The dataset’s own graph has the same IRI as the registration.
+      await sparqlClient.update(`
+        INSERT DATA {
+          GRAPH <${url}> { <${url}> <http://purl.org/dc/terms/title> "Self-described" }
+        }
+      `);
 
       const updated = await registrationStore.update(
         createTestRegistration(
@@ -574,6 +580,43 @@ describe('SPARQL', () => {
       expect(found!.datasets.map((dataset) => dataset.toString())).toEqual([
         url,
       ]);
+      const datasetGraph = await sparqlClient.query(`
+        SELECT * WHERE { GRAPH <${url}> { ?s ?p ?o } }
+      `);
+      expect(await datasetGraph.toArray()).toHaveLength(1);
+    });
+
+    it('does not re-create a deleted registration that another one lists as a dataset', async () => {
+      // The catalog’s dataset triples remain at the deleted registration’s URL.
+      const url = 'https://example.org/dataset/deleted-but-listed';
+      await registrationStore.store(
+        createTestRegistration(url, undefined, undefined, undefined, [
+          new URL(url),
+        ]),
+      );
+      await registrationStore.delete(new URL(url));
+      await registrationStore.store(
+        createTestRegistration(
+          'https://example.org/listing-catalog.json',
+          undefined,
+          undefined,
+          undefined,
+          [new URL(url)],
+        ),
+      );
+
+      const updated = await registrationStore.update(
+        createTestRegistration(
+          url,
+          undefined,
+          undefined,
+          new Date('2025-01-15T08:30:00Z'),
+          [new URL(url)],
+        ),
+      );
+
+      expect(updated).toBe(false);
+      expect(await registrationStore.findByUrl(new URL(url))).toBeUndefined();
     });
 
     it('does not re-create a registration deleted before the update', async () => {
