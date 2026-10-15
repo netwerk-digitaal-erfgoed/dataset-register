@@ -1759,6 +1759,7 @@
       validateHref={dataset.subjectOf?.$id
         ? localizeHref(`/validate?url=${encodeUrlParam(dataset.subjectOf.$id)}`)
         : null}
+      analyzedAt={summaryGeneratedAt}
     />
 
     <!-- VoID Summary Section -->

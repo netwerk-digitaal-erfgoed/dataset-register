@@ -31,6 +31,8 @@
     severityTone,
   } from '$lib/components/validation/severity';
   import { shortenUri } from '$lib/utils/prefix';
+  import { getRelativeTimeString } from '$lib/utils/relative-time';
+  import { formatDateTime } from '$lib/utils/date';
   import { replaceState } from '$app/navigation';
   import { page } from '$app/state';
 
@@ -43,6 +45,7 @@
     iiifManifests,
     linkedData,
     validateHref,
+    analyzedAt,
   }: {
     isAnalyzed: boolean;
     registrationStatus: RegistrationFailureReason | null;
@@ -56,6 +59,9 @@
     // visitors can inspect the manifest validation results. Null when the dataset
     // has no registered URL to validate.
     validateHref: string | null;
+    // When the Knowledge Graph last ran its checks on this dataset, the same
+    // moment its Linked Data summary was generated. Null when not yet analyzed.
+    analyzedAt: string | null;
   } = $props();
 
   const criteria = $derived(
@@ -500,9 +506,22 @@
   <section class="mb-8" aria-labelledby="nde-compatibility-heading">
     <h2
       id="nde-compatibility-heading"
-      class="mb-2 text-xl font-semibold text-gray-900 dark:text-white"
+      class="mb-2 flex flex-wrap items-center gap-2 text-xl font-semibold text-gray-900 dark:text-white"
     >
       {m.nde_compatibility()}
+      {#if analyzedAt}
+        <span
+          id="nde-compatibility-updated-relative"
+          class="ml-auto cursor-default text-sm font-normal text-gray-600 dark:text-gray-400"
+        >
+          {m.detail_summary_updated({
+            time: getRelativeTimeString(analyzedAt),
+          })}
+        </span>
+        <Tooltip triggeredBy="#nde-compatibility-updated-relative">
+          {formatDateTime(analyzedAt)}
+        </Tooltip>
+      {/if}
     </h2>
     <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
       {m.nde_compatibility_description()}
