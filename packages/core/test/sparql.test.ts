@@ -549,6 +549,83 @@ describe('SPARQL', () => {
       ]);
     });
 
+    it('updates a registration whose URL is also its dataset IRI', async () => {
+      // A dataset described at its own URL: the dataset triples share the
+      // registration’s subject, so clearing them must not remove its type.
+      const url = 'https://example.org/dataset/self-described';
+      await registrationStore.store(
+        createTestRegistration(url, undefined, undefined, undefined, [
+          new URL(url),
+        ]),
+      );
+      // The dataset’s own graph has the same IRI as the registration.
+      await sparqlClient.update(`
+        INSERT DATA {
+          GRAPH <${url}> { <${url}> <http://purl.org/dc/terms/title> "Self-described" }
+        }
+      `);
+
+      const updated = await registrationStore.update(
+        createTestRegistration(
+          url,
+          undefined,
+          undefined,
+          new Date('2025-01-15T08:30:00Z'),
+          [new URL(url)],
+        ),
+      );
+
+      expect(updated).toBe(true);
+      const found = await registrationStore.findByUrl(new URL(url));
+      expect(found!.datasets.map((dataset) => dataset.toString())).toEqual([
+        url,
+      ]);
+      const datasetGraph = await sparqlClient.query(`
+        SELECT * WHERE { GRAPH <${url}> { ?s ?p ?o } }
+      `);
+      expect(await datasetGraph.toArray()).toHaveLength(1);
+    });
+
+    it('does not re-create a deleted registration that another one lists as a dataset', async () => {
+      // The catalog’s dataset triples remain at the deleted registration’s URL.
+      const url = 'https://example.org/dataset/deleted-but-listed';
+      const catalogUrl = 'https://example.org/listing-catalog.json';
+      await registrationStore.store(
+        createTestRegistration(url, undefined, undefined, undefined, [
+          new URL(url),
+        ]),
+      );
+      await registrationStore.delete(new URL(url));
+      await registrationStore.store(
+        createTestRegistration(catalogUrl, undefined, undefined, undefined, [
+          new URL(url),
+        ]),
+      );
+
+      const updated = await registrationStore.update(
+        createTestRegistration(
+          url,
+          undefined,
+          undefined,
+          new Date('2025-01-15T08:30:00Z'),
+          [new URL(url)],
+        ),
+      );
+
+      expect(updated).toBe(false);
+      expect(await registrationStore.findByUrl(new URL(url))).toBeUndefined();
+      // Nor clear what the catalog stored at that URL.
+      const catalogDataset = await sparqlClient.query(`
+        SELECT * WHERE {
+          GRAPH <${registrationsGraphIri}> {
+            <${url}> a <https://schema.org/Dataset> ;
+              <https://schema.org/subjectOf> <${catalogUrl}> .
+          }
+        }
+      `);
+      expect(await catalogDataset.toArray()).toHaveLength(1);
+    });
+
     it('does not re-create a registration deleted before the update', async () => {
       // A crawl that was in flight when the registration was deleted must not
       // bring it back.

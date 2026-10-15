@@ -291,40 +291,39 @@ export class SparqlRegistrationStore implements RegistrationStore {
     const quads = toRdf(registration);
     const triples = await quadsToNTriples(quads);
 
-    // Like store(), but the type triple is kept until the insert, which runs only while
-    // it is still there. A delete that lands between the two operations removes it, so
-    // the insert finds no match and the registration stays deleted.
+    // Like store(), but only while the registration exists: both operations require
+    // its `a schema:EntryPoint` triple, which the clear spares, also when a dataset
+    // shares the registration’s IRI. QLever runs the operations of one request
+    // atomically, on its single update thread (`Server::processUpdate`), so a delete
+    // cannot land between them. They are separate because a combined DELETE/INSERT
+    // instantiates the insert once per cleared triple.
     await this.client.update(`
       PREFIX schema: <https://schema.org/>
       PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
       WITH <${this.graphIri}>
       DELETE {
-        <${iri}> ?p ?o .
-        ?dataset ?dp ?do .
+        ?subject ?predicate ?object .
       }
       WHERE {
+        <${iri}> a schema:EntryPoint .
         {
-          <${iri}> ?p ?o .
-          FILTER (?p != rdf:type)
+          VALUES ?subject { <${iri}> }
         } UNION {
-          ?dataset schema:subjectOf <${iri}> .
-          ?dataset ?dp ?do .
+          ?subject schema:subjectOf <${iri}> .
         } UNION {
-          <${iri}> schema:about ?dataset .
-          ?dataset ?dp ?do .
+          <${iri}> schema:about ?subject .
         }
+        ?subject ?predicate ?object .
+        FILTER (!(?subject = <${iri}> && ?predicate = rdf:type && ?object = schema:EntryPoint))
       };
 
+      WITH <${this.graphIri}>
       INSERT {
-        GRAPH <${this.graphIri}> {
-          ${triples}
-        }
+        ${triples}
       }
       WHERE {
-        GRAPH <${this.graphIri}> {
-          <${iri}> a schema:EntryPoint .
-        }
+        <${iri}> a schema:EntryPoint .
       }`);
 
     // Asked afterwards, so a delete that lands after the update is reported too.
