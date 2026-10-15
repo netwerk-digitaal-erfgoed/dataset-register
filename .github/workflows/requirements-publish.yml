@@ -12,31 +12,13 @@ on:
     paths:
       - 'requirements/**'
 
-defaults:
-  run:
-    working-directory: requirements
-
 jobs:
+  # Renders the templates, adds the NDE logo and house style, and builds the spec;
+  # requirements/Makefile reads this version, so a local build matches.
   build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: lts/*
-
-      # Renders the templates and adds the NDE logo and house style; requirements/Makefile
-      # reads this version, so a local build matches.
-      - uses: netwerk-digitaal-erfgoed/workflows/spec-boilerplate@v1.0.0
-        with:
-          working-directory: requirements
-
-      - name: Build and validate
-        uses: w3c/spec-prod@v2.14.1
-        with:
-          VALIDATE_MARKUP: false
-          SOURCE: requirements/index.bs
+    uses: netwerk-digitaal-erfgoed/workflows/.github/workflows/spec.yml@66ba476b4622833548e2203a56996cd20a9cdd7d
+    with:
+      working-directory: requirements
 
   publish:
     runs-on: ubuntu-latest
@@ -59,7 +41,7 @@ jobs:
 
       - uses: actions/download-artifact@v8
         with:
-          name: spec-prod-result-requirements
+          name: spec-prod-result
           path: artifacts/
 
       - name: Copy build artifacts
