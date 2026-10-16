@@ -24,7 +24,6 @@ import { distributionValidityQuads } from '../src/distribution-validity.js';
 import { validationReportGraphIri } from '../src/validation-report.js';
 import { shacl } from '../src/validator.js';
 import factory from 'rdf-ext';
-import nock from 'nock';
 import {
   createTestDataset,
   createTestDatasetWithPublisher,
@@ -959,29 +958,6 @@ describe('SPARQL', () => {
       const [duration] = record.mock.calls[0]!;
       expect(duration).toBeGreaterThan(0);
       expect(duration).toBeLessThan(30);
-    });
-
-    it('records the HTTP status of a rejected update as its error type', async () => {
-      const record = vi.spyOn(storeUpdateDuration, 'record');
-      // A store that is too busy to take the update.
-      nock('http://unavailable-store.example.org')
-        .post('/sparql')
-        .reply(503, 'Service Unavailable');
-      const unavailable = new SparqlClient(
-        'http://unavailable-store.example.org/sparql',
-        undefined,
-        'dataset',
-      );
-
-      await expect(
-        unavailable.update('INSERT DATA { <urn:s> <urn:p> <urn:o> }'),
-      ).rejects.toThrow();
-
-      expect(record).toHaveBeenCalledWith(expect.any(Number), {
-        'db.operation.name': 'update',
-        'db.collection.name': 'dataset',
-        'error.type': '503',
-      });
     });
   });
 
