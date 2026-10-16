@@ -27,6 +27,8 @@ import {
 } from './constants.js';
 import type { DatasetCore, Quad } from '@rdfjs/types';
 import { URL } from 'node:url';
+import { performance } from 'node:perf_hooks';
+import { storeErrorType, storeUpdateDuration } from './instrumentation.js';
 
 const queryEngine = new QueryEngine();
 
@@ -39,28 +41,32 @@ export function stores(
   distributionHealthGraphIri = 'https://datasetregister.netwerkdigitaalerfgoed.nl/sparql/distribution-health',
   distributionValidityGraphIri = 'https://datasetregister.netwerkdigitaalerfgoed.nl/sparql/distribution-validity',
 ) {
-  const client = new SparqlClient(url, accessToken);
+  // One client per store, so the update durations it records name the store.
+  const client = (store: StoreName) =>
+    new SparqlClient(url, accessToken, store);
 
   return {
-    datasetStore: new SparqlDatasetStore(client),
+    datasetStore: new SparqlDatasetStore(client('dataset')),
     registrationStore: new SparqlRegistrationStore(
-      client,
+      client('registration'),
       registrationsGraphIri,
     ),
     allowedRegistrationDomainStore: new SparqlAllowedRegistrationDomainStore(
-      client,
+      client('allowed-domain'),
       allowedRegistrationDomainsGraphIri,
     ),
-    ratingStore: new SparqlRatingStore(client, ratingGraphIri),
+    ratingStore: new SparqlRatingStore(client('rating'), ratingGraphIri),
     distributionHealthStore: new SparqlDistributionHealthStore(
-      client,
+      client('distribution-health'),
       distributionHealthGraphIri,
     ),
     distributionValidityStore: new SparqlDistributionValidityStore(
-      client,
+      client('distribution-validity'),
       distributionValidityGraphIri,
     ),
-    validationReportStore: new SparqlValidationReportStore(client),
+    validationReportStore: new SparqlValidationReportStore(
+      client('validation-report'),
+    ),
   };
 }
 
@@ -419,9 +425,14 @@ export class SparqlRatingStore implements RatingStore {
 export class SparqlClient {
   private readonly sources: [{ type: 'sparql'; value: string }];
 
+  /**
+   * @param store Names the store this client writes for in the update durations it records
+   *   ({@link storeUpdateDuration}).
+   */
   constructor(
     private readonly url: string,
     private readonly accessToken?: string,
+    private readonly store?: StoreName,
   ) {
     this.sources = [
       {
@@ -465,12 +476,37 @@ export class SparqlClient {
   }
 
   async update(operations: string) {
-    await queryEngine.queryVoid(operations, {
-      sources: this.sources,
-      ...(this.accessToken && { fetch: authenticatedFetch(this.accessToken) }),
-    });
+    const start = performance.now();
+    let errorType: string | undefined;
+    try {
+      await queryEngine.queryVoid(operations, {
+        sources: this.sources,
+        ...(this.accessToken && {
+          fetch: authenticatedFetch(this.accessToken),
+        }),
+      });
+    } catch (error) {
+      errorType = storeErrorType(error);
+      throw error;
+    } finally {
+      storeUpdateDuration.record((performance.now() - start) / 1000, {
+        'db.operation.name': 'update',
+        ...(this.store && { 'db.collection.name': this.store }),
+        ...(errorType && { 'error.type': errorType }),
+      });
+    }
   }
 }
+
+/** The store a {@link SparqlClient} writes for: a bounded label for {@link storeUpdateDuration}. */
+export type StoreName =
+  | 'dataset'
+  | 'validation-report'
+  | 'registration'
+  | 'rating'
+  | 'allowed-domain'
+  | 'distribution-health'
+  | 'distribution-validity';
 
 export class SparqlAllowedRegistrationDomainStore implements AllowedRegistrationDomainStore {
   constructor(

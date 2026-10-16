@@ -117,7 +117,9 @@ You can configure the application through environment variables:
   [search index](#search-index) (facets such as class, terminology source and size, and the NDE-compatibility flags).
   Defaults to the public NDE endpoint; a failed or unreachable read degrades to a register-only index.
 - `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS`: where metrics are exported to over OTLP, plus any
-  authentication headers; leave unset to run without a collector.
+  authentication headers; leave unset to run without a collector. Besides the registration, validation and crawl
+  counters, the API and crawler export `db.client.operation.duration`: how long each SPARQL update to the store takes,
+  in seconds, by store (`db.collection.name`) and, for a failed update, the HTTP status or error class (`error.type`).
 - `OTEL_RESOURCE_ATTRIBUTES`, `OTEL_SERVICE_NAME`: extra [resource attributes](https://opentelemetry.io/docs/languages/js/resources/)
   on exported metrics, or a different service name than the default `dataset-register`. `service.instance.id` defaults
   to the hostname (the pod name in Kubernetes), which keeps the metrics of API replicas apart.

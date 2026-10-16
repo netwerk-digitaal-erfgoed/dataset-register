@@ -1,5 +1,6 @@
 import {
   afterAll,
+  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -23,6 +24,7 @@ import { distributionValidityQuads } from '../src/distribution-validity.js';
 import { validationReportGraphIri } from '../src/validation-report.js';
 import { shacl } from '../src/validator.js';
 import factory from 'rdf-ext';
+import nock from 'nock';
 import {
   createTestDataset,
   createTestDatasetWithPublisher,
@@ -32,6 +34,7 @@ import {
 } from './fixtures/test-datasets.js';
 import { dereference } from '../src/test-utils.js';
 import { Penalty, Rating } from '../src/index.js';
+import { storeUpdateDuration } from '../src/instrumentation.js';
 
 const registrationsGraphIri = 'http://example.org/registrations';
 const allowedDomainsGraphIri = 'http://example.org/allowed-domains';
@@ -932,6 +935,53 @@ describe('SPARQL', () => {
       await distributionHealthStore.storeMany([]);
       expect(updateSpy).not.toHaveBeenCalled();
       updateSpy.mockRestore();
+    });
+  });
+
+  describe('SparqlClient.update', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('records the duration of each update in seconds for its store', async () => {
+      const record = vi.spyOn(storeUpdateDuration, 'record');
+
+      await ratingStore.store(
+        new URL('http://example.org/rated-for-duration'),
+        new Rating([], 100),
+      );
+
+      expect(record).toHaveBeenCalledWith(expect.any(Number), {
+        'db.operation.name': 'update',
+        'db.collection.name': 'rating',
+      });
+      // In seconds: a local update takes well under the 30-second store timeout.
+      const [duration] = record.mock.calls[0]!;
+      expect(duration).toBeGreaterThan(0);
+      expect(duration).toBeLessThan(30);
+    });
+
+    it('records the HTTP status of a rejected update as its error type', async () => {
+      const record = vi.spyOn(storeUpdateDuration, 'record');
+      // A store that is too busy to take the update.
+      nock('http://unavailable-store.example.org')
+        .post('/sparql')
+        .reply(503, 'Service Unavailable');
+      const unavailable = new SparqlClient(
+        'http://unavailable-store.example.org/sparql',
+        undefined,
+        'dataset',
+      );
+
+      await expect(
+        unavailable.update('INSERT DATA { <urn:s> <urn:p> <urn:o> }'),
+      ).rejects.toThrow();
+
+      expect(record).toHaveBeenCalledWith(expect.any(Number), {
+        'db.operation.name': 'update',
+        'db.collection.name': 'dataset',
+        'error.type': '503',
+      });
     });
   });
 

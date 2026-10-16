@@ -133,3 +133,33 @@ export const crawlCounter = meter.createCounter('crawler.counter', {
   description: 'Number of times a dataset/catalog was crawled',
   valueType: ValueType.INT,
 });
+
+/**
+ * How long our SPARQL updates take, per store, following the OpenTelemetry database client
+ * conventions. Unlike the crawl timings, which mostly measure publishers’ servers, this measures
+ * our own writes: the store’s time plus Comunica’s client-side work on the update. QLever slows
+ * down as updates pile up between index rebuilds, so this is where a store in trouble shows
+ * first. The buckets reach past QLever’s 30-second timeout.
+ */
+export const storeUpdateDuration = meter.createHistogram(
+  'db.client.operation.duration',
+  {
+    description: 'Duration of SPARQL updates to the store',
+    unit: 's',
+    advice: {
+      explicitBucketBoundaries: [
+        0.01, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60,
+      ],
+    },
+  },
+);
+
+/**
+ * A low-cardinality `error.type` for a failed store operation: the HTTP status the store
+ * answered with when the error names one (QLever reports a timed-out update as 429), otherwise
+ * the error’s class, or `_OTHER` for a thrown value that is not an Error.
+ */
+export function storeErrorType(error: unknown): string {
+  if (!(error instanceof Error)) return '_OTHER';
+  return /HTTP status (\d{3})/.exec(error.message)?.[1] ?? error.name;
+}
