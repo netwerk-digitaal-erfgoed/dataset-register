@@ -490,6 +490,7 @@ export class SparqlClient {
       throw error;
     } finally {
       storeUpdateDuration.record((performance.now() - start) / 1000, {
+        'db.system.name': 'qlever',
         'db.operation.name': 'update',
         ...(this.store && { 'db.collection.name': this.store }),
         ...(errorType && { 'error.type': errorType }),

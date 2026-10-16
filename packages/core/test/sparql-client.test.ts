@@ -28,6 +28,7 @@ describe('SparqlClient.update', () => {
     ).rejects.toThrow();
 
     expect(record).toHaveBeenCalledWith(expect.any(Number), {
+      'db.system.name': 'qlever',
       'db.operation.name': 'update',
       'db.collection.name': 'dataset',
       'error.type': '503',

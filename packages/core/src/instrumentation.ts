@@ -136,7 +136,8 @@ export const crawlCounter = meter.createCounter('crawler.counter', {
 
 /**
  * How long our SPARQL updates take, per store, following the OpenTelemetry database client
- * conventions. Unlike the crawl timings, which mostly measure publishers’ servers, this measures
+ * conventions (https://opentelemetry.io/docs/specs/semconv/database/database-metrics/), with
+ * `qlever` as `db.system.name` and the store as `db.collection.name`. Unlike the crawl timings, which mostly measure publishers’ servers, this measures
  * our own writes: the store’s time plus Comunica’s client-side work on the update. QLever slows
  * down as updates pile up between index rebuilds, so this is where a store in trouble shows
  * first. The buckets reach past QLever’s 30-second timeout.
