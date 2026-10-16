@@ -28,6 +28,12 @@ export interface DistributionHealthStore {
    */
   getMany(urls: URL[]): Promise<Map<string, DistributionHealthRecord>>;
   store(record: DistributionHealthRecord): Promise<void>;
+  /**
+   * Replace the records for many URLs in one update. The store’s cost is per update request, so
+   * the crawler writes the records of all distributions it probed together rather than one by one.
+   * Each URL must occur once.
+   */
+  storeMany(records: DistributionHealthRecord[]): Promise<void>;
   delete(url: URL): Promise<void>;
 }
 
@@ -86,32 +92,16 @@ export class SparqlDistributionHealthStore implements DistributionHealthStore {
   }
 
   public async store(record: DistributionHealthRecord): Promise<void> {
-    const iri = record.url.toString();
-    const triples = [
-      `<${iri}> a nde-probe:DistributionHealthRecord .`,
-      `<${iri}> nde-probe:lastProbedAt "${record.lastProbedAt.toISOString()}"^^xsd:dateTime .`,
-      `<${iri}> nde-probe:consecutiveFailures "${record.consecutiveFailures}"^^xsd:integer .`,
-    ];
-    if (record.lastOutcome !== null) {
-      triples.push(
-        `<${iri}> nde-probe:lastOutcome <${record.lastOutcome.value}> .`,
-      );
-    }
-    if (record.lastSuccessAt !== null) {
-      triples.push(
-        `<${iri}> nde-probe:lastSuccessAt "${record.lastSuccessAt.toISOString()}"^^xsd:dateTime .`,
-      );
-    }
-    if (record.firstFailureAt !== null) {
-      triples.push(
-        `<${iri}> nde-probe:firstFailureAt "${record.firstFailureAt.toISOString()}"^^xsd:dateTime .`,
-      );
-    }
-    if (record.sourceFingerprint !== null) {
-      triples.push(
-        `<${iri}> nde-probe:sourceFingerprint ${JSON.stringify(record.sourceFingerprint)} .`,
-      );
-    }
+    await this.storeMany([record]);
+  }
+
+  public async storeMany(records: DistributionHealthRecord[]): Promise<void> {
+    if (records.length === 0) return;
+
+    const values = records
+      .map((record) => `<${record.url.toString()}>`)
+      .join(' ');
+    const triples = records.flatMap(recordTriples);
 
     await this.client.update(`
       PREFIX nde-probe: <https://def.nde.nl/probe#>
@@ -119,10 +109,11 @@ export class SparqlDistributionHealthStore implements DistributionHealthStore {
 
       WITH <${this.graphIri}>
       DELETE {
-        <${iri}> ?p ?o .
+        ?url ?p ?o .
       }
       WHERE {
-        <${iri}> ?p ?o .
+        VALUES ?url { ${values} }
+        ?url ?p ?o .
       };
 
       INSERT DATA {
@@ -143,6 +134,36 @@ export class SparqlDistributionHealthStore implements DistributionHealthStore {
         <${url.toString()}> ?p ?o .
       }`);
   }
+}
+
+function recordTriples(record: DistributionHealthRecord): string[] {
+  const iri = record.url.toString();
+  const triples = [
+    `<${iri}> a nde-probe:DistributionHealthRecord .`,
+    `<${iri}> nde-probe:lastProbedAt "${record.lastProbedAt.toISOString()}"^^xsd:dateTime .`,
+    `<${iri}> nde-probe:consecutiveFailures "${record.consecutiveFailures}"^^xsd:integer .`,
+  ];
+  if (record.lastOutcome !== null) {
+    triples.push(
+      `<${iri}> nde-probe:lastOutcome <${record.lastOutcome.value}> .`,
+    );
+  }
+  if (record.lastSuccessAt !== null) {
+    triples.push(
+      `<${iri}> nde-probe:lastSuccessAt "${record.lastSuccessAt.toISOString()}"^^xsd:dateTime .`,
+    );
+  }
+  if (record.firstFailureAt !== null) {
+    triples.push(
+      `<${iri}> nde-probe:firstFailureAt "${record.firstFailureAt.toISOString()}"^^xsd:dateTime .`,
+    );
+  }
+  if (record.sourceFingerprint !== null) {
+    triples.push(
+      `<${iri}> nde-probe:sourceFingerprint ${JSON.stringify(record.sourceFingerprint)} .`,
+    );
+  }
+  return triples;
 }
 
 function dateOrNull(term: unknown): Date | null {

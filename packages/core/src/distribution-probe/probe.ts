@@ -22,7 +22,10 @@ import type {
   DistributionHealthRecord,
   DistributionHealthStore,
 } from '../distribution-health-store.ts';
-import type { DistributionValidityStore } from '../distribution-validity-store.ts';
+import type {
+  DistributionValidityMeasurement,
+  DistributionValidityStore,
+} from '../distribution-validity-store.ts';
 import { distributionValidityQuads } from '../distribution-validity.ts';
 
 const schema = (property: string): NamedNode =>
@@ -291,13 +294,7 @@ export class DistributionProbeStage {
     groups: ProbeGroup[],
     onProgress?: ProbeProgressListener,
     timing?: ProbeTiming,
-  ): Promise<
-    Array<{
-      verdict: ProbeVerdict;
-      record: DistributionHealthRecord | null;
-      validityVerdict: ValidityVerdict | null;
-    }>
-  > {
+  ): Promise<EvaluatedProbe[]> {
     // Probe the representatives that have a parsable URL via probeMany, which bounds total
     // fan-out (probeConcurrency) and the per-host burst (probePerHostConcurrency). A
     // representative without a Distribution never reaches the network and is evaluated
@@ -337,23 +334,24 @@ export class DistributionProbeStage {
       resultByGroup[entry.index] = results[position];
     });
 
-    // Evaluate each probe into a verdict (and health/validity records). probeMany bounds the
-    // network fan-out; this bounds the post-probe store writes — our own stores, so a plain
-    // global cap (probeConcurrency), not the per-host budget — keeping concurrent writes at the
-    // same ceiling the combined worker pool enforced before. The existing health records are
-    // fetched once for the whole batch (one query) rather than per endpoint.
+    // Evaluate each probe into a verdict (and health/validity records), then write the records
+    // of the whole batch at once. The store’s cost is per update request, not per triple – QLever
+    // handles updates one at a time and each takes longer as the day’s updates pile up – so the
+    // existing health records are read in one query and each rail is written in one update,
+    // rather than one per endpoint.
     const storeWriteStart = performance.now();
     const existingHealth = await this.fetchExistingHealth(groups);
-    const evaluated = await mapLimited(
-      groups,
-      this.probeConcurrency,
-      (group, index) =>
-        this.evaluateProbe(
-          group.representative,
-          resultByGroup[index],
-          existingHealth,
-        ),
+    const evaluated = groups.map((group, index) =>
+      this.evaluateProbe(
+        group.representative,
+        resultByGroup[index],
+        existingHealth,
+      ),
     );
+    // The reachability rail is authoritative and written first; the validity rail is best-effort
+    // enrichment recorded afterwards.
+    await this.writeHealth(evaluated);
+    await this.writeValidity(evaluated);
     if (timing) {
       timing.storeWriteMs = Math.round(performance.now() - storeWriteStart);
     }
@@ -396,31 +394,24 @@ export class DistributionProbeStage {
     }
   }
 
-  private async evaluateProbe(
+  /**
+   * Turn one probe result into a verdict plus the health record and validity verdict it implies.
+   * Writes nothing: {@link writeHealth} and {@link writeValidity} persist the whole batch.
+   */
+  private evaluateProbe(
     candidate: DistributionCandidate,
     result: ProbeResultType | null,
     existingHealth: Map<string, DistributionHealthRecord> | null,
-  ): Promise<{
-    verdict: ProbeVerdict;
-    record: DistributionHealthRecord | null;
-    validityVerdict: ValidityVerdict | null;
-  }> {
+  ): EvaluatedProbe {
     const { distribution } = candidate;
     if (distribution === null || result === null) {
-      return {
-        verdict: {
-          success: false,
-          outcome: probeOutcomes.NetworkError,
-          detail: `Distribution access URL is not a valid URL: ${candidate.urlNode.value}`,
-        },
-        record: null,
-        validityVerdict: null,
-      };
+      return failedEvaluation(
+        `Distribution access URL is not a valid URL: ${candidate.urlNode.value}`,
+      );
     }
 
-    // A failure while recording the verdict (e.g. a health-store outage) must not reject
-    // the whole batch: isolate it per candidate and surface it as a NetworkError, matching
-    // the per-task error handling the worker pool previously provided.
+    // An error while evaluating one endpoint must not reject the whole batch: isolate it and
+    // surface it as a NetworkError for that endpoint only.
     try {
       const verdict = classify(result);
 
@@ -432,97 +423,127 @@ export class DistributionProbeStage {
 
       const probeUrl = canonicalProbeUrl(distribution.accessUrl);
 
-      // The reachability rail is authoritative and updated first; the validity
-      // rail is best-effort enrichment recorded afterwards. recordValidity
-      // isolates its own failures so a validity-store outage can never reject the
-      // probe and corrupt the reachability verdict.
       // Skip the health write when there is no store (registration API path) or the batched read
-      // failed (existingHealth === null) — in the latter case writing would reset streaks we could
+      // failed (existingHealth === null) – in the latter case writing would reset streaks we could
       // not read. The probe verdict below is still authoritative from the live probe.
-      const healthStore = this.healthStore;
-      const record =
-        healthStore === null || existingHealth === null
+      const health =
+        this.healthStore === null || existingHealth === null
           ? null
-          : await this.updateHealth(
-              healthStore,
+          : this.nextHealth(
               probeUrl,
               verdict,
               fingerprint,
               existingHealth.get(probeUrl.toString()) ?? null,
             );
-      // The validity rail is independent of the health-write dedup: a source can keep the same
-      // reachability outcome and fingerprint (date|size) while its RDF body validity changes (e.g.
-      // a Content-Type flip makes a dump unparseable). So the validity write/delete runs on every
-      // probe, never gated on whether the health record was rewritten.
-      await this.recordValidity(
-        probeUrl,
-        validityVerdict,
-        result instanceof DataDumpProbeResult,
-      );
+      const record = health?.record ?? null;
 
       return {
         verdict:
           record === null ? verdict : this.applyPromotion(verdict, record),
         record,
         validityVerdict,
+        healthWrite: health?.needsWrite ? health.record : null,
+        // The validity rail is independent of the health-write dedup: a source can keep the same
+        // reachability outcome and fingerprint (date|size) while its RDF body validity changes
+        // (e.g. a Content-Type flip makes a dump unparseable). So the validity write is due on
+        // every probe, never gated on whether the health record is rewritten. A data dump without
+        // a verdict gets an empty measurement, which clears the stored one.
+        validityWrite:
+          validityVerdict !== null
+            ? {
+                accessUrl: probeUrl,
+                quads: distributionValidityQuads(validityVerdict, {
+                  distributionUrl: probeUrl.toString(),
+                  generatedAt: new Date(),
+                  producer: this.producerAgent,
+                }),
+              }
+            : result instanceof DataDumpProbeResult
+              ? { accessUrl: probeUrl, quads: [] }
+              : null,
       };
     } catch (reason) {
-      return {
-        verdict: {
-          success: false,
-          outcome: probeOutcomes.NetworkError,
-          detail: String(reason),
-        },
-        record: null,
-        validityVerdict: null,
-      };
+      this.logger?.warn(
+        `Failed to evaluate the probe of ${distribution.accessUrl.toString()}: ${String(reason)}`,
+      );
+      return failedEvaluation(String(reason));
     }
   }
 
   /**
-   * Persist a shallow validity verdict as a DQV/PROV measurement (both valid and
-   * invalid, per distribution attempted). No-op when no validity store is
+   * Persist the health records of a batch in one update. A store failure must not reject the
+   * batch: every endpoint whose record could not be written surfaces as a NetworkError instead,
+   * as it did when each record was written on its own. Its validity write still goes ahead.
+   */
+  private async writeHealth(evaluated: EvaluatedProbe[]): Promise<void> {
+    const store = this.healthStore;
+    if (store === null) return;
+    // Keyed by URL: two groups can share a canonical probe URL, and one subject must not get the
+    // triples of two records.
+    const records = new Map<string, DistributionHealthRecord>();
+    for (const { healthWrite } of evaluated) {
+      if (healthWrite !== null) {
+        records.set(healthWrite.url.toString(), healthWrite);
+      }
+    }
+    if (records.size === 0) return;
+    try {
+      await store.storeMany([...records.values()]);
+    } catch (reason) {
+      evaluated.forEach((entry, index) => {
+        if (entry.healthWrite !== null) {
+          evaluated[index] = {
+            ...failedEvaluation(String(reason)),
+            validityWrite: entry.validityWrite,
+          };
+        }
+      });
+    }
+  }
+
+  /**
+   * Persist the shallow validity verdicts of a batch as DQV/PROV measurements (both valid and
+   * invalid, per distribution attempted) in one update. No-op when no validity store is
    * configured (the registration API path, which instead emits a sh:Violation).
-   * When the probe carried no validity signal (probeResultToVerdict returned
-   * null) the measurement is cleared for a data dump — so a verdict that
+   * When a probe carried no validity signal (probeResultToVerdict returned
+   * null) the measurement is cleared for a data dump – so a verdict that
    * disappears (e.g. a dump that grew past the parse limit or changed content
-   * type) does not leave a stale measurement behind — and skipped for anything
+   * type) does not leave a stale measurement behind – and skipped for anything
    * else (a SPARQL endpoint or network failure never has a measurement).
    * Best-effort: a store failure is logged, never thrown, so the reachability
    * rail is unaffected.
    */
-  private async recordValidity(
-    probeUrl: URL,
-    validityVerdict: ValidityVerdict | null,
-    isDataDump: boolean,
-  ): Promise<void> {
+  private async writeValidity(evaluated: EvaluatedProbe[]): Promise<void> {
     const store = this.validityStore;
     if (store === null) return;
+    const writes = evaluated
+      .map(({ validityWrite }) => validityWrite)
+      .filter(
+        (write): write is DistributionValidityMeasurement => write !== null,
+      );
+    // Keyed by URL for the same reason as the health records. Clears go in first, so when two
+    // groups share a URL a measurement replaces a clear rather than the other way round.
+    const measurements = new Map(
+      [
+        ...writes.filter((write) => write.quads.length === 0),
+        ...writes.filter((write) => write.quads.length > 0),
+      ].map((write) => [write.accessUrl.toString(), write]),
+    );
     try {
-      if (validityVerdict === null) {
-        if (isDataDump) await store.delete(probeUrl);
-        return;
-      }
-      const quads = distributionValidityQuads(validityVerdict, {
-        distributionUrl: probeUrl.toString(),
-        generatedAt: new Date(),
-        producer: this.producerAgent,
-      });
-      await store.store(probeUrl, quads);
+      await store.storeMany([...measurements.values()]);
     } catch (error) {
       this.logger?.warn(
-        `Failed to record distribution validity for ${probeUrl.toString()}: ${String(error)}`,
+        `Failed to record distribution validity for ${[...measurements.keys()].join(', ')}: ${String(error)}`,
       );
     }
   }
 
-  private async updateHealth(
-    store: DistributionHealthStore,
+  private nextHealth(
     probeUrl: URL,
     verdict: ProbeVerdict,
     fingerprint: string | null,
     existing: DistributionHealthRecord | null,
-  ): Promise<DistributionHealthRecord> {
+  ): { record: DistributionHealthRecord; needsWrite: boolean } {
     const now = new Date();
 
     const record: DistributionHealthRecord = verdict.success
@@ -551,11 +572,11 @@ export class DistributionProbeStage {
     // per-registration cost. Skip it while the record is unchanged, refreshing at most once per
     // HEALTH_REWRITE_MAX_STALENESS_MS so lastProbedAt (surfaced as the distribution's last-checked
     // time) never drifts further than that.
-    if (existing !== null && !healthRecordNeedsWrite(existing, record, now)) {
-      return record;
-    }
-    await store.store(record);
-    return record;
+    return {
+      record,
+      needsWrite:
+        existing === null || healthRecordNeedsWrite(existing, record, now),
+    };
   }
 
   private applyPromotion(
@@ -652,30 +673,6 @@ function severityForMarker(
     : shacl('Violation');
 }
 
-/**
- * Map items to results in input order, running at most `limit` tasks at once. Bounds the
- * post-probe store writes: probeMany already caps the network fan-out, so this only needs a
- * plain global cap, not the per-host budget. `task` must not reject — evaluateProbe isolates
- * its own failures into a verdict — so unlike a worker pool there is no per-task error handling.
- */
-async function mapLimited<TItem, TResult>(
-  items: readonly TItem[],
-  limit: number,
-  task: (item: TItem, index: number) => Promise<TResult>,
-): Promise<TResult[]> {
-  const results: TResult[] = new Array(items.length);
-  let cursor = 0;
-  const worker = async (): Promise<void> => {
-    while (cursor < items.length) {
-      const index = cursor++;
-      results[index] = await task(items[index]!, index);
-    }
-  };
-  const workerCount = Math.max(1, Math.min(limit, items.length));
-  await Promise.all(Array.from({ length: workerCount }, worker));
-  return results;
-}
-
 interface ProbeGroup {
   /** The candidate actually probed; its verdict is reused for every member. */
   representative: DistributionCandidate;
@@ -762,6 +759,34 @@ export function collectDistributions(
     }
   }
   return candidates;
+}
+
+/** One probe result evaluated into a verdict, with what its batch still has to persist. */
+interface EvaluatedProbe {
+  verdict: ProbeVerdict;
+  record: DistributionHealthRecord | null;
+  validityVerdict: ValidityVerdict | null;
+  /** The health record to write: {@link record} when it carries new signal, null otherwise. */
+  healthWrite: DistributionHealthRecord | null;
+  /**
+   * The validity measurement to write: the probe’s verdict, or no quads to clear the stored
+   * measurement of a data dump that produced none.
+   */
+  validityWrite: DistributionValidityMeasurement | null;
+}
+
+function failedEvaluation(detail: string): EvaluatedProbe {
+  return {
+    verdict: {
+      success: false,
+      outcome: probeOutcomes.NetworkError,
+      detail,
+    },
+    record: null,
+    validityVerdict: null,
+    healthWrite: null,
+    validityWrite: null,
+  };
 }
 
 function candidatesFor(
