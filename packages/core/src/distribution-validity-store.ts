@@ -6,13 +6,11 @@ export interface DistributionValidityStore {
   store(accessUrl: URL, quads: Quad[]): Promise<void>;
   /**
    * Replace the measurements of many distributions in one update. The store’s cost is per update
-   * request, so the crawler writes the measurements of all distributions it probed together.
-   * Each access URL must occur once.
+   * request, so the crawler writes the measurements of all distributions it probed together. A
+   * measurement without quads clears the stored one. Each access URL must occur once.
    */
   storeMany(measurements: DistributionValidityMeasurement[]): Promise<void>;
   delete(accessUrl: URL): Promise<void>;
-  /** Clear the measurements of many distributions in one update. */
-  deleteMany(accessUrls: URL[]): Promise<void>;
 }
 
 /** The quads of one distribution’s validity measurement, keyed by its access URL. */
@@ -51,27 +49,25 @@ export class SparqlDistributionValidityStore implements DistributionValidityStor
     const triples = await quadsToNTriples(
       measurements.flatMap((measurement) => measurement.quads),
     );
-    await this.client.update(`
-      ${deleteMeasurementsFor(
-        measurements.map((measurement) => measurement.accessUrl),
-        this.graphIri,
-      )}
+    const deleteMeasurements = deleteMeasurementsFor(
+      measurements.map((measurement) => measurement.accessUrl),
+      this.graphIri,
+    );
+    await this.client.update(
+      triples === ''
+        ? deleteMeasurements
+        : `${deleteMeasurements};
 
       INSERT DATA {
         GRAPH <${this.graphIri}> {
           ${triples}
         }
-      }`);
+      }`,
+    );
   }
 
   public async delete(accessUrl: URL): Promise<void> {
-    await this.deleteMany([accessUrl]);
-  }
-
-  public async deleteMany(accessUrls: URL[]): Promise<void> {
-    if (accessUrls.length === 0) return;
-
-    await this.client.update(deleteMeasurementsFor(accessUrls, this.graphIri));
+    await this.storeMany([{ accessUrl, quads: [] }]);
   }
 }
 
@@ -84,9 +80,15 @@ function deleteMeasurementsFor(accessUrls: URL[], graphIri: string): string {
   const values = accessUrls
     .map((accessUrl) => `<${accessUrl.toString()}>`)
     .join(' ');
-  // One UNION branch per structural node so each binds ?subject/?p/?o on its
-  // own. OPTIONAL with three independent ?p/?o triples would instead form a
-  // Cartesian product of the measurement's, activity's, and usage's triples.
+  // Each UNION branch carries the access URLs and the measurement anchor itself. QLever plans
+  // UNION branches on their own, so with the anchor outside the UNION a branch scans every
+  // ?subject ?p ?o in the graph and joins the anchor only afterwards. One branch per
+  // structural node so each binds ?subject/?p/?o on its own: OPTIONAL with three independent
+  // ?p/?o triples would instead form a Cartesian product of the measurement’s, activity’s, and
+  // usage’s triples.
+  const measurement = `VALUES ?distribution { ${values} }
+          ?measurement dqv:computedOn ?distribution ;
+            dqv:isMeasurementOf <https://def.nde.nl/metric#distribution-rdf-valid> .`;
   return `
       PREFIX dqv: <http://www.w3.org/ns/dqv#>
       PREFIX prov: <http://www.w3.org/ns/prov#>
@@ -96,19 +98,19 @@ function deleteMeasurementsFor(accessUrls: URL[], graphIri: string): string {
         ?subject ?p ?o .
       }
       WHERE {
-        VALUES ?distribution { ${values} }
-        ?measurement dqv:computedOn ?distribution ;
-          dqv:isMeasurementOf <https://def.nde.nl/metric#distribution-rdf-valid> .
         {
+          ${measurement}
           ?measurement ?p ?o .
           BIND(?measurement AS ?subject)
         } UNION {
+          ${measurement}
           ?measurement prov:wasGeneratedBy ?subject .
           ?subject ?p ?o .
         } UNION {
+          ${measurement}
           ?measurement prov:wasGeneratedBy ?activity .
           ?activity prov:qualifiedUsage ?subject .
           ?subject ?p ?o .
         }
-      };`;
+      }`;
 }

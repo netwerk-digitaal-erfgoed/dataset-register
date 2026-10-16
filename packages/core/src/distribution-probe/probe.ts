@@ -410,61 +410,70 @@ export class DistributionProbeStage {
       );
     }
 
-    const verdict = classify(result);
+    // An error while evaluating one endpoint must not reject the whole batch: isolate it and
+    // surface it as a NetworkError for that endpoint only.
+    try {
+      const verdict = classify(result);
 
-    // The source-change fingerprint is the shared key across both rails: it is
-    // recorded on the reachability health record and on the validity
-    // measurement, so the staleness gate can match them by value.
-    const fingerprint = sourceFingerprint(distribution, result);
-    const validityVerdict = probeResultToVerdict(result, fingerprint);
+      // The source-change fingerprint is the shared key across both rails: it is
+      // recorded on the reachability health record and on the validity
+      // measurement, so the staleness gate can match them by value.
+      const fingerprint = sourceFingerprint(distribution, result);
+      const validityVerdict = probeResultToVerdict(result, fingerprint);
 
-    const probeUrl = canonicalProbeUrl(distribution.accessUrl);
+      const probeUrl = canonicalProbeUrl(distribution.accessUrl);
 
-    // Skip the health write when there is no store (registration API path) or the batched read
-    // failed (existingHealth === null) – in the latter case writing would reset streaks we could
-    // not read. The probe verdict below is still authoritative from the live probe.
-    const health =
-      this.healthStore === null || existingHealth === null
-        ? null
-        : this.nextHealth(
-            probeUrl,
-            verdict,
-            fingerprint,
-            existingHealth.get(probeUrl.toString()) ?? null,
-          );
-    const record = health?.record ?? null;
-
-    return {
-      verdict: record === null ? verdict : this.applyPromotion(verdict, record),
-      record,
-      validityVerdict,
-      healthWrite: health?.needsWrite ? health.record : null,
-      // The validity rail is independent of the health-write dedup: a source can keep the same
-      // reachability outcome and fingerprint (date|size) while its RDF body validity changes (e.g.
-      // a Content-Type flip makes a dump unparseable). So the validity write/clear is due on every
-      // probe, never gated on whether the health record is rewritten.
-      validityWrite:
-        validityVerdict === null
+      // Skip the health write when there is no store (registration API path) or the batched read
+      // failed (existingHealth === null) – in the latter case writing would reset streaks we could
+      // not read. The probe verdict below is still authoritative from the live probe.
+      const health =
+        this.healthStore === null || existingHealth === null
           ? null
-          : {
-              accessUrl: probeUrl,
-              quads: distributionValidityQuads(validityVerdict, {
-                distributionUrl: probeUrl.toString(),
-                generatedAt: new Date(),
-                producer: this.producerAgent,
-              }),
-            },
-      validityClear:
-        validityVerdict === null && result instanceof DataDumpProbeResult
-          ? probeUrl
-          : null,
-    };
+          : this.nextHealth(
+              probeUrl,
+              verdict,
+              fingerprint,
+              existingHealth.get(probeUrl.toString()) ?? null,
+            );
+      const record = health?.record ?? null;
+
+      return {
+        verdict:
+          record === null ? verdict : this.applyPromotion(verdict, record),
+        record,
+        validityVerdict,
+        healthWrite: health?.needsWrite ? health.record : null,
+        // The validity rail is independent of the health-write dedup: a source can keep the same
+        // reachability outcome and fingerprint (date|size) while its RDF body validity changes
+        // (e.g. a Content-Type flip makes a dump unparseable). So the validity write is due on
+        // every probe, never gated on whether the health record is rewritten. A data dump without
+        // a verdict gets an empty measurement, which clears the stored one.
+        validityWrite:
+          validityVerdict !== null
+            ? {
+                accessUrl: probeUrl,
+                quads: distributionValidityQuads(validityVerdict, {
+                  distributionUrl: probeUrl.toString(),
+                  generatedAt: new Date(),
+                  producer: this.producerAgent,
+                }),
+              }
+            : result instanceof DataDumpProbeResult
+              ? { accessUrl: probeUrl, quads: [] }
+              : null,
+      };
+    } catch (reason) {
+      this.logger?.warn(
+        `Failed to evaluate the probe of ${distribution.accessUrl.toString()}: ${String(reason)}`,
+      );
+      return failedEvaluation(String(reason));
+    }
   }
 
   /**
    * Persist the health records of a batch in one update. A store failure must not reject the
    * batch: every endpoint whose record could not be written surfaces as a NetworkError instead,
-   * as it did when each record was written on its own.
+   * as it did when each record was written on its own. Its validity write still goes ahead.
    */
   private async writeHealth(evaluated: EvaluatedProbe[]): Promise<void> {
     const store = this.healthStore;
@@ -483,7 +492,10 @@ export class DistributionProbeStage {
     } catch (reason) {
       evaluated.forEach((entry, index) => {
         if (entry.healthWrite !== null) {
-          evaluated[index] = failedEvaluation(String(reason));
+          evaluated[index] = {
+            ...failedEvaluation(String(reason)),
+            validityWrite: entry.validityWrite,
+          };
         }
       });
     }
@@ -491,7 +503,7 @@ export class DistributionProbeStage {
 
   /**
    * Persist the shallow validity verdicts of a batch as DQV/PROV measurements (both valid and
-   * invalid, per distribution attempted). No-op when no validity store is
+   * invalid, per distribution attempted) in one update. No-op when no validity store is
    * configured (the registration API path, which instead emits a sh:Violation).
    * When a probe carried no validity signal (probeResultToVerdict returned
    * null) the measurement is cleared for a data dump – so a verdict that
@@ -504,23 +516,24 @@ export class DistributionProbeStage {
   private async writeValidity(evaluated: EvaluatedProbe[]): Promise<void> {
     const store = this.validityStore;
     if (store === null) return;
-    // Keyed by URL for the same reason as the health records.
-    const measurements = new Map<string, DistributionValidityMeasurement>();
-    const cleared = new Map<string, URL>();
-    for (const { validityWrite, validityClear } of evaluated) {
-      if (validityWrite !== null) {
-        measurements.set(validityWrite.accessUrl.toString(), validityWrite);
-      }
-      if (validityClear !== null) {
-        cleared.set(validityClear.toString(), validityClear);
-      }
-    }
+    const writes = evaluated
+      .map(({ validityWrite }) => validityWrite)
+      .filter(
+        (write): write is DistributionValidityMeasurement => write !== null,
+      );
+    // Keyed by URL for the same reason as the health records. Clears go in first, so when two
+    // groups share a URL a measurement replaces a clear rather than the other way round.
+    const measurements = new Map(
+      [
+        ...writes.filter((write) => write.quads.length === 0),
+        ...writes.filter((write) => write.quads.length > 0),
+      ].map((write) => [write.accessUrl.toString(), write]),
+    );
     try {
-      await store.deleteMany([...cleared.values()]);
       await store.storeMany([...measurements.values()]);
     } catch (error) {
       this.logger?.warn(
-        `Failed to record distribution validity: ${String(error)}`,
+        `Failed to record distribution validity for ${[...measurements.keys()].join(', ')}: ${String(error)}`,
       );
     }
   }
@@ -660,34 +673,6 @@ function severityForMarker(
     : shacl('Violation');
 }
 
-/** One probe result evaluated into a verdict, with what its batch still has to persist. */
-interface EvaluatedProbe {
-  verdict: ProbeVerdict;
-  record: DistributionHealthRecord | null;
-  validityVerdict: ValidityVerdict | null;
-  /** The health record to write: {@link record} when it carries new signal, null otherwise. */
-  healthWrite: DistributionHealthRecord | null;
-  /** The validity measurement to write, when the probe produced a verdict. */
-  validityWrite: DistributionValidityMeasurement | null;
-  /** The access URL whose validity measurement must be cleared, when a data dump produced none. */
-  validityClear: URL | null;
-}
-
-function failedEvaluation(detail: string): EvaluatedProbe {
-  return {
-    verdict: {
-      success: false,
-      outcome: probeOutcomes.NetworkError,
-      detail,
-    },
-    record: null,
-    validityVerdict: null,
-    healthWrite: null,
-    validityWrite: null,
-    validityClear: null,
-  };
-}
-
 interface ProbeGroup {
   /** The candidate actually probed; its verdict is reused for every member. */
   representative: DistributionCandidate;
@@ -774,6 +759,34 @@ export function collectDistributions(
     }
   }
   return candidates;
+}
+
+/** One probe result evaluated into a verdict, with what its batch still has to persist. */
+interface EvaluatedProbe {
+  verdict: ProbeVerdict;
+  record: DistributionHealthRecord | null;
+  validityVerdict: ValidityVerdict | null;
+  /** The health record to write: {@link record} when it carries new signal, null otherwise. */
+  healthWrite: DistributionHealthRecord | null;
+  /**
+   * The validity measurement to write: the probe’s verdict, or no quads to clear the stored
+   * measurement of a data dump that produced none.
+   */
+  validityWrite: DistributionValidityMeasurement | null;
+}
+
+function failedEvaluation(detail: string): EvaluatedProbe {
+  return {
+    verdict: {
+      success: false,
+      outcome: probeOutcomes.NetworkError,
+      detail,
+    },
+    record: null,
+    validityVerdict: null,
+    healthWrite: null,
+    validityWrite: null,
+  };
 }
 
 function candidatesFor(

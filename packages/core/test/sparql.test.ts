@@ -1049,7 +1049,7 @@ describe('SPARQL', () => {
       expect(await countTriples()).toBe(0);
     });
 
-    it('replaces and deletes the measurements of many distributions in one update each', async () => {
+    it('replaces and clears the measurements of many distributions in one update', async () => {
       const otherUrl = new URL('https://example.com/other.ttl');
       const measurement = (accessUrl: URL, valid: boolean) => ({
         accessUrl,
@@ -1088,13 +1088,24 @@ describe('SPARQL', () => {
       expect(await askMeasurementValue('false')).toBe(false);
       expect(await countTriples()).toBeLessThan(invalidTriples);
 
-      await distributionValidityStore.deleteMany([url, otherUrl]);
+      // A measurement without quads clears the stored one, in the same single update.
+      await distributionValidityStore.storeMany([
+        measurement(url, false),
+        { accessUrl: otherUrl, quads: [] },
+      ]);
       expect(updateSpy).toHaveBeenCalledTimes(2);
+      expect(await askMeasurementValue('true')).toBe(false);
+      expect(await askMeasurementValue('false')).toBe(true);
+
+      await distributionValidityStore.storeMany([
+        { accessUrl: url, quads: [] },
+        { accessUrl: otherUrl, quads: [] },
+      ]);
+      expect(updateSpy).toHaveBeenCalledTimes(3);
       expect(await countTriples()).toBe(0);
 
       await distributionValidityStore.storeMany([]);
-      await distributionValidityStore.deleteMany([]);
-      expect(updateSpy).toHaveBeenCalledTimes(2);
+      expect(updateSpy).toHaveBeenCalledTimes(3);
       updateSpy.mockRestore();
     });
   });
