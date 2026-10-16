@@ -5,6 +5,7 @@ import {
   configureDiagnosticLogging,
   detectResource,
   shutdownInstrumentation,
+  storeErrorType,
 } from '../src/instrumentation.js';
 
 describe('detectResource', () => {
@@ -97,5 +98,24 @@ describe('shutdownInstrumentation', () => {
     expect(shutdownInstrumentation()).toBe(first);
 
     await expect(first).resolves.toBeUndefined();
+  });
+});
+
+describe('storeErrorType', () => {
+  it('uses the HTTP status the store answered with', () => {
+    // How Comunica reports QLever cancelling an update at its timeout.
+    const error = new Error(
+      'Could not update https://example.org/sparql (HTTP status 429):\nempty response',
+    );
+
+    expect(storeErrorType(error)).toBe('429');
+  });
+
+  it('falls back to the error class without an HTTP status', () => {
+    expect(storeErrorType(new TypeError('fetch failed'))).toBe('TypeError');
+  });
+
+  it('uses _OTHER for a thrown value that is not an Error', () => {
+    expect(storeErrorType(undefined)).toBe('_OTHER');
   });
 });

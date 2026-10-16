@@ -1,5 +1,6 @@
 import {
   afterAll,
+  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -32,6 +33,7 @@ import {
 } from './fixtures/test-datasets.js';
 import { dereference } from '../src/test-utils.js';
 import { Penalty, Rating } from '../src/index.js';
+import { storeUpdateDuration } from '../src/instrumentation.js';
 
 const registrationsGraphIri = 'http://example.org/registrations';
 const allowedDomainsGraphIri = 'http://example.org/allowed-domains';
@@ -932,6 +934,31 @@ describe('SPARQL', () => {
       await distributionHealthStore.storeMany([]);
       expect(updateSpy).not.toHaveBeenCalled();
       updateSpy.mockRestore();
+    });
+  });
+
+  describe('SparqlClient.update', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('records the duration of each update in seconds for its store', async () => {
+      const record = vi.spyOn(storeUpdateDuration, 'record');
+
+      await ratingStore.store(
+        new URL('http://example.org/rated-for-duration'),
+        new Rating([], 100),
+      );
+
+      expect(record).toHaveBeenCalledWith(expect.any(Number), {
+        'db.system.name': 'qlever',
+        'db.operation.name': 'update',
+        'db.collection.name': 'rating',
+      });
+      // In seconds: a local update takes well under the 30-second store timeout.
+      const [duration] = record.mock.calls[0]!;
+      expect(duration).toBeGreaterThan(0);
+      expect(duration).toBeLessThan(30);
     });
   });
 
