@@ -1,9 +1,15 @@
-import { Registration, Validator } from '@dataset-register/core';
+import {
+  DatasetRemover,
+  Registration,
+  Validator,
+} from '@dataset-register/core';
 import { Crawler } from '../src/crawler.js';
 import { URL } from 'url';
 import {
   file,
   MockDatasetStore,
+  MockDistributionHealthStore,
+  MockDistributionValidityStore,
   MockRatingStore,
   MockRegistrationStore,
   MockValidationReportStore,
@@ -12,6 +18,7 @@ import {
 import nock from 'nock';
 import pino from 'pino';
 import { DataFactory, Store } from 'n3';
+import factory from 'rdf-ext';
 
 const SHACL = 'http://www.w3.org/ns/shacl#';
 const reportWithWarnings = (count: number) => {
@@ -28,8 +35,19 @@ const reportWithWarnings = (count: number) => {
 };
 
 let registrationStore: MockRegistrationStore;
+let datasetStore: MockDatasetStore;
+let ratingStore: MockRatingStore;
+let distributionHealthStore: MockDistributionHealthStore;
 let reportStore: MockValidationReportStore;
 let crawler: Crawler;
+const remover = () =>
+  new DatasetRemover({
+    registrationStore,
+    datasetStore,
+    ratingStore,
+    distributionHealthStore,
+    distributionValidityStore: new MockDistributionValidityStore(),
+  });
 const validator = (isValid: boolean, errors = new Store()): Validator => ({
   validate: () =>
     Promise.resolve({
@@ -44,12 +62,16 @@ const noDatasetValidator: Validator = {
 describe('Crawler', () => {
   beforeEach(async () => {
     registrationStore = new MockRegistrationStore();
+    datasetStore = new MockDatasetStore();
+    ratingStore = new MockRatingStore();
+    distributionHealthStore = new MockDistributionHealthStore();
     reportStore = new MockValidationReportStore();
     crawler = new Crawler(
       registrationStore,
-      new MockDatasetStore(),
-      new MockRatingStore(),
+      datasetStore,
+      ratingStore,
       reportStore,
+      remover(),
       validator(true),
       pino({ enabled: false }),
     );
@@ -79,6 +101,99 @@ describe('Crawler', () => {
     expect(readRegistration.datasets).toEqual([
       new URL('http://data.bibliotheken.nl/id/dataset/rise-alba'),
     ]);
+  });
+
+  it('removes the datasets a valid crawl no longer finds', async () => {
+    await storeRegistrationFixture(new URL('https://example.com/valid'));
+    await storePreviousDatasetFixture();
+
+    await nockValidRegistration();
+    await crawler.crawl(new Date('3000-01-01'));
+
+    expect(
+      (await datasetStore.findAll()).map((datasetIri) => datasetIri.toString()),
+    ).toEqual(['http://data.bibliotheken.nl/id/dataset/rise-alba']);
+    expect(distributionHealthStore.records.has(previousDistributionUrl)).toBe(
+      false,
+    );
+  });
+
+  it('keeps the datasets a crawl that fails midway did not reach', async () => {
+    await storeRegistrationFixture(new URL('https://example.com/valid'));
+    await storePreviousDatasetFixture();
+    vi.spyOn(datasetStore, 'store').mockRejectedValue(
+      new Error('page 2 failed'),
+    );
+
+    await nockValidRegistration();
+    await crawler.crawl(new Date('3000-01-01'));
+
+    expect(
+      (await datasetStore.findAll()).map((datasetIri) => datasetIri.toString()),
+    ).toEqual(['https://example.com/dataset1']);
+    expect(distributionHealthStore.records.has(previousDistributionUrl)).toBe(
+      true,
+    );
+  });
+
+  it('keeps a dataset that another registration still lists', async () => {
+    await storeRegistrationFixture(new URL('https://example.com/valid'));
+    await storeRegistrationFixture(new URL('https://example.com/other'));
+    await storePreviousDatasetFixture();
+    // Crawled just now, so only the first registration is due.
+    await registrationStore.update(
+      (await registrationStore.findByUrl(
+        new URL('https://example.com/other'),
+      ))!.crawled(),
+    );
+
+    await nockValidRegistration();
+    await crawler.crawl(new Date('2001-01-01'));
+
+    expect(
+      (await datasetStore.findAll()).map((datasetIri) => datasetIri.toString()),
+    ).toContain('https://example.com/dataset1');
+    expect(distributionHealthStore.records.has(previousDistributionUrl)).toBe(
+      true,
+    );
+  });
+
+  it('finishes the crawl when removing dropped datasets fails', async () => {
+    await storeRegistrationFixture(new URL('https://example.com/valid'));
+    vi.spyOn(datasetStore, 'findDistributionUrls').mockRejectedValue(
+      new Error('store unavailable'),
+    );
+
+    await nockValidRegistration();
+    await crawler.crawl(new Date('3000-01-01'));
+
+    expect(registrationStore.all()[0].datasets).toEqual([
+      new URL('http://data.bibliotheken.nl/id/dataset/rise-alba'),
+    ]);
+  });
+
+  it('keeps the datasets of a registration that no longer validates', async () => {
+    crawler = new Crawler(
+      registrationStore,
+      datasetStore,
+      ratingStore,
+      reportStore,
+      remover(),
+      validator(false),
+      pino({ enabled: false }),
+    );
+    await storeRegistrationFixture(new URL('https://example.com/valid'));
+    await storePreviousDatasetFixture();
+
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/valid')
+      .reply(200, await validSchemaOrgDataset());
+    await crawler.crawl(new Date('3000-01-01'));
+
+    expect(
+      (await datasetStore.findAll()).map((datasetIri) => datasetIri.toString()),
+    ).toEqual(['https://example.com/dataset1']);
   });
 
   it('stamps the crawl date, which is what makes the registration due again', async () => {
@@ -162,9 +277,10 @@ describe('Crawler', () => {
   it('records the warning count and stores the validation report', async () => {
     crawler = new Crawler(
       registrationStore,
-      new MockDatasetStore(),
-      new MockRatingStore(),
+      datasetStore,
+      ratingStore,
       reportStore,
+      remover(),
       validator(true, reportWithWarnings(2)),
       pino({ enabled: false }),
     );
@@ -185,13 +301,12 @@ describe('Crawler', () => {
 
   it('does not re-create a registration deleted during its crawl', async () => {
     const url = new URL('https://example.com/valid');
-    const datasetStore = new MockDatasetStore();
-    const ratingStore = new MockRatingStore();
     crawler = new Crawler(
       registrationStore,
       datasetStore,
       ratingStore,
       reportStore,
+      remover(),
       validator(true, reportWithWarnings(1)),
       pino({ enabled: false }),
     );
@@ -213,7 +328,9 @@ describe('Crawler', () => {
 
     expect(registrationStore.isRegistered(url)).toBe(false);
     // What the crawl wrote before the delete is cleaned up too.
-    const datasetIri = new URL('http://data.bibliotheken.nl/id/dataset/rise-alba');
+    const datasetIri = new URL(
+      'http://data.bibliotheken.nl/id/dataset/rise-alba',
+    );
     expect(deleteDataset).toHaveBeenCalledWith(datasetIri);
     expect(deleteRating).toHaveBeenCalledWith(datasetIri);
     expect(reportStore.reports.has(url.toString())).toBe(false);
@@ -252,9 +369,10 @@ describe('Crawler', () => {
   it('logs URLs that no longer validate', async () => {
     crawler = new Crawler(
       registrationStore,
-      new MockDatasetStore(),
-      new MockRatingStore(),
+      datasetStore,
+      ratingStore,
       reportStore,
+      remover(),
       validator(false),
       pino({ enabled: false }),
     );
@@ -274,9 +392,10 @@ describe('Crawler', () => {
   it('marks registration gone when validator finds no datasets', async () => {
     crawler = new Crawler(
       registrationStore,
-      new MockDatasetStore(),
-      new MockRatingStore(),
+      datasetStore,
+      ratingStore,
       reportStore,
+      remover(),
       noDatasetValidator,
       pino({ enabled: false }),
     );
@@ -299,9 +418,10 @@ describe('Crawler', () => {
     // next pass (not recorded as gone), so a transiently slow host is retried.
     crawler = new Crawler(
       registrationStore,
-      new MockDatasetStore(),
-      new MockRatingStore(),
+      datasetStore,
+      ratingStore,
       reportStore,
+      remover(),
       validator(true),
       pino({ enabled: false }),
       { httpRequestTimeoutMs: 20 },
@@ -332,9 +452,10 @@ describe('Crawler', () => {
     const messages: string[] = [];
     crawler = new Crawler(
       registrationStore,
-      new MockDatasetStore(),
-      new MockRatingStore(),
+      datasetStore,
+      ratingStore,
       reportStore,
+      remover(),
       validator(true),
       {
         info: (first: unknown, second?: string) =>
@@ -407,9 +528,10 @@ describe('Crawler', () => {
     };
     crawler = new Crawler(
       registrationStore,
-      new MockDatasetStore(),
-      new MockRatingStore(),
+      datasetStore,
+      ratingStore,
       reportStore,
+      remover(),
       timingValidator,
       capturingLogger,
     );
@@ -473,4 +595,43 @@ async function storeRegistrationFixture(url: URL) {
     date: new Date('2000-01-01'),
   });
   await registrationStore.store(updatedRegistration);
+}
+
+const previousDistributionUrl = 'https://example.com/dataset1.nt';
+
+// The description of the dataset that storeRegistrationFixture lists, as a previous
+// crawl stored it, with a health record for its distribution.
+async function storePreviousDatasetFixture() {
+  const { quad, namedNode, blankNode } = DataFactory;
+  const dataset = namedNode('https://example.com/dataset1');
+  const distribution = blankNode('distribution');
+  const dcat = (term: string) => namedNode(`http://www.w3.org/ns/dcat#${term}`);
+  await datasetStore.store(
+    factory.dataset([
+      quad(
+        dataset,
+        namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+        dcat('Dataset'),
+      ),
+      quad(dataset, dcat('distribution'), distribution),
+      quad(distribution, dcat('accessURL'), namedNode(previousDistributionUrl)),
+    ]),
+  );
+  await distributionHealthStore.store({
+    url: new URL(previousDistributionUrl),
+    lastProbedAt: new Date('2000-01-01'),
+    lastOutcome: null,
+    lastSuccessAt: null,
+    firstFailureAt: new Date('2000-01-01'),
+    consecutiveFailures: 1,
+    sourceFingerprint: null,
+  });
+}
+
+async function nockValidRegistration() {
+  nock('https://example.com')
+    .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+    .get('/valid')
+    .times(2)
+    .reply(200, await validSchemaOrgDataset());
 }

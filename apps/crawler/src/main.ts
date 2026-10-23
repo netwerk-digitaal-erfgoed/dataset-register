@@ -1,6 +1,7 @@
 import { Crawler } from './crawler.js';
 import {
   CompositeValidator,
+  DatasetRemover,
   DistributionProbeStage,
   readProbeSeverities,
   readUrl,
@@ -43,6 +44,13 @@ const crawler = new Crawler(
   datasetStore,
   ratingStore,
   validationReportStore,
+  new DatasetRemover({
+    registrationStore,
+    datasetStore,
+    ratingStore,
+    distributionHealthStore,
+    distributionValidityStore,
+  }),
   validator,
   logger,
   { httpRequestTimeoutMs: config.HTTP_REQUEST_TIMEOUT * 1000 },

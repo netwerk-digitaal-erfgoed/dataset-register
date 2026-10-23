@@ -39,4 +39,6 @@ export {
   MockDatasetStore,
   MockRatingStore,
   MockValidationReportStore,
+  MockDistributionHealthStore,
+  MockDistributionValidityStore,
 } from './mock.ts';

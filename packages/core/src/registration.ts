@@ -196,6 +196,10 @@ export interface RegistrationStore {
   findRegistrationsCrawledBefore(date: Date): Promise<Registration[]>;
   findByUrl(url: URL): Promise<Registration | undefined>;
   /**
+   * Those of `datasetIris` that a Registration lists, leaving out `exceptUrl`’s own.
+   */
+  findListedDatasets(datasetIris: URL[], exceptUrl?: URL): Promise<URL[]>;
+  /**
    * Delete a Registration and all its linked datasets from the registrations graph.
    */
   delete(url: URL): Promise<void>;
