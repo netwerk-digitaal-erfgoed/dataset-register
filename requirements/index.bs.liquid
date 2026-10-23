@@ -499,7 +499,11 @@ See also [[DWBP-UCR#R-LicenseAvailable]].
 
 ### Creation, publication and modification dates ### {#dataset-date}
 
-Publishers *SHOULD* make known when the [=dataset description=] was originally created, published and when it was last updated.
+Publishers *SHOULD* make known when the [=dataset=] was originally created, published and when it was last updated.
+These dates are about the data, not about the [=dataset description=]:
+a dataset is modified when the data available through any of its [=distributions=] changes.
+[=Consumers=] can compare the dataset’s modification date with that of each [=distribution=]
+to see whether that distribution has the latest data.
 The dates *MUST* be valid according to [[!ISO8601]].
 
 <div class="example">
@@ -1029,7 +1033,8 @@ See [[#distribution-attributes]] for a full overview.
 
 Publishers *SHOULD* make known when the [=distribution=] was first published and when it was last updated,
 so [=consumers=] can efficiently stay up-to-date with the latest changes.
-Please note that this is different from the [[#dataset-date|dataset description’s dates]].
+These dates can differ from the [[#dataset-date|dataset’s dates]],
+for example when new data is already available through a SPARQL endpoint but not yet in a data dump.
 Datetimes (`2019-08-15T08:05:00Z`) are preferred because they offer greater precision,
 but simple dates (`2019-04-14`) are also allowed.
 
