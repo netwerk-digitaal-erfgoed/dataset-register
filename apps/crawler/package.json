@@ -6,8 +6,8 @@
   "dependencies": {
     "@dataset-register/core": "*",
     "@dataset-register/search-indexer": "*",
-    "env-schema": "^8.0.0",
-    "pino": "^10.2.0"
+    "env-schema": "^8.0.1",
+    "pino": "^10.4.0"
   },
   "devDependencies": {
     "rdf-ext": "^2.6.0"
