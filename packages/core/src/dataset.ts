@@ -33,9 +33,13 @@ export interface DatasetStore {
 
   /**
    * The access and download URLs of stored datasets that equal one of `urls` or add a
-   * fragment to it, as the descriptions write them.
+   * fragment to it, as the descriptions write them. The references of
+   * `exceptDatasetIris` are not counted.
    */
-  findReferencedDistributionUrls(urls: string[]): Promise<string[]>;
+  findReferencedDistributionUrls(
+    urls: string[],
+    exceptDatasetIris?: URL[],
+  ): Promise<string[]>;
 
   countDatasets(): Promise<number>;
 

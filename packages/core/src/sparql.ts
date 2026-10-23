@@ -151,7 +151,10 @@ export class SparqlDatasetStore implements DatasetStore {
     return (await result.toArray()).map((binding) => binding.get('url')!.value);
   }
 
-  async findReferencedDistributionUrls(urls: string[]): Promise<string[]> {
+  async findReferencedDistributionUrls(
+    urls: string[],
+    exceptDatasetIris: URL[] = [],
+  ): Promise<string[]> {
     if (urls.length === 0) return [];
 
     // The second branch matches the references that carry a fragment against the URL
@@ -159,10 +162,15 @@ export class SparqlDatasetStore implements DatasetStore {
     // every reference in the store against each URL.
     const values = (variable: string) =>
       `VALUES ${variable} { ${iriValues(urls)} }`;
+    const exceptDatasets =
+      exceptDatasetIris.length > 0
+        ? `FILTER (?dataset NOT IN (${exceptDatasetIris.map((iri) => `<${sparqlIri(iri)}>`).join(', ')}))`
+        : '';
     const reference = `GRAPH ?dataset {
             ?dataset dcat:distribution ?distribution .
             ?distribution dcat:accessURL|dcat:downloadURL ?reference .
-          }`;
+          }
+          ${exceptDatasets}`;
     const result = await this.client.query(`
       PREFIX dcat: <http://www.w3.org/ns/dcat#>
 

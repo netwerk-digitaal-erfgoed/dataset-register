@@ -293,6 +293,27 @@ describe('SPARQL', () => {
       ]);
       expect(await datasetStore.findReferencedDistributionUrls([])).toEqual([]);
     });
+
+    it('does not count the references of excepted datasets', async () => {
+      await datasetStore.store(
+        datasetWithDistributions(TEST_DATASET_IRIS.DATASET_1, {
+          accessURL: 'https://example.org/sparql#query',
+          downloadURL: 'https://example.org/dump.nt',
+        }),
+      );
+      await datasetStore.store(
+        datasetWithDistributions(TEST_DATASET_IRIS.DATASET_2, {
+          downloadURL: 'https://example.org/dump.nt',
+        }),
+      );
+
+      expect(
+        await datasetStore.findReferencedDistributionUrls(
+          ['https://example.org/sparql', 'https://example.org/dump.nt'],
+          [new URL(TEST_DATASET_IRIS.DATASET_1)],
+        ),
+      ).toEqual(['https://example.org/dump.nt']);
+    });
   });
 
   describe('SparqlRegistrationStore', () => {
