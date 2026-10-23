@@ -4,7 +4,9 @@ import { FastifyInstance } from 'fastify';
 import { Server } from 'http';
 import { server } from '../src/server.js';
 import {
+  DatasetRemover,
   readUrl,
+  RegistrationStore,
   ShaclEngineValidator,
   type InvalidDataset,
   type Valid,
@@ -14,6 +16,8 @@ import {
   file,
   MockAllowedRegistrationDomainStore,
   MockDatasetStore,
+  MockDistributionHealthStore,
+  MockDistributionValidityStore,
   MockRatingStore,
   MockRegistrationStore,
   MockValidationReportStore,
@@ -22,9 +26,35 @@ import { Registration } from '@dataset-register/core';
 import type { DatasetCore } from '@rdfjs/types';
 import { fileURLToPath, URL } from 'url';
 import { dirname } from 'path';
+import factory from 'rdf-ext';
 
 let httpServer: FastifyInstance<Server>;
 const registrationStore = new MockRegistrationStore();
+const datasetStore = new MockDatasetStore();
+
+function remover(
+  registrationStore: RegistrationStore,
+  datasetStore: MockDatasetStore,
+): DatasetRemover {
+  return new DatasetRemover({
+    registrationStore,
+    datasetStore,
+    ratingStore: new MockRatingStore(),
+    distributionHealthStore: new MockDistributionHealthStore(),
+    distributionValidityStore: new MockDistributionValidityStore(),
+  });
+}
+
+/** A stored description of `datasetIri`, as the crawler or a registration would store it. */
+function datasetDescription(datasetIri: URL) {
+  return factory.dataset([
+    factory.quad(
+      factory.namedNode(datasetIri.toString()),
+      factory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+      factory.namedNode('http://www.w3.org/ns/dcat#Dataset'),
+    ),
+  ]);
+}
 
 /**
  * Parse a Server-Sent Events stream body into its individual events. This is
@@ -51,7 +81,7 @@ describe('Server', () => {
   beforeAll(async () => {
     const shacl = await readUrl('../../requirements/shacl.ttl');
     httpServer = await server(
-      new MockDatasetStore(),
+      datasetStore,
       registrationStore,
       new MockValidationReportStore(),
       new MockAllowedRegistrationDomainStore(),
@@ -59,6 +89,7 @@ describe('Server', () => {
       shacl,
       '/',
       { logger: true },
+      remover(registrationStore, datasetStore),
     );
 
     nock.back.fixtures = dirname(fileURLToPath(import.meta.url)) + '/http';
@@ -606,6 +637,74 @@ describe('Server', () => {
     expect(stored?.dateCrawled).toEqual(new Date('2025-01-02T00:00:00Z'));
   });
 
+  it('removes the datasets a re-registration no longer finds', async () => {
+    const url = new URL('https://demo.netwerkdigitaalerfgoed.nl/renamed');
+    const previousDataset = new URL('https://example.com/previous-name');
+    await datasetStore.store(datasetDescription(previousDataset));
+    await registrationStore.store(
+      new Registration(url, new Date('2025-01-01T00:00:00Z'), undefined, [
+        previousDataset,
+      ]),
+    );
+
+    nock('https://demo.netwerkdigitaalerfgoed.nl')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/renamed')
+      .times(2)
+      .reply(200, await file('dataset-dcat-valid-minimal.jsonld'));
+
+    const response = await httpServer.inject({
+      method: 'POST',
+      url: '/datasets',
+      headers: { 'Content-Type': 'application/ld+json' },
+      payload: JSON.stringify({ '@id': url.toString() }),
+    });
+
+    expect(response.statusCode).toEqual(202);
+    // The response is sent before the datasets are stored.
+    let stored: string[] = [];
+    await vi.waitFor(async () => {
+      stored = (await datasetStore.findAll()).map((datasetIri) =>
+        datasetIri.toString(),
+      );
+      expect(stored).not.toContain(previousDataset.toString());
+    });
+    // The descriptions found now are kept.
+    const [found] = (await registrationStore.findByUrl(url))!.datasets;
+    expect(stored).toContain(found!.toString());
+  });
+
+  it('keeps a re-registration when removing superseded datasets fails', async () => {
+    const url = new URL('https://demo.netwerkdigitaalerfgoed.nl/renamed-again');
+    await registrationStore.store(
+      new Registration(url, new Date('2025-01-01T00:00:00Z'), undefined, [
+        new URL('https://example.com/old-name'),
+      ]),
+    );
+    const failingLookup = vi
+      .spyOn(registrationStore, 'findListedDatasets')
+      .mockRejectedValueOnce(new Error('store unavailable'));
+
+    nock('https://demo.netwerkdigitaalerfgoed.nl')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/renamed-again')
+      .times(2)
+      .reply(200, await file('dataset-dcat-valid-minimal.jsonld'));
+
+    const response = await httpServer.inject({
+      method: 'POST',
+      url: '/datasets',
+      headers: { 'Content-Type': 'application/ld+json' },
+      payload: JSON.stringify({ '@id': url.toString() }),
+    });
+
+    expect(response.statusCode).toEqual(202);
+    await vi.waitFor(() => expect(failingLookup).toHaveBeenCalled());
+    expect(
+      (await registrationStore.findByUrl(url))?.datasets,
+    ).not.toContainEqual(new URL('https://example.com/old-name'));
+  });
+
   it('discovers and registers datasets via well-known datacatalog', async () => {
     // The original URL has no dataset.
     nock('https://demo.netwerkdigitaalerfgoed.nl')
@@ -785,7 +884,7 @@ describe('POST /allowed-domains', () => {
       shacl,
       '/',
       { logger: false },
-      new MockRatingStore(),
+      remover(new MockRegistrationStore(), new MockDatasetStore()),
       testToken,
     );
   });
@@ -948,6 +1047,7 @@ describe('POST /allowed-domains', () => {
 describe('DELETE /datasets', () => {
   let httpServerWithAuth: FastifyInstance<Server>;
   let deleteRegistrationStore: MockRegistrationStore;
+  let deleteDatasetStore: MockDatasetStore;
   let deleteValidationReportStore: MockValidationReportStore;
   let shacl: DatasetCore;
   const testToken = 'test-api-token';
@@ -955,9 +1055,10 @@ describe('DELETE /datasets', () => {
   beforeAll(async () => {
     shacl = await readUrl('../../requirements/shacl.ttl');
     deleteRegistrationStore = new MockRegistrationStore();
+    deleteDatasetStore = new MockDatasetStore();
     deleteValidationReportStore = new MockValidationReportStore();
     httpServerWithAuth = await server(
-      new MockDatasetStore(),
+      deleteDatasetStore,
       deleteRegistrationStore,
       deleteValidationReportStore,
       new MockAllowedRegistrationDomainStore(),
@@ -965,7 +1066,7 @@ describe('DELETE /datasets', () => {
       shacl,
       '/',
       { logger: false },
-      new MockRatingStore(),
+      remover(deleteRegistrationStore, deleteDatasetStore),
       testToken,
     );
   });
@@ -1053,6 +1154,44 @@ describe('DELETE /datasets', () => {
     expect(deleteRegistrationStore.isRegistered(testUrl)).toBe(false);
   });
 
+  it('deletes the registration’s datasets, but not one another registration lists', async () => {
+    const testUrl = new URL(
+      'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html',
+    );
+    const sharedDataset = new URL('https://example.com/shared');
+    await deleteRegistrationStore.store(
+      new Registration(testUrl, new Date()).read({
+        datasets: [new URL('https://example.com/dataset1'), sharedDataset],
+        statusCode: 200,
+        valid: true,
+      }),
+    );
+    await deleteRegistrationStore.store(
+      new Registration(new URL('https://example.com/other'), new Date()).read({
+        datasets: [sharedDataset],
+        statusCode: 200,
+        valid: true,
+      }),
+    );
+    await deleteDatasetStore.store(
+      datasetDescription(new URL('https://example.com/dataset1')),
+    );
+    await deleteDatasetStore.store(datasetDescription(sharedDataset));
+
+    const response = await httpServerWithAuth.inject({
+      method: 'DELETE',
+      url: `/datasets?url=${testUrl.toString()}`,
+      headers: { Authorization: `Bearer ${testToken}`, Accept: '*/*' },
+    });
+
+    expect(response.statusCode).toEqual(204);
+    expect(
+      (await deleteDatasetStore.findAll()).map((datasetIri) =>
+        datasetIri.toString(),
+      ),
+    ).toEqual([sharedDataset.toString()]);
+  });
+
   it('deletes the registration’s validation report', async () => {
     const testUrl = new URL(
       'https://demo.netwerkdigitaalerfgoed.nl/datasets/kb/2.html',
@@ -1116,7 +1255,7 @@ describe('DELETE /datasets reindex trigger', () => {
       shacl,
       '/',
       { logger: false },
-      new MockRatingStore(),
+      remover(triggerStore, new MockDatasetStore()),
       testToken,
       onDatasetsChanged,
     );

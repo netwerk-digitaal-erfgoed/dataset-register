@@ -1,5 +1,6 @@
 import {
   CompositeValidator,
+  DatasetRemover,
   DistributionProbeStage,
   readUrl,
   ShaclEngineValidator,
@@ -43,6 +44,8 @@ await (async () => {
     allowedRegistrationDomainStore,
     ratingStore,
     validationReportStore,
+    distributionHealthStore,
+    distributionValidityStore,
   } = stores(config.SPARQL_URL, config.SPARQL_ACCESS_TOKEN);
   startInstrumentation(datasetStore);
   const shacl = await readUrl('requirements/shacl.ttl');
@@ -80,7 +83,13 @@ await (async () => {
         logger: config.LOG,
         trustProxy: config.TRUST_PROXY,
       },
-      ratingStore,
+      new DatasetRemover({
+        registrationStore,
+        datasetStore,
+        ratingStore,
+        distributionHealthStore,
+        distributionValidityStore,
+      }),
       config.API_ACCESS_TOKEN,
       buildSearchIndexTrigger(),
     );

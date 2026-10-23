@@ -719,7 +719,7 @@ function probeKey(candidate: DistributionCandidate): string {
  * The URL fetch() actually requests: the fragment is dropped because it is never sent, so
  * distributions that differ only by a #query fragment share one probe and one health record.
  */
-function canonicalProbeUrl(accessUrl: URL): URL {
+export function canonicalProbeUrl(accessUrl: URL): URL {
   const canonical = new URL(accessUrl.toString());
   canonical.hash = '';
   return canonical;

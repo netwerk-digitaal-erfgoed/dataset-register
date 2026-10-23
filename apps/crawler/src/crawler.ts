@@ -13,6 +13,7 @@ import { Valid, Validator, ValidationTiming } from '@dataset-register/core';
 import { crawlCounter } from '@dataset-register/core';
 import { rate, RatingStore } from '@dataset-register/core';
 import { countWarnings, ValidationReportStore } from '@dataset-register/core';
+import { DatasetRemover } from '@dataset-register/core';
 
 // Only emit a per-registration timing line when a registration is slow, so healthy fast
 // registrations stay quiet. A slow registration is what a stalled crawl is made of, and the
@@ -49,6 +50,7 @@ export class Crawler {
     private datasetStore: DatasetStore,
     private ratingStore: RatingStore,
     private validationReportStore: ValidationReportStore,
+    private datasetRemover: DatasetRemover,
     private validator: Validator,
     private logger: pino.Logger,
     options: CrawlerOptions = {},
@@ -63,7 +65,8 @@ export class Crawler {
    *
    * Scenarios:
    * - if the registration URL is still valid, update the Registration with the
-   *   datasets currently found at the URL
+   *   datasets currently found at the URL, and remove the datasets it no longer
+   *   lists: their descriptions were superseded by the ones found now
    * - if the registration URL still works but no longer validates, store a
    *   schema:validUntil date in the Registration, keeping references to the
    *   datasets that were previously found at the URL when it was still valid
@@ -88,6 +91,9 @@ export class Crawler {
       let statusCode: number | undefined = undefined;
       let isValid = false;
       let datasetIris = registration.datasets;
+      // Whether every dataset at the URL was fetched. A page that fails mid-catalogue
+      // leaves datasetIris partial, and the datasets not reached are not dropped.
+      let fetchedAllDatasets = false;
       // Number of sh:Warning results in the registration's own description, taken
       // from the raw-data validation below – the same report the /validate
       // endpoint produces, so the dataset page and /validate stay consistent.
@@ -152,6 +158,7 @@ export class Crawler {
               await this.ratingStore.store(extractIri(dataset), rating);
             }
             phases.storeLoopMs = Math.round(performance.now() - storeLoopStart);
+            fetchedAllDatasets = true;
           } else if (validationResult.state === 'invalid') {
             statusCode = 200;
             this.logger.info(`${registration.url} does not pass validation`);
@@ -222,13 +229,16 @@ export class Crawler {
         if (!(await this.registrationStore.update(updatedRegistration))) {
           // Deleted while this crawl ran: the delete removed what was stored before
           // it, so remove what this crawl stored, or it outlives the registration.
-          for (const datasetIri of datasetIris) {
-            await this.ratingStore.delete(datasetIri);
-            await this.datasetStore.delete(datasetIri);
-          }
+          await this.datasetRemover.remove(datasetIris, registration.url);
           await this.validationReportStore.delete(registration.url);
           this.logger.info(
             `${registration.url} was deleted during its crawl; discarded the crawl result`,
+          );
+        } else if (fetchedAllDatasets) {
+          await this.removeDroppedDatasets(
+            registration.url,
+            registration.datasets,
+            datasetIris,
           );
         }
       } finally {
@@ -244,6 +254,39 @@ export class Crawler {
     }
 
     this.logRoundSummary(registrations.length, roundStart, roundTimings);
+  }
+
+  /**
+   * Remove the datasets a registration listed before this crawl but no longer does. Logged
+   * rather than thrown on failure, so a cleanup error does not abort the rest of the round.
+   */
+  private async removeDroppedDatasets(
+    registrationUrl: URL,
+    previousDatasetIris: URL[],
+    currentDatasetIris: URL[],
+  ): Promise<void> {
+    const current = new Set(
+      currentDatasetIris.map((datasetIri) => datasetIri.toString()),
+    );
+    const dropped = previousDatasetIris.filter(
+      (datasetIri) => !current.has(datasetIri.toString()),
+    );
+    try {
+      const removed = await this.datasetRemover.remove(
+        dropped,
+        registrationUrl,
+      );
+      if (removed.length > 0) {
+        this.logger.info(
+          `${registrationUrl} no longer lists ${removed.length} datasets; removed them`,
+        );
+      }
+    } catch (error) {
+      this.logger.warn(
+        { err: error },
+        `Removing the datasets ${registrationUrl} no longer lists failed`,
+      );
+    }
   }
 
   /**

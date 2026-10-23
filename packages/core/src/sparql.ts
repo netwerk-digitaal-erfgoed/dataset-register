@@ -118,6 +118,70 @@ export class SparqlDatasetStore implements DatasetStore {
   async delete(datasetUri: URL): Promise<void> {
     await this.client.update(`CLEAR GRAPH <${datasetUri}>`);
   }
+
+  async findAll(): Promise<URL[]> {
+    const result = await this.client.query(`
+      PREFIX dcat: <http://www.w3.org/ns/dcat#>
+
+      SELECT DISTINCT ?dataset WHERE {
+        GRAPH ?dataset {
+          ?dataset a dcat:Dataset .
+        }
+      }`);
+
+    return (await result.toArray()).map(
+      (binding) => new URL(binding.get('dataset')!.value),
+    );
+  }
+
+  async findDistributionUrls(datasetIris: URL[]): Promise<string[]> {
+    if (datasetIris.length === 0) return [];
+
+    const result = await this.client.query(`
+      PREFIX dcat: <http://www.w3.org/ns/dcat#>
+
+      SELECT DISTINCT ?url WHERE {
+        VALUES ?dataset { ${iriValues(datasetIris)} }
+        GRAPH ?dataset {
+          ?dataset dcat:distribution ?distribution .
+          ?distribution dcat:accessURL|dcat:downloadURL ?url .
+        }
+      }`);
+
+    return (await result.toArray()).map((binding) => binding.get('url')!.value);
+  }
+
+  async findReferencedDistributionUrls(urls: string[]): Promise<string[]> {
+    if (urls.length === 0) return [];
+
+    // The second branch matches the references that carry a fragment against the URL
+    // without it: one pass over the references that contain a #, rather than comparing
+    // every reference in the store against each URL.
+    const values = (variable: string) =>
+      `VALUES ${variable} { ${iriValues(urls)} }`;
+    const reference = `GRAPH ?dataset {
+            ?dataset dcat:distribution ?distribution .
+            ?distribution dcat:accessURL|dcat:downloadURL ?reference .
+          }`;
+    const result = await this.client.query(`
+      PREFIX dcat: <http://www.w3.org/ns/dcat#>
+
+      SELECT DISTINCT ?reference WHERE {
+        {
+          ${values('?reference')}
+          ${reference}
+        } UNION {
+          ${reference}
+          FILTER (CONTAINS(STR(?reference), "#"))
+          BIND (IRI(STRBEFORE(STR(?reference), "#")) AS ?url)
+          ${values('?url')}
+        }
+      }`);
+
+    return (await result.toArray()).map(
+      (binding) => binding.get('reference')!.value,
+    );
+  }
 }
 
 /**
@@ -253,6 +317,28 @@ export class SparqlRegistrationStore implements RegistrationStore {
       datasets,
       dateCrawled ? new Date(dateCrawled.value) : undefined,
       warningCount ? parseInt(warningCount.value) : undefined,
+    );
+  }
+
+  async findListedDatasets(
+    datasetIris: URL[],
+    exceptUrl?: URL,
+  ): Promise<URL[]> {
+    if (datasetIris.length === 0) return [];
+
+    const result = await this.client.query(`
+      PREFIX schema: <https://schema.org/>
+
+      SELECT DISTINCT ?dataset WHERE {
+        VALUES ?dataset { ${iriValues(datasetIris)} }
+        GRAPH <${this.graphIri}> {
+          ?registration schema:about ?dataset .
+        }
+        ${exceptUrl ? `FILTER (?registration != <${sparqlIri(exceptUrl)}>)` : ''}
+      }`);
+
+    return (await result.toArray()).map(
+      (binding) => new URL(binding.get('dataset')!.value),
     );
   }
 
@@ -553,4 +639,8 @@ export function authenticatedFetch(
       headers,
     });
   };
+}
+
+function iriValues(iris: Array<URL | string>): string {
+  return iris.map((iri) => `<${sparqlIri(iri)}>`).join(' ');
 }

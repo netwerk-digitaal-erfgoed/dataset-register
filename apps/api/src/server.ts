@@ -9,6 +9,7 @@ import bearerAuth from '@fastify/bearer-auth';
 import {
   AllowedRegistrationDomainStore,
   createRdfFetch,
+  DatasetRemover,
   DatasetStore,
   dereference,
   discoverDatacatalog,
@@ -19,7 +20,6 @@ import {
   HttpError,
   NoDatasetFoundAtUrl,
   ProbeProgressListener,
-  RatingStore,
   Registration,
   registrationsCounter,
   RegistrationStore,
@@ -53,7 +53,7 @@ export async function server(
   shacl: DatasetCore,
   docsUrl = '/',
   options?: FastifyServerOptions,
-  ratingStore?: RatingStore,
+  datasetRemover?: DatasetRemover,
   apiAccessToken?: string,
   /**
    * Called fire-and-forget after a delete removes a registration, so the search
@@ -352,6 +352,25 @@ export async function server(
         mediaType,
       });
       await registrationStore.store(updatedRegistration);
+
+      // The descriptions found now supersede those of datasets the URL no longer lists.
+      // Logged rather than thrown: the response is already sent.
+      const found = new Set(
+        datasetIris.map((datasetIri) => datasetIri.toString()),
+      );
+      try {
+        await datasetRemover?.remove(
+          (existingRegistration?.datasets ?? []).filter(
+            (datasetIri) => !found.has(datasetIri.toString()),
+          ),
+          url,
+        );
+      } catch (error) {
+        request.log.warn(
+          { err: error },
+          `Removing the datasets ${url.toString()} no longer lists failed`,
+        );
+      }
     }
 
     registrationsCounter.add(1, {
@@ -523,13 +542,8 @@ export async function server(
           return reply.code(404).send();
         }
 
-        // Delete ratings and dataset graphs for each dataset
-        for (const datasetIri of registration.datasets) {
-          await ratingStore?.delete(datasetIri);
-          await datasetStore.delete(datasetIri);
-        }
-
         // Before the registration, so a failure here leaves it in place for a retry.
+        await datasetRemover?.remove(registration.datasets, url);
         await validationReportStore.delete(url);
 
         // Delete the registration (including linked dataset entries in registrations graph)

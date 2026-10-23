@@ -1,5 +1,6 @@
 export * from './constants.ts';
 export * from './dataset.ts';
+export * from './dataset-remover.ts';
 export * from './distribution-health-store.ts';
 export * from './distribution-validity-store.ts';
 export * from './distribution-validity.ts';
