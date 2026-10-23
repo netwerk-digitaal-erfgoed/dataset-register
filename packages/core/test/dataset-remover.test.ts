@@ -122,6 +122,30 @@ describe('DatasetRemover', () => {
     expect(distributionHealthStore.records.size).toBe(0);
   });
 
+  it('finishes a removal that stopped halfway when run again', async () => {
+    const datasetIri = await storeDataset('https://example.com/dataset', [
+      'https://example.com/dump.nt',
+    ]);
+    const deleteMeasurements = distributionValidityStore.delete.bind(
+      distributionValidityStore,
+    );
+    distributionValidityStore.delete = async () => {
+      throw new Error('Store unavailable');
+    };
+
+    await expect(remover.remove([datasetIri], registrationUrl)).rejects.toThrow(
+      'Store unavailable',
+    );
+
+    distributionValidityStore.delete = deleteMeasurements;
+    expect(await remover.remove([datasetIri], registrationUrl)).toEqual([
+      datasetIri,
+    ]);
+    expect(await datasetStore.findAll()).toEqual([]);
+    expect(distributionHealthStore.records.size).toBe(0);
+    expect(distributionValidityStore.measurements.size).toBe(0);
+  });
+
   it('does nothing without datasets', async () => {
     expect(await remover.remove([], registrationUrl)).toEqual([]);
   });

@@ -35,21 +35,18 @@ export class DatasetRemover {
     const unlisted = await this.unlisted(datasetIris, registrationUrl);
     if (unlisted.length === 0) return [];
 
-    // Read before the dataset graphs go, as they are what names the URLs.
     const distributionUrls = [
       ...new Set(await this.stores.datasetStore.findDistributionUrls(unlisted)),
     ];
 
-    for (const datasetIri of unlisted) {
-      await this.stores.ratingStore.delete(datasetIri);
-      await this.stores.datasetStore.delete(datasetIri);
-    }
-
-    // Probe records are keyed by URL, so another dataset can still depend on one.
+    // Probe records are keyed by URL, so another dataset can still depend on one. They go
+    // before the dataset graphs that name their URLs, so a removal that stops halfway is
+    // finished by running it again.
     const referenced = new Set(
       (
         await this.stores.datasetStore.findReferencedDistributionUrls(
           distributionUrls.map(withoutFragment),
+          unlisted,
         )
       ).flatMap(probeRecordKey),
     );
@@ -61,6 +58,11 @@ export class DatasetRemover {
     for (const key of unreferenced) {
       await this.stores.distributionHealthStore.delete(new URL(key));
       await this.stores.distributionValidityStore.delete(new URL(key));
+    }
+
+    for (const datasetIri of unlisted) {
+      await this.stores.ratingStore.delete(datasetIri);
+      await this.stores.datasetStore.delete(datasetIri);
     }
 
     return unlisted;

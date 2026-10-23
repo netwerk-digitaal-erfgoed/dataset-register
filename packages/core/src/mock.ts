@@ -140,9 +140,19 @@ export class MockDatasetStore implements DatasetStore {
     );
   }
 
-  findReferencedDistributionUrls(urls: string[]): Promise<string[]> {
+  findReferencedDistributionUrls(
+    urls: string[],
+    exceptDatasetIris: URL[] = [],
+  ): Promise<string[]> {
+    const counted = this.datasets.filter(
+      (dataset) =>
+        !exceptDatasetIris.some(
+          (datasetIri) =>
+            datasetIri.toString() === extractIri(dataset).toString(),
+        ),
+    );
     return Promise.resolve(
-      this.distributionUrls(this.datasets).filter((reference) =>
+      this.distributionUrls(counted).filter((reference) =>
         urls.some(
           (url) => reference === url || reference.startsWith(`${url}#`),
         ),
