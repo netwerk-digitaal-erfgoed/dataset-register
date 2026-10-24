@@ -1427,7 +1427,7 @@ dcat:DatasetShape
         sh:description "De datum waarop de dataset is aangemaakt."@nl, "The date on which the dataset was created."@en ;
         sh:message "Vul de aanmaakdatum in"@nl, "Enter the creation date"@en ;
     ],
-    nde-dataset:DcCreatedDatatypeProperty ,
+    nde-dataset:DcCreatedDatatypeProperty,
     nde-dataset:DcCreatedIso8601Property,
     [
         sh:path dc:issued ;
@@ -1437,7 +1437,7 @@ dcat:DatasetShape
         sh:description "De datum van formele uitgifte (bijvoorbeeld publicatie) van de dataset."@nl, "The date of formal issuance (such as publication) of the dataset."@en ;
         sh:message "Vul de uitgiftedatum in"@nl, "Enter the issue date"@en ;
     ],
-    nde-dataset:DcIssuedDatatypeProperty ,
+    nde-dataset:DcIssuedDatatypeProperty,
     nde-dataset:DcIssuedIso8601Property,
     [
         sh:path dc:modified ;
@@ -1447,7 +1447,7 @@ dcat:DatasetShape
         sh:description "De meest recente datum waarop de dataset is gewijzigd of aangepast."@nl, "The most recent date on which the dataset was changed or modified."@en ;
         sh:message "Vul de wijzigingsdatum in"@nl, "Enter the modification date"@en ;
     ],
-    nde-dataset:DcModifiedDatatypeProperty ,
+    nde-dataset:DcModifiedDatatypeProperty,
     nde-dataset:DcModifiedIso8601Property,
     [
         sh:path dc:spatial ;
