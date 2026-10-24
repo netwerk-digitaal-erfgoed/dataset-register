@@ -254,31 +254,8 @@ The value MUST be the canonical URI of a license. For example, use `http://creat
             sh:description "De datum van formele uitgifte (bijvoorbeeld publicatie) van de dataset."@nl, "The date of formal issuance (such as publication) of the dataset."@en ;
             sh:message "Vul de publicatiedatum in"@nl, "Enter the publication date"@en ;
         ] ,
-        [
-            sh:path schema:datePublished ;
-            sh:or (
-                [ sh:datatype schema:Date ]
-                [ sh:datatype schema:DateTime ]
-                [ sh:datatype xsd:dateTime ]
-                [ sh:datatype xsd:date ]
-            ) ;
-            sh:severity sh:Warning ;
-            nde:futureChange [
-                nde:version "2.0" ;
-                sh:severity sh:Violation ;
-            ] ;
-            sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
-        ] ,
-        [
-            sh:path schema:datePublished ;
-            sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
-            sh:severity sh:Warning ;
-            nde:futureChange [
-                nde:version "2.0" ;
-                sh:severity sh:Violation ;
-            ] ;
-            sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
-        ] ,
+        nde-dataset:SchemaDatePublishedDatatypeProperty ,
+        nde-dataset:SchemaDatePublishedIso8601Property ,
         [
             sh:path schema:dateCreated ;
             sh:minCount 1 ;
@@ -287,31 +264,8 @@ The value MUST be the canonical URI of a license. For example, use `http://creat
             sh:description "De datum waarop de dataset is aangemaakt."@nl, "The date on which the dataset was created."@en ;
             sh:message "Vul de aanmaakdatum in"@nl, "Enter the creation date"@en ;
         ] ,
-        [
-            sh:path schema:dateCreated ;
-            sh:or (
-                [ sh:datatype schema:Date ]
-                [ sh:datatype schema:DateTime ]
-                [ sh:datatype xsd:dateTime ]
-                [ sh:datatype xsd:date ]
-            ) ;
-            sh:severity sh:Warning ;
-            nde:futureChange [
-                nde:version "2.0" ;
-                sh:severity sh:Violation ;
-            ] ;
-            sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
-        ] ,
-        [
-            sh:path schema:dateCreated ;
-            sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
-            sh:severity sh:Warning ;
-            nde:futureChange [
-                nde:version "2.0" ;
-                sh:severity sh:Violation ;
-            ] ;
-            sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
-        ] ,
+        nde-dataset:SchemaDateCreatedDatatypeProperty ,
+        nde-dataset:SchemaDateCreatedIso8601Property ,
         [
             sh:path schema:dateModified ;
             sh:minCount 1 ;
@@ -320,31 +274,8 @@ The value MUST be the canonical URI of a license. For example, use `http://creat
             sh:description "De meest recente datum waarop de dataset is gewijzigd of aangepast."@nl, "The most recent date on which the dataset was changed or modified."@en ;
             sh:message "Vul de wijzigingsdatum in"@nl, "Enter the last modified date"@en ;
         ] ,
-        [
-            sh:path schema:dateModified ;
-            sh:or (
-                [ sh:datatype schema:Date ]
-                [ sh:datatype schema:DateTime ]
-                [ sh:datatype xsd:dateTime ]
-                [ sh:datatype xsd:date ]
-            ) ;
-            sh:severity sh:Warning ;
-            nde:futureChange [
-                nde:version "2.0" ;
-                sh:severity sh:Violation ;
-            ] ;
-            sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
-        ] ,
-        [
-            sh:path schema:dateModified ;
-            sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
-            sh:severity sh:Warning ;
-            nde:futureChange [
-                nde:version "2.0" ;
-                sh:severity sh:Violation ;
-            ] ;
-            sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
-        ] ,
+        nde-dataset:SchemaDateModifiedDatatypeProperty ,
+        nde-dataset:SchemaDateModifiedIso8601Property ,
         [
             a sh:PropertyShape ;
             sh:path schema:version ;
@@ -637,56 +568,10 @@ nde-dataset:DistributionShape
             sh:maxCount 1 ;
             sh:description "De meest recente datum waarop de distributie is gewijzigd of aangepast."@nl, "The most recent date on which the distribution was changed or modified."@en ;
         ] ,
-        [
-            sh:path schema:datePublished ;
-            sh:or (
-                [ sh:datatype schema:Date ]
-                [ sh:datatype schema:DateTime ]
-                [ sh:datatype xsd:dateTime ]
-                [ sh:datatype xsd:date ]
-            ) ;
-            sh:severity sh:Warning ;
-            nde:futureChange [
-                nde:version "2.0" ;
-                sh:severity sh:Violation ;
-            ] ;
-            sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
-        ] ,
-        [
-            sh:path schema:dateModified ;
-            sh:or (
-                [ sh:datatype schema:Date ]
-                [ sh:datatype schema:DateTime ]
-                [ sh:datatype xsd:dateTime ]
-                [ sh:datatype xsd:date ]
-            ) ;
-            sh:severity sh:Warning ;
-            nde:futureChange [
-                nde:version "2.0" ;
-                sh:severity sh:Violation ;
-            ] ;
-            sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
-        ] ,
-        [
-            sh:path schema:datePublished ;
-            sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
-            sh:severity sh:Warning ;
-            nde:futureChange [
-                nde:version "2.0" ;
-                sh:severity sh:Violation ;
-            ] ;
-            sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
-        ] ,
-        [
-            sh:path schema:dateModified ;
-            sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
-            sh:severity sh:Warning ;
-            nde:futureChange [
-                nde:version "2.0" ;
-                sh:severity sh:Violation ;
-            ] ;
-            sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
-        ] ,
+        nde-dataset:SchemaDatePublishedDatatypeProperty ,
+        nde-dataset:SchemaDateModifiedDatatypeProperty ,
+        nde-dataset:SchemaDatePublishedIso8601Property ,
+        nde-dataset:SchemaDateModifiedIso8601Property ,
         [
             sh:path schema:inLanguage ;
             sh:pattern "^[a-zA-Z]{2,3}(-[a-zA-Z0-9]+)*$" ;
@@ -1307,6 +1192,170 @@ nde-dataset:DcLanguageAuthorityProperty a sh:PropertyShape ;
     sh:message "Gebruik een taal-URI uit de EU-lijst (bijvoorbeeld http://publications.europa.eu/resource/authority/language/NLD) in plaats van een taalcode zoals ‘nl’"@nl, "Use a language URI from the EU list (such as http://publications.europa.eu/resource/authority/language/NLD) instead of a language code such as ‘nl’"@en ;
 .
 
+# Date shapes, one pair per path, shared by every class shape with that path:
+# the datatype, and the ISO 8601 lexical form that a datatype alone does not check.
+nde-dataset:SchemaDateCreatedDatatypeProperty a sh:PropertyShape ;
+    sh:path schema:dateCreated ;
+    sh:or (
+        [ sh:datatype schema:Date ]
+        [ sh:datatype schema:DateTime ]
+        [ sh:datatype xsd:dateTime ]
+        [ sh:datatype xsd:date ]
+    ) ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+.
+
+nde-dataset:SchemaDateCreatedIso8601Property a sh:PropertyShape ;
+    sh:path schema:dateCreated ;
+    sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
+.
+
+nde-dataset:SchemaDatePublishedDatatypeProperty a sh:PropertyShape ;
+    sh:path schema:datePublished ;
+    sh:or (
+        [ sh:datatype schema:Date ]
+        [ sh:datatype schema:DateTime ]
+        [ sh:datatype xsd:dateTime ]
+        [ sh:datatype xsd:date ]
+    ) ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+.
+
+nde-dataset:SchemaDatePublishedIso8601Property a sh:PropertyShape ;
+    sh:path schema:datePublished ;
+    sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
+.
+
+nde-dataset:SchemaDateModifiedDatatypeProperty a sh:PropertyShape ;
+    sh:path schema:dateModified ;
+    sh:or (
+        [ sh:datatype schema:Date ]
+        [ sh:datatype schema:DateTime ]
+        [ sh:datatype xsd:dateTime ]
+        [ sh:datatype xsd:date ]
+    ) ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+.
+
+nde-dataset:SchemaDateModifiedIso8601Property a sh:PropertyShape ;
+    sh:path schema:dateModified ;
+    sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
+.
+
+nde-dataset:DcCreatedDatatypeProperty a sh:PropertyShape ;
+    sh:path dc:created ;
+    sh:or (
+        [ sh:datatype schema:Date ]
+        [ sh:datatype schema:DateTime ]
+        [ sh:datatype xsd:dateTime ]
+        [ sh:datatype xsd:date ]
+    ) ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+.
+
+nde-dataset:DcCreatedIso8601Property a sh:PropertyShape ;
+    sh:path dc:created ;
+    sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
+.
+
+nde-dataset:DcIssuedDatatypeProperty a sh:PropertyShape ;
+    sh:path dc:issued ;
+    sh:or (
+        [ sh:datatype schema:Date ]
+        [ sh:datatype schema:DateTime ]
+        [ sh:datatype xsd:dateTime ]
+        [ sh:datatype xsd:date ]
+    ) ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+.
+
+nde-dataset:DcIssuedIso8601Property a sh:PropertyShape ;
+    sh:path dc:issued ;
+    sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
+.
+
+nde-dataset:DcModifiedDatatypeProperty a sh:PropertyShape ;
+    sh:path dc:modified ;
+    sh:or (
+        [ sh:datatype schema:Date ]
+        [ sh:datatype schema:DateTime ]
+        [ sh:datatype xsd:dateTime ]
+        [ sh:datatype xsd:date ]
+    ) ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
+.
+
+nde-dataset:DcModifiedIso8601Property a sh:PropertyShape ;
+    sh:path dc:modified ;
+    sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
+.
+
 ##
 ## DCAT
 ##
@@ -1378,31 +1427,8 @@ dcat:DatasetShape
         sh:description "De datum waarop de dataset is aangemaakt."@nl, "The date on which the dataset was created."@en ;
         sh:message "Vul de aanmaakdatum in"@nl, "Enter the creation date"@en ;
     ],
-    [
-        sh:path dc:created ;
-        sh:or (
-            [ sh:datatype schema:Date ]
-            [ sh:datatype schema:DateTime ]
-            [ sh:datatype xsd:dateTime ]
-            [ sh:datatype xsd:date ]
-        ) ;
-        sh:severity sh:Warning ;
-        nde:futureChange [
-            nde:version "2.0" ;
-            sh:severity sh:Violation ;
-        ] ;
-        sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
-    ] ,
-    [
-        sh:path dc:created ;
-        sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
-        sh:severity sh:Warning ;
-        nde:futureChange [
-            nde:version "2.0" ;
-            sh:severity sh:Violation ;
-        ] ;
-        sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
-    ],
+    nde-dataset:DcCreatedDatatypeProperty ,
+    nde-dataset:DcCreatedIso8601Property,
     [
         sh:path dc:issued ;
         sh:minCount 1 ;
@@ -1411,31 +1437,8 @@ dcat:DatasetShape
         sh:description "De datum van formele uitgifte (bijvoorbeeld publicatie) van de dataset."@nl, "The date of formal issuance (such as publication) of the dataset."@en ;
         sh:message "Vul de uitgiftedatum in"@nl, "Enter the issue date"@en ;
     ],
-    [
-        sh:path dc:issued ;
-        sh:or (
-            [ sh:datatype schema:Date ]
-            [ sh:datatype schema:DateTime ]
-            [ sh:datatype xsd:dateTime ]
-            [ sh:datatype xsd:date ]
-        ) ;
-        sh:severity sh:Warning ;
-        nde:futureChange [
-            nde:version "2.0" ;
-            sh:severity sh:Violation ;
-        ] ;
-        sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
-    ] ,
-    [
-        sh:path dc:issued ;
-        sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
-        sh:severity sh:Warning ;
-        nde:futureChange [
-            nde:version "2.0" ;
-            sh:severity sh:Violation ;
-        ] ;
-        sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
-    ],
+    nde-dataset:DcIssuedDatatypeProperty ,
+    nde-dataset:DcIssuedIso8601Property,
     [
         sh:path dc:modified ;
         sh:minCount 1 ;
@@ -1444,31 +1447,8 @@ dcat:DatasetShape
         sh:description "De meest recente datum waarop de dataset is gewijzigd of aangepast."@nl, "The most recent date on which the dataset was changed or modified."@en ;
         sh:message "Vul de wijzigingsdatum in"@nl, "Enter the modification date"@en ;
     ],
-    [
-        sh:path dc:modified ;
-        sh:or (
-            [ sh:datatype schema:Date ]
-            [ sh:datatype schema:DateTime ]
-            [ sh:datatype xsd:dateTime ]
-            [ sh:datatype xsd:date ]
-        ) ;
-        sh:severity sh:Warning ;
-        nde:futureChange [
-            nde:version "2.0" ;
-            sh:severity sh:Violation ;
-        ] ;
-        sh:message "Gebruik een waarde van type xsd:date, xsd:dateTime, schema:Date of schema:DateTime"@nl, "Use a value of type xsd:date, xsd:dateTime, schema:Date or schema:DateTime"@en ;
-    ] ,
-    [
-        sh:path dc:modified ;
-        sh:pattern "^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}:[0-9]{2}.*)?$" ;
-        sh:severity sh:Warning ;
-        nde:futureChange [
-            nde:version "2.0" ;
-            sh:severity sh:Violation ;
-        ] ;
-        sh:message "Gebruik een ISO 8601-datum, bijv. 2026-04-14 of 2026-04-14T10:30:00"@nl, "Use an ISO 8601 date, such as 2026-04-14 or 2026-04-14T10:30:00"@en ;
-    ],
+    nde-dataset:DcModifiedDatatypeProperty ,
+    nde-dataset:DcModifiedIso8601Property,
     [
         sh:path dc:spatial ;
         sh:minCount 1 ;
