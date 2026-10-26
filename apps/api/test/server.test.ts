@@ -3,6 +3,7 @@ import type { Mock } from 'vitest';
 import { FastifyInstance } from 'fastify';
 import { Server } from 'http';
 import { server } from '../src/server.js';
+import { registrar } from '../src/register.js';
 import {
   DatasetRemover,
   readUrl,
@@ -31,10 +32,6 @@ import factory from 'rdf-ext';
 let httpServer: FastifyInstance<Server>;
 const registrationStore = new MockRegistrationStore();
 const datasetStore = new MockDatasetStore();
-// A registration runs after the response: fetching, converting and validating
-// the description can take over a second on a CI runner. Waiting for it must
-// end within Vitest’s 5 second test timeout.
-const registrationTimeout = 4000;
 
 function remover(
   registrationStore: RegistrationStore,
@@ -82,6 +79,20 @@ function parseSse(body: string): { event: string; data: string }[] {
 }
 
 describe('Server', () => {
+  const register = vi.fn(
+    registrar(
+      registrationStore,
+      datasetStore,
+      remover(registrationStore, datasetStore),
+    ),
+  );
+
+  /** Await the registration that `POST /datasets` runs after its response. */
+  async function registered(): Promise<void> {
+    expect(register).toHaveBeenCalledOnce();
+    await register.mock.results[0]?.value;
+  }
+
   beforeAll(async () => {
     const shacl = await readUrl('../../requirements/shacl.ttl');
     httpServer = await server(
@@ -94,10 +105,24 @@ describe('Server', () => {
       '/',
       { logger: true },
       remover(registrationStore, datasetStore),
+      undefined,
+      undefined,
+      register,
     );
 
     nock.back.fixtures = dirname(fileURLToPath(import.meta.url)) + '/http';
     nock.back.setMode('record');
+  });
+
+  beforeEach(() => {
+    register.mockClear();
+  });
+
+  // Let no registration keep writing to the shared stores while the next test runs.
+  afterEach(async () => {
+    await Promise.allSettled(
+      register.mock.results.map((result) => result.value),
+    );
   });
 
   afterAll(() => {
@@ -635,6 +660,7 @@ describe('Server', () => {
     });
 
     expect(response.statusCode).toEqual(202);
+    await registered();
     const stored = await registrationStore.findByUrl(url);
     expect(stored?.warningCount).toBe(3);
     // The crawl clock is carried over for the same reason: reading is not crawling.
@@ -665,17 +691,11 @@ describe('Server', () => {
     });
 
     expect(response.statusCode).toEqual(202);
-    // The response is sent before the datasets are stored.
-    let stored: string[] = [];
-    await vi.waitFor(
-      async () => {
-        stored = (await datasetStore.findAll()).map((datasetIri) =>
-          datasetIri.toString(),
-        );
-        expect(stored).not.toContain(previousDataset.toString());
-      },
-      { timeout: registrationTimeout },
+    await registered();
+    const stored = (await datasetStore.findAll()).map((datasetIri) =>
+      datasetIri.toString(),
     );
+    expect(stored).not.toContain(previousDataset.toString());
     // The descriptions found now are kept.
     const [found] = (await registrationStore.findByUrl(url))!.datasets;
     expect(stored).toContain(found!.toString());
@@ -706,9 +726,8 @@ describe('Server', () => {
     });
 
     expect(response.statusCode).toEqual(202);
-    await vi.waitFor(() => expect(failingLookup).toHaveBeenCalled(), {
-      timeout: registrationTimeout,
-    });
+    await registered();
+    expect(failingLookup).toHaveBeenCalled();
     expect(
       (await registrationStore.findByUrl(url))?.datasets,
     ).not.toContainEqual(new URL('https://example.com/old-name'));
@@ -853,16 +872,36 @@ describe('Server', () => {
       }),
     });
     nockDone();
-    // sleep 2 seconds to allow the async store to complete
-    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Validation succeeds, so 202 to the client, even if fetching datasets fails.
     expect(response.statusCode).toEqual(202);
+    await registered();
     expect(
       registrationStore.isRegistered(
         new URL('https://netwerkdigitaalerfgoed.nl/fails'),
       ),
     ).toBe(true);
+  });
+
+  it('still responds with 202 when the registration fails after the response', async () => {
+    register.mockRejectedValueOnce(new Error('store unavailable'));
+    nock('https://demo.netwerkdigitaalerfgoed.nl')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/failing-registration')
+      .reply(200, await file('dataset-dcat-valid-minimal.jsonld'));
+
+    const response = await httpServer.inject({
+      method: 'POST',
+      url: '/datasets',
+      headers: { 'Content-Type': 'application/ld+json' },
+      payload: JSON.stringify({
+        '@id': 'https://demo.netwerkdigitaalerfgoed.nl/failing-registration',
+      }),
+    });
+
+    expect(response.statusCode).toEqual(202);
+    // The server logs the failure rather than leaving the rejection unhandled.
+    await expect(registered()).rejects.toThrow('store unavailable');
   });
 
   it('returns SHACL graph', async () => {
