@@ -131,10 +131,32 @@ const mediaTypePattern = '^[a-zA-Z]+/[a-zA-Z0-9][a-zA-Z0-9!#$&\\\\-^_.+]*$';
  * too (e.g. "application/gzip"). The +g?zip suffix strip is a no-op on those: it
  * only matches a "+"-separated suffix, which a bare compression media type lacks.
  */
-export const normalizeMediaType = (variable: string) => {
-  const cleaned = `REPLACE(REPLACE(STR(?${variable}Raw), ";.*$", ""), "\\\\+g?zip$", "")`;
-  return `?${variable}Raw ;
-        BIND(
+export const normalizeMediaType = (variable: string) =>
+  `?${variable}Raw ;
+        ${bindNormalizedMediaType(variable)}`;
+
+/**
+ * SPARQL expression that is true when ?variable is a value normalizeMediaType()
+ * turns into a media type: any IRI, or a literal shaped like a media type.
+ */
+export const isMediaType = (variable: string) =>
+  `(isIRI(?${variable}) || REGEX(${withoutParametersAndCompression(variable)}, "${mediaTypePattern}"))`;
+
+/**
+ * SPARQL expression that is true when ?variable, a dct:format value, is a media
+ * type: an IANA media type IRI, or a literal shaped like a media type. Other
+ * IRIs, such as EU file types, are formats but not media types.
+ */
+export const isIanaMediaType = (variable: string) =>
+  `((isIRI(?${variable}) && REGEX(STR(?${variable}), "${ianaMediaTypeIri}")) || (isLiteral(?${variable}) && REGEX(${withoutParametersAndCompression(variable)}, "${mediaTypePattern}")))`;
+
+/**
+ * The BIND half of normalizeMediaType(), for a ?variableRaw that a pattern other
+ * than a single triple binds.
+ */
+export const bindNormalizedMediaType = (variable: string) => {
+  const cleaned = withoutParametersAndCompression(`${variable}Raw`);
+  return `BIND(
           IF(
             isIRI(?${variable}Raw),
             IRI(REPLACE(REPLACE(STR(?${variable}Raw), "\\\\+g?zip$", ""), "^http://", "https://")),
@@ -194,3 +216,9 @@ export const compressFormat = (
     } AS ?${compressFormatVariable}
   )`;
 };
+
+const ianaMediaTypeIri =
+  '^https?://www\\\\.iana\\\\.org/assignments/media-types/';
+
+const withoutParametersAndCompression = (variable: string) =>
+  `REPLACE(REPLACE(STR(?${variable}), ";.*$", ""), "\\\\+g?zip$", "")`;

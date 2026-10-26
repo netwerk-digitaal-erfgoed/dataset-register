@@ -31,6 +31,10 @@ import factory from 'rdf-ext';
 let httpServer: FastifyInstance<Server>;
 const registrationStore = new MockRegistrationStore();
 const datasetStore = new MockDatasetStore();
+// A registration runs after the response: fetching, converting and validating
+// the description can take over a second on a CI runner. Waiting for it must
+// end within Vitest’s 5 second test timeout.
+const registrationTimeout = 4000;
 
 function remover(
   registrationStore: RegistrationStore,
@@ -663,12 +667,15 @@ describe('Server', () => {
     expect(response.statusCode).toEqual(202);
     // The response is sent before the datasets are stored.
     let stored: string[] = [];
-    await vi.waitFor(async () => {
-      stored = (await datasetStore.findAll()).map((datasetIri) =>
-        datasetIri.toString(),
-      );
-      expect(stored).not.toContain(previousDataset.toString());
-    });
+    await vi.waitFor(
+      async () => {
+        stored = (await datasetStore.findAll()).map((datasetIri) =>
+          datasetIri.toString(),
+        );
+        expect(stored).not.toContain(previousDataset.toString());
+      },
+      { timeout: registrationTimeout },
+    );
     // The descriptions found now are kept.
     const [found] = (await registrationStore.findByUrl(url))!.datasets;
     expect(stored).toContain(found!.toString());
@@ -699,7 +706,9 @@ describe('Server', () => {
     });
 
     expect(response.statusCode).toEqual(202);
-    await vi.waitFor(() => expect(failingLookup).toHaveBeenCalled());
+    await vi.waitFor(() => expect(failingLookup).toHaveBeenCalled(), {
+      timeout: registrationTimeout,
+    });
     expect(
       (await registrationStore.findByUrl(url))?.datasets,
     ).not.toContainEqual(new URL('https://example.com/old-name'));

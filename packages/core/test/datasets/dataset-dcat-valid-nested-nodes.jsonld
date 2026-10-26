@@ -1,0 +1,127 @@
+{
+  "@context": {
+    "dcat": "http://www.w3.org/ns/dcat#",
+    "dct": "http://purl.org/dc/terms/",
+    "foaf": "http://xmlns.com/foaf/0.1/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "time": "http://www.w3.org/2006/time#"
+  },
+  "@graph": [
+    {
+      "@id": "https://example.com/id/dataset/with-creator",
+      "@type": "dcat:Dataset",
+      "dct:title": {
+        "@value": "Dataset with a creator",
+        "@language": "en"
+      },
+      "dct:publisher": {
+        "@id": "https://example.com/id/publisher"
+      },
+      "dct:creator": {
+        "@id": "https://example.com/id/creator"
+      },
+      "dct:temporal": [
+        {
+          "@type": "dct:PeriodOfTime",
+          "dcat:startDate": {
+            "@value": "1800-01-01",
+            "@type": "xsd:date"
+          },
+          "dcat:endDate": {
+            "@value": "1900-12-31",
+            "@type": "xsd:date"
+          }
+        },
+        {
+          "@type": "dct:PeriodOfTime",
+          "time:hasBeginning": {
+            "@id": "https://example.com/id/instant/1800"
+          }
+        }
+      ],
+      "dcat:distribution": [
+        {
+          "@id": "https://example.com/id/distribution/format-literal",
+          "@type": "dcat:Distribution",
+          "dcat:downloadURL": {
+            "@id": "https://example.com/dump.nt.gz"
+          },
+          "dct:format": "application/n-triples+gzip"
+        },
+        {
+          "@id": "https://example.com/id/distribution/format-iri",
+          "@type": "dcat:Distribution",
+          "dcat:downloadURL": {
+            "@id": "https://example.com/dump.jsonld"
+          },
+          "dcat:mediaType": {
+            "@id": "https://www.iana.org/assignments/media-types/application/ld+json"
+          },
+          "dct:format": [
+            {
+              "@id": "http://publications.europa.eu/resource/authority/file-type/JSON_LD"
+            },
+            "application/n-quads"
+          ]
+        },
+        {
+          "@id": "https://example.com/id/distribution/format-iana-iri",
+          "@type": "dcat:Distribution",
+          "dcat:downloadURL": {
+            "@id": "https://example.com/dump.ttl"
+          },
+          "dct:format": {
+            "@id": "https://www.iana.org/assignments/media-types/text/turtle"
+          }
+        },
+        {
+          "@id": "https://example.com/id/distribution/invalid-media-type",
+          "@type": "dcat:Distribution",
+          "dcat:downloadURL": {
+            "@id": "https://example.com/dump.nq"
+          },
+          "dcat:mediaType": "n-quads",
+          "dct:format": "application/n-quads"
+        }
+      ],
+      "dct:isReferencedBy": [
+        {
+          "@id": "https://doi.org/10.1145/3604951.3605520"
+        },
+        {
+          "@type": "foaf:Document",
+          "foaf:page": {
+            "@id": "https://example.com/paper"
+          }
+        }
+      ]
+    },
+    {
+      "@id": "https://example.com/id/dataset/without-creator",
+      "@type": "dcat:Dataset",
+      "dct:title": {
+        "@value": "Dataset without a creator",
+        "@language": "en"
+      },
+      "dct:publisher": {
+        "@id": "https://example.com/id/publisher"
+      }
+    },
+    {
+      "@id": "https://example.com/id/publisher",
+      "@type": "foaf:Organization",
+      "foaf:name": {
+        "@value": "Publisher",
+        "@language": "en"
+      }
+    },
+    {
+      "@id": "https://example.com/id/creator",
+      "@type": "foaf:Person",
+      "foaf:name": {
+        "@value": "Creator",
+        "@language": "en"
+      }
+    }
+  ]
+}
