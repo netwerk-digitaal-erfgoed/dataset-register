@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.16.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.15.1...requirements-1.16.0) (2026-10-26)
+
+
+### Features
+
+* **requirements:** define what makes a good organization IRI ([#2385](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2385)) ([b43b50a](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/b43b50ae6b644384231df51aeab4b0b2c4d886dd))
+* **requirements:** document DCAT-AP-NL 3.0 alongside Schema.org ([#2425](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2425)) ([ecf4716](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/ecf47166b9ecbe52053a08c96d8f75be09d61d85))
+* **requirements:** list optional DCAT distribution properties ([#2435](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2435)) ([ebe5670](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/ebe56704ef67c331d576a27de459c77a892abca1))
+* **requirements:** warn about every version 2.0 rule ([#2417](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2417)) ([8b1218d](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/8b1218d35d864667c03fd9dc1f6474e49796766c))
+
+
+### Bug Fixes
+
+* convert nested DCAT nodes and align the DCAT checks with Schema.org ([#2475](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2475)) ([ef1ce3a](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/ef1ce3ae9b46d26cc7c95053f3926b685dafff4c))
+* **requirements:** accept http:// and https:// Creative Commons IRIs, store http:// ([#2438](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2438)) ([4380e99](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/4380e993714b9d6b5adeafdfde27137a8bc598e4))
+* **requirements:** base ‘required’ and the cardinality on the shape with the sh:minCount ([#2436](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2436)) ([3af756b](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/3af756b005051017b9ec325d5fc7e393341dbf25))
+* **requirements:** correct the Google example, ISIL placeholders and deep-link scroll ([#2433](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2433)) ([38d959b](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/38d959b27d575698e755c67d755b84aed5b2071b))
+* **requirements:** say that dataset dates are about the data, not the description ([#2468](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2468)) ([29d6f08](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/29d6f08045310bc84a73e6b39370671b08108999))
+
+
+### Documentation
+
+* **requirements:** typo ([#2421](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2421)) ([34bb3c1](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/34bb3c15c2f784e8b6cfa0f12c8a42398a678c71))
+
 ## [1.15.1](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.15.0...requirements-1.15.1) (2026-10-13)
 
 
