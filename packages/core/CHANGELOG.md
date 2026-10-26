@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.3.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/core-0.2.0...core-0.3.0) (2026-10-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deps:** the GraphQL search API names the reference types after their targets. Agent becomes OrganizationReference and Vocabulary becomes TerminologySourceReference; the AgentFilter and VocabularyFilter inputs become OrganizationFilter and TerminologySourceFilter. Field names and shapes are unchanged, so only clients that name these types (fragment type conditions, typed variables) need to rename them.
+
+### build
+
+* **deps:** bump the lde group across 1 directory with 8 updates ([#2333](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2333)) ([10c45f2](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/10c45f21ed520b16b3d3ae6ae767c673ca74e2a5))
+
+
+### Features
+
+* **core:** export the duration of SPARQL updates per store ([#2456](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2456)) ([be8fd82](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/be8fd821b38e118b5dc93fcb5b22058a48346672))
+* **requirements:** define what makes a good organization IRI ([#2385](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2385)) ([b43b50a](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/b43b50ae6b644384231df51aeab4b0b2c4d886dd))
+* **requirements:** document DCAT-AP-NL 3.0 alongside Schema.org ([#2425](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2425)) ([ecf4716](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/ecf47166b9ecbe52053a08c96d8f75be09d61d85))
+* **requirements:** warn about every version 2.0 rule ([#2417](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2417)) ([8b1218d](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/8b1218d35d864667c03fd9dc1f6474e49796766c))
+
+
+### Bug Fixes
+
+* **api:** delete the validation report when a registration is deleted ([#2415](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2415)) ([6e09d29](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/6e09d295085b6ae667284dd433d893ddc73a59ac))
+* convert nested DCAT nodes and align the DCAT checks with Schema.org ([#2475](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2475)) ([ef1ce3a](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/ef1ce3ae9b46d26cc7c95053f3926b685dafff4c))
+* **core:** keep a registration described at its own URL on update ([#2447](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2447)) ([06da3bb](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/06da3bbd1fa844b432211adf2d0a46c8b01f7939))
+* **core:** rate only missing properties as missing ([8b1218d](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/8b1218d35d864667c03fd9dc1f6474e49796766c))
+* **core:** strip any Creative Commons deed and add the trailing license slash ([#2441](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2441)) ([2bbb6d0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/2bbb6d0f007700348d0ada32c8dc14510c14b2ee))
+* **crawler:** don’t re-create a registration deleted during its crawl ([#2429](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2429)) ([0100bed](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/0100bed0abea59fada7d90b17f7aa72c8f9d096e))
+* delete probe records before the dataset graphs that name them ([#2471](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2471)) ([95fa631](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/95fa63173ea08c6f0cc3309c6b9a61498cea66f1))
+* remove the datasets a registration no longer lists ([#2470](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2470)) ([dfd9ff7](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/dfd9ff76f5fcda6c139451fdf206168205eb6902))
+* **requirements:** accept http:// and https:// Creative Commons IRIs, store http:// ([#2438](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2438)) ([4380e99](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/4380e993714b9d6b5adeafdfde27137a8bc598e4))
+
 ## [0.2.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/core-0.1.0...core-0.2.0) (2026-10-13)
 
 
