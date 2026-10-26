@@ -1501,11 +1501,15 @@ dcat:DatasetShape
         sh:minCount 1 ;
         sh:description "De organisatie of persoon die verantwoordelijk is voor de publicatie van de dataset."@nl, "An entity (organisation or person) responsible for making the Dataset available."@en ;
         sh:message "Voeg een uitgever toe"@nl, "Add a publisher"@en ;
+    ],
+    [
+        sh:path dc:publisher ;
         sh:or (
             [ sh:class foaf:Organization ]
             [ sh:class foaf:Person ]
             [ sh:class foaf:Agent ]
         ) ;
+        sh:message "Gebruik een uitgever van type foaf:Organization, foaf:Person of foaf:Agent"@nl, "Use a publisher of type foaf:Organization, foaf:Person or foaf:Agent"@en ;
     ],
     [
         sh:path dc:publisher ;
@@ -1526,12 +1530,21 @@ dcat:DatasetShape
             sh:severity sh:Violation ;
         ] ;
         sh:description "De organisatie of persoon die verantwoordelijk is voor het creëren van de beschreven dataset."@nl, "An entity (organisation or person) responsible for producing the dataset."@en ;
+        sh:message "Voeg een maker toe"@nl, "Add a creator"@en ;
+    ],
+    [
+        sh:path dc:creator ;
         sh:or (
             [ sh:class foaf:Organization ]
             [ sh:class foaf:Person ]
             [ sh:class foaf:Agent ]
         ) ;
-        sh:message "Voeg een maker toe"@nl, "Add a creator"@en ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Gebruik een maker van type foaf:Organization, foaf:Person of foaf:Agent"@nl, "Use a creator of type foaf:Organization, foaf:Person or foaf:Agent"@en ;
     ],
     [
         sh:path dcat:contactPoint ;
@@ -1815,6 +1828,15 @@ dcat:DistributionShape
     [
         sh:path foaf:page ;
         sh:nodeKind sh:IRI ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
+    ] ,
+    [
+        sh:path foaf:page ;
         sh:pattern "^https://" ;
         sh:severity sh:Warning ;
         nde:futureChange [
