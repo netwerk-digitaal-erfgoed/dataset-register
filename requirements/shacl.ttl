@@ -282,7 +282,7 @@ The value MUST be the canonical URI of a license. For example, use `http://creat
             sh:minCount 0 ;
             sh:maxCount 1 ;
             sh:description "Versieaanduiding van de dataset, bijvoorbeeld een semantisch versienummer of een datum."@nl, "Version identifier of the dataset, such as a semantic version number or a date."@en ;
-            sh:message "Voeg een versie toe (bijv. 1.0 of 2.1) als je met meerdere versies van een datasetbeschrijving werkt"@nl, "Add a version (such as 1.0 or 2.1) if you work with multiple versions of the dataset description"@en ;
+            sh:message "Gebruik maximaal één versie (bijv. 1.0 of 2.1)"@nl, "Use at most one version (such as 1.0 or 2.1)"@en ;
         ] ,
         [
             a sh:PropertyShape ;
@@ -1499,11 +1499,6 @@ dcat:DatasetShape
     [
         sh:path dc:publisher ;
         sh:minCount 1 ;
-        sh:severity sh:Warning ;
-        nde:futureChange [
-            nde:version "2.0" ;
-            sh:severity sh:Violation ;
-        ] ;
         sh:description "De organisatie of persoon die verantwoordelijk is voor de publicatie van de dataset."@nl, "An entity (organisation or person) responsible for making the Dataset available."@en ;
         sh:message "Voeg een uitgever toe"@nl, "Add a publisher"@en ;
         sh:or (
@@ -1590,6 +1585,52 @@ dcat:DatasetShape
         sh:path dc:source ;
         sh:minCount 0 ;
         sh:description "De URI van een dataset waarop deze dataset is gebaseerd."@nl, "The URI of a dataset this dataset is based on."@en ;
+    ] ,
+    [
+        a sh:PropertyShape ;
+        sh:path dcat:version ;
+        sh:maxCount 1 ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:description "Versieaanduiding van de dataset, bijvoorbeeld een semantisch versienummer of een datum."@nl, "Version identifier of the dataset, such as a semantic version number or a date."@en ;
+        sh:message "Gebruik maximaal één versie"@nl, "Use at most one version"@en ;
+    ] ,
+    [
+        a sh:PropertyShape ;
+        sh:path dc:hasPart ;
+        sh:minCount 0 ;
+        sh:description "Verwijst naar een dataset die onderdeel is van deze dataset en ook als afzonderlijke dataset beschikbaar is."@nl, "Indicates a dataset that is part of this dataset and also available as a separate dataset."@en ;
+    ] ,
+    [
+        a sh:PropertyShape ;
+        sh:path dc:isReferencedBy ;
+        sh:minCount 0 ;
+        sh:description "Een citaat of verwijzing voor de dataset."@nl, "A citation or reference for the dataset."@en ;
+    ] ,
+    [
+        a sh:PropertyShape ;
+        sh:path dc:isPartOf ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:description "De HTTP IRI(s) van de datacatalogus of -catalogi waartoe de dataset behoort."@nl, "The HTTP IRI(s) of the data catalog(s) that the dataset belongs to."@en ;
+        sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
+    ] ,
+    [
+        sh:path dc:isPartOf ;
+        sh:pattern "^https?://" ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
     ] ;
     sh:targetClass dcat:Dataset ;
 .
@@ -1687,6 +1728,10 @@ dcat:DistributionShape
         sh:path dc:modified ;
         sh:description "De meest recente datum waarop de distributie is gewijzigd of aangepast."@nl, "The most recent date on which the distribution was changed or modified."@en ;
     ] ,
+    nde-dataset:DcIssuedDatatypeProperty,
+    nde-dataset:DcModifiedDatatypeProperty,
+    nde-dataset:DcIssuedIso8601Property,
+    nde-dataset:DcModifiedIso8601Property,
     [
         sh:path dcat:byteSize ;
         sh:description "Bestandsgrootte van de distributie in bytes."@nl, "Distribution file size in bytes."@en ;
@@ -1747,6 +1792,37 @@ dcat:DistributionShape
         sh:message "Vul de taal of talen in waarin de distributie beschikbaar is"@nl, "Enter the language or languages of the distribution"@en ;
     ] ,
     nde-dataset:DcLanguageAuthorityProperty ,
+    [
+        sh:path dcat:accessURL ;
+        sh:pattern "^https://" ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Gebruik een web-URL die begint met https://"@nl, "Use a web URL starting with https://"@en ;
+    ] ,
+    [
+        sh:path dcat:downloadURL ;
+        sh:pattern "^https://" ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Gebruik een web-URL die begint met https://"@nl, "Use a web URL starting with https://"@en ;
+    ] ,
+    [
+        sh:path foaf:page ;
+        sh:nodeKind sh:IRI ;
+        sh:pattern "^https://" ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Gebruik een web-URL die begint met https://"@nl, "Use a web URL starting with https://"@en ;
+    ] ,
     [
         sh:path dcat:accessURL ;
         nde-probe:probeReachable true ;

@@ -902,12 +902,17 @@ describe('Validator', () => {
     const report = await validateTurtle(`
       @prefix dcat: <http://www.w3.org/ns/dcat#> .
       @prefix dct: <http://purl.org/dc/terms/> .
+      @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 
       <https://example.com/dataset> a dcat:Dataset ;
         dct:title "Dataset"@en ;
         dct:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
         dct:language "nl" ;
+        dct:publisher <https://example.com/publisher> ;
         dcat:distribution <https://example.com/distribution> .
+
+      <https://example.com/publisher> a foaf:Organization ;
+        foaf:name "Publisher"@en .
 
       <https://example.com/distribution> a dcat:Distribution ;
         dcat:accessURL <https://example.com/dataset.ttl> ;
@@ -924,6 +929,19 @@ describe('Validator', () => {
         message.startsWith('Use a language URI from the EU list'),
       ),
     ).toHaveLength(2);
+  });
+
+  it('rejects a DCAT description without a publisher', async () => {
+    const report = await validateTurtle(`
+      @prefix dcat: <http://www.w3.org/ns/dcat#> .
+      @prefix dct: <http://purl.org/dc/terms/> .
+
+      <https://example.com/dataset> a dcat:Dataset ;
+        dct:title "Dataset"@en ;
+        dct:license <https://creativecommons.org/publicdomain/zero/1.0/> .
+    `);
+
+    expect(report.state).toEqual('invalid');
   });
 });
 
