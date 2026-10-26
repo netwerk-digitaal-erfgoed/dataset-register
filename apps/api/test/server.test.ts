@@ -32,8 +32,9 @@ let httpServer: FastifyInstance<Server>;
 const registrationStore = new MockRegistrationStore();
 const datasetStore = new MockDatasetStore();
 // A registration runs after the response: fetching, converting and validating
-// the description can take over a second on a CI runner.
-const registrationTimeout = 5000;
+// the description can take over a second on a CI runner. Waiting for it must
+// end within Vitest’s 5 second test timeout.
+const registrationTimeout = 4000;
 
 function remover(
   registrationStore: RegistrationStore,
