@@ -679,6 +679,237 @@ describe('Fetch', () => {
     ).toBe(true);
   });
 
+  describe('nested DCAT nodes', () => {
+    const fetchNestedNodes = async () => {
+      nock('https://example.com')
+        .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+        .get('/dcat-nested-nodes')
+        .reply(200, await file('dataset-dcat-valid-nested-nodes.jsonld'));
+      const datasets = await fetchDatasetsAsArray(
+        new URL('https://example.com/dcat-nested-nodes'),
+      );
+      return new Map(
+        datasets.map((dataset) => [
+          [...dataset.match(null, rdf('type'), dcat('Dataset'))][0].subject
+            .value,
+          dataset,
+        ]),
+      );
+    };
+    const publisherUri = factory.namedNode('https://example.com/id/publisher');
+    const creatorUri = factory.namedNode('https://example.com/id/creator');
+
+    it('reads dct:creator from the dataset itself', async () => {
+      const datasets = await fetchNestedNodes();
+      const withCreator = factory.namedNode(
+        'https://example.com/id/dataset/with-creator',
+      );
+      const withoutCreator = factory.namedNode(
+        'https://example.com/id/dataset/without-creator',
+      );
+
+      const creators = (iri: typeof withCreator) =>
+        [...datasets.get(iri.value)!.match(iri, dct('creator'))].map(
+          (quad) => quad.object.value,
+        );
+      expect(creators(withCreator)).toEqual([creatorUri.value]);
+      expect(creators(withoutCreator)).toEqual([]);
+      expect(
+        datasets
+          .get(withCreator.value)!
+          .has(
+            factory.quad(
+              creatorUri,
+              foaf('name'),
+              factory.literal('Creator', 'en'),
+            ),
+          ),
+      ).toBe(true);
+      expect(
+        datasets
+          .get(withoutCreator.value)!
+          .has(factory.quad(withoutCreator, dct('publisher'), publisherUri)),
+      ).toBe(true);
+    });
+
+    it('keeps the start and end date of a dct:PeriodOfTime and leaves out one without', async () => {
+      const datasets = await fetchNestedNodes();
+      const datasetUri = factory.namedNode(
+        'https://example.com/id/dataset/with-creator',
+      );
+      const dataset = datasets.get(datasetUri.value)!;
+      const temporals = [...dataset.match(datasetUri, dct('temporal'))];
+      const xsdDate = factory.namedNode(
+        'http://www.w3.org/2001/XMLSchema#date',
+      );
+
+      expect(temporals).toHaveLength(1);
+      const [temporal] = temporals;
+      expect(temporal.object.termType).toBe('BlankNode');
+      const period = temporal.object as BlankNode;
+      expect(
+        dataset.has(factory.quad(period, rdf('type'), dct('PeriodOfTime'))),
+      ).toBe(true);
+      expect(
+        dataset.has(
+          factory.quad(
+            period,
+            dcat('startDate'),
+            factory.literal('1800-01-01', xsdDate),
+          ),
+        ),
+      ).toBe(true);
+      expect(
+        dataset.has(
+          factory.quad(
+            period,
+            dcat('endDate'),
+            factory.literal('1900-12-31', xsdDate),
+          ),
+        ),
+      ).toBe(true);
+    });
+
+    it('reads the media type from a dct:format literal when dcat:mediaType is absent', async () => {
+      const datasets = await fetchNestedNodes();
+      const dataset = datasets.get(
+        'https://example.com/id/dataset/with-creator',
+      )!;
+      const formatLiteral = factory.namedNode(
+        'https://example.com/id/distribution/format-literal',
+      );
+
+      expect(
+        [...dataset.match(formatLiteral, dcat('mediaType'))].map(
+          (quad) => quad.object.value,
+        ),
+      ).toEqual([
+        'https://www.iana.org/assignments/media-types/application/n-triples',
+      ]);
+      expect(
+        dataset.has(
+          factory.quad(
+            formatLiteral,
+            dcat('compressFormat'),
+            factory.namedNode(
+              'https://www.iana.org/assignments/media-types/application/gzip',
+            ),
+          ),
+        ),
+      ).toBe(true);
+    });
+
+    it('keeps an EU file type in dct:format and prefers dcat:mediaType', async () => {
+      const datasets = await fetchNestedNodes();
+      const dataset = datasets.get(
+        'https://example.com/id/dataset/with-creator',
+      )!;
+      const formatIri = factory.namedNode(
+        'https://example.com/id/distribution/format-iri',
+      );
+
+      expect(
+        [...dataset.match(formatIri, dcat('mediaType'))].map(
+          (quad) => quad.object.value,
+        ),
+      ).toEqual([
+        'https://www.iana.org/assignments/media-types/application/ld+json',
+      ]);
+      expect(
+        [...dataset.match(formatIri, dct('format'))].map(
+          (quad) => quad.object.value,
+        ),
+      ).toEqual([
+        'http://publications.europa.eu/resource/authority/file-type/JSON_LD',
+      ]);
+    });
+
+    it('reads the media type from dct:format when dcat:mediaType has none', async () => {
+      const datasets = await fetchNestedNodes();
+      const dataset = datasets.get(
+        'https://example.com/id/dataset/with-creator',
+      )!;
+      const mediaTypes = (distribution: string) =>
+        [
+          ...dataset.match(factory.namedNode(distribution), dcat('mediaType')),
+        ].map((quad) => quad.object.value);
+
+      expect(
+        mediaTypes('https://example.com/id/distribution/format-iana-iri'),
+      ).toEqual(['https://www.iana.org/assignments/media-types/text/turtle']);
+      expect(
+        dataset.match(
+          factory.namedNode(
+            'https://example.com/id/distribution/format-iana-iri',
+          ),
+          dct('format'),
+        ).size,
+      ).toBe(0);
+      expect(
+        mediaTypes('https://example.com/id/distribution/invalid-media-type'),
+      ).toEqual([
+        'https://www.iana.org/assignments/media-types/application/n-quads',
+      ]);
+    });
+
+    it('leaves out a dct:isReferencedBy blank node', async () => {
+      const datasets = await fetchNestedNodes();
+      const datasetUri = factory.namedNode(
+        'https://example.com/id/dataset/with-creator',
+      );
+
+      expect(
+        [
+          ...datasets
+            .get(datasetUri.value)!
+            .match(datasetUri, dct('isReferencedBy')),
+        ].map((quad) => quad.object.value),
+      ).toEqual(['https://doi.org/10.1145/3604951.3605520']);
+    });
+  });
+
+  describe('nested Schema.org nodes', () => {
+    const fetchNestedNodes = async () => {
+      nock('https://example.com')
+        .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+        .get('/schema-org-nested-nodes')
+        .reply(200, await file('dataset-schema-org-valid-nested-nodes.jsonld'));
+      const [dataset] = await fetchDatasetsAsArray(
+        new URL('https://example.com/schema-org-nested-nodes'),
+      );
+      return dataset;
+    };
+    const datasetUri = factory.namedNode(
+      'https://example.com/id/dataset/schema-org',
+    );
+
+    it('stores the value of a schema:PropertyValue publisher identifier', async () => {
+      const dataset = await fetchNestedNodes();
+
+      expect(
+        [
+          ...dataset.match(
+            factory.namedNode('https://example.com/id/publisher'),
+            dct('identifier'),
+          ),
+        ].map(({ object }) => [object.termType, object.value]),
+      ).toEqual([['Literal', 'NL-HaKB']]);
+    });
+
+    it('stores a cited work by its URL and keeps a text citation', async () => {
+      const dataset = await fetchNestedNodes();
+
+      expect(
+        [...dataset.match(datasetUri, dct('isReferencedBy'))]
+          .map(({ object }) => [object.termType, object.value])
+          .sort(),
+      ).toEqual([
+        ['Literal', 'A citation as text'],
+        ['NamedNode', 'https://doi.org/10.1145/3604951.3605520'],
+      ]);
+    });
+  });
+
   it('preserves dct:accrualPeriodicity from Schema.org input', async () => {
     const response = await file(
       'dataset-schema-org-valid-accrual-periodicity.jsonld',

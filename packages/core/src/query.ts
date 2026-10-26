@@ -2,6 +2,9 @@ import factory from 'rdf-ext';
 import {
   absoluteIri,
   bindIriLicense,
+  bindNormalizedMediaType,
+  isIanaMediaType,
+  isMediaType,
   compressFormat,
   convertToIri,
   convertToXsdDate,
@@ -26,6 +29,9 @@ const source = 'source';
 const keyword = 'keyword';
 const spatialCoverage = 'spatialCoverage';
 const temporalCoverage = 'temporalCoverage';
+const periodOfTime = 'periodOfTime';
+const periodOfTimeStart = 'periodOfTime_startDate';
+const periodOfTimeEnd = 'periodOfTime_endDate';
 const genre = 'genre';
 const about = 'about';
 const mainEntityOfPage = 'mainEntityOfPage';
@@ -51,6 +57,7 @@ const publisherSameAs = 'publisher_sameAs';
 const distributionUrl = 'distribution_url';
 const distributionDocumentation = 'distribution_documentation';
 const distributionMediaType = 'distribution_mediaType';
+const distributionFormat = 'distribution_format';
 const distributionConformsTo = 'distribution_conformsTo';
 const distributionConformsToProtocol = 'distribution_conformsTo_protocol';
 const distributionConformsToSparql = 'distribution_conformsTo_sparql';
@@ -196,7 +203,19 @@ function schemaOrgMultiValuedUnions(prefix: string): string {
       includedInDataCatalog,
     ),
     multiValuedUnion(type, `${prefix}:hasPart`, hasPart),
-    multiValuedUnion(type, `${prefix}:citation`, isReferencedBy),
+    // A cited CreativeWork node would be stored without its properties: use its
+    // URL instead, and drop it when it has none.
+    multiValuedUnion(
+      type,
+      `${prefix}:citation`,
+      `${isReferencedBy}Raw`,
+      `OPTIONAL { ?${isReferencedBy}Raw ${prefix}:url ?${isReferencedBy}Url . }
+        BIND(COALESCE(
+          IF(isBlank(?${isReferencedBy}Raw), ?unbound, ?${isReferencedBy}Raw),
+          IF(isIRI(?${isReferencedBy}Url), ?${isReferencedBy}Url, ?unbound),
+          IF(REGEX(STR(?${isReferencedBy}Url), "^https?://"), IRI(?${isReferencedBy}Url), ?unbound)
+        ) AS ?${isReferencedBy})`,
+    ),
     multiValuedUnion(type, `${prefix}:mainEntityOfPage`, mainEntityOfPage),
   ].join('\n      ');
 }
@@ -218,11 +237,28 @@ function dcatMultiValuedUnions(): string {
       spatialCoverage,
       `FILTER(!isBlank(?${spatialCoverage}))`,
     ),
-    multiValuedUnion(type, `dct:temporal`, temporalCoverage),
+    // A blank node is stored without its properties, except a PeriodOfTime
+    // with DCAT dates, which gets its own branch below: leave the others out.
+    multiValuedUnion(
+      type,
+      `dct:temporal`,
+      temporalCoverage,
+      `FILTER(!isBlank(?${temporalCoverage}) || EXISTS { ?${temporalCoverage} dcat:startDate|dcat:endDate ?periodOfTimeDate })`,
+    ),
     multiValuedUnion(type, `dcat:version`, version),
     multiValuedUnion(type, `dct:isPartOf`, includedInDataCatalog),
-    multiValuedUnion(type, `dct:hasPart`, hasPart),
-    multiValuedUnion(type, `dct:isReferencedBy`, isReferencedBy),
+    multiValuedUnion(
+      type,
+      `dct:hasPart`,
+      hasPart,
+      `FILTER(!isBlank(?${hasPart}))`,
+    ),
+    multiValuedUnion(
+      type,
+      `dct:isReferencedBy`,
+      isReferencedBy,
+      `FILTER(!isBlank(?${isReferencedBy}))`,
+    ),
     multiValuedUnion(type, `dcat:landingPage`, mainEntityOfPage),
     multiValuedUnion(type, `dcat:theme`, 'theme'),
   ].join('\n      ');
@@ -269,6 +305,10 @@ export const constructQuery = `
       dcat:contactPoint ?${contactPoint} ;
       dcat:distribution ?${distribution} .
 
+    ?${periodOfTime} a dct:PeriodOfTime ;
+      dcat:startDate ?${periodOfTimeStart} ;
+      dcat:endDate ?${periodOfTimeEnd} .
+
     ?${contactPoint} a vcard:Kind ;
       vcard:fn ?${contactPointName} ;
       vcard:hasEmail ?${contactPointEmail} .
@@ -287,6 +327,7 @@ export const constructQuery = `
       dcat:downloadURL ?${distributionDownloadUrl} ;
       dcat:mediaType ?${distributionMediaTypeForDownload} ;
       dcat:compressFormat ?${distributionCompressFormatForDownload} ;
+      dct:format ?${distributionFormat} ;
       dct:conformsTo ?${distributionConformsTo} ;
       dct:conformsTo ?${distributionConformsToSparql} ;
       dct:issued ?${distributionDatePublished} ;
@@ -350,10 +391,14 @@ export const constructQuery = `
         OPTIONAL { ?${publisher} dct:identifier ?${publisherIdentifier} ; }
         OPTIONAL { ?${publisher} owl:sameAs ?${publisherSameAs} ; }
 
+        # Its own class variable: sharing ?foafAgentClass would require the
+        # creator to have a class of the publisher.
         OPTIONAL {
-          ?${creator} a ?foafAgentClass ;
+          ?${dataset} dct:creator ?${creator} .
+          ?${creator} a ?creatorAgentClass ;
             a ?${creatorType} ;
             foaf:name ?${creatorName} .
+          VALUES ?creatorAgentClass { foaf:Organization foaf:Person foaf:Agent }
         }
           
         VALUES ?foafAgentClass { foaf:Organization foaf:Person foaf:Agent }
@@ -368,8 +413,25 @@ export const constructQuery = `
           BIND(COALESCE(${absoluteIri(distributionUrl + 'AccessRaw')}, ${absoluteIri(distributionUrl + 'DownloadRaw')}) AS ?${distributionUrl})
           FILTER(BOUND(?${distributionUrl}))
           OPTIONAL { ?${distribution} dct:license ${normalizeLicense(distributionLicense + 'Provided')} }
+          # The shapes accept dct:format in place of dcat:mediaType, so fall back
+          # to a media type in dct:format when dcat:mediaType has none. Other
+          # IRIs there, such as EU file types, are kept as dct:format.
           OPTIONAL {
-            ?${distribution} dcat:mediaType ${normalizeMediaType(distributionMediaType)} .
+            {
+              ?${distribution} dcat:mediaType ?${distributionMediaType}Raw .
+            } UNION {
+              ?${distribution} dct:format ?${distributionMediaType}Raw .
+              FILTER(${isIanaMediaType(distributionMediaType + 'Raw')})
+              FILTER NOT EXISTS {
+                ?${distribution} dcat:mediaType ?declaredMediaType .
+                FILTER(${isMediaType('declaredMediaType')})
+              }
+            }
+            ${bindNormalizedMediaType(distributionMediaType)}
+          }
+          OPTIONAL {
+            ?${distribution} dct:format ?${distributionFormat} .
+            FILTER(isIRI(?${distributionFormat}) && !${isIanaMediaType(distributionFormat)})
           }
           OPTIONAL {
             ?${distribution} dcat:compressFormat ${normalizeMediaType(distributionCompressFormatDeclared)} .
@@ -440,6 +502,14 @@ export const constructQuery = `
       ${schemaOrgContactPointUnion('httpSchema')}
       UNION {
         ?${dataset} a dcat:Dataset .
+        ?${dataset} dct:temporal ?${periodOfTime} .
+        FILTER(!isLiteral(?${periodOfTime}))
+        OPTIONAL { ?${periodOfTime} dcat:startDate ?${periodOfTimeStart} . }
+        OPTIONAL { ?${periodOfTime} dcat:endDate ?${periodOfTimeEnd} . }
+        FILTER(BOUND(?${periodOfTimeStart}) || BOUND(?${periodOfTimeEnd}))
+      }
+      UNION {
+        ?${dataset} a dcat:Dataset .
         ?${dataset} dcat:contactPoint ?${contactPoint} .
         OPTIONAL { ?${contactPoint} vcard:fn ?${contactPointName} . }
         OPTIONAL { ?${contactPoint} vcard:hasEmail ?${contactPointEmail} . }
@@ -489,7 +559,13 @@ function schemaOrgQuery(prefix: string): string {
       ?${publisher} a ?publisherTypeRaw ;
         ${prefix}:name ?${publisherName} .
       OPTIONAL { ?${publisher} ${prefix}:alternateName ?${publisherAlternateName} . }
-      OPTIONAL { ?${publisher} ${prefix}:identifier ?${publisherIdentifier} . }
+      # The shapes accept a schema:PropertyValue (such as an ISIL with its
+      # propertyID), whose schema:value is the identifier itself.
+      OPTIONAL {
+        ?${publisher} ${prefix}:identifier ?${publisherIdentifier}Raw .
+        OPTIONAL { ?${publisherIdentifier}Raw ${prefix}:value ?${publisherIdentifier}Value . }
+        BIND(COALESCE(?${publisherIdentifier}Value, IF(isBlank(?${publisherIdentifier}Raw), ?unbound, ?${publisherIdentifier}Raw)) AS ?${publisherIdentifier})
+      }
       OPTIONAL {
         ?${publisher} ${prefix}:sameAs ?${publisherSameAs} .
         FILTER(isIRI(?${publisherSameAs}))
