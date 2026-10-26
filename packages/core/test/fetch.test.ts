@@ -13,7 +13,7 @@ import nock from 'nock';
 import { dcat, dct, foaf, odrl, rdf } from '../src/query.js';
 import factory from 'rdf-ext';
 import { dereference, file, validSchemaOrgDataset } from '../src/test-utils.js';
-import type { BlankNode, Literal } from '@rdfjs/types';
+import type { BlankNode, Literal, NamedNode } from '@rdfjs/types';
 
 describe('Fetch', () => {
   it('extracts title, publisher, and identifier for a foaf:Agent publisher', async () => {
@@ -708,7 +708,7 @@ describe('Fetch', () => {
         'https://example.com/id/dataset/without-creator',
       );
 
-      const creators = (iri: typeof withCreator) =>
+      const creators = (iri: NamedNode) =>
         [...datasets.get(iri.value)!.match(iri, dct('creator'))].map(
           (quad) => quad.object.value,
         );
