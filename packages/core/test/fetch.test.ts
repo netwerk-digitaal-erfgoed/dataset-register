@@ -883,7 +883,7 @@ describe('Fetch', () => {
       'https://example.com/id/dataset/schema-org',
     );
 
-    it('stores the value of a schema:PropertyValue publisher identifier', async () => {
+    it('stores the value of a schema:PropertyValue publisher identifier, not its node', async () => {
       const dataset = await fetchNestedNodes();
 
       expect(

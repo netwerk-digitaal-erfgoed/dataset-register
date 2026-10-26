@@ -13,12 +13,19 @@
       "@value": "Publisher",
       "@language": "en"
     },
-    "identifier": {
-      "@type": "PropertyValue",
-      "propertyID": "ISIL",
-      "value": "NL-HaKB",
-      "@id": "https://example.com/id/identifier/isil"
-    }
+    "identifier": [
+      {
+        "@type": "PropertyValue",
+        "propertyID": "ISIL",
+        "value": "NL-HaKB",
+        "@id": "https://example.com/id/identifier/isil"
+      },
+      {
+        "@type": "PropertyValue",
+        "propertyID": "KvK",
+        "@id": "https://example.com/id/identifier/kvk"
+      }
+    ]
   },
   "citation": [
     {

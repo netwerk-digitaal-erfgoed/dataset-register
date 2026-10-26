@@ -150,12 +150,6 @@ export const isMediaType = (variable: string) =>
 export const isIanaMediaType = (variable: string) =>
   `((isIRI(?${variable}) && REGEX(STR(?${variable}), "${ianaMediaTypeIri}")) || (isLiteral(?${variable}) && REGEX(${withoutParametersAndCompression(variable)}, "${mediaTypePattern}")))`;
 
-const ianaMediaTypeIri =
-  '^https?://www\\\\.iana\\\\.org/assignments/media-types/';
-
-const withoutParametersAndCompression = (variable: string) =>
-  `REPLACE(REPLACE(STR(?${variable}), ";.*$", ""), "\\\\+g?zip$", "")`;
-
 /**
  * The BIND half of normalizeMediaType(), for a ?variableRaw that a pattern other
  * than a single triple binds.
@@ -222,3 +216,9 @@ export const compressFormat = (
     } AS ?${compressFormatVariable}
   )`;
 };
+
+const ianaMediaTypeIri =
+  '^https?://www\\\\.iana\\\\.org/assignments/media-types/';
+
+const withoutParametersAndCompression = (variable: string) =>
+  `REPLACE(REPLACE(STR(?${variable}), ";.*$", ""), "\\\\+g?zip$", "")`;

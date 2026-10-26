@@ -383,26 +383,19 @@ export const constructQuery = `
         }
         BIND(COALESCE(?datasetLicenseExplicit, ?distributionLicenseSample) AS ?${license})
 
-        ?${publisher} a ?foafAgentClass ;
-          a ?${publisherType} ;
+        ?${publisher} a ?${publisherType} ;
           foaf:name ?${publisherName} .
+        # A check rather than a join, so a publisher with several of these
+        # classes does not multiply the rows.
+        FILTER EXISTS {
+          ?${publisher} a ?foafAgentClass .
+          VALUES ?foafAgentClass { foaf:Organization foaf:Person foaf:Agent }
+        }
 
         OPTIONAL { ?${publisher} foaf:nick ?${publisherAlternateName} ; }
         OPTIONAL { ?${publisher} dct:identifier ?${publisherIdentifier} ; }
         OPTIONAL { ?${publisher} owl:sameAs ?${publisherSameAs} ; }
 
-        # Its own class variable: sharing ?foafAgentClass would require the
-        # creator to have a class of the publisher.
-        OPTIONAL {
-          ?${dataset} dct:creator ?${creator} .
-          ?${creator} a ?creatorAgentClass ;
-            a ?${creatorType} ;
-            foaf:name ?${creatorName} .
-          VALUES ?creatorAgentClass { foaf:Organization foaf:Person foaf:Agent }
-        }
-          
-        VALUES ?foafAgentClass { foaf:Organization foaf:Person foaf:Agent }
-  
         OPTIONAL {
           ?${dataset} dcat:distribution ?${distribution} .
           ?${distribution} a dcat:Distribution .
@@ -509,6 +502,16 @@ export const constructQuery = `
         FILTER(BOUND(?${periodOfTimeStart}) || BOUND(?${periodOfTimeEnd}))
       }
       UNION {
+        ?${dataset} a dcat:Dataset ;
+          dct:creator ?${creator} .
+        ?${creator} a ?${creatorType} ;
+          foaf:name ?${creatorName} .
+        FILTER EXISTS {
+          ?${creator} a ?creatorAgentClass .
+          VALUES ?creatorAgentClass { foaf:Organization foaf:Person foaf:Agent }
+        }
+      }
+      UNION {
         ?${dataset} a dcat:Dataset .
         ?${dataset} dcat:contactPoint ?${contactPoint} .
         OPTIONAL { ?${contactPoint} vcard:fn ?${contactPointName} . }
@@ -560,11 +563,15 @@ function schemaOrgQuery(prefix: string): string {
         ${prefix}:name ?${publisherName} .
       OPTIONAL { ?${publisher} ${prefix}:alternateName ?${publisherAlternateName} . }
       # The shapes accept a schema:PropertyValue (such as an ISIL with its
-      # propertyID), whose schema:value is the identifier itself.
+      # propertyID), whose schema:value is the identifier itself. Without a
+      # value, its node is no identifier.
       OPTIONAL {
         ?${publisher} ${prefix}:identifier ?${publisherIdentifier}Raw .
         OPTIONAL { ?${publisherIdentifier}Raw ${prefix}:value ?${publisherIdentifier}Value . }
-        BIND(COALESCE(?${publisherIdentifier}Value, IF(isBlank(?${publisherIdentifier}Raw), ?unbound, ?${publisherIdentifier}Raw)) AS ?${publisherIdentifier})
+        BIND(COALESCE(
+          ?${publisherIdentifier}Value,
+          IF(isBlank(?${publisherIdentifier}Raw) || EXISTS { ?${publisherIdentifier}Raw a ${prefix}:PropertyValue }, ?unbound, ?${publisherIdentifier}Raw)
+        ) AS ?${publisherIdentifier})
       }
       OPTIONAL {
         ?${publisher} ${prefix}:sameAs ?${publisherSameAs} .
