@@ -79,7 +79,7 @@
                     {%- endcase -%}
                 {%- endif -%}
             </td>
-            {% render 'cardinality-and-usage', property: property, nodeShape: nodeShape, optional: 'Recommended' -%}
+            {% render 'nde-cardinality-and-usage', property: property, nodeShape: nodeShape, optional: 'Recommended' -%}
         </tr>
         {% endfor %}
     </tbody>
