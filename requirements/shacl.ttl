@@ -94,11 +94,15 @@ nde-dataset:DatacatalogShape
         ] ,
         [
             sh:path schema:dataset ;
-            sh:class schema:Dataset ;
             sh:minCount 1 ;
             sh:description "Dataset(s) in de datacatalogus"@nl, "Dataset(s) in the data catalog"@en ;
-            sh:message "Voeg minimaal één datasetbeschrijving toe aan de datacatalogus"@nl, "Add at least one dataset description to the data catalog"@en ;
+            sh:message "Voeg minimaal één datasetbeschrijving toe aan de datacatalogus. Een datacatalogus bestaat namelijk uit datasetbeschrijvingen"@nl, "Add at least one dataset description to the data catalog. A data catalog consists of dataset descriptions"@en ;
+        ] ,
+        [
+            sh:path schema:dataset ;
+            sh:class schema:Dataset ;
             sh:severity sh:Warning ;
+            sh:message "Gebruik een dataset van type schema:Dataset"@nl, "Use a dataset of type schema:Dataset"@en ;
         ]
 .
 
@@ -297,6 +301,12 @@ The value MUST be the canonical URI of a license. For example, use `http://creat
             sh:minCount 0 ;
             sh:description """De natuurlijke taal van de tekstuele waardes in de dataset – dus van de metadata-records zelf (titels, omschrijvingen enzovoort). Gebruik een BCP 47-taalcode, bijv. `nl` of `en`."""@nl, """The natural language of the textual values within the dataset – that is, of the metadata records themselves (titles, descriptions, and so on). Use a BCP 47 language code, such as `nl` or `en`."""@en ;
             sh:message "Gebruik een BCP 47-taalcode, bijv. nl of en"@nl, "Use a BCP 47 language code, such as nl or en"@en ;
+        ] ,
+        [
+            sh:path schema:inLanguage ;
+            sh:minCount 1 ;
+            sh:severity sh:Info ;
+            sh:message "Vul de taal of talen in"@nl, "Enter the language or languages of the dataset"@en ;
         ] ,
         [
             a sh:PropertyShape ;
@@ -554,7 +564,19 @@ nde-dataset:DistributionShape
             sh:description "Beschrijving van de distributie"@nl, "Distribution description"@en ;
             sh:message "Gebruik een waarde van type xsd:string of rdf:langString"@nl, "Use a value of type xsd:string or rdf:langString"@en ;
         ] ,
-        nde-dataset:SchemaDescriptionUniqueLangProperty,
+        # A warning rather than nde-dataset:SchemaDescriptionUniqueLangProperty, because
+        # registered DCAT distributions repeat a language in dc:description, and both
+        # vocabularies hold distributions to the same rules.
+        [
+            sh:path schema:description ;
+            sh:uniqueLang true ;
+            sh:severity sh:Warning ;
+            nde:futureChange [
+                nde:version "2.0" ;
+                sh:severity sh:Violation ;
+            ] ;
+            sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
+        ] ,
         [
             a sh:PropertyShape ;
             sh:path schema:datePublished ;
@@ -597,6 +619,24 @@ nde-dataset:DistributionShape
             sh:maxCount 1 ;
             sh:severity sh:Warning ;
             sh:message "Gebruik maximaal één licentie"@nl, "Use at most one license"@en ;
+        ] ,
+        [
+            sh:path schema:license ;
+            sh:node nde-dataset:LicenseCreativeCommonsTrailingSlashShape ;
+            sh:severity sh:Warning ;
+            sh:message "Eindig de Creative Commons-licentie-URI met een slash"@nl, "End the Creative Commons license URI with a slash"@en ;
+        ] ,
+        [
+            sh:path schema:license ;
+            sh:node nde-dataset:LicenseNotOpenDefinitionShape ;
+            sh:severity sh:Warning ;
+            sh:message "Gebruik de Creative Commons-URI zelf, geen opendefinition.org-alias"@nl, "Use the Creative Commons URI directly, not an opendefinition.org alias"@en ;
+        ] ,
+        [
+            sh:path schema:license ;
+            sh:node nde-dataset:LicenseOpenDataCommonsShape ;
+            sh:severity sh:Warning ;
+            sh:message "Gebruik de officiële Open Data Commons-licentie-URI met versienummer, bijv. http://opendatacommons.org/licenses/odbl/1.0/"@nl, "Use an official Open Data Commons licence URI with a version number, such as http://opendatacommons.org/licenses/odbl/1.0/"@en ;
         ] ,
         [
             a sh:PropertyShape ;
@@ -751,7 +791,7 @@ nde-dataset:AgentShape
             ) ;
             sh:minCount 0 ;
             sh:description "Alternatieve namen, zoals een afkorting waaronder de organisatie bekendstaat."@nl, "Alternative names such as an abbreviation that the organization is known under."@en ;
-            sh:message "Gebruik een waarde van type rdf:langString en geef de taal aan (bijv. nl of en)"@nl, "Use a value of type rdf:langString and specify the language (such as nl or en)"@en ;
+            sh:message "Gebruik een waarde van type xsd:string of rdf:langString"@nl, "Use a value of type xsd:string or rdf:langString"@en ;
         ] ,
         [
             sh:path schema:alternateName ;
@@ -1471,14 +1511,14 @@ dcat:DatasetShape
         sh:path dc:temporal ;
         sh:minCount 1 ;
         sh:severity sh:Info ;
-        sh:description "De tijdsperiode waar de dataset betrekking op heeft. De waarde moet een ISO 8601-datum of -tijdsinterval zijn (bijv. ‘2011’, ‘2011/2012’, ‘1889-06/07’ voor een verkorte notatie, ‘-0431/-0404’ voor v.Chr.-dateringen, of ‘1440/..’ voor een open einde), of een HTTP(S)-URI."@nl, "The time period to which the dataset pertains. The value must be an ISO 8601 date or time interval (such as ‘2011’, ‘2011/2012’, ‘1889-06/07’ for shortened notation, ‘-0431/-0404’ for BCE dates, or ‘1440/..’ for an open-ended range), or an HTTP(S) URI."@en ;
+        sh:description "De tijdsperiode waar de dataset betrekking op heeft. De waarde moet een ISO 8601-datum of -tijdsinterval zijn (bijv. ‘2011’, ‘2011/2012’, ‘1889-06/07’ voor een verkorte notatie, ‘-0431/-0404’ of ‘-13000/-10000’ voor v.Chr.-dateringen, of ‘1440/..’ voor een open einde), of een HTTP(S)-URI."@nl, "The time period to which the dataset pertains. The value must be an ISO 8601 date or time interval (such as ‘2011’, ‘2011/2012’, ‘1889-06/07’ for shortened notation, ‘-0431/-0404’ or ‘-13000/-10000’ for BCE dates, or ‘1440/..’ for an open-ended range), or an HTTP(S) URI."@en ;
         sh:message "Voeg een tijdsaanduiding toe"@nl, "Add temporal coverage"@en ;
     ],
     [
         sh:path dc:temporal ;
         sh:or (
             [ sh:nodeKind sh:IRI ; sh:pattern "^https?://" ]
-            [ sh:pattern "^(-?\\d{4}(-\\d{2}(-\\d{2}(T\\d{2}:\\d{2}(:\\d{2})?)?)?)?|\\.\\.)(/(-?\\d{4}(-\\d{2}(-\\d{2}(T\\d{2}:\\d{2}(:\\d{2})?)?)?)?|\\d{2}(-\\d{2})?|\\.\\.))?$" ]
+            [ sh:pattern "^(-?\\d{4,}(-\\d{2}(-\\d{2}(T\\d{2}:\\d{2}(:\\d{2})?)?)?)?|\\.\\.)(/(-?\\d{4,}(-\\d{2}(-\\d{2}(T\\d{2}:\\d{2}(:\\d{2})?)?)?)?|\\d{2}(-\\d{2})?|\\.\\.))?$" ]
             [ sh:class dc:PeriodOfTime ]
         ) ;
         sh:severity sh:Warning ;
@@ -1514,11 +1554,6 @@ dcat:DatasetShape
     [
         sh:path dc:publisher ;
         sh:maxCount 1 ;
-        sh:severity sh:Warning ;
-        nde:futureChange [
-            nde:version "2.0" ;
-            sh:severity sh:Violation ;
-        ] ;
         sh:message "Gebruik maximaal één uitgever"@nl, "Use at most one publisher"@en ;
     ],
     [
@@ -1590,8 +1625,13 @@ dcat:DatasetShape
         sh:path dcat:landingPage ;
         sh:minCount 0 ;
         sh:nodeKind sh:IRI ;
-        sh:pattern "^https?://" ;
         sh:description """Een webpagina die toegang biedt tot de dataset, zijn distributies of aanvullende informatie. Niet nodig als de URI van de dataset zelf al naar een HTML-pagina leidt. De menselijk leesbare beschrijving MOET consistent zijn met en minstens alle details (zoals distributies) uit de RDF-datasetbeschrijving bevatten."""@nl, """A web page that provides access to the Dataset, its Distributions and/or additional information. Not needed when the dataset URI itself resolves to an HTML page. The human-readable description MUST be consistent with and include at least all details (such as distributions) from the RDF dataset description."""@en ;
+        sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
+    ] ,
+    [
+        sh:path dcat:landingPage ;
+        sh:pattern "^https://" ;
+        sh:message "Gebruik een web-URL die begint met https://"@nl, "Use a web URL starting with https://"@en ;
     ] ,
     [
         a sh:PropertyShape ;
@@ -1603,11 +1643,6 @@ dcat:DatasetShape
         a sh:PropertyShape ;
         sh:path dcat:version ;
         sh:maxCount 1 ;
-        sh:severity sh:Warning ;
-        nde:futureChange [
-            nde:version "2.0" ;
-            sh:severity sh:Violation ;
-        ] ;
         sh:description "Versieaanduiding van de dataset, bijvoorbeeld een semantisch versienummer of een datum."@nl, "Version identifier of the dataset, such as a semantic version number or a date."@en ;
         sh:message "Gebruik maximaal één versie"@nl, "Use at most one version"@en ;
     ] ,
@@ -1676,6 +1711,10 @@ dcat:DistributionShape
             sh:path dc:format ;
             sh:description "Het formaat van de distributie."@nl, "The format of the distribution."@en ;
         ] ]
+        [ sh:property [
+            sh:minCount 1 ;
+            sh:path dc:conformsTo ;
+        ] ]
     ) ;
     sh:property [
         sh:path dcat:mediaType ;
@@ -1696,6 +1735,18 @@ dcat:DistributionShape
             sh:severity sh:Violation ;
         ] ;
         sh:message "Gebruik maximaal één mediatype per distributie"@nl, "Use at most one media type per distribution"@en ;
+    ] ,
+    # Mirrors the x- check on schema:encodingFormat. dcat:mediaType is usually an
+    # IANA media type IRI, so the pattern also matches after the IANA prefix.
+    [
+        sh:path dcat:mediaType ;
+        sh:not [ sh:pattern "^(https?://www\\.iana\\.org/assignments/media-types/)?[a-zA-Z]+/x-" ] ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Gebruik een geregistreerd IANA-mediatype. Mediatypes met het voorvoegsel x- (zoals application/x-zip-compressed) zijn niet geregistreerd bij IANA; gebruik het geregistreerde type, bijvoorbeeld application/zip"@nl, "Use a registered IANA media type. Media types with the x- prefix (such as application/x-zip-compressed) are not registered with IANA; use the registered type, such as application/zip"@en ;
     ] ,
     # Metadata-only property shapes: they describe the paths of the first sh:or
     # above, for the spec and for the reachability-probe results, which look up a
@@ -1723,23 +1774,68 @@ dcat:DistributionShape
         sh:path dc:conformsTo ;
         sh:description "Standaarden of specificaties waaraan de distributie voldoet. Voor SPARQL-endpoints moet dit de SPARQL protocol-URI bevatten."@nl, "Standards or specifications the distribution conforms to. For SPARQL endpoints, this must include the SPARQL protocol URI."@en ;
     ] ,
-    # Metadata-only property shapes for the optional properties the Register reads,
-    # so that the spec lists them. They add no constraints.
+    [
+        sh:path dc:conformsTo ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
+    ] ,
+    [
+        sh:path dc:conformsTo ;
+        sh:pattern "^https?://" ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Gebruik een web URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
+    ] ,
+    # Property shapes for the optional properties the Register reads, so that the
+    # spec lists them, with the constraints that schema:DataDownload has too.
     [
         sh:path dc:title ;
         sh:description "De naam van de distributie."@nl, "The name of the distribution."@en ;
     ] ,
     [
         sh:path dc:description ;
+        sh:or (
+            [ sh:datatype xsd:string ]
+            [ sh:datatype rdf:langString ]
+        );
         sh:description "Beschrijving van de distributie"@nl, "Distribution description"@en ;
+        sh:message "Gebruik een waarde van type xsd:string of rdf:langString"@nl, "Use a value of type xsd:string or rdf:langString"@en ;
+    ] ,
+    [
+        sh:path dc:description ;
+        sh:uniqueLang true ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
+    ] ,
+    [
+        sh:path dc:description ;
+        sh:minCount 1 ;
+        sh:severity sh:Info ;
+        sh:message "Voeg een beschrijving toe"@nl, "Add a description"@en ;
     ] ,
     [
         sh:path dc:issued ;
+        sh:maxCount 1 ;
         sh:description "De datum van formele uitgifte (bijvoorbeeld publicatie) van de distributie."@nl, "The date of formal issuance (such as publication) of the distribution."@en ;
+        sh:message "Gebruik maximaal één uitgiftedatum"@nl, "Use at most one issue date"@en ;
     ] ,
     [
         sh:path dc:modified ;
+        sh:maxCount 1 ;
         sh:description "De meest recente datum waarop de distributie is gewijzigd of aangepast."@nl, "The most recent date on which the distribution was changed or modified."@en ;
+        sh:message "Gebruik maximaal één wijzigingsdatum"@nl, "Use at most one modification date"@en ;
     ] ,
     nde-dataset:DcIssuedDatatypeProperty,
     nde-dataset:DcModifiedDatatypeProperty,
@@ -1747,7 +1843,9 @@ dcat:DistributionShape
     nde-dataset:DcModifiedIso8601Property,
     [
         sh:path dcat:byteSize ;
+        sh:maxCount 1 ;
         sh:description "Bestandsgrootte van de distributie in bytes."@nl, "Distribution file size in bytes."@en ;
+        sh:message "Gebruik maximaal één bestandsgrootte"@nl, "Use at most one file size"@en ;
     ] ,
     [
         sh:path foaf:page ;
@@ -1828,6 +1926,16 @@ dcat:DistributionShape
     [
         sh:path foaf:page ;
         sh:nodeKind sh:IRI ;
+        sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
+    ] ,
+    [
+        sh:path foaf:page ;
+        sh:pattern "^https://" ;
+        sh:message "Gebruik een web-URL die begint met https://"@nl, "Use a web URL starting with https://"@en ;
+    ] ,
+    [
+        sh:path dcat:accessURL ;
+        sh:nodeKind sh:IRI ;
         sh:severity sh:Warning ;
         nde:futureChange [
             nde:version "2.0" ;
@@ -1836,14 +1944,14 @@ dcat:DistributionShape
         sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
     ] ,
     [
-        sh:path foaf:page ;
-        sh:pattern "^https://" ;
+        sh:path dcat:downloadURL ;
+        sh:nodeKind sh:IRI ;
         sh:severity sh:Warning ;
         nde:futureChange [
             nde:version "2.0" ;
             sh:severity sh:Violation ;
         ] ;
-        sh:message "Gebruik een web-URL die begint met https://"@nl, "Use a web URL starting with https://"@en ;
+        sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
     ] ,
     [
         sh:path dcat:accessURL ;
@@ -1933,6 +2041,20 @@ dcat:CatalogShape
     ],
     [
         sh:path dc:publisher ;
+        sh:or (
+            [ sh:class foaf:Organization ]
+            [ sh:class foaf:Person ]
+            [ sh:class foaf:Agent ]
+        ) ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Gebruik een uitgever van type foaf:Organization, foaf:Person of foaf:Agent"@nl, "Use a publisher of type foaf:Organization, foaf:Person or foaf:Agent"@en ;
+    ],
+    [
+        sh:path dc:publisher ;
         sh:maxCount 1 ;
         sh:severity sh:Warning ;
         nde:futureChange [
@@ -1963,6 +2085,12 @@ dcat:CatalogShape
         sh:minCount 1 ;
         sh:description "De datasets in de catalogus."@nl, "The datasets in the catalog."@en ;
         sh:message "Voeg minimaal één datasetbeschrijving toe aan de datacatalogus. Een datacatalogus bestaat namelijk uit datasetbeschrijvingen"@nl, "Add at least one dataset description to the data catalog. A data catalog consists of dataset descriptions"@en ;
+    ],
+    [
+        sh:path dcat:dataset ;
+        sh:class dcat:Dataset ;
+        sh:severity sh:Warning ;
+        sh:message "Gebruik een dataset van type dcat:Dataset"@nl, "Use a dataset of type dcat:Dataset"@en ;
     ] .
 
 dcat:ContactPointShape
@@ -1971,21 +2099,48 @@ dcat:ContactPointShape
     sh:property [
         sh:path vcard:fn ;
         sh:minCount 1 ;
-        sh:description "Naam van het contactpunt, bij voorkeur een afdeling (“Afdeling datasets”) in plaats van een individuele medewerker."@nl, "Name of the contact point, preferably a department (“Datasets department”) rather than an individual employee."@en ;
+        sh:description "Naam van het contactpunt, bij voorkeur een afdeling (“Afdeling datasets”) in plaats van een individuele medewerker. Geef de waarde een taaltag, zodat een meertalige afdelingsnaam of een niet-Latijnse persoonsnaam in de juiste taal getoond kan worden."@nl, "Name of the contact point, preferably a department (“Datasets department”) rather than an individual employee. Tag the value with a language so that a multilingual department name or a non-Latin personal name can be shown in the appropriate language."@en ;
         sh:message "Vul een naam in voor het contactpunt"@nl, "Enter a name for the contact point"@en ;
+    ] ,
+    [
+        sh:path vcard:fn ;
+        sh:or (
+            [ sh:datatype xsd:string ]
+            [ sh:datatype rdf:langString ]
+        ) ;
+        sh:message "Gebruik een waarde van type xsd:string of rdf:langString"@nl, "Use a value of type xsd:string or rdf:langString"@en ;
+    ] ,
+    [
+        sh:path vcard:fn ;
+        sh:uniqueLang true ;
+        sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
+    ] ,
+    [
+        sh:path vcard:fn ;
+        sh:datatype rdf:langString ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Gebruik een waarde van type rdf:langString en geef de taal aan (bijv. nl of en)"@nl, "Use a value of type rdf:langString and specify the language (such as nl or en)"@en ;
     ] ,
     [
         sh:path vcard:hasEmail ;
         sh:minCount 1 ;
-        sh:nodeKind sh:IRI ;
         sh:description "Het e-mailadres van het contactpunt als mailto:-URL, bij voorkeur een functioneel adres van de organisatie of afdeling."@nl, "The email address of the contact point as a mailto: URL, preferably a functional address of the organization or department."@en ;
+        sh:message "Vul een e-mailadres in voor het contactpunt"@nl, "Enter an email address for the contact point"@en ;
+    ] ,
+    [
+        sh:path vcard:hasEmail ;
+        sh:nodeKind sh:IRI ;
         sh:pattern "^mailto:" ;
         sh:severity sh:Warning ;
         nde:futureChange [
             nde:version "2.0" ;
             sh:severity sh:Violation ;
         ] ;
-        sh:message "Vul een e-mailadres in voor het contactpunt, als mailto:-URL"@nl, "Enter an email address for the contact point, as a mailto: URL"@en ;
+        sh:message "Geef het e-mailadres van het contactpunt op als mailto:-URL"@nl, "Give the email address of the contact point as a mailto: URL"@en ;
     ] .
 
 dcat:AgentShape
@@ -2000,24 +2155,59 @@ dcat:AgentShape
             [ sh:datatype xsd:string ]
             [ sh:datatype rdf:langString ]
         ) ;
-        sh:uniqueLang true ;
         sh:description "De naam van de uitgever of maker."@nl, "The name of the publisher or creator."@en ;
+        sh:message "Vul een naam in voor de uitgever of maker"@nl, "Enter a name for the publisher or creator"@en ;
+    ] ,
+    [
+        sh:path foaf:name ;
+        sh:uniqueLang true ;
         sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
     ] ,
     nde-dataset:FoafNameLangStringProperty ,
-    # Metadata-only property shapes: the Register reads these properties, so
-    # publishers need to be told about them, but they carry no constraints.
     [
         sh:path foaf:nick ;
+        sh:or (
+            [ sh:datatype xsd:string ]
+            [ sh:datatype rdf:langString ]
+        ) ;
         sh:description "Alternatieve namen, zoals een afkorting waaronder de organisatie bekendstaat."@nl, "Alternative names such as an abbreviation that the organization is known under."@en ;
+        sh:message "Gebruik een waarde van type xsd:string of rdf:langString"@nl, "Use a value of type xsd:string or rdf:langString"@en ;
+    ] ,
+    [
+        sh:path foaf:nick ;
+        sh:uniqueLang true ;
+        sh:severity sh:Warning ;
+        sh:message "Gebruik per taal maximaal één waarde"@nl, "Use at most one value per language"@en ;
+    ] ,
+    [
+        sh:path foaf:nick ;
+        sh:datatype rdf:langString ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Gebruik een waarde van type rdf:langString en geef de taal aan (bijv. nl of en)"@nl, "Use a value of type rdf:langString and specify the language (such as nl or en)"@en ;
     ] ,
     [
         sh:path dc:identifier ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Warning ;
         sh:description "Identificatie(s) van de organisatie, minimaal de <a href=\"https://www.nationaalarchief.nl/archiveren/kennisbank/isil-codes\">ISIL-code</a>."@nl, "Identifier(s) of the organization, at least its <a href=\"https://www.nationaalarchief.nl/archiveren/kennisbank/isil-codes\">ISIL code</a>."@en ;
+        sh:message "Gebruik een waarde van type xsd:string"@nl, "Use a value of type xsd:string"@en ;
     ] ,
     [
         sh:path owl:sameAs ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Info ;
         sh:description "Verwijzingen naar de organisatie in andere databases."@nl, "Links to the organization in other databases."@en ;
+        sh:message "Gebruik een waarde van type URI (RDF-resource), geen tekst"@nl, "Use a value of type URI (RDF resource), not text"@en ;
+    ] ,
+    [
+        sh:path owl:sameAs ;
+        sh:pattern "^https?://" ;
+        sh:severity sh:Info ;
+        sh:message "Gebruik een web-URI die begint met http:// of https://"@nl, "Use a web URI starting with http:// or https://"@en ;
     ] .
 
 # Publisher/creator validation is consolidated into dcat:AgentShape above, which covers
