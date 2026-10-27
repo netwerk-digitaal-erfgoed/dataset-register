@@ -2251,6 +2251,25 @@ dcat:AgentShape
 # shapes would duplicate every constraint (nodeKind, pattern, foaf:name) and fire two
 # identical violations on the same focus node.
 
+# DCAT mirror of nde-dataset:OrganizationIdentifierRequiredShape: only organizations
+# need an identifier, so Person publishers and creators are skipped.
+dcat:OrganizationIdentifierRequiredShape
+    a sh:NodeShape ;
+    sh:targetObjectsOf dc:publisher, dc:creator ;
+    sh:severity sh:Info ;
+    sh:message "Voeg een identificatie toe voor de organisatie, zoals een KvK-nummer of ISIL"@nl, "Add an identifier for the organisation, such as a Chamber of Commerce number or ISIL"@en ;
+    sh:sparql [
+        sh:select """
+            PREFIX dct: <http://purl.org/dc/terms/>
+            PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+            SELECT $this ?path WHERE {
+                $this a foaf:Organization .
+                FILTER NOT EXISTS { $this dct:identifier ?id }
+                BIND(dct:identifier AS ?path)
+            }
+        """ ;
+    ] .
+
 ##
 ## Distribution probe extensions
 ##
