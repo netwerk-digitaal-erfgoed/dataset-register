@@ -61,6 +61,7 @@ interface IntendedDifference {
 const SH = 'http://www.w3.org/ns/shacl#';
 const NDE = 'https://def.nde.nl#';
 const RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
+const RDFS = 'http://www.w3.org/2000/01/rdf-schema#';
 const sh = (name: string) => DataFactory.namedNode(`${SH}${name}`);
 
 const prefixes: Record<string, string> = {
@@ -433,9 +434,14 @@ function atomsOf(propertyShape: Quad_Subject): string[] {
 }
 
 function describeChange(change: Quad_Subject): string {
+  // The label only names the change in the spec.
   return store
     .getQuads(change, null, null, null)
-    .filter((quad) => quad.predicate.value !== `${NDE}version`)
+    .filter(
+      (quad) =>
+        quad.predicate.value !== `${NDE}version` &&
+        quad.predicate.value !== `${RDFS}label`,
+    )
     .map((quad) =>
       quad.predicate.value === `${SH}severity`
         ? compact(quad.object.value).replace('sh:', '')
