@@ -537,11 +537,46 @@ The dates *MUST* be valid according to [[!ISO8601]].
 
 ### Versions ### {#dataset-versions}
 
-A [=dataset description=] may change over time.
-[=Consumers=], such as researchers, may want to determine which information was valid at a certain moment.
+A [=dataset=] may change over time, for instance when the publisher corrects or extends the data.
+The version identifies the state of the data that a [=dataset description=] is about,
+such as a semantic version number or a date.
+Like the [[#dataset-date|dates]], the version is about the data, not about the dataset description:
+correcting the description does not make a new version of the dataset.
 
-> Therefore, publishers *SHOULD* not only publish the current version of the dataset description,
+[=Consumers=], such as researchers, may want to cite or reuse the data as it was at a certain moment.
+
+> Therefore, publishers *SHOULD* not only publish the current version of the dataset,
 > but keep historical versions accessible to users.
+
+Describe each version that remains available as a [=dataset=] of its own, with its own IRI.
+In DCAT, link a version to the one it replaces with `dcat:previousVersion`;
+Schema.org has no property for this.
+
+<div class="example">
+    Specify the dataset version:
+
+    <div class="vocab-tabs">
+    <pre highlight=json-ld data-vocab="schema">
+        {
+          "@context": "https://schema.org/",
+          "@id": "https://example.com/id/dataset/2.0",
+          "@type": "Dataset",
+          "version": "2.0"
+        }
+    </pre>
+    <pre highlight=json-ld data-vocab="dcat">
+        {
+          "@context": {
+            "dcat": "http://www.w3.org/ns/dcat#"
+          },
+          "@id": "https://example.com/id/dataset/2.0",
+          "@type": "dcat:Dataset",
+          "dcat:version": "2.0",
+          "dcat:previousVersion": { "@id": "https://example.com/id/dataset/1.0" }
+        }
+    </pre>
+    </div>
+</div>
 
 It is up to the [=publisher=] to determine when to publish new versions.
 
