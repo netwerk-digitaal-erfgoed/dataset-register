@@ -1748,6 +1748,35 @@ dcat:DistributionShape
         ] ;
         sh:message "Gebruik een geregistreerd IANA-mediatype. Mediatypes met het voorvoegsel x- (zoals application/x-zip-compressed) zijn niet geregistreerd bij IANA; gebruik het geregistreerde type, bijvoorbeeld application/zip"@nl, "Use a registered IANA media type. Media types with the x- prefix (such as application/x-zip-compressed) are not registered with IANA; use the registered type, such as application/zip"@en ;
     ] ,
+    # Unlike schema:encodingFormat, which can only carry compression in the media
+    # type, DCAT declares it in dcat:compressFormat, so dcat:mediaType names the
+    # packed file’s type alone.
+    [
+        sh:path dcat:mediaType ;
+        sh:not [
+            sh:pattern "^(https?://www\\.iana\\.org/assignments/media-types/)?application/(zip|gzip|x-gzip|x-zip-compressed)$" ;
+            sh:flags "i" ;
+        ] ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Geef het compressietype (zoals application/zip of application/gzip) op in dcat:compressFormat, en het mediatype van de ingepakte bestanden in dcat:mediaType"@nl, "Give the compression type (such as application/zip or application/gzip) in dcat:compressFormat, and the media type of the packed file(s) in dcat:mediaType"@en ;
+    ] ,
+    [
+        sh:path dcat:mediaType ;
+        sh:not [
+            sh:pattern "\\+(zip|gzip)$" ;
+            sh:flags "i" ;
+        ] ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Verplaats het compressieachtervoegsel naar dcat:compressFormat: gebruik bijvoorbeeld dcat:mediaType text/turtle met dcat:compressFormat application/gzip in plaats van text/turtle+gzip"@nl, "Move the compression suffix to dcat:compressFormat: for example, use dcat:mediaType text/turtle with dcat:compressFormat application/gzip rather than text/turtle+gzip"@en ;
+    ] ,
     # Metadata-only property shapes: they describe the paths of the first sh:or
     # above, for the spec and for the reachability-probe results, which look up a
     # description by path.
@@ -1760,12 +1789,12 @@ dcat:DistributionShape
         sh:description "De URL van het downloadbare bestand in een bepaald formaat."@nl, "The URL of the downloadable file in a specific format."@en ;
     ] ,
     # Metadata-only property shape: dcat:compressFormat carries no constraints of
-    # its own, but publishers need to be told it is read and preferred over a
-    # +gzip/+zip suffix on dcat:mediaType.
+    # its own, but publishers need to be told it is where compression goes, and
+    # that it is preferred over a +gzip/+zip suffix on dcat:mediaType.
     [
         sh:path dcat:compressFormat ;
-        sh:description "Het compressieformaat van de distributie, als mediatype uit de IANA media types-lijst (bijv. `application/gzip`). Dit is in DCAT de gebruikelijke manier om compressie aan te geven; een achtervoegsel op `dcat:mediaType` (bijv. `text/turtle+gzip`) wordt ook geaccepteerd. Zijn beide opgegeven, dan heeft `dcat:compressFormat` voorrang. Een waarde die geen mediatype is (bijv. `gzip` in plaats van `application/gzip`) wordt niet opgenomen."@nl ,
-                       "The compression format of the distribution, as a media type from the IANA media types list (such as `application/gzip`). This is the usual way to declare compression in DCAT; a suffix on `dcat:mediaType` (such as `text/turtle+gzip`) is accepted as well. If both are given, `dcat:compressFormat` takes precedence. A value that is not a media type (such as `gzip` rather than `application/gzip`) is not recorded."@en ;
+        sh:description "Het compressieformaat van de distributie, als mediatype uit de IANA media types-lijst (bijv. `application/gzip`). Geef compressie in DCAT hier aan, niet in `dcat:mediaType`: een kaal compressietype (bijv. `application/zip`) of een achtervoegsel (bijv. `text/turtle+gzip`) daar geeft een waarschuwing. Zijn beide opgegeven, dan heeft `dcat:compressFormat` voorrang. Een waarde die geen mediatype is (bijv. `gzip` in plaats van `application/gzip`) wordt niet opgenomen."@nl ,
+                       "The compression format of the distribution, as a media type from the IANA media types list (such as `application/gzip`). In DCAT, declare compression here, not in `dcat:mediaType`: a bare compression type (such as `application/zip`) or a suffix (such as `text/turtle+gzip`) there gives a warning. If both are given, `dcat:compressFormat` takes precedence. A value that is not a media type (such as `gzip` rather than `application/gzip`) is not recorded."@en ;
     ] ,
     # Metadata-only property shape so the UI can surface a description for the
     # dct:conformsTo path emitted by DistributionSparqlMediaTypeRequiresProtocolShape

@@ -932,6 +932,50 @@ describe('Validator', () => {
     ).toHaveLength(2);
   });
 
+  it('warns about compression in a DCAT media type, which belongs in dcat:compressFormat', async () => {
+    const report = await validateTurtle(`
+      @prefix dcat: <http://www.w3.org/ns/dcat#> .
+      @prefix dct: <http://purl.org/dc/terms/> .
+      @prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+      <https://example.com/dataset> a dcat:Dataset ;
+        dct:title "Dataset"@en ;
+        dct:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
+        dct:publisher <https://example.com/publisher> ;
+        dcat:distribution <https://example.com/bare>, <https://example.com/suffix>,
+          <https://example.com/compressed> .
+
+      <https://example.com/publisher> a foaf:Organization ;
+        foaf:name "Publisher"@en .
+
+      <https://example.com/bare> a dcat:Distribution ;
+        dcat:accessURL <https://example.com/dataset.zip> ;
+        dcat:mediaType <https://www.iana.org/assignments/media-types/application/zip> .
+
+      <https://example.com/suffix> a dcat:Distribution ;
+        dcat:accessURL <https://example.com/dataset.ttl.gz> ;
+        dcat:mediaType "text/turtle+gzip" .
+
+      <https://example.com/compressed> a dcat:Distribution ;
+        dcat:accessURL <https://example.com/dataset.csv.gz> ;
+        dcat:mediaType <https://www.iana.org/assignments/media-types/text/csv> ;
+        dcat:compressFormat <https://www.iana.org/assignments/media-types/application/gzip> .
+    `);
+
+    expect(report.state).toEqual('valid');
+    const messages = warningMessages(report as Valid);
+    expect(
+      messages.filter((message) =>
+        message.startsWith('Give the compression type'),
+      ),
+    ).toHaveLength(1);
+    expect(
+      messages.filter((message) =>
+        message.startsWith('Move the compression suffix'),
+      ),
+    ).toHaveLength(1);
+  });
+
   it('rejects a DCAT description without a publisher', async () => {
     const report = await validateTurtle(`
       @prefix dcat: <http://www.w3.org/ns/dcat#> .

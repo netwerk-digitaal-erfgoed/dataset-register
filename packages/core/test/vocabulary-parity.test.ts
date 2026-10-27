@@ -310,7 +310,7 @@ const intendedDifferences: Record<string, IntendedDifference> = {
   'nde-dataset:DistributionShape schema:encodingFormat ↔ dcat:DistributionShape dcat:mediaType':
     {
       reason:
-        'dcat:mediaType is an IANA media type IRI rather than a type/subtype string, and DCAT declares compression in dcat:compressFormat rather than in the media type.',
+        'dcat:mediaType is an IANA media type IRI rather than a type/subtype string, and DCAT declares compression in dcat:compressFormat, so the media type must not carry it, whereas schema:encodingFormat must.',
       schemaOnly: [
         'maxCount=1 (Warning, v2.0: Violation, maxCount=1)',
         `not=[in(application/gzip application/x-gzip application/x-zip-compressed application/zip)] (${futureViolation})`,
@@ -319,6 +319,8 @@ const intendedDifferences: Record<string, IntendedDifference> = {
       ],
       dcatOnly: [
         `maxCount=1 (${futureViolation})`,
+        `not=[flags=i; pattern=\\+(zip|gzip)$] (${futureViolation})`,
+        `not=[flags=i; pattern=^(https?://www\\.iana\\.org/assignments/media-types/)?application/(zip|gzip|x-gzip|x-zip-compressed)$] (${futureViolation})`,
         `not=[pattern=^(https?://www\\.iana\\.org/assignments/media-types/)?[a-zA-Z]+/x-] (${futureViolation})`,
       ],
     },
