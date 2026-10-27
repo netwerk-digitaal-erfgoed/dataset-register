@@ -11,12 +11,13 @@
  * are asked for nothing. The same file is published at https://def.nde.nl/context.jsonld,
  * so a third party pointing their `@context` at it gets the verdict we get.
  *
- * It restores 11 of the 125 typings schema.org last published, NOT all of them: every term
- * the shapes and the CONSTRUCT reference, and nothing else. That is deliberate – three of
- * the rest admit a non-date, which is the bug schema.org was right to fix. The cost is that
+ * It restores 14 of the 125 typings schema.org last published, NOT all of them: every term
+ * the shapes and the CONSTRUCT reference, plus `isPartOf`, `thumbnailUrl` and `url`, which
+ * the NDE Schema.org application profile constrains. That is deliberate – three of the
+ * rest admit a non-date, which is the bug schema.org was right to fix. The cost is that
  * adding a schema.org term to `requirements/shacl.ttl` or to `query.ts` means checking
- * whether it used to be typed: `url`, `image` and `logo` were `@id`, and would otherwise
- * arrive as literals with nothing to warn you.
+ * whether it used to be typed: `image` and `logo` were `@id`, and would otherwise arrive
+ * as literals with nothing to warn you.
  *
  * This reaches JSON-LD only, which is why `StandardizeSchemaOrgPrefixToHttps` stays: a
  * Turtle document written against `http://schema.org/` has no context to correct it, and

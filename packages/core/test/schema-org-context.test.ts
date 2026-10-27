@@ -149,6 +149,29 @@ describe('parsing a registration that cites schema.org', () => {
   });
 
   /**
+   * The Register’s shapes do not use these, but the NDE Schema.org application profile
+   * does, and its examples are validated with this context.
+   */
+  it.each(['isPartOf', 'thumbnailUrl', 'url'])(
+    'reads %s as an IRI',
+    async (property) => {
+      const data = (await load(
+        Readable.from(
+          JSON.stringify({
+            '@context': 'https://schema.org/',
+            '@id': 'https://example.org/dataset',
+            '@type': 'Dataset',
+            [property]: 'https://example.org/value',
+          }),
+        ),
+        'application/ld+json',
+      )) as DatasetCore;
+
+      expect(objectOf(data, property).termType).toBe('NamedNode');
+    },
+  );
+
+  /**
    * `"@type": "Date"` resolves against `@vocab`, so a date-only value is typed
    * `schema:Date` – exactly what schema.org’s context produced before 30.1, and one of
    * the datatypes the `sh:or` on `schema:dateModified` accepts. Under the live context
