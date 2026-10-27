@@ -335,6 +335,7 @@ describe('Validator', () => {
     expect(formatReport(report)).toMatchInlineSnapshot(`
       "[Info] https://schema.org/about on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Add a URI describing the dataset’s subject matter or material type (for example from the Network of Terms)
       [Info] https://schema.org/identifier on <https://www.goudatijdmachine.nl/omeka/api/items/232>: Add an identifier for the organisation, such as a Chamber of Commerce number or ISIL
+      [Info] https://schema.org/inLanguage on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: Enter the language or languages of the dataset
       [Warning] https://schema.org/contactPoint on <https://www.goudatijdmachine.nl/omeka/api/items/232>: Add a contact point with a name and email address, preferably of the department that manages the dataset or catalogue
       [Warning] https://schema.org/encodingFormat on <https://www.goudatijdmachine.nl/omeka/api/items/3030722>: Remove the SPARQL MIME type from schema:encodingFormat; SPARQL endpoints are declared via schema:usageInfo
       [Warning] https://schema.org/genre on <https://www.goudatijdmachine.nl/omeka/api/items/3030723>: schema:genre is deprecated; use schema:about with a URI (for example from the Network of Terms)
@@ -931,6 +932,50 @@ describe('Validator', () => {
     ).toHaveLength(2);
   });
 
+  it('warns about compression in a DCAT media type, which belongs in dcat:compressFormat', async () => {
+    const report = await validateTurtle(`
+      @prefix dcat: <http://www.w3.org/ns/dcat#> .
+      @prefix dct: <http://purl.org/dc/terms/> .
+      @prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+      <https://example.com/dataset> a dcat:Dataset ;
+        dct:title "Dataset"@en ;
+        dct:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
+        dct:publisher <https://example.com/publisher> ;
+        dcat:distribution <https://example.com/bare>, <https://example.com/suffix>,
+          <https://example.com/compressed> .
+
+      <https://example.com/publisher> a foaf:Organization ;
+        foaf:name "Publisher"@en .
+
+      <https://example.com/bare> a dcat:Distribution ;
+        dcat:accessURL <https://example.com/dataset.zip> ;
+        dcat:mediaType <https://www.iana.org/assignments/media-types/application/zip> .
+
+      <https://example.com/suffix> a dcat:Distribution ;
+        dcat:accessURL <https://example.com/dataset.ttl.gz> ;
+        dcat:mediaType "text/turtle+gzip" .
+
+      <https://example.com/compressed> a dcat:Distribution ;
+        dcat:accessURL <https://example.com/dataset.csv.gz> ;
+        dcat:mediaType <https://www.iana.org/assignments/media-types/text/csv> ;
+        dcat:compressFormat <https://www.iana.org/assignments/media-types/application/gzip> .
+    `);
+
+    expect(report.state).toEqual('valid');
+    const messages = warningMessages(report as Valid);
+    expect(
+      messages.filter((message) =>
+        message.startsWith('Give the compression type'),
+      ),
+    ).toHaveLength(1);
+    expect(
+      messages.filter((message) =>
+        message.startsWith('Move the compression suffix'),
+      ),
+    ).toHaveLength(1);
+  });
+
   it('rejects a DCAT description without a publisher', async () => {
     const report = await validateTurtle(`
       @prefix dcat: <http://www.w3.org/ns/dcat#> .
@@ -948,7 +993,7 @@ describe('Validator', () => {
 export const validate = async (filename: string, parser?: Transform) =>
   validator.validate(await dataset(filename, parser));
 
-const dataset = async (filename: string, parser?: Transform) => {
+export const dataset = async (filename: string, parser?: Transform) => {
   const content = await file(filename);
   const stream = Readable.from(content);
 

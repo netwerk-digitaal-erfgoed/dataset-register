@@ -154,7 +154,7 @@ export class Crawler {
               await this.datasetStore.store(dataset);
               const dcatValidationResult =
                 await this.validator.validate(dataset);
-              const rating = rate(dcatValidationResult as Valid);
+              const rating = rate(dcatValidationResult as Valid, dataset);
               await this.ratingStore.store(extractIri(dataset), rating);
             }
             phases.storeLoopMs = Math.round(performance.now() - storeLoopStart);
