@@ -549,34 +549,6 @@ correcting the description does not make a new version of the dataset.
 > but keep historical versions accessible to users.
 
 Describe each version that remains available as a [=dataset=] of its own, with its own IRI.
-In DCAT, link a version to the one it replaces with `dcat:previousVersion`;
-Schema.org has no property for this.
-
-<div class="example">
-    Specify the dataset version:
-
-    <div class="vocab-tabs">
-    <pre highlight=json-ld data-vocab="schema">
-        {
-          "@context": "https://schema.org/",
-          "@id": "https://example.com/id/dataset/2.0",
-          "@type": "Dataset",
-          "version": "2.0"
-        }
-    </pre>
-    <pre highlight=json-ld data-vocab="dcat">
-        {
-          "@context": {
-            "dcat": "http://www.w3.org/ns/dcat#"
-          },
-          "@id": "https://example.com/id/dataset/2.0",
-          "@type": "dcat:Dataset",
-          "dcat:version": "2.0",
-          "dcat:previousVersion": { "@id": "https://example.com/id/dataset/1.0" }
-        }
-    </pre>
-    </div>
-</div>
 
 It is up to the [=publisher=] to determine when to publish new versions.
 
