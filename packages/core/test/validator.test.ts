@@ -976,6 +976,44 @@ describe('Validator', () => {
     ).toHaveLength(1);
   });
 
+  it('recommends an identifier for a DCAT organization, not for a person', async () => {
+    const report = await validateTurtle(`
+      @prefix dcat: <http://www.w3.org/ns/dcat#> .
+      @prefix dct: <http://purl.org/dc/terms/> .
+      @prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+      <https://example.com/dataset> a dcat:Dataset ;
+        dct:title "Dataset"@en ;
+        dct:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
+        dct:publisher <https://example.com/publisher> ;
+        dct:creator <https://example.com/creator>, <https://example.com/identified> .
+
+      <https://example.com/publisher> a foaf:Organization ;
+        foaf:name "Publisher"@en .
+
+      <https://example.com/creator> a foaf:Person ;
+        foaf:name "Creator"@en .
+
+      <https://example.com/identified> a foaf:Organization ;
+        foaf:name "Identified"@en ;
+        dct:identifier "NL-AmISG" .
+    `);
+
+    expect(report.state).toEqual('valid');
+    const focusNodes = [
+      ...(report as Valid).errors.match(
+        null,
+        shacl('resultPath'),
+        rdf.namedNode('http://purl.org/dc/terms/identifier'),
+      ),
+    ].map(
+      (quad) =>
+        [...(report as Valid).errors.match(quad.subject, shacl('focusNode'))][0]
+          ?.object.value,
+    );
+    expect(focusNodes).toEqual(['https://example.com/publisher']);
+  });
+
   it('rejects a DCAT description without a publisher', async () => {
     const report = await validateTurtle(`
       @prefix dcat: <http://www.w3.org/ns/dcat#> .
