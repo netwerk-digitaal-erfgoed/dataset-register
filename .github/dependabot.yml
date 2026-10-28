@@ -18,7 +18,7 @@ updates:
       exclude:
         - '@lde/*'
     ignore:
-      # Two majors are blocked by a peer that has not caught up. Dependabot
+      # These majors are blocked by something that has not caught up. Dependabot
       # re-proposes them every cycle otherwise, and each one has to be split out
       # of its group by hand — three times so far (#2297, #2319, #2326).
       #
@@ -36,6 +36,12 @@ updates:
         # declares `typescript@>=4.8.4 <6.1.0`, so npm cannot resolve the tree at
         # all. Lift when typescript-eslint widens its peer range.
         versions: ['>=7']
+      - dependency-name: 'jsonld-context-parser'
+        # packages/core declares the range of the copy hoisted at the root (2.x,
+        # from @comunica/context-entries). Declaring 3.x nests a copy under
+        # packages/core, which @nx/js:prune-lockfile cannot map, so every Docker
+        # build fails. Lift when the hoisted copy moves to 3.x.
+        versions: ['>=3']
 
     groups:
       lde: # Our own LDE packages; bump together and fast (no cooldown).
@@ -82,7 +88,12 @@ updates:
           - 'vitest'
       all-other-npm: # Catch-all (listed last, so the specific groups above win): collapse
         # every remaining npm update into one PR instead of a daily trickle of small PRs.
+        # Majors stay out: each gets its own PR, so one breaking release cannot hold
+        # back every patch in the group.
         patterns:
           - '*'
         exclude-patterns:
           - '@lde/*'
+        update-types:
+          - 'minor'
+          - 'patch'

@@ -20,17 +20,17 @@
     "@lde/search": "^0.29.0",
     "@lde/search-typesense": "^0.34.0",
     "@rdfjs/types": "2.0.1",
-    "env-schema": "^8.0.0",
+    "env-schema": "^8.0.1",
     "n3": "^2.6.4",
-    "pino": "^10.2.0",
+    "pino": "^10.4.0",
     "tslib": "^2.3.0",
-    "typesense": "^3.0.6"
+    "typesense": "^3.2.0"
   },
   "devDependencies": {
     "@types/jsonld": "^1.5.15",
     "jsonld": "^9.0.0",
     "rdf-ext": "^2.6.0",
-    "testcontainers": "^12.1.0"
+    "testcontainers": "^12.2.1"
   },
   "nx": {
     "projectType": "library",
