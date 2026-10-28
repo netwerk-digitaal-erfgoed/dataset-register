@@ -9,13 +9,13 @@
     "@fastify/bearer-auth": "^10.1.4",
     "@fastify/cors": "^11.3.1",
     "@fastify/sse": "^0.6.1",
-    "@fastify/swagger": "^9.9.1",
-    "@fastify/swagger-ui": "^6.1.1",
+    "@fastify/swagger": "^9.9.2",
+    "@fastify/swagger-ui": "^6.1.2",
     "@lde/fastify-rdf": "^0.6.0",
     "@rdfjs/types": "2.0.1",
     "close-with-grace": "2.5.0",
     "env-schema": "^8.0.0",
-    "fastify": "^5.12.5",
+    "fastify": "^5.12.7",
     "psl": "1.15.0"
   },
   "nx": {

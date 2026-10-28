@@ -1,6 +1,7 @@
 import type { Quad } from '@rdfjs/types';
 import type { SparqlClient } from './sparql.js';
 import { quadsToNTriples } from './rdf-serialize.js';
+import { sparqlIri } from './sparql-iri.js';
 
 export interface DistributionValidityStore {
   store(accessUrl: URL, quads: Quad[]): Promise<void>;
@@ -78,7 +79,7 @@ export class SparqlDistributionValidityStore implements DistributionValidityStor
 // untouched.
 function deleteMeasurementsFor(accessUrls: URL[], graphIri: string): string {
   const values = accessUrls
-    .map((accessUrl) => `<${accessUrl.toString()}>`)
+    .map((accessUrl) => `<${sparqlIri(accessUrl)}>`)
     .join(' ');
   // Each UNION branch carries the access URLs and the measurement anchor itself. QLever plans
   // UNION branches on their own, so with the anchor outside the UNION a branch scans every

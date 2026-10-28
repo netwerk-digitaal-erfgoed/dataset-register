@@ -3,7 +3,7 @@ Title: Requirements for Datasets
 Shortname: nde-datasets
 Level: 1
 Status: LS
-!Version: <a href="#v1.15.1">1.15.1</a>
+!Version: <a href="#v1.16.0">1.16.0</a>
 Markup Shorthands: css yes, markdown yes
 URL: https://docs.nde.nl/requirements-datasets/
 Editor:
@@ -499,7 +499,11 @@ See also [[DWBP-UCR#R-LicenseAvailable]].
 
 ### Creation, publication and modification dates ### {#dataset-date}
 
-Publishers *SHOULD* make known when the [=dataset description=] was originally created, published and when it was last updated.
+Publishers *SHOULD* make known when the [=dataset=] was originally created, published and when it was last updated.
+These dates are about the data, not about the [=dataset description=]:
+a dataset is modified when the data available through any of its [=distributions=] changes.
+[=Consumers=] can compare the dataset’s modification date with that of each [=distribution=]
+to see whether that distribution has the latest data.
 The dates *MUST* be valid according to [[!ISO8601]].
 
 <div class="example">
@@ -533,11 +537,18 @@ The dates *MUST* be valid according to [[!ISO8601]].
 
 ### Versions ### {#dataset-versions}
 
-A [=dataset description=] may change over time.
-[=Consumers=], such as researchers, may want to determine which information was valid at a certain moment.
+A [=dataset=] may change over time, for instance when the publisher corrects or extends the data.
+The version identifies the state of the data that a [=dataset description=] is about,
+such as a semantic version number or a date.
+Like the [[#dataset-date|dates]], the version is about the data, not about the dataset description:
+correcting the description does not make a new version of the dataset.
 
-> Therefore, publishers *SHOULD* not only publish the current version of the dataset description,
+[=Consumers=], such as researchers, may want to cite or reuse the data as it was at a certain moment.
+
+> Therefore, publishers *SHOULD* not only publish the current version of the dataset,
 > but keep historical versions accessible to users.
+
+Describe each version that remains available as a [=dataset=] of its own, with its own IRI.
 
 It is up to the [=publisher=] to determine when to publish new versions.
 
@@ -1029,7 +1040,8 @@ See [[#distribution-attributes]] for a full overview.
 
 Publishers *SHOULD* make known when the [=distribution=] was first published and when it was last updated,
 so [=consumers=] can efficiently stay up-to-date with the latest changes.
-Please note that this is different from the [[#dataset-date|dataset description’s dates]].
+These dates can differ from the [[#dataset-date|dataset’s dates]],
+for example when new data is already available through a SPARQL endpoint but not yet in a data dump.
 Datetimes (`2019-08-15T08:05:00Z`) are preferred because they offer greater precision,
 but simple dates (`2019-04-14`) are also allowed.
 
@@ -1566,6 +1578,20 @@ Changes {#changes}
 This section lists notable changes to this specification.
 
 <!-- CHANGELOG-START -->
+Version 1.16.0 (2026-10-26) {#v1.16.0}
+----------
+
+- Define what makes a good organization IRI ([b43b50a](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/b43b50ae6b644384231df51aeab4b0b2c4d886dd)).
+- Document DCAT-AP-NL 3.0 alongside Schema.org ([ecf4716](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/ecf47166b9ecbe52053a08c96d8f75be09d61d85)).
+- List optional DCAT distribution properties ([ebe5670](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/ebe56704ef67c331d576a27de459c77a892abca1)).
+- Warn about every version 2.0 rule ([8b1218d](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/8b1218d35d864667c03fd9dc1f6474e49796766c)).
+- Convert nested DCAT nodes and align the DCAT checks with Schema.org ([ef1ce3a](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/ef1ce3ae9b46d26cc7c95053f3926b685dafff4c)).
+- Accept http:// and https:// Creative Commons IRIs, store http:// ([4380e99](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/4380e993714b9d6b5adeafdfde27137a8bc598e4)).
+- Base ‘required’ and the cardinality on the shape with the sh:minCount ([3af756b](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/3af756b005051017b9ec325d5fc7e393341dbf25)).
+- Correct the Google example, ISIL placeholders and deep-link scroll ([38d959b](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/38d959b27d575698e755c67d755b84aed5b2071b)).
+- Say that dataset dates are about the data, not the description ([29d6f08](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/29d6f08045310bc84a73e6b39370671b08108999)).
+- Typo ([34bb3c1](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/34bb3c15c2f784e8b6cfa0f12c8a42398a678c71)).
+
 Version 1.15.1 (2026-10-13) {#v1.15.1}
 ----------
 

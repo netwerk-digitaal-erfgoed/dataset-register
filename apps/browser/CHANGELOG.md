@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.3.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/browser-0.2.0...browser-0.3.0) (2026-10-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deps:** the GraphQL search API names the reference types after their targets. Agent becomes OrganizationReference and Vocabulary becomes TerminologySourceReference; the AgentFilter and VocabularyFilter inputs become OrganizationFilter and TerminologySourceFilter. Field names and shapes are unchanged, so only clients that name these types (fragment type conditions, typed variables) need to rename them.
+
+### build
+
+* **deps:** bump the lde group across 1 directory with 8 updates ([#2333](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2333)) ([10c45f2](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/10c45f21ed520b16b3d3ae6ae767c673ca74e2a5))
+
+
+### Features
+
+* **browser:** show SCHEMA-AP-NDE validation results on the dataset page ([#2422](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2422)) ([5f4ba33](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/5f4ba33c4c40eacf9931eee126bc86c4d25e9bd0))
+* **browser:** show when the automated checks last ran ([#2449](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2449)) ([2d35f0d](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/2d35f0d1b4c2aec63a3a684484e875d2ec6afdd2))
+
+
+### Bug Fixes
+
+* **browser:** describe an organisation’s missing contact point and identifier ([#2432](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2432)) ([1e3aeb9](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/1e3aeb923a90622183888414c4e02740f51d3e3d))
+* **browser:** describe shared property shapes by the owner that fits the result ([#2428](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2428)) ([f5b78e3](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/f5b78e3cf29e2f9b5a8cd2d88e66ea82e5c203f1))
+* **browser:** list violations before warnings in the conformance issues ([#2426](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2426)) ([90ccac5](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/90ccac5ea1e48bff767f026383ca609fb268e545))
+* **browser:** open the Paste tab from a shared #rdf= link ([#2439](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2439)) ([725009a](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/725009a66aebc8f47ec627bbe6947ad91503b443))
+* **browser:** say when no URIs were found to check for persistence ([#2431](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2431)) ([7cbe414](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/7cbe414f8375ecd7bbb7aa75cc96574c40ac4016))
+
 ## [0.2.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/browser-0.1.0...browser-0.2.0) (2026-10-13)
 
 

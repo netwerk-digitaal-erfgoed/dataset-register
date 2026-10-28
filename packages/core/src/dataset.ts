@@ -20,6 +20,27 @@ export interface DatasetStore {
    */
   delete(datasetUri: URL): Promise<void>;
 
+  /**
+   * The IRIs of all stored datasets.
+   */
+  findAll(): Promise<URL[]>;
+
+  /**
+   * The access and download URLs of the distributions of the given datasets, as the
+   * descriptions write them.
+   */
+  findDistributionUrls(datasetIris: URL[]): Promise<string[]>;
+
+  /**
+   * The access and download URLs of stored datasets that equal one of `urls` or add a
+   * fragment to it, as the descriptions write them. The references of
+   * `exceptDatasetIris` are not counted.
+   */
+  findReferencedDistributionUrls(
+    urls: string[],
+    exceptDatasetIris?: URL[],
+  ): Promise<string[]>;
+
   countDatasets(): Promise<number>;
 
   countOrganisations(): Promise<number>;

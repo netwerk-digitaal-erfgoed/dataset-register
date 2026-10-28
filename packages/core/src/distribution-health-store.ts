@@ -1,6 +1,7 @@
 import factory from 'rdf-ext';
 import type { NamedNode } from '@rdfjs/types';
 import type { SparqlClient } from './sparql.ts';
+import { sparqlIri } from './sparql-iri.ts';
 
 export interface DistributionHealthRecord {
   url: URL;
@@ -125,13 +126,14 @@ export class SparqlDistributionHealthStore implements DistributionHealthStore {
   }
 
   public async delete(url: URL): Promise<void> {
+    const iri = sparqlIri(url);
     await this.client.update(`
       WITH <${this.graphIri}>
       DELETE {
-        <${url.toString()}> ?p ?o .
+        <${iri}> ?p ?o .
       }
       WHERE {
-        <${url.toString()}> ?p ?o .
+        <${iri}> ?p ?o .
       }`);
   }
 }

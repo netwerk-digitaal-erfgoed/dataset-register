@@ -235,6 +235,85 @@ describe('SPARQL', () => {
       await datasetStore.delete(new URL(TEST_DATASET_IRIS.DATASET_1));
       expect(await datasetStore.countDatasets()).toBe(0);
     });
+
+    it('finds all stored datasets', async () => {
+      await datasetStore.store(createTestDataset(TEST_DATASET_IRIS.DATASET_1));
+      await datasetStore.store(createTestDataset(TEST_DATASET_IRIS.DATASET_2));
+
+      expect(
+        (await datasetStore.findAll()).map((iri) => iri.toString()).sort(),
+      ).toEqual([TEST_DATASET_IRIS.DATASET_1, TEST_DATASET_IRIS.DATASET_2]);
+    });
+
+    it('finds the distribution URLs of datasets', async () => {
+      await datasetStore.store(
+        datasetWithDistributions(TEST_DATASET_IRIS.DATASET_1, {
+          accessURL: 'https://example.org/sparql#query',
+          downloadURL: 'https://example.org/dump.nt',
+        }),
+      );
+      await datasetStore.store(
+        datasetWithDistributions(TEST_DATASET_IRIS.DATASET_2, {
+          accessURL: 'https://example.org/other.nt',
+        }),
+      );
+
+      expect(
+        (
+          await datasetStore.findDistributionUrls([
+            new URL(TEST_DATASET_IRIS.DATASET_1),
+          ])
+        ).sort(),
+      ).toEqual([
+        'https://example.org/dump.nt',
+        'https://example.org/sparql#query',
+      ]);
+      expect(await datasetStore.findDistributionUrls([])).toEqual([]);
+    });
+
+    it('finds the distribution URLs that stored datasets still reference', async () => {
+      await datasetStore.store(
+        datasetWithDistributions(TEST_DATASET_IRIS.DATASET_1, {
+          accessURL: 'https://example.org/sparql#query',
+          downloadURL: 'https://example.org/dump.nt',
+        }),
+      );
+
+      expect(
+        (
+          await datasetStore.findReferencedDistributionUrls([
+            'https://example.org/sparql',
+            'https://example.org/dump.nt',
+            'https://example.org/gone.nt',
+          ])
+        ).sort(),
+      ).toEqual([
+        'https://example.org/dump.nt',
+        'https://example.org/sparql#query',
+      ]);
+      expect(await datasetStore.findReferencedDistributionUrls([])).toEqual([]);
+    });
+
+    it('does not count the references of excepted datasets', async () => {
+      await datasetStore.store(
+        datasetWithDistributions(TEST_DATASET_IRIS.DATASET_1, {
+          accessURL: 'https://example.org/sparql#query',
+          downloadURL: 'https://example.org/dump.nt',
+        }),
+      );
+      await datasetStore.store(
+        datasetWithDistributions(TEST_DATASET_IRIS.DATASET_2, {
+          downloadURL: 'https://example.org/dump.nt',
+        }),
+      );
+
+      expect(
+        await datasetStore.findReferencedDistributionUrls(
+          ['https://example.org/sparql', 'https://example.org/dump.nt'],
+          [new URL(TEST_DATASET_IRIS.DATASET_1)],
+        ),
+      ).toEqual(['https://example.org/dump.nt']);
+    });
   });
 
   describe('SparqlRegistrationStore', () => {
@@ -500,6 +579,45 @@ describe('SPARQL', () => {
 
       await registrationStore.delete(url);
       expect(await registrationStore.findByUrl(url)).toBeUndefined();
+    });
+
+    it('finds the datasets that registrations list, except the given one’s', async () => {
+      const shared = new URL('https://example.org/dataset/shared');
+      const own = new URL('https://example.org/dataset/own');
+      const unlisted = new URL('https://example.org/dataset/unlisted');
+      await registrationStore.store(
+        createTestRegistration(
+          'https://example.org/catalog.json',
+          undefined,
+          undefined,
+          new Date('2025-01-15T08:30:00Z'),
+          [shared, own],
+        ),
+      );
+      await registrationStore.store(
+        createTestRegistration(
+          'https://example.org/other-catalog.json',
+          undefined,
+          undefined,
+          new Date('2025-01-15T08:30:00Z'),
+          [shared],
+        ),
+      );
+
+      const listed = async (exceptUrl?: URL) =>
+        (
+          await registrationStore.findListedDatasets(
+            [shared, own, unlisted],
+            exceptUrl,
+          )
+        )
+          .map((iri) => iri.toString())
+          .sort();
+      expect(await listed()).toEqual([own.toString(), shared.toString()]);
+      expect(await listed(new URL('https://example.org/catalog.json'))).toEqual(
+        [shared.toString()],
+      );
+      expect(await registrationStore.findListedDatasets([])).toEqual([]);
     });
 
     it('should delete a registration and its linked datasets', async () => {
@@ -882,6 +1000,19 @@ describe('SPARQL', () => {
       expect(await distributionHealthStore.get(url)).toBeNull();
     });
 
+    it('deletes the record of a URL with IRIREF-illegal characters', async () => {
+      const queryUrl = new URL(
+        'https://example.org/sparql?query=CONSTRUCT { ?s ?p ?o }',
+      );
+
+      await expect(
+        distributionHealthStore.delete(queryUrl),
+      ).resolves.toBeUndefined();
+      await expect(
+        distributionValidityStore.delete(queryUrl),
+      ).resolves.toBeUndefined();
+    });
+
     it('replaces the records of many URLs in one update', async () => {
       const otherUrl = new URL('https://example.com/other.nt.gz');
       const untouchedUrl = new URL('https://example.com/untouched.nt.gz');
@@ -1137,3 +1268,26 @@ describe('SPARQL', () => {
     });
   });
 });
+
+function datasetWithDistributions(
+  datasetIri: string,
+  urls: { accessURL?: string; downloadURL?: string },
+) {
+  const dataset = createTestDataset(datasetIri);
+  const dcat = (term: string) =>
+    factory.namedNode(`http://www.w3.org/ns/dcat#${term}`);
+  for (const [predicate, url] of Object.entries(urls)) {
+    const distribution = factory.blankNode();
+    dataset.add(
+      factory.quad(
+        factory.namedNode(datasetIri),
+        dcat('distribution'),
+        distribution,
+      ),
+    );
+    dataset.add(
+      factory.quad(distribution, dcat(predicate), factory.namedNode(url)),
+    );
+  }
+  return dataset;
+}

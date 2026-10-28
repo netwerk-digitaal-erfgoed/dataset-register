@@ -16,7 +16,7 @@
   "dependencies": {
     "@dataset-register/core": "*",
     "@lde/dataset": "^0.8.0",
-    "@lde/pipeline": "^0.36.0",
+    "@lde/pipeline": "^0.37.0",
     "@lde/search": "^0.29.0",
     "@lde/search-typesense": "^0.34.0",
     "@rdfjs/types": "2.0.1",

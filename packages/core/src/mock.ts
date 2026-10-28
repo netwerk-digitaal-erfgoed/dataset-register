@@ -8,8 +8,18 @@ import type { DatasetStore } from './dataset.ts';
 import fs from 'node:fs';
 import DatasetExt from 'rdf-ext/lib/Dataset.js';
 import type { Rating, RatingStore } from './rate.ts';
-import type { DatasetCore } from '@rdfjs/types';
+import type { DatasetCore, Quad } from '@rdfjs/types';
 import type { ValidationReportStore } from './validation-report.ts';
+import { extractIri } from './dataset.ts';
+import { dcat } from './query.ts';
+import type {
+  DistributionHealthRecord,
+  DistributionHealthStore,
+} from './distribution-health-store.ts';
+import type {
+  DistributionValidityMeasurement,
+  DistributionValidityStore,
+} from './distribution-validity-store.ts';
 
 export class MockRegistrationStore implements RegistrationStore {
   private readonly registrations: Map<URL, Registration> = new Map();
@@ -35,6 +45,7 @@ export class MockRegistrationStore implements RegistrationStore {
   }
 
   async store(registration: Registration): Promise<void> {
+    await this.delete(registration.url);
     this.registrations.set(registration.url, registration);
   }
 
@@ -52,6 +63,22 @@ export class MockRegistrationStore implements RegistrationStore {
       (registration) => registration.url.toString() === url.toString(),
     );
     return Promise.resolve(found);
+  }
+
+  findListedDatasets(datasetIris: URL[], exceptUrl?: URL): Promise<URL[]> {
+    const listed = new Set(
+      this.all()
+        .filter(
+          (registration) =>
+            registration.url.toString() !== exceptUrl?.toString(),
+        )
+        .flatMap((registration) =>
+          registration.datasets.map((datasetIri) => datasetIri.toString()),
+        ),
+    );
+    return Promise.resolve(
+      datasetIris.filter((datasetIri) => listed.has(datasetIri.toString())),
+    );
   }
 
   async delete(url: URL): Promise<void> {
@@ -90,8 +117,47 @@ export class MockDatasetStore implements DatasetStore {
     this.datasets.push(datasets);
   }
 
-  async delete(_datasetUri: URL): Promise<void> {
-    // In mock, we don't track datasets by URI, so this is a no-op
+  async delete(datasetUri: URL): Promise<void> {
+    this.datasets = this.datasets.filter(
+      (dataset) => extractIri(dataset).toString() !== datasetUri.toString(),
+    );
+  }
+
+  findAll(): Promise<URL[]> {
+    return Promise.resolve(this.datasets.map(extractIri));
+  }
+
+  findDistributionUrls(datasetIris: URL[]): Promise<string[]> {
+    return Promise.resolve(
+      this.distributionUrls(
+        this.datasets.filter((dataset) =>
+          datasetIris.some(
+            (datasetIri) =>
+              datasetIri.toString() === extractIri(dataset).toString(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  findReferencedDistributionUrls(
+    urls: string[],
+    exceptDatasetIris: URL[] = [],
+  ): Promise<string[]> {
+    const counted = this.datasets.filter(
+      (dataset) =>
+        !exceptDatasetIris.some(
+          (datasetIri) =>
+            datasetIri.toString() === extractIri(dataset).toString(),
+        ),
+    );
+    return Promise.resolve(
+      this.distributionUrls(counted).filter((reference) =>
+        urls.some(
+          (url) => reference === url || reference.startsWith(`${url}#`),
+        ),
+      ),
+    );
   }
 
   countDatasets(): Promise<number> {
@@ -100,6 +166,15 @@ export class MockDatasetStore implements DatasetStore {
 
   countOrganisations(): Promise<number> {
     return Promise.resolve(0);
+  }
+
+  private distributionUrls(datasets: DatasetExt[]): string[] {
+    return datasets.flatMap((dataset) =>
+      [
+        ...dataset.match(null, dcat('accessURL'), null),
+        ...dataset.match(null, dcat('downloadURL'), null),
+      ].map((quad) => quad.object.value),
+    );
   }
 }
 
@@ -124,6 +199,61 @@ export class MockValidationReportStore implements ValidationReportStore {
 
   async delete(registrationUrl: URL): Promise<void> {
     this.reports.delete(registrationUrl.toString());
+  }
+}
+
+export class MockDistributionHealthStore implements DistributionHealthStore {
+  public readonly records: Map<string, DistributionHealthRecord> = new Map();
+
+  async get(url: URL): Promise<DistributionHealthRecord | null> {
+    return this.records.get(url.toString()) ?? null;
+  }
+
+  async getMany(urls: URL[]): Promise<Map<string, DistributionHealthRecord>> {
+    return new Map(
+      urls.flatMap((url) => {
+        const record = this.records.get(url.toString());
+        return record ? [[url.toString(), record]] : [];
+      }),
+    );
+  }
+
+  async store(record: DistributionHealthRecord): Promise<void> {
+    this.records.set(record.url.toString(), record);
+  }
+
+  async storeMany(records: DistributionHealthRecord[]): Promise<void> {
+    records.forEach((record) =>
+      this.records.set(record.url.toString(), record),
+    );
+  }
+
+  async delete(url: URL): Promise<void> {
+    this.records.delete(url.toString());
+  }
+}
+
+export class MockDistributionValidityStore implements DistributionValidityStore {
+  public readonly measurements: Map<string, Quad[]> = new Map();
+
+  async store(accessUrl: URL, quads: Quad[]): Promise<void> {
+    await this.storeMany([{ accessUrl, quads }]);
+  }
+
+  async storeMany(
+    measurements: DistributionValidityMeasurement[],
+  ): Promise<void> {
+    for (const { accessUrl, quads } of measurements) {
+      if (quads.length === 0) {
+        this.measurements.delete(accessUrl.toString());
+      } else {
+        this.measurements.set(accessUrl.toString(), quads);
+      }
+    }
+  }
+
+  async delete(accessUrl: URL): Promise<void> {
+    this.measurements.delete(accessUrl.toString());
   }
 }
 

@@ -9,18 +9,15 @@ import bearerAuth from '@fastify/bearer-auth';
 import {
   AllowedRegistrationDomainStore,
   createRdfFetch,
+  DatasetRemover,
   DatasetStore,
   dereference,
   discoverDatacatalog,
   type ResolvedSource,
-  extractIri,
-  fetch,
   FetchError,
   HttpError,
   NoDatasetFoundAtUrl,
   ProbeProgressListener,
-  RatingStore,
-  Registration,
   registrationsCounter,
   RegistrationStore,
   serializeQuads,
@@ -38,6 +35,7 @@ import fastifyRdf from '@lde/fastify-rdf';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import type { DatasetCore } from '@rdfjs/types';
 import { dirname } from 'node:path';
+import { type Register, registrar } from './register.js';
 
 /** Whether the client asked for a Server-Sent Events response. */
 function wantsEventStream(accept: string | undefined): boolean {
@@ -53,7 +51,7 @@ export async function server(
   shacl: DatasetCore,
   docsUrl = '/',
   options?: FastifyServerOptions,
-  ratingStore?: RatingStore,
+  datasetRemover?: DatasetRemover,
   apiAccessToken?: string,
   /**
    * Called fire-and-forget after a delete removes a registration, so the search
@@ -62,6 +60,12 @@ export async function server(
    * unit-testable. `main.ts` wires it to the single-flight rebuild.
    */
   onDatasetsChanged?: () => void,
+  /** Runs after `POST /datasets` has responded; see {@link Register}. */
+  register: Register = registrar(
+    registrationStore,
+    datasetStore,
+    datasetRemover,
+  ),
 ): Promise<FastifyInstance<Server>> {
   const server = fastify(options);
 
@@ -307,51 +311,14 @@ export async function server(
       ? await validate(resolved.data, reply.code(202), resolved.url)
       : false;
     if (resolved && valid) {
-      const { url, data, mediaType } = resolved;
-      // The URL has validated, so any problems with processing the dataset are now ours. Therefore, make sure to
-      // store the registration so we can come back to that when crawling, even if fetching the datasets fails.
-      // Store first rather than wrapping in a try/catch to cope with OOMs.
-      // Keep original datePosted if re-registering an existing URL.
-      const existingRegistration = await registrationStore.findByUrl(url);
-      const datePosted = existingRegistration?.datePosted ?? new Date();
-      // Carry the crawl clock over: re-registering reads the URL and re-stores the
-      // description, but probes nothing, so it must not defer the next crawl.
-      // Carry the warning count over too: re-registering stores no validation report, so
-      // claiming a fresh count the report graph cannot back up would make the dataset page
-      // and /validate disagree. Blanking it is worse still – the page would read “no
-      // warnings” until the next crawl.
-      const registration = new Registration(
-        url,
-        datePosted,
-        undefined,
-        [],
-        existingRegistration?.dateCrawled,
-        existingRegistration?.warningCount,
+      // Not awaited: the client has its 202 and should not wait for the datasets to be
+      // fetched, so a failure can only be logged.
+      void register(resolved, request.log).catch((error: unknown) =>
+        request.log.error(
+          { err: error },
+          `Registering ${resolved.url.toString()} failed`,
+        ),
       );
-      await registrationStore.store(registration);
-
-      // Fetch dataset descriptions and store them.
-      const datasetIris: URL[] = [];
-      for await (const dataset of fetch(url, data)) {
-        datasetIris.push(extractIri(dataset));
-        await datasetStore.store(dataset);
-      }
-
-      request.log.info(
-        `Found ${datasetIris.length} datasets at ${url.toString()}`,
-      );
-
-      // Update registration with dataset descriptions that we found.
-      // Pass the media type so a manual re-registration records it too, and does not
-      // blank out what the last crawl recorded.
-      const updatedRegistration = registration.read({
-        datasets: datasetIris,
-        statusCode: 200,
-        valid: true,
-        warningCount: existingRegistration?.warningCount,
-        mediaType,
-      });
-      await registrationStore.store(updatedRegistration);
     }
 
     registrationsCounter.add(1, {
@@ -523,13 +490,8 @@ export async function server(
           return reply.code(404).send();
         }
 
-        // Delete ratings and dataset graphs for each dataset
-        for (const datasetIri of registration.datasets) {
-          await ratingStore?.delete(datasetIri);
-          await datasetStore.delete(datasetIri);
-        }
-
         // Before the registration, so a failure here leaves it in place for a retry.
+        await datasetRemover?.remove(registration.datasets, url);
         await validationReportStore.delete(url);
 
         // Delete the registration (including linked dataset entries in registrations graph)
