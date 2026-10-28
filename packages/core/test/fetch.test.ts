@@ -1915,17 +1915,20 @@ describe('Request timeout', () => {
     // Page 1 is dereferenced; Comunica then follows the Hydra link to page 2. Passing an
     // explicit per-request timeout to fetch() must reach the page-2 GET too, proving
     // pages 2..N are bounded by the same deadline – not just the first dereference (#2000).
+    // The pages persist because Comunica may request one again, and nock answers a
+    // request no mock is left for with a 501.
     nock('https://slow.example')
       .get('/datasets/hydra-page1.jsonld')
-      .times(2)
       .replyWithFile(200, 'test/datasets/hydra-page1.jsonld', {
         'Content-Type': 'application/ld+json',
-      });
+      })
+      .persist();
     nock('https://slow.example')
       .get('/datasets/hydra-page2.jsonld')
       .replyWithFile(200, 'test/datasets/hydra-page2.jsonld', {
         'Content-Type': 'application/ld+json',
-      });
+      })
+      .persist();
 
     const { data } = await fetchDereference(
       new URL('https://slow.example/datasets/hydra-page1.jsonld'),
