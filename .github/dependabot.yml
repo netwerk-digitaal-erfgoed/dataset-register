@@ -18,7 +18,7 @@ updates:
       exclude:
         - '@lde/*'
     ignore:
-      # Two majors are blocked by a peer that has not caught up. Dependabot
+      # These majors are blocked by something that has not caught up. Dependabot
       # re-proposes them every cycle otherwise, and each one has to be split out
       # of its group by hand — three times so far (#2297, #2319, #2326).
       #
@@ -36,6 +36,18 @@ updates:
         # declares `typescript@>=4.8.4 <6.1.0`, so npm cannot resolve the tree at
         # all. Lift when typescript-eslint widens its peer range.
         versions: ['>=7']
+      - dependency-name: 'jsonld-context-parser'
+        # packages/core declares the range of the copy hoisted at the root (2.x,
+        # from @comunica/context-entries). Declaring 3.x nests a copy under
+        # packages/core, which @nx/js:prune-lockfile cannot map, so every Docker
+        # build fails. Lift when the hoisted copy moves to 3.x.
+        versions: ['>=3']
+      - dependency-name: 'nock'
+        # nock 15 hangs on a mocked HEAD response that declares a Content-Length
+        # but has no body, which the distribution probe tests rely on, and the
+        # nock.back fixtures in the API tests time out. Lift when the tests are
+        # migrated to nock 15.
+        versions: ['>=15']
 
     groups:
       lde: # Our own LDE packages; bump together and fast (no cooldown).
