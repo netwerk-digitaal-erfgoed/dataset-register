@@ -1,4 +1,3 @@
-// Temporary: exercises the graphql-contract job.
 import { fold } from '@lde/text-normalization';
 
 /**
