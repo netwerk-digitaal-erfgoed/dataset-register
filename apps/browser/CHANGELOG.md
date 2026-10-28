@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/browser-0.3.0...browser-0.3.1) (2026-10-28)
+
+
+### chore
+
+* **browser:** Synchronize dataset-register-app versions
+
 ## [0.3.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/browser-0.2.0...browser-0.3.0) (2026-10-26)
 
 

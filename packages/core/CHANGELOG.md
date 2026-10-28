@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.1](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/core-0.3.0...core-0.3.1) (2026-10-28)
+
+
+### Bug Fixes
+
+* **requirements:** hold DCAT and Schema.org properties to the same rules ([#2484](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2484)) ([6f336e8](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/6f336e87bd946106c5419f33a4f47863bec51c9a))
+* **requirements:** label every v2.0 media type rule in the spec ([#2489](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2489)) ([b47a403](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/b47a403255c29a6f8f8076a2ad5e729470f91261))
+* **requirements:** recommend an identifier for DCAT organizations too ([#2491](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2491)) ([3ed2023](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/3ed2023404c6e32fef683f5715ab98f672e026e9))
+
 ## [0.3.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/core-0.2.0...core-0.3.0) (2026-10-26)
 
 
