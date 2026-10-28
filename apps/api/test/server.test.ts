@@ -58,6 +58,33 @@ function datasetDescription(datasetIri: URL) {
 }
 
 /**
+ * The recorded fixture bodies are not byte-exact copies of the original
+ * responses, so their Content-Length headers overstate them, and nock 15 waits
+ * for the missing bytes forever. Drop the header so each reply ends with its body.
+ */
+const fixtureOptions: nock.BackOptions = {
+  before: (definition) => {
+    const rawHeaders: unknown = definition.rawHeaders;
+    if (Array.isArray(rawHeaders)) {
+      const index = rawHeaders.findIndex(
+        (value, position) =>
+          position % 2 === 0 &&
+          String(value).toLowerCase() === 'content-length',
+      );
+      if (index !== -1) {
+        rawHeaders.splice(index, 2);
+      }
+    } else if (definition.rawHeaders) {
+      for (const name of Object.keys(definition.rawHeaders)) {
+        if (name.toLowerCase() === 'content-length') {
+          delete definition.rawHeaders[name];
+        }
+      }
+    }
+  },
+};
+
+/**
  * Parse a Server-Sent Events stream body into its individual events. This is
  * an intentionally independent parser (the browser client has its own in
  * validation.ts) so the test validates the server's wire format on its own
@@ -268,7 +295,7 @@ describe('Server', () => {
   });
 
   it('responds with 200 to valid dataset requests', async () => {
-    const { nockDone } = await nock.back('valid-dataset.json');
+    const { nockDone } = await nock.back('valid-dataset.json', fixtureOptions);
     const response = await httpServer.inject({
       method: 'PUT',
       url: '/datasets/validate',
@@ -556,7 +583,10 @@ describe('Server', () => {
   });
 
   it('responds with validation errors to invalid dataset requests', async () => {
-    const { nockDone } = await nock.back('invalid-dataset.json');
+    const { nockDone } = await nock.back(
+      'invalid-dataset.json',
+      fixtureOptions,
+    );
     const response = await httpServer.inject({
       method: 'PUT',
       url: '/datasets/validate',
@@ -572,7 +602,7 @@ describe('Server', () => {
   });
 
   it('ignores UTF-8 BOMs', async () => {
-    const { nockDone } = await nock.back('utf8-bom.json');
+    const { nockDone } = await nock.back('utf8-bom.json', fixtureOptions);
     const response = await httpServer.inject({
       method: 'PUT',
       url: '/datasets/validate',
@@ -615,7 +645,7 @@ describe('Server', () => {
   });
 
   it('accepts authorized domains', async () => {
-    const { nockDone } = await nock.back('post-dataset.json');
+    const { nockDone } = await nock.back('post-dataset.json', fixtureOptions);
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets',
@@ -847,7 +877,10 @@ describe('Server', () => {
   });
 
   it('responds with validation errors when adding an invalid dataset', async () => {
-    const { nockDone } = await nock.back('invalid-dataset.json');
+    const { nockDone } = await nock.back(
+      'invalid-dataset.json',
+      fixtureOptions,
+    );
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets',
@@ -862,7 +895,10 @@ describe('Server', () => {
   });
 
   it('stores registration even if fetching datasets fails', async () => {
-    const { nockDone } = await nock.back('post-dataset-query-fails.json');
+    const { nockDone } = await nock.back(
+      'post-dataset-query-fails.json',
+      fixtureOptions,
+    );
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets',

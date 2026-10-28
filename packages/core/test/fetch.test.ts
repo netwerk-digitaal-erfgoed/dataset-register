@@ -1,4 +1,5 @@
 import { URL } from 'url';
+import { setTimeout as wait } from 'node:timers/promises';
 import {
   CouldNotFetchUrl,
   dereference as fetchDereference,
@@ -1883,8 +1884,9 @@ describe('Language tag defaults', () => {
 
 describe('Request timeout', () => {
   // A distinct host keeps the aborted, poisoned connection out of the example.com
-  // pool the other tests reuse. The afterEach cancels nock's delayed-response timer
-  // (left pending by the abort) so it cannot fire during a later test.
+  // pool the other tests reuse. The stalls wait before replying rather than using
+  // nock's delay(), which in nock 15 delays only the end of the body: headers go out
+  // at once, and finishing the body after the abort trips an undici assertion.
   afterEach(() => {
     nock.abortPendingRequests();
     nock.cleanAll();
@@ -1895,8 +1897,10 @@ describe('Request timeout', () => {
     nock('https://slow.example')
       .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
       .get('/stalls')
-      .delayConnection(500) // Far longer than the 20 ms timeout below.
-      .reply(200, response);
+      .reply(async () => {
+        await wait(500); // Far longer than the 20 ms timeout below.
+        return [200, response];
+      });
 
     // A 20 ms per-request timeout must abort the stalled fetch instead of waiting,
     // so one trickling host can never freeze the crawl loop (issue #2000). The abort
@@ -1941,8 +1945,10 @@ describe('Request timeout', () => {
   it('merges a caller-supplied abort signal with the timeout', async () => {
     nock('https://slow.example')
       .get('/merge')
-      .delayConnection(500)
-      .reply(200, 'never delivered');
+      .reply(async () => {
+        await wait(500);
+        return [200, 'never delivered'];
+      });
 
     // The timeout is generous, so the caller's own signal must still abort the
     // request – proving the timeout signal is merged with, not substituted for, it.
