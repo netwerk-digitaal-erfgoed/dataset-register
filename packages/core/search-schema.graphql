@@ -159,7 +159,7 @@ type DatasetFacets {
   terminology_source: [IRIBucket!]!
   language: [ValueBucket!]!
   format: [ValueBucket!]!
-  size: [RangeBucket!]!
+  size: IntBinnedRangeFacet!
   status: [ValueBucket!]!
   iiif: [BooleanBucket!]!
   nde_schema_ap: [BooleanBucket!]!
@@ -178,6 +178,28 @@ type ValueBucket {
   value: String!
   count: Int!
   label: [LanguageString!]
+}
+
+type IntBinnedRangeFacet {
+  """
+  The lowest and highest value in the whole collection, ignoring every filter and the text of the query; null when no document holds one.
+  """
+  all: IntExtent
+
+  """
+  The lowest and highest value among the documents every other filter leaves – the field’s own range filter is not applied, so a selection can always be widened again; null when none holds one.
+  """
+  matching: IntExtent
+
+  """
+  The declared bins over the same documents as “matching”.
+  """
+  buckets: [RangeBucket!]!
+}
+
+type IntExtent {
+  min: Int!
+  max: Int!
 }
 
 type RangeBucket {
