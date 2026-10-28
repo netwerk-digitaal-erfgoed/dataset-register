@@ -294,13 +294,19 @@ describe('probe outcome classifier', () => {
   });
 });
 
+// nock 15 never settles a mocked HEAD reply that declares a Content-Length (it
+// waits for that many body bytes), so the HEAD mocks below leave it out.
 describe('DistributionProbeStage', () => {
   beforeEach(() => {
     nock.cleanAll();
   });
 
   it('emits sh:Violation triples for an unreachable dcat:accessURL', async () => {
-    nock('https://example.org').head('/broken').replyWithError('ENOTFOUND');
+    // Persist the error so the probe’s retries fail too, as they would on a real outage.
+    nock('https://example.org')
+      .head('/broken')
+      .replyWithError('ENOTFOUND')
+      .persist();
 
     const dataset = factory.dataset();
     const datasetNode = factory.namedNode('https://example.org/d1');
@@ -671,8 +677,8 @@ describe('DistributionProbeStage', () => {
   it('dedups the health write, rewriting only when the outcome, fingerprint, or staleness window changes', async () => {
     nock('https://example.org')
       .head('/dedup')
-      .times(5)
-      .replyWithError('ECONNREFUSED');
+      .replyWithError('ECONNREFUSED')
+      .persist();
 
     const dataset = factory.dataset();
     const datasetNode = factory.namedNode('https://example.org/d-dedup');
@@ -746,7 +752,6 @@ describe('DistributionProbeStage', () => {
     for (const path of ['a', 'b', 'c']) {
       nock('https://example.org').head(`/${path}`).reply(200, '', {
         'Content-Type': 'text/turtle',
-        'Content-Length': '20',
       });
       nock('https://example.org')
         .get(`/${path}`)
@@ -1014,7 +1019,6 @@ describe('DistributionProbeStage', () => {
     // record is written, never a spurious NetworkError.
     nock('https://example.org').head('/good').reply(200, '', {
       'Content-Type': 'text/turtle',
-      'Content-Length': '20',
     });
     nock('https://example.org')
       .get('/good')
@@ -1110,17 +1114,24 @@ describe('DistributionProbeStage', () => {
     const stage = new DistributionProbeStage({ healthStore });
 
     // First probe: a genuine outage. The probe retries transport errors before
-    // reporting the endpoint as unavailable, so every attempt must fail – register
-    // the recovery mock only afterwards, lest a retry consume it prematurely.
-    nock('https://example.org').head('/recovering').replyWithError('ENOTFOUND');
+    // reporting the endpoint as unavailable, so every attempt must fail – persist
+    // the error, and clear it before registering the recovery mocks.
+    nock('https://example.org')
+      .head('/recovering')
+      .replyWithError('ENOTFOUND')
+      .persist();
     await stage.run(dataset); // failure
+    nock.cleanAll();
 
-    // Second probe: the endpoint has recovered. A large Content-Length makes the
-    // probe treat the HEAD as authoritative and skip the GET fallback.
-    nock('https://example.org').head('/recovering').reply(200, '', {
-      'Content-Type': 'text/turtle',
-      'Content-Length': '100000',
-    });
+    // Second probe: the endpoint has recovered and serves valid Turtle.
+    nock('https://example.org')
+      .head('/recovering')
+      .reply(200, '', { 'Content-Type': 'text/turtle' });
+    nock('https://example.org')
+      .get('/recovering')
+      .reply(200, '<urn:a> <urn:b> <urn:c> .', {
+        'Content-Type': 'text/turtle',
+      });
     await stage.run(dataset); // success
 
     const stored = await healthStore.get(new URL(url.value));
@@ -1181,19 +1192,14 @@ describe('DistributionProbeStage', () => {
     const distributionCount = 5;
     const maxProbes = 2;
     let probeCount = 0;
-    // Each distribution has a distinct accessURL, so it is its own probe endpoint. A large
-    // Content-Length keeps the probe on HEAD (no GET fallback), so each probed endpoint
-    // maps to exactly one intercepted request.
+    // Each distribution has a distinct accessURL, so it is its own probe endpoint, and each
+    // probed endpoint maps to exactly one intercepted HEAD request.
     nock('https://example.org')
       .head(/\/capped-\d+/)
       .times(distributionCount)
       .reply(() => {
         probeCount++;
-        return [
-          200,
-          '',
-          { 'Content-Type': 'text/turtle', 'Content-Length': '100000' },
-        ];
+        return [200, '', { 'Content-Type': 'text/turtle' }];
       });
 
     const dataset = factory.dataset();
@@ -1239,11 +1245,7 @@ describe('DistributionProbeStage', () => {
       .times(3)
       .reply(() => {
         probeCount++;
-        return [
-          200,
-          '',
-          { 'Content-Type': 'text/turtle', 'Content-Length': '100000' },
-        ];
+        return [200, '', { 'Content-Type': 'text/turtle' }];
       });
 
     const dataset = factory.dataset();
@@ -1519,7 +1521,6 @@ describe('DistributionProbeStage', () => {
   it('records a rejected probe when the health store throws', async () => {
     nock('https://example.org').head('/store-throws').reply(200, '', {
       'Content-Type': 'text/turtle',
-      'Content-Length': '20',
     });
     nock('https://example.org')
       .get('/store-throws')
@@ -1598,7 +1599,8 @@ describe('DistributionProbeStage', () => {
   it('skips the health write (preserving streaks) when the batched read fails', async () => {
     nock('https://example.org')
       .head('/read-outage')
-      .replyWithError('ENOTFOUND');
+      .replyWithError('ENOTFOUND')
+      .persist();
 
     const dataset = factory.dataset();
     const datasetNode = factory.namedNode('https://example.org/d-read-outage');
@@ -1828,12 +1830,14 @@ describe('DistributionProbeStage', () => {
   });
 
   it('emits the format-match severity and constraint for a content-type mismatch', async () => {
-    // A large Content-Length keeps the probe on HEAD; the served type contradicts the declared
-    // one, so the verdict is a ContentTypeMismatch — the format-match check, not reachability.
-    nock('https://example.org').head('/typed').reply(200, '', {
-      'Content-Type': 'application/json',
-      'Content-Length': '100000',
-    });
+    // The served type contradicts the declared one, so the verdict is a ContentTypeMismatch —
+    // the format-match check, not reachability.
+    nock('https://example.org')
+      .head('/typed')
+      .reply(200, '', { 'Content-Type': 'application/json' });
+    nock('https://example.org')
+      .get('/typed')
+      .reply(200, '{}', { 'Content-Type': 'application/json' });
 
     const dataset = factory.dataset();
     const datasetNode = factory.namedNode('https://example.org/d-fmt');
