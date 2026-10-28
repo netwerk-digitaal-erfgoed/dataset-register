@@ -1,3 +1,7 @@
+type OrganizationReference {
+  id: IRI!
+  label: [LanguageString!]!
+}
 
 """
 An absolute IRI (RFC 3987), serialized as a string. Any scheme – `https:`, `urn:`, `doi:`, `ark:` – not only HTTP. A field or filter typed `IRI` keys on identity, never on a literal.
