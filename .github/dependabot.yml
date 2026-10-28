@@ -42,12 +42,6 @@ updates:
         # packages/core, which @nx/js:prune-lockfile cannot map, so every Docker
         # build fails. Lift when the hoisted copy moves to 3.x.
         versions: ['>=3']
-      - dependency-name: 'nock'
-        # nock 15 hangs on a mocked HEAD response that declares a Content-Length
-        # but has no body, which the distribution probe tests rely on, and the
-        # nock.back fixtures in the API tests time out. Lift when the tests are
-        # migrated to nock 15.
-        versions: ['>=15']
 
     groups:
       lde: # Our own LDE packages; bump together and fast (no cooldown).
@@ -94,7 +88,12 @@ updates:
           - 'vitest'
       all-other-npm: # Catch-all (listed last, so the specific groups above win): collapse
         # every remaining npm update into one PR instead of a daily trickle of small PRs.
+        # Majors stay out: each gets its own PR, so one breaking release cannot hold
+        # back every patch in the group.
         patterns:
           - '*'
         exclude-patterns:
           - '@lde/*'
+        update-types:
+          - 'minor'
+          - 'patch'
