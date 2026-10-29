@@ -99,5 +99,8 @@
       "dependsOn": ["copy-workspace-modules", "prune-lockfile"]
     }
   },
-  "analytics": false
+  "analytics": false,
+  "affected": {
+    "legacy": true
+  }
 }
