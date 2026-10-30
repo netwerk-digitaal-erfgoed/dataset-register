@@ -164,7 +164,7 @@ const PAYLOAD: DatasetSearchResult = {
     terminology_source: [],
     status: [],
     nde_schema_ap: [],
-    size: [],
+    size: { buckets: [] },
   },
 };
 
