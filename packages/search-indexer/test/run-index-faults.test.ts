@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DataFactory } from 'n3';
 import { Errors, type Client } from 'typesense';
-import { RebuildAlreadyRunning } from '@lde/search-typesense';
 import type { Quad } from '@rdfjs/types';
 import type { RunContext, RunWriter } from '@lde/pipeline';
-import type { SearchDocument, SearchType } from '@lde/search';
+import {
+  RebuildAlreadyRunning,
+  type SearchDocument,
+  type SearchType,
+} from '@lde/search';
 
 const { namedNode, literal, quad } = DataFactory;
 
@@ -36,6 +39,9 @@ const mocks = vi.hoisted(() => ({
   registerQuads: [] as Quad[],
   orgLabelQuads: [] as Quad[],
   orgLabelError: false,
+  /** The latest rebuild request per index, standing in for Typesense’s
+   *  `rebuild_requests` collection. */
+  rebuildRequests: new Map<string, number>(),
 }));
 
 vi.mock('../src/typesense-client.ts', () => ({
@@ -55,10 +61,10 @@ vi.mock('../src/register-source.ts', () => ({
   },
 }));
 
-// Replace only the blue/green writer; keep the real `RebuildAlreadyRunning` so
-// runIndex’s `instanceof` skip check still recognises the lock-held case. The
-// captured `searchType` lets `openRun` distinguish the dataset rebuild from a
-// label-collection rebuild.
+// Replace the blue/green writer and the rebuild-request store. The captured
+// `searchType` lets `openRun` distinguish the dataset rebuild from a
+// label-collection rebuild; the request store keeps its requests in memory so a
+// test can record one mid-run.
 vi.mock('@lde/search-typesense', async (importOriginal) => {
   const actual = await importOriginal<object>();
   return {
@@ -84,8 +90,25 @@ vi.mock('@lde/search-typesense', async (importOriginal) => {
         return mocks.openRun(context, this.#searchType);
       }
     },
+    TypesenseRebuildRequests: class {
+      readonly #name: string;
+      constructor(_client: unknown, name: string) {
+        this.#name = name;
+      }
+      async record(): Promise<void> {
+        recordRebuildRequest(this.#name);
+      }
+      async latest(): Promise<string | undefined> {
+        return mocks.rebuildRequests.get(this.#name)?.toString();
+      }
+    },
   };
 });
+
+/** Record a rebuild request for `name`, as another trigger would. */
+function recordRebuildRequest(name: string): void {
+  mocks.rebuildRequests.set(name, (mocks.rebuildRequests.get(name) ?? 0) + 1);
+}
 
 // Imported after the mocks are registered so it binds to them.
 const { runIndex } = await import('../src/run-index.ts');
@@ -163,12 +186,65 @@ describe('runIndex fault handling', () => {
     mocks.orgLabelQuads = [];
     mocks.orgLabelError = false;
     mocks.client = fakeClient();
+    mocks.rebuildRequests.clear();
   });
 
   it('rethrows a non-lock openRun failure instead of skipping', async () => {
     mocks.openRun.mockRejectedValueOnce(new Error('lock backend down'));
 
     await expect(runIndex(baseOptions)).rejects.toThrow('lock backend down');
+  });
+
+  it('hands the rebuild off when another rebuild holds the dataset lock', async () => {
+    mocks.openRun.mockRejectedValueOnce(new RebuildAlreadyRunning('datasets'));
+
+    const logs: string[] = [];
+    const result = await runIndex({
+      ...baseOptions,
+      log: (message) => logs.push(message),
+    });
+
+    expect(result).toEqual({ mode: 'skipped', reason: 'handed-off' });
+    expect(mocks.openRun).toHaveBeenCalledOnce();
+    expect(logs).toContain(
+      'Rebuild of datasets handed off to the rebuild already running',
+    );
+  });
+
+  it('rebuilds again when a request arrives during the rebuild', async () => {
+    let datasetRuns = 0;
+    mocks.openRun.mockImplementation(async (_context, type: SearchType) => {
+      if (type.name === 'Dataset' && ++datasetRuns === 1) {
+        // Another trigger records its request while this run holds the lock.
+        recordRebuildRequest('datasets');
+      }
+      return fakeRun();
+    });
+
+    const result = await runIndex(baseOptions);
+
+    expect(datasetRuns).toBe(2);
+    expect(result).toMatchObject({ mode: 'rebuild', collection: 'datasets' });
+  });
+
+  it('reports the committed rebuild when its rerun is handed off', async () => {
+    let datasetRuns = 0;
+    mocks.openRun.mockImplementation(async (_context, type: SearchType) => {
+      if (type.name !== 'Dataset') {
+        return fakeRun();
+      }
+      if (++datasetRuns === 1) {
+        recordRebuildRequest('datasets');
+        return fakeRun();
+      }
+      // Another pod took the lock before the rerun.
+      throw new RebuildAlreadyRunning('datasets');
+    });
+
+    const result = await runIndex(baseOptions);
+
+    expect(datasetRuns).toBe(2);
+    expect(result).toMatchObject({ mode: 'rebuild', upserted: 1 });
   });
 
   it('aborts the run and rethrows when the commit fails', async () => {

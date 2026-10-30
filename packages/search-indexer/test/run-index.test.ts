@@ -523,7 +523,7 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
     expect(await search('Mohlmann')).toContain(base('mohlmann'));
   });
 
-  it('skips the rebuild when another already holds the cross-pod lock', async () => {
+  it('hands the rebuild off when another already holds the cross-pod lock', async () => {
     const alias = 'datasets_locked';
     // Simulate a concurrent rebuild by pre-taking this index’s single-flight
     // lock (the marker document `@lde/search-typesense` creates on `openRun`).
@@ -540,11 +540,14 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
       collectionAlias: alias,
     });
 
-    // The lock is held, so the run is a graceful no-op rather than a failure.
-    expect(result).toMatchObject({
-      mode: 'skipped',
-      reason: 'concurrent-rebuild',
-    });
+    // The lock is held, so the run records a request for the holder and returns
+    // rather than fails.
+    expect(result).toEqual({ mode: 'skipped', reason: 'handed-off' });
+    const request = await client
+      .collections('rebuild_requests')
+      .documents(alias)
+      .retrieve();
+    expect(request).toMatchObject({ id: alias });
     await client.collections('rebuild_locks').documents(alias).delete();
   });
 
