@@ -111,7 +111,8 @@ You can configure the application through environment variables:
   hours. Endpoints beyond the cap are skipped and the skipped count is logged, never silently dropped (default: `100`).
 - `TYPESENSE_HOST`, `TYPESENSE_PORT`, `TYPESENSE_PROTOCOL`, `TYPESENSE_API_KEY`: connection to the
   [Typesense](https://typesense.org) [search index](#search-index). When `TYPESENSE_HOST` and `TYPESENSE_API_KEY` are
-  both set, the crawler rebuilds the index after each crawl; leave them unset to run without search. `TYPESENSE_API_KEY`
+  both set, the crawler rebuilds the index after each crawl and the API after each registration or deletion; leave them
+  unset to run without search. `TYPESENSE_API_KEY`
   is the admin key used to write the index (the bundled `docker compose` Typesense defaults to `dev-typesense-key`).
 - `KNOWLEDGE_GRAPH_URL`: SPARQL endpoint of the Dataset Knowledge Graph used to enrich the
   [search index](#search-index) (facets such as class, terminology source and size, and the NDE-compatibility flags).
