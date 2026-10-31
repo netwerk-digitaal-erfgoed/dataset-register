@@ -1,7 +1,11 @@
 import { Client, Errors } from 'typesense';
-import { BlueGreenRebuild, RebuildAlreadyRunning } from '@lde/search-typesense';
+import {
+  BlueGreenRebuild,
+  TypesenseRebuildRequests,
+} from '@lde/search-typesense';
 import {
   projectRoots,
+  requestRebuild,
   type RootType,
   type SearchDocument,
 } from '@lde/search';
@@ -52,15 +56,16 @@ export interface RunIndexOptions {
 }
 
 /**
- * Why a run left the live index untouched. `concurrent-rebuild`: another rebuild
- * already held the cross-pod lock. `empty-knowledge-graph`: a configured DKG
+ * Why a run left the live index untouched. `handed-off`: another rebuild held
+ * the cross-pod lock, and that run rebuilds again once it finishes, so this
+ * request is served there rather than dropped. `empty-knowledge-graph`: a configured DKG
  * returned no enrichment, so the current enriched index was kept rather than
  * swapped for an enrichment-less one. `empty-projection`: the projection produced
  * no documents while a live index already exists, so the populated index was kept
  * rather than replaced with an empty one (see {@link runIndex}).
  */
 export type SkipReason =
-  'concurrent-rebuild' | 'empty-knowledge-graph' | 'empty-projection';
+  'handed-off' | 'empty-knowledge-graph' | 'empty-projection';
 
 export type RunIndexResult =
   | {
@@ -86,17 +91,42 @@ export type RunIndexResult =
  *
  * {@link BlueGreenRebuild} is single-flight per index (it holds a cross-pod lock
  * in Typesense), so the crawler and every API pod can trigger this concurrently
- * and only one rebuild runs at a time; a trigger arriving mid-rebuild throws
- * {@link RebuildAlreadyRunning}, which is caught and returned as
- * `mode: 'skipped'` rather than queued.
+ * and only one rebuild runs at a time. Every run goes through `requestRebuild`:
+ * a trigger arriving mid-rebuild records a request and returns
+ * `mode: 'skipped'` with reason `handed-off`, and the run holding the lock
+ * rebuilds once more when it finishes, so the change the trigger was for still
+ * reaches the index. After reruns, the result describes the last one that ran;
+ * a rerun handed off to another pod leaves it unchanged.
  */
 export async function runIndex(
   options: RunIndexOptions,
 ): Promise<RunIndexResult> {
   const log = options.log ?? (() => undefined);
   const alias = options.collectionAlias ?? SEARCH_COLLECTION_ALIAS;
-
   const client = createTypesenseClient(options.typesense);
+
+  let result: RunIndexResult | undefined;
+  await requestRebuild(
+    async () => {
+      result = await rebuildIndex(options, client, alias, log);
+    },
+    // Named after the alias because that is what the dataset rebuild locks on.
+    new TypesenseRebuildRequests(client, alias),
+  );
+  if (result === undefined) {
+    log(`Rebuild of ${alias} handed off to the rebuild already running`);
+    return { mode: 'skipped', reason: 'handed-off' };
+  }
+  return result;
+}
+
+/** One blue/green rebuild of the dataset index and its label collections. */
+async function rebuildIndex(
+  options: RunIndexOptions,
+  client: Client,
+  alias: string,
+  log: (message: string) => void,
+): Promise<RunIndexResult> {
   const source = new RegisterSource(
     new SparqlClient(options.sparqlUrl),
     options.registrationsGraphIri ?? DEFAULT_REGISTRATIONS_GRAPH,
@@ -110,54 +140,9 @@ export async function runIndex(
 
   log(`Rebuilding search index ${alias}`);
 
-  // Kick off every read/sync that does not depend on the writer up front so they
-  // overlap instead of serializing on the critical path: the two main CONSTRUCTs
-  // (register + DKG, different endpoints), the typed-label reads, and the
-  // synonym-set sync. The label reads and the synonym sync otherwise sit serially
-  // – labels after commit, synonyms before the reads – adding their full
-  // round-trip latency to the run; overlapping hides it behind the main reads and
-  // the import. Each dataset is framed per subject and projected, streamed
-  // straight into the rebuild so only one document is held at a time; the
-  // versioned collection name, alias swap and cross-pod lock are managed by
-  // {@link BlueGreenRebuild}.
-  const labelQuadsPromise = readLabelQuads(source, options, log);
-  // readLabelQuads can reject (the register org-label read has no fallback); mark
-  // it handled so an early skip-return below does not surface an unhandled
-  // rejection. The label rebuild awaits the same promise and keeps the previous
-  // label collections on a real failure.
-  labelQuadsPromise.catch(() => undefined);
-  const synonymsPromise = syncSynonyms(client, log);
-  const [registerQuads, dkgQuads] = await Promise.all([
-    source.readQuads(),
-    readKnowledgeGraphQuads(options, log),
-  ]);
-
-  // Guard a transient or empty Knowledge Graph from stripping every facet off the
-  // live index. The rebuild is a full blue/green swap, so projecting register data
-  // with no DKG enrichment would atomically replace a good, enriched index with an
-  // enrichment-less one for every dataset at once (no terminology-source facet, no
-  // Linked Data summary class data). When a DKG endpoint is configured but returned
-  // nothing – unreachable, or reduced to a bootstrap-only store – while the
-  // register has data and a live index already exists, keep that index instead of
-  // swapping. A run with no DKG endpoint configured, or a cold start with no index
-  // yet, still proceeds register-only. The next run self-heals once the DKG is
-  // back. (See dataset-knowledge-graph#385, which makes the DKG fail loudly rather
-  // than serve empty.)
-  if (
-    options.knowledgeGraphEndpoint !== undefined &&
-    dkgQuads.length === 0 &&
-    registerQuads.length > 0 &&
-    (await aliasTarget(client, alias)) !== undefined
-  ) {
-    log(
-      `Rebuild of ${alias} skipped: the Knowledge Graph returned no enrichment; keeping the current index to avoid stripping facets`,
-    );
-    return { mode: 'skipped', reason: 'empty-knowledge-graph' };
-  }
-
   // The collection schema references the synonym set by name, so the sync must
   // complete before openRun creates the collection.
-  await synonymsPromise;
+  await syncSynonyms(client, log);
 
   const writer = new BlueGreenRebuild<SearchDocument>(client, datasetType, {
     // The alias this deployment keeps its live collection on, rather than the
@@ -176,21 +161,54 @@ export async function runIndex(
     synonymSets: [SEARCH_SYNONYM_SET],
   });
 
-  let run;
-  try {
-    run = await writer.openRun(runContext());
-  } catch (error) {
-    // The cross-pod lock is held by another rebuild: a graceful skip, not a
-    // failure. Every other error is genuine and propagates.
-    if (error instanceof RebuildAlreadyRunning) {
-      log(`Rebuild of ${alias} skipped: another rebuild is already running`);
-      return { mode: 'skipped', reason: 'concurrent-rebuild' };
-    }
-    throw error;
-  }
+  // Taken before any read: when another rebuild holds the cross-pod lock, this
+  // throws `RebuildAlreadyRunning` and `requestRebuild` in runIndex turns it into
+  // a hand-off, so a handed-off trigger costs no SPARQL reads.
+  const run = await writer.openRun(runContext());
+
+  // Start every read up front so they overlap instead of serializing on the
+  // critical path: the two main CONSTRUCTs (register + DKG, different endpoints)
+  // and the typed-label reads, which would otherwise add their full round-trip
+  // latency after commit. Each dataset is framed per subject and projected,
+  // streamed straight into the rebuild so only one document is held at a time.
+  const labelQuadsPromise = readLabelQuads(source, options, log);
+  // readLabelQuads can reject (the register org-label read has no fallback); mark
+  // it handled so an early skip-return below does not surface an unhandled
+  // rejection. The label rebuild awaits the same promise and keeps the previous
+  // label collections on a real failure.
+  labelQuadsPromise.catch(() => undefined);
 
   let upserted = 0;
   try {
+    const [registerQuads, dkgQuads] = await Promise.all([
+      source.readQuads(),
+      readKnowledgeGraphQuads(options, log),
+    ]);
+
+    // Guard a transient or empty Knowledge Graph from stripping every facet off the
+    // live index. The rebuild is a full blue/green swap, so projecting register data
+    // with no DKG enrichment would atomically replace a good, enriched index with an
+    // enrichment-less one for every dataset at once (no terminology-source facet, no
+    // Linked Data summary class data). When a DKG endpoint is configured but returned
+    // nothing – unreachable, or reduced to a bootstrap-only store – while the
+    // register has data and a live index already exists, keep that index instead of
+    // swapping. A run with no DKG endpoint configured, or a cold start with no index
+    // yet, still proceeds register-only. The next run self-heals once the DKG is
+    // back. (See dataset-knowledge-graph#385, which makes the DKG fail loudly rather
+    // than serve empty.)
+    if (
+      options.knowledgeGraphEndpoint !== undefined &&
+      dkgQuads.length === 0 &&
+      registerQuads.length > 0 &&
+      (await aliasTarget(client, alias)) !== undefined
+    ) {
+      await run.abort(new Error('the Knowledge Graph returned no enrichment'));
+      log(
+        `Rebuild of ${alias} skipped: the Knowledge Graph returned no enrichment; keeping the current index to avoid stripping facets`,
+      );
+      return { mode: 'skipped', reason: 'empty-knowledge-graph' };
+    }
+
     // Count the projected documents as they stream past, so the result carries
     // the imported total the writer does not itself report.
     const documents = (async function* () {
@@ -336,7 +354,6 @@ function projectDatasets(
   })();
   return projectRoots(quads, roots, SEARCH_SCHEMA, datasetType);
 }
-
 
 /**
  * Whether the alias currently points at a collection: a cold start (no index
