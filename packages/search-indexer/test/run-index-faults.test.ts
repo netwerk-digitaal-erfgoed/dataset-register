@@ -37,6 +37,8 @@ const mocks = vi.hoisted(() => ({
   openRun: vi.fn(),
   client: undefined as unknown as Client,
   registerQuads: [] as Quad[],
+  /** How many times the register was read, to prove a hand-off reads nothing. */
+  registerReads: 0,
   orgLabelQuads: [] as Quad[],
   orgLabelError: false,
   /** The latest rebuild request per index, standing in for Typesense’s
@@ -51,6 +53,7 @@ vi.mock('../src/typesense-client.ts', () => ({
 vi.mock('../src/register-source.ts', () => ({
   RegisterSource: class {
     readQuads(): Promise<Quad[]> {
+      mocks.registerReads++;
       return Promise.resolve(mocks.registerQuads);
     }
     readOrganizationLabelQuads(): Promise<Quad[]> {
@@ -183,6 +186,7 @@ describe('runIndex fault handling', () => {
     // Default: every rebuild (dataset + labels) opens a working run.
     mocks.openRun.mockImplementation(async () => fakeRun());
     mocks.registerQuads = REGISTER_QUADS;
+    mocks.registerReads = 0;
     mocks.orgLabelQuads = [];
     mocks.orgLabelError = false;
     mocks.client = fakeClient();
@@ -206,6 +210,8 @@ describe('runIndex fault handling', () => {
 
     expect(result).toEqual({ mode: 'skipped', reason: 'handed-off' });
     expect(mocks.openRun).toHaveBeenCalledOnce();
+    // The lock is tried before the register is read, so a hand-off reads nothing.
+    expect(mocks.registerReads).toBe(0);
     expect(logs).toContain(
       'Rebuild of datasets handed off to the rebuild already running',
     );

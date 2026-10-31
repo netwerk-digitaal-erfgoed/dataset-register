@@ -140,54 +140,9 @@ async function rebuildIndex(
 
   log(`Rebuilding search index ${alias}`);
 
-  // Kick off every read/sync that does not depend on the writer up front so they
-  // overlap instead of serializing on the critical path: the two main CONSTRUCTs
-  // (register + DKG, different endpoints), the typed-label reads, and the
-  // synonym-set sync. The label reads and the synonym sync otherwise sit serially
-  // – labels after commit, synonyms before the reads – adding their full
-  // round-trip latency to the run; overlapping hides it behind the main reads and
-  // the import. Each dataset is framed per subject and projected, streamed
-  // straight into the rebuild so only one document is held at a time; the
-  // versioned collection name, alias swap and cross-pod lock are managed by
-  // {@link BlueGreenRebuild}.
-  const labelQuadsPromise = readLabelQuads(source, options, log);
-  // readLabelQuads can reject (the register org-label read has no fallback); mark
-  // it handled so an early skip-return below does not surface an unhandled
-  // rejection. The label rebuild awaits the same promise and keeps the previous
-  // label collections on a real failure.
-  labelQuadsPromise.catch(() => undefined);
-  const synonymsPromise = syncSynonyms(client, log);
-  const [registerQuads, dkgQuads] = await Promise.all([
-    source.readQuads(),
-    readKnowledgeGraphQuads(options, log),
-  ]);
-
-  // Guard a transient or empty Knowledge Graph from stripping every facet off the
-  // live index. The rebuild is a full blue/green swap, so projecting register data
-  // with no DKG enrichment would atomically replace a good, enriched index with an
-  // enrichment-less one for every dataset at once (no terminology-source facet, no
-  // Linked Data summary class data). When a DKG endpoint is configured but returned
-  // nothing – unreachable, or reduced to a bootstrap-only store – while the
-  // register has data and a live index already exists, keep that index instead of
-  // swapping. A run with no DKG endpoint configured, or a cold start with no index
-  // yet, still proceeds register-only. The next run self-heals once the DKG is
-  // back. (See dataset-knowledge-graph#385, which makes the DKG fail loudly rather
-  // than serve empty.)
-  if (
-    options.knowledgeGraphEndpoint !== undefined &&
-    dkgQuads.length === 0 &&
-    registerQuads.length > 0 &&
-    (await aliasTarget(client, alias)) !== undefined
-  ) {
-    log(
-      `Rebuild of ${alias} skipped: the Knowledge Graph returned no enrichment; keeping the current index to avoid stripping facets`,
-    );
-    return { mode: 'skipped', reason: 'empty-knowledge-graph' };
-  }
-
   // The collection schema references the synonym set by name, so the sync must
   // complete before openRun creates the collection.
-  await synonymsPromise;
+  await syncSynonyms(client, log);
 
   const writer = new BlueGreenRebuild<SearchDocument>(client, datasetType, {
     // The alias this deployment keeps its live collection on, rather than the
@@ -206,12 +161,54 @@ async function rebuildIndex(
     synonymSets: [SEARCH_SYNONYM_SET],
   });
 
-  // Throws `RebuildAlreadyRunning` when another rebuild holds the cross-pod
-  // lock; `requestRebuild` in runIndex turns that into a hand-off.
+  // Taken before any read: when another rebuild holds the cross-pod lock, this
+  // throws `RebuildAlreadyRunning` and `requestRebuild` in runIndex turns it into
+  // a hand-off, so a handed-off trigger costs no SPARQL reads.
   const run = await writer.openRun(runContext());
+
+  // Start every read up front so they overlap instead of serializing on the
+  // critical path: the two main CONSTRUCTs (register + DKG, different endpoints)
+  // and the typed-label reads, which would otherwise add their full round-trip
+  // latency after commit. Each dataset is framed per subject and projected,
+  // streamed straight into the rebuild so only one document is held at a time.
+  const labelQuadsPromise = readLabelQuads(source, options, log);
+  // readLabelQuads can reject (the register org-label read has no fallback); mark
+  // it handled so an early skip-return below does not surface an unhandled
+  // rejection. The label rebuild awaits the same promise and keeps the previous
+  // label collections on a real failure.
+  labelQuadsPromise.catch(() => undefined);
 
   let upserted = 0;
   try {
+    const [registerQuads, dkgQuads] = await Promise.all([
+      source.readQuads(),
+      readKnowledgeGraphQuads(options, log),
+    ]);
+
+    // Guard a transient or empty Knowledge Graph from stripping every facet off the
+    // live index. The rebuild is a full blue/green swap, so projecting register data
+    // with no DKG enrichment would atomically replace a good, enriched index with an
+    // enrichment-less one for every dataset at once (no terminology-source facet, no
+    // Linked Data summary class data). When a DKG endpoint is configured but returned
+    // nothing – unreachable, or reduced to a bootstrap-only store – while the
+    // register has data and a live index already exists, keep that index instead of
+    // swapping. A run with no DKG endpoint configured, or a cold start with no index
+    // yet, still proceeds register-only. The next run self-heals once the DKG is
+    // back. (See dataset-knowledge-graph#385, which makes the DKG fail loudly rather
+    // than serve empty.)
+    if (
+      options.knowledgeGraphEndpoint !== undefined &&
+      dkgQuads.length === 0 &&
+      registerQuads.length > 0 &&
+      (await aliasTarget(client, alias)) !== undefined
+    ) {
+      await run.abort(new Error('the Knowledge Graph returned no enrichment'));
+      log(
+        `Rebuild of ${alias} skipped: the Knowledge Graph returned no enrichment; keeping the current index to avoid stripping facets`,
+      );
+      return { mode: 'skipped', reason: 'empty-knowledge-graph' };
+    }
+
     // Count the projected documents as they stream past, so the result carries
     // the imported total the writer does not itself report.
     const documents = (async function* () {
