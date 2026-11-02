@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { paraglideVitePlugin } from '@inlang/paraglide-js';
 import { defineConfig } from 'vitest/config';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { nxReadySignal } from '@nx/vite/plugins/nx-ready-signal.plugin';
 
 export default defineConfig({
   root: __dirname,
@@ -36,6 +37,7 @@ export default defineConfig({
       strategy: ['url', 'baseLocale'],
       outdir: './src/lib/paraglide',
     }),
+    nxReadySignal(),
   ],
   ssr: {
     // lz-string is a CommonJS module; let Vite bundle it during SSR so its

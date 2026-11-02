@@ -129,7 +129,8 @@ jobs:
         run: npx nx run @dataset-register/core:sdl
 
       - if: steps.relevant.outputs.changed == 'true'
-        name: Commit if the contract was out of date
+        id: stale
+        name: Stage the contract if it was out of date
         env:
           CONTRACT: packages/core/search-schema.graphql
           FORK: ${{ github.event.pull_request.head.repo.fork }}
@@ -145,13 +146,27 @@ jobs:
             echo '::error::The committed GraphQL contract is out of date and this job cannot push to a fork. Run `npx nx run @dataset-register/core:sdl` and commit the result.'
             exit 1
           fi
-          git config user.name 'github-actions[bot]'
-          git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add "$CONTRACT"
-          # --no-verify: the pre-commit hook runs `nx affected`, which defaults to
-          # --base=main, and this checkout has only the head branch.
-          git commit --no-verify -m 'build(core): update the GraphQL contract'
-          git push origin "HEAD:${{ github.head_ref }}"
+          echo 'stale=true' >> "$GITHUB_OUTPUT"
+
+      # Commit through the GitHub API with the App’s token rather than with git
+      # and GITHUB_TOKEN. main requires signed commits, and GitHub signs only the
+      # commits it creates itself, so a git-pushed commit left every pull request
+      # it touched unmergeable. A push with GITHUB_TOKEN also left the checks on
+      # the new head waiting for approval; the App’s commit runs them as usual.
+      - if: steps.stale.outputs.stale == 'true'
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
+      - if: steps.stale.outputs.stale == 'true'
+        name: Commit the updated contract
+        uses: grafana/github-api-commit-action@v1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          commit-message: 'build(core): update the GraphQL contract'
 
       # Whether this pull request changes the API, which is a different question
       # from whether the file needed regenerating: an author who ran the target

@@ -5,6 +5,7 @@ import {
 } from '@dataset-register/core';
 import { Crawler } from '../src/crawler.js';
 import { URL } from 'url';
+import { setTimeout as wait } from 'node:timers/promises';
 import {
   file,
   MockDatasetStore,
@@ -434,8 +435,11 @@ describe('Crawler', () => {
     nock('https://slow.example')
       .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
       .get('/stalls')
-      .delayConnection(500) // Far longer than the 20 ms timeout.
-      .reply(200, response);
+      // Stall before replying: nock 15's delay() only delays the end of the body.
+      .reply(async () => {
+        await wait(500); // Far longer than the 20 ms timeout.
+        return [200, response];
+      });
     await crawler.crawl(new Date('3000-01-01'));
 
     // The registration is untouched: its original 2000-01-01 dateRead still stands,

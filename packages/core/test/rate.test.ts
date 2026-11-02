@@ -1,23 +1,23 @@
 import { rate } from '../src/rate.js';
 import type { Valid } from '../src/validator.js';
-import { validate } from './validator.test.js';
+import { dataset, validate } from './validator.test.js';
 
 describe('Rate', () => {
   it('rates minimal dataset description', async () => {
-    const validationResult = (await validate(
-      'dataset-dcat-valid-minimal.jsonld',
-    )) as Valid;
-    expect(rate(validationResult).worstRating).toBe(25);
-    expect(rate(validationResult).score).toBe(25);
+    const filename = 'dataset-dcat-valid-minimal.jsonld';
+    const validationResult = (await validate(filename)) as Valid;
+    const rating = rate(validationResult, await dataset(filename));
+    expect(rating.worstRating).toBe(25);
+    expect(rating.score).toBe(25);
   });
 
   it('rates complete dataset description', async () => {
     // The description’s dct:language values are language codes, which give a
     // warning; a property that is present but ill-formed costs no points.
-    const validationResult = (await validate(
-      'dataset-dcat-valid.jsonld',
-    )) as Valid;
-    const rating = rate(validationResult);
+    // One of its distributions lacks a dct:description, which costs the dataset nothing.
+    const filename = 'dataset-dcat-valid.jsonld';
+    const validationResult = (await validate(filename)) as Valid;
+    const rating = rate(validationResult, await dataset(filename));
     expect(rating.score).toBe(100);
     expect(rating.explanation).toBe('');
   });

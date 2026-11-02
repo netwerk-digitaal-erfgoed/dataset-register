@@ -3,6 +3,7 @@ import type { Mock } from 'vitest';
 import { FastifyInstance } from 'fastify';
 import { Server } from 'http';
 import { server } from '../src/server.js';
+import { registrar } from '../src/register.js';
 import {
   DatasetRemover,
   readUrl,
@@ -57,6 +58,33 @@ function datasetDescription(datasetIri: URL) {
 }
 
 /**
+ * The recorded fixture bodies are not byte-exact copies of the original
+ * responses, so their Content-Length headers overstate them, and nock 15 waits
+ * for the missing bytes forever. Drop the header so each reply ends with its body.
+ */
+const fixtureOptions: nock.BackOptions = {
+  before: (definition) => {
+    const rawHeaders: unknown = definition.rawHeaders;
+    if (Array.isArray(rawHeaders)) {
+      const index = rawHeaders.findIndex(
+        (value, position) =>
+          position % 2 === 0 &&
+          String(value).toLowerCase() === 'content-length',
+      );
+      if (index !== -1) {
+        rawHeaders.splice(index, 2);
+      }
+    } else if (definition.rawHeaders) {
+      for (const name of Object.keys(definition.rawHeaders)) {
+        if (name.toLowerCase() === 'content-length') {
+          delete definition.rawHeaders[name];
+        }
+      }
+    }
+  },
+};
+
+/**
  * Parse a Server-Sent Events stream body into its individual events. This is
  * an intentionally independent parser (the browser client has its own in
  * validation.ts) so the test validates the server's wire format on its own
@@ -78,6 +106,21 @@ function parseSse(body: string): { event: string; data: string }[] {
 }
 
 describe('Server', () => {
+  const register = vi.fn(
+    registrar(
+      registrationStore,
+      datasetStore,
+      remover(registrationStore, datasetStore),
+    ),
+  );
+  const onDatasetsChanged = vi.fn<() => void>();
+
+  /** Await the registration that `POST /datasets` runs after its response. */
+  async function registered(): Promise<void> {
+    expect(register).toHaveBeenCalledOnce();
+    await register.mock.results[0]?.value;
+  }
+
   beforeAll(async () => {
     const shacl = await readUrl('../../requirements/shacl.ttl');
     httpServer = await server(
@@ -90,10 +133,25 @@ describe('Server', () => {
       '/',
       { logger: true },
       remover(registrationStore, datasetStore),
+      undefined,
+      onDatasetsChanged,
+      register,
     );
 
     nock.back.fixtures = dirname(fileURLToPath(import.meta.url)) + '/http';
     nock.back.setMode('record');
+  });
+
+  beforeEach(() => {
+    register.mockClear();
+    onDatasetsChanged.mockClear();
+  });
+
+  // Let no registration keep writing to the shared stores while the next test runs.
+  afterEach(async () => {
+    await Promise.allSettled(
+      register.mock.results.map((result) => result.value),
+    );
   });
 
   afterAll(() => {
@@ -239,7 +297,7 @@ describe('Server', () => {
   });
 
   it('responds with 200 to valid dataset requests', async () => {
-    const { nockDone } = await nock.back('valid-dataset.json');
+    const { nockDone } = await nock.back('valid-dataset.json', fixtureOptions);
     const response = await httpServer.inject({
       method: 'PUT',
       url: '/datasets/validate',
@@ -527,7 +585,10 @@ describe('Server', () => {
   });
 
   it('responds with validation errors to invalid dataset requests', async () => {
-    const { nockDone } = await nock.back('invalid-dataset.json');
+    const { nockDone } = await nock.back(
+      'invalid-dataset.json',
+      fixtureOptions,
+    );
     const response = await httpServer.inject({
       method: 'PUT',
       url: '/datasets/validate',
@@ -543,7 +604,7 @@ describe('Server', () => {
   });
 
   it('ignores UTF-8 BOMs', async () => {
-    const { nockDone } = await nock.back('utf8-bom.json');
+    const { nockDone } = await nock.back('utf8-bom.json', fixtureOptions);
     const response = await httpServer.inject({
       method: 'PUT',
       url: '/datasets/validate',
@@ -586,7 +647,7 @@ describe('Server', () => {
   });
 
   it('accepts authorized domains', async () => {
-    const { nockDone } = await nock.back('post-dataset.json');
+    const { nockDone } = await nock.back('post-dataset.json', fixtureOptions);
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets',
@@ -631,6 +692,7 @@ describe('Server', () => {
     });
 
     expect(response.statusCode).toEqual(202);
+    await registered();
     const stored = await registrationStore.findByUrl(url);
     expect(stored?.warningCount).toBe(3);
     // The crawl clock is carried over for the same reason: reading is not crawling.
@@ -661,14 +723,11 @@ describe('Server', () => {
     });
 
     expect(response.statusCode).toEqual(202);
-    // The response is sent before the datasets are stored.
-    let stored: string[] = [];
-    await vi.waitFor(async () => {
-      stored = (await datasetStore.findAll()).map((datasetIri) =>
-        datasetIri.toString(),
-      );
-      expect(stored).not.toContain(previousDataset.toString());
-    });
+    await registered();
+    const stored = (await datasetStore.findAll()).map((datasetIri) =>
+      datasetIri.toString(),
+    );
+    expect(stored).not.toContain(previousDataset.toString());
     // The descriptions found now are kept.
     const [found] = (await registrationStore.findByUrl(url))!.datasets;
     expect(stored).toContain(found!.toString());
@@ -699,7 +758,8 @@ describe('Server', () => {
     });
 
     expect(response.statusCode).toEqual(202);
-    await vi.waitFor(() => expect(failingLookup).toHaveBeenCalled());
+    await registered();
+    expect(failingLookup).toHaveBeenCalled();
     expect(
       (await registrationStore.findByUrl(url))?.datasets,
     ).not.toContainEqual(new URL('https://example.com/old-name'));
@@ -819,7 +879,10 @@ describe('Server', () => {
   });
 
   it('responds with validation errors when adding an invalid dataset', async () => {
-    const { nockDone } = await nock.back('invalid-dataset.json');
+    const { nockDone } = await nock.back(
+      'invalid-dataset.json',
+      fixtureOptions,
+    );
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets',
@@ -834,7 +897,10 @@ describe('Server', () => {
   });
 
   it('stores registration even if fetching datasets fails', async () => {
-    const { nockDone } = await nock.back('post-dataset-query-fails.json');
+    const { nockDone } = await nock.back(
+      'post-dataset-query-fails.json',
+      fixtureOptions,
+    );
     const response = await httpServer.inject({
       method: 'POST',
       url: '/datasets',
@@ -844,16 +910,68 @@ describe('Server', () => {
       }),
     });
     nockDone();
-    // sleep 2 seconds to allow the async store to complete
-    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Validation succeeds, so 202 to the client, even if fetching datasets fails.
     expect(response.statusCode).toEqual(202);
+    await registered();
     expect(
       registrationStore.isRegistered(
         new URL('https://netwerkdigitaalerfgoed.nl/fails'),
       ),
     ).toBe(true);
+  });
+
+  it('still responds with 202 when the registration fails after the response', async () => {
+    register.mockRejectedValueOnce(new Error('store unavailable'));
+    nock('https://demo.netwerkdigitaalerfgoed.nl')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/failing-registration')
+      .reply(200, await file('dataset-dcat-valid-minimal.jsonld'));
+
+    const response = await httpServer.inject({
+      method: 'POST',
+      url: '/datasets',
+      headers: { 'Content-Type': 'application/ld+json' },
+      payload: JSON.stringify({
+        '@id': 'https://demo.netwerkdigitaalerfgoed.nl/failing-registration',
+      }),
+    });
+
+    expect(response.statusCode).toEqual(202);
+    // The server logs the failure rather than leaving the rejection unhandled.
+    await expect(registered()).rejects.toThrow('store unavailable');
+    expect(onDatasetsChanged).not.toHaveBeenCalled();
+  });
+
+  it('fires the reindex trigger once the registration has stored its datasets', async () => {
+    let finishRegistration = (): void => undefined;
+    register.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishRegistration = resolve;
+        }),
+    );
+    nock('https://demo.netwerkdigitaalerfgoed.nl')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/registration-to-index')
+      .reply(200, await file('dataset-dcat-valid-minimal.jsonld'));
+
+    const response = await httpServer.inject({
+      method: 'POST',
+      url: '/datasets',
+      headers: { 'Content-Type': 'application/ld+json' },
+      payload: JSON.stringify({
+        '@id': 'https://demo.netwerkdigitaalerfgoed.nl/registration-to-index',
+      }),
+    });
+
+    // The 202 goes out while the datasets are still being stored.
+    expect(response.statusCode).toEqual(202);
+    expect(onDatasetsChanged).not.toHaveBeenCalled();
+
+    finishRegistration();
+    await registered();
+    expect(onDatasetsChanged).toHaveBeenCalledOnce();
   });
 
   it('returns SHACL graph', async () => {

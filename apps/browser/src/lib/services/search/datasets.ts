@@ -68,7 +68,7 @@ export interface RawFacets {
   readonly terminology_source: readonly ValueBucket[];
   readonly status: readonly ValueBucket[];
   readonly nde_schema_ap: readonly BooleanBucket[];
-  readonly size: readonly RangeBucket[];
+  readonly size: { readonly buckets: readonly RangeBucket[] };
 }
 
 /**
@@ -277,7 +277,7 @@ export const DATASET_SEARCH_QUERY = `
         terminology_source { value count label { language value } }
         status { value count }
         nde_schema_ap { value count }
-        size { count min max }
+        size { buckets { count min max } }
       }
     }
   }

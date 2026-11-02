@@ -121,7 +121,7 @@ export function mapFacets(facets: RawFacets): Facets {
       facets.status.filter((bucket) => SELECTABLE_STATUSES.has(bucket.value)),
     ),
     checks: mapCheckBuckets(facets),
-    size: mapSizeHistogram(facets.size),
+    size: mapSizeHistogram(facets.size.buckets),
   };
 }
 

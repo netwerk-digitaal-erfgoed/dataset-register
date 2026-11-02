@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite';
+import { nxReadySignal } from '@nx/vite/plugins/nx-ready-signal.plugin';
 
 export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/apps/api',
-  plugins: [],
+  plugins: [nxReadySignal()],
   test: {
     watch: false,
     globals: true,
@@ -16,10 +17,10 @@ export default defineConfig(() => ({
       provider: 'v8' as const,
       thresholds: {
         autoUpdate: true,
-        lines: 98.18,
+        lines: 98.21,
         functions: 100,
-        branches: 92.1,
-        statements: 98.19,
+        branches: 92.2,
+        statements: 98.22,
       },
     },
   },

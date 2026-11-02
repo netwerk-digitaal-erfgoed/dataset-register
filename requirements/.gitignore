@@ -3,3 +3,4 @@ index.bs
 .nde/
 logo.include
 nde.include
+nde-*.liquid

@@ -37,7 +37,7 @@ function rawFacets(): RawFacets {
     // Typesense returns a `true` bucket only. The API buckets a boolean field by
     // its real value, so this is `true`, not the string `'true'`.
     nde_schema_ap: [{ value: true, count: 3 }],
-    size: [{ count: 8, min: 1000, max: 10000 }],
+    size: { buckets: [{ count: 8, min: 1000, max: 10000 }] },
   };
 }
 

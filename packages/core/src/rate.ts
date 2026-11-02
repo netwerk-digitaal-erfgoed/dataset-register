@@ -1,7 +1,12 @@
 import { shacl } from './validator.ts';
 import type { Valid } from './validator.ts';
-import { dcat, dct } from './query.ts';
-import type { NamedNode, Quad_Subject } from '@rdfjs/types';
+import { datasetType, dcat, dct } from './query.ts';
+import { DataFactory } from 'n3';
+import type { DatasetCore, NamedNode, Quad_Subject } from '@rdfjs/types';
+
+const rdfType = DataFactory.namedNode(
+  'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+);
 
 // If at least one of the properties in the map’s key is missing (e.g. either created or issued), apply the penalty
 // specified in the map’s value (e.g. 10) is applied.
@@ -20,12 +25,21 @@ const worstRating = [...penalties].reduce(
   100,
 );
 
-export function rate(validationResult: Valid): Rating {
+/**
+ * Rate the description of `dataset`. Only results on the dcat:Dataset itself
+ * count: a distribution can miss a property of the same name, such as
+ * dct:description.
+ */
+export function rate(validationResult: Valid, dataset: DatasetCore): Rating {
+  const datasetNodes = [...dataset.match(null, rdfType, datasetType)].map(
+    (quad) => quad.subject,
+  );
   const violations: Map<string, string> = [...validationResult.errors].reduce(
     (map, quad) => {
       if (
         quad.predicate.equals(shacl('resultPath')) &&
-        isMissingProperty(validationResult, quad.subject)
+        isMissingProperty(validationResult, quad.subject) &&
+        isAbout(validationResult, quad.subject, datasetNodes)
       ) {
         map.set(
           quad.object.value,
@@ -110,3 +124,14 @@ const isMissingProperty = (
     shacl('sourceConstraintComponent'),
     shacl('MinCountConstraintComponent'),
   ).size > 0;
+
+const isAbout = (
+  validationResult: Valid,
+  result: Quad_Subject,
+  datasetNodes: Quad_Subject[],
+): boolean =>
+  datasetNodes.some(
+    (datasetNode) =>
+      validationResult.errors.match(result, shacl('focusNode'), datasetNode)
+        .size > 0,
+  );
