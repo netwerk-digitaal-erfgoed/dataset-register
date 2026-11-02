@@ -111,7 +111,8 @@ You can configure the application through environment variables:
   hours. Endpoints beyond the cap are skipped and the skipped count is logged, never silently dropped (default: `100`).
 - `TYPESENSE_HOST`, `TYPESENSE_PORT`, `TYPESENSE_PROTOCOL`, `TYPESENSE_API_KEY`: connection to the
   [Typesense](https://typesense.org) [search index](#search-index). When `TYPESENSE_HOST` and `TYPESENSE_API_KEY` are
-  both set, the crawler rebuilds the index after each crawl; leave them unset to run without search. `TYPESENSE_API_KEY`
+  both set, the crawler rebuilds the index after each crawl and the API after each registration or deletion; leave them
+  unset to run without search. `TYPESENSE_API_KEY`
   is the admin key used to write the index (the bundled `docker compose` Typesense defaults to `dev-typesense-key`).
 - `KNOWLEDGE_GRAPH_URL`: SPARQL endpoint of the Dataset Knowledge Graph used to enrich the
   [search index](#search-index) (facets such as class, terminology source and size, and the NDE-compatibility flags).
@@ -163,7 +164,8 @@ Knowledge Graph ([`KNOWLEDGE_GRAPH_URL`](#configuration)), into a flat search do
 blue/green: it builds a fresh collection, then atomically repoints an alias, so the live index is never partial. A
 sidecar `labels` collection maps facet-value IRIs (organizations, classes, terminology sources) to display labels. The
 rebuild is single-flight per index (a cross-pod lock held in Typesense), so the crawler and API replicas never rebuild
-concurrently.
+concurrently. A rebuild triggered while another is running is not dropped: it records a request, and the running
+rebuild runs once more when it finishes, so the change that triggered it still reaches the index.
 
 `docker compose up` starts Typesense (alongside QLever) on `localhost:8108`, and the committed `.env` files already
 point the crawler and the browser at it, so local search works out of the box. The [crawler](#crawler) rebuilds the
@@ -186,7 +188,7 @@ the search key; in production, generate a scoped
 
 ## Data model
 
-The data model — including the `schema:EntryPoint`, `schema:Dataset`, `schema:contentRating`,
+The data model – including the `schema:EntryPoint`, `schema:Dataset`, `schema:contentRating`,
 `dcat:Dataset`, `foaf:Organization`, and `dcat:Distribution` shapes, their alignment with
-[DCAT-AP-NL 3.0](https://docs.geostandaarden.nl/dcat/dcat-ap-nl30/), and the allow list — is
+[DCAT-AP-NL 3.0](https://docs.geostandaarden.nl/dcat/dcat-ap-nl30/), and the allow list – is
 documented at https://docs.nde.nl/services/dataset-register/data-model.

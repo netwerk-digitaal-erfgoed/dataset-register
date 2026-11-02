@@ -1,12 +1,8 @@
 import { Client, Errors } from 'typesense';
 import { DataFactory } from 'n3';
 import type { Quad } from '@rdfjs/types';
-import { BlueGreenRebuild, RebuildAlreadyRunning } from '@lde/search-typesense';
-import {
-  projectRoots,
-  type RootType,
-  type SearchDocument,
-} from '@lde/search';
+import { BlueGreenRebuild } from '@lde/search-typesense';
+import { projectRoots, type RootType, type SearchDocument } from '@lde/search';
 import { Dataset } from '@lde/dataset';
 import { SEARCH_SCHEMA } from '@dataset-register/core';
 import { irAlias, labelFieldOf } from '@lde/search/adapter';
@@ -27,7 +23,6 @@ import type { RunContext } from '@lde/pipeline';
  */
 
 const { literal, namedNode, quad } = DataFactory;
-
 
 /**
  * The synthetic source each label document is stamped with. Blue/green stamps a
@@ -89,7 +84,12 @@ export async function rebuildLabelCollection(
     }
     log(`Indexed ${documents.length} ${type.name} labels; alias ${alias}`);
   } catch (error) {
-    if (error instanceof RebuildAlreadyRunning) {
+    // Safe to skip: the run holding this lock is another `runIndex` call, and
+    // our rebuild request reaches it like any other. Either its reads came
+    // after our request, or its `requestRebuild` loop sees the request and
+    // reruns. By name, not `instanceof`, as `requestRebuild` does: a nested copy
+    // of `@lde/search` would bring its own class.
+    if (error instanceof Error && error.name === 'RebuildAlreadyRunning') {
       log(`Label index ${alias} skipped: another rebuild is already running`);
       return;
     }

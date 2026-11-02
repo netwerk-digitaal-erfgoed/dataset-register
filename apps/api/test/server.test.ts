@@ -113,6 +113,7 @@ describe('Server', () => {
       remover(registrationStore, datasetStore),
     ),
   );
+  const onDatasetsChanged = vi.fn<() => void>();
 
   /** Await the registration that `POST /datasets` runs after its response. */
   async function registered(): Promise<void> {
@@ -133,7 +134,7 @@ describe('Server', () => {
       { logger: true },
       remover(registrationStore, datasetStore),
       undefined,
-      undefined,
+      onDatasetsChanged,
       register,
     );
 
@@ -143,6 +144,7 @@ describe('Server', () => {
 
   beforeEach(() => {
     register.mockClear();
+    onDatasetsChanged.mockClear();
   });
 
   // Let no registration keep writing to the shared stores while the next test runs.
@@ -938,6 +940,38 @@ describe('Server', () => {
     expect(response.statusCode).toEqual(202);
     // The server logs the failure rather than leaving the rejection unhandled.
     await expect(registered()).rejects.toThrow('store unavailable');
+    expect(onDatasetsChanged).not.toHaveBeenCalled();
+  });
+
+  it('fires the reindex trigger once the registration has stored its datasets', async () => {
+    let finishRegistration = (): void => undefined;
+    register.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishRegistration = resolve;
+        }),
+    );
+    nock('https://demo.netwerkdigitaalerfgoed.nl')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/registration-to-index')
+      .reply(200, await file('dataset-dcat-valid-minimal.jsonld'));
+
+    const response = await httpServer.inject({
+      method: 'POST',
+      url: '/datasets',
+      headers: { 'Content-Type': 'application/ld+json' },
+      payload: JSON.stringify({
+        '@id': 'https://demo.netwerkdigitaalerfgoed.nl/registration-to-index',
+      }),
+    });
+
+    // The 202 goes out while the datasets are still being stored.
+    expect(response.statusCode).toEqual(202);
+    expect(onDatasetsChanged).not.toHaveBeenCalled();
+
+    finishRegistration();
+    await registered();
+    expect(onDatasetsChanged).toHaveBeenCalledOnce();
   });
 
   it('returns SHACL graph', async () => {

@@ -54,8 +54,8 @@ export async function server(
   datasetRemover?: DatasetRemover,
   apiAccessToken?: string,
   /**
-   * Called fire-and-forget after a delete removes a registration, so the search
-   * index can be rebuilt. Injected (rather than calling the indexer directly) so
+   * Called fire-and-forget after a registration has stored its datasets and after
+   * a delete removes a registration, so the search index can be rebuilt. Injected (rather than calling the indexer directly) so
    * the HTTP layer stays free of any Typesense dependency and the trigger is
    * unit-testable. `main.ts` wires it to the single-flight rebuild.
    */
@@ -312,13 +312,16 @@ export async function server(
       : false;
     if (resolved && valid) {
       // Not awaited: the client has its 202 and should not wait for the datasets to be
-      // fetched, so a failure can only be logged.
-      void register(resolved, request.log).catch((error: unknown) =>
-        request.log.error(
-          { err: error },
-          `Registering ${resolved.url.toString()} failed`,
-        ),
-      );
+      // fetched, so a failure can only be logged. The search index is rebuilt only once
+      // the datasets are stored, so the rebuild reads them.
+      void register(resolved, request.log)
+        .then(() => onDatasetsChanged?.())
+        .catch((error: unknown) =>
+          request.log.error(
+            { err: error },
+            `Registering ${resolved.url.toString()} failed`,
+          ),
+        );
     }
 
     registrationsCounter.add(1, {
