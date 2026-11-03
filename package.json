@@ -50,7 +50,7 @@
     "prettier": "^3.9.10",
     "prettier-plugin-packagejson": "^3.0.3",
     "prettier-plugin-svelte": "^4.1.1",
-    "svelte": "^5.57.2",
+    "svelte": "^5.57.3",
     "tslib": "^2.3.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "8.72.0",
