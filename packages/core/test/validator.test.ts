@@ -932,6 +932,96 @@ describe('Validator', () => {
     ).toHaveLength(2);
   });
 
+  it('warns about a placeholder or doubly prefixed email address on a Schema.org contact point', async () => {
+    // Reserved names are template defaults nobody filled in; a real domain
+    // that merely contains or starts with one of them is fine.
+    const report = await validateTurtle(`
+      @prefix schema: <https://schema.org/> .
+
+      <https://example.com/dataset> a schema:Dataset ;
+        schema:name "Dataset"@en ;
+        schema:license <http://creativecommons.org/publicdomain/zero/1.0/> ;
+        schema:publisher <https://example.com/publisher> ;
+        schema:distribution <https://example.com/distribution> .
+
+      <https://example.com/publisher> a schema:Organization ;
+        schema:name "Publisher"@en ;
+        schema:email "info@example.org" ;
+        schema:contactPoint [
+          a schema:ContactPoint ;
+          schema:name "Datasets"@en ;
+          schema:email
+            "info@example.org",
+            "info@museum.test",
+            "mailto:mailto:datasets@kb.nl",
+            "info@myexample.org",
+            "info@example.nl",
+            "info@example.org.nl",
+            "info@example-museum.nl",
+            "info@testmuseum.nl"
+        ] .
+
+      <https://example.com/distribution> a schema:DataDownload ;
+        schema:contentUrl <https://example.com/dataset.ttl> ;
+        schema:encodingFormat "text/turtle" .
+    `);
+
+    expect(report.state).toEqual('valid');
+    // The organization’s own schema:email is not a contact point’s.
+    expect(flaggedValues(report as Valid, placeholderEmail)).toEqual([
+      'info@example.org',
+      'info@museum.test',
+    ]);
+    expect(flaggedValues(report as Valid, doubleMailto)).toEqual([
+      'mailto:mailto:datasets@kb.nl',
+    ]);
+  });
+
+  it('warns about a placeholder or doubly prefixed email address on a DCAT contact point', async () => {
+    const report = await validateTurtle(`
+      @prefix dcat: <http://www.w3.org/ns/dcat#> .
+      @prefix dct: <http://purl.org/dc/terms/> .
+      @prefix foaf: <http://xmlns.com/foaf/0.1/> .
+      @prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
+
+      <https://example.com/dataset> a dcat:Dataset ;
+        dct:title "Dataset"@en ;
+        dct:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
+        dct:publisher <https://example.com/publisher> ;
+        dcat:contactPoint [
+          a vcard:Kind ;
+          vcard:fn "Datasets"@en ;
+          vcard:hasEmail
+            <mailto:datasets@Mail.Example.COM>,
+            <mailto:info@example.org,datasets@kb.nl>,
+            <mailto:info@example.org?subject=Datasets>,
+            <mailto:mailto:collections@kb.nl>,
+            <mailto:%20mailto:archive@kb.nl>,
+            <mailto:library@kb.nl>,
+            <mailto:info@example.org.nl>
+        ] ;
+        dcat:distribution <https://example.com/distribution> .
+
+      <https://example.com/publisher> a foaf:Organization ;
+        foaf:name "Publisher"@en .
+
+      <https://example.com/distribution> a dcat:Distribution ;
+        dcat:accessURL <https://example.com/dataset.ttl> ;
+        dcat:mediaType <https://www.iana.org/assignments/media-types/text/turtle> .
+    `);
+
+    expect(report.state).toEqual('valid');
+    expect(flaggedValues(report as Valid, placeholderEmail)).toEqual([
+      'mailto:datasets@Mail.Example.COM',
+      'mailto:info@example.org,datasets@kb.nl',
+      'mailto:info@example.org?subject=Datasets',
+    ]);
+    expect(flaggedValues(report as Valid, doubleMailto)).toEqual([
+      'mailto:%20mailto:archive@kb.nl',
+      'mailto:mailto:collections@kb.nl',
+    ]);
+  });
+
   it('warns about compression in a DCAT media type, which belongs in dcat:compressFormat', async () => {
     const report = await validateTurtle(`
       @prefix dcat: <http://www.w3.org/ns/dcat#> .
@@ -1059,6 +1149,28 @@ const warningMessages = (report: InvalidDataset | Valid): string[] =>
         quad.object.termType === 'Literal' && quad.object.language === 'en',
     )
     .map((quad) => quad.object.value);
+
+const placeholderEmail =
+  'Replace the placeholder email address of the contact point with a real one';
+const doubleMailto =
+  'Remove the duplicate mailto: from the email address of the contact point';
+
+const flaggedValues = (
+  report: InvalidDataset | Valid,
+  message: string,
+): string[] =>
+  [...report.errors.match(null, shacl('resultMessage'), null)]
+    .filter(
+      (quad) =>
+        quad.object.termType === 'Literal' &&
+        quad.object.language === 'en' &&
+        quad.object.value === message,
+    )
+    .flatMap((quad) => [
+      ...report.errors.match(quad.subject, shacl('value'), null),
+    ])
+    .map((quad) => quad.object.value)
+    .sort();
 
 const formatReport = (report: InvalidDataset | Valid): string => {
   const literal = (subject: unknown, predicate: ReturnType<typeof shacl>) =>

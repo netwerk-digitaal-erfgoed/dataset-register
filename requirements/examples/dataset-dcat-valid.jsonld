@@ -52,7 +52,7 @@
       "dcat:contactPoint": {
         "@type": "vcard:Kind",
         "vcard:fn": { "@value": "Datasets Manager", "@language": "en" },
-        "vcard:hasEmail": { "@id": "mailto:datasets@example.com" }
+        "vcard:hasEmail": { "@id": "mailto:datasets@kb.nl" }
       },
       "dct:created": { "@value": "2021-05-27", "@type": "xsd:date" },
       "dct:issued": { "@value": "2021-05-28", "@type": "xsd:date" },

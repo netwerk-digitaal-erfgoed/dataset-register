@@ -739,6 +739,9 @@ Publishers *MAY* link to other identifiers of the organization, such as its Wiki
 Publishers *SHOULD* include contact information so [=consumers=] can reach them with questions or feedback.
 If contact information is provided, it *MUST* include a name and e-mail address.
 The e-mail address *SHOULD* be an organizational or departmental address rather than a personal one for GDPR compliance.
+The e-mail address *SHOULD* reach the publisher.
+In [[#v2|v2.0]] of this specification, it *MUST NOT* be a placeholder on a reserved domain such as `example.org`,
+and it *MUST NOT* repeat the `mailto:` prefix.
 
 In Schema.org, the contact point belongs to the publisher (`schema:contactPoint`).
 In DCAT-AP-NL 3.0, it belongs to the dataset or catalog (`dcat:contactPoint`),

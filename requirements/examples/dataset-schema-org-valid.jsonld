@@ -96,7 +96,7 @@
       "contactPoint": {
         "@type": "ContactPoint",
         "name": { "@value": "Datasets Manager", "@language": "en" },
-        "email": "datasets@example.com"
+        "email": "datasets@kb.nl"
       }
     }
   ]
