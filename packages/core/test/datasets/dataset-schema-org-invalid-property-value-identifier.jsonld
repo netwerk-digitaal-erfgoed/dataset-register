@@ -22,7 +22,7 @@
     "contactPoint": {
       "@type": "ContactPoint",
       "name": { "@value": "Datasets Manager", "@language": "en" },
-      "email": "datasets@example.org"
+      "email": "datasets@kb.nl"
     },
     "identifier": {
       "@type": "PropertyValue",

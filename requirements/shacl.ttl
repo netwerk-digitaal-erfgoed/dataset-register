@@ -1052,6 +1052,28 @@ nde-dataset:ContactPointShape
         sh:minCount 1 ;
         sh:description "Het e-mailadres van het contactpunt, bij voorkeur een functioneel adres van de organisatie of afdeling."@nl, "The email address of the contact point, preferably a functional address of the organization or department."@en ;
         sh:message "Vul een e-mailadres in voor het contactpunt"@nl, "Enter an email address for the contact point"@en ;
+    ] ,
+    [
+        # Reserved names (RFC 2606) that no mailbox can sit on: template
+        # defaults that the publisher did not fill in.
+        sh:path schema:email ;
+        sh:not [ sh:pattern "@([^@/?#,\\s]+\\.)?(example(\\.(com|net|org))?|test|invalid|localhost)([?#,\\s]|$)" ; sh:flags "i" ] ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Vervang het voorbeeldadres van het contactpunt door een echt e-mailadres"@nl, "Replace the placeholder email address of the contact point with a real one"@en ;
+    ] ,
+    [
+        sh:path schema:email ;
+        sh:not [ sh:pattern "^mailto:(\\s|%20)*mailto:" ; sh:flags "i" ] ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Verwijder de dubbele mailto: uit het e-mailadres van het contactpunt"@nl, "Remove the duplicate mailto: from the email address of the contact point"@en ;
     ] .
 
 # Publisher/creator validation is consolidated into nde-dataset:AgentShape above,
@@ -2177,6 +2199,28 @@ dcat:ContactPointShape
             sh:severity sh:Violation ;
         ] ;
         sh:message "Geef het e-mailadres van het contactpunt op als mailto:-URL"@nl, "Give the email address of the contact point as a mailto: URL"@en ;
+    ] ,
+    [
+        # Reserved names (RFC 2606) that no mailbox can sit on: template
+        # defaults that the publisher did not fill in.
+        sh:path vcard:hasEmail ;
+        sh:not [ sh:pattern "@([^@/?#,\\s]+\\.)?(example(\\.(com|net|org))?|test|invalid|localhost)([?#,\\s]|$)" ; sh:flags "i" ] ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Vervang het voorbeeldadres van het contactpunt door een echt e-mailadres"@nl, "Replace the placeholder email address of the contact point with a real one"@en ;
+    ] ,
+    [
+        sh:path vcard:hasEmail ;
+        sh:not [ sh:pattern "^mailto:(\\s|%20)*mailto:" ; sh:flags "i" ] ;
+        sh:severity sh:Warning ;
+        nde:futureChange [
+            nde:version "2.0" ;
+            sh:severity sh:Violation ;
+        ] ;
+        sh:message "Verwijder de dubbele mailto: uit het e-mailadres van het contactpunt"@nl, "Remove the duplicate mailto: from the email address of the contact point"@en ;
     ] .
 
 dcat:AgentShape
