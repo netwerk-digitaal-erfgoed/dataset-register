@@ -2044,6 +2044,10 @@ dcat:CatalogShape
     a sh:NodeShape ;
     sh:targetSubjectsOf dcat:dataset ;
     sh:class dcat:Catalog ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:nodeKind sh:IRI ;
+    ] ;
     sh:property [
         sh:path dc:title ;
         sh:minCount 1 ;
@@ -2150,6 +2154,19 @@ dcat:CatalogShape
         sh:severity sh:Warning ;
         sh:message "Gebruik een dataset van type dcat:Dataset"@nl, "Use a dataset of type dcat:Dataset"@en ;
     ] .
+
+# Warns today about the node kind that CatalogShape’s nde:futureChange announces,
+# as nde-dataset:DatacatalogIriShape does for Schema.org.
+dcat:CatalogIriShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf dcat:dataset ;
+    sh:nodeKind sh:IRI ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "Geef de datacatalogus een URI"@nl, "Give the data catalog a URI"@en .
 
 dcat:ContactPointShape
     a sh:NodeShape ;

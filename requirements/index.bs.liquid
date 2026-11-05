@@ -205,6 +205,10 @@ A dataset that is already registered is not removed on that date.
 If its description breaks a version 2.0 rule, the Register marks it as invalid the next time it reads the description.
 
 The changes follow DCAT-AP-NL 3.0, the format into which the Register converts every dataset description.
+On one point these requirements go further: every [=dataset=] and [=data catalog=] must have a URI.
+[[VOCAB-DCAT-3]] [recommends](https://www.w3.org/TR/vocab-dcat-3/#dcat-rdf) such a global identifier;
+these requirements make it mandatory so that [=consumers=] can identify datasets and catalogs over time, link to them and list a catalog’s datasets.
+Datasets need a URI already; version 2.0 adds the requirement for catalogs.
 The attribute tables in [[#overview]] mark each affected attribute with a label such as ‘v2.0: becomes required’.
 Run your datasets through the [validator](https://datasetregister.netwerkdigitaalerfgoed.nl/en/validate):
 the warnings it gives are the changes that apply to you.
