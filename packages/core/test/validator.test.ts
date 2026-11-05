@@ -1022,6 +1022,43 @@ describe('Validator', () => {
     ]);
   });
 
+  it('warns about a DCAT catalog without a URI, as about a Schema.org one', async () => {
+    const report = await validateTurtle(`
+      @prefix dcat: <http://www.w3.org/ns/dcat#> .
+      @prefix dct: <http://purl.org/dc/terms/> .
+      @prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+      [] a dcat:Catalog ;
+        dct:title "Blank catalog"@en ;
+        dct:publisher <https://example.com/publisher> ;
+        dcat:dataset <https://example.com/dataset> .
+
+      <https://example.com/catalog> a dcat:Catalog ;
+        dct:title "Catalog"@en ;
+        dct:publisher <https://example.com/publisher> ;
+        dcat:dataset <https://example.com/dataset> .
+
+      <https://example.com/dataset> a dcat:Dataset ;
+        dct:title "Dataset"@en ;
+        dct:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
+        dct:publisher <https://example.com/publisher> ;
+        dcat:distribution <https://example.com/distribution> .
+
+      <https://example.com/publisher> a foaf:Organization ;
+        foaf:name "Publisher"@en .
+
+      <https://example.com/distribution> a dcat:Distribution ;
+        dcat:accessURL <https://example.com/dataset.ttl> ;
+        dcat:mediaType <https://www.iana.org/assignments/media-types/text/turtle> .
+    `);
+
+    expect(report.state).toEqual('valid');
+    const messages = warningMessages(report as Valid);
+    expect(
+      messages.filter((message) => message === 'Give the data catalog a URI'),
+    ).toHaveLength(1);
+  });
+
   it('warns about compression in a DCAT media type, which belongs in dcat:compressFormat', async () => {
     const report = await validateTurtle(`
       @prefix dcat: <http://www.w3.org/ns/dcat#> .
