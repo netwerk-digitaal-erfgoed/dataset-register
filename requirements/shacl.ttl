@@ -506,7 +506,6 @@ nde-dataset:DistributionShape
             sh:severity sh:Warning ;
             nde:futureChange [
                 nde:version "2.0" ;
-                sh:maxCount 1 ;
                 sh:severity sh:Violation ;
             ] ;
             sh:message "Gebruik maximaal één MIME-type per distributie"@nl, "Use at most one MIME type per distribution"@en ;
