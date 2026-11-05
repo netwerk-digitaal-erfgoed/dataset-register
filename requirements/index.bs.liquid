@@ -16,126 +16,6 @@ Local Boilerplate: logo yes
 
 <pre class=include>path: nde.include</pre>
 
-<style>
-/* Schema.org and DCAT alternatives, shown as tabs that switch together. */
-.vocab-tablist {
-    display: flex;
-    gap: 0.25em;
-    margin-bottom: 0.5em;
-    border-bottom: 1px solid var(--example-border);
-}
-.vocab-tablist [role="tab"] {
-    margin-bottom: -1px;
-    padding: 0.25em 0.75em;
-    border: none;
-    border-bottom: 3px solid transparent;
-    background: none;
-    color: var(--text);
-    font: inherit;
-    cursor: pointer;
-}
-.vocab-tablist [role="tab"][aria-selected="true"] {
-    border-bottom-color: var(--a-normal-text);
-    color: var(--a-normal-text);
-    font-weight: bold;
-}
-.vocab-tablist [role="tab"]:focus-visible,
-.vocab-tabs > [role="tabpanel"]:focus-visible {
-    outline: 2px solid var(--a-normal-text);
-    outline-offset: 2px;
-}
-:root[data-vocab="schema"] .vocab-tabs > [data-vocab="dcat"],
-:root[data-vocab="dcat"] .vocab-tabs > [data-vocab="schema"] {
-    /* Beats Bikeshed’s display: grid on line-numbered code blocks. */
-    display: none !important;
-}
-</style>
-
-<script>
-// Turns each .vocab-tabs group into tabs. Picking a vocabulary in one group
-// switches every group on the page, and the choice is remembered.
-(() => {
-  const vocabularies = { schema: 'Schema.org', dcat: 'DCAT' };
-  const storageKey = 'nde-datasets-vocabulary';
-  const tabs = [];
-
-  const select = (vocabulary) => {
-    document.documentElement.dataset.vocab = vocabulary;
-    for (const tab of tabs) {
-      const selected = tab.dataset.vocab === vocabulary;
-      tab.setAttribute('aria-selected', String(selected));
-      tab.tabIndex = selected ? 0 : -1;
-    }
-  };
-
-  // Hide the other vocabulary before the page renders, so a deep link
-  // does not land on content that is about to disappear.
-  let stored = null;
-  try {
-    stored = localStorage.getItem(storageKey);
-  } catch {}
-  select(Object.hasOwn(vocabularies, stored ?? '') ? stored : 'schema');
-
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.vocab-tabs').forEach((group, groupIndex) => {
-      const tablist = document.createElement('div');
-      tablist.className = 'vocab-tablist';
-      tablist.setAttribute('role', 'tablist');
-      tablist.setAttribute('aria-label', 'Vocabulary');
-
-      for (const panel of group.querySelectorAll(':scope > [data-vocab]')) {
-        const vocabulary = panel.dataset.vocab;
-        const tab = document.createElement('button');
-        tab.type = 'button';
-        tab.id = `vocab-tab-${groupIndex}-${vocabulary}`;
-        tab.dataset.vocab = vocabulary;
-        tab.textContent = vocabularies[vocabulary];
-        tab.setAttribute('role', 'tab');
-        panel.id ||= `vocab-panel-${groupIndex}-${vocabulary}`;
-        panel.tabIndex = 0;
-        panel.setAttribute('role', 'tabpanel');
-        panel.setAttribute('aria-labelledby', tab.id);
-        tab.setAttribute('aria-controls', panel.id);
-
-        tab.addEventListener('click', () => {
-          // Keep the clicked tab in place while groups above it change height.
-          const topBefore = tab.getBoundingClientRect().top;
-          select(vocabulary);
-          window.scrollBy(0, tab.getBoundingClientRect().top - topBefore);
-          try {
-            localStorage.setItem(storageKey, vocabulary);
-          } catch {}
-        });
-        tab.addEventListener('keydown', (event) => {
-          if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-          const siblings = [...tablist.children];
-          const step = event.key === 'ArrowRight' ? 1 : -1;
-          const next = siblings[(siblings.indexOf(tab) + step + siblings.length) % siblings.length];
-          next.click();
-          next.focus();
-        });
-
-        tablist.append(tab);
-        tabs.push(tab);
-      }
-      group.prepend(tablist);
-    });
-    select(document.documentElement.dataset.vocab);
-
-    // The tab bars added height above a deep link’s target.
-    if (location.hash) {
-      let id = location.hash.slice(1);
-      try {
-        id = decodeURIComponent(id);
-      } catch {
-        // A malformed escape such as #100% is not a valid ID either way.
-      }
-      document.getElementById(id)?.scrollIntoView();
-    }
-  });
-})();
-</script>
-
 Introduction {#introduction}
 ============
 
@@ -282,8 +162,8 @@ Publishers *MAY* use either the Schema.org [[!SCHEMA-ORG]] or the DCAT-AP-NL 3.0
 
     So, on your organization's web page, for instance <a href="https://www.kb.nl">www.kb.nl</a>, include:
 
-    <div class="vocab-tabs">
-    <xmp highlight=html data-vocab="schema">
+    <div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+    <xmp highlight=html data-tab="schema" data-tab-label="Schema.org">
         <html>
           <head>
             <title>Koninklijke Bibliotheek</title>
@@ -304,7 +184,7 @@ Publishers *MAY* use either the Schema.org [[!SCHEMA-ORG]] or the DCAT-AP-NL 3.0
           </body>
         </html>
     </xmp>
-    <xmp highlight=html data-vocab="dcat">
+    <xmp highlight=html data-tab="dcat" data-tab-label="DCAT">
         <html>
           <head>
             <title>Koninklijke Bibliotheek</title>
@@ -391,8 +271,8 @@ Publishers *MUST* include basic information about the dataset, at the very minim
 <div class="example">
     Basic dataset information:
 
-    <div class="vocab-tabs">
-    <pre highlight=json-ld data-vocab="schema">
+    <div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+    <pre highlight=json-ld data-tab="schema" data-tab-label="Schema.org">
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
@@ -409,7 +289,7 @@ Publishers *MUST* include basic information about the dataset, at the very minim
           ]
         }
     </pre>
-    <pre highlight=json-ld data-vocab="dcat">
+    <pre highlight=json-ld data-tab="dcat" data-tab-label="DCAT">
         {
           "@context": {
             "dcat": "http://www.w3.org/ns/dcat#",
@@ -444,15 +324,15 @@ Publishers *MUST* include basic information about the dataset, at the very minim
     Specify a license for the dataset.
     In DCAT-AP-NL 3.0, the license belongs to each distribution rather than to the dataset:
 
-    <div class="vocab-tabs">
-    <pre highlight=json-ld data-vocab="schema">
+    <div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+    <pre highlight=json-ld data-tab="schema" data-tab-label="Schema.org">
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
           "license": "http://creativecommons.org/publicdomain/zero/1.0/"
         }
     </pre>
-    <pre highlight=json-ld data-vocab="dcat">
+    <pre highlight=json-ld data-tab="dcat" data-tab-label="DCAT">
         {
           "@context": {
             "dcat": "http://www.w3.org/ns/dcat#",
@@ -509,8 +389,8 @@ The dates *MUST* be valid according to [[!ISO8601]].
 <div class="example">
     Specify dataset description dates:
 
-    <div class="vocab-tabs">
-    <pre highlight=json-ld data-vocab="schema">
+    <div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+    <pre highlight=json-ld data-tab="schema" data-tab-label="Schema.org">
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
@@ -519,7 +399,7 @@ The dates *MUST* be valid according to [[!ISO8601]].
           "dateModified": "2019-08-15"
         }
     </pre>
-    <pre highlight=json-ld data-vocab="dcat">
+    <pre highlight=json-ld data-tab="dcat" data-tab-label="DCAT">
         {
           "@context": {
             "dcat": "http://www.w3.org/ns/dcat#",
@@ -561,8 +441,8 @@ If more information is available, publishers *SHOULD* add it.
 <div class="example">
     More information about the dataset.
 
-    <div class="vocab-tabs">
-    <pre highlight=json-ld line-numbers data-vocab="schema">
+    <div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+    <pre highlight=json-ld line-numbers data-tab="schema" data-tab-label="Schema.org">
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
@@ -573,7 +453,7 @@ If more information is available, publishers *SHOULD* add it.
           "mainEntityOfPage": "https://www.kb.nl/bronnen-zoekwijzers/kb-collecties/moderne-handschriften-vanaf-ca-1550/alba-amicorum"
         }
     </pre>
-    <pre highlight=json-ld line-numbers data-vocab="dcat">
+    <pre highlight=json-ld line-numbers data-tab="dcat" data-tab-label="DCAT">
         {
           "@context": {
             "dcat": "http://www.w3.org/ns/dcat#",
@@ -610,8 +490,8 @@ Providing information about the person/organization behind the dataset answers u
 <div class="example">
     An organization description:
 
-    <div class="vocab-tabs">
-    <pre highlight=json-ld data-vocab="schema">
+    <div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+    <pre highlight=json-ld data-tab="schema" data-tab-label="Schema.org">
         {
           "@context": "https://schema.org/",
           "@type": "Organization",
@@ -626,7 +506,7 @@ Providing information about the person/organization behind the dataset answers u
           }
         }
     </pre>
-    <pre highlight=json-ld data-vocab="dcat">
+    <pre highlight=json-ld data-tab="dcat" data-tab-label="DCAT">
         {
           "@context": {
             "foaf": "http://xmlns.com/foaf/0.1/"
@@ -651,8 +531,8 @@ See [[#organization-attributes]] for a full overview of organization attributes.
 <div class="example">
     A person description:
 
-    <div class="vocab-tabs">
-    <pre highlight=json-ld data-vocab="schema">
+    <div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+    <pre highlight=json-ld data-tab="schema" data-tab-label="Schema.org">
         {
           "@context": "https://schema.org/",
           "@type": "Person",
@@ -663,7 +543,7 @@ See [[#organization-attributes]] for a full overview of organization attributes.
           }
         }
     </pre>
-    <pre highlight=json-ld data-vocab="dcat">
+    <pre highlight=json-ld data-tab="dcat" data-tab-label="DCAT">
         {
           "@context": {
             "foaf": "http://xmlns.com/foaf/0.1/"
@@ -711,8 +591,8 @@ Publishers *MAY* link to other identifiers of the organization, such as its Wiki
 <div class="example">
     An organization with an ISIL code:
 
-    <div class="vocab-tabs">
-    <pre highlight=json-ld data-vocab="schema">
+    <div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+    <pre highlight=json-ld data-tab="schema" data-tab-label="Schema.org">
         {
           "@context": "https://schema.org/",
           "@type": "Organization",
@@ -720,7 +600,7 @@ Publishers *MAY* link to other identifiers of the organization, such as its Wiki
           "identifier": "NL-HaKB"
         }
     </pre>
-    <pre highlight=json-ld data-vocab="dcat">
+    <pre highlight=json-ld data-tab="dcat" data-tab-label="DCAT">
         {
           "@context": {
             "dct": "http://purl.org/dc/terms/",
@@ -750,8 +630,8 @@ and the e-mail address is a `mailto:` IRI.
 <div class="example">
     A dataset with contact information.
 
-    <div class="vocab-tabs">
-    <pre highlight=json-ld line-numbers line-highlight="9-17" data-vocab="schema">
+    <div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+    <pre highlight=json-ld line-numbers line-highlight="9-17" data-tab="schema" data-tab-label="Schema.org">
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
@@ -772,7 +652,7 @@ and the e-mail address is a `mailto:` IRI.
           }
         }
     </pre>
-    <pre highlight=json-ld line-numbers line-highlight="7-16" data-vocab="dcat">
+    <pre highlight=json-ld line-numbers line-highlight="7-16" data-tab="dcat" data-tab-label="DCAT">
         {
           "@context": {
             "dcat": "http://www.w3.org/ns/dcat#",
@@ -801,8 +681,8 @@ The person/organization data is then included as the dataset's publisher:
 <div class="example">
     A dataset with an organization as publisher.
 
-    <div class="vocab-tabs">
-    <pre highlight=json-ld data-vocab="schema">
+    <div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+    <pre highlight=json-ld data-tab="schema" data-tab-label="Schema.org">
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
@@ -830,7 +710,7 @@ The person/organization data is then included as the dataset's publisher:
           }
         }
     </pre>
-    <pre highlight=json-ld data-vocab="dcat">
+    <pre highlight=json-ld data-tab="dcat" data-tab-label="DCAT">
         {
           "@context": {
             "dcat": "http://www.w3.org/ns/dcat#",
@@ -870,8 +750,8 @@ The person/organization data is then included as the dataset's publisher:
 <div class="example">
     A dataset with a person as publisher.
 
-    <div class="vocab-tabs">
-    <pre highlight=json-ld data-vocab="schema">
+    <div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+    <pre highlight=json-ld data-tab="schema" data-tab-label="Schema.org">
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
@@ -885,7 +765,7 @@ The person/organization data is then included as the dataset's publisher:
           }
         }
     </pre>
-    <pre highlight=json-ld data-vocab="dcat">
+    <pre highlight=json-ld data-tab="dcat" data-tab-label="DCAT">
         {
           "@context": {
             "dcat": "http://www.w3.org/ns/dcat#",
@@ -934,8 +814,8 @@ in DCAT-AP-NL 3.0 with `dct:conformsTo`, next to a `dct:format` from the [EU fil
     In the Schema.org vocabulary, each type of distribution is called a [DataDownload](https://schema.org/DataDownload),
     even if it is a query endpoint.
 
-    <div class="vocab-tabs">
-    <pre highlight=json-ld data-vocab="schema">
+    <div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+    <pre highlight=json-ld data-tab="schema" data-tab-label="Schema.org">
         {
           "@context": "https://schema.org/",
           "@type": "DataDownload",
@@ -943,7 +823,7 @@ in DCAT-AP-NL 3.0 with `dct:conformsTo`, next to a `dct:format` from the [EU fil
           "usageInfo": "https://www.w3.org/TR/sparql11-protocol/"
         }
     </pre>
-    <pre highlight=json-ld data-vocab="dcat">
+    <pre highlight=json-ld data-tab="dcat" data-tab-label="DCAT">
         {
           "@context": {
             "dcat": "http://www.w3.org/ns/dcat#",
@@ -966,8 +846,8 @@ The distributions are then included under the `schema:distribution` or `dcat:dis
     The SPARQL endpoint separates the endpoint URL (`schema:contentUrl` or `dcat:accessURL`)
     from its query UI (`schema:documentation` or `foaf:page`).
 
-    <div class="vocab-tabs">
-    <pre highlight=json-ld data-vocab="schema">
+    <div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+    <pre highlight=json-ld data-tab="schema" data-tab-label="Schema.org">
         {
           "@context": "https://schema.org/",
           "@type": "Dataset",
@@ -991,7 +871,7 @@ The distributions are then included under the `schema:distribution` or `dcat:dis
           ]
         }
     </pre>
-    <pre highlight=json-ld data-vocab="dcat">
+    <pre highlight=json-ld data-tab="dcat" data-tab-label="DCAT">
         {
           "@context": {
             "dcat": "http://www.w3.org/ns/dcat#",
@@ -1051,8 +931,8 @@ but simple dates (`2019-04-14`) are also allowed.
 <div class="example">
     Specify distribution dates:
 
-    <div class="vocab-tabs">
-    <pre highlight=json-ld data-vocab="schema">
+    <div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+    <pre highlight=json-ld data-tab="schema" data-tab-label="Schema.org">
         {
           "@context": "https://schema.org/",
           "@type": "DataDownload",
@@ -1060,7 +940,7 @@ but simple dates (`2019-04-14`) are also allowed.
           "dateModified": "2019-08-15T08:05:00"
         }
     </pre>
-    <pre highlight=json-ld data-vocab="dcat">
+    <pre highlight=json-ld data-tab="dcat" data-tab-label="DCAT">
         {
           "@context": {
             "dcat": "http://www.w3.org/ns/dcat#",
@@ -1169,8 +1049,8 @@ For downloads as well as APIs, this *MUST* be the IRI of the application profile
 <div class="example">
     A download distribution that conforms to [[SCHEMA-AP-NDE]]:
 
-    <div class="vocab-tabs">
-    <pre highlight=json-ld data-vocab="schema">
+    <div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+    <pre highlight=json-ld data-tab="schema" data-tab-label="Schema.org">
         {
           "@context": "https://schema.org/",
           "@type": "DataDownload",
@@ -1179,7 +1059,7 @@ For downloads as well as APIs, this *MUST* be the IRI of the application profile
           "usageInfo": "https://docs.nde.nl/schema-profile/"
         }
     </pre>
-    <pre highlight=json-ld data-vocab="dcat">
+    <pre highlight=json-ld data-tab="dcat" data-tab-label="DCAT">
         {
           "@context": {
             "dcat": "http://www.w3.org/ns/dcat#",
@@ -1198,8 +1078,8 @@ For downloads as well as APIs, this *MUST* be the IRI of the application profile
 <div class="example">
     A SPARQL distribution that returns RDF conforming to [[SCHEMA-AP-NDE]]:
 
-    <div class="vocab-tabs">
-    <pre highlight=json-ld data-vocab="schema">
+    <div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+    <pre highlight=json-ld data-tab="schema" data-tab-label="Schema.org">
         {
           "@context": "https://schema.org/",
           "@type": "DataDownload",
@@ -1207,7 +1087,7 @@ For downloads as well as APIs, this *MUST* be the IRI of the application profile
           "usageInfo": [ "https://www.w3.org/TR/sparql11-protocol/", "https://docs.nde.nl/schema-profile/" ]
         }
     </pre>
-    <pre highlight=json-ld data-vocab="dcat">
+    <pre highlight=json-ld data-tab="dcat" data-tab-label="DCAT">
         {
           "@context": {
             "dcat": "http://www.w3.org/ns/dcat#",
@@ -1237,8 +1117,8 @@ which improves discoverability.
 <div class="example">
     A catalog of available datasets:
 
-    <div class="vocab-tabs">
-    <pre highlight=json-ld data-vocab="schema">
+    <div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+    <pre highlight=json-ld data-tab="schema" data-tab-label="Schema.org">
         {
           "@context": "https://schema.org/",
           "@type": "DataCatalog",
@@ -1271,7 +1151,7 @@ which improves discoverability.
           ]
         }
     </pre>
-    <pre highlight=json-ld data-vocab="dcat">
+    <pre highlight=json-ld data-tab="dcat" data-tab-label="DCAT">
         {
           "@context": {
             "dcat": "http://www.w3.org/ns/dcat#",
@@ -1336,8 +1216,8 @@ even if that resource is the same on all pages.
 <div class="example">
     A paginated catalog:
 
-    <div class="vocab-tabs">
-    <pre highlight=json-ld line-numbers line-highlight="4,6,24-30" data-vocab="schema">
+    <div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+    <pre highlight=json-ld line-numbers line-highlight="4,6,24-30" data-tab="schema" data-tab-label="Schema.org">
         {
           "@context": [
             "https://schema.org/",
@@ -1383,7 +1263,7 @@ even if that resource is the same on all pages.
           ]
         }
     </pre>
-    <pre highlight=json-ld line-numbers line-highlight="6,8,26-32" data-vocab="dcat">
+    <pre highlight=json-ld line-numbers line-highlight="6,8,26-32" data-tab="dcat" data-tab-label="DCAT">
         {
           "@context": {
             "dcat": "http://www.w3.org/ns/dcat#",
@@ -1455,55 +1335,55 @@ This is an overview of required and recommended attributes.
 
 ### Dataset attributes ### {#dataset-attributes}
 
-<div class="vocab-tabs">
-<div data-vocab="schema">
+<div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+<div data-tab="schema" data-tab-label="Schema.org">
 {% render 'attributes', name: 'Dataset', nodeShape: datasetShape %}
 </div>
-<div data-vocab="dcat">
+<div data-tab="dcat" data-tab-label="DCAT">
 {% render 'attributes', name: 'Dataset', nodeShape: dcatDatasetShape %}
 </div>
 </div>
 
 ### Organization attributes ### {#organization-attributes}
 
-<div class="vocab-tabs">
-<div data-vocab="schema">
+<div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+<div data-tab="schema" data-tab-label="Schema.org">
 {% render 'attributes', name: 'Organization', nodeShape: organizationShape, targetClass: 'schema:Organization' %}
 </div>
-<div data-vocab="dcat">
+<div data-tab="dcat" data-tab-label="DCAT">
 {% render 'attributes', name: 'Organization', nodeShape: dcatAgentShape, targetClass: 'foaf:Organization' %}
 </div>
 </div>
 
 ### Contact point attributes ### {#contactpoint-attributes}
 
-<div class="vocab-tabs">
-<div data-vocab="schema">
+<div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+<div data-tab="schema" data-tab-label="Schema.org">
 {% render 'attributes', name: 'ContactPoint', nodeShape: contactPointShape, targetClass: 'schema:ContactPoint' %}
 </div>
-<div data-vocab="dcat">
+<div data-tab="dcat" data-tab-label="DCAT">
 {% render 'attributes', name: 'ContactPoint', nodeShape: dcatContactPointShape, targetClass: 'vcard:Kind' %}
 </div>
 </div>
 
 ### Distribution attributes ### {#distribution-attributes}
 
-<div class="vocab-tabs">
-<div data-vocab="schema">
+<div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+<div data-tab="schema" data-tab-label="Schema.org">
 {% render 'attributes', name: 'Distribution', nodeShape: distributionShape, targetClass: 'schema:DataDownload' %}
 </div>
-<div data-vocab="dcat">
+<div data-tab="dcat" data-tab-label="DCAT">
 {% render 'attributes', name: 'Distribution', nodeShape: dcatDistributionShape, targetClass: 'dcat:Distribution' %}
 </div>
 </div>
 
 ### DataCatalog attributes ### {#datacatalog-attributes}
 
-<div class="vocab-tabs">
-<div data-vocab="schema">
+<div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+<div data-tab="schema" data-tab-label="Schema.org">
 {% render 'attributes', name: 'DataCatalog', nodeShape: catalogShape %}
 </div>
-<div data-vocab="dcat">
+<div data-tab="dcat" data-tab-label="DCAT">
 {% render 'attributes', name: 'DataCatalog', nodeShape: dcatCatalogShape %}
 </div>
 </div>
@@ -1513,14 +1393,14 @@ This is an overview of required and recommended attributes.
 <div class="example">
     A full [=dataset description=] that includes [[#dataset-attributes|required and recommended attributes]].
 
-    <div class="vocab-tabs">
-    <div data-vocab="schema">
+    <div class="nde-tabs" data-tabs="vocabulary" data-label="Vocabulary">
+    <div data-tab="schema" data-tab-label="Schema.org">
     <pre class=include-code>
     path: examples/dataset-schema-org-valid.jsonld
     highlight: json-ld
     </pre>
     </div>
-    <div data-vocab="dcat">
+    <div data-tab="dcat" data-tab-label="DCAT">
     <pre class=include-code>
     path: examples/dataset-dcat-valid.jsonld
     highlight: json-ld
