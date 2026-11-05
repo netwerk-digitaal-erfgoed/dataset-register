@@ -43,7 +43,7 @@
     "@opentelemetry/exporter-metrics-otlp-proto": "^0.300.0",
     "@opentelemetry/resources": "^3.0.0",
     "@opentelemetry/sdk-metrics": "^3.0.0",
-    "@opentelemetry/semantic-conventions": "^1.43.0",
+    "@opentelemetry/semantic-conventions": "^1.44.0",
     "@rdfjs/types": "2.0.1",
     "jsonld-context-parser": "^2.4.0",
     "jsonld-streaming-parser": "^5.0.2",
