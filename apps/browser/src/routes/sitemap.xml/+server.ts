@@ -9,24 +9,24 @@ const CACHE_TTL = 86400; // 24 hours in seconds
 let cachedDatasets: DatasetInfo[] | null = null;
 let cacheTimestamp = 0;
 
+// No lastmod: schema:dateRead advances on every crawl whether or not the
+// description changed, and search engines stop trusting a lastmod that does.
 interface DatasetInfo {
   uri: string;
-  dateRead?: string;
 }
 
 /**
- * Fetch all dataset URIs with their last read dates from the SPARQL endpoint.
+ * Fetch all dataset URIs from the SPARQL endpoint.
  */
 async function fetchDatasetUris(): Promise<DatasetInfo[]> {
   const query = `
     PREFIX dcat: <http://www.w3.org/ns/dcat#>
     PREFIX schema: <https://schema.org/>
 
-    SELECT DISTINCT ?dataset ?dateRead WHERE {
+    SELECT DISTINCT ?dataset WHERE {
       ?dataset a dcat:Dataset ;
         schema:subjectOf ?registrationUrl .
       FILTER NOT EXISTS { ?registrationUrl schema:validUntil ?validUntil }
-      OPTIONAL { ?dataset schema:dateRead ?dateRead }
     }
   `;
 
@@ -38,13 +38,9 @@ async function fetchDatasetUris(): Promise<DatasetInfo[]> {
     for await (const binding of bindings) {
       const typedBinding = binding as unknown as {
         dataset: { value: string };
-        dateRead?: { value: string };
       };
 
-      datasets.push({
-        uri: typedBinding.dataset.value,
-        dateRead: typedBinding.dateRead?.value,
-      });
+      datasets.push({ uri: typedBinding.dataset.value });
     }
   } catch (error) {
     console.error('Sitemap query failed:', error);
@@ -60,12 +56,9 @@ function generateSitemapXml(datasets: DatasetInfo[], origin: string): string {
   const urls = datasets
     .map((dataset) => {
       const loc = `${origin}${datasetDetailHref(dataset.uri)}`;
-      const lastmod = dataset.dateRead
-        ? `\n    <lastmod>${dataset.dateRead.split('T')[0]}</lastmod>`
-        : '';
 
       return `  <url>
-    <loc>${escapeXml(loc)}</loc>${lastmod}
+    <loc>${escapeXml(loc)}</loc>
   </url>`;
     })
     .join('\n');
