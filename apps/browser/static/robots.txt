@@ -1,6 +1,13 @@
 # Allow crawling everything in the new app.
 User-agent: *
 
+# Disallow per-query feeds and validation runs: they waste crawl budget and
+# are not worth indexing.
+Disallow: /datasets/rss
+Disallow: /en/datasets/rss
+Disallow: /validate?
+Disallow: /en/validate?
+
 # Disallow select paths from the legacy app.
 Disallow: /search.php
 Disallow: /show.php

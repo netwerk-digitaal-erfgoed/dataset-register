@@ -430,6 +430,11 @@
 <svelte:head>
   <title>Datasets | Netwerk Digitaal Erfgoed</title>
   <meta content={m.header_tagline()} name="description" />
+  {#if page.url.search}
+    <!-- Filtered and searched result lists are endless near-duplicates; keep
+         them out of the index, but let crawlers follow their links. -->
+    <meta name="robots" content="noindex, follow" />
+  {/if}
   <link rel="canonical" href={canonicalUrl} />
   <link rel="alternate" hreflang="nl" href={canonicalUrl} />
   <link rel="alternate" hreflang="en" href={enUrl} />
