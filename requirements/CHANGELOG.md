@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.16.1](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.16.0...requirements-1.16.1) (2026-11-07)
+
+
+### Bug Fixes
+
+* **requirements:** hold DCAT and Schema.org properties to the same rules ([#2484](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2484)) ([6f336e8](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/6f336e87bd946106c5419f33a4f47863bec51c9a))
+* **requirements:** label every v2.0 media type rule in the spec ([#2489](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2489)) ([b47a403](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/b47a403255c29a6f8f8076a2ad5e729470f91261))
+* **requirements:** recommend an identifier for DCAT organizations too ([#2491](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2491)) ([3ed2023](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/3ed2023404c6e32fef683f5715ab98f672e026e9))
+* **requirements:** say that the version is about the dataset, not the description ([#2483](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2483)) ([cbf8166](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/cbf816603c554cd61bd273ce00c5636fd721b35a))
+* **requirements:** warn about a DCAT catalog without a URI ([#2514](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2514)) ([7162537](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/7162537f505667249c06abbec32549567969d4c9))
+* **requirements:** warn about placeholder and doubly prefixed contact e-mail addresses ([#2511](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2511)) ([06ce2c5](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/06ce2c53409946d4a0bcd7b0451270532612fa7b))
+
 ## [1.16.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/requirements-1.15.1...requirements-1.16.0) (2026-10-26)
 
 
