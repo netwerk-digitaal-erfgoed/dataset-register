@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/core-0.3.1...core-0.4.0) (2026-11-07)
+
+
+### Features
+
+* rebuild the search index after a registration and hand off locked rebuilds ([#2501](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2501)) ([a58d2e0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/a58d2e0d10dc82791e7a6beb64a6e8c8a93cb012))
+
+
+### Bug Fixes
+
+* **requirements:** warn about a DCAT catalog without a URI ([#2514](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2514)) ([7162537](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/7162537f505667249c06abbec32549567969d4c9))
+* **requirements:** warn about placeholder and doubly prefixed contact e-mail addresses ([#2511](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2511)) ([06ce2c5](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/06ce2c53409946d4a0bcd7b0451270532612fa7b))
+
 ## [0.3.1](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/core-0.3.0...core-0.3.1) (2026-10-28)
 
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/browser-0.3.1...browser-0.4.0) (2026-11-07)
+
+
+### Features
+
+* rebuild the search index after a registration and hand off locked rebuilds ([#2501](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2501)) ([a58d2e0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/a58d2e0d10dc82791e7a6beb64a6e8c8a93cb012))
+
+
+### Bug Fixes
+
+* **browser:** keep crawlers on dataset detail pages ([#2517](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2517)) ([f2c5240](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/f2c5240533e6fc6a8348a05b6abf5096cfa57c3d))
+
 ## [0.3.1](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/browser-0.3.0...browser-0.3.1) (2026-10-28)
 
 
