@@ -200,6 +200,21 @@ describe('SPARQL', () => {
       expect(await datasetStore.countDatasets()).toBe(1);
     });
 
+    it('does not store a description that fails to canonicalize for another reason', async () => {
+      const dataset = createTestDataset(TEST_DATASET_IRIS.DATASET_1);
+      // RDF data cannot contain a variable, so canonicalizing one is a bug, not a limit.
+      dataset.add(
+        factory.quad(
+          factory.namedNode(TEST_DATASET_IRIS.DATASET_1),
+          factory.namedNode('https://example.org/linked'),
+          factory.variable('unbound'),
+        ),
+      );
+
+      await expect(datasetStore.store(dataset)).rejects.toThrow();
+      expect(await datasetStore.countDatasets()).toBe(0);
+    });
+
     it('still stores a description when its stored hash cannot be read', async () => {
       const unreadable = new SparqlDatasetStore(
         sparqlClient,
