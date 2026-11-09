@@ -30,6 +30,18 @@ jobs:
           node-version: lts/*
           cache: 'npm'
 
+      # Fail when a version in package-lock.json does not satisfy the range that
+      # asks for it. Dependabot can write such a lockfile: in #2502 it raised
+      # packages/core to @lde/dataset ^0.10.0 but left 0.8.0 installed under
+      # packages/core. npm ci does not reliably catch that – it passed #2502 while
+      # 0.10.0 was the latest release, and only failed once 0.10.1 came out – and
+      # the stale entries nest packages that the pruned Docker lockfiles then
+      # drop, so the failure surfaced as a missing package deep in an image build.
+      # This reads the lockfile alone (no install, no network) and names the
+      # offending entries. Fix a failure with one `npm install` at the root.
+      - name: Check that the lockfile satisfies every manifest
+        run: npm ls --all --package-lock-only > /dev/null
+
       - run: npm ci
 
       - uses: nrwl/nx-set-shas@v5
