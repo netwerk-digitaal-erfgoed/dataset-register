@@ -6,6 +6,7 @@ import {
   extractSubject,
 } from './dataset.js';
 import {
+  CanonicalizationLimitError,
   detectChange,
   SparqlContentHashReader,
   withContentHash,
@@ -140,12 +141,17 @@ export class SparqlDatasetStore implements DatasetStore {
       .then((hashes) => ({ previous: hashes.get(subject.value) }))
       .catch(() => undefined);
 
-    // detectChange throws on a description too costly to canonicalize; store it as is.
+    // A description too costly to canonicalize is stored as is; any other error is a bug.
     const detected = await detectChange(
       dataset,
       read?.previous,
       CONVERSION_VERSION,
-    ).catch(() => undefined);
+    ).catch((error: unknown) => {
+      if (error instanceof CanonicalizationLimitError) {
+        return undefined;
+      }
+      throw error;
+    });
     if (detected === undefined) {
       await this.write(graph, dataset);
       return 'unhashable';
