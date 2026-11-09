@@ -313,13 +313,11 @@ const intendedDifferences: Record<string, IntendedDifference> = {
       reason:
         'dcat:mediaType is an IANA media type IRI rather than a type/subtype string, and DCAT declares compression in dcat:compressFormat, so the media type must not carry it, whereas schema:encodingFormat must.',
       schemaOnly: [
-        'maxCount=1 (Warning, v2.0: Violation, maxCount=1)',
         `not=[in(application/gzip application/x-gzip application/x-zip-compressed application/zip)] (${futureViolation})`,
         `not=[pattern=^[a-zA-Z]+/x-] (${futureViolation})`,
         'pattern=^[a-zA-Z]+/[a-zA-Z0-9][a-zA-Z0-9!#$&\\-^_.+]*$ (Violation)',
       ],
       dcatOnly: [
-        `maxCount=1 (${futureViolation})`,
         `not=[flags=i; pattern=\\+(zip|gzip)$] (${futureViolation})`,
         `not=[flags=i; pattern=^(https?://www\\.iana\\.org/assignments/media-types/)?application/(zip|gzip|x-gzip|x-zip-compressed)$] (${futureViolation})`,
         `not=[pattern=^(https?://www\\.iana\\.org/assignments/media-types/)?[a-zA-Z]+/x-] (${futureViolation})`,
