@@ -4,7 +4,7 @@ import type {
   RegistrationStore,
 } from './registration.ts';
 import { URL } from 'node:url';
-import type { DatasetStore } from './dataset.ts';
+import type { DatasetStore, DatasetWrite } from './dataset.ts';
 import fs from 'node:fs';
 import DatasetExt from 'rdf-ext/lib/Dataset.js';
 import type { Rating, RatingStore } from './rate.ts';
@@ -113,8 +113,9 @@ export class MockAllowedRegistrationDomainStore implements AllowedRegistrationDo
 export class MockDatasetStore implements DatasetStore {
   private datasets: DatasetExt[] = [];
 
-  async store(datasets: DatasetExt): Promise<void> {
+  async store(datasets: DatasetExt): Promise<DatasetWrite> {
     this.datasets.push(datasets);
+    return 'created';
   }
 
   async delete(datasetUri: URL): Promise<void> {

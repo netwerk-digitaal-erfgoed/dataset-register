@@ -32,7 +32,7 @@ import {
   TEST_PUBLISHER_IRIS,
 } from './fixtures/test-datasets.js';
 import { dereference } from '../src/test-utils.js';
-import { Penalty, Rating } from '../src/index.js';
+import { CONVERSION_VERSION, Penalty, Rating } from '../src/index.js';
 import { storeUpdateDuration } from '../src/instrumentation.js';
 
 const registrationsGraphIri = 'http://example.org/registrations';
@@ -158,6 +158,64 @@ describe('SPARQL', () => {
       expect(bindings[0]?.get('title')?.value).toBe(
         'Alba amicorum of the Dutch Royal Library',
       );
+    });
+
+    it('reports whether a dataset changed since it was last stored', async () => {
+      const original = createTestDataset(
+        TEST_DATASET_IRIS.DATASET_1,
+        'Original Title',
+      );
+
+      expect(await datasetStore.store(original)).toBe('created');
+      expect(await datasetStore.store(original)).toBe('unchanged');
+      expect(
+        await datasetStore.store(
+          createTestDataset(TEST_DATASET_IRIS.DATASET_1, 'Updated Title'),
+        ),
+      ).toBe('changed');
+    });
+
+    it('stores a description too costly to canonicalize without a hash', async () => {
+      const dataset = createTestDataset(TEST_DATASET_IRIS.DATASET_1);
+      // Ten fully interlinked, indistinguishable blank nodes exceed RDFC-1.0’s work limit.
+      const nodes = Array.from({ length: 10 }, (_unused, index) =>
+        factory.blankNode(`node${index}`),
+      );
+      for (const subject of nodes) {
+        for (const object of nodes) {
+          if (subject !== object) {
+            dataset.add(
+              factory.quad(
+                subject,
+                factory.namedNode('https://example.org/linked'),
+                object,
+              ),
+            );
+          }
+        }
+      }
+
+      expect(await datasetStore.store(dataset)).toBe('unhashable');
+      expect(await datasetStore.countDatasets()).toBe(1);
+    });
+
+    it('stores the content hash in the dataset’s own graph', async () => {
+      await datasetStore.store(createTestDataset(TEST_DATASET_IRIS.DATASET_1));
+
+      const result = await sparqlClient.query(`
+        SELECT ?hash ?version WHERE {
+          GRAPH <${TEST_DATASET_IRIS.DATASET_1}> {
+            <${TEST_DATASET_IRIS.DATASET_1}>
+              <https://w3id.org/lde/content-hash#contentHash> ?hash ;
+              <https://w3id.org/lde/content-hash#hashVersion> ?version .
+          }
+        }
+      `);
+
+      const bindings = await result.toArray();
+      expect(bindings).toHaveLength(1);
+      expect(bindings[0]?.get('hash')?.value).toMatch(/^rdfc10-sha256:/);
+      expect(bindings[0]?.get('version')?.value).toBe(CONVERSION_VERSION);
     });
 
     it('should replace existing dataset when storing the same IRI', async () => {

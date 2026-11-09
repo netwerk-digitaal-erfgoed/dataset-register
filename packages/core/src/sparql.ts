@@ -1,7 +1,17 @@
-import { DatasetStore, extractIri } from './dataset.js';
+import {
+  CONVERSION_VERSION,
+  DatasetStore,
+  DatasetWrite,
+  extractIri,
+} from './dataset.js';
+import {
+  detectChange,
+  SparqlContentHashReader,
+  withContentHash,
+} from '@lde/change-detection';
 import { QueryEngine } from '@comunica/query-sparql';
 import type { BindingsStream } from '@comunica/types';
-import { Parser } from 'n3';
+import { DataFactory, Parser } from 'n3';
 import { quadsToNTriples } from './rdf-serialize.js';
 import { sparqlIri } from './sparql-iri.js';
 import {
@@ -46,7 +56,10 @@ export function stores(
     new SparqlClient(url, accessToken, store);
 
   return {
-    datasetStore: new SparqlDatasetStore(client('dataset')),
+    datasetStore: new SparqlDatasetStore(
+      client('dataset'),
+      new SparqlContentHashReader({ endpoint: new URL(url) }),
+    ),
     registrationStore: new SparqlRegistrationStore(
       client('registration'),
       registrationsGraphIri,
@@ -71,7 +84,10 @@ export function stores(
 }
 
 export class SparqlDatasetStore implements DatasetStore {
-  constructor(private readonly client: SparqlClient) {}
+  constructor(
+    private readonly client: SparqlClient,
+    private readonly contentHashes: SparqlContentHashReader,
+  ) {}
 
   async countDatasets(): Promise<number> {
     const result = await this.client.query(`
@@ -99,8 +115,32 @@ export class SparqlDatasetStore implements DatasetStore {
     return parseInt(bindings[0]!.get('count')!.value);
   }
 
-  async store(dataset: DatasetCore): Promise<void> {
+  /**
+   * Store the dataset together with its content hash, and report how it compares to the
+   * description stored before. Every description is written for now, `unchanged` ones too: the
+   * statuses are only counted, to see what skipping the unchanged ones would save.
+   */
+  async store(dataset: DatasetCore): Promise<DatasetWrite> {
     const graph = extractIri(dataset);
+    const iri = DataFactory.namedNode(graph.toString());
+    const previous = (await this.contentHashes.read([iri])).get(iri.value);
+
+    // detectChange throws on a description too costly to canonicalize; store it as is.
+    const detected = await detectChange(
+      dataset,
+      previous,
+      CONVERSION_VERSION,
+    ).catch(() => undefined);
+    if (detected === undefined) {
+      await this.write(graph, dataset);
+      return 'unhashable';
+    }
+
+    await this.write(graph, withContentHash(dataset, iri, detected.hash));
+    return detected.status;
+  }
+
+  private async write(graph: URL, dataset: DatasetCore): Promise<void> {
     const triples = await quadsToNTriples([...dataset]);
 
     const sparqlUpdate = `
