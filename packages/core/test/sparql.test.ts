@@ -33,6 +33,7 @@ import {
 } from './fixtures/test-datasets.js';
 import { dereference } from '../src/test-utils.js';
 import { CONVERSION_VERSION, Penalty, Rating } from '../src/index.js';
+import { SparqlContentHashReader } from '@lde/change-detection';
 import { storeUpdateDuration } from '../src/instrumentation.js';
 
 const registrationsGraphIri = 'http://example.org/registrations';
@@ -197,6 +198,38 @@ describe('SPARQL', () => {
 
       expect(await datasetStore.store(dataset)).toBe('unhashable');
       expect(await datasetStore.countDatasets()).toBe(1);
+    });
+
+    it('still stores a description when its stored hash cannot be read', async () => {
+      const unreadable = new SparqlDatasetStore(
+        sparqlClient,
+        new SparqlContentHashReader({
+          endpoint: new URL('http://localhost:9/sparql'),
+        }),
+      );
+
+      expect(
+        await unreadable.store(createTestDataset(TEST_DATASET_IRIS.DATASET_1)),
+      ).toBe('unknown');
+      expect(await datasetStore.countDatasets()).toBe(1);
+    });
+
+    it('stores the content hash on the dataset’s own IRI, as written', async () => {
+      const iri = 'http://Example.org/dataset';
+      await datasetStore.store(createTestDataset(iri));
+
+      const result = await sparqlClient.query(`
+        SELECT ?hash WHERE {
+          GRAPH ?graph {
+            <${iri}> <https://w3id.org/lde/content-hash#contentHash> ?hash .
+          }
+        }
+      `);
+
+      expect(await result.toArray()).toHaveLength(1);
+      expect(await datasetStore.store(createTestDataset(iri))).toBe(
+        'unchanged',
+      );
     });
 
     it('stores the content hash in the dataset’s own graph', async () => {

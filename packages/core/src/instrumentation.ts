@@ -142,7 +142,8 @@ export const crawlCounter = meter.createCounter('crawler.counter', {
 export const datasetWriteCounter = meter.createCounter(
   'crawler.dataset.writes',
   {
-    description: 'Number of dataset descriptions a crawl stored, by change status',
+    description:
+      'Number of dataset descriptions a crawl stored, by change status',
     valueType: ValueType.INT,
   },
 );

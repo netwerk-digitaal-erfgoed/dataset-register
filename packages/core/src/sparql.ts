@@ -3,6 +3,7 @@ import {
   DatasetStore,
   DatasetWrite,
   extractIri,
+  extractSubject,
 } from './dataset.js';
 import {
   detectChange,
@@ -11,7 +12,7 @@ import {
 } from '@lde/change-detection';
 import { QueryEngine } from '@comunica/query-sparql';
 import type { BindingsStream } from '@comunica/types';
-import { DataFactory, Parser } from 'n3';
+import { Parser } from 'n3';
 import { quadsToNTriples } from './rdf-serialize.js';
 import { sparqlIri } from './sparql-iri.js';
 import {
@@ -42,6 +43,10 @@ import { storeErrorType, storeUpdateDuration } from './instrumentation.js';
 
 const queryEngine = new QueryEngine();
 
+// The stored-hash read runs once per dataset in the crawl loop, so a stalled one would hold up the
+// whole round. It selects two literals for one IRI; give up on it well before QLever’s own timeout.
+const CONTENT_HASH_READ_TIMEOUT_MS = 10_000;
+
 export function stores(
   url: string,
   accessToken?: string,
@@ -58,7 +63,10 @@ export function stores(
   return {
     datasetStore: new SparqlDatasetStore(
       client('dataset'),
-      new SparqlContentHashReader({ endpoint: new URL(url) }),
+      new SparqlContentHashReader({
+        endpoint: new URL(url),
+        fetch: fetchWithTimeout(CONTENT_HASH_READ_TIMEOUT_MS),
+      }),
     ),
     registrationStore: new SparqlRegistrationStore(
       client('registration'),
@@ -122,13 +130,20 @@ export class SparqlDatasetStore implements DatasetStore {
    */
   async store(dataset: DatasetCore): Promise<DatasetWrite> {
     const graph = extractIri(dataset);
-    const iri = DataFactory.namedNode(graph.toString());
-    const previous = (await this.contentHashes.read([iri])).get(iri.value);
+    // The hash goes on the subject the description is about, not on its normalised URL.
+    const subject = extractSubject(dataset);
+
+    // Reading the stored hash only serves the comparison, so a failed read must not stop the
+    // write: compare against nothing, store the description and its hash, and report `unknown`.
+    const read = await this.contentHashes
+      .read([subject])
+      .then((hashes) => ({ previous: hashes.get(subject.value) }))
+      .catch(() => undefined);
 
     // detectChange throws on a description too costly to canonicalize; store it as is.
     const detected = await detectChange(
       dataset,
-      previous,
+      read?.previous,
       CONVERSION_VERSION,
     ).catch(() => undefined);
     if (detected === undefined) {
@@ -136,8 +151,8 @@ export class SparqlDatasetStore implements DatasetStore {
       return 'unhashable';
     }
 
-    await this.write(graph, withContentHash(dataset, iri, detected.hash));
-    return detected.status;
+    await this.write(graph, withContentHash(dataset, subject, detected.hash));
+    return read === undefined ? 'unknown' : detected.status;
   }
 
   private async write(graph: URL, dataset: DatasetCore): Promise<void> {
@@ -673,6 +688,15 @@ export class SparqlAllowedRegistrationDomainStore implements AllowedRegistration
         }
       }`);
   }
+}
+
+// fetch-sparql-endpoint passes no abort signal of its own, so the timeout is the only one.
+function fetchWithTimeout(timeoutMs: number): typeof globalThis.fetch {
+  return (input, init) =>
+    globalThis.fetch(input, {
+      ...init,
+      signal: AbortSignal.timeout(timeoutMs),
+    });
 }
 
 export function authenticatedFetch(

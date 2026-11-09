@@ -91,6 +91,7 @@ export class Crawler {
       reconverted: 0,
       unchanged: 0,
       unhashable: 0,
+      unknown: 0,
     };
     for (const registration of registrations) {
       this.logger.info(`Crawling registration URL ${registration.url}...`);
