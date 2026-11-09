@@ -1,4 +1,5 @@
 import {
+  datasetWriteCounter,
   DatasetRemover,
   Registration,
   Validator,
@@ -102,6 +103,16 @@ describe('Crawler', () => {
     expect(readRegistration.datasets).toEqual([
       new URL('http://data.bibliotheken.nl/id/dataset/rise-alba'),
     ]);
+  });
+
+  it('counts how each stored dataset compares to the one stored before', async () => {
+    const add = vi.spyOn(datasetWriteCounter, 'add');
+    await storeRegistrationFixture(new URL('https://example.com/valid'));
+
+    await nockValidRegistration();
+    await crawler.crawl(new Date('3000-01-01'));
+
+    expect(add).toHaveBeenCalledWith(1, { status: 'created' });
   });
 
   it('removes the datasets a valid crawl no longer finds', async () => {
@@ -313,9 +324,10 @@ describe('Crawler', () => {
     );
     await storeRegistrationFixture(url);
     // The API deletes the registration while the crawler is storing its datasets.
-    vi.spyOn(datasetStore, 'store').mockImplementation(() =>
-      registrationStore.delete(url),
-    );
+    vi.spyOn(datasetStore, 'store').mockImplementation(async () => {
+      await registrationStore.delete(url);
+      return 'created';
+    });
     const deleteDataset = vi.spyOn(datasetStore, 'delete');
     const deleteRating = vi.spyOn(ratingStore, 'delete');
 

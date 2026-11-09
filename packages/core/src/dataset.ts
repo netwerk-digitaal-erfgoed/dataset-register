@@ -7,13 +7,29 @@ import { StandardizeSchemaOrgPrefixToHttps } from './transform.ts';
 import { FetchDocumentLoader } from 'jsonld-context-parser';
 import { JsonLdParser } from 'jsonld-streaming-parser';
 import { createRdfFetch } from './fetch.ts';
-import type { DatasetCore } from '@rdfjs/types';
+import type { DatasetCore, NamedNode } from '@rdfjs/types';
+import type { ChangeStatus } from '@lde/change-detection';
+
+/**
+ * The version of how we convert a fetched dataset description into what we store, stored with
+ * each description’s content hash. Bump it whenever that conversion changes what gets stored,
+ * so a change of ours is told apart from a change by the publisher.
+ */
+export const CONVERSION_VERSION = '1';
+
+/**
+ * How a stored dataset description compares to the one stored before it (see
+ * {@link ChangeStatus}). Two statuses say the comparison could not be made, although the
+ * description was stored: `unhashable` when it is too costly to canonicalize and is stored without
+ * a content hash, and `unknown` when the stored hash could not be read.
+ */
+export type DatasetWrite = ChangeStatus | 'unhashable' | 'unknown';
 
 export interface DatasetStore {
   /**
    * Store a dataset description, replacing any triples that were previously stored for it.
    */
-  store(dataset: DatasetCore): Promise<void>;
+  store(dataset: DatasetCore): Promise<DatasetWrite>;
 
   /**
    * Delete a dataset's named graph.
@@ -47,6 +63,15 @@ export interface DatasetStore {
 }
 
 export function extractIri(dataset: DatasetCore): URL {
+  return new URL(extractSubject(dataset).value);
+}
+
+/**
+ * The dataset’s own subject, as the description writes it. Unlike {@link extractIri}, which
+ * normalises it as a URL (`http://Example.org` becomes `http://example.org/`), this is the term the
+ * description’s triples are actually about.
+ */
+export function extractSubject(dataset: DatasetCore): NamedNode {
   const quad = [
     ...dataset.match(
       null,
@@ -54,7 +79,7 @@ export function extractIri(dataset: DatasetCore): URL {
       datasetType,
     ),
   ][0];
-  return new URL(quad.subject.value);
+  return DataFactory.namedNode(quad.subject.value);
 }
 
 export async function load(

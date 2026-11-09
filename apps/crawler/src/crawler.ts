@@ -10,7 +10,11 @@ import {
 } from '@dataset-register/core';
 import pino from 'pino';
 import { Valid, Validator, ValidationTiming } from '@dataset-register/core';
-import { crawlCounter } from '@dataset-register/core';
+import {
+  crawlCounter,
+  datasetWriteCounter,
+  type DatasetWrite,
+} from '@dataset-register/core';
 import { rate, RatingStore } from '@dataset-register/core';
 import { countWarnings, ValidationReportStore } from '@dataset-register/core';
 import { DatasetRemover } from '@dataset-register/core';
@@ -81,6 +85,14 @@ export class Crawler {
       );
     const roundStart = performance.now();
     const roundTimings: Array<{ url: string; totalMs: number }> = [];
+    const roundWrites: Record<DatasetWrite, number> = {
+      created: 0,
+      changed: 0,
+      reconverted: 0,
+      unchanged: 0,
+      unhashable: 0,
+      unknown: 0,
+    };
     for (const registration of registrations) {
       this.logger.info(`Crawling registration URL ${registration.url}...`);
       const registrationStart = performance.now();
@@ -151,7 +163,9 @@ export class Crawler {
               this.httpRequestTimeoutMs,
             )) {
               datasetIris.push(extractIri(dataset));
-              await this.datasetStore.store(dataset);
+              const write = await this.datasetStore.store(dataset);
+              datasetWriteCounter.add(1, { status: write });
+              roundWrites[write]++;
               const dcatValidationResult =
                 await this.validator.validate(dataset);
               const rating = rate(dcatValidationResult as Valid, dataset);
@@ -253,7 +267,12 @@ export class Crawler {
       }
     }
 
-    this.logRoundSummary(registrations.length, roundStart, roundTimings);
+    this.logRoundSummary(
+      registrations.length,
+      roundStart,
+      roundTimings,
+      roundWrites,
+    );
   }
 
   /**
@@ -333,11 +352,15 @@ export class Crawler {
     );
   }
 
-  /** Log a per-round summary: total duration, registration count, and the slowest registrations. */
+  /**
+   * Log a per-round summary: total duration, registration count, the slowest registrations, and
+   * how the stored dataset descriptions compare to the ones stored before them.
+   */
   private logRoundSummary(
     registrationCount: number,
     roundStart: number,
     roundTimings: Array<{ url: string; totalMs: number }>,
+    datasetWrites: Record<DatasetWrite, number>,
   ): void {
     const totalMs = Math.round(performance.now() - roundStart);
     const slowest = [...roundTimings]
@@ -349,6 +372,7 @@ export class Crawler {
         registrations: registrationCount,
         totalMs,
         slowest,
+        datasetWrites,
       },
       `Crawl round finished: ${registrationCount} registrations in ${totalMs}ms`,
     );

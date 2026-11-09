@@ -1,4 +1,15 @@
-import { DatasetStore, extractIri } from './dataset.js';
+import {
+  CONVERSION_VERSION,
+  DatasetStore,
+  DatasetWrite,
+  extractIri,
+  extractSubject,
+} from './dataset.js';
+import {
+  detectChange,
+  SparqlContentHashReader,
+  withContentHash,
+} from '@lde/change-detection';
 import { QueryEngine } from '@comunica/query-sparql';
 import type { BindingsStream } from '@comunica/types';
 import { Parser } from 'n3';
@@ -32,6 +43,10 @@ import { storeErrorType, storeUpdateDuration } from './instrumentation.js';
 
 const queryEngine = new QueryEngine();
 
+// The stored-hash read runs once per dataset in the crawl loop, so a stalled one would hold up the
+// whole round. It selects two literals for one IRI; give up on it well before QLever’s own timeout.
+const CONTENT_HASH_READ_TIMEOUT_MS = 10_000;
+
 export function stores(
   url: string,
   accessToken?: string,
@@ -46,7 +61,13 @@ export function stores(
     new SparqlClient(url, accessToken, store);
 
   return {
-    datasetStore: new SparqlDatasetStore(client('dataset')),
+    datasetStore: new SparqlDatasetStore(
+      client('dataset'),
+      new SparqlContentHashReader({
+        endpoint: new URL(url),
+        fetch: fetchWithTimeout(CONTENT_HASH_READ_TIMEOUT_MS),
+      }),
+    ),
     registrationStore: new SparqlRegistrationStore(
       client('registration'),
       registrationsGraphIri,
@@ -71,7 +92,10 @@ export function stores(
 }
 
 export class SparqlDatasetStore implements DatasetStore {
-  constructor(private readonly client: SparqlClient) {}
+  constructor(
+    private readonly client: SparqlClient,
+    private readonly contentHashes: SparqlContentHashReader,
+  ) {}
 
   async countDatasets(): Promise<number> {
     const result = await this.client.query(`
@@ -99,8 +123,39 @@ export class SparqlDatasetStore implements DatasetStore {
     return parseInt(bindings[0]!.get('count')!.value);
   }
 
-  async store(dataset: DatasetCore): Promise<void> {
+  /**
+   * Store the dataset together with its content hash, and report how it compares to the
+   * description stored before. Every description is written for now, `unchanged` ones too: the
+   * statuses are only counted, to see what skipping the unchanged ones would save.
+   */
+  async store(dataset: DatasetCore): Promise<DatasetWrite> {
     const graph = extractIri(dataset);
+    // The hash goes on the subject the description is about, not on its normalised URL.
+    const subject = extractSubject(dataset);
+
+    // Reading the stored hash only serves the comparison, so a failed read must not stop the
+    // write: compare against nothing, store the description and its hash, and report `unknown`.
+    const read = await this.contentHashes
+      .read([subject])
+      .then((hashes) => ({ previous: hashes.get(subject.value) }))
+      .catch(() => undefined);
+
+    // detectChange throws on a description too costly to canonicalize; store it as is.
+    const detected = await detectChange(
+      dataset,
+      read?.previous,
+      CONVERSION_VERSION,
+    ).catch(() => undefined);
+    if (detected === undefined) {
+      await this.write(graph, dataset);
+      return 'unhashable';
+    }
+
+    await this.write(graph, withContentHash(dataset, subject, detected.hash));
+    return read === undefined ? 'unknown' : detected.status;
+  }
+
+  private async write(graph: URL, dataset: DatasetCore): Promise<void> {
     const triples = await quadsToNTriples([...dataset]);
 
     const sparqlUpdate = `
@@ -633,6 +688,15 @@ export class SparqlAllowedRegistrationDomainStore implements AllowedRegistration
         }
       }`);
   }
+}
+
+// fetch-sparql-endpoint passes no abort signal of its own, so the timeout is the only one.
+function fetchWithTimeout(timeoutMs: number): typeof globalThis.fetch {
+  return (input, init) =>
+    globalThis.fetch(input, {
+      ...init,
+      signal: AbortSignal.timeout(timeoutMs),
+    });
 }
 
 export function authenticatedFetch(
