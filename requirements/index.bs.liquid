@@ -316,7 +316,13 @@ Publishers *MUST* include basic information about the dataset, at the very minim
     </div>
 </div>
 
-{% assign dataset = nodeShapes | where: 'targetClass', 'schema:Dataset' | first -%}
+{%- comment -%}
+    Look the dataset shape up by its IRI, not by sh:targetClass: other node shapes,
+    such as nde-dataset:DatasetNotInCatalogShape, also target schema:Dataset.
+{%- endcomment -%}
+{% for shape in nodeShapes -%}
+{%- if shape['@id'] == 'nde-dataset:DatasetShape' %}{% assign dataset = shape %}{% endif -%}
+{%- endfor %}
 
 {% assign license = dataset.property | mergePropertiesByPath | where: 'path', 'schema:license' | first -%}
 
@@ -1117,6 +1123,11 @@ A [=data catalog=] provides [=consumers=] with a complete overview of available 
 which improves discoverability.
 
 > Therefore, publishers *SHOULD* provide a catalog.
+
+A catalog that leaves out some of its datasets gives consumers an incomplete overview.
+
+> Therefore, the catalog *SHOULD* reference every [=dataset description=] it is published with
+> using `schema:dataset` or `dcat:dataset`.
 
 <div class="example">
     A catalog of available datasets:

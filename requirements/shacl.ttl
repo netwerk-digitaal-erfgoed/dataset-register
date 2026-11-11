@@ -120,6 +120,53 @@ nde-dataset:DatacatalogIriShape
     ] ;
     sh:message "Geef de datacatalogus een URI"@nl, "Give the data catalog a URI"@en .
 
+# DatacatalogShape targets subjects of schema:dataset (#1789), so that an inline catalog behind
+# schema:includedInDataCatalog is not validated as a full catalog. That leaves its own
+# schema:dataset sh:minCount unable to fail: a catalog without datasets is never a focus node.
+# These two SPARQL shapes target by class instead and skip catalogs that are only the object of
+# schema:includedInDataCatalog. The Register registers every dataset in the document whether
+# or not the catalog lists it, so a missing link is a Warning. Severity and message sit on the
+# node shape because shacl-engine ignores them on the sh:sparql node (see
+# OrganizationContactPointRequiredShape).
+nde-dataset:DatacatalogWithoutDatasetShape
+    a sh:NodeShape ;
+    sh:targetClass schema:DataCatalog ;
+    sh:severity sh:Warning ;
+    sh:message "Voeg met schema:dataset de URI van elke dataset in deze datacatalogus toe. Een datacatalogus bestaat namelijk uit datasetbeschrijvingen"@nl,
+        "Add schema:dataset with the URI of each dataset in this data catalog. A data catalog consists of dataset descriptions"@en ;
+    sh:sparql [
+        sh:select """
+            PREFIX schema: <https://schema.org/>
+            SELECT $this ?path WHERE {
+                FILTER NOT EXISTS { $this schema:dataset ?dataset }
+                FILTER NOT EXISTS { ?referrer schema:includedInDataCatalog $this }
+                BIND(schema:dataset AS ?path)
+            }
+        """ ;
+    ] .
+
+# A dataset that points to a catalog with schema:includedInDataCatalog names its catalog itself,
+# so only datasets without that link are reported.
+nde-dataset:DatasetNotInCatalogShape
+    a sh:NodeShape ;
+    sh:targetClass schema:Dataset ;
+    sh:severity sh:Warning ;
+    sh:message "De datacatalogus in dit document noemt deze dataset niet. Voeg aan de datacatalogus schema:dataset toe met de URI van deze dataset, zodat de catalogus compleet is"@nl,
+        "The data catalog in this document does not list this dataset. Add schema:dataset with this dataset’s URI to the data catalog, so the catalog is complete"@en ;
+    sh:sparql [
+        sh:select """
+            PREFIX schema: <https://schema.org/>
+            SELECT $this WHERE {
+                FILTER EXISTS {
+                    ?catalog a schema:DataCatalog .
+                    FILTER NOT EXISTS { ?referrer schema:includedInDataCatalog ?catalog }
+                }
+                FILTER NOT EXISTS { ?anyCatalog schema:dataset $this }
+                FILTER NOT EXISTS { $this schema:includedInDataCatalog ?ownCatalog }
+            }
+        """ ;
+    ] .
+
 nde-dataset:DatasetShape
     a sh:NodeShape ;
     sh:targetClass schema:Dataset ;
@@ -2166,6 +2213,41 @@ dcat:CatalogIriShape
         sh:severity sh:Violation ;
     ] ;
     sh:message "Geef de datacatalogus een URI"@nl, "Give the data catalog a URI"@en .
+
+# The DCAT counterparts of nde-dataset:DatacatalogWithoutDatasetShape and
+# nde-dataset:DatasetNotInCatalogShape. DCAT has no inline-reference property that query.ts
+# reads in place of schema:includedInDataCatalog, so there is nothing to skip.
+dcat:CatalogWithoutDatasetShape
+    a sh:NodeShape ;
+    sh:targetClass dcat:Catalog ;
+    sh:severity sh:Warning ;
+    sh:message "Voeg met dcat:dataset de URI van elke dataset in deze datacatalogus toe. Een datacatalogus bestaat namelijk uit datasetbeschrijvingen"@nl,
+        "Add dcat:dataset with the URI of each dataset in this data catalog. A data catalog consists of dataset descriptions"@en ;
+    sh:sparql [
+        sh:select """
+            PREFIX dcat: <http://www.w3.org/ns/dcat#>
+            SELECT $this ?path WHERE {
+                FILTER NOT EXISTS { $this dcat:dataset ?dataset }
+                BIND(dcat:dataset AS ?path)
+            }
+        """ ;
+    ] .
+
+dcat:DatasetNotInCatalogShape
+    a sh:NodeShape ;
+    sh:targetClass dcat:Dataset ;
+    sh:severity sh:Warning ;
+    sh:message "De datacatalogus in dit document noemt deze dataset niet. Voeg aan de datacatalogus dcat:dataset toe met de URI van deze dataset, zodat de catalogus compleet is"@nl,
+        "The data catalog in this document does not list this dataset. Add dcat:dataset with this dataset’s URI to the data catalog, so the catalog is complete"@en ;
+    sh:sparql [
+        sh:select """
+            PREFIX dcat: <http://www.w3.org/ns/dcat#>
+            SELECT $this WHERE {
+                FILTER EXISTS { ?catalog a dcat:Catalog }
+                FILTER NOT EXISTS { ?anyCatalog dcat:dataset $this }
+            }
+        """ ;
+    ] .
 
 dcat:ContactPointShape
     a sh:NodeShape ;

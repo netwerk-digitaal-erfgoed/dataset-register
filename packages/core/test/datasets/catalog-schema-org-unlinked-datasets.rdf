@@ -1,0 +1,130 @@
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:schema="http://schema.org/" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+	<schema:DataCatalog>
+		<schema:name xml:lang="nl">Regionaal Archief Nijmegen</schema:name>
+		<schema:description xml:lang="nl">Alle linked data zoals beschikbaar gesteld door Regionaal Archief Nijmegen.</schema:description>
+		<schema:publisher>
+			<schema:Organization rdf:about="https://www.regionaalarchiefnijmegen.nl/">
+				<schema:name xml:lang="nl">Regionaal Archief Nijmegen</schema:name>
+			</schema:Organization>
+		</schema:publisher>
+	</schema:DataCatalog>
+<schema:Dataset rdf:about="https://studiezaal.nijmegen.nl/AtlantisPubliek/data/dataset/LOD+Beelddocumenten" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:schema="https://schema.org/">
+  <schema:name xml:lang="nl">LOD Beelddocumenten</schema:name>
+  <schema:inLanguage>nl</schema:inLanguage>
+  <schema:license rdf:resource="https://creativecommons.org/publicdomain/zero/1.0/" />
+  <schema:description xml:lang="nl">De collectie beelddocumenten van het Regionaal Archief Nijmegen bevat meer dan 120.000 foto's, negatieven, ansichtkaarten, kaarten en plattegronden. Het meeste materiaal is beschreven en doorzoekbaar gemaakt via de website. De beschrijvingen zijn ook beschikbaar gesteld als Linked Open Data (LOD) met behulp van de datamodellen van Schema.org en Records in Contexts. Waar mogelijk zijn er koppelingen gelegd met externe terminologiebronnen via het Termennetwerk. Afbeeldingen van beelddocumenten zijn alleen beschikbaar als ze zijn voorzien van de licenties “Publiek domein”, “CC0” of “CC-BY-SA”.</schema:description>
+  <schema:creator>
+    <schema:Organization rdf:about="https://www.regionaalarchiefnijmegen.nl/">
+      <schema:identifier>
+        <schema:PropertyValue>
+          <schema:value>NL-NmRAN</schema:value>
+          <schema:propertyID rdf:resource="http://www.wikidata.org/entity/Q470458" />
+        </schema:PropertyValue>
+      </schema:identifier>
+      <schema:name xml:lang="nl">Regionaal Archief Nijmegen</schema:name>
+      <schema:alternateName xml:lang="nl">RAN</schema:alternateName>
+      <schema:sameAs rdf:resource="http://www.wikidata.org/entity/Q15881190" />
+      <schema:contactPoint>
+        <schema:ContactPoint>
+          <schema:name xml:lang="nl">Algemeen mailadres RAN</schema:name>
+          <schema:email>hetarchief@nijmegen.nl</schema:email>
+        </schema:ContactPoint>
+      </schema:contactPoint>
+    </schema:Organization>
+  </schema:creator>
+  <schema:dateCreated rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2021-12-02</schema:dateCreated>
+  <schema:datePublished rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2021-12-02</schema:datePublished>
+  <schema:dateModified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2026-11-10</schema:dateModified>
+  <schema:temporalCoverage>1155/2026</schema:temporalCoverage>
+  <schema:about rdf:resource="http://vocab.getty.edu/aat/300127131" />
+  <schema:about rdf:resource="http://vocab.getty.edu/aat/300127173" />
+  <schema:spatialCoverage rdf:resource="http://www.wikidata.org/entity/Q658081" />
+  <schema:spatialCoverage rdf:resource="http://www.wikidata.org/entity/Q932142" />
+  <schema:distribution>
+    <schema:DataDownload>
+      <schema:contentUrl rdf:resource="https://studiezaal.nijmegen.nl/AtlantisPubliek/data/set/LOD+Beelddocumenten.rdf" />
+      <schema:encodingFormat>application/rdf+xml</schema:encodingFormat>
+      <schema:description xml:lang="nl">LOD Beelddocumenten beschikbaar als .rdf</schema:description>
+    </schema:DataDownload>
+  </schema:distribution>
+  <schema:publisher>
+    <schema:Organization rdf:about="https://www.regionaalarchiefnijmegen.nl/">
+      <schema:identifier>
+        <schema:PropertyValue>
+          <schema:value>NL-NmRAN</schema:value>
+          <schema:propertyID rdf:resource="http://www.wikidata.org/entity/Q470458" />
+        </schema:PropertyValue>
+      </schema:identifier>
+      <schema:name xml:lang="nl">Regionaal Archief Nijmegen</schema:name>
+      <schema:alternateName xml:lang="nl">RAN</schema:alternateName>
+      <schema:sameAs rdf:resource="http://www.wikidata.org/entity/Q15881190" />
+      <schema:contactPoint>
+        <schema:ContactPoint>
+          <schema:name xml:lang="nl">Algemeen mailadres RAN</schema:name>
+          <schema:email>hetarchief@nijmegen.nl</schema:email>
+        </schema:ContactPoint>
+      </schema:contactPoint>
+    </schema:Organization>
+  </schema:publisher>
+</schema:Dataset>
+<schema:Dataset rdf:about="https://studiezaal.nijmegen.nl/AtlantisPubliek/data/dataset/RAN_Archieven_en_archiefvormers" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:schema="https://schema.org/">
+  <schema:name xml:lang="nl">RAN_Archieven_en_archiefvormers</schema:name>
+  <schema:inLanguage>nl</schema:inLanguage>
+  <schema:license rdf:resource="https://creativecommons.org/publicdomain/zero/1.0/" />
+  <schema:description xml:lang="nl">Overzicht van alle archieven en bijbehorende archiefvormers die door het Regionaal Archief Nijmegen worden beheerd..
+Gemodelleerd naar minimal requirements van Schema.org Application Profile for NDE.</schema:description>
+  <schema:creator>
+    <schema:Organization rdf:about="https://www.regionaalarchiefnijmegen.nl/">
+      <schema:identifier>
+        <schema:PropertyValue>
+          <schema:value>NL-NmRAN</schema:value>
+          <schema:propertyID rdf:resource="http://www.wikidata.org/entity/Q470458" />
+        </schema:PropertyValue>
+      </schema:identifier>
+      <schema:name xml:lang="nl">Regionaal Archief Nijmegen</schema:name>
+      <schema:alternateName xml:lang="nl">RAN</schema:alternateName>
+      <schema:sameAs rdf:resource="http://www.wikidata.org/entity/Q15881190" />
+      <schema:contactPoint>
+        <schema:ContactPoint>
+          <schema:name xml:lang="nl">Algemeen mailadres RAN</schema:name>
+          <schema:email>hetarchief@nijmegen.nl</schema:email>
+        </schema:ContactPoint>
+      </schema:contactPoint>
+    </schema:Organization>
+  </schema:creator>
+  <schema:dateCreated rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2026-03-30</schema:dateCreated>
+  <schema:datePublished rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2026-03-30</schema:datePublished>
+  <schema:dateModified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2026-11-10</schema:dateModified>
+  <schema:temporalCoverage>1105/2026</schema:temporalCoverage>
+  <schema:about rdf:resource="http://data.bibliotheken.nl/id/thes/p075599651" />
+  <schema:about rdf:resource="http://www.wikidata.org/entity/Q59275219" />
+  <schema:spatialCoverage rdf:resource="http://www.wikidata.org/entity/Q658081" />
+  <schema:spatialCoverage rdf:resource="http://www.wikidata.org/entity/Q932142" />
+  <schema:distribution>
+    <schema:DataDownload>
+      <schema:contentUrl rdf:resource="https://studiezaal.nijmegen.nl/AtlantisPubliek/data/set/RAN_Archieven_en_archiefvormers.n3" />
+      <schema:encodingFormat>text/n3</schema:encodingFormat>
+      <schema:description xml:lang="nl">RAN_Archieven_en_archiefvormers beschikbaar als .n3</schema:description>
+    </schema:DataDownload>
+  </schema:distribution>
+  <schema:publisher>
+    <schema:Organization rdf:about="https://www.regionaalarchiefnijmegen.nl/">
+      <schema:identifier>
+        <schema:PropertyValue>
+          <schema:value>NL-NmRAN</schema:value>
+          <schema:propertyID rdf:resource="http://www.wikidata.org/entity/Q470458" />
+        </schema:PropertyValue>
+      </schema:identifier>
+      <schema:name xml:lang="nl">Regionaal Archief Nijmegen</schema:name>
+      <schema:alternateName xml:lang="nl">RAN</schema:alternateName>
+      <schema:sameAs rdf:resource="http://www.wikidata.org/entity/Q15881190" />
+      <schema:contactPoint>
+        <schema:ContactPoint>
+          <schema:name xml:lang="nl">Algemeen mailadres RAN</schema:name>
+          <schema:email>hetarchief@nijmegen.nl</schema:email>
+        </schema:ContactPoint>
+      </schema:contactPoint>
+    </schema:Organization>
+  </schema:publisher>
+</schema:Dataset>
+</rdf:RDF>

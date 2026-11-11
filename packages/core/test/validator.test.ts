@@ -1,5 +1,6 @@
 import {
   InvalidDataset,
+  readUrl,
   shacl,
   ShaclEngineValidator,
   Valid,
@@ -167,6 +168,70 @@ describe('Validator', () => {
     const report = await validate('catalog-schema-org-invalid.jsonld');
     expect(report.state).toEqual('invalid');
     expectViolations(report as InvalidDataset, ['https://schema.org/name'], 2);
+  });
+
+  it('warns when a Schema.org catalog does not list the datasets in its document', async () => {
+    // Issue #2530: the catalog of Regionaal Archief Nijmegen, trimmed. Its catalog wrapper declares
+    // http://schema.org/ and lists no datasets; each dataset redeclares https://schema.org/.
+    const report = (await validator.validate(
+      await readUrl('test/datasets/catalog-schema-org-unlinked-datasets.rdf'),
+    )) as Valid;
+
+    expect(report.state).toEqual('valid');
+    // The catalog result can only fire if the http://schema.org/DataCatalog type was normalised.
+    expect(catalogLinkResults(report)).toEqual([
+      {
+        focusNode: '_:blank',
+        path: 'https://schema.org/dataset',
+        message:
+          'Add schema:dataset with the URI of each dataset in this data catalog. A data catalog consists of dataset descriptions',
+      },
+      {
+        focusNode:
+          'https://studiezaal.nijmegen.nl/AtlantisPubliek/data/dataset/LOD+Beelddocumenten',
+        path: undefined,
+        message: datasetNotInSchemaCatalog,
+      },
+      {
+        focusNode:
+          'https://studiezaal.nijmegen.nl/AtlantisPubliek/data/dataset/RAN_Archieven_en_archiefvormers',
+        path: undefined,
+        message: datasetNotInSchemaCatalog,
+      },
+    ]);
+  });
+
+  it('warns when a DCAT catalog does not list the datasets in its document', async () => {
+    const report = (await validate(
+      'catalog-dcat-unlinked-datasets.jsonld',
+    )) as Valid;
+
+    expect(report.state).toEqual('valid');
+    expect(catalogLinkResults(report)).toEqual([
+      {
+        focusNode: 'http://data.bibliotheken.nl/id/dataset/rise-alba',
+        path: undefined,
+        message:
+          'The data catalog in this document does not list this dataset. Add dcat:dataset with this dataset’s URI to the data catalog, so the catalog is complete',
+      },
+      {
+        focusNode: 'https://example.com/catalog',
+        path: 'http://www.w3.org/ns/dcat#dataset',
+        message:
+          'Add dcat:dataset with the URI of each dataset in this data catalog. A data catalog consists of dataset descriptions',
+      },
+    ]);
+  });
+
+  it('does not warn about catalog links when the catalog lists its datasets', async () => {
+    for (const fixture of [
+      'catalog-schema-org-valid.jsonld',
+      'catalog-dcat-valid.jsonld',
+      'dataset-schema-org-valid-included-in-data-catalog.jsonld',
+    ]) {
+      const report = (await validate(fixture)) as Valid;
+      expect(catalogLinkResults(report)).toEqual([]);
+    }
   });
 
   it('accepts valid DCAT catalog', async () => {
@@ -1186,6 +1251,44 @@ const warningMessages = (report: InvalidDataset | Valid): string[] =>
         quad.object.termType === 'Literal' && quad.object.language === 'en',
     )
     .map((quad) => quad.object.value);
+
+const datasetNotInSchemaCatalog =
+  'The data catalog in this document does not list this dataset. Add schema:dataset with this dataset’s URI to the data catalog, so the catalog is complete';
+
+const catalogLinkShapes = new Set([
+  'https://def.nde.nl/dataset#DatacatalogWithoutDatasetShape',
+  'https://def.nde.nl/dataset#DatasetNotInCatalogShape',
+  'http://www.w3.org/ns/dcat#CatalogWithoutDatasetShape',
+  'http://www.w3.org/ns/dcat#DatasetNotInCatalogShape',
+]);
+
+/**
+ * Results of the shapes that check whether a catalog lists the datasets in its document, as
+ * Warnings sorted by focus node; a blank focus node is shown as `_:blank`.
+ */
+const catalogLinkResults = (report: InvalidDataset | Valid) =>
+  [...report.errors.match(null, shacl('sourceShape'), null)]
+    .filter((quad) => catalogLinkShapes.has(quad.object.value))
+    .map((quad) => {
+      const object = (property: string) =>
+        [...report.errors.match(quad.subject, shacl(property), null)].map(
+          (result) => result.object,
+        );
+      expect(object('resultSeverity')[0]?.value).toEqual(
+        'http://www.w3.org/ns/shacl#Warning',
+      );
+      const [focusNode] = object('focusNode');
+      return {
+        focusNode:
+          focusNode?.termType === 'BlankNode' ? '_:blank' : focusNode?.value,
+        path: object('resultPath')[0]?.value,
+        message: object('resultMessage').find(
+          (message) =>
+            message.termType === 'Literal' && message.language === 'en',
+        )?.value,
+      };
+    })
+    .sort((a, b) => ((a.focusNode ?? '') < (b.focusNode ?? '') ? -1 : 1));
 
 const placeholderEmail =
   'Replace the placeholder email address of the contact point with a real one';
