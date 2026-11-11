@@ -6,7 +6,7 @@
   import CheckOutline from 'flowbite-svelte-icons/CheckOutline.svelte';
   import ChevronRightOutline from 'flowbite-svelte-icons/ChevronRightOutline.svelte';
   import CloseOutline from 'flowbite-svelte-icons/CloseOutline.svelte';
-  import ExclamationCircleOutline from 'flowbite-svelte-icons/ExclamationCircleOutline.svelte';
+  import ExclamationOutline from '$lib/components/icons/ExclamationOutline.svelte';
   import InfoCircleSolid from 'flowbite-svelte-icons/InfoCircleSolid.svelte';
   import {
     compatibilityCriteria,
@@ -98,8 +98,8 @@
           case 'met':
             return m.nde_compat_persistent_heading_persistent();
           case 'warning':
-            // Two orange reasons: a sample that errored, versus a namespace that
-            // resolves but is non-durable.
+            // Two amber (warning) reasons: a sample that errored, versus a
+            // namespace that resolves but is non-durable.
             switch (criterion.reason) {
               case 'sampling-failed':
                 return m.nde_compat_persistent_heading_sampling_failed();
@@ -485,7 +485,7 @@
       state === 'met'
         ? 'border-green-600 bg-green-600 text-white dark:border-green-500 dark:bg-green-500'
         : state === 'warning'
-          ? 'border-orange-500 bg-orange-500 text-white dark:border-orange-400 dark:bg-orange-400'
+          ? 'border-amber-500 bg-amber-500 text-white dark:border-amber-400 dark:bg-amber-400'
           : state === 'failed'
             ? 'border-red-600 bg-red-600 text-white dark:border-red-500 dark:bg-red-500'
             : 'border-gray-300 bg-white dark:border-gray-400 dark:bg-gray-700'
@@ -494,7 +494,7 @@
   >
     {#if state === 'met'}<CheckOutline
         class="h-3 w-3"
-      />{:else if state === 'warning'}<ExclamationCircleOutline
+      />{:else if state === 'warning'}<ExclamationOutline
         class="h-3 w-3"
       />{:else if state === 'failed'}<CloseOutline class="h-3 w-3" />{/if}
   </span>
@@ -545,8 +545,8 @@
           {@const detailText = detail(criterion)}
           {@const sectionHref = sectionAnchor(criterion)}
           <li class="flex items-start gap-3 px-4 py-3">
-            <!-- Status box. Green tick = met, orange exclamation = warning, red
-               cross = error, neutral empty = pending or not applicable. The
+            <!-- Status box. Green tick = met, amber exclamation mark = warning,
+               red cross = error, neutral empty = pending or not applicable. The
                heading carries the status for assistive technology, so the box is
                decorative. -->
             <span
@@ -554,7 +554,7 @@
                 criterion.state === 'met'
                   ? 'border-green-600 bg-green-600 text-white dark:border-green-500 dark:bg-green-500'
                   : criterion.state === 'warning'
-                    ? 'border-orange-500 bg-orange-500 text-white dark:border-orange-400 dark:bg-orange-400'
+                    ? 'border-amber-500 bg-amber-500 text-white dark:border-amber-400 dark:bg-amber-400'
                     : criterion.state === 'failed'
                       ? 'border-red-600 bg-red-600 text-white dark:border-red-500 dark:bg-red-500'
                       : 'border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700'
@@ -564,7 +564,7 @@
               {#if criterion.state === 'met'}
                 <CheckOutline class="h-3.5 w-3.5" />
               {:else if criterion.state === 'warning'}
-                <ExclamationCircleOutline class="h-3.5 w-3.5" />
+                <ExclamationOutline class="h-3.5 w-3.5" />
               {:else if criterion.state === 'failed'}
                 <CloseOutline class="h-3.5 w-3.5" />
               {/if}
