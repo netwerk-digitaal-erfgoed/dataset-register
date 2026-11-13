@@ -76,7 +76,7 @@ export const SUBJECT_NAMESPACE_DURABLE_METRIC =
 
 // Namespace of the recognised persistent-identifier schemes the Knowledge Graph
 // attaches to a subject namespace via `dcterms:conformsTo` (e.g.
-// `https://def.nde.nl/pid-scheme#ark`). Its presence is the green/orange
+// `https://def.nde.nl/pid-scheme#ark`). Its presence is the green/amber
 // discriminator for the persistent criterion.
 export const PID_SCHEME_BASE_URI = 'https://def.nde.nl/pid-scheme#';
 
@@ -293,7 +293,8 @@ export function parsePersistentUriFailureReason(
 //                   non-durable vendor namespaces: it resolves today but is not a
 //                   durable home for the identifiers, so it warns rather than
 //                   passing. False until the DKG emits the marker (see
-//                   dataset-knowledge-graph): the orange tier is dormant until then.
+//                   dataset-knowledge-graph): the amber (warning) tier is
+//                   dormant until then.
 // 'failures'      — the sampled URIs that did not resolve, each with its typed
 //                   reason. All are hard failures (🔴); empty until the DKG ships
 //                   the per-URI data, in which case the count alone drives the red

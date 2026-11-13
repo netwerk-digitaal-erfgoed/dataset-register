@@ -51,6 +51,7 @@
   import InfoCircleSolid from 'flowbite-svelte-icons/InfoCircleSolid.svelte';
   import SearchOutline from 'flowbite-svelte-icons/SearchOutline.svelte';
   import ExclamationCircleOutline from 'flowbite-svelte-icons/ExclamationCircleOutline.svelte';
+  import ExclamationOutline from '$lib/components/icons/ExclamationOutline.svelte';
   import {
     displayMissingProperties,
     getRegistrationStatus,
@@ -1695,24 +1696,17 @@
     </div>
   {/if}
 
-  <!-- The Knowledge Graph analysis (NDE-compatibility criteria + the VoID
-       linked-data summary) streams in after the register record above; see
-       DatasetAnalysis. The shell renders immediately and this section fills in
+  <!-- The Knowledge Graph analysis (the VoID linked-data summary, then the
+       NDE-compatibility criteria) streams in after the register record above;
+       see DatasetAnalysis. The shell renders immediately and this section fills in
        once data.analysis resolves. -->
   {#await data.analysis}
     <!-- Skeleton placeholder while the streamed analysis loads, matching the
-         search page's shimmer style: a row for the criteria “vinkjes” and a few
-         lines for the linked-data summary. The label is screen-reader-only; the
-         bars are decorative. -->
+         search page's shimmer style: a few lines for the linked-data summary
+         and a row for the criteria “vinkjes”, in the order they render. The
+         label is screen-reader-only; the bars are decorative. -->
     <div class="mb-8" role="status" aria-live="polite">
       <span class="sr-only">{m.detail_analysis_loading()}</span>
-      <div class="mb-6 flex flex-wrap gap-3" aria-hidden="true">
-        {#each [1, 2, 3, 4] as pill (pill)}
-          <div
-            class="h-8 w-32 animate-shimmer rounded-full bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-700 dark:to-gray-600"
-          ></div>
-        {/each}
-      </div>
       <div
         class="mb-4 h-7 w-2/5 animate-shimmer rounded bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-700 dark:to-gray-600"
         aria-hidden="true"
@@ -1725,6 +1719,13 @@
         class="h-4 w-3/5 animate-shimmer rounded bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-700 dark:to-gray-600"
         aria-hidden="true"
       ></div>
+      <div class="mt-6 flex flex-wrap gap-3" aria-hidden="true">
+        {#each [1, 2, 3, 4] as pill (pill)}
+          <div
+            class="h-8 w-32 animate-shimmer rounded-full bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-700 dark:to-gray-600"
+          ></div>
+        {/each}
+      </div>
     </div>
   {:then analysis}
     {@const summary = analysis.summary}
@@ -1747,21 +1748,6 @@
       summary,
       hasVoidStats,
     )}
-    <!-- NDE compatibility (“vinkjes”) -->
-    <NdeCompatibility
-      isAnalyzed={isAnalyzed(summary)}
-      {registrationStatus}
-      {registrationHasWarnings}
-      {persistentUris}
-      {terms}
-      {iiifManifests}
-      {linkedData}
-      validateHref={dataset.subjectOf?.$id
-        ? localizeHref(`/validate?url=${encodeUrlParam(dataset.subjectOf.$id)}`)
-        : null}
-      analyzedAt={summaryGeneratedAt}
-    />
-
     <!-- VoID Summary Section -->
     {#if summary && hasVoidStats}
       <h2
@@ -1795,15 +1781,15 @@
         {#if summarySourceInvalid}
           <!-- The figures are retained from an earlier crawl (the current source
                  no longer parses as valid RDF), so the Knowledge Graph kept its
-                 previous summary. A subtle orange warning next to the timestamp –
+                 previous summary. A subtle amber warning next to the timestamp –
                  with the reason in its tooltip – flags the figures as not current;
                  the affected distribution is listed in the download section below. -->
           <span
             id="summary-outdated-warning"
-            class="cursor-pointer text-orange-500 dark:text-orange-400"
+            class="cursor-pointer text-amber-600 dark:text-amber-500"
             class:ml-auto={!summaryGeneratedAt}
           >
-            <ExclamationCircleOutline class="h-5 w-5" />
+            <ExclamationOutline class="h-5 w-5" />
             <!-- Names the icon for assistive tech; the tooltip carries the
                  description, so the title is not repeated there. -->
             <span class="sr-only">{m.detail_summary_outdated()}</span>
@@ -2109,6 +2095,22 @@
         </Alert>
       </div>
     {/if}
+
+    <!-- NDE compatibility (“vinkjes”), after the linked-data summary so a
+         LOD dataset leads with what it contains (issue #2534). -->
+    <NdeCompatibility
+      isAnalyzed={isAnalyzed(summary)}
+      {registrationStatus}
+      {registrationHasWarnings}
+      {persistentUris}
+      {terms}
+      {iiifManifests}
+      {linkedData}
+      validateHref={dataset.subjectOf?.$id
+        ? localizeHref(`/validate?url=${encodeUrlParam(dataset.subjectOf.$id)}`)
+        : null}
+      analyzedAt={summaryGeneratedAt}
+    />
   {/await}
 
   <!-- Registration Section -->
