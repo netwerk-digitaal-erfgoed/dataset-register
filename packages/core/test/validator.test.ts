@@ -325,6 +325,24 @@ describe('Validator', () => {
     ]);
   });
 
+  it('warns on a language tag that is not well-formed', async () => {
+    // JSON-LD admits any @language, so `nederlands` (a subtag over 8 characters)
+    // reaches validation; well-formed tags such as nl and en-GB pass.
+    const report = (await validate(
+      'dataset-schema-org-invalid-language-tag.jsonld',
+    )) as Valid;
+    expect(report.state).toEqual('valid');
+
+    const languageTag = 'Use a valid language tag, such as nl or en';
+    const nodeLevelResults = formatReport(report)
+      .split('\n')
+      .filter((line) => line.includes(languageTag));
+    expect(nodeLevelResults).toEqual([
+      `[Warning] https://schema.org/description on <http://data.bibliotheken.nl/id/dataset/rise-alba>: ${languageTag}`,
+      `[Warning] https://schema.org/name on <https://example.com/publisher>: ${languageTag}`,
+    ]);
+  });
+
   it('captures full SHACL feedback for Gouda Tijdmachine fixture', async () => {
     const report = (await validate(
       'dataset-schema-org-gouda-tijdmachine.ttl',
