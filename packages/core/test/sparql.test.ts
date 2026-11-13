@@ -1219,6 +1219,42 @@ describe('SPARQL', () => {
       expect(match?.object.value).toBe('object');
     });
 
+    it('skips a triple with an invalid language tag and keeps the rest', async () => {
+      // A subtag over 8 characters is not BCP 47, so N3 rejects the whole
+      // response; the store accepts and serves it, as it did for registered
+      // descriptions with `@nederlands`.
+      await sparqlClient.update(`
+        INSERT DATA {
+          GRAPH <http://example.org/construct-langtag> {
+            <http://example.org/valid> <http://example.org/name> "Valid"@nl .
+            <http://example.org/invalid> <http://example.org/name> "Invalid"@nederlands .
+          }
+        }`);
+
+      const quads = await sparqlClient.constructQuads(`
+        CONSTRUCT { ?s <urn:name> ?o }
+        WHERE { GRAPH <http://example.org/construct-langtag> { ?s <http://example.org/name> ?o } }`);
+
+      expect(quads.map((quad) => quad.subject.value)).toEqual([
+        'http://example.org/valid',
+      ]);
+    });
+
+    it('throws when the result is not N-Triples at all', async () => {
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(
+          new Response('<html><body>Bad gateway</body></html>'),
+        );
+      try {
+        await expect(
+          sparqlClient.constructQuads('CONSTRUCT WHERE { ?s ?p ?o }'),
+        ).rejects.toThrow();
+      } finally {
+        fetchSpy.mockRestore();
+      }
+    });
+
     it('throws on a malformed CONSTRUCT', async () => {
       await expect(
         sparqlClient.constructQuads('CONSTRUCT WHERE not-sparql'),

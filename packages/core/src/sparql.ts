@@ -623,7 +623,7 @@ export class SparqlClient {
         `CONSTRUCT failed: ${response.status} ${await response.text()}`,
       );
     }
-    return new Parser().parse(await response.text());
+    return parseSkippingInvalidTriples(await response.text());
   }
 
   async queryBoolean(query: string) {
@@ -721,4 +721,34 @@ export function authenticatedFetch(
 
 function iriValues(iris: Array<URL | string>): string {
   return iris.map((iri) => `<${sparqlIri(iri)}>`).join(' ');
+}
+
+/**
+ * Parse a CONSTRUCT result, skipping triples N3 rejects instead of failing the
+ * whole result. The store serves some triples N3 refuses, such as a language tag
+ * with a subtag over 8 characters (`"Bonnefanten"@nederlands`), and one of those
+ * would otherwise abort every search-index rebuild. N-Triples holds one triple
+ * per line, so after a parse error each line is parsed on its own; blank-node
+ * labels are kept verbatim so they still join across lines.
+ */
+function parseSkippingInvalidTriples(nTriples: string): Quad[] {
+  try {
+    return new Parser().parse(nTriples);
+  } catch (error) {
+    const quads: Quad[] = [];
+    const skipped: string[] = [];
+    for (const line of nTriples.split('\n').filter((line) => line.trim())) {
+      try {
+        quads.push(...new Parser({ blankNodePrefix: '' }).parse(line));
+      } catch {
+        skipped.push(line);
+      }
+    }
+    // Nothing parses: not N-Triples at all (an HTML error page, say), so fail.
+    if (quads.length === 0) throw error;
+    console.warn(
+      `Skipped ${skipped.length} triple(s) the parser rejects in a CONSTRUCT result, such as: ${skipped[0]}`,
+    );
+    return quads;
+  }
 }
