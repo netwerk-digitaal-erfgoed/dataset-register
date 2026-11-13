@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.4.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/core-0.3.1...core-0.4.0) (2026-11-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deps:** the GraphQL search API types date_posted as ISO8601Date instead of String, and serves it at its source precision once the index is rebuilt. Clients that name the type must use ISO8601Date.
+
+### build
+
+* **deps:** upgrade every [@lde](https://github.com/lde) package to its latest version ([#2520](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2520)) ([347cccc](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/347cccc4dc45d4c5e26c5133cd612d2f7ec06e08))
+
+
+### Features
+
+* **core:** store a content hash with each dataset description ([#2521](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2521)) ([e58acbf](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/e58acbf5f027d0f85ba721124b9aed7b7dc1d01b))
+* rebuild the search index after a registration and hand off locked rebuilds ([#2501](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2501)) ([a58d2e0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/a58d2e0d10dc82791e7a6beb64a6e8c8a93cb012))
+
+
+### Bug Fixes
+
+* **core:** count only a canonicalization limit as unhashable ([#2525](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2525)) ([d2b7c88](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/d2b7c884cb89151c7bbf8649c0ea675a6274e32b))
+* **core:** skip triples the parser rejects in CONSTRUCT results ([#2537](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2537)) ([225d23d](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/225d23dde3871aaf6dc3b347afbd1dab033bde26))
+* remove unnecessary line that causes metashacl validation violation ([#2506](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2506)) ([f958b52](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/f958b52f409db95f739f2b59c5932de3df54ab4f))
+* **requirements:** warn about a DCAT catalog without a URI ([#2514](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2514)) ([7162537](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/7162537f505667249c06abbec32549567969d4c9))
+* **requirements:** warn about a language tag that is not well-formed ([#2538](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2538)) ([1ccc744](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/1ccc744f15b4b9381ca7ca055604ba59c9332084))
+* **requirements:** warn about placeholder and doubly prefixed contact e-mail addresses ([#2511](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2511)) ([06ce2c5](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/06ce2c53409946d4a0bcd7b0451270532612fa7b))
+
 ## [0.3.1](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/core-0.3.0...core-0.3.1) (2026-10-28)
 
 
