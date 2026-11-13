@@ -708,7 +708,7 @@ describe('linkedDataState', () => {
   it('is a warning/invalid-linked-data when a declared source is invalid, even over conforming content', () => {
     // The extracted content is from an earlier crawl (the Knowledge Graph keeps
     // its previous summary when a re-crawl fails to parse); the live source no
-    // longer parses, so the pass is downgraded to an orange warning rather than
+    // longer parses, so the pass is downgraded to an amber warning rather than
     // shown as a clean green.
     expect(
       linkedDataState({

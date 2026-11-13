@@ -1786,7 +1786,7 @@
                  the affected distribution is listed in the download section below. -->
           <span
             id="summary-outdated-warning"
-            class="cursor-pointer text-amber-500 dark:text-amber-400"
+            class="cursor-pointer text-amber-600 dark:text-amber-500"
             class:ml-auto={!summaryGeneratedAt}
           >
             <ExclamationOutline class="h-5 w-5" />
