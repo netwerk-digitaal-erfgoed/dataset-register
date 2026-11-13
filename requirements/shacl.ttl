@@ -899,6 +899,31 @@ nde-dataset:AgentWikidataEntityHttpShape
     sh:severity sh:Warning ;
     sh:message "Gebruik http:// (niet https://) in de Wikidata-entiteit-URI"@nl, "Use http:// (not https://) in the Wikidata entity URI"@en .
 
+# A language tag must be well-formed BCP 47: subtags of 1 to 8 letters or digits, the
+# first only letters. JSON-LD admits any @language, so a tag such as `nederlands` gets
+# through parsing, yet RDF tooling that enforces BCP 47 (N3, for one) then rejects the
+# whole document. Targets every node a description consists of, in both vocabularies.
+nde-dataset:WellFormedLanguageTagShape
+    a sh:NodeShape ;
+    sh:targetClass schema:Dataset, dcat:Dataset, schema:DataCatalog, dcat:Catalog ;
+    sh:targetObjectsOf schema:publisher, schema:creator, dc:publisher, dc:creator,
+        schema:distribution, dcat:distribution, schema:contactPoint, dcat:contactPoint ;
+    sh:severity sh:Warning ;
+    nde:futureChange [
+        nde:version "2.0" ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:message "Gebruik een geldige taalcode, zoals nl of en"@nl, "Use a valid language tag, such as nl or en"@en ;
+    sh:sparql [
+        sh:select """
+            SELECT $this ?path ?value WHERE {
+                $this ?path ?value .
+                FILTER(isLiteral(?value) && LANG(?value) != ""
+                    && !REGEX(LANG(?value), "^[a-zA-Z]{1,8}(-[a-zA-Z0-9]{1,8})*$"))
+            }
+        """ ;
+    ] .
+
 # Separate node shapes for Organization-specific constraints that must fire only on
 # schema:Organization instances (not on Person publishers/creators). Each carries its own
 # sh:severity and sh:message at node level, because shacl-engine's sparql validations
