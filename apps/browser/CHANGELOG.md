@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.4.0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/browser-0.3.1...browser-0.4.0) (2026-11-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deps:** the GraphQL search API types date_posted as ISO8601Date instead of String, and serves it at its source precision once the index is rebuilt. Clients that name the type must use ISO8601Date.
+
+### build
+
+* **deps:** upgrade every [@lde](https://github.com/lde) package to its latest version ([#2520](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2520)) ([347cccc](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/347cccc4dc45d4c5e26c5133cd612d2f7ec06e08))
+
+
+### Features
+
+* **browser:** show the Linked Data Summary before the automated checks ([#2535](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2535)) ([a5a367e](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/a5a367e373b38526b0b388c9f3f51357f45327fa))
+* rebuild the search index after a registration and hand off locked rebuilds ([#2501](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2501)) ([a58d2e0](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/a58d2e0d10dc82791e7a6beb64a6e8c8a93cb012))
+
+
+### Bug Fixes
+
+* **browser:** keep crawlers on dataset detail pages ([#2517](https://github.com/netwerk-digitaal-erfgoed/dataset-register/issues/2517)) ([f2c5240](https://github.com/netwerk-digitaal-erfgoed/dataset-register/commit/f2c5240533e6fc6a8348a05b6abf5096cfa57c3d))
+
 ## [0.3.1](https://github.com/netwerk-digitaal-erfgoed/dataset-register/compare/browser-0.3.0...browser-0.3.1) (2026-10-28)
 
 
