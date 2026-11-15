@@ -34,6 +34,10 @@ interface CrawlPhaseTimings {
   dereferenceMs?: number;
   validateMs?: number;
   storeLoopMs?: number;
+  // The parts of storeLoopMs, summed over the registration’s datasets.
+  datasetStoreMs?: number;
+  ratingValidateMs?: number;
+  ratingStoreMs?: number;
 }
 
 export interface CrawlerOptions {
@@ -44,10 +48,19 @@ export interface CrawlerOptions {
    * own fresh deadline, so a large healthy paginated catalogue is not cut off.
    */
   httpRequestTimeoutMs?: number;
+
+  /**
+   * Validator whose report rates each fetched dataset. The rating only reads SHACL
+   * minCount results, so pass a SHACL-only validator here: the registration-level
+   * `validator` has already probed the distributions, and probing them again per dataset
+   * doubles the network and store work. Defaults to `validator`.
+   */
+  ratingValidator?: Validator;
 }
 
 export class Crawler {
   private readonly httpRequestTimeoutMs: number | undefined;
+  private readonly ratingValidator: Validator;
 
   constructor(
     private registrationStore: RegistrationStore,
@@ -61,6 +74,7 @@ export class Crawler {
   ) {
     // Leave undefined when unset: dereference()/fetch() own the single default.
     this.httpRequestTimeoutMs = options.httpRequestTimeoutMs;
+    this.ratingValidator = options.ratingValidator ?? validator;
   }
 
   /**
@@ -157,21 +171,33 @@ export class Crawler {
             this.logger.info(`${registration.url} passes validation`);
             datasetIris = []; // Start with a fresh list.
             const storeLoopStart = performance.now();
+            let datasetStoreMs = 0;
+            let ratingValidateMs = 0;
+            let ratingStoreMs = 0;
             for await (const dataset of fetch(
               registration.url,
               data,
               this.httpRequestTimeoutMs,
             )) {
               datasetIris.push(extractIri(dataset));
+              const datasetStoreStart = performance.now();
               const write = await this.datasetStore.store(dataset);
+              datasetStoreMs += performance.now() - datasetStoreStart;
               datasetWriteCounter.add(1, { status: write });
               roundWrites[write]++;
+              const ratingValidateStart = performance.now();
               const dcatValidationResult =
-                await this.validator.validate(dataset);
+                await this.ratingValidator.validate(dataset);
+              ratingValidateMs += performance.now() - ratingValidateStart;
               const rating = rate(dcatValidationResult as Valid, dataset);
+              const ratingStoreStart = performance.now();
               await this.ratingStore.store(extractIri(dataset), rating);
+              ratingStoreMs += performance.now() - ratingStoreStart;
             }
             phases.storeLoopMs = Math.round(performance.now() - storeLoopStart);
+            phases.datasetStoreMs = Math.round(datasetStoreMs);
+            phases.ratingValidateMs = Math.round(ratingValidateMs);
+            phases.ratingStoreMs = Math.round(ratingStoreMs);
             fetchedAllDatasets = true;
           } else if (validationResult.state === 'invalid') {
             statusCode = 200;
@@ -313,8 +339,8 @@ export class Crawler {
    * slow, log a structured `crawl.registration.timing` line attributing the time across dereference,
    * SHACL, the distribution probe's network fan-out, and its store writes – so a stalled crawl can be
    * diagnosed from the logs (we have no metrics yet). The SHACL/probe split covers the
-   * registration-level validation; `storeLoopMs` covers the per-dataset store-and-validate loop
-   * (including its own probing), which the split does not break out. `mediaType` rides along because
+   * registration-level validation; `storeLoopMs` covers the per-dataset loop, split into dataset
+   * writes, rating validation and rating writes. `mediaType` rides along because
    * the serialization often explains the time (a multi-megabyte JSON-LD parse is slow for a reason).
    * Fast registrations are recorded but not logged.
    */
@@ -341,6 +367,9 @@ export class Crawler {
         dereferenceMs: phases.dereferenceMs,
         validateMs: phases.validateMs,
         storeLoopMs: phases.storeLoopMs,
+        datasetStoreMs: phases.datasetStoreMs,
+        ratingValidateMs: phases.ratingValidateMs,
+        ratingStoreMs: phases.ratingStoreMs,
         shaclMs: timing.shaclMs,
         probeNetworkMs: timing.networkMs,
         probeStoreWriteMs: timing.storeWriteMs,

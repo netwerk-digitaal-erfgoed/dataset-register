@@ -105,6 +105,30 @@ describe('Crawler', () => {
     ]);
   });
 
+  it('rates each dataset with the rating validator, not the probing one', async () => {
+    const probingValidator = validator(true);
+    const ratingValidator = validator(true);
+    const probingValidate = vi.spyOn(probingValidator, 'validate');
+    const ratingValidate = vi.spyOn(ratingValidator, 'validate');
+    crawler = new Crawler(
+      registrationStore,
+      datasetStore,
+      ratingStore,
+      reportStore,
+      remover(),
+      probingValidator,
+      pino({ enabled: false }),
+      { ratingValidator },
+    );
+    await storeRegistrationFixture(new URL('https://example.com/valid'));
+
+    await nockValidRegistration();
+    await crawler.crawl(new Date('3000-01-01'));
+
+    expect(probingValidate).toHaveBeenCalledTimes(1);
+    expect(ratingValidate).toHaveBeenCalledTimes(1);
+  });
+
   it('counts how each stored dataset compares to the one stored before', async () => {
     const add = vi.spyOn(datasetWriteCounter, 'add');
     await storeRegistrationFixture(new URL('https://example.com/valid'));
