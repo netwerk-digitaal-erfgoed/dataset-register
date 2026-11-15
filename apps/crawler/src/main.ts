@@ -24,12 +24,13 @@ const {
 
 const shacl = await readUrl('requirements/shacl.ttl');
 const logger = pino();
+const shaclValidator = new ShaclEngineValidator(shacl);
 // Lenient mode: probe every distribution each crawl round, but only emit a failure once the
 // health store shows the streak is persistent (default: 7 days since the first failure).
 // Transient blips don’t penalise the rating. Emitted failures carry the sh:severity the shapes
 // declare for each check (reachability and format-match are sh:Warning today).
 const validator = new CompositeValidator(
-  new ShaclEngineValidator(shacl),
+  shaclValidator,
   new DistributionProbeStage({
     healthStore: distributionHealthStore,
     validityStore: distributionValidityStore,
@@ -53,12 +54,16 @@ const crawler = new Crawler(
   }),
   validator,
   logger,
-  { httpRequestTimeoutMs: config.HTTP_REQUEST_TIMEOUT * 1000 },
+  {
+    httpRequestTimeoutMs: config.HTTP_REQUEST_TIMEOUT * 1000,
+    // Rate each dataset from SHACL alone: `validator` has already probed its distributions.
+    ratingValidator: shaclValidator,
+  },
 );
 
 // Update the Typesense search index after a crawl. Decoupled from the crawl
 // write path (it re-reads the store), error-isolated, and skipped entirely when
-// no Typesense target is configured — a slow or failed index run must never
+// no Typesense target is configured – a slow or failed index run must never
 // block or crash the crawler (D7). The rebuild is single-flight per index inside
 // the indexer, so the crawler and the API pods never rebuild concurrently.
 async function updateSearchIndex(): Promise<void> {
