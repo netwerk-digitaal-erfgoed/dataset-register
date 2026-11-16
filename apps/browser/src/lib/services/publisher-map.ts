@@ -1,5 +1,6 @@
 import type { Binding, QueryResult, ResultRendererPlugin } from '@ldforge/core';
 import { createGeoRenderer, type GeoRendererOptions } from '@ldforge/geo';
+import * as m from '$lib/paraglide/messages';
 import './publisher-map.css';
 
 type Publisher = { iri: string; name: string; datasets: string };
@@ -75,7 +76,7 @@ export function createPublisherMapRenderer(
         return fallback.render(container, result, context);
       }
       const places = groupPublisherPlaces(result.bindings);
-      const nl = context?.locale === 'nl';
+      const locale = context?.locale === 'nl' ? 'nl' : 'en';
       const options: GeoRendererOptions = {
         renderPopup(doc, properties) {
           const entry =
@@ -93,9 +94,10 @@ export function createPublisherMapRenderer(
           );
           const summary = doc.createElement('div');
           summary.className = 'publisher-map-total';
-          summary.textContent = `${new Intl.NumberFormat(context?.locale).format(total)} ${
-            nl ? 'datasets in totaal' : 'datasets in total'
-          }`;
+          summary.textContent = m.publisher_map_total(
+            { count: new Intl.NumberFormat(locale).format(total) },
+            { locale },
+          );
           const list = doc.createElement('ul');
           for (const publisher of [...entry.publishers.values()].sort((a, b) =>
             a.name.localeCompare(b.name),
@@ -112,7 +114,7 @@ export function createPublisherMapRenderer(
           }
           const button = doc.createElement('button');
           button.type = 'button';
-          button.textContent = nl ? 'Toon datasets' : 'Show datasets';
+          button.textContent = m.publisher_map_show_datasets({}, { locale });
           button.addEventListener('click', () =>
             onSelect({
               name: String(properties.label ?? ''),
@@ -120,9 +122,7 @@ export function createPublisherMapRenderer(
             }),
           );
           const note = doc.createElement('small');
-          note.textContent = nl
-            ? 'Plaatscentrum, geen exact adres.'
-            : 'Place centre, not an exact address.';
+          note.textContent = m.publisher_map_place_note({}, { locale });
           popup.append(title, summary, list, button, note);
           return popup;
         },

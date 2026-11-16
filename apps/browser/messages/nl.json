@@ -548,7 +548,7 @@
   "sparql_back": "Terug naar datasets",
   "sparql_loading": "LDForge wordt geladen…",
   "sparql_load_error": "LDForge kon niet worden geladen. Vernieuw de pagina om het opnieuw te proberen.",
-  "index_information": "Index informatie",
+  "index_information": "Indexinformatie",
   "index_close": "Sluiten",
   "index_error": "De indexinformatie kon niet worden opgehaald.",
   "index_retry": "Opnieuw proberen",
@@ -557,5 +557,9 @@
   "index_subjects": "Aantal subjects",
   "index_predicates": "Aantal predicates",
   "index_objects": "Aantal objects",
-  "index_loading": "Indexinformatie ophalen…"
+  "index_loading": "Indexinformatie ophalen…",
+  "sparql_examples": "Voorbeelden",
+  "publisher_map_total": "{count} datasets in totaal",
+  "publisher_map_show_datasets": "Toon datasets",
+  "publisher_map_place_note": "Plaatscentrum, geen exact adres."
 }

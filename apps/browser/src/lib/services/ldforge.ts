@@ -23,6 +23,7 @@ import { createTimelineRenderer } from '@ldforge/timeline';
 import { createPivotRenderer } from '@ldforge/pivot';
 import { createTreeRenderer } from '@ldforge/tree';
 import { PUBLIC_SPARQL_ENDPOINT } from '$app/env/public';
+import * as m from '$lib/paraglide/messages';
 import { sparqlExamples, sparqlPluginExamples } from './sparql-examples';
 import {
   createPublisherMapRenderer,
@@ -76,7 +77,7 @@ export function mountEditor(
   });
   editor.getToolBar().addButton({
     id: 'index-information',
-    label: { en: 'Index information', nl: 'Index informatie' },
+    label: translations(m.index_information),
     icon: createSvgIcon([
       'M20 6c0 2-4 3-8 3S4 8 4 6s4-3 8-3 8 1 8 3z',
       'M4 6v12c0 2 4 3 8 3s8-1 8-3V6',
@@ -87,7 +88,7 @@ export function mountEditor(
   const examples = editor.getToolBar().addButtonGroup({
     id: 'examples',
     type: buttonGroupTypes.dropdown,
-    label: { en: 'Examples', nl: 'Voorbeelden' },
+    label: translations(m.sparql_examples),
     dropdownWidth: 380,
     icon: createSvgIcon([
       'M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1zM12 5v15',
@@ -126,4 +127,14 @@ export function mountEditor(
     );
   }
   return editor;
+}
+
+/** LDForge switches label language itself, so it takes every translation. */
+function translations(
+  message: (inputs: object, options: { locale: Locale }) => string,
+) {
+  return {
+    en: message({}, { locale: 'en' }),
+    nl: message({}, { locale: 'nl' }),
+  };
 }

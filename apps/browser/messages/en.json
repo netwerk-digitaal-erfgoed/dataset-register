@@ -557,5 +557,9 @@
   "index_subjects": "Number of subjects",
   "index_predicates": "Number of predicates",
   "index_objects": "Number of objects",
-  "index_loading": "Loading index information…"
+  "index_loading": "Loading index information…",
+  "sparql_examples": "Examples",
+  "publisher_map_total": "{count} datasets in total",
+  "publisher_map_show_datasets": "Show datasets",
+  "publisher_map_place_note": "Place centre, not an exact address."
 }
