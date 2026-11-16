@@ -69,6 +69,13 @@ automatically executing it. Shared LDForge links retain the query in the URL.
 The page uses `PUBLIC_SPARQL_ENDPOINT`; `/sparql` remains the API endpoint.
 The editor is lazy-loaded in the browser and destroyed on navigation.
 
+The dataset page’s Query this dataset button opens `/query?dataset=…&endpoint=…`,
+which runs queries against that dataset’s own SPARQL endpoint instead. The page
+checks that the register lists the endpoint as one of the dataset’s SPARQL
+distributions and returns 404 otherwise, so a link cannot point the editor at an
+arbitrary server. It starts with a generic query and leaves out the register’s
+examples and index information.
+
 By default, development and production use the declared `@ldforge/*` npm packages.
 To work against a local LDForge checkout, add this to `apps/browser/.env.local`:
 

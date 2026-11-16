@@ -8,7 +8,13 @@
     query,
     autoRun = false,
     locale,
-  }: { query: string; autoRun?: boolean; locale: Locale } = $props();
+    endpoint,
+  }: {
+    query: string;
+    autoRun?: boolean;
+    locale: Locale;
+    endpoint?: string;
+  } = $props();
   let container: HTMLDivElement | undefined = $state();
   let indexOpen = $state(false);
   let loading = $state(true);
@@ -19,6 +25,7 @@
     const initialQuery = query;
     const initialLocale = locale;
     const run = autoRun;
+    const initialEndpoint = endpoint;
     if (!target) return;
 
     let disposed = false;
@@ -30,9 +37,15 @@
     void import('$lib/services/ldforge')
       .then(({ mountEditor }) => {
         if (disposed) return;
-        editor = mountEditor(target, initialQuery, initialLocale, () => {
-          indexOpen = true;
-        });
+        editor = mountEditor(
+          target,
+          initialQuery,
+          initialLocale,
+          () => {
+            indexOpen = true;
+          },
+          initialEndpoint,
+        );
         loading = false;
         if (run) void editor.run();
       })

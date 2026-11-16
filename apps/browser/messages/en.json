@@ -546,6 +546,8 @@
   "status_announcements_link": "More on the status page",
   "sparql_page_description": "Query the Linked Data of the Dataset Register with SPARQL.",
   "sparql_back": "Back to datasets",
+  "sparql_back_to_dataset": "Back to dataset",
+  "sparql_dataset_endpoint_description": "Query this dataset’s SPARQL endpoint:",
   "sparql_loading": "Loading LDForge…",
   "sparql_load_error": "LDForge could not be loaded. Refresh the page to try again.",
   "index_information": "Index information",

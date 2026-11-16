@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { datasetDetailHref } from './url';
+import { datasetDetailHref, datasetQueryHref } from './url';
 
 describe('datasetDetailHref', () => {
   it('leaves the IRI literal in the query string', () => {
@@ -32,5 +32,16 @@ describe('datasetDetailHref', () => {
     const href = datasetDetailHref(original);
     const value = new URL('http://x' + href).searchParams.get('uri');
     expect(value).toBe(original);
+  });
+});
+
+describe('datasetQueryHref', () => {
+  it('round-trips the dataset and endpoint through URLSearchParams', () => {
+    const dataset = 'https://example.org/dataset?id=1&v=2';
+    const endpoint = 'https://example.org/sparql?graph=a&b#c';
+    const params = new URL('http://x' + datasetQueryHref(dataset, endpoint))
+      .searchParams;
+    expect(params.get('dataset')).toBe(dataset);
+    expect(params.get('endpoint')).toBe(endpoint);
   });
 });

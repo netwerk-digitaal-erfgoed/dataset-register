@@ -1,18 +1,8 @@
 import { fetchDatasetDetail } from '$lib/services/dataset-detail';
+import { ILLEGAL_IRI_CHARS } from '$lib/utils/sparql';
 import { cachedFetchAnalysis } from '$lib/services/dataset-analysis-cache.server';
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-
-// Characters disallowed inside a SPARQL IRIREF (`<...>`): per the grammar, any
-// codepoint ≤ U+0020 (space, tab, newline, controls) and the set <>"{}|^`\.
-// fetchDatasetDetail interpolates the IRI straight into CONSTRUCT queries, so an
-// IRI carrying any of these would produce a syntactically invalid query that
-// throws — surfacing as a 500 instead of a clean “not found”. The usual trigger
-// is a literal `+` in the IRI shared without percent-encoding: URLSearchParams
-// reads `+` as a space (legacy form-encoding), and the original `+` cannot be
-// recovered, so 404 is the best achievable outcome.
-// eslint-disable-next-line no-control-regex -- matching control codepoints is the point
-const ILLEGAL_IRI_CHARS = /[\x00-\x20<>"{}|^`\\]/;
 
 export const load: PageServerLoad = async ({ url }) => {
   const datasetUri = url.searchParams.get('uri');

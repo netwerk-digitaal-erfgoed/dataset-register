@@ -49,3 +49,8 @@ function encodeQueryValue(value: string): string {
 export function datasetDetailHref(uri: string): string {
   return `/dataset?uri=${encodeQueryValue(uri)}`;
 }
+
+/** Build the href for querying one of a dataset’s SPARQL endpoints in the editor. */
+export function datasetQueryHref(datasetUri: string, endpoint: string): string {
+  return `/query?dataset=${encodeQueryValue(datasetUri)}&endpoint=${encodeQueryValue(endpoint)}`;
+}
