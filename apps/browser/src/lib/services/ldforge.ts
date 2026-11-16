@@ -46,7 +46,6 @@ export function mountEditor(
   const editor: ForgeEditor = createEditor(container, {
     query,
     locale,
-    themeMainColor: '#4b5563',
     executor,
     shareEndpoint: PUBLIC_SPARQL_ENDPOINT,
     prefixesCollapsed: true,

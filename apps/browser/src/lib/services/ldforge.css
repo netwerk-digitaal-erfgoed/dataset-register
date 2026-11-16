@@ -1,3 +1,45 @@
+/* Map LDForge’s design tokens onto the Dataset Register’s Tailwind palette, so
+   the editor shares the site’s colours, font and dark mode. The wrapper class
+   outranks LDForge’s own `.ldforge` defaults. */
+.ldforge-host .ldforge {
+  --ldforge-accent: var(--color-blue-700);
+  --ldforge-accent-fill: var(--color-blue-700);
+  --ldforge-on-accent: var(--color-white);
+  --ldforge-accent-text: var(--color-blue-700);
+  --ldforge-text: var(--color-gray-900);
+  --ldforge-muted: var(--color-gray-600);
+  --ldforge-surface: var(--color-white);
+  --ldforge-surface-subtle: var(--color-gray-50);
+  --ldforge-surface-tinted: var(--color-gray-100);
+  --ldforge-hover: var(--color-gray-100);
+  --ldforge-selected: var(--color-blue-50);
+  --ldforge-border: var(--color-gray-200);
+  --ldforge-border-strong: var(--color-gray-300);
+  --ldforge-focus: var(--color-blue-600);
+  --ldforge-shadow: rgb(0 0 0 / 0.1);
+  --ldforge-backdrop: rgb(0 0 0 / 0.4);
+  font-family: var(--font-sans);
+  border-radius: var(--radius-lg);
+}
+
+.dark .ldforge-host .ldforge {
+  --ldforge-accent: var(--color-blue-600);
+  --ldforge-accent-fill: var(--color-blue-600);
+  --ldforge-accent-text: var(--color-blue-400);
+  --ldforge-text: var(--color-gray-100);
+  --ldforge-muted: var(--color-gray-400);
+  --ldforge-surface: var(--color-gray-800);
+  --ldforge-surface-subtle: var(--color-gray-900);
+  --ldforge-surface-tinted: var(--color-gray-700);
+  --ldforge-hover: var(--color-gray-700);
+  --ldforge-selected: var(--color-gray-700);
+  --ldforge-border: var(--color-gray-700);
+  --ldforge-border-strong: var(--color-gray-600);
+  --ldforge-focus: var(--color-blue-400);
+  --ldforge-shadow: rgb(0 0 0 / 0.4);
+  --ldforge-backdrop: rgb(0 0 0 / 0.6);
+}
+
 /* Keep the accessible name and native title while matching the editor tools. */
 .ldforge-core-tools
   [data-toolbar-button='index-information']

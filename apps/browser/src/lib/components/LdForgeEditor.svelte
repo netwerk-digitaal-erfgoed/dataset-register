@@ -61,6 +61,10 @@
     {m.sparql_load_error()}
   </p>
 {/if}
-<div bind:this={container} class="min-w-0" aria-label="SPARQL editor"></div>
+<div
+  bind:this={container}
+  class="ldforge-host min-w-0"
+  aria-label="SPARQL editor"
+></div>
 
 <IndexInformationDialog bind:open={indexOpen} {locale} />

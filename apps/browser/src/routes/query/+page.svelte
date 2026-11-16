@@ -13,16 +13,26 @@
   <meta name="description" content={m.sparql_page_description()} />
 </svelte:head>
 
-<div class="mb-6 space-y-3">
-  <a
-    href={localizeHref('/datasets')}
-    class="text-sm text-blue-700 hover:underline dark:text-blue-300"
-    >← {m.sparql_back()}</a
-  >
-  <h1 class="text-3xl font-semibold text-gray-900 dark:text-gray-100">
-    SPARQL
-  </h1>
-  <p class="text-gray-600 dark:text-gray-300">{m.sparql_page_description()}</p>
-</div>
+<div class="mx-auto max-w-7xl px-1 sm:px-6 lg:px-8">
+  <div class="mb-8">
+    <a
+      href={localizeHref('/datasets')}
+      class="mb-4 inline-block text-sm text-blue-700 hover:underline dark:text-blue-400"
+      >← {m.sparql_back()}</a
+    >
+    <h1
+      class="mb-4 text-3xl font-bold leading-[1.2] tracking-[-0.02em] text-gray-900 dark:text-white lg:text-4xl"
+    >
+      SPARQL
+    </h1>
+    <p class="text-[0.9375rem] leading-[1.5] text-gray-700 dark:text-gray-300">
+      {m.sparql_page_description()}
+    </p>
+  </div>
 
-<LdForgeEditor query={data.query} autoRun={data.autoRun} locale={getLocale()} />
+  <LdForgeEditor
+    query={data.query}
+    autoRun={data.autoRun}
+    locale={getLocale()}
+  />
+</div>
