@@ -30,12 +30,12 @@ import {
   type PidScheme,
   type TermLinks,
 } from './nde-compatibility.js';
-import { offersLinkedData } from '$lib/utils/distribution';
+import { offersLinkedData, SPARQL_PROTOCOL } from '$lib/utils/distribution';
 import type {
   DistributionHealth,
   ValidityVerdict,
 } from './distribution-health.js';
-import { normalizeMediaType } from '$lib/utils/sparql';
+import { ILLEGAL_IRI_CHARS, normalizeMediaType } from '$lib/utils/sparql';
 import { getLocale } from '$lib/paraglide/runtime';
 import {
   REGISTRATION_STATUS_BASE_URI,
@@ -1316,6 +1316,31 @@ export type AnalysisFetcher = (
   datasetUri: string,
   distributions: DistributionDetail[],
 ) => Promise<DatasetAnalysis>;
+
+/**
+ * Whether `endpoint` is one of the dataset’s SPARQL distributions, so the query
+ * editor only talks to endpoints the register lists for a dataset.
+ */
+export async function isDatasetSparqlEndpoint(
+  datasetUri: string,
+  endpoint: string,
+): Promise<boolean> {
+  if (ILLEGAL_IRI_CHARS.test(datasetUri) || ILLEGAL_IRI_CHARS.test(endpoint)) {
+    return false;
+  }
+  return fetcher.fetchAsk(
+    PUBLIC_SPARQL_ENDPOINT,
+    `PREFIX dcat: <http://www.w3.org/ns/dcat#>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    ASK {
+      GRAPH ?g {
+        <${datasetUri}> dcat:distribution ?distribution .
+        ?distribution dcat:accessURL <${endpoint}> ;
+          dct:conformsTo <${SPARQL_PROTOCOL}> .
+      }
+    }`,
+  );
+}
 
 export async function fetchDatasetDetail(
   datasetUri: string,

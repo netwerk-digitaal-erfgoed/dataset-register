@@ -32,22 +32,24 @@ import {
 import '@ldforge/editor/styles.css';
 import './ldforge.css';
 
+/**
+ * Mount the editor on the register’s endpoint, or with `endpoint` on a dataset’s
+ * own endpoint, which leaves out the register’s examples and index information.
+ */
 export function mountEditor(
   container: HTMLElement,
   query: string,
   locale: Locale,
   showIndexInformation: () => void,
+  endpoint = PUBLIC_SPARQL_ENDPOINT,
 ) {
   // The host owns the endpoint. Query comments cannot redirect requests elsewhere.
-  const executor = createHttpExecutor({
-    endpoint: PUBLIC_SPARQL_ENDPOINT,
-    method: 'GET',
-  });
+  const executor = createHttpExecutor({ endpoint, method: 'GET' });
   const editor: ForgeEditor = createEditor(container, {
     query,
     locale,
     executor,
-    shareEndpoint: PUBLIC_SPARQL_ENDPOINT,
+    shareEndpoint: endpoint,
     prefixesCollapsed: true,
     editorRows: 15,
     autoGrow: false,
@@ -75,6 +77,8 @@ export function mountEditor(
       createJsonRenderer(),
     ],
   });
+  // The examples and index information describe the register’s own data.
+  if (endpoint !== PUBLIC_SPARQL_ENDPOINT) return editor;
   editor.getToolBar().addButton({
     id: 'index-information',
     label: translations(m.index_information),

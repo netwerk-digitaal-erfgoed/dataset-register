@@ -32,7 +32,7 @@
   import { getLicenseName } from '$lib/utils/license.js';
   import { shortenUri, languageCode } from '$lib/utils/prefix.js';
   import { getMediaTypeLabel } from '$lib/utils/media-type.js';
-  import { datasetDetailHref } from '$lib/url';
+  import { datasetDetailHref, datasetQueryHref } from '$lib/url';
   import { encodeUrlParam } from '$lib/utils/url-param.js';
   import LanguageBadge from '$lib/components/LanguageBadge.svelte';
   import {
@@ -194,8 +194,8 @@
     downloadDistributions.filter((d) => !isRdfDistribution(d)),
   );
 
-  function yasguiUrl(endpoint: string): string {
-    return `https://yasgui.org/#query=SELECT+*+WHERE+%7B%0A++%3Fsub+%3Fpred+%3Fobj+.%0A%7D+%0ALIMIT+10&endpoint=${encodeURIComponent(endpoint)}`;
+  function queryHref(endpoint: string): string {
+    return localizeHref(datasetQueryHref(dataset.$id, endpoint));
   }
 
   // The default download points at a reachable (or not-yet-probed) distribution
@@ -1546,14 +1546,11 @@
           <div class="inline-flex rounded-lg shadow-sm" role="group">
             {#if preferredEndpoint}
               <a
-                href={yasguiUrl(preferredEndpoint.accessURL)}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={queryHref(preferredEndpoint.accessURL)}
                 class={splitBtnMainClass}
               >
                 <SearchOutline class="me-2 h-4 w-4" />
                 {m.detail_query_dataset()}
-                <span class="sr-only"> ({m.opens_in_new_tab()})</span>
               </a>
             {:else}
               <span
@@ -1601,14 +1598,11 @@
                   {@render copyButton(distribution.accessURL)}
                 </div>
                 <a
-                  href={yasguiUrl(distribution.accessURL)}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={queryHref(distribution.accessURL)}
                   class="block max-w-full truncate text-xs text-blue-600 hover:underline dark:text-blue-400"
                   title={distribution.accessURL}
                 >
                   {distribution.accessURL}
-                  <span class="sr-only"> ({m.opens_in_new_tab()})</span>
                 </a>
                 {#if distribution.description}
                   <span class="text-xs text-gray-500 dark:text-gray-400">
