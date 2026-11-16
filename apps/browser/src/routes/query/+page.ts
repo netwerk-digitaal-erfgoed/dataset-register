@@ -12,5 +12,7 @@ export const load: PageLoad = ({ url, data }) => ({
   query:
     url.searchParams.get('query') ??
     (data.target ? datasetStarterQuery : exampleQuery),
-  autoRun: url.searchParams.get('exec') === 'true',
+  // Never run on load against a dataset’s endpoint: a shared link could
+  // otherwise fire any query at an institution’s server from every visitor.
+  autoRun: !data.target && url.searchParams.get('exec') === 'true',
 });

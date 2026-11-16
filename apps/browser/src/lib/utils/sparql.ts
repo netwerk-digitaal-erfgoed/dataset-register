@@ -2,8 +2,9 @@ import { IANA_MEDIA_TYPE_PREFIX } from '@dataset-register/core/search';
 
 // Characters disallowed inside a SPARQL IRIREF (`<...>`): per the grammar, any
 // codepoint ≤ U+0020 (space, tab, newline, controls) and the set <>"{}|^`\.
-// Queries interpolate IRIs straight into `<...>`, so an IRI carrying any of these would produce a syntactically invalid query that
-// throws — surfacing as a 500 instead of a clean “not found”. The usual trigger
+// Queries interpolate IRIs straight into `<...>`, so an IRI carrying any of
+// these would produce a syntactically invalid query that throws – surfacing as
+// a 500 instead of a clean “not found”. The usual trigger
 // is a literal `+` in the IRI shared without percent-encoding: URLSearchParams
 // reads `+` as a space (legacy form-encoding), and the original `+` cannot be
 // recovered, so 404 is the best achievable outcome.

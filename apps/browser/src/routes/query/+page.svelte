@@ -11,7 +11,12 @@
 
 <svelte:head>
   <title>SPARQL | Datasetregister</title>
-  <meta name="description" content={m.sparql_page_description()} />
+  <meta
+    name="description"
+    content={data.target
+      ? `${m.sparql_dataset_endpoint_description()} ${data.target.endpoint}`
+      : m.sparql_page_description()}
+  />
 </svelte:head>
 
 <div class="mx-auto max-w-7xl px-1 sm:px-6 lg:px-8">

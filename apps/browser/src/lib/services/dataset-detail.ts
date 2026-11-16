@@ -1325,9 +1325,11 @@ export async function isDatasetSparqlEndpoint(
   datasetUri: string,
   endpoint: string,
 ): Promise<boolean> {
-  if (ILLEGAL_IRI_CHARS.test(datasetUri) || ILLEGAL_IRI_CHARS.test(endpoint)) {
-    return false;
-  }
+  const isAbsoluteIri = (value: string) =>
+    URL.canParse(value) && !ILLEGAL_IRI_CHARS.test(value);
+  if (!isAbsoluteIri(datasetUri) || !isAbsoluteIri(endpoint)) return false;
+  // Compare the string value, as the dataset page lists an access URL whatever
+  // its term type. ILLEGAL_IRI_CHARS excludes `"` and `\`, so the literal is safe.
   return fetcher.fetchAsk(
     PUBLIC_SPARQL_ENDPOINT,
     `PREFIX dcat: <http://www.w3.org/ns/dcat#>
@@ -1335,8 +1337,9 @@ export async function isDatasetSparqlEndpoint(
     ASK {
       GRAPH ?g {
         <${datasetUri}> dcat:distribution ?distribution .
-        ?distribution dcat:accessURL <${endpoint}> ;
+        ?distribution dcat:accessURL ?accessURL ;
           dct:conformsTo <${SPARQL_PROTOCOL}> .
+        FILTER(STR(?accessURL) = "${endpoint}")
       }
     }`,
   );
