@@ -45,7 +45,7 @@
     "@ldforge/renderers": "^1.1.1",
     "@ldforge/timeline": "^1.0.1",
     "@ldforge/tree": "^1.0.1",
-    "@zazuko/prefixes": "^2.6.4",
+    "@zazuko/prefixes": "^3.0.1",
     "codemirror": "^6.0.2",
     "feed": "^6.0.0",
     "fetch-sparql-endpoint": "^7.1.1",
