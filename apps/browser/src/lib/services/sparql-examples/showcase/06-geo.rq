@@ -1,0 +1,40 @@
+# label-en: Publishers in the Netherlands
+# label-nl: Uitgevers in Nederland
+# view=geo; geo-title=Uitgevers in Nederland — live gekoppeld met Wikidata
+# Publisher locations come from the register; coordinates and Dutch place names
+# come from Wikidata via SERVICE. Match GeoNames IDs, avoiding ambiguous names.
+# Return one row per publisher; the host groups popups and markers by place.
+# The coordinate is a place centre, NOT an address.
+# Publishers without a matching Dutch location are not shown.
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX schema: <https://schema.org/>
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?place ?geometry ?publisher ?publisherName ?datasets
+       (?placeName AS ?geometryLabel) (?place AS ?geoLink)
+WHERE {
+  {
+    SELECT ?publisher ?geonamesId (MIN(STR(?name)) AS ?publisherName)
+           (COUNT(DISTINCT ?dataset) AS ?datasets)
+    WHERE {
+      ?dataset a dcat:Dataset ; dct:publisher ?publisher ; schema:subjectOf ?registration .
+      ?registration schema:additionalType <https://data.netwerkdigitaalerfgoed.nl/registry/valid> .
+      ?publisher foaf:name ?name ; schema:location ?location .
+      FILTER(REGEX(STR(?location), "geonames.org/[0-9]+/?$"))
+      BIND(REPLACE(STR(?location), "^.*geonames.org/([0-9]+)/?$", "$1") AS ?geonamesId)
+    }
+    GROUP BY ?publisher ?geonamesId
+  }
+  SERVICE <https://query.wikidata.org/sparql> {
+    ?place wdt:P1566 ?geonamesId ;
+      wdt:P17 wd:Q55 ;
+      wdt:P625 ?geometry ;
+      rdfs:label ?placeName .
+    FILTER(LANG(?placeName) = "nl")
+  }
+}
+ORDER BY ?placeName ?place ?publisherName ?publisher

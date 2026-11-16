@@ -1,0 +1,15 @@
+# label-en: Registrations by month
+# label-nl: Registraties per maand
+# view=charts; chart=line; chart-title=Registratie-URLs per maand
+# This is datePosted of URLs still in the register, not a historical event log.
+# Only months with registrations are returned; no artificial observations are added.
+PREFIX schema: <https://schema.org/>
+
+SELECT ?chart_label (COUNT(DISTINCT ?registration) AS ?chart_value)
+FROM <https://demo.netwerkdigitaalerfgoed.nl/registry/registrations>
+WHERE {
+  ?registration a schema:EntryPoint ; schema:datePosted ?posted .
+  BIND(SUBSTR(STR(?posted), 1, 7) AS ?chart_label)
+}
+GROUP BY ?chart_label
+ORDER BY ?chart_label

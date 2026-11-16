@@ -1,0 +1,14 @@
+# label-en: Average rating per publisher
+# label-nl: Gemiddelde beoordeling per uitgever
+PREFIX schema: <https://schema.org/>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?publisher ?name (AVG(?rating) AS ?avgrating)
+WHERE {
+  ?dataset schema:contentRating/schema:ratingValue ?rating ;
+    dct:publisher ?publisher .
+  ?publisher foaf:name ?name .
+}
+GROUP BY ?publisher ?name
+ORDER BY DESC(?avgrating)

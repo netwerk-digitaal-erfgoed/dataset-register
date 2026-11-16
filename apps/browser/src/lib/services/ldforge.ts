@@ -23,8 +23,7 @@ import { createTimelineRenderer } from '@ldforge/timeline';
 import { createPivotRenderer } from '@ldforge/pivot';
 import { createTreeRenderer } from '@ldforge/tree';
 import { PUBLIC_SPARQL_ENDPOINT } from '$app/env/public';
-import { sparqlExamples } from './sparql-examples';
-import { sparqlPluginExamples } from './sparql-plugin-examples';
+import { sparqlExamples, sparqlPluginExamples } from './sparql-examples';
 import {
   createPublisherMapRenderer,
   placeDatasetsQuery,
@@ -97,10 +96,7 @@ export function mountEditor(
   for (const example of [...sparqlExamples, ...sparqlPluginExamples]) {
     examples.addButton({
       id: example.id,
-      label: {
-        en: example.label.en.replace(/^[^·]+ · /, ''),
-        nl: example.label.nl.replace(/^[^·]+ · /, ''),
-      },
+      label: example.label,
       icon: editor
         .getRenderers()
         .find(

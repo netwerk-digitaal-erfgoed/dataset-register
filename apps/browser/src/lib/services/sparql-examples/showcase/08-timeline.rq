@@ -1,0 +1,22 @@
+# label-en: Recent registrations
+# label-nl: Recente registraties
+# view=timeline; timeline-title=De 30 nieuwste registratie-URLs
+# datePosted is the registration date, not the creation date of the collection.
+# One point per registration URL; a URL can describe several datasets.
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX schema: <https://schema.org/>
+
+SELECT (SAMPLE(?title) AS ?timelineLabel) (MAX(?posted) AS ?timelineStart)
+       (SAMPLE(?name) AS ?timelineGroup) (?registration AS ?timelineLink)
+       ("Registratiedatum van deze URL; geen datum van de collectieobjecten." AS ?timelineDescription)
+WHERE {
+  ?dataset a dcat:Dataset ; dct:title ?title ; dct:publisher/foaf:name ?name ;
+    schema:subjectOf ?registration .
+  ?registration schema:datePosted ?posted ;
+    schema:additionalType <https://data.netwerkdigitaalerfgoed.nl/registry/valid> .
+}
+GROUP BY ?registration
+ORDER BY DESC(?timelineStart) ?registration
+LIMIT 30

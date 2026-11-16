@@ -1,0 +1,30 @@
+# label-en: Formats by publisher
+# label-nl: Formaten per uitgever
+# view=pivot; pivot-title=Datasets per uitgever en mediaformaat; pivot-aggregate=sum; pivot-row-title=Uitgever; pivot-column-title=Mediaformaat
+# A dataset can have multiple formats and therefore appear in multiple columns.
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX schema: <https://schema.org/>
+
+SELECT (MIN(STR(?name)) AS ?pivotRow) ?pivotColumn
+       (COUNT(DISTINCT ?dataset) AS ?pivotValue)
+WHERE {
+  {
+    SELECT ?publisher (COUNT(DISTINCT ?d) AS ?total)
+    WHERE {
+      ?d a dcat:Dataset ; dct:publisher ?publisher ; schema:subjectOf ?r .
+      ?r schema:additionalType <https://data.netwerkdigitaalerfgoed.nl/registry/valid> .
+    }
+    GROUP BY ?publisher
+    ORDER BY DESC(?total) ?publisher
+    LIMIT 10
+  }
+  ?dataset a dcat:Dataset ; dct:publisher ?publisher ; schema:subjectOf ?registration ;
+    dcat:distribution/dcat:mediaType ?mediaType .
+  ?registration schema:additionalType <https://data.netwerkdigitaalerfgoed.nl/registry/valid> .
+  ?publisher foaf:name ?name .
+  BIND(REPLACE(STR(?mediaType), "^https?://www.iana.org/assignments/media-types/", "") AS ?pivotColumn)
+}
+GROUP BY ?publisher ?pivotColumn
+ORDER BY ?pivotRow ?pivotColumn

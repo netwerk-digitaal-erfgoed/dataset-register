@@ -1,0 +1,18 @@
+# label-en: Top 10 publishers
+# label-nl: Top 10 uitgevers
+# view=charts; chart=bar; chart-title=Top 10 uitgevers — geldige datasets
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX schema: <https://schema.org/>
+
+SELECT (SAMPLE(?name) AS ?chart_label)
+       (COUNT(DISTINCT ?dataset) AS ?chart_value)
+WHERE {
+  ?dataset a dcat:Dataset ; dct:publisher ?publisher ; schema:subjectOf ?registration .
+  ?registration schema:additionalType <https://data.netwerkdigitaalerfgoed.nl/registry/valid> .
+  ?publisher foaf:name ?name .
+}
+GROUP BY ?publisher
+ORDER BY DESC(?chart_value) ?publisher
+LIMIT 10

@@ -1,0 +1,11 @@
+# label-en: Allowed domains
+# label-nl: Toegestane domeinen
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+
+SELECT ?domain
+FROM <https://data.netwerkdigitaalerfgoed.nl/registry/allowed_domain_names>
+WHERE {
+  [] <https://data.netwerkdigitaalerfgoed.nl/allowed_domain_names/def/domain_name> ?domain
+}
+ORDER BY ?domain

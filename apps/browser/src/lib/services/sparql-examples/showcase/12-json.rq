@@ -1,0 +1,15 @@
+# label-en: Recent registration metadata
+# label-nl: Recente registratiemetadata
+# view=json
+# Inspect RDF term types, datatypes and values in SPARQL Results JSON.
+PREFIX schema: <https://schema.org/>
+
+SELECT ?registration ?posted ?read ?status
+FROM <https://demo.netwerkdigitaalerfgoed.nl/registry/registrations>
+WHERE {
+  ?registration a schema:EntryPoint ; schema:datePosted ?posted .
+  OPTIONAL { ?registration schema:dateRead ?read }
+  OPTIONAL { ?registration schema:status ?status }
+}
+ORDER BY DESC(?posted) ?registration
+LIMIT 10

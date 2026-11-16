@@ -91,6 +91,18 @@ trees, ASK booleans and JSON. Query comments select the matching plugin with
 `# view=…`; selecting an example loads it, and Run executes it. The original five
 administrative queries remain above the divider.
 
+Each example is a `.rq` file in `src/lib/services/sparql-examples/`: `admin/` above
+the divider, `showcase/` below it. Files sort by their numeric prefix, and the rest
+of the file name is the example’s id. The first lines hold the menu labels, which
+are stripped from the query:
+
+```sparql
+# label-en: Most recent registrations
+# label-nl: Meest recente registraties
+```
+
+To add an example, add a file; the tests check that every example parses.
+
 These examples select their publishers and datasets from the current register;
 they contain no fixed `VALUES` data. Counts use distinct datasets where joins can
 multiply rows. The pivot counts a dataset in each format it offers, so row totals

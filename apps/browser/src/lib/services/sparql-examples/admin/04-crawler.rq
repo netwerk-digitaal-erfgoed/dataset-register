@@ -1,0 +1,21 @@
+# label-en: Crawler
+# label-nl: Crawler
+PREFIX schema: <https://schema.org/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?dataset (MAX(xsd:dateTime(?read)) AS ?lastRead) ?registration ?registration_lastRead ?registration_status ?registration_validUntil
+FROM <https://demo.netwerkdigitaalerfgoed.nl/registry/registrations>
+WHERE {
+  ?dataset a schema:Dataset ;
+    schema:dateRead ?read ;
+    schema:subjectOf ?registration .
+
+  ?registration schema:dateRead ?registration_lastRead ;
+    schema:status ?registration_status .
+  OPTIONAL { ?registration schema:validUntil ?registration_validUntil }
+
+  # Find a specific registration URL.
+  # FILTER (CONTAINS(STR(?registration), "https://archief.nl/id/"))
+}
+GROUP BY ?dataset ?registration ?registration_lastRead ?registration_status ?registration_validUntil
+ORDER BY DESC(?lastRead)

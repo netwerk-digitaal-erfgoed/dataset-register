@@ -1,0 +1,38 @@
+# label-en: Browse datasets by publisher
+# label-nl: Datasets per uitgever
+# view=tree; tree-title=Blader door de datasets van drie uitgevers
+# Publisher roots and dataset children follow the real dct:publisher links.
+# Select three publishers with 10–30 valid datasets from the current data.
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX schema: <https://schema.org/>
+
+SELECT ?tree_id ?tree_parent (SAMPLE(?label) AS ?tree_label) (?tree_id AS ?tree_url)
+WHERE {
+  {
+    SELECT ?publisher (COUNT(DISTINCT ?candidate) AS ?total)
+    WHERE {
+      ?candidate a dcat:Dataset ; dct:publisher ?publisher ; schema:subjectOf ?r .
+      ?r schema:additionalType <https://data.netwerkdigitaalerfgoed.nl/registry/valid> .
+    }
+    GROUP BY ?publisher
+    HAVING(COUNT(DISTINCT ?candidate) >= 10 && COUNT(DISTINCT ?candidate) <= 30)
+    ORDER BY DESC(?total) ?publisher
+    LIMIT 3
+  }
+  {
+    ?publisher foaf:name ?label .
+    BIND(?publisher AS ?tree_id)
+  }
+  UNION
+  {
+    ?tree_id a dcat:Dataset ; dct:publisher ?publisher ; dct:title ?label ;
+      schema:subjectOf ?registration .
+    ?registration schema:additionalType <https://data.netwerkdigitaalerfgoed.nl/registry/valid> .
+    BIND(?publisher AS ?tree_parent)
+  }
+}
+GROUP BY ?tree_id ?tree_parent
+ORDER BY ?tree_parent ?tree_label ?tree_id
+LIMIT 100

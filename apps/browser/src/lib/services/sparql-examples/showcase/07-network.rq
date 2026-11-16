@@ -1,0 +1,33 @@
+# label-en: Publishers and datasets
+# label-nl: Uitgevers en datasets
+# view=network; network-title=Uitgevers en hun datasets
+# Edges represent dct:publisher, not collaboration between organizations.
+# Select three publishers with 10–30 valid datasets to keep the network readable.
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX schema: <https://schema.org/>
+
+SELECT ?source (SAMPLE(?name) AS ?sourceLabel) ?target
+       (SAMPLE(?title) AS ?targetLabel)
+       ("publiceert" AS ?relationLabel)
+       ("Uitgever" AS ?sourceGroup) ("Dataset" AS ?targetGroup)
+WHERE {
+  {
+    SELECT ?source (COUNT(DISTINCT ?candidate) AS ?total)
+    WHERE {
+      ?candidate a dcat:Dataset ; dct:publisher ?source ; schema:subjectOf ?r .
+      ?r schema:additionalType <https://data.netwerkdigitaalerfgoed.nl/registry/valid> .
+    }
+    GROUP BY ?source
+    HAVING(COUNT(DISTINCT ?candidate) >= 10 && COUNT(DISTINCT ?candidate) <= 30)
+    ORDER BY DESC(?total) ?source
+    LIMIT 3
+  }
+  ?target a dcat:Dataset ; dct:publisher ?source ; dct:title ?title ; schema:subjectOf ?registration .
+  ?registration schema:additionalType <https://data.netwerkdigitaalerfgoed.nl/registry/valid> .
+  ?source foaf:name ?name .
+}
+GROUP BY ?source ?target
+ORDER BY ?source ?target
+LIMIT 80
