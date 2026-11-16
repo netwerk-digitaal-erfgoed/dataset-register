@@ -44,9 +44,10 @@ import { storeErrorType, storeUpdateDuration } from './instrumentation.js';
 
 const queryEngine = new QueryEngine();
 
-// The stored-hash read runs once per dataset in the crawl loop, so a stalled one would hold up the
-// whole round. It selects two literals for one IRI; give up on it well before QLever’s own timeout.
-const CONTENT_HASH_READ_TIMEOUT_MS = 10_000;
+// The stored-hash and stored-rating reads run once per dataset in the crawl loop, so a stalled one
+// would hold up the whole round. Each selects a few literals for one IRI; give up on it well before
+// QLever’s own timeout.
+const perDatasetReadFetch = fetchWithTimeout(10_000);
 
 export function stores(
   url: string,
@@ -66,7 +67,7 @@ export function stores(
       client('dataset'),
       new SparqlContentHashReader({
         endpoint: new URL(url),
-        fetch: fetchWithTimeout(CONTENT_HASH_READ_TIMEOUT_MS),
+        fetch: perDatasetReadFetch,
       }),
     ),
     registrationStore: new SparqlRegistrationStore(
@@ -126,8 +127,9 @@ export class SparqlDatasetStore implements DatasetStore {
 
   /**
    * Store the dataset together with its content hash, and report how it compares to the
-   * description stored before. Every description is written for now, `unchanged` ones too: the
-   * statuses are only counted, to see what skipping the unchanged ones would save.
+   * description stored before. An `unchanged` description is not written again: each store update
+   * makes every later one slower until the nightly index rebuild, and most crawled descriptions are
+   * unchanged.
    */
   async store(dataset: DatasetCore): Promise<DatasetWrite> {
     const graph = extractIri(dataset);
@@ -155,6 +157,10 @@ export class SparqlDatasetStore implements DatasetStore {
     if (detected === undefined) {
       await this.write(graph, dataset);
       return 'unhashable';
+    }
+
+    if (detected.status === 'unchanged') {
+      return 'unchanged';
     }
 
     await this.write(graph, withContentHash(dataset, subject, detected.hash));
@@ -532,7 +538,16 @@ export class SparqlRatingStore implements RatingStore {
     private readonly graphIri: string,
   ) {}
 
+  /**
+   * Store the rating, unless the stored rating is already the same. The dataset’s content hash
+   * cannot decide this: a rating also depends on the SHACL shapes and the penalties, and a crawl
+   * killed between storing a dataset and its rating leaves the rating missing.
+   */
   async store(datasetUri: URL, rating: Rating): Promise<void> {
+    if (await this.isStored(datasetUri, rating)) {
+      return;
+    }
+
     await this.client.update(`
       PREFIX schema: <https://schema.org/>
       
@@ -575,6 +590,38 @@ export class SparqlRatingStore implements RatingStore {
         ?rating ?p ?o .
       }`);
   }
+
+  // A failed read only costs an unneeded write, so it must not stop the rating from being stored.
+  private async isStored(datasetUri: URL, rating: Rating): Promise<boolean> {
+    try {
+      const result = await this.client.query(
+        `
+        PREFIX schema: <https://schema.org/>
+
+        SELECT ?bestRating ?worstRating ?ratingValue ?ratingExplanation WHERE {
+          GRAPH <${this.graphIri}> {
+            <${datasetUri}> schema:contentRating ?rating .
+            ?rating schema:bestRating ?bestRating ;
+              schema:worstRating ?worstRating ;
+              schema:ratingValue ?ratingValue ;
+              schema:ratingExplanation ?ratingExplanation .
+          }
+        }`,
+        perDatasetReadFetch,
+      );
+      const [stored, ...duplicates] = await result.toArray();
+
+      return (
+        duplicates.length === 0 &&
+        stored?.get('bestRating')?.value === String(rating.bestRating) &&
+        stored.get('worstRating')?.value === String(rating.worstRating) &&
+        stored.get('ratingValue')?.value === String(rating.score) &&
+        stored.get('ratingExplanation')?.value === rating.explanation
+      );
+    } catch {
+      return false;
+    }
+  }
 }
 
 export class SparqlClient {
@@ -597,8 +644,14 @@ export class SparqlClient {
     ];
   }
 
-  async query(query: string): Promise<BindingsStream> {
-    return await queryEngine.queryBindings(query, { sources: this.sources });
+  async query(
+    query: string,
+    fetch?: typeof globalThis.fetch,
+  ): Promise<BindingsStream> {
+    return await queryEngine.queryBindings(query, {
+      sources: this.sources,
+      ...(fetch && { fetch }),
+    });
   }
 
   /**

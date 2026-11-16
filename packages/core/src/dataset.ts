@@ -19,15 +19,17 @@ export const CONVERSION_VERSION = '1';
 
 /**
  * How a stored dataset description compares to the one stored before it (see
- * {@link ChangeStatus}). Two statuses say the comparison could not be made, although the
- * description was stored: `unhashable` when it is too costly to canonicalize and is stored without
- * a content hash, and `unknown` when the stored hash could not be read.
+ * {@link ChangeStatus}). An `unchanged` description is not written again. Two statuses say the
+ * comparison could not be made, although the description was stored: `unhashable` when it is too
+ * costly to canonicalize and is stored without a content hash, and `unknown` when the stored hash
+ * could not be read.
  */
 export type DatasetWrite = ChangeStatus | 'unhashable' | 'unknown';
 
 export interface DatasetStore {
   /**
-   * Store a dataset description, replacing any triples that were previously stored for it.
+   * Store a dataset description, replacing any triples that were previously stored for it, unless
+   * it is unchanged since it was last stored.
    */
   store(dataset: DatasetCore): Promise<DatasetWrite>;
 

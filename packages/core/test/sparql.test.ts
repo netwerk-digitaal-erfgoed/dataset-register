@@ -6,6 +6,7 @@ import {
   describe,
   expect,
   it,
+  onTestFinished,
   vi,
 } from 'vitest';
 import { QLeverContainer } from './qlever-container.js';
@@ -174,6 +175,16 @@ describe('SPARQL', () => {
           createTestDataset(TEST_DATASET_IRIS.DATASET_1, 'Updated Title'),
         ),
       ).toBe('changed');
+    });
+
+    it('does not rewrite a description that is unchanged', async () => {
+      const dataset = createTestDataset(TEST_DATASET_IRIS.DATASET_1);
+      await datasetStore.store(dataset);
+
+      const update = vi.spyOn(SparqlClient.prototype, 'update');
+      onTestFinished(() => update.mockRestore());
+      expect(await datasetStore.store(dataset)).toBe('unchanged');
+      expect(update).not.toHaveBeenCalled();
     });
 
     it('stores a description too costly to canonicalize without a hash', async () => {
@@ -964,6 +975,64 @@ describe('SPARQL', () => {
       const storedRows = await stored.toArray();
       expect(storedRows).toHaveLength(1);
       expect(storedRows[0]!.get('score')!.value).toBe('95');
+    });
+
+    it('does not rewrite a rating that is unchanged', async () => {
+      const datasetUri = new URL(TEST_DATASET_IRIS.DATASET_1);
+      const rating = new Rating([new Penalty('test/path', 5)], 1);
+      await ratingStore.store(datasetUri, rating);
+
+      const update = vi.spyOn(SparqlClient.prototype, 'update');
+      onTestFinished(() => update.mockRestore());
+      await ratingStore.store(datasetUri, rating);
+      expect(update).not.toHaveBeenCalled();
+    });
+
+    it('still stores a rating when the stored one cannot be read', async () => {
+      const query = vi
+        .spyOn(SparqlClient.prototype, 'query')
+        .mockRejectedValueOnce(new Error('store unreachable'));
+      onTestFinished(() => query.mockRestore());
+      const update = vi.spyOn(SparqlClient.prototype, 'update');
+      onTestFinished(() => update.mockRestore());
+
+      await ratingStore.store(
+        new URL(TEST_DATASET_IRIS.DATASET_1),
+        new Rating([], 1),
+      );
+      expect(query).toHaveBeenCalledOnce();
+      expect(update).toHaveBeenCalledOnce();
+    });
+
+    it('replaces a rating that changed', async () => {
+      const datasetUri = new URL(TEST_DATASET_IRIS.DATASET_1);
+      await ratingStore.store(
+        datasetUri,
+        new Rating([new Penalty('test/path', 5)], 1),
+      );
+      await ratingStore.store(
+        datasetUri,
+        new Rating([new Penalty('test/path', 5)], 1, 50),
+      );
+      await ratingStore.store(datasetUri, new Rating([], 1));
+
+      const stored = await sparqlClient.query(`
+        PREFIX schema: <https://schema.org/>
+
+        SELECT ?score ?best ?explanation WHERE {
+          GRAPH <${ratingsGraphIri}> {
+            <${datasetUri}> schema:contentRating ?rating .
+            ?rating schema:ratingValue ?score ;
+              schema:bestRating ?best ;
+              schema:ratingExplanation ?explanation .
+          }
+        }
+      `);
+      const storedRows = await stored.toArray();
+      expect(storedRows).toHaveLength(1);
+      expect(storedRows[0]!.get('score')!.value).toBe('100');
+      expect(storedRows[0]!.get('best')!.value).toBe('100');
+      expect(storedRows[0]!.get('explanation')!.value).toBe('');
     });
 
     it('deletes ratings', async () => {
