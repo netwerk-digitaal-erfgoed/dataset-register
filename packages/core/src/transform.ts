@@ -1,7 +1,7 @@
 import { Transform } from 'node:stream';
 import type { TransformCallback } from 'node:stream';
 import factory from 'rdf-ext';
-import type { DatasetCore, NamedNode, Quad } from '@rdfjs/types';
+import type { DatasetCore, NamedNode, Quad, Term } from '@rdfjs/types';
 import type DatasetExt from 'rdf-ext/lib/Dataset.js';
 import { dcat, dct, foaf, rdf, vcard, xsd } from './query.ts';
 import { parseTemporalCoverage } from './temporal-coverage.ts';
@@ -96,6 +96,79 @@ export function normalizeTemporalCoverage(quads: Quad[]): Quad[] {
     }
   }
   return result;
+}
+
+/**
+ * Keep one `dcat:contactPoint` per subject, as DCAT-AP-NL 3.0 allows exactly one, and drop the
+ * other contact points’ descriptions.
+ *
+ * Schema.org puts contact points on the publisher, which may have several, and a catalogue that
+ * embeds a shared publisher in every dataset gives that publisher a blank-node contact point per
+ * copy – so every dataset would inherit all of them. The kept one is the lowest by email, then
+ * name, then node, with a missing email or name sorting last, so the same one is kept on every
+ * crawl and a complete contact point wins over an incomplete one.
+ */
+export function keepOneContactPoint(quads: Quad[]): Quad[] {
+  // Per subject, its distinct contact point nodes.
+  const contactPointsBySubject = factory.termMap<Term, Set<Term>>();
+  for (const quad of quads) {
+    if (!quad.predicate.equals(dcatContactPoint)) continue;
+    const contactPoints =
+      contactPointsBySubject.get(quad.subject) ?? factory.termSet();
+    contactPoints.add(quad.object);
+    contactPointsBySubject.set(quad.subject, contactPoints);
+  }
+  if (![...contactPointsBySubject.values()].some((nodes) => nodes.size > 1)) {
+    return quads;
+  }
+
+  const emails = lowestValueByNode(quads, vcardHasEmail);
+  const names = lowestValueByNode(quads, vcardFn);
+  const compareContactPoints = (left: Term, right: Term) =>
+    compareMissingLast(emails.get(left), emails.get(right)) ||
+    compareMissingLast(names.get(left), names.get(right)) ||
+    compareMissingLast(left.value, right.value);
+
+  const keptBySubject = factory.termMap<Term, Term>();
+  const keptNodes = factory.termSet();
+  const droppedNodes = factory.termSet();
+  for (const [subject, contactPoints] of contactPointsBySubject) {
+    const [kept, ...others] = [...contactPoints].sort(compareContactPoints);
+    keptBySubject.set(subject, kept);
+    keptNodes.add(kept);
+    for (const other of others) droppedNodes.add(other);
+  }
+
+  return quads.filter((quad) =>
+    quad.predicate.equals(dcatContactPoint)
+      ? keptBySubject.get(quad.subject)?.equals(quad.object)
+      : !droppedNodes.has(quad.subject) || keptNodes.has(quad.subject),
+  );
+}
+
+const dcatContactPoint = dcat('contactPoint');
+const vcardHasEmail = vcard('hasEmail');
+const vcardFn = vcard('fn');
+
+/** Per subject node: the lowest value of `predicate`. */
+function lowestValueByNode(quads: Quad[], predicate: NamedNode) {
+  const lowest = factory.termMap<Term, string>();
+  for (const quad of quads) {
+    if (!quad.predicate.equals(predicate)) continue;
+    const node = quad.subject;
+    const current = lowest.get(node);
+    if (current === undefined || quad.object.value < current) {
+      lowest.set(node, quad.object.value);
+    }
+  }
+  return lowest;
+}
+
+function compareMissingLast(left?: string, right?: string): number {
+  if (left === right) return 0;
+  if (left === undefined) return 1;
+  if (right === undefined) return -1;
+  return left < right ? -1 : 1;
 }
 
 const dctTemporal = dct('temporal');

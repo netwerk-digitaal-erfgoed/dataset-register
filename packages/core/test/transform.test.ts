@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import factory from 'rdf-ext';
 import type { Literal, Quad, Term } from '@rdfjs/types';
-import { dcat, dct, rdf, xsd } from '../src/query.ts';
-import { normalizeTemporalCoverage } from '../src/transform.ts';
+import { dcat, dct, rdf, vcard, xsd } from '../src/query.ts';
+import {
+  keepOneContactPoint,
+  normalizeTemporalCoverage,
+} from '../src/transform.ts';
 
 const ds = factory.namedNode('https://example.org/dataset');
 
@@ -103,5 +106,95 @@ describe('normalizeTemporalCoverage', () => {
     );
     const input = [title];
     expect(normalizeTemporalCoverage(input)).toBe(input);
+  });
+});
+
+describe('keepOneContactPoint', () => {
+  function contactPoint(
+    id: string,
+    emails: string[] = [],
+    name?: string,
+  ): Quad[] {
+    const node = factory.blankNode(id);
+    return [
+      factory.quad(ds, dcat('contactPoint'), node),
+      factory.quad(node, rdf('type'), vcard('Kind')),
+      ...emails.map((email) =>
+        factory.quad(
+          node,
+          vcard('hasEmail'),
+          factory.namedNode(`mailto:${email}`),
+        ),
+      ),
+      ...(name ? [factory.quad(node, vcard('fn'), factory.literal(name))] : []),
+    ];
+  }
+
+  function kept(quads: Quad[]): string | undefined {
+    return findObject(quads, dcat('contactPoint'))?.value;
+  }
+
+  it('keeps the contact point with the lowest email, whatever the input order', () => {
+    const help = contactPoint('help', ['help@example.com'], 'Helpdesk');
+    const data = contactPoint('data', ['data@example.com'], 'Datamanager');
+
+    for (const quads of [
+      [...help, ...data],
+      [...data, ...help],
+    ]) {
+      const result = keepOneContactPoint(quads);
+      expect(kept(result)).toBe('data');
+      expect(result).toEqual(data);
+    }
+  });
+
+  it('breaks an email tie on name, then on node value', () => {
+    expect(
+      kept(
+        keepOneContactPoint([
+          ...contactPoint('a', ['data@example.com'], 'Zeta'),
+          ...contactPoint('b', ['data@example.com'], 'Alpha'),
+        ]),
+      ),
+    ).toBe('b');
+    expect(
+      kept(keepOneContactPoint([...contactPoint('b'), ...contactPoint('a')])),
+    ).toBe('a');
+  });
+
+  it('compares a contact point with several emails by its lowest', () => {
+    const result = keepOneContactPoint([
+      ...contactPoint('one', ['beta@example.com']),
+      ...contactPoint('several', [
+        'zeta@example.com',
+        'alpha@example.com',
+        'omega@example.com',
+      ]),
+    ]);
+    expect(kept(result)).toBe('several');
+  });
+
+  it('prefers a contact point with an email over one without, whatever the input order', () => {
+    const withoutEmail = contactPoint('without', [], 'Helpdesk');
+    const withEmail = contactPoint('with', ['data@example.com'], 'Data');
+    for (const quads of [
+      [...withoutEmail, ...withEmail],
+      [...withEmail, ...withoutEmail],
+    ]) {
+      expect(kept(keepOneContactPoint(quads))).toBe('with');
+    }
+  });
+
+  it('counts a contact point linked twice as one', () => {
+    const quads = [
+      ...contactPoint('only', ['data@example.com']),
+      factory.quad(ds, dcat('contactPoint'), factory.blankNode('only')),
+    ];
+    expect(keepOneContactPoint(quads)).toBe(quads);
+  });
+
+  it('returns the input array reference when no subject has more than one contact point', () => {
+    const quads = contactPoint('only', ['data@example.com']);
+    expect(keepOneContactPoint(quads)).toBe(quads);
   });
 });
