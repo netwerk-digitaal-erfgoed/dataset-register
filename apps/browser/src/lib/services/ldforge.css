@@ -1,0 +1,6 @@
+/* Keep the accessible name and native title while matching the editor tools. */
+.ldforge-core-tools
+  [data-toolbar-button='index-information']
+  .ldforge-button-label {
+  display: none;
+}

@@ -61,17 +61,21 @@
     shouldFetch: boolean;
     scrollY: number;
   } {
-    const currentSearchKey = getSearchKey({
-      query: page.url.searchParams.get('search') || undefined,
-      publisher: decodeDiscreteParam('publishers'),
-      format: decodeDiscreteParam('format'),
-      class: decodeDiscreteParam('class'),
-      terminologySource: decodeDiscreteParam('terminologySource'),
-      catalog: decodeDiscreteParam('catalog'),
-      size: decodeRangeParam('size'),
-      status: decodeDiscreteParam('status'),
-      checks: decodeDiscreteParam('checks'),
-    });
+    // The navigation cache only exists in the browser. Avoid reading page state
+    // during server initialization when there is no cache to restore.
+    const currentSearchKey =
+      searchCache &&
+      getSearchKey({
+        query: page.url.searchParams.get('search') || undefined,
+        publisher: decodeDiscreteParam('publishers'),
+        format: decodeDiscreteParam('format'),
+        class: decodeDiscreteParam('class'),
+        terminologySource: decodeDiscreteParam('terminologySource'),
+        catalog: decodeDiscreteParam('catalog'),
+        size: decodeRangeParam('size'),
+        status: decodeDiscreteParam('status'),
+        checks: decodeDiscreteParam('checks'),
+      });
 
     if (searchCache && searchCache.searchKey === currentSearchKey) {
       const cache = searchCache;

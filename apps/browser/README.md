@@ -29,6 +29,30 @@ nx dev browser -- --open
 
 In the browser, navigate to http://localhost:{port}/datasets.
 
+### Local UI preview with public data
+
+For UI work without a local search index, create `apps/browser/.env.local`:
+
+```dotenv
+PUBLIC_SEARCH_GRAPHQL_ENDPOINT=/__preview/graphql
+```
+
+Keep this file local (for example, exclude it in `.git/info/exclude`). Vite proxies
+this development-only path to the public Dataset Register GraphQL API, avoiding
+cross-origin preflight restrictions. The committed `.env` already points SPARQL
+and dataset details at the public endpoints. This setup needs network access;
+it does not run a local API, crawler or database.
+
+Use Node.js 24 or newer and start the UI from the repository root:
+
+```sh
+npm ci
+npm run dev --workspace=@dataset-register/browser -- --host 127.0.0.1 --port 4174 --strictPort
+```
+
+Open http://127.0.0.1:4174/datasets. Port 4174 leaves the LDForge preview on 4173
+available alongside this app.
+
 ## Build
 
 To create a production version of the app:
@@ -36,3 +60,62 @@ To create a production version of the app:
 ```sh
 nx build browser
 ```
+
+## SPARQL query page (LDForge)
+
+The SPARQL button opens `/query` within the website, retaining its example query
+and `exec=true` to run it. Direct visits to `/query` show the example without
+automatically executing it. Shared LDForge links retain the query in the URL.
+The page uses `PUBLIC_SPARQL_ENDPOINT`; `/sparql` remains the API endpoint.
+The editor is lazy-loaded in the browser and destroyed on navigation.
+
+By default, development and production use the declared `@ldforge/*` npm packages.
+To work against a local LDForge checkout, add this to `apps/browser/.env.local`:
+
+```dotenv
+LDFORGE_SOURCE=/absolute/path/to/LDForge
+```
+
+Restart the development server after changing this setting. Vite resolves the
+LDForge packages and editor CSS directly from that checkout's `packages/*/src`,
+so source edits participate in Vite's reload cycle without rebuilding packages.
+Run `npm ci` in both repositories first. No `npm link` or `file:` dependencies
+are needed. Remove `LDFORGE_SOURCE` to return to npm packages; production builds
+always use npm, even when the local setting is present.
+
+### Plugin showcase queries
+
+The Examples menu includes live queries for tables, dataset cards, bar/line/doughnut
+charts, publisher networks, registration timelines, format pivot tables, publisher
+trees, ASK booleans and JSON. Query comments select the matching plugin with
+`# view=…`; selecting an example loads it, and Run executes it. The original five
+administrative queries remain above the divider.
+
+These examples select their publishers and datasets from the current register;
+they contain no fixed `VALUES` data. Counts use distinct datasets where joins can
+multiply rows. The pivot counts a dataset in each format it offers, so row totals
+are format occurrences rather than unique dataset totals. The monthly chart
+contains months represented by current registration URLs, not an event history;
+months without registrations are omitted. Ratings describe metadata completeness.
+
+The map example federates to Wikidata using a SPARQL `SERVICE` clause. It matches
+publishers' `schema:location` GeoNames IDs to Wikidata `P1566`, restricts places to
+the Netherlands (`P17/Q55`), and retrieves Dutch labels and live `P625` coordinates.
+Each marker represents a matched place and lists its publishers; it is a place
+centre, not an exact publisher address. Publishers with no matching location are
+omitted. This example depends on the register supporting federation and on
+Wikidata availability; it contains no fixed place or coordinate table.
+
+The publisher popup keeps publishers as structured bindings and renders one marker
+per place. The popup has one Show datasets action for all its publishers. It opens and runs
+a combined query in a new editor tab, preserving the map tab. This uses the
+`renderPopup` API from `@ldforge/geo`. All declared LDForge minimum versions
+target MIT-licensed releases: editor 1.2.1, geo and renderers 1.1.1, and the
+remaining packages 1.0.1. These include keyboard help and full-height tables with
+optional scrolling. Development can still override these
+packages with `LDFORGE_SOURCE`.
+
+The NDE toolbar's Index information button opens a dialog with the configured
+endpoint's live `?cmd=stats` response. It shows the index name and normal counts
+for triples, subjects, predicates and objects, omitting QLever's internal counts.
+Requests are cancelled when the dialog closes; failures have a retry action.

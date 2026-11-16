@@ -1,0 +1,42 @@
+.publisher-map-popup {
+  width: 280px;
+  max-width: 65vw;
+  color: var(--ldforge-text, #111827);
+  font:
+    13px/1.45 system-ui,
+    sans-serif;
+}
+.publisher-map-popup ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.publisher-map-popup li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--ldforge-border, #d1d5db);
+  overflow-wrap: anywhere;
+}
+.publisher-map-popup small {
+  color: var(--ldforge-muted, #4b5563);
+}
+.publisher-map-popup > small {
+  display: block;
+  margin-top: 10px;
+}
+.publisher-map-popup button {
+  padding: 5px 8px;
+  white-space: nowrap;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.publisher-map-total {
+  margin-top: 4px;
+  color: var(--ldforge-muted, #4b5563);
+}
