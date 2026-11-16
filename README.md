@@ -147,7 +147,9 @@ The crawler will periodically fetch registration URLs ([`schema:EntryPoint`](htt
 The crawler runs a single pass and exits: it checks every registration URL, fetches those that have become
 outdated, and rebuilds the search index. A registration URL is considered outdated if it has been last read longer
 than [`REGISTRATION_URL_TTL`](#configuration) ago (its `schema:dateRead` is older). If any outdated registration URLs
-are found, they are fetched and updated in the SPARQL store.
+are found, they are fetched and updated in the SPARQL store. A dataset description whose content hash matches the stored
+one is not written again, and neither is a rating that equals the stored rating: every SPARQL update makes the next
+ones slower until QLever’s nightly index rebuild.
 
 Because it is one-shot, recurring crawls are scheduled externally rather than in-process – in production by a
 [Kubernetes CronJob](https://github.com/netwerk-digitaal-erfgoed/infrastructure/blob/main/k8s/dataset-register/crawler.yaml),

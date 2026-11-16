@@ -136,14 +136,13 @@ export const crawlCounter = meter.createCounter('crawler.counter', {
 
 /**
  * How each dataset description a crawl stores compares to the one stored before it, by `status`
- * (a `DatasetWrite`). The share of `unchanged` is what skipping unchanged descriptions would
- * save in store writes.
+ * (a `DatasetWrite`). An `unchanged` description is counted but not written again.
  */
 export const datasetWriteCounter = meter.createCounter(
   'crawler.dataset.writes',
   {
     description:
-      'Number of dataset descriptions a crawl stored, by change status',
+      'Number of dataset descriptions a crawl compared to the stored ones, by change status',
     valueType: ValueType.INT,
   },
 );
