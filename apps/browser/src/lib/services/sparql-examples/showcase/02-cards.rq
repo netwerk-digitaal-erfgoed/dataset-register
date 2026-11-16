@@ -1,0 +1,33 @@
+# label-en: Discover heritage datasets
+# label-nl: Ontdek erfgoeddatasets
+# view=cards
+# One representative dataset per publisher, selected from the live register.
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX schema: <https://schema.org/>
+
+SELECT (SAMPLE(?title) AS ?card_title)
+       (CONCAT(SAMPLE(?name), " — ", SUBSTR(SAMPLE(?description), 1, 280)) AS ?card_text)
+       ("Bekijk dataset" AS ?card_button)
+       (IRI(CONCAT("https://datasetregister.netwerkdigitaalerfgoed.nl/dataset?uri=", ENCODE_FOR_URI(STR(?dataset)))) AS ?card_button_url)
+WHERE {
+  {
+    SELECT ?publisher (MIN(STR(?d)) AS ?datasetIRI) (COUNT(DISTINCT ?d) AS ?total)
+    WHERE {
+      ?d a dcat:Dataset ; dct:publisher ?publisher ; schema:subjectOf ?r .
+      ?r schema:additionalType <https://data.netwerkdigitaalerfgoed.nl/registry/valid> .
+    }
+    GROUP BY ?publisher
+    ORDER BY DESC(?total) ?publisher
+    LIMIT 18
+  }
+  BIND(IRI(?datasetIRI) AS ?dataset)
+  ?dataset a dcat:Dataset ; dct:title ?title ; dct:description ?description ;
+    dct:publisher ?publisher ; schema:subjectOf ?registration .
+  ?registration schema:additionalType <https://data.netwerkdigitaalerfgoed.nl/registry/valid> .
+  ?publisher foaf:name ?name .
+}
+GROUP BY ?dataset
+ORDER BY ?card_title ?dataset
+LIMIT 18

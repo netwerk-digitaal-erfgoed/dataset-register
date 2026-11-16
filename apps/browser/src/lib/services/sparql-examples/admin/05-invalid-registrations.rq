@@ -1,0 +1,20 @@
+# label-en: Invalid registration URLs
+# label-nl: Ongeldige registratie-URLs
+PREFIX schema: <https://schema.org/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?url ?posted (MAX(xsd:dateTime(?read)) AS ?lastRead) ?status ?dataset ?validUntil
+WHERE {
+  ?url a schema:EntryPoint ;
+    schema:datePosted ?posted ;
+    schema:dateRead ?read ;
+    schema:status ?status
+  OPTIONAL { ?url schema:about ?dataset } .
+  OPTIONAL { ?url schema:validUntil ?validUntil } .
+
+  # If the registration URL could not be read, its HTTP status code ≠ 200.
+  # If the registration URL could be read but no longer validates, ?validUntil is set.
+  FILTER (?status != 200 || (EXISTS { ?url schema:validUntil ?validUntil }))
+}
+GROUP BY ?url ?posted ?status ?dataset ?validUntil
+ORDER BY ?lastRead

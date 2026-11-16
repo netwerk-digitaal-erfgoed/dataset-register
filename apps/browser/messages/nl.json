@@ -17,7 +17,7 @@
   "changes_empty": "Er zijn nog geen wijzigingen gepubliceerd.",
   "distribution_rdf": "Deze dataset biedt een RDF-download",
   "distribution_sparql": "Deze dataset biedt een SPARQL-endpoint",
-  "sparql_view_query": "Bekijk SPARQL-query bij de triplestore",
+  "sparql_view_query": "Bekijk SPARQL-query in LDForge",
   "search_no_datasets": "Geen datasets gevonden",
   "search_placeholder": "Zoek datasets...",
   "search_datasets_found": [
@@ -543,5 +543,23 @@
   "severity_Warning": "Waarschuwing",
   "severity_Info": "Suggestie",
   "status_announcements_label": "Servicemeldingen",
-  "status_announcements_link": "Meer op de statuspagina"
+  "status_announcements_link": "Meer op de statuspagina",
+  "sparql_page_description": "Bevraag de Linked Data van het Datasetregister met SPARQL.",
+  "sparql_back": "Terug naar datasets",
+  "sparql_loading": "LDForge wordt geladen…",
+  "sparql_load_error": "LDForge kon niet worden geladen. Vernieuw de pagina om het opnieuw te proberen.",
+  "index_information": "Indexinformatie",
+  "index_close": "Sluiten",
+  "index_error": "De indexinformatie kon niet worden opgehaald.",
+  "index_retry": "Opnieuw proberen",
+  "index_description": "Beschrijving",
+  "index_triples": "Aantal triples",
+  "index_subjects": "Aantal subjects",
+  "index_predicates": "Aantal predicates",
+  "index_objects": "Aantal objects",
+  "index_loading": "Indexinformatie ophalen…",
+  "sparql_examples": "Voorbeelden",
+  "publisher_map_total": "{count} datasets in totaal",
+  "publisher_map_show_datasets": "Toon datasets",
+  "publisher_map_place_note": "Plaatscentrum, geen exact adres."
 }

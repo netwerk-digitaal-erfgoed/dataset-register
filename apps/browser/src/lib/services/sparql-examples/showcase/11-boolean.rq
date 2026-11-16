@@ -1,0 +1,11 @@
+# label-en: Are there invalid registrations?
+# label-nl: Zijn er ongeldige registraties?
+# view=boolean
+PREFIX schema: <https://schema.org/>
+
+ASK
+FROM <https://demo.netwerkdigitaalerfgoed.nl/registry/registrations>
+WHERE {
+  ?registration a schema:EntryPoint ;
+    schema:additionalType <https://data.netwerkdigitaalerfgoed.nl/registry/invalid> .
+}

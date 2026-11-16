@@ -17,7 +17,7 @@
   "changes_empty": "No changes have been published yet.",
   "distribution_rdf": "This dataset provides an RDF download",
   "distribution_sparql": "This dataset provides a SPARQL endpoint",
-  "sparql_view_query": "View SPARQL query in the triple store",
+  "sparql_view_query": "View SPARQL query in LDForge",
   "search_no_datasets": "Found no datasets",
   "search_placeholder": "Search datasets...",
   "search_datasets_found": [
@@ -543,5 +543,23 @@
   "severity_Warning": "Warning",
   "severity_Info": "Suggestion",
   "status_announcements_label": "Service announcements",
-  "status_announcements_link": "More on the status page"
+  "status_announcements_link": "More on the status page",
+  "sparql_page_description": "Query the Linked Data of the Dataset Register with SPARQL.",
+  "sparql_back": "Back to datasets",
+  "sparql_loading": "Loading LDForge…",
+  "sparql_load_error": "LDForge could not be loaded. Refresh the page to try again.",
+  "index_information": "Index information",
+  "index_close": "Close",
+  "index_error": "The index information could not be retrieved.",
+  "index_retry": "Try again",
+  "index_description": "Description",
+  "index_triples": "Number of triples",
+  "index_subjects": "Number of subjects",
+  "index_predicates": "Number of predicates",
+  "index_objects": "Number of objects",
+  "index_loading": "Loading index information…",
+  "sparql_examples": "Examples",
+  "publisher_map_total": "{count} datasets in total",
+  "publisher_map_show_datasets": "Show datasets",
+  "publisher_map_place_note": "Place centre, not an exact address."
 }

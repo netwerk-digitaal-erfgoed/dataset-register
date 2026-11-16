@@ -1,0 +1,24 @@
+# label-en: Dataset metadata ratings
+# label-nl: Metadatabeoordelingen
+# view=charts; chart=doughnut; chart-title=Metadatabeoordeling van geldige datasets
+# The register's rating describes metadata, not the quality of collection objects.
+# Each dataset occurs once; only ratings on the 0–100 scale are included.
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX schema: <https://schema.org/>
+
+SELECT ?chart_label (COUNT(*) AS ?chart_value)
+WHERE {
+  {
+    SELECT ?dataset (MAX(?rating) AS ?score)
+    WHERE {
+      ?dataset a dcat:Dataset ; schema:subjectOf ?registration ;
+        schema:contentRating/schema:ratingValue ?rating .
+      ?registration schema:additionalType <https://data.netwerkdigitaalerfgoed.nl/registry/valid> .
+      FILTER(?rating >= 0 && ?rating <= 100)
+    }
+    GROUP BY ?dataset
+  }
+  BIND(IF(?score < 60, "0–59", IF(?score < 80, "60–79", IF(?score < 95, "80–94", "95–100"))) AS ?chart_label)
+}
+GROUP BY ?chart_label
+ORDER BY ?chart_label

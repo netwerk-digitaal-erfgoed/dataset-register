@@ -1,0 +1,15 @@
+# label-en: Most recent registrations
+# label-nl: Meest recente registraties
+PREFIX schema: <https://schema.org/>
+
+SELECT *
+FROM <https://demo.netwerkdigitaalerfgoed.nl/registry/registrations>
+WHERE {
+  ?url a schema:EntryPoint ;
+    schema:datePosted ?posted .
+  OPTIONAL {
+    ?url schema:dateRead ?read ;
+      schema:status ?status
+  }
+}
+ORDER BY DESC(?posted)
