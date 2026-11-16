@@ -6,6 +6,7 @@ import { constructQuery, dcat, rdf } from './query.ts';
 import { pipeline } from 'node:stream';
 import {
   addDefaultLanguageTags,
+  keepOneContactPoint,
   normalizeTemporalCoverage,
   StandardizeSchemaOrgPrefixToHttps,
 } from './transform.ts';
@@ -240,7 +241,9 @@ async function* query(url: URL, data: DatasetExt, timeoutMs: number) {
 
   for (const datasetIri of datasetOrder) {
     yield addDefaultLanguageTags(
-      normalizeTemporalCoverage(groupedQuads.get(datasetIri)!),
+      keepOneContactPoint(
+        normalizeTemporalCoverage(groupedQuads.get(datasetIri)!),
+      ),
     );
   }
 }

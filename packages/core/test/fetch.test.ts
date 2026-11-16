@@ -11,7 +11,7 @@ import {
   RequestTimeout,
 } from '../src/fetch.js';
 import nock from 'nock';
-import { dcat, dct, foaf, odrl, rdf } from '../src/query.js';
+import { dcat, dct, foaf, odrl, rdf, vcard } from '../src/query.js';
 import factory from 'rdf-ext';
 import { dereference, file, validSchemaOrgDataset } from '../src/test-utils.js';
 import type { BlankNode, Literal, NamedNode } from '@rdfjs/types';
@@ -646,6 +646,38 @@ describe('Fetch', () => {
     expect(themes).toContain(
       'http://publications.europa.eu/resource/authority/data-theme/EDUC',
     );
+  });
+
+  it('keeps one contact point per dataset when datasets embed a shared publisher', async () => {
+    // Each embedded copy of the publisher adds a blank-node contact point to the one
+    // publisher IRI, so without selection every dataset inherits all of them. The merged
+    // graph no longer says which copy a contact point came from, so dataset 3 gets the
+    // publisher’s lowest one too, not the help@ address its own copy declares.
+    const response = await file('catalog-schema-org-shared-publisher.jsonld');
+    nock('https://example.com')
+      .defaultReplyHeaders({ 'Content-Type': 'application/ld+json' })
+      .get('/shared-publisher')
+      .reply(200, response);
+
+    const datasets = await fetchDatasetsAsArray(
+      new URL('https://example.com/shared-publisher'),
+    );
+
+    expect(datasets).toHaveLength(3);
+    for (const dataset of datasets) {
+      const contactPoints = [
+        ...dataset.match(null, dcat('contactPoint'), null),
+      ];
+      expect(contactPoints).toHaveLength(1);
+      expect([...dataset.match(null, rdf('type'), vcard('Kind'))]).toHaveLength(
+        1,
+      );
+      expect(
+        [
+          ...dataset.match(contactPoints[0].object, vcard('hasEmail'), null),
+        ].map((quad) => quad.object.value),
+      ).toEqual(['mailto:data@example.com']);
+    }
   });
 
   it('preserves dct:accrualPeriodicity from DCAT input', async () => {
