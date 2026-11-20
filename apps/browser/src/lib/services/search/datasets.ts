@@ -44,9 +44,10 @@ export interface ValueBucket {
   readonly label?: readonly LanguageString[] | null;
 }
 
-/** A range facet bucket: its count and half-open `[min, max)` bounds (`max` null
- *  on the open-ended top bin). The bin is identified by its bounds, not a key. */
-export interface RangeBucket {
+/** A binned integer facet bucket (GraphQL `IntRangeBucket`): its count and
+ *  half-open `[min, max)` bounds (`max` null on the open-ended top bin). The bin
+ *  is identified by its bounds, not a key. */
+export interface IntRangeBucket {
   readonly count: number;
   readonly min: number | null;
   readonly max: number | null;
@@ -60,15 +61,22 @@ export interface BooleanBucket {
   readonly count: number;
 }
 
+/** A value or reference facet (GraphQL `ValueFacet` / `IRIFacet`): its buckets.
+ *  The query selects no `limit`, so the engine’s own cap (`maxFacetValues`)
+ *  applies and the full list comes back for the sidebar’s client-side search. */
+export interface ValueFacet {
+  readonly buckets: readonly ValueBucket[];
+}
+
 /** The facet buckets the sidebar renders, keyed by GraphQL facet field name. */
 export interface RawFacets {
-  readonly publisher: readonly ValueBucket[];
-  readonly format: readonly ValueBucket[];
-  readonly class: readonly ValueBucket[];
-  readonly terminology_source: readonly ValueBucket[];
-  readonly status: readonly ValueBucket[];
+  readonly publisher: ValueFacet;
+  readonly format: ValueFacet;
+  readonly class: ValueFacet;
+  readonly terminology_source: ValueFacet;
+  readonly status: ValueFacet;
   readonly nde_schema_ap: readonly BooleanBucket[];
-  readonly size: { readonly buckets: readonly RangeBucket[] };
+  readonly size: { readonly buckets: readonly IntRangeBucket[] };
 }
 
 /**
@@ -271,11 +279,11 @@ export const DATASET_SEARCH_QUERY = `
         nde_schema_ap
       }
       facets {
-        publisher { value count label { language value } }
-        format { value count }
-        class { value count label { language value } }
-        terminology_source { value count label { language value } }
-        status { value count }
+        publisher { buckets { value count label { language value } } }
+        format { buckets { value count } }
+        class { buckets { value count label { language value } } }
+        terminology_source { buckets { value count label { language value } } }
+        status { buckets { value count } }
         nde_schema_ap { value count }
         size { buckets { count min max } }
       }

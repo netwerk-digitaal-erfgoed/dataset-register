@@ -4,7 +4,7 @@ import * as m from '$lib/paraglide/messages';
 import {
   CHECK_SCHEMA_AP_NDE,
   localizedRecord,
-  type RangeBucket,
+  type IntRangeBucket,
   type RawFacets,
   type ValueBucket,
 } from './search/datasets.js';
@@ -111,14 +111,16 @@ const SIZE_RANGE_FALLBACK: FacetValueRange = { min: 1, max: 1000000000 };
  */
 export function mapFacets(facets: RawFacets): Facets {
   return {
-    publisher: mapValueBuckets(facets.publisher),
-    format: mapValueBuckets(facets.format),
-    class: mapValueBuckets(facets.class),
-    terminologySource: mapValueBuckets(facets.terminology_source),
+    publisher: mapValueBuckets(facets.publisher.buckets),
+    format: mapValueBuckets(facets.format.buckets),
+    class: mapValueBuckets(facets.class.buckets),
+    terminologySource: mapValueBuckets(facets.terminology_source.buckets),
     // The status facet lists only the non-default states (invalid, gone);
     // `valid` is the implicit default and is never a toggle.
     status: mapValueBuckets(
-      facets.status.filter((bucket) => SELECTABLE_STATUSES.has(bucket.value)),
+      facets.status.buckets.filter((bucket) =>
+        SELECTABLE_STATUSES.has(bucket.value),
+      ),
     ),
     checks: mapCheckBuckets(facets),
     size: mapSizeHistogram(facets.size.buckets),
@@ -175,7 +177,7 @@ function mapValueBuckets(buckets: readonly ValueBucket[]): CountedFacetValue[] {
 // Map the size range buckets to the UI histogram. The bins are logarithmic
 // (bin n starts at 10^n), so the bin index is log10 of the bucket’s lower bound;
 // the slider range is derived from the same populated bins (or the fallback).
-function mapSizeHistogram(buckets: readonly RangeBucket[]): Histogram {
+function mapSizeHistogram(buckets: readonly IntRangeBucket[]): Histogram {
   const populated = buckets.filter((bucket) => bucket.count > 0);
 
   const bins: HistogramBin[] = populated
