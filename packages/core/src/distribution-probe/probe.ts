@@ -47,8 +47,9 @@ export interface ProbeLogger {
  * severities are read from the SHACL shapes (see {@link readProbeSeverities}) so the requirements
  * graph is the single source of truth: bumping a shape from sh:Warning to sh:Violation changes
  * runtime behaviour — a Warning informs without invalidating the dataset, a Violation invalidates
- * it – with no code change here. Outcomes that are not a publisher defect are never governed by
- * the shapes: see {@link NON_DEFECT_OUTCOMES}.
+ * it – with no code change here. Two outcomes are always a sh:Warning instead, on every path
+ * (see {@link severityOf}): an HTTP 429, and an HTTP 401/403 on a dataset that declares restricted
+ * access.
  */
 export interface ProbeSeverities {
   /** Reachability failures: network error, 4xx/5xx, SPARQL or RDF-parse failures, empty body. */
@@ -168,6 +169,11 @@ export interface DistributionCandidate {
    * agree by construction. Null when the access URL is not a parsable URL.
    */
   distribution: Distribution | null;
+  /**
+   * True when the distribution’s dataset declares dct:accessRights RESTRICTED or NON_PUBLIC, the
+   * DCAT-AP-NL way to say that not everyone may retrieve its data.
+   */
+  restrictedAccess: boolean;
 }
 
 /**
@@ -741,7 +747,14 @@ export function collectDistributions(
       ) {
         continue;
       }
-      candidates.push(...candidatesFor(input, distributionNode, profile));
+      candidates.push(
+        ...candidatesFor(
+          input,
+          distributionNode,
+          profile,
+          declaresRestrictedAccess(input, quad.subject),
+        ),
+      );
     }
   }
   return candidates;
@@ -775,10 +788,26 @@ function failedEvaluation(detail: string): EvaluatedProbe {
   };
 }
 
+const restrictedAccessRights = [
+  'http://publications.europa.eu/resource/authority/access-right/RESTRICTED',
+  'http://publications.europa.eu/resource/authority/access-right/NON_PUBLIC',
+];
+
+/**
+ * Whether a dataset declares restricted access. Only the declared dct:accessRights counts, never
+ * the PUBLIC default the register stores when it is absent.
+ */
+function declaresRestrictedAccess(input: DatasetCore, dataset: Term): boolean {
+  return iriValues(input, dataset, dct('accessRights')).some((accessRights) =>
+    restrictedAccessRights.includes(accessRights.value),
+  );
+}
+
 function candidatesFor(
   input: DatasetCore,
   distributionNode: NamedNode | BlankNode,
   profile: 'dcat' | 'schema',
+  restrictedAccess: boolean,
 ): DistributionCandidate[] {
   const mediaType =
     literalValue(input, distributionNode, dcat('mediaType')) ??
@@ -850,7 +879,13 @@ function candidatesFor(
           undefined,
         );
       }
-      found.push({ distributionNode, urlNode: urlTerm, path, distribution });
+      found.push({
+        distributionNode,
+        urlNode: urlTerm,
+        path,
+        distribution,
+        restrictedAccess,
+      });
     }
   }
   return found;
@@ -957,18 +992,6 @@ function toDistribution(
 }
 
 /**
- * Probe outcomes that do not mean the publisher’s distribution is faulty, so they are always a
- * sh:Warning – on the strict registration path too, and whatever severity the shapes declare. An
- * HTTP 429 means the Register was throttled while probing; an HTTP 401/403 means access to the
- * distribution is restricted, such as a file that is only available on request, which is a
- * legitimate publishing choice. Both still report under the reachability constraint component.
- */
-const NON_DEFECT_OUTCOMES: readonly NamedNode[] = [
-  probeOutcomes.RateLimited,
-  probeOutcomes.AuthRequired,
-];
-
-/**
  * The probe check a verdict belongs to: a content-type outcome is a format-match failure; every
  * other outcome (unreachable, server error, SPARQL/parse failure) is a reachability failure. The
  * verdict outcome decides this, not the result path, because the path always carries the
@@ -986,12 +1009,22 @@ function checkKind(verdict: ProbeVerdict): keyof ProbeSeverities {
   return 'reachable';
 }
 
+/**
+ * The sh:severity of a failed probe. Two outcomes are not a publisher defect, so they are always a
+ * sh:Warning – on the strict registration path too, and whatever severity the shapes declare: an
+ * HTTP 429, because the Register was throttled while probing, and an HTTP 401/403 on a dataset
+ * that declares restricted access, because refusing anonymous requests is then the declared
+ * policy. An undeclared 401/403 is a reachability failure like any other.
+ */
 function severityOf(
   outcome: NamedNode,
   kind: keyof ProbeSeverities,
+  candidate: DistributionCandidate,
   severities: ProbeSeverities,
 ): NamedNode {
-  return NON_DEFECT_OUTCOMES.some((nonDefect) => nonDefect.equals(outcome))
+  const isDeclaredRestriction =
+    outcome.equals(probeOutcomes.AuthRequired) && candidate.restrictedAccess;
+  return outcome.equals(probeOutcomes.RateLimited) || isDeclaredRestriction
     ? shacl('Warning')
     : severities[kind];
 }
@@ -1018,7 +1051,7 @@ function emitProbeResult(
     factory.quad(
       resultNode,
       shacl('resultSeverity'),
-      severityOf(outcome, kind, severities),
+      severityOf(outcome, kind, candidate, severities),
     ),
     factory.quad(
       resultNode,

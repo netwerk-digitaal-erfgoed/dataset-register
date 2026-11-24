@@ -52,8 +52,8 @@ await (async () => {
   // Strict mode for the API. The DistributionProbeStage omits `severities`, so it falls back to
   // emitting every probe failure at sh:Violation regardless of the shapes' declared severity –
   // except an HTTP 429, which stays a sh:Warning because it means the Register was rate-limited
-  // while probing, and an HTTP 401/403, which stays a sh:Warning because restricted access is a
-  // publishing choice; neither means the distribution is faulty (see NON_DEFECT_OUTCOMES in the probe):
+  // while probing, and an HTTP 401/403 on a dataset that declares dct:accessRights RESTRICTED or
+  // NON_PUBLIC, where refusing anonymous requests is the declared policy (see severityOf):
   // a faulty distribution invalidates the dataset, so it is rejected at registration and shown
   // as invalid on the /validate endpoints. The crawler honours the shapes' sh:Warning instead,
   // so a distribution that breaks after a dataset is registered is reported without invalidating

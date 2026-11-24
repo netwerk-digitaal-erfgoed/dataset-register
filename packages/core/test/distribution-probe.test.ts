@@ -507,12 +507,22 @@ describe('DistributionProbeStage', () => {
     ).toBe(false);
   });
 
-  it.each([401, 403])(
-    'emits a sh:Warning, not a sh:Violation, for an HTTP %i probe result',
-    async (status) => {
-      // A 401/403 means access is restricted, which is a legitimate publishing choice for a
-      // dataset whose files are only available on request, so it must not invalidate the
-      // dataset – even here on the strict default (registration/validate) path.
+  const accessRight = (value: string) =>
+    `http://publications.europa.eu/resource/authority/access-right/${value}`;
+
+  it.each([
+    { status: 401, accessRights: 'RESTRICTED', severity: 'Warning' },
+    { status: 403, accessRights: 'RESTRICTED', severity: 'Warning' },
+    { status: 403, accessRights: 'NON_PUBLIC', severity: 'Warning' },
+    { status: 403, accessRights: 'PUBLIC', severity: 'Violation' },
+    { status: 403, accessRights: undefined, severity: 'Violation' },
+    { status: 401, accessRights: undefined, severity: 'Violation' },
+  ])(
+    'emits a sh:$severity for an HTTP $status when the dataset declares access rights $accessRights',
+    async ({ status, accessRights, severity }) => {
+      // A 401/403 only means the distribution is not broken when the dataset declares restricted
+      // access (DCAT-AP-NL dct:accessRights); otherwise a new registration must be rejected, as
+      // for any other distribution that does not work.
       nock('https://example.org')
         .head('/restricted')
         .reply(status)
@@ -526,6 +536,15 @@ describe('DistributionProbeStage', () => {
       dataset.add(
         factory.quad(datasetNode, dcat('distribution'), distributionNode),
       );
+      if (accessRights !== undefined) {
+        dataset.add(
+          factory.quad(
+            datasetNode,
+            dct('accessRights'),
+            factory.namedNode(accessRight(accessRights)),
+          ),
+        );
+      }
       dataset.add(
         factory.quad(
           distributionNode,
@@ -555,7 +574,7 @@ describe('DistributionProbeStage', () => {
       );
       expect(severities.length).toBeGreaterThan(0);
       expect(
-        severities.every((quad) => quad.object.equals(shacl('Warning'))),
+        severities.every((quad) => quad.object.equals(shacl(severity))),
       ).toBe(true);
     },
   );
