@@ -47,21 +47,14 @@ export interface ProbeLogger {
  * severities are read from the SHACL shapes (see {@link readProbeSeverities}) so the requirements
  * graph is the single source of truth: bumping a shape from sh:Warning to sh:Violation changes
  * runtime behaviour — a Warning informs without invalidating the dataset, a Violation invalidates
- * it — with no code change here. The rate-limited severity is the exception (see {@link checkKind}):
- * an HTTP 429 means the Register was throttled while probing, not that the publisher’s distribution
- * is faulty, so it is fixed at sh:Warning in code and never governed by the shapes.
+ * it – with no code change here. Outcomes that are not a publisher defect are never governed by
+ * the shapes: see {@link NON_DEFECT_OUTCOMES}.
  */
 export interface ProbeSeverities {
   /** Reachability failures: network error, 4xx/5xx, SPARQL or RDF-parse failures, empty body. */
   reachable: NamedNode;
   /** The server Content-Type does not match the declared media type. */
   formatMatch: NamedNode;
-  /**
-   * An endpoint answered HTTP 429 (Too Many Requests): the Register was rate-limited while
-   * probing — our infrastructure condition, not a defect in the publisher’s data — so this is
-   * always sh:Warning and never invalidates a dataset, on both the registration and crawler paths.
-   */
-  rateLimited: NamedNode;
 }
 
 /**
@@ -210,9 +203,6 @@ export class DistributionProbeStage {
     this.severities = options.severities ?? {
       reachable: shacl('Violation'),
       formatMatch: shacl('Violation'),
-      // A 429 is the Register being throttled, never a publisher defect, so it stays a Warning
-      // even on this strict path where every other probe failure falls back to a Violation.
-      rateLimited: shacl('Warning'),
     };
   }
 
@@ -644,10 +634,6 @@ export function readProbeSeverities(shaclGraph: DatasetCore): ProbeSeverities {
   return {
     reachable: severityForMarker(shaclGraph, probeReachableMarker),
     formatMatch: severityForMarker(shaclGraph, probeFormatMatchMarker),
-    // Not shape-governed: a 429 reflects the Register being rate-limited while probing, not a
-    // publisher data-quality requirement, so it is fixed at sh:Warning rather than read from the
-    // shapes (severityForMarker would otherwise fail closed to sh:Violation absent a marker).
-    rateLimited: shacl('Warning'),
   };
 }
 
@@ -825,25 +811,58 @@ function candidatesFor(
       ? [dcat('accessURL'), dcat('downloadURL')]
       : [schema('contentUrl')];
 
+  // When a DCAT distribution declares a downloadURL, its dcat:mediaType describes that file, and a
+  // different accessURL is typically a landing page (DCAT allows this). Such an accessURL is
+  // probed for reachability only: holding an HTML landing page to the file’s media type would
+  // reject a valid description.
+  const downloadUrls = new Set(
+    profile === 'dcat'
+      ? iriValues(input, distributionNode, dcat('downloadURL')).map((urlTerm) =>
+          probeUrlValue(urlTerm.value),
+        )
+      : [],
+  );
+
   const found: DistributionCandidate[] = [];
   for (const path of urlPaths) {
     for (const urlTerm of iriValues(input, distributionNode, path)) {
-      found.push({
-        distributionNode,
-        urlNode: urlTerm,
-        path,
-        distribution: toDistribution(
+      let distribution = toDistribution(
+        urlTerm.value,
+        mediaType,
+        conformsTo,
+        compressFormat,
+        modified,
+        byteSize,
+      );
+      const isLandingPage =
+        path.equals(dcat('accessURL')) &&
+        downloadUrls.size > 0 &&
+        distribution?.isSparql() === false &&
+        !downloadUrls.has(canonicalProbeUrl(distribution.accessUrl).toString());
+      if (isLandingPage) {
+        // The declared change signals describe the file too, so they stay off the page’s probe.
+        distribution = toDistribution(
           urlTerm.value,
-          mediaType,
+          undefined,
           conformsTo,
-          compressFormat,
-          modified,
-          byteSize,
-        ),
-      });
+          undefined,
+          undefined,
+          undefined,
+        );
+      }
+      found.push({ distributionNode, urlNode: urlTerm, path, distribution });
     }
   }
   return found;
+}
+
+/** The URL a probe would request for an IRI value, or the raw value when it does not parse. */
+function probeUrlValue(value: string): string {
+  try {
+    return canonicalProbeUrl(new URL(value)).toString();
+  } catch {
+    return value;
+  }
 }
 
 function iriValues(
@@ -938,17 +957,25 @@ function toDistribution(
 }
 
 /**
- * The probe check a verdict belongs to. A rate-limited outcome (HTTP 429) is its own check so it
- * can stay a non-blocking Warning; a content-type outcome is a format-match failure; every other
- * outcome (unreachable, server error, SPARQL/parse failure) is a reachability failure. The verdict
- * outcome decides this, not the result path, because the path always carries the
+ * Probe outcomes that do not mean the publisher’s distribution is faulty, so they are always a
+ * sh:Warning – on the strict registration path too, and whatever severity the shapes declare. An
+ * HTTP 429 means the Register was throttled while probing; an HTTP 401/403 means access to the
+ * distribution is restricted, such as a file that is only available on request, which is a
+ * legitimate publishing choice. Both still report under the reachability constraint component.
+ */
+const NON_DEFECT_OUTCOMES: readonly NamedNode[] = [
+  probeOutcomes.RateLimited,
+  probeOutcomes.AuthRequired,
+];
+
+/**
+ * The probe check a verdict belongs to: a content-type outcome is a format-match failure; every
+ * other outcome (unreachable, server error, SPARQL/parse failure) is a reachability failure. The
+ * verdict outcome decides this, not the result path, because the path always carries the
  * access/download/content URL — never the media-type property.
  */
 function checkKind(verdict: ProbeVerdict): keyof ProbeSeverities {
   const outcome = verdict.outcome;
-  if (outcome !== null && outcome.equals(probeOutcomes.RateLimited)) {
-    return 'rateLimited';
-  }
   if (
     outcome !== null &&
     (outcome.equals(probeOutcomes.ContentTypeMismatch) ||
@@ -957,6 +984,16 @@ function checkKind(verdict: ProbeVerdict): keyof ProbeSeverities {
     return 'formatMatch';
   }
   return 'reachable';
+}
+
+function severityOf(
+  outcome: NamedNode,
+  kind: keyof ProbeSeverities,
+  severities: ProbeSeverities,
+): NamedNode {
+  return NON_DEFECT_OUTCOMES.some((nonDefect) => nonDefect.equals(outcome))
+    ? shacl('Warning')
+    : severities[kind];
 }
 
 function emitProbeResult(
@@ -978,7 +1015,11 @@ function emitProbeResult(
     factory.quad(resultNode, shacl('focusNode'), candidate.distributionNode),
     factory.quad(resultNode, shacl('resultPath'), candidate.path),
     factory.quad(resultNode, shacl('value'), candidate.urlNode),
-    factory.quad(resultNode, shacl('resultSeverity'), severities[kind]),
+    factory.quad(
+      resultNode,
+      shacl('resultSeverity'),
+      severityOf(outcome, kind, severities),
+    ),
     factory.quad(
       resultNode,
       shacl('sourceConstraintComponent'),

@@ -507,6 +507,103 @@ describe('DistributionProbeStage', () => {
     ).toBe(false);
   });
 
+  it.each([401, 403])(
+    'emits a sh:Warning, not a sh:Violation, for an HTTP %i probe result',
+    async (status) => {
+      // A 401/403 means access is restricted, which is a legitimate publishing choice for a
+      // dataset whose files are only available on request, so it must not invalidate the
+      // dataset – even here on the strict default (registration/validate) path.
+      nock('https://example.org')
+        .head('/restricted')
+        .reply(status)
+        .get('/restricted')
+        .reply(status)
+        .persist();
+
+      const dataset = factory.dataset();
+      const datasetNode = factory.namedNode('https://example.org/d-auth');
+      const distributionNode = factory.blankNode();
+      dataset.add(
+        factory.quad(datasetNode, dcat('distribution'), distributionNode),
+      );
+      dataset.add(
+        factory.quad(
+          distributionNode,
+          dcat('downloadURL'),
+          factory.namedNode('https://example.org/restricted'),
+        ),
+      );
+      dataset.add(
+        factory.quad(
+          distributionNode,
+          dcat('mediaType'),
+          factory.literal('text/csv'),
+        ),
+      );
+
+      const quads = await new DistributionProbeStage().run(dataset);
+
+      const outcome = quads.find((quad) =>
+        quad.predicate.equals(
+          factory.namedNode(`${ndeProbePrefix}probeOutcome`),
+        ),
+      );
+      expect(outcome?.object.value).toBe(`${ndeProbePrefix}AuthRequired`);
+
+      const severities = quads.filter((quad) =>
+        quad.predicate.equals(shacl('resultSeverity')),
+      );
+      expect(severities.length).toBeGreaterThan(0);
+      expect(
+        severities.every((quad) => quad.object.equals(shacl('Warning'))),
+      ).toBe(true);
+    },
+  );
+
+  it('checks only the reachability of an accessURL next to a downloadURL', async () => {
+    // A distribution with both URLs commonly has a landing page as its accessURL; its
+    // dcat:mediaType describes the file at the downloadURL, so the HTML page must not fail the
+    // format-match check.
+    nock('https://example.org')
+      .head('/landing')
+      .reply(200, '', { 'Content-Type': 'text/html' });
+    nock('https://example.org')
+      .head('/data.csv')
+      .reply(200, '', { 'Content-Type': 'text/csv' });
+
+    const dataset = factory.dataset();
+    const datasetNode = factory.namedNode('https://example.org/d-landing');
+    const distributionNode = factory.blankNode();
+    dataset.add(
+      factory.quad(datasetNode, dcat('distribution'), distributionNode),
+    );
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('accessURL'),
+        factory.namedNode('https://example.org/landing'),
+      ),
+    );
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('downloadURL'),
+        factory.namedNode('https://example.org/data.csv'),
+      ),
+    );
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('mediaType'),
+        factory.literal('text/csv'),
+      ),
+    );
+
+    const quads = await new DistributionProbeStage().run(dataset);
+
+    expect(quads).toEqual([]);
+  });
+
   it('tells a DCAT publisher to move a SPARQL query UI to foaf:page', async () => {
     nock('https://example.org')
       .post('/sparql')
@@ -1812,7 +1909,6 @@ describe('DistributionProbeStage', () => {
       severities: {
         reachable: shacl('Warning'),
         formatMatch: shacl('Info'),
-        rateLimited: shacl('Warning'),
       },
     });
     const quads = await stage.run(dataset);
@@ -1864,7 +1960,6 @@ describe('DistributionProbeStage', () => {
       severities: {
         reachable: shacl('Warning'),
         formatMatch: shacl('Info'),
-        rateLimited: shacl('Warning'),
       },
     });
     const quads = await stage.run(dataset);
@@ -2112,5 +2207,141 @@ describe('collectDistributions', () => {
 
     expect(candidates).toHaveLength(1);
     expect(candidates[0].distribution?.compressFormat).toBeUndefined();
+  });
+
+  const distributionWith = (urls: { access?: string; download?: string }) => {
+    const dataset = factory.dataset();
+    const distributionNode = factory.blankNode();
+    dataset.add(
+      factory.quad(
+        factory.namedNode('https://example.org/ds-urls'),
+        dcat('distribution'),
+        distributionNode,
+      ),
+    );
+    if (urls.access !== undefined) {
+      dataset.add(
+        factory.quad(
+          distributionNode,
+          dcat('accessURL'),
+          factory.namedNode(urls.access),
+        ),
+      );
+    }
+    if (urls.download !== undefined) {
+      dataset.add(
+        factory.quad(
+          distributionNode,
+          dcat('downloadURL'),
+          factory.namedNode(urls.download),
+        ),
+      );
+    }
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dcat('mediaType'),
+        factory.literal('text/csv'),
+      ),
+    );
+    return { dataset, distributionNode };
+  };
+
+  const mimeTypeAt = (
+    candidates: ReturnType<typeof collectDistributions>,
+    path: string,
+  ) =>
+    candidates.find((candidate) => candidate.path.equals(dcat(path)))
+      ?.distribution?.mimeType;
+
+  it('probes an accessURL next to a different downloadURL without a media type', () => {
+    const { dataset } = distributionWith({
+      access: 'https://example.org/landing',
+      download: 'https://example.org/data.csv',
+    });
+
+    const candidates = collectDistributions(dataset);
+
+    expect(candidates).toHaveLength(2);
+    expect(mimeTypeAt(candidates, 'accessURL')).toBeUndefined();
+    expect(mimeTypeAt(candidates, 'downloadURL')).toBe('text/csv');
+  });
+
+  it('keeps the media type on an accessURL that equals the downloadURL', () => {
+    const { dataset } = distributionWith({
+      access: 'https://example.org/data.csv',
+      download: 'https://example.org/data.csv',
+    });
+
+    const candidates = collectDistributions(dataset);
+
+    expect(mimeTypeAt(candidates, 'accessURL')).toBe('text/csv');
+    expect(mimeTypeAt(candidates, 'downloadURL')).toBe('text/csv');
+  });
+
+  it('keeps the media type on an accessURL that differs from the downloadURL only by a fragment', () => {
+    const { dataset } = distributionWith({
+      access: 'https://example.org/data.csv#download',
+      download: 'https://example.org/data.csv',
+    });
+
+    const candidates = collectDistributions(dataset);
+
+    expect(mimeTypeAt(candidates, 'accessURL')).toBe('text/csv');
+  });
+
+  it('tolerates a malformed accessURL next to a downloadURL', () => {
+    const { dataset } = distributionWith({
+      access: 'not a url',
+      download: 'https://example.org/data.csv',
+    });
+
+    const candidates = collectDistributions(dataset);
+
+    expect(candidates).toHaveLength(2);
+    expect(mimeTypeAt(candidates, 'downloadURL')).toBe('text/csv');
+  });
+
+  it('tolerates a malformed downloadURL next to an accessURL', () => {
+    const { dataset } = distributionWith({
+      access: 'https://example.org/landing',
+      download: 'not a url',
+    });
+
+    const candidates = collectDistributions(dataset);
+
+    expect(candidates).toHaveLength(2);
+    expect(mimeTypeAt(candidates, 'accessURL')).toBeUndefined();
+  });
+
+  it('keeps the media type on an accessURL without a downloadURL', () => {
+    const { dataset } = distributionWith({
+      access: 'https://example.org/data.csv',
+    });
+
+    const candidates = collectDistributions(dataset);
+
+    expect(mimeTypeAt(candidates, 'accessURL')).toBe('text/csv');
+  });
+
+  it('keeps probing a SPARQL accessURL next to a downloadURL as SPARQL', () => {
+    const { dataset, distributionNode } = distributionWith({
+      access: 'https://example.org/sparql',
+      download: 'https://example.org/data.csv',
+    });
+    dataset.add(
+      factory.quad(
+        distributionNode,
+        dct('conformsTo'),
+        factory.namedNode('https://www.w3.org/TR/sparql11-protocol/'),
+      ),
+    );
+
+    const candidates = collectDistributions(dataset);
+    const access = candidates.find((candidate) =>
+      candidate.path.equals(dcat('accessURL')),
+    );
+
+    expect(access?.distribution?.isSparql()).toBe(true);
   });
 });
