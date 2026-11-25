@@ -47,21 +47,15 @@ export interface ProbeLogger {
  * severities are read from the SHACL shapes (see {@link readProbeSeverities}) so the requirements
  * graph is the single source of truth: bumping a shape from sh:Warning to sh:Violation changes
  * runtime behaviour — a Warning informs without invalidating the dataset, a Violation invalidates
- * it — with no code change here. The rate-limited severity is the exception (see {@link checkKind}):
- * an HTTP 429 means the Register was throttled while probing, not that the publisher’s distribution
- * is faulty, so it is fixed at sh:Warning in code and never governed by the shapes.
+ * it – with no code change here. Two outcomes are always a sh:Warning instead, on every path
+ * (see {@link severityOf}): an HTTP 429, and an HTTP 401/403 on a dataset that declares restricted
+ * access.
  */
 export interface ProbeSeverities {
   /** Reachability failures: network error, 4xx/5xx, SPARQL or RDF-parse failures, empty body. */
   reachable: NamedNode;
   /** The server Content-Type does not match the declared media type. */
   formatMatch: NamedNode;
-  /**
-   * An endpoint answered HTTP 429 (Too Many Requests): the Register was rate-limited while
-   * probing — our infrastructure condition, not a defect in the publisher’s data — so this is
-   * always sh:Warning and never invalidates a dataset, on both the registration and crawler paths.
-   */
-  rateLimited: NamedNode;
 }
 
 /**
@@ -175,6 +169,11 @@ export interface DistributionCandidate {
    * agree by construction. Null when the access URL is not a parsable URL.
    */
   distribution: Distribution | null;
+  /**
+   * True when the distribution’s dataset declares dct:accessRights RESTRICTED or NON_PUBLIC, the
+   * DCAT-AP-NL way to say that not everyone may retrieve its data.
+   */
+  restrictedAccess: boolean;
 }
 
 /**
@@ -210,9 +209,6 @@ export class DistributionProbeStage {
     this.severities = options.severities ?? {
       reachable: shacl('Violation'),
       formatMatch: shacl('Violation'),
-      // A 429 is the Register being throttled, never a publisher defect, so it stays a Warning
-      // even on this strict path where every other probe failure falls back to a Violation.
-      rateLimited: shacl('Warning'),
     };
   }
 
@@ -644,10 +640,6 @@ export function readProbeSeverities(shaclGraph: DatasetCore): ProbeSeverities {
   return {
     reachable: severityForMarker(shaclGraph, probeReachableMarker),
     formatMatch: severityForMarker(shaclGraph, probeFormatMatchMarker),
-    // Not shape-governed: a 429 reflects the Register being rate-limited while probing, not a
-    // publisher data-quality requirement, so it is fixed at sh:Warning rather than read from the
-    // shapes (severityForMarker would otherwise fail closed to sh:Violation absent a marker).
-    rateLimited: shacl('Warning'),
   };
 }
 
@@ -755,7 +747,14 @@ export function collectDistributions(
       ) {
         continue;
       }
-      candidates.push(...candidatesFor(input, distributionNode, profile));
+      candidates.push(
+        ...candidatesFor(
+          input,
+          distributionNode,
+          profile,
+          declaresRestrictedAccess(input, quad.subject),
+        ),
+      );
     }
   }
   return candidates;
@@ -789,10 +788,26 @@ function failedEvaluation(detail: string): EvaluatedProbe {
   };
 }
 
+const restrictedAccessRights = [
+  'http://publications.europa.eu/resource/authority/access-right/RESTRICTED',
+  'http://publications.europa.eu/resource/authority/access-right/NON_PUBLIC',
+];
+
+/**
+ * Whether a dataset declares restricted access. Only the declared dct:accessRights counts, never
+ * the PUBLIC default the register stores when it is absent.
+ */
+function declaresRestrictedAccess(input: DatasetCore, dataset: Term): boolean {
+  return iriValues(input, dataset, dct('accessRights')).some((accessRights) =>
+    restrictedAccessRights.includes(accessRights.value),
+  );
+}
+
 function candidatesFor(
   input: DatasetCore,
   distributionNode: NamedNode | BlankNode,
   profile: 'dcat' | 'schema',
+  restrictedAccess: boolean,
 ): DistributionCandidate[] {
   const mediaType =
     literalValue(input, distributionNode, dcat('mediaType')) ??
@@ -825,25 +840,64 @@ function candidatesFor(
       ? [dcat('accessURL'), dcat('downloadURL')]
       : [schema('contentUrl')];
 
+  // When a DCAT distribution declares a downloadURL, its dcat:mediaType describes that file, and a
+  // different accessURL is typically a landing page (DCAT allows this). Such an accessURL is
+  // probed for reachability only: holding an HTML landing page to the file’s media type would
+  // reject a valid description.
+  const downloadUrls = new Set(
+    profile === 'dcat'
+      ? iriValues(input, distributionNode, dcat('downloadURL')).map((urlTerm) =>
+          probeUrlValue(urlTerm.value),
+        )
+      : [],
+  );
+
   const found: DistributionCandidate[] = [];
   for (const path of urlPaths) {
     for (const urlTerm of iriValues(input, distributionNode, path)) {
+      let distribution = toDistribution(
+        urlTerm.value,
+        mediaType,
+        conformsTo,
+        compressFormat,
+        modified,
+        byteSize,
+      );
+      const isLandingPage =
+        path.equals(dcat('accessURL')) &&
+        downloadUrls.size > 0 &&
+        distribution?.isSparql() === false &&
+        !downloadUrls.has(canonicalProbeUrl(distribution.accessUrl).toString());
+      if (isLandingPage) {
+        // The declared change signals describe the file too, so they stay off the page’s probe.
+        distribution = toDistribution(
+          urlTerm.value,
+          undefined,
+          conformsTo,
+          undefined,
+          undefined,
+          undefined,
+        );
+      }
       found.push({
         distributionNode,
         urlNode: urlTerm,
         path,
-        distribution: toDistribution(
-          urlTerm.value,
-          mediaType,
-          conformsTo,
-          compressFormat,
-          modified,
-          byteSize,
-        ),
+        distribution,
+        restrictedAccess,
       });
     }
   }
   return found;
+}
+
+/** The URL a probe would request for an IRI value, or the raw value when it does not parse. */
+function probeUrlValue(value: string): string {
+  try {
+    return canonicalProbeUrl(new URL(value)).toString();
+  } catch {
+    return value;
+  }
 }
 
 function iriValues(
@@ -938,17 +992,13 @@ function toDistribution(
 }
 
 /**
- * The probe check a verdict belongs to. A rate-limited outcome (HTTP 429) is its own check so it
- * can stay a non-blocking Warning; a content-type outcome is a format-match failure; every other
- * outcome (unreachable, server error, SPARQL/parse failure) is a reachability failure. The verdict
- * outcome decides this, not the result path, because the path always carries the
+ * The probe check a verdict belongs to: a content-type outcome is a format-match failure; every
+ * other outcome (unreachable, server error, SPARQL/parse failure) is a reachability failure. The
+ * verdict outcome decides this, not the result path, because the path always carries the
  * access/download/content URL — never the media-type property.
  */
 function checkKind(verdict: ProbeVerdict): keyof ProbeSeverities {
   const outcome = verdict.outcome;
-  if (outcome !== null && outcome.equals(probeOutcomes.RateLimited)) {
-    return 'rateLimited';
-  }
   if (
     outcome !== null &&
     (outcome.equals(probeOutcomes.ContentTypeMismatch) ||
@@ -957,6 +1007,26 @@ function checkKind(verdict: ProbeVerdict): keyof ProbeSeverities {
     return 'formatMatch';
   }
   return 'reachable';
+}
+
+/**
+ * The sh:severity of a failed probe. Two outcomes are not a publisher defect, so they are always a
+ * sh:Warning – on the strict registration path too, and whatever severity the shapes declare: an
+ * HTTP 429, because the Register was throttled while probing, and an HTTP 401/403 on a dataset
+ * that declares restricted access, because refusing anonymous requests is then the declared
+ * policy. An undeclared 401/403 is a reachability failure like any other.
+ */
+function severityOf(
+  outcome: NamedNode,
+  kind: keyof ProbeSeverities,
+  candidate: DistributionCandidate,
+  severities: ProbeSeverities,
+): NamedNode {
+  const isDeclaredRestriction =
+    outcome.equals(probeOutcomes.AuthRequired) && candidate.restrictedAccess;
+  return outcome.equals(probeOutcomes.RateLimited) || isDeclaredRestriction
+    ? shacl('Warning')
+    : severities[kind];
 }
 
 function emitProbeResult(
@@ -978,7 +1048,11 @@ function emitProbeResult(
     factory.quad(resultNode, shacl('focusNode'), candidate.distributionNode),
     factory.quad(resultNode, shacl('resultPath'), candidate.path),
     factory.quad(resultNode, shacl('value'), candidate.urlNode),
-    factory.quad(resultNode, shacl('resultSeverity'), severities[kind]),
+    factory.quad(
+      resultNode,
+      shacl('resultSeverity'),
+      severityOf(outcome, kind, candidate, severities),
+    ),
     factory.quad(
       resultNode,
       shacl('sourceConstraintComponent'),
