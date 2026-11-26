@@ -10,29 +10,37 @@ import type { RawFacets } from './search/datasets';
 // `label`, reproduces that shape.
 function rawFacets(): RawFacets {
   return {
-    publisher: [
-      {
-        value: 'https://example.org/org',
-        count: 5,
-        label: [{ language: 'nl', value: 'Voorbeeld' }],
-      },
-    ],
-    format: [
-      { value: 'group:sparql', count: 7 },
-      { value: 'text/turtle', count: 2 },
-    ],
-    class: [{ value: 'group:person', count: 4 }],
-    terminology_source: [
-      {
-        value: 'http://vocab.getty.edu/aat',
-        count: 1,
-        label: [{ language: 'en', value: 'AAT' }],
-      },
-    ],
-    status: [
-      { value: 'valid', count: 100 },
-      { value: 'invalid', count: 2 },
-    ],
+    publisher: {
+      buckets: [
+        {
+          value: 'https://example.org/org',
+          count: 5,
+          label: [{ language: 'nl', value: 'Voorbeeld' }],
+        },
+      ],
+    },
+    format: {
+      buckets: [
+        { value: 'group:sparql', count: 7 },
+        { value: 'text/turtle', count: 2 },
+      ],
+    },
+    class: { buckets: [{ value: 'group:person', count: 4 }] },
+    terminology_source: {
+      buckets: [
+        {
+          value: 'http://vocab.getty.edu/aat',
+          count: 1,
+          label: [{ language: 'en', value: 'AAT' }],
+        },
+      ],
+    },
+    status: {
+      buckets: [
+        { value: 'valid', count: 100 },
+        { value: 'invalid', count: 2 },
+      ],
+    },
     // A boolean check facet: the field is indexed only when the check is met, so
     // Typesense returns a `true` bucket only. The API buckets a boolean field by
     // its real value, so this is `true`, not the string `'true'`.
