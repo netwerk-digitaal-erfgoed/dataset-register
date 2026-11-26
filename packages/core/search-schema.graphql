@@ -160,13 +160,73 @@ type Pagination {
 }
 
 type DatasetFacets {
-  publisher: [IRIBucket!]!
-  class: [IRIBucket!]!
-  terminology_source: [IRIBucket!]!
-  language: [ValueBucket!]!
-  format: [ValueBucket!]!
+  publisher(
+    """
+    At most this many buckets, between 1 and 100: the values with the highest counts. A larger limit returns a superset of a smaller one; there is no next page. Omit it for the deployment’s default.
+    """
+    limit: Int
+
+    """
+    Only the values whose referent matches this text – by the label each document states for it – counted as without it and capped at `limit`. A selected value that does not match is left out. Text shorter than 3 characters is no query.
+    """
+    query: String
+  ): IRIFacet!
+  class(
+    """
+    At most this many buckets, between 1 and 100: the values with the highest counts. A larger limit returns a superset of a smaller one; there is no next page. Omit it for the deployment’s default.
+    """
+    limit: Int
+
+    """
+    Only the values whose referent matches this text – by its label, alternate names or whatever else a search of its type matches – counted as without it and capped at `limit`. A selected value that does not match is left out. Text shorter than 3 characters is no query.
+    """
+    query: String
+  ): IRIFacet!
+  terminology_source(
+    """
+    At most this many buckets, between 1 and 100: the values with the highest counts. A larger limit returns a superset of a smaller one; there is no next page. Omit it for the deployment’s default.
+    """
+    limit: Int
+
+    """
+    Only the values whose referent matches this text – by the label each document states for it – counted as without it and capped at `limit`. A selected value that does not match is left out. Text shorter than 3 characters is no query.
+    """
+    query: String
+  ): IRIFacet!
+  language(
+    """
+    At most this many buckets, between 1 and 100: the values with the highest counts. A larger limit returns a superset of a smaller one; there is no next page. Omit it for the deployment’s default.
+    """
+    limit: Int
+
+    """
+    Only the values matching this text, counted as without it and capped at `limit`. A selected value that does not match is left out. Text shorter than 3 characters is no query.
+    """
+    query: String
+  ): ValueFacet!
+  format(
+    """
+    At most this many buckets, between 1 and 100: the values with the highest counts. A larger limit returns a superset of a smaller one; there is no next page. Omit it for the deployment’s default.
+    """
+    limit: Int
+
+    """
+    Only the values matching this text, counted as without it and capped at `limit`. A selected value that does not match is left out. Text shorter than 3 characters is no query.
+    """
+    query: String
+  ): ValueFacet!
   size: IntBinnedRangeFacet!
-  status: [ValueBucket!]!
+  status(
+    """
+    At most this many buckets, between 1 and 100: the values with the highest counts. A larger limit returns a superset of a smaller one; there is no next page. Omit it for the deployment’s default.
+    """
+    limit: Int
+
+    """
+    Only the values matching this text, counted as without it and capped at `limit`. A selected value that does not match is left out. Text shorter than 3 characters is no query.
+    """
+    query: String
+  ): ValueFacet!
   iiif: [BooleanBucket!]!
   nde_schema_ap: [BooleanBucket!]!
   linked_data: [BooleanBucket!]!
@@ -174,10 +234,34 @@ type DatasetFacets {
   persistent_uris: [BooleanBucket!]!
 }
 
+type IRIFacet {
+  """
+  The values with the highest counts, at most `limit` of them, plus any value the query selects.
+  """
+  buckets: [IRIBucket!]!
+
+  """
+  How many distinct values the facet holds over the matching documents, however many buckets are returned. May be an estimate on large result sets; null when the engine does not report it.
+  """
+  totalValues: Int
+}
+
 type IRIBucket {
   value: IRI!
   count: Int!
   label: [LanguageString!]
+}
+
+type ValueFacet {
+  """
+  The values with the highest counts, at most `limit` of them, plus any value the query selects.
+  """
+  buckets: [ValueBucket!]!
+
+  """
+  How many distinct values the facet holds over the matching documents, however many buckets are returned. May be an estimate on large result sets; null when the engine does not report it.
+  """
+  totalValues: Int
 }
 
 type ValueBucket {
@@ -200,7 +284,7 @@ type IntBinnedRangeFacet {
   """
   The declared bins over the same documents as “matching”.
   """
-  buckets: [RangeBucket!]!
+  buckets: [IntRangeBucket!]!
 }
 
 type IntExtent {
@@ -208,9 +292,9 @@ type IntExtent {
   max: Int!
 }
 
-type RangeBucket {
-  min: Float
-  max: Float
+type IntRangeBucket {
+  min: Int
+  max: Int
   count: Int!
 }
 
