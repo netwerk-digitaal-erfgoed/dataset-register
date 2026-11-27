@@ -28,8 +28,11 @@ import {
   TERMINOLOGY_SOURCE_TYPE,
 } from '@dataset-register/core';
 import type { Quad } from '@rdfjs/types';
-import { rebuildLabelCollection } from './label-collections.js';
-import { rootsOfClass } from './roots.js';
+import {
+  prepareLabelQuads,
+  rebuildLabelCollection,
+} from './label-collections.js';
+import { RDF_TYPE, rootsOfClass } from './roots.js';
 import { rootTypeOf } from './ir-alias.js';
 import { RegisterSource } from './register-source.js';
 import { DkgSource } from './dkg-source.js';
@@ -150,6 +153,11 @@ async function rebuildIndex(
     // peer collections a joinable reference points at; ours resolves only this
     // type, and every other name stays derived.
     collectionNameFor: () => alias,
+    // Resolves the Organization and TerminologySource types the facets
+    // reference, so the collection declares the `publisher_match` and
+    // `terminology_source_match` companions the projection writes and a
+    // facet `query` searches.
+    schema: SEARCH_SCHEMA,
     defaultSortingField: DEFAULT_SORTING_FIELD,
     // Dutch-stem any folded, locale-less `*_search` companion field. The
     // per-locale text fields (title/description/...) carry their own nl/en
@@ -180,9 +188,10 @@ async function rebuildIndex(
 
   let upserted = 0;
   try {
-    const [registerQuads, dkgQuads] = await Promise.all([
+    const [registerQuads, dkgQuads, labelQuads] = await Promise.all([
       source.readQuads(),
       readKnowledgeGraphQuads(options, log),
+      referentLabelQuads(labelQuadsPromise, log),
     ]);
 
     // Guard a transient or empty Knowledge Graph from stripping every facet off the
@@ -215,6 +224,7 @@ async function rebuildIndex(
       for await (const document of projectDatasets(
         registerQuads,
         dkgQuads,
+        labelQuads,
         datasetType,
       )) {
         upserted++;
@@ -327,7 +337,8 @@ function runContext(): RunContext {
 }
 
 /**
- * Project ONLY dataset documents from the merged register + DKG quads.
+ * Project ONLY dataset documents from the merged register + DKG quads and
+ * the referent labels ({@link referentLabelQuads}).
  *
  * `projectRoots` projects the one type it is handed over the roots it is given,
  * so the `datasets` collection can never receive Organization/Class/
@@ -339,6 +350,7 @@ function runContext(): RunContext {
 function projectDatasets(
   registerQuads: readonly Quad[],
   dkgQuads: readonly Quad[],
+  labelQuads: readonly Quad[],
   datasetType: RootType,
 ): AsyncIterable<SearchDocument> {
   // Only the register asserts `a dcat:Dataset` (the facts CONSTRUCT), so the
@@ -351,6 +363,7 @@ function projectDatasets(
   const quads = (function* () {
     yield* registerQuads;
     yield* dkgQuads;
+    yield* labelQuads;
   })();
   return projectRoots(quads, roots, SEARCH_SCHEMA, datasetType);
 }
@@ -379,6 +392,43 @@ async function aliasTarget(
     }
     throw error;
   }
+}
+
+/**
+ * The organization and terminology-source labels, re-tagged as their label
+ * collections are ({@link prepareLabelQuads}), for the dataset projection. It
+ * reads each publisher’s and terminology source’s label beside its IRI to fill
+ * the facets’ label-match companions (`publisher_match`,
+ * `terminology_source_match`) that a facet `query` searches. Untagged, the
+ * names would match none of the label field’s locales and be dropped. Their
+ * `rdf:type` is left out: it only names the label collections’ roots. Empty
+ * when the label read fails, so facet queries find nothing until the next run
+ * rather than the rebuild failing.
+ */
+async function referentLabelQuads(
+  labelQuads: Promise<LabelQuadSets>,
+  log: (message: string) => void,
+): Promise<Quad[]> {
+  let organization: Quad[];
+  let terminologySource: Quad[];
+  try {
+    ({ organization, terminologySource } = await labelQuads);
+  } catch (error) {
+    log(
+      `Label read failed; facet queries match no publisher or terminology source until the next run: ${(error as Error).message}`,
+    );
+    return [];
+  }
+  return [
+    ...prepareLabelQuads(
+      organization,
+      rootTypeOf(SEARCH_SCHEMA, ORGANIZATION_TYPE),
+    ),
+    ...prepareLabelQuads(
+      terminologySource,
+      rootTypeOf(SEARCH_SCHEMA, TERMINOLOGY_SOURCE_TYPE),
+    ),
+  ].filter((labelQuad) => labelQuad.predicate.value !== RDF_TYPE);
 }
 
 /** The raw label quads per label-source type, keyed to feed each typed

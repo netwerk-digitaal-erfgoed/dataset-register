@@ -461,6 +461,48 @@ describe('runIndex acceptance (QLever + Typesense)', () => {
     expect(document.terminology_source).toEqual([AAT]);
   });
 
+  it('pairs each publisher and terminology source with its label, so a facet query can match it', async () => {
+    const document = (await client
+      .collections(SEARCH_COLLECTION_ALIAS)
+      .documents(base('mohlmann'))
+      .retrieve()) as Record<string, unknown>;
+    expect(document.publisher_match).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(
+          /^Koninklijke Bibliotheek .*https:\/\/example\.org\/org\/kb$/,
+        ),
+        expect.stringMatching(
+          /^Nationaal Archief .*https:\/\/example\.org\/org\/na$/,
+        ),
+      ]),
+    );
+    expect(document.terminology_source_match).toEqual([
+      expect.stringMatching(
+        /^Art Architecture Thesaurus .*https:\/\/vocab\.getty\.edu\/aat\/$/,
+      ),
+    ]);
+
+    const response = await client
+      .collections(SEARCH_COLLECTION_ALIAS)
+      .documents()
+      .search({
+        q: '*',
+        query_by: QUERY_BY,
+        facet_by: 'publisher_match',
+        facet_query: 'publisher_match:biblio',
+        per_page: 0,
+      });
+    const facet = response.facet_counts?.find(
+      (counts) => counts.field_name === 'publisher_match',
+    );
+    expect(facet?.counts).toEqual([
+      expect.objectContaining({
+        value: expect.stringMatching(/https:\/\/example\.org\/org\/kb$/),
+        count: 1,
+      }),
+    ]);
+  });
+
   it('enriches a document with the DKG size (void:triples)', async () => {
     const document = (await client
       .collections(SEARCH_COLLECTION_ALIAS)
