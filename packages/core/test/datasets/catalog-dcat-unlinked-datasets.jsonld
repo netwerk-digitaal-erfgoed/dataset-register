@@ -1,0 +1,48 @@
+{
+  "@context": {
+    "dcat": "http://www.w3.org/ns/dcat#",
+    "dct": "http://purl.org/dc/terms/",
+    "foaf": "http://xmlns.com/foaf/0.1/"
+  },
+  "@graph": [
+    {
+      "@type": "dcat:Catalog",
+      "@id": "https://example.com/catalog",
+      "dct:title": "Voorbeeld catalogus",
+      "dct:description": "Een catalogus die de dataset in hetzelfde document niet noemt.",
+      "dct:publisher": {
+        "@type": "foaf:Organization",
+        "@id": "https://example.com/publisher",
+        "foaf:name": "Example Organization"
+      }
+    },
+    {
+      "@type": "dcat:Dataset",
+      "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba",
+      "dct:title": "Alba amicorum van de Koninklijke Bibliotheek",
+      "dct:identifier": "http://data.bibliotheken.nl/id/dataset/rise-alba",
+      "dct:keyword": ["alba amicorum"],
+      "dct:license": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "dct:publisher": {
+        "@type": "foaf:Organization",
+        "@id": "https://kb.nl/",
+        "foaf:name": "Koninklijke Bibliotheek",
+        "foaf:workplaceHomepage": "https://www.kb.nl/"
+      },
+      "dcat:distribution": [
+        {
+          "@type": "dcat:Distribution",
+          "dcat:mediaType": {
+            "@id": "https://www.iana.org/assignments/media-types/application/rdf+xml"
+          },
+          "dcat:accessURL": {
+            "@id": "http://data.bibliotheken.nl/id/dataset/rise-alba.rdf"
+          },
+          "dct:license": {
+            "@id": "https://creativecommons.org/publicdomain/zero/1.0/"
+          }
+        }
+      ]
+    }
+  ]
+}
