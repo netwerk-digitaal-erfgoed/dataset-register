@@ -18,7 +18,7 @@
     "@lde/dataset": "^0.10.0",
     "@lde/pipeline": "^0.51.2",
     "@lde/search": "^0.50.1",
-    "@lde/search-typesense": "^0.66.3",
+    "@lde/search-typesense": "^0.66.4",
     "@rdfjs/types": "2.0.1",
     "env-schema": "^8.0.1",
     "n3": "^2.6.4",
